@@ -39,6 +39,7 @@ jobs:
         run: |
           version="$(basename $GITHUB_REF)"
           echo "::set-output name=version::$version"
+          chomd +x scripts/deploy-codecc/packager-codecc.sh
           codecc_pkg_dir=/dev/shm/codecc ./scripts/deploy-codecc/packager-codecc.sh "$version" bkcodecc-slim.tar.gz "$PWD"
       - uses: actions/upload-artifact@v1
         with:

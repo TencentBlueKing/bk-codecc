@@ -12,7 +12,7 @@ my_path="$(readlink -f "$0")"
 my_dir=${my_path%/*}
 [ -d "$my_dir" ] || { echo >&2 "ERROR: my_dir is NOT an existed dir: $my_dir."; return 3; }
 cmd_collect_codecc_ms_name="$my_dir/bk-codecc-collect-ms-name.sh"
-cmd_codecc_slim="$my_dir/../bk-ci-slim.sh"  # 复用ci-lism脚本.
+cmd_codecc_slim="$my_dir/bk-codecc-slim.sh"
 
 collect_frontend (){
   echo "collect_frontend"
