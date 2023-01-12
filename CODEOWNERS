@@ -1,10 +1,10 @@
 # Where component owners are known, add them here.
 /.github @austingod
-/CODEOWNERS @austingod @zanyzhao
+/CODEOWNERS @austingod @foxdd @Yuanruitao
 /docs @austingod @irwinsun
 /*.md @austingod @Yuanruitao
 
-/scripts @fighter-liu @austingod @foxdd @Yuanruitao
+/scripts @austingod @foxdd @Yuanruitao
 /src/gateway @austingod @foxdd @Yuanruitao
 /src/frontend @lockiechen @foxdd @brookylin
 /support-files @austingod @foxdd @Yuanruitao 
