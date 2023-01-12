@@ -26,6 +26,7 @@ collect_backend (){
   echo "collect_backend"
   # 收集fatjar, slim化.
   svcs=$(ls "$codecc_bin_msjar_dir" | sed -n 's/boot-\(.*\).jar/\1/p')
+  chmod +x "$cmd_codecc_slim"
   for ms in $svcs; do
     "$cmd_codecc_slim" "$ms" "$codecc_bin_msjar_dir/boot-$ms.jar" "$codecc_pkg_dir"
   done
