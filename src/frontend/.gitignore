@@ -1,9 +1,0 @@
-node_modules/
-formatCommitMsg.js
-frontend/*
-svg-sprites/dist
-package-lock.json
-yarn.lock
-yarn-error.log
-devops-gitci/src/conf
-*/webpack_cache
