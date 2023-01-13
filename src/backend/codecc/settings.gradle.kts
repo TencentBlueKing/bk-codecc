@@ -24,7 +24,6 @@ pluginManagement {
     }
 }
 
-
 // CodeCC Core Micro Service
 include (":core")
 include (":core:common")
