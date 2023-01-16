@@ -65,7 +65,7 @@ codecc-frontend
 
 ## 本地开发
 
-0. 拷贝 index.html 为 index-dev.html，并替换文件中的 `__xxx__` 为实际情况的配置值
+0. 拷贝 index.html 为 index-dev.html，并替换文件中的 `__xxx__` 为实际情况的配置值。
 
 1. 配置 host
 
