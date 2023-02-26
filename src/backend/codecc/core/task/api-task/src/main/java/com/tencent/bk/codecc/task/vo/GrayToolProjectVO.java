@@ -31,6 +31,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -66,4 +67,21 @@ public class GrayToolProjectVO extends CommonVO {
     @ApiModelProperty("配置参数")
     private Map<String, Object> configureParam;
 
+    /**
+     * 接口人
+     */
+    @ApiModelProperty("接口人")
+    private String projectOwner;
+
+    /**
+     * 原因
+     */
+    @ApiModelProperty("原因")
+    private String reason;
+
+    /**
+     * 筛除机器创建项目(0:筛除 1:不筛除)
+     */
+    @ApiModelProperty("筛除机器创建项目")
+    private Integer hasRobotTaskBool;
 }

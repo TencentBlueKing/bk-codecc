@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.bk.codecc.defect.vo.TaskLogOverviewVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -18,7 +18,7 @@ import javax.ws.rs.core.MediaType;
  * @date 2020/11/2
  */
 @Api(tags = {"BUILD_CHECKER"}, description = "工具执行记录接口")
-@Path("/build/taskLogOverview")
+@Path("/build/taskLogOverview/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface BuildTaskLogOverviewResource {

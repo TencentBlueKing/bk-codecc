@@ -12,10 +12,10 @@
 
 package com.tencent.bk.codecc.codeccjob.service.impl;
 
-import com.tencent.bk.codecc.defect.model.DefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.defect.vo.ConfigCheckersPkgReqVO;
 import com.tencent.bk.codecc.codeccjob.dao.mongorepository.DefectRepository;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.IBizService;
@@ -42,17 +42,17 @@ public class CommonConfigCheckerPkgBizServiceImpl implements IBizService<ConfigC
     @Override
     public Result processBiz(ConfigCheckersPkgReqVO configCheckersPkgReqVO)
     {
-        List<DefectEntity> defectList = defectRepository.findByTaskIdAndToolName(configCheckersPkgReqVO.getTaskId(), configCheckersPkgReqVO.getToolName());
+        List<CommonDefectEntity> defectList = defectRepository.findByTaskIdAndToolName(configCheckersPkgReqVO.getTaskId(), configCheckersPkgReqVO.getToolName());
         if (CollectionUtils.isNotEmpty(defectList))
         {
             long currTime = System.currentTimeMillis();
             List<String> closedCheckers = configCheckersPkgReqVO.getClosedCheckers();
             List<String> openCheckers = configCheckersPkgReqVO.getOpenedCheckers();
 
-            List<DefectEntity> needUpdateDefectList = new ArrayList<>();
+            List<CommonDefectEntity> needUpdateDefectList = new ArrayList<>();
             defectList.forEach(defectEntity ->
             {
-                String checkerName = defectEntity.getCheckerName();
+                String checkerName = defectEntity.getChecker();
                 int status = defectEntity.getStatus();
 
                 // 告警未被修复

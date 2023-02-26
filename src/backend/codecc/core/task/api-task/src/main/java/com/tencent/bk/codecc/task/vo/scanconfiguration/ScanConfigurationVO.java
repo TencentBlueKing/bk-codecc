@@ -27,11 +27,6 @@ public class ScanConfigurationVO extends CommonVO
     private Integer scanType;
 
     /**
-     * 新告警转为历史告警的配置
-     */
-    private NewDefectJudgeVO newDefectJudge;
-
-    /**
      * 告警作者转换配置
      */
     private List<TransferAuthorPair> transferAuthorList;
@@ -40,6 +35,16 @@ public class ScanConfigurationVO extends CommonVO
      * 是否回写工蜂
      */
     private Boolean mrCommentEnable;
+
+    /**
+     * 是否允许页面忽略告警
+     */
+    private Boolean prohibitIgnore;
+
+    /**
+     * 项目编译脚本
+     */
+    private String compileCommand;
 
     @Data
     public static class TransferAuthorPair

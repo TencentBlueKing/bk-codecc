@@ -3,14 +3,14 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ include "common.names.fullname" . }}-init-mongodb
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
+  labels: {{- include "codecc.labels.standard" . | nindent 4 }}
     app.kubernetes.io/component: init-mongodb
     {{- if .Values.commonLabels }}
       {{- include "common.tplvalues.render" (dict "value" .Values.commonLabels "context" $) | nindent 4 }}
     {{- end }}
   annotations:
-    "helm.sh/hook": post-install
-    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-6"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
     {{- if .Values.commonAnnotations }}
     {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
@@ -18,7 +18,7 @@ metadata:
 spec:
   template:
     metadata:
-      labels: {{- include "common.labels.standard" . | nindent 8 }}
+      labels: {{- include "codecc.labels.standard" . | nindent 8 }}
         app.kubernetes.io/component: init-mongodb
     spec:
       {{- if .Values.mongodb.enabled }}
@@ -30,11 +30,12 @@ spec:
             - "/bin/sh"
             - "-c"
             - |
-              until getent hosts {{ include "codecc.mongodb.fullname" . }}
+              until getent hosts {{ include "common.names.fullname" . }}-mongodb
               do 
-                echo waiting for {{ include "codecc.mongodb.fullname" . }};
+                echo waiting for {{ include "common.names.fullname" . }}-mongodb;
                 sleep 2;
               done
+              sleep 10;
               echo "Mongodb is available";
       {{- end }}
       containers:
@@ -44,18 +45,10 @@ spec:
           command: ['/bin/sh','-c','/data/workspace/init-mongodb.sh']
           env:
             - name: CODECC_USERNAME
-              value: {{ include "codecc.mongodb.username" . }}
+              value: {{ .Values.mongodb.auth.username }}
             - name: CODECC_PASSWORD
-              value: {{ include "codecc.mongodb.password" . }}
+              value: {{ .Values.mongodb.auth.password }}
             - name: CODECC_HOST
               value: {{ include "codecc.mongodb.fullname" . }}
-            - name: CODECC_PORT
-              value: {{ include "codecc.mongodb.port" . | quote }}
-            - name: CODECC_AUTH_DB_DEFECT
-              value: {{ include "codecc.mongodb.defectAuthDB" . }}
-            - name: CODECC_AUTH_DB_TASK
-              value: {{ include "codecc.mongodb.taskAuthDB" . }}
-            - name: CODECC_AUTH_DB_QUARTZ
-              value: {{ include "codecc.mongodb.quartzAuthDB" . }}
       restartPolicy: OnFailure
 {{- end }}

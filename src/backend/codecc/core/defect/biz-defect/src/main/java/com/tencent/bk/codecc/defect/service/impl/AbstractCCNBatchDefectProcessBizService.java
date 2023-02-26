@@ -1,18 +1,29 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.CCNDefectDao;
-import com.tencent.bk.codecc.defect.model.CCNDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.service.AbstractBatchDefectProcessBizService;
-import com.tencent.bk.codecc.defect.service.IQueryWarningBizService;
-import com.tencent.bk.codecc.defect.vo.*;
+import com.tencent.bk.codecc.defect.utils.ParamUtils;
+import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
+import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
+import com.tencent.bk.codecc.defect.vo.CCNDefectQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.Tool;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.*;
 
 /**
  * 圈复杂度告警处理处理抽象类
@@ -21,61 +32,127 @@ import java.util.*;
  * @date 2020/3/3
  */
 @Slf4j
-public abstract class AbstractCCNBatchDefectProcessBizService extends AbstractBatchDefectProcessBizService
-{
+public abstract class AbstractCCNBatchDefectProcessBizService extends AbstractBatchDefectProcessBizService {
+
     @Autowired
     private CCNDefectDao ccnDefectDao;
 
     @Autowired
     private CCNDefectRepository ccnDefectRepository;
 
+    @Autowired
+    private CCNQueryWarningBizServiceImpl ccnQueryWarningBizService;
+
+    @Autowired
+    private ThirdPartySystemCaller thirdPartySystemCaller;
+
     @Override
     protected abstract void doBiz(List defectList, BatchDefectProcessReqVO batchDefectProcessReqVO);
 
     @Override
-    protected List getDefectsByQueryCond(long taskId, DefectQueryReqVO defectQueryReqVO)
-    {
-        // 根据任务ID和工具名查询所有的告警
-        CCNDefectQueryRspVO defectQueryRspVO = new CCNDefectQueryRspVO();
+    protected List getDefectsByQueryCond(long taskId, DefectQueryReqVO request) {
+        return getDefectsByQueryCondWithPage(taskId, request, null, null, null);
+    }
 
-        Set<String> fileList = defectQueryReqVO.getFileList();
-        String author = defectQueryReqVO.getAuthor();
-        List<CCNDefectEntity> defectList = ccnDefectDao.findByTaskIdAndAuthorAndRelPaths(taskId, author, fileList);
+    @Override
+    protected List getDefectsByQueryCondWithPage(long taskId, DefectQueryReqVO request,
+            String startFilePath, Long skip, Integer pageSize) {
+        List<Long> taskIdList = Collections.singletonList(taskId);
+        String buildId = request.getBuildId();
+        List<String> dimensionList = Lists.newArrayList(Tool.CCN.name());
+        List<String> toolNameList = Lists.newArrayList(Tool.CCN.name());
+        Map<Long, List<String>> taskToolMap = ParamUtils.getTaskToolMap(
+                toolNameList,
+                dimensionList,
+                taskIdList,
+                buildId
+        );
+        log.info("query ccn defect list, task tool map: {}", taskToolMap);
+        // 多任务维度，有些任务可能曾经开启过圈复杂度，但现在已经停用了
+        taskIdList = Lists.newArrayList(taskToolMap.keySet());
+        request.setTaskIdList(taskIdList);
 
-        IQueryWarningBizService queryWarningBizService = factory.createBizService(defectQueryReqVO.getToolName(),
-                ComConstants.BusinessType.QUERY_WARNING.value(), IQueryWarningBizService.class);
-        queryWarningBizService.filterDefectByCondition(taskId, defectList, null, defectQueryReqVO, defectQueryRspVO, null);
+        // 严重级别
+        Set<Map.Entry<Integer, Integer>> riskFactors = Sets.newHashSet();
+        if (CollectionUtils.isNotEmpty(request.getSeverity())) {
+            for (String severity : request.getSeverity()) {
+                ComConstants.RiskFactor riskFactor = ComConstants.RiskFactor.get(Integer.parseInt(severity));
+                riskFactors.add(thirdPartySystemCaller.getCCNRiskFactorConfig(riskFactor));
+            }
+        }
 
-        return defectList;
+        Map<String, Boolean> filedMap = new HashMap<>();
+        filedMap.put("_id", true);
+        filedMap.put("status", true);
+        filedMap.put("tool_name", true);
+        filedMap.put("author", true);
+        filedMap.put("severity", true);
+        filedMap.put("rel_path", true);
+
+        if (pageSize == null) {
+            return ccnDefectDao.findDefectByCondition(taskIdList, request.getAuthor(),
+                    CollectionUtils.isEmpty(request.getStatus()) ? Collections.emptySet() :
+                            request.getStatus().stream().map(Integer::valueOf).collect(Collectors.toSet()),
+                    request.getFileList(), riskFactors, null, request.getBuildId(),
+                    request.getStartCreateTime(), request.getEndCreateTime(), request.getIgnoreReasonTypes(), filedMap);
+        } else {
+            return ccnDefectDao.findDefectByConditionWithFilePathPage(taskIdList, request.getAuthor(),
+                    CollectionUtils.isEmpty(request.getStatus()) ? Collections.emptySet() :
+                            request.getStatus().stream().map(Integer::valueOf).collect(Collectors.toSet()),
+                    request.getFileList(), riskFactors, null, request.getBuildId(), request.getStartCreateTime(),
+                    request.getEndCreateTime(), request.getIgnoreReasonTypes(), startFilePath, skip, pageSize,
+                    filedMap);
+        }
+    }
+    @Override
+    protected void processCustomizeOpsAfterEachPageDone(List defectList, BatchDefectProcessReqVO batchDefectProcessReqVO) {
+
     }
 
     /**
      * 根据前端传入的告警key，查询有效的告警
      * 过滤规则是：忽略告警、告警处理人分配、告警标志修改针对的都是待修复告警，而恢复忽略针对的是已忽略告警
+     *
      * @param batchDefectProcessReqVO
      */
     @Override
-    protected List<CCNDefectEntity> getEffectiveDefectByDefectKeySet(BatchDefectProcessReqVO batchDefectProcessReqVO)
-    {
-        List<CCNDefectEntity> defecEntityList = ccnDefectRepository.findByEntityIdIn(batchDefectProcessReqVO.getDefectKeySet());
-        if (CollectionUtils.isEmpty(defecEntityList))
-        {
+    protected List<CCNDefectEntity> getEffectiveDefectByDefectKeySet(BatchDefectProcessReqVO batchDefectProcessReqVO) {
+        Long taskId = batchDefectProcessReqVO.getTaskId();
+        List<CCNDefectEntity> defecEntityList = ccnDefectRepository.findByTaskIdAndEntityIdIn(taskId,
+                batchDefectProcessReqVO.getDefectKeySet());
+        Iterator<CCNDefectEntity> it;
+        if (CollectionUtils.isEmpty(defecEntityList)) {
             return new ArrayList<>();
+        } else {
+            it = defecEntityList.iterator();
         }
 
-        Iterator<CCNDefectEntity> it = defecEntityList.iterator();
-        while (it.hasNext())
-        {
+        while (it.hasNext()) {
             CCNDefectEntity defectEntity = it.next();
             int status = defectEntity.getStatus();
-            int statusCond = getStatusCondition();
-            boolean notMatchNewStatus = statusCond == ComConstants.DefectStatus.NEW.value() && status != ComConstants.DefectStatus.NEW.value();
-            boolean notMatchIgnoreStatus = statusCond > ComConstants.DefectStatus.NEW.value() && (status & statusCond) == 0;
-            if (notMatchNewStatus || notMatchIgnoreStatus)
-            {
+            Set<String> statusCondSet = getStatusCondition(null);
+            boolean match = false;
+            for (String statusCondStr : statusCondSet) {
+                int statusCond = Integer.parseInt(statusCondStr);
+                boolean notMatchNewStatus = statusCond == ComConstants.DefectStatus.NEW.value()
+                        && status != ComConstants.DefectStatus.NEW.value();
+                boolean notMatchIgnoreStatus = statusCond > ComConstants.DefectStatus.NEW.value()
+                        && (status & statusCond) == 0;
+                if (notMatchNewStatus || notMatchIgnoreStatus) {
+                    continue;
+                }
+                match = true;
+                break;
+            }
+            if (!match) {
                 it.remove();
             }
         }
         return defecEntityList;
+    }
+
+    @Override
+    protected List<Long> getTaskIdsByDefectKeySet(BatchDefectProcessReqVO batchDefectProcessReqVO) {
+        return ccnDefectDao.findTaskIdsByEntityIds(batchDefectProcessReqVO.getDefectKeySet());
     }
 }

@@ -26,7 +26,7 @@
 
 package com.tencent.bk.codecc.codeccjob.dao.mongorepository;
 
-import com.tencent.bk.codecc.defect.model.DUPCDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.DUPCDefectEntity;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;

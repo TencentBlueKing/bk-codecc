@@ -34,6 +34,7 @@ import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
+import org.springframework.data.redis.connection.RedisConnectionFactory
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.core.StringRedisTemplate
@@ -45,8 +46,8 @@ import java.net.UnknownHostException
 @AutoConfigureBefore(RedisAutoConfiguration::class)
 class RedisCommonAutoConfiguration {
 
-
-    @Bean("redisTemplate")
+    @Bean
+    @ConditionalOnMissingBean(name = ["redisTemplate"])
     @Throws(UnknownHostException::class)
     fun redisTemplate(@Autowired jedisConnectionFactory: JedisConnectionFactory): RedisTemplate<String, String> {
         val redisTemplate = RedisTemplate<String, String>()
@@ -56,7 +57,6 @@ class RedisCommonAutoConfiguration {
         GenericToStringSerializer(String::class.java).also { redisTemplate.valueSerializer = it }
         return redisTemplate
     }
-
 
     @Bean
     @ConditionalOnMissingBean

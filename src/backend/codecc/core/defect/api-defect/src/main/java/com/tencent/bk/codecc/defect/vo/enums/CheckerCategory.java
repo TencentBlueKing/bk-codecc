@@ -15,11 +15,10 @@ package com.tencent.bk.codecc.defect.vo.enums;
 /**
  * 规则类型
  *
- * @date 2019/12/26
  * @version V1.0
+ * @date 2019/12/26
  */
-public enum CheckerCategory
-{
+public enum CheckerCategory {
 
     /**
      * 代码缺陷
@@ -51,18 +50,13 @@ public enum CheckerCategory
      */
     CODE_STATISTIC("代码统计");
 
-
     private String name;
 
-    CheckerCategory(String name)
-    {
+    CheckerCategory(String name) {
         this.name = name;
     }
 
-
-    public String getName()
-    {
+    public String getName() {
         return this.name;
     }
-
 }

@@ -16,8 +16,8 @@ object CommonDefectAttributeUtils {
             logger.info("Scm change records json is empty!")
             return authorSet
         }
-        val srcFile = defectDetailVO.filePathname
-        val lineNum = defectDetailVO.lineNumber
+        val srcFile = defectDetailVO.filePath
+        val lineNum = defectDetailVO.lineNum
         var affStr = ""
         for (i in 0 until scmJsonArr.length()) {
             val jsonFile = scmJsonArr.getJSONObject(i)

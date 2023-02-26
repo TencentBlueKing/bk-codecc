@@ -31,6 +31,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.tencent.bk.codecc.defect.vo.LintDefectDetailQueryReqVO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;
@@ -64,4 +65,7 @@ public class CommonDefectDetailQueryReqVO
 
     @ApiModelProperty(value = "文件路径")
     private String filePath;
+
+    @ApiModelProperty(value = "构建Id")
+    private String buildId;
 }

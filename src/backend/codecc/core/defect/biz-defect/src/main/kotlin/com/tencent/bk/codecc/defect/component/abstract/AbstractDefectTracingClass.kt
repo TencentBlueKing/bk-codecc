@@ -10,8 +10,8 @@ import com.tencent.bk.codecc.defect.pojo.AggregateDispatchFileName
 import com.tencent.bk.codecc.defect.pojo.FileMD5TotalModel
 import com.tencent.bk.codecc.task.vo.TaskDetailVO
 import com.tencent.codecc.common.db.CommonEntity
-import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.api.codecc.util.JsonUtil
+import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.constant.CommonMessageCode
 import com.tencent.devops.common.script.CommandLineUtils
@@ -197,7 +197,7 @@ abstract class AbstractDefectTracingClass<T : CommonEntity>(
 
             val inputFileName = "${streamName}_${toolName}_${buildId}_${t}_aggregate_input_data.json"
             val inputFilePath = scmJsonComponent.index(inputFileName, ScmJsonComponent.AGGREGATE)
-            logger.info("aggregate inputFileName : $inputFilePath")
+            logger.info("aggregate inputFilePath : $inputFilePath")
             val inputFile = File(inputFilePath)
 
             var outputFileName = "${streamName}_${toolName}_${buildId}_${t}_aggregate_output_data.json"
@@ -242,25 +242,25 @@ abstract class AbstractDefectTracingClass<T : CommonEntity>(
      */
     private fun groupByFilePath(defectHashList: List<AggregateDefectInputModel>): MutableList<AggregateDefectGroupModel> {
         return defectHashList.groupingBy { (if (it.relPath.isNullOrBlank()) it.filePath else it.relPath) }.eachCount()
-            .entries.fold(
-                mutableListOf(
-                    AggregateDefectGroupModel(0, mutableListOf())
-                )
-            ) { acc, entry ->
-                // 如果大于30000，则要重新加一个分组
-                if (acc.last().count + entry.value > 30000) {
-                    acc.add(AggregateDefectGroupModel(entry.value, mutableListOf(entry.key)))
-                    acc
-                }
-                // 如果小于30000，则在原来分组中处理
-                else {
-                    if (!(entry.key.isBlank())) {
-                        acc.last().filePathList.add(entry.key)
-                        acc.last().count += entry.value
+                .entries.fold(
+                    mutableListOf(
+                        AggregateDefectGroupModel(0, mutableListOf())
+                    )
+                ) { acc, entry ->
+                    // 如果大于30000，则要重新加一个分组
+                    if (acc.last().count + entry.value > 30000) {
+                        acc.add(AggregateDefectGroupModel(entry.value, mutableListOf(entry.key)))
+                        acc
                     }
-                    acc
+                    // 如果小于30000，则在原来分组中处理
+                    else {
+                        if (!(entry.key.isBlank())) {
+                            acc.last().filePathList.add(entry.key)
+                            acc.last().count += entry.value
+                        }
+                        acc
+                    }
                 }
-            }
     }
 
     /**

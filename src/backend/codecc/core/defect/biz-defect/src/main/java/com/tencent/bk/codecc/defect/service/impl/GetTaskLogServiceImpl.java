@@ -26,13 +26,19 @@
 
 package com.tencent.bk.codecc.defect.service.impl;
 
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskLogDao;
+import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskLogOverviewDao;
+import com.tencent.bk.codecc.defect.dao.mongotemplate.ToolBuildInfoDao;
 import com.tencent.bk.codecc.defect.model.TaskLogEntity;
+import com.tencent.bk.codecc.defect.model.TaskLogOverviewEntity;
+import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
 import com.tencent.bk.codecc.defect.service.GetTaskLogService;
 import com.tencent.bk.codecc.defect.service.LogService;
 import com.tencent.bk.codecc.defect.utils.ConvertUtil;
@@ -50,24 +56,33 @@ import com.tencent.bk.codecc.task.vo.pipeline.PipelineTaskVO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.exception.UnauthorizedException;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
-import com.tencent.devops.common.auth.api.external.AuthTaskService;
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
 import com.tencent.devops.common.auth.api.pojo.external.PipelineAuthAction;
 import com.tencent.devops.common.auth.api.pojo.external.model.BkAuthExResourceActionModel;
+import com.tencent.devops.common.auth.api.service.AuthTaskService;
 import com.tencent.devops.common.client.Client;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
+import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.DateTimeUtils;
-import com.tencent.devops.common.util.JsonUtil;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -78,15 +93,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
-
 /**
  * LINT获取分析记录的逻辑实现类
  *
@@ -96,29 +102,25 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
 @Service
 public class GetTaskLogServiceImpl implements GetTaskLogService {
 
+    private static Logger logger = LoggerFactory.getLogger(GetTaskLogServiceImpl.class);
     @Autowired
     private Client client;
-
     @Autowired
     private LogService logService;
-
     @Autowired
     private TaskLogDao taskLogDao;
-
     @Autowired
     private RedisTemplate redisTemplate;
-
     @Autowired
     private TaskLogRepository taskLogRepository;
-
     @Autowired
     private AuthExPermissionApi bkAuthExPermissionApi;
-
     @Autowired
     private AuthTaskService authTaskService;
-
-    private static Logger logger = LoggerFactory.getLogger(GetTaskLogServiceImpl.class);
-
+    @Autowired
+    private TaskLogOverviewDao taskLogOverviewDao;
+    @Autowired
+    private ToolBuildInfoDao toolBuildInfoDao;
 
     @Override
     public Result<QueryTaskLogVO> queryTaskLog(QueryTaskLogVO queryTaskLogVO) {
@@ -160,17 +162,18 @@ public class GetTaskLogServiceImpl implements GetTaskLogService {
     /**
      * 查询分析记录日志
      *
-     * @param projectId     项目ID
-     * @param pipelineId    流水线ID
-     * @param buildId       构建号ID
+     * @param projectId 项目ID
+     * @param pipelineId 流水线ID
+     * @param buildId 构建号ID
      * @param queryKeywords 搜索词
-     * @param tag           对应element ID
+     * @param tag 对应element ID
      * @return 日志信息
      */
     @Override
     public QueryLogRepVO queryAnalysisLog(String userId, String projectId, String pipelineId, String buildId,
-                                          String queryKeywords, String tag) {
-        validatePermission(pipelineId);
+            String queryKeywords,
+            String tag, String multiPipelineMark) {
+        validatePermission(pipelineId, multiPipelineMark);
         return logService.getAnalysisLog(userId, projectId, pipelineId, buildId, queryKeywords, tag);
     }
 
@@ -178,40 +181,42 @@ public class GetTaskLogServiceImpl implements GetTaskLogService {
     /**
      * 查询更多的日志
      *
-     * @param projectId    项目ID
-     * @param pipelineId   流水线ID
-     * @param buildId      构建号ID
-     * @param num          行数
-     * @param fromStart    是否顺序显示
-     * @param start        开始行数
-     * @param end          结束行数
-     * @param tag          对应element ID
+     * @param projectId 项目ID
+     * @param pipelineId 流水线ID
+     * @param buildId 构建号ID
+     * @param num 行数
+     * @param fromStart 是否顺序显示
+     * @param start 开始行数
+     * @param end 结束行数
+     * @param tag 对应element ID
      * @param executeCount 执行次数
      * @return 日志信息
      */
     @Override
-    // NOCC:ParameterNumber(设计如此:)
     public QueryLogRepVO getMoreLogs(String userId, String projectId, String pipelineId, String buildId, Integer num,
-                                     Boolean fromStart, Long start, Long end, String tag, Integer executeCount) {
-        validatePermission(pipelineId);
-        return logService.getMoreLogs(userId, projectId, pipelineId, buildId, num,
-                fromStart, start, end, tag, executeCount);
+            Boolean fromStart, Long start, Long end, String tag, Integer executeCount,
+            String multiPipelineMark) {
+        validatePermission(pipelineId, multiPipelineMark);
+        return logService.getMoreLogs(userId, projectId, pipelineId, buildId, num, fromStart,
+                start, end, tag, executeCount);
     }
 
 
     /**
      * 下载分析记录日志
      *
-     * @param projectId    项目ID
-     * @param pipelineId   流水线ID
-     * @param buildId      构建号ID
-     * @param tag          对应element ID
+     * @param projectId 项目ID
+     * @param pipelineId 流水线ID
+     * @param buildId 构建号ID
+     * @param tag 对应element ID
      * @param executeCount 执行次数
+     * @return 日志信息
      */
     @Override
-    public void downloadLogs(String userId, String projectId, String pipelineId, String buildId,
-                             String tag, Integer executeCount) {
-        validatePermission(pipelineId);
+    public void downloadLogs(String userId, String projectId, String pipelineId, String buildId, String tag,
+            Integer executeCount,
+            String multiPipelineMark) {
+        validatePermission(pipelineId, multiPipelineMark);
         logService.downloadLogs(userId, projectId, pipelineId, buildId, tag, executeCount);
     }
 
@@ -219,20 +224,18 @@ public class GetTaskLogServiceImpl implements GetTaskLogService {
     /**
      * 获取某行后的日志
      *
-     * @param projectId    项目ID
-     * @param pipelineId   流水线ID
-     * @param buildId      构建号ID
-     * @param tag          对应element ID
+     * @param projectId 项目ID
+     * @param pipelineId 流水线ID
+     * @param buildId 构建号ID
+     * @param tag 对应element ID
      * @param executeCount 执行次数
      * @return 日志信息
      */
     @Override
-    // NOCC:ParameterNumber(设计如此:)
-    public QueryLogRepVO getAfterLogs(String userId, String projectId, String pipelineId, String buildId,
-                                      Long start, String queryKeywords, String tag, Integer executeCount) {
-        validatePermission(pipelineId);
-        return logService.getAfterLogs(userId, projectId, pipelineId, buildId, start,
-                queryKeywords, tag, executeCount);
+    public QueryLogRepVO getAfterLogs(String userId, String projectId, String pipelineId, String buildId, Long start,
+            String queryKeywords, String tag, Integer executeCount, String multiPipelineMark) {
+        validatePermission(pipelineId, multiPipelineMark);
+        return logService.getAfterLogs(userId, projectId, pipelineId, buildId, start, queryKeywords, tag, executeCount);
     }
 
     /**
@@ -282,7 +285,8 @@ public class GetTaskLogServiceImpl implements GetTaskLogService {
             Map<String, String> deptInfo =
                     (Map<String, String>) redisTemplate.opsForHash().entries(RedisKeyConstants.KEY_DEPT_INFOS);
 
-            activeTaskList = taskDetailVoList.stream().map(taskDetailVO -> {
+            activeTaskList = taskDetailVoList.stream().map(taskDetailVO ->
+            {
                 ActiveTaskStatisticsVO activeTaskVO = new ActiveTaskStatisticsVO();
                 BeanUtils.copyProperties(taskDetailVO, activeTaskVO);
 
@@ -309,7 +313,6 @@ public class GetTaskLogServiceImpl implements GetTaskLogService {
             for (TaskLogEntity taskLogEntity : taskLogList) {
                 long taskId = taskLogEntity.getTaskId();
 
-
                 String status = activeTaskMap.get(taskId);
                 if (StringUtils.isNotEmpty(status)) {
                     continue;
@@ -320,13 +323,13 @@ public class GetTaskLogServiceImpl implements GetTaskLogService {
                 int flag = taskLogEntity.getFlag();
 
                 if (ComConstants.Tool.COVERITY.name().equals(toolName)) {
-                    if (currStep == ComConstants.Step4Cov.DEFECT_SYNS.value()
-                            && flag == ComConstants.StepFlag.SUCC.value()) {
+                    if (currStep == ComConstants.Step4Cov.DEFECT_SYNS.value() &&
+                            flag == ComConstants.StepFlag.SUCC.value()) {
                         activeTaskMap.put(taskId, "活跃");
                     }
                 } else {
-                    if (currStep == ComConstants.Step4MutliTool.COMMIT.value()
-                            && flag == ComConstants.StepFlag.SUCC.value()) {
+                    if (currStep == ComConstants.Step4MutliTool.COMMIT.value() &&
+                            flag == ComConstants.StepFlag.SUCC.value()) {
                         activeTaskMap.put(taskId, "活跃");
                     }
                 }
@@ -341,13 +344,13 @@ public class GetTaskLogServiceImpl implements GetTaskLogService {
      *
      * @param pipelineId
      */
-    private void validatePermission(String pipelineId) {
+    private void validatePermission(String pipelineId, String multiPipelineMark) {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         HttpServletRequest request = attributes.getRequest();
         String userName = request.getHeader(AUTH_HEADER_DEVOPS_USER_ID);
 
-        Result<PipelineTaskVO> taskInfo =
-                client.get(ServiceTaskRestResource.class).getPipelineTask(pipelineId, "");
+        Result<PipelineTaskVO> taskInfo = client.get(ServiceTaskRestResource.class).getPipelineTask(pipelineId,
+                multiPipelineMark, "");
         if (taskInfo.isNotOk() || null == taskInfo.getData()) {
             logger.error("get task detail info fail! pipeline id: {}", pipelineId);
             throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
@@ -385,4 +388,76 @@ public class GetTaskLogServiceImpl implements GetTaskLogService {
         throw new UnauthorizedException("unauthorized user permission!");
     }
 
+    /**
+     * 查询分析成功的任务和工具信息
+     *
+     * @param reqVO 请求体
+     * @return list
+     */
+    @Override
+    public List<QueryTaskListReqVO> queryAccessedTaskAndToolName(QueryTaskListReqVO reqVO) {
+        logger.info("queryAccessedTaskAndToolName reqVO:[{}]", reqVO);
+        List<QueryTaskListReqVO> queryTaskListReqVOs = new ArrayList<>();
+        List<TaskLogEntity> taskLogEntities = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(reqVO.getTaskIds()) && StringUtils.isNotEmpty(reqVO.getToolName())) {
+            taskLogEntities = taskLogDao.queryAccessedTask(reqVO.getTaskIds(), reqVO.getToolName());
+        }
+        logger.info("queryAccessedTaskAndToolName taskLogEntities:[{}]", taskLogEntities.size());
+        for (TaskLogEntity taskLogEntity : taskLogEntities) {
+            if (taskLogEntity != null) {
+                QueryTaskListReqVO queryTaskListReq = new QueryTaskListReqVO();
+                queryTaskListReq.setTaskId(taskLogEntity.getTaskId());
+                queryTaskListReq.setToolName(taskLogEntity.getToolName());
+                queryTaskListReqVOs.add(queryTaskListReq);
+            }
+        }
+        return queryTaskListReqVOs;
+    }
+
+    /**
+     * 按任务ID获取最新分析状态
+     *
+     * @param taskIds 任务ID集合
+     * @return map
+     */
+    @Override
+    public Map<Long, String> getLatestAnalyzeStatus(List<Long> taskIds) {
+
+        if (CollectionUtils.isEmpty(taskIds)) {
+            logger.info("getLatestAnalyzeStatus taskIds is null!");
+            return null;
+        }
+
+        // 先拿到最新build id
+        List<ToolBuildInfoEntity> toolBuildInfoEntities =
+                toolBuildInfoDao.findLatestBuildIdByTaskIdSet(taskIds);
+        List<String> buildIdList = toolBuildInfoEntities.stream().map(ToolBuildInfoEntity::getDefectBaseBuildId)
+                .collect(Collectors.toList());
+
+        // 根据taskIds获取最新分析状态
+        List<TaskLogOverviewEntity> taskLogOverviewEntityList =
+                taskLogOverviewDao.findLatestAnalyzeStatus(taskIds, buildIdList, null);
+
+        Map<Long, TaskLogOverviewEntity> taskLogOverviewMap = taskLogOverviewEntityList.stream()
+                .collect(Collectors.toMap(TaskLogOverviewEntity::getTaskId, Function.identity(), (k, v) -> v));
+
+        Map<Long, String> analyzeStatusMap = new HashMap<>();
+
+        for (TaskLogOverviewEntity taskLogOverviewEntity : taskLogOverviewEntityList) {
+            if (taskLogOverviewMap.containsKey(taskLogOverviewEntity.getTaskId())) {
+                TaskLogOverviewEntity taskLogOverviewModel = taskLogOverviewMap.get(taskLogOverviewEntity.getTaskId());
+
+                if (taskLogOverviewModel != null && taskLogOverviewModel.getStartTime() != null) {
+                    Long startTime = taskLogOverviewModel.getStartTime();
+
+                    String analyzeDateTime = DateTimeUtils.timestamp2StringDate(startTime)
+                            + ComConstants.ScanStatus.convertScanStatus(taskLogOverviewModel.getStatus());
+
+                    analyzeStatusMap.put(taskLogOverviewModel.getTaskId(), analyzeDateTime);
+                }
+            }
+        }
+
+        return analyzeStatusMap;
+    }
 }

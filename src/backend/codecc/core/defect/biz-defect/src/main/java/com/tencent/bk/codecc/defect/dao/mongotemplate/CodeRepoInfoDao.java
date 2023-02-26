@@ -1,6 +1,5 @@
 package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
-import com.tencent.bk.codecc.defect.model.TaskLogGroupEntity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoInfoEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,5 +41,4 @@ public class CodeRepoInfoDao
         AggregationResults<CodeRepoInfoEntity> queryResult = mongoTemplate.aggregate(agg, "t_code_repo_info", CodeRepoInfoEntity.class);
         return queryResult.getMappedResults();
     }
-
 }

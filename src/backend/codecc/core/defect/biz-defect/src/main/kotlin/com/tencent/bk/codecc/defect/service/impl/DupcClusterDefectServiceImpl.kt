@@ -1,6 +1,11 @@
 package com.tencent.bk.codecc.defect.service.impl
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.*
+import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository
+import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository
+import com.tencent.bk.codecc.defect.dao.mongorepository.CommonStatisticRepository
+import com.tencent.bk.codecc.defect.dao.mongorepository.DUPCStatisticRepository
+import com.tencent.bk.codecc.defect.dao.mongorepository.LintStatisticRepository
+import com.tencent.bk.codecc.defect.model.statistic.StatisticEntity
 import com.tencent.devops.common.api.clusterresult.BaseClusterResultVO
 import com.tencent.devops.common.api.clusterresult.DupcClusterResultVO
 import com.tencent.devops.common.constant.ComConstants
@@ -10,22 +15,28 @@ import org.springframework.stereotype.Service
 
 @Service("DUPC")
 class DupcClusterDefectServiceImpl @Autowired constructor(
-        lintStatisticRepository: LintStatisticRepository,
-        commonStatisticRepository: CommonStatisticRepository,
-        ccnStatisticRepository: CCNStatisticRepository,
-        clocStatisticRepository: CLOCStatisticRepository,
-        private val dupcStatisticRepository: DUPCStatisticRepository
-): AbstractClusterDefectService(
-        lintStatisticRepository,
-        commonStatisticRepository,
-        dupcStatisticRepository,
-        ccnStatisticRepository,
-        clocStatisticRepository
+    lintStatisticRepository: LintStatisticRepository,
+    commonStatisticRepository: CommonStatisticRepository,
+    ccnStatisticRepository: CCNStatisticRepository,
+    clocStatisticRepository: CLOCStatisticRepository,
+    private val dupcStatisticRepository: DUPCStatisticRepository
+) : AbstractClusterDefectService(
+    lintStatisticRepository,
+    commonStatisticRepository,
+    dupcStatisticRepository,
+    ccnStatisticRepository,
+    clocStatisticRepository
 ) {
     /**
      * 重复率工具不参与开源治理度量，没有聚类逻辑
      */
-    override fun cluster(taskId: Long, buildId: String, toolList: List<String>) {
+    override fun cluster(
+        taskId: Long,
+        buildId: String,
+        toolList: List<String>,
+        isMigrationSuccessful: Boolean,
+        toolNameToDimensionStatisticMap: Map<String, StatisticEntity>
+    ) {
         logger.info("dupc cluster $taskId $buildId ${toolList.size}")
     }
 
@@ -33,8 +44,8 @@ class DupcClusterDefectServiceImpl @Autowired constructor(
         val dupcClusterResultVO = DupcClusterResultVO()
         dupcClusterResultVO.type = ComConstants.ToolType.DUPC.name
         val dupcClusterStatisticEntity =
-                dupcStatisticRepository.findFirstByTaskIdAndBuildId(taskId, buildId)
-                        ?: return dupcClusterResultVO
+            dupcStatisticRepository.findFirstByTaskIdAndBuildId(taskId, buildId)
+                ?: return dupcClusterResultVO
         dupcClusterResultVO.totalCount = dupcClusterStatisticEntity.defectCount
         dupcClusterResultVO.defectChange = dupcClusterStatisticEntity.defectChange
         dupcClusterResultVO.dupRate = dupcClusterStatisticEntity.dupRate.toDouble()

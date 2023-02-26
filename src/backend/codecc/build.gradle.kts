@@ -1,63 +1,27 @@
+import com.tencent.devops.conventions.AssemblyMode
 import com.tencent.devops.utils.findPropertyOrEmpty
-import com.tencent.devops.enums.AssemblyMode
 
 plugins {
-    id("com.tencent.devops.boot")
+    id("com.tencent.devops.boot") version "0.0.5"
 }
 
 allprojects {
     group = "com.tencent.bk.codecc"
-    version = "1.7.37-RELEASE"
+    version = "0.0.2"
 
     apply(plugin = "com.tencent.devops.boot")
 
-    val property = project.findPropertyOrEmpty("devops.assemblyMode").trim()
-    if (project.name.startsWith("boot-")) {
-        when (AssemblyMode.ofValueOrDefault(property)) {
-            AssemblyMode.CONSUL -> {
-                project.configurations.all {
-                    exclude(group = "org.springframework.cloud", module = "spring-cloud-starter-kubernetes-client")
-                    exclude(group = "org.springframework.cloud",
-                        module = "spring-cloud-starter-kubernetes-client-config")
-                }
-            }
-            AssemblyMode.K8S, AssemblyMode.KUBERNETES -> {
-                project.configurations.all {
-                    exclude(group = "org.springframework.cloud", module = "spring-cloud-starter-config")
-                    exclude(group = "org.springframework.cloud", module = "spring-cloud-starter-consul-config")
-                    exclude(group = "org.springframework.cloud", module = "spring-cloud-starter-consul-discovery")
-                }
-            }
-        }
+    val mavenRepoUrl = project.findPropertyOrEmpty("MAVEN_REPO_URL")
+    repositories {
+        mavenLocal()
+        maven(url = mavenRepoUrl)
+        mavenCentral()
+        jcenter()
     }
 
-
-    configurations {
-        all {
-            exclude(group = "org.springframework.boot", module = "spring-boot-starter-logging")
-            exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
-            exclude(group = "org.apache.tomcat", module = "tomcat-jdbc")
-            exclude(group = "org.slf4j", module = "log4j-over-slf4j")
-            exclude(group = "org.slf4j", module = "slf4j-log4j12")
-            exclude(group = "org.slf4j", module = "slf4j-nop")
-            exclude(group = "ch.qos.logback", module = "logback-classic")
-            exclude(group = "com.tencent.bk.devops.ci.common", module = "common-archive-tencent")
-            exclude(group = "com.tencent.bk.devops.ci.common", module = "common-client")
-            exclude(group = "com.github.ulisesbocchio", module = "jasypt-spring-boot-starter")
-        }
-        if (project.name.contains("biz-codeccjob") && project.name != "boot-codeccjob") {
-//			all { exclude(group = "org.springframework.boot", module = "spring-boot-starter-websocket") }
-            all { exclude(group = "io.undertow", module = "undertow-websockets-jsr") }
-        }
-    }
-
-
-
+    // 版本管理
     dependencyManagement {
-
-        applyMavenExclusions(false)
-
-
+        setApplyMavenExclusions(false)
         dependencies {
             dependency("org.hashids:hashids:${Versions.hashidsVersion}")
             dependency("javax.ws.rs:javax.ws.rs-api:${Versions.jaxrsVersion}")
@@ -67,7 +31,7 @@ allprojects {
             dependency("org.apache.commons:commons-exec:${Versions.commonExecVersion}")
             dependency("org.apache.commons:commons-pool2:${Versions.commonPool2Version}")
             dependency("com.vmware:vijava:${Versions.vmwareVersion}")
-            dependency("org.bouncycastle:bcprov-ext-jdk15on:${Versions.bouncyCastleVersion}")
+            dependency("org.bouncycastle:bcprov-jdk16:${Versions.bouncyCastleVersion}")
             dependency("dom4j:dom4j:${Versions.dom4jVersion}")
             dependency("org.apache.commons:commons-compress:${Versions.compressVersion}")
             dependency("org.reflections:reflections:${Versions.reflectionsVersion}")
@@ -78,18 +42,38 @@ allprojects {
             dependency("org.apache.tomcat.embed:tomcat-embed-core:${Versions.tomcatEmbedCoreVersion}")
             dependency("commons-collections:commons-collections:${Versions.commonCollection}")
             dependency("biz.paluch.redis:lettuce:${Versions.lettuceVersion}")
+//			dependency("org.springframework.data:spring-data-redis:${Versions.springRedisVersion}")
+            dependency("org.glassfish.jersey.ext:jersey-bean-validation:${Versions.jerseyValidationVersion}")
             dependency("commons-io:commons-io:${Versions.commonsIOVersion}")
+            dependency("org.apache.xmlrpc:xmlrpc-client:${Versions.xmlrpcVersion}")
             dependency("commons-httpclient:commons-httpclient:${Versions.commonsHttpclientVersion}")
             dependency("com.alibaba:easyexcel:${Versions.easyexcel}")
             dependency("org.redisson:redisson:${Versions.redisson}")
-            dependency("org.apache.lucene:lucene-core:${Versions.lucene}")
             dependency("com.alibaba:fastjson:${Versions.fastjson}")
+            dependency("org.quartz-scheduler:quartz:${Versions.quartz}")
+            dependency("org.quartz-scheduler:quartz-jobs:${Versions.quartzJobs}")
+            dependencySet("org.jetbrains.kotlin:${Versions.Kotlin}") {
+                entry("kotlin-stdlib-jdk8")
+                entry("kotlin-reflect")
+            }
             dependencySet("io.swagger:${Versions.swaggerVersion}") {
                 entry("swagger-annotations")
                 entry("swagger-jersey2-jaxrs")
                 entry("swagger-models")
                 entry("swagger-core")
                 entry("swagger-jaxrs")
+            }
+            dependencySet("com.fasterxml.jackson.module:${Versions.jacksonVersion}") {
+                entry("jackson-module-kotlin")
+            }
+            dependencySet("com.fasterxml.jackson.core:${Versions.jacksonVersion}") {
+                entry("jackson-core")
+                entry("jackson-databind")
+                entry("jackson-annotations")
+            }
+            dependencySet("com.fasterxml.jackson.jaxrs:${Versions.jacksonVersion}") {
+                entry("jackson-jaxrs-json-provider")
+                entry("jackson-jaxrs-base")
             }
             dependencySet("io.github.openfeign:${Versions.feignVersion}") {
                 entry("feign-jaxrs")
@@ -124,43 +108,27 @@ allprojects {
                 entry("poi")
                 entry("poi-ooxml")
             }
-            dependencySet("org.apache.logging.log4j:${Versions.log4j}"){
+            dependencySet("org.apache.poi:${Versions.poiVersion}") {
+                entry("poi")
+                entry("poi-ooxml")
+            }
+            dependencySet("org.apache.logging.log4j:${Versions.log4jVersion}") {
                 entry("log4j-api")
                 entry("log4j-core")
                 entry("log4j-slf4j-impl")
             }
-            dependency("com.google.guava:guava:${Versions.guava}")
-            dependency("commons-beanutils:commons-beanutils:${Versions.beanUtils}")
-
-            //Jersey 版本控制
-            dependencySet("org.glassfish.jersey.containers:${Versions.jersey}"){
-                entry("jersey-container-servlet")
-                entry("jersey-container-servlet-core")
+            dependencySet("io.micrometer:${Versions.micrometerVersion}") {
+                entry("micrometer-jersey2")
+                entry("micrometer-registry-prometheus")
             }
-            dependencySet("org.glassfish.jersey.core:${Versions.jersey}"){
-                entry("jersey-client")
-                entry("jersey-common")
-                entry("jersey-server")
-            }
-            dependencySet("org.glassfish.jersey.ext:${Versions.jersey}"){
-                entry("jersey-bean-validation")
-                entry("jersey-entity-filtering")
-                entry("jersey-spring")
-            }
-            dependency("org.glassfish.jersey.inject:jersey-hk2:${Versions.jersey}")
-            dependencySet("org.glassfish.jersey.media:${Versions.jersey}"){
-                entry("jersey-media-json-jackson")
-                entry("jersey-media-multipart")
-            }
-
             /**
              * 蓝盾依赖
              */
-            dependencySet("com.tencent.bk.devops.ci.common:${Versions.devopsVersion}") {
-                entry("common-auth-api")
-                entry("common-auth-v3")
-                entry("common-redis")
+            dependencySet("com.tencent.bk.devops.ci.common:${Versions.devopsVersion}"){
                 entry("common-pipeline")
+                entry("common-redis")
+                entry("common-auth-v3")
+                entry("common-kafka")
             }
             dependencySet("com.tencent.bk.devops.ci.auth:${Versions.devopsVersion}") {
                 entry("api-auth")
@@ -191,6 +159,9 @@ allprojects {
                 entry("api-codecc")
                 entry("common-codecc")
             }
+            dependency("io.opentelemetry:opentelemetry-api:${Versions.opentelemetryVersion}")
+//            dependency("com.github.ben-manes.caffeine:caffeine:${Versions.caffeineVersion}")
+            dependency("com.esotericsoftware:reflectasm:${Versions.reflectasmVersion}")
         }
     }
 
@@ -201,11 +172,46 @@ allprojects {
         annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
         implementation("org.glassfish.jersey.media:jersey-media-multipart")
         implementation("org.glassfish.jersey.ext:jersey-bean-validation")
-
         testImplementation(group = "com.github.shyiko", name = "ktlint", version = Versions.ktlintVersion)
         testImplementation("junit:junit")
         testImplementation("org.mockito:mockito-all")
         testImplementation("com.nhaarman:mockito-kotlin-kt1.1:1.6.0")
+    }
+
+    val property = project.findPropertyOrEmpty("devops.assemblyMode").trim()
+    configurations.forEach {
+        it.exclude("org.springframework.boot", "spring-boot-starter-logging")
+        it.exclude("org.springframework.boot", "spring-boot-starter-tomcat")
+        it.exclude("org.apache.tomcat", "tomcat-jdbc")
+        it.exclude("org.slf4j", "log4j-over-slf4j")
+        it.exclude("org.slf4j", "slf4j-log4j12")
+        it.exclude("org.slf4j", "slf4j-nop")
+        it.exclude("ch.qos.logback", "logback-classic")
+        it.exclude(group = "com.tencent.bk.devops.ci.common", module = "common-archive-tencent")
+        it.exclude(group = "com.tencent.bk.devops.ci.common", module = "common-client")
+        it.exclude(group = "com.github.ulisesbocchio", module = "jasypt-spring-boot-starter")
+        it.exclude(group = "org.bouncycastle", module = "bcprov-jdk15on")
+        it.exclude(group = "org.bouncycastle", module = "bcpkix-jdk15on")
+        it.exclude(group = "org.bouncycastle", module = "bcprov-ext-jdk15on")
+        if (project.name.contains("biz-codeccjob") && project.name != "boot-codeccjob") {
+            it.exclude("io.undertow", "undertow-websockets-jsr")
+        }
+        if (project.name.contains("boot-idcsync-tencent")) {
+            it.exclude("com.tencent.bk.devops.ci.common", "common-web")
+        }
+        if (project.name.startsWith("boot-")) {
+            when (AssemblyMode.ofValueOrDefault(property)) {
+                AssemblyMode.CONSUL -> {
+                    it.exclude("org.springframework.cloud", "spring-cloud-starter-kubernetes-client")
+                    it.exclude("org.springframework.cloud", "spring-cloud-starter-kubernetes-client-config")
+                }
+                AssemblyMode.K8S, AssemblyMode.KUBERNETES -> {
+                    it.exclude("org.springframework.cloud", "spring-cloud-starter-config")
+                    it.exclude("org.springframework.cloud", "spring-cloud-starter-consul-config")
+                    it.exclude("org.springframework.cloud", "spring-cloud-starter-consul-discovery")
+                }
+            }
+        }
     }
 }
 

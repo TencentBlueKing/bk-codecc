@@ -2,7 +2,7 @@ package com.tencent.bk.codecc.defect.api
 
 import com.tencent.bk.codecc.task.vo.GrayTaskStatVO
 import com.tencent.devops.common.api.annotation.ServiceInterface
-import com.tencent.devops.common.api.pojo.Result
+import com.tencent.devops.common.api.pojo.codecc.Result
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
 import io.swagger.annotations.ApiParam

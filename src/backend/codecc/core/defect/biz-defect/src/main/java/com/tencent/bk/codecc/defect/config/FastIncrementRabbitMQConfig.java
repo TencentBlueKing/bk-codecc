@@ -232,6 +232,7 @@ public class FastIncrementRabbitMQConfig
         container.setMaxConcurrentConsumers(10);
         container.setStartConsumerMinInterval(10000);
         container.setConsecutiveActiveTrigger(10);
+        container.setPrefetchCount(1);
         MessageListenerAdapter adapter = new MessageListenerAdapter(fastIncrementConsumer, "consumer");
         adapter.setMessageConverter(jackson2JsonMessageConverter);
         container.setMessageListener(adapter);

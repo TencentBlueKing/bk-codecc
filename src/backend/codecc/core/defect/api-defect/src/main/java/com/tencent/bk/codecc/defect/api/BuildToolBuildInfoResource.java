@@ -1,14 +1,13 @@
 package com.tencent.bk.codecc.defect.api;
 
-import com.tencent.bk.codecc.defect.vo.SetForceFullScanReqVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.bk.codecc.defect.vo.ToolBuildStackReqVO;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
-import java.util.List;
 
 /**
  * 工具构建信息接口
@@ -30,5 +29,5 @@ public interface BuildToolBuildInfoResource
             @PathParam("taskId")
                     Long taskId,
             @ApiParam(value = "任务id及工具集映射参数", required = true)
-                    SetForceFullScanReqVO setForceFullScanReqVO);
+                    ToolBuildStackReqVO toolBuildStackReqVO);
 }

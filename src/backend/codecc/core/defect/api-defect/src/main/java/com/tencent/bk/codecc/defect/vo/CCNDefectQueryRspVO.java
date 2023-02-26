@@ -49,55 +49,55 @@ public class CCNDefectQueryRspVO extends CommonDefectQueryRspVO
      * 风险系数极高的个数
      */
     @ApiModelProperty("风险系数极高的个数")
-    private int superHighCount;
+    private Long superHighCount;
 
     /**
      * 风险系数高的个数
      */
     @ApiModelProperty("风险系数高的个数")
-    private int highCount;
+    private Long highCount;
 
     /**
      * 风险系数中的个数
      */
     @ApiModelProperty("风险系数中的个数")
-    private int mediumCount;
+    private Long mediumCount;
 
     /**
      * 风险系数低的个数
      */
     @ApiModelProperty("风险系数低的个数")
-    private int lowCount;
+    private Long lowCount;
 
     @ApiModelProperty("待修复告警数")
-    private int existCount;
+    private Long existCount;
 
     @ApiModelProperty("已修复告警数")
-    private int fixCount;
+    private Long fixCount;
 
     @ApiModelProperty("已忽略告警数")
-    private int ignoreCount;
+    private Long ignoreCount;
 
     @ApiModelProperty("已屏蔽告警数")
-    private int maskCount;
+    private Long maskCount;
 
     /**
      * 新增告警的个数
      */
     @ApiModelProperty("新增告警的个数")
-    private int newDefectCount;
+    private long newDefectCount;
 
     /**
      * 历史告警的个数
      */
     @ApiModelProperty("历史告警的个数")
-    private int historyDefectCount;
+    private long historyDefectCount;
 
     /**
      * 告警总数
      */
     @ApiModelProperty("告警总数")
-    private int totalCount;
+    private Long totalCount;
 
     /**
      * 缺陷列表
@@ -106,14 +106,8 @@ public class CCNDefectQueryRspVO extends CommonDefectQueryRspVO
     private Page<CCNDefectVO> defectList;
 
     /**
-     * 新老告警判定时间
-     */
-    @ApiModelProperty("新老告警判定时间")
-    private long newDefectJudgeTime;
-
-    /**
      * 圈复杂度阀值
      */
     @ApiModelProperty(value = "圈复杂度阀值")
-    private int ccnThreshold;
+    private Integer ccnThreshold;
 }

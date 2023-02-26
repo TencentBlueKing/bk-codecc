@@ -15,16 +15,16 @@ package com.tencent.bk.codecc.defect.component;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
-import com.tencent.bk.codecc.defect.model.CCNDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity;
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectInputModel;
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectOutputModel;
+import com.tencent.bk.codecc.defect.service.impl.CCNFilterPathBizServiceImpl;
 import com.tencent.bk.codecc.defect.vo.CommitDefectVO;
+import com.tencent.bk.codecc.task.vo.FilterPathInputVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
-import com.tencent.devops.common.util.PathUtils;
-import java.util.HashSet;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -39,11 +39,13 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -58,6 +60,10 @@ import java.util.stream.Collectors;
 public class NewCCNDefectTracingComponent extends AbstractDefectTracingComponent<CCNDefectEntity> {
     @Autowired
     private CCNDefectRepository ccnDefectRepository;
+    @Autowired
+    private DefectIdGenerator defectIdGenerator;
+    @Autowired
+    private CCNFilterPathBizServiceImpl ccnFilterPathBizService;
 
     /**
      * 告警跟踪
@@ -85,13 +91,13 @@ public class NewCCNDefectTracingComponent extends AbstractDefectTracingComponent
 
         //如果代码没有变化，直接检查是否被路径屏蔽，然后将original入库
         if (CollectionUtils.isEmpty(defectList)) {
-            Set<String> pathList = new HashSet<>();
+            Set<String> whitePaths = new HashSet<>();
             if (CollectionUtils.isNotEmpty(taskVO.getWhitePaths())) {
-                pathList.addAll(taskVO.getWhitePaths());
+                whitePaths.addAll(taskVO.getWhitePaths());
             }
             List<CCNDefectEntity> upsertDefectList = updateOriginalDefectStatus(originalDefectList, currentDefectList,
-                    filterPaths, pathList, buildEntity, transferAuthorList);
-            saveDefects(taskId, toolName, filterPaths, pathList, buildEntity, upsertDefectList);
+                    filterPaths, whitePaths, buildEntity, transferAuthorList);
+            saveDefects(taskId, toolName, filterPaths, whitePaths, buildEntity, upsertDefectList);
 
             return new AsyncResult<>(true);
         }
@@ -103,7 +109,8 @@ public class NewCCNDefectTracingComponent extends AbstractDefectTracingComponent
                         "",
                         ccnDefectEntity.getPinpointHash(),
                         ccnDefectEntity.getFilePath(),
-                        ccnDefectEntity.getRelPath())
+                        ccnDefectEntity.getRelPath(),
+                        null)
         ).collect(Collectors.toList());
 
         //3. 做聚类，通过MQ分发到各台服务器上去做聚类，避免聚类都集中到一台服务器上导致服务器资源不足
@@ -136,7 +143,7 @@ public class NewCCNDefectTracingComponent extends AbstractDefectTracingComponent
                                                      List<CCNDefectEntity> originalDefectList,
                                                      List<CCNDefectEntity> currentDefectList,
                                                      Set<String> filterPaths,
-                                                     Set<String> pathList,
+                                                     Set<String> whitePaths,
                                                      BuildEntity buildEntity,
                                                      List<TransferAuthorEntity.TransferAuthorPair> transferAuthorList)
     {
@@ -170,7 +177,10 @@ public class NewCCNDefectTracingComponent extends AbstractDefectTracingComponent
             } else if (newDefect == null && oldDefect.getStatus() == ComConstants.DefectStatus.NEW.value()) {
                 fixDefect(oldDefect, buildEntity);
                 upsertDefectList.add(oldDefect);
-            } else if (checkMaskByPath(oldDefect, filterPaths, pathList, System.currentTimeMillis())) {
+            } else if (ccnFilterPathBizService.processBiz(
+                    new FilterPathInputVO<>(
+                            whitePaths, filterPaths, oldDefect, System.currentTimeMillis()))
+                    .getData()) {
 
                 // 用新告警的信息更新老告警信息
                 updateOldDefectInfo(oldDefect, newDefect, transferAuthorList);
@@ -193,29 +203,48 @@ public class NewCCNDefectTracingComponent extends AbstractDefectTracingComponent
     protected void saveDefects(long taskId,
                    String toolName,
                    Set<String> filterPaths,
-                   Set<String> pathList,
+                   Set<String> whitePaths,
                    BuildEntity buildEntity,
                    List<CCNDefectEntity> upsertDefectList)
     {
         long beginTime = System.currentTimeMillis();
+        String buildId = null;
+        if (null != buildEntity) {
+            buildId = buildEntity.getBuildId();
+        }
         log.info("begin saveDefectFile: taskId:{}, toolName:{}, buildId:{}", taskId, toolName,
-                buildEntity.getBuildId());
+                buildId);
 
         long curTime = System.currentTimeMillis();
         if (CollectionUtils.isNotEmpty(upsertDefectList)) {
+            List<CCNDefectEntity> needGenDefectIdList = new ArrayList<>();
+
             upsertDefectList.forEach(ccnDefectEntity ->
             {
                 ccnDefectEntity.setTaskId(taskId);
                 ccnDefectEntity.setUpdatedDate(curTime);
-                checkMaskByPath(ccnDefectEntity, filterPaths, pathList, curTime);
+                ccnFilterPathBizService.processBiz(
+                        new FilterPathInputVO<>(whitePaths, filterPaths, ccnDefectEntity, curTime));
+
+                if (StringUtils.isEmpty(ccnDefectEntity.getId())) {
+                    needGenDefectIdList.add(ccnDefectEntity);
+                }
             });
 
+            // 初始化告警ID
+            if (CollectionUtils.isNotEmpty(needGenDefectIdList)) {
+                int increment = needGenDefectIdList.size();
+                Long currMaxId = defectIdGenerator.generateDefectId(taskId, toolName, increment);
+                AtomicLong currMinIdAtom = new AtomicLong(currMaxId - increment + 1);
+                needGenDefectIdList.forEach(defect -> defect.setId(String.valueOf(currMinIdAtom.getAndIncrement())));
+            }
+
             log.info("save defect trace result: taskId:{}, toolName:{}, buildId:{}, defectCount:{}", taskId, toolName,
-                    buildEntity.getBuildId(), upsertDefectList.size());
+                    buildId, upsertDefectList.size());
             ccnDefectRepository.saveAll(upsertDefectList);
         }
         log.info("end saveDefectFile, cost:{}, taskId:{}, toolName:{}, buildId:{}",
-                System.currentTimeMillis() - beginTime, taskId, toolName, buildEntity.getBuildId());
+                System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
     }
 
     /**
@@ -248,7 +277,7 @@ public class NewCCNDefectTracingComponent extends AbstractDefectTracingComponent
                     // 检查聚类output文件是否存在
                     checkOutputFileExists(outputFile);
 
-                    String outputDefects = ScmJsonComponent.readFileContent(outputFile);
+                    String outputDefects = ScmJsonComponent.readFileContent(outputFile, true);
                     if (StringUtils.isEmpty(outputDefects)) {
                         log.info("empty output defects! output file : {}", outputFile);
                         return upsertDefectList;
@@ -428,42 +457,6 @@ public class NewCCNDefectTracingComponent extends AbstractDefectTracingComponent
             // 作者转换
             transferAuthor(selectedOldDefect, transferAuthorList);
         }
-    }
-
-    /**
-     * 入库前检测屏蔽路径
-     *
-     * @param ccnDefectEntity
-     * @param filterPaths
-     * @param curTime
-     * @return
-     */
-    private boolean checkMaskByPath(CCNDefectEntity ccnDefectEntity,
-                                    Set<String> filterPaths,
-                                    Set<String> pathList,
-                                    long curTime) {
-        String relPath = ccnDefectEntity.getRelPath();
-        String filePath = ccnDefectEntity.getFilePath();
-
-        // 如果告警不是已经屏蔽，则在入库前检测一遍屏蔽路径
-        if ((ccnDefectEntity.getStatus() & ComConstants.DefectStatus.PATH_MASK.value()) == 0
-                && (ccnDefectEntity.getStatus() & ComConstants.DefectStatus.FIXED.value()) == 0
-                && (PathUtils.checkIfMaskByPath(StringUtils.isNotEmpty(relPath) ? relPath : filePath, filterPaths)
-                || (CollectionUtils.isNotEmpty(pathList)
-                && !PathUtils.checkIfMaskByPath(filePath, pathList)))) {
-            ccnDefectEntity.setStatus(ccnDefectEntity.getStatus() | ComConstants.DefectStatus.PATH_MASK.value());
-            ccnDefectEntity.setExcludeTime(curTime);
-            return true;
-        }
-        // 如果已经是被路径屏蔽的，但是实质没有被路径屏蔽，则要把屏蔽状态去掉
-        else if ((CollectionUtils.isEmpty(pathList)
-                || PathUtils.checkIfMaskByPath(filePath, pathList))
-                && !PathUtils.checkIfMaskByPath(StringUtils.isNotEmpty(relPath) ? relPath : filePath, filterPaths)
-                && (ccnDefectEntity.getStatus() & ComConstants.DefectStatus.PATH_MASK.value()) > 0) {
-            ccnDefectEntity.setStatus(ccnDefectEntity.getStatus() - ComConstants.DefectStatus.PATH_MASK.value());
-            return true;
-        }
-        return false;
     }
 
     /**

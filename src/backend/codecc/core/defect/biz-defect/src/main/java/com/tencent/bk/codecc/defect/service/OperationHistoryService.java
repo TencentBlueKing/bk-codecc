@@ -46,4 +46,14 @@ public interface OperationHistoryService
      * @return
      */
     List<OperationHistoryVO> getOperHisByTaskIdAndFuncId(long taskId, String toolName, List<String> funcId);
+
+    /**
+     * 设置codeCC任务用户权限操作记录
+     *
+     * @param reqVOList 请求参数
+     * @param userId    用户名
+     * @param taskId    任务ID
+     * @return boolean
+     */
+    Boolean saveSettingsAuthorityOperationHistory(List<String> reqVOList, String userId, long taskId);
 }

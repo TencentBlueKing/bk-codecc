@@ -32,7 +32,7 @@ import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
 import com.tencent.bk.codecc.defect.vo.common.BuildVO;
 import com.tencent.devops.common.api.analysisresult.BaseLastAnalysisResultVO;
 import com.tencent.devops.common.api.analysisresult.ToolLastAnalysisResultVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 
 import java.util.Collection;
 import java.util.List;
@@ -168,7 +168,7 @@ public interface TaskLogService
      * @param taskId
      * @return
      */
-    List<BuildVO> getTaskBuildInfos(long taskId, int limit);
+    List<BuildVO> getTaskBuildInfos(long taskId);
 
     /**
      * 批量获取任务的工具最新分析记录

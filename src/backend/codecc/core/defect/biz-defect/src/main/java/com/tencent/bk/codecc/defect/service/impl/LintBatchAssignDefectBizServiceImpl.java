@@ -1,24 +1,26 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectRepository;
+import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.LintDefectV2Dao;
-import com.tencent.bk.codecc.defect.model.LintDefectEntity;
-import com.tencent.bk.codecc.defect.model.LintFileEntity;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
+import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.BusinessType;
+import com.tencent.devops.common.constant.ComConstants.ToolType;
+import com.tencent.devops.common.constant.ComConstants.DefectStatus;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.util.List2StrUtil;
+import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * Lint类工具批量标识的处理器
@@ -28,8 +30,8 @@ import java.util.TreeSet;
  */
 @Slf4j
 @Service("LINTBatchAssignDefectBizService")
-public class LintBatchAssignDefectBizServiceImpl extends AbstractLintBatchDefectProcessBizService
-{
+public class LintBatchAssignDefectBizServiceImpl extends AbstractLintBatchDefectProcessBizService {
+
     @Autowired
     private LintDefectV2Dao defectDao;
 
@@ -37,8 +39,7 @@ public class LintBatchAssignDefectBizServiceImpl extends AbstractLintBatchDefect
     protected void doBiz(List defectList, BatchDefectProcessReqVO batchDefectProcessReqVO)
     {
         Set<String> newAuthor = batchDefectProcessReqVO.getNewAuthor();
-        if (CollectionUtils.isEmpty(newAuthor))
-        {
+        if (CollectionUtils.isEmpty(newAuthor)) {
             log.error("parameter [newAuthor] can't be empty");
             throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{newAuthor.toString()}, null);
         }
@@ -50,4 +51,34 @@ public class LintBatchAssignDefectBizServiceImpl extends AbstractLintBatchDefect
         refreshOverviewData(batchDefectProcessReqVO.getTaskId());
     }
 
+    @Override
+    protected Set<String> getStatusCondition(DefectQueryReqVO queryCondObj) {
+        // 对已忽略也可以进行处理人修改
+        return Sets.newHashSet(String.valueOf(ComConstants.DefectStatus.NEW.value()),
+                String.valueOf(DefectStatus.IGNORE.value()));
+    }
+
+    @Override
+    protected void doBizByPage(List defectList, BatchDefectProcessReqVO batchDefectProcessReqVO) {
+        Set<String> newAuthor = batchDefectProcessReqVO.getNewAuthor();
+        if (CollectionUtils.isEmpty(newAuthor)) {
+            log.error("parameter [newAuthor] can't be empty");
+            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{newAuthor.toString()}, null);
+        }
+
+        String newAuthorStr = List2StrUtil.toString(newAuthor, ComConstants.SEMICOLON);
+
+        defectDao.batchUpdateDefectAuthor(batchDefectProcessReqVO.getTaskId(), defectList, newAuthorStr);
+    }
+
+
+    @Override
+    protected void processAfterAllPageDone(BatchDefectProcessReqVO batchDefectProcessReqVO) {
+        refreshOverviewData(batchDefectProcessReqVO.getTaskId());
+    }
+
+    @Override
+    protected Pair<BusinessType, ToolType> getBusinessTypeToolTypePair() {
+        return Pair.of(BusinessType.ASSIGN_DEFECT, ToolType.STANDARD);
+    }
 }

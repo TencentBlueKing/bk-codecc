@@ -15,7 +15,7 @@ package com.tencent.bk.codecc.schedule.resources;
 import com.tencent.bk.codecc.schedule.api.BuildFSRestResource;
 import com.tencent.bk.codecc.schedule.vo.*;
 import com.tencent.bk.codecc.schedule.service.UploadDownloadService;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.web.RestResource;
 import org.springframework.beans.factory.annotation.Autowired;
 

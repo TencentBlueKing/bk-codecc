@@ -3,6 +3,7 @@ package com.tencent.bk.codecc.defect.model.incremental;
 import com.tencent.codecc.common.db.CommonEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
@@ -17,15 +18,16 @@ import java.util.List;
  * @version V1.0
  * @date 2019/11/17
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Document(collection = "t_tool_build_info")
 @CompoundIndexes({
-        @CompoundIndex(name = "taskid_toolname_idx", def = "{'task_id': 1, 'tool_name': 1}")
+        @CompoundIndex(name = "taskid_toolname_idx", def = "{'task_id': 1, 'tool_name': 1}"),
+        @CompoundIndex(name = "taskid_updateddate_idx", def = "{'task_id': 1, 'updated_date': 1}", background = true)
 })
-public class ToolBuildInfoEntity extends CommonEntity
-{
+public class ToolBuildInfoEntity extends CommonEntity {
     /**
      * 任务ID
      */
@@ -63,4 +65,7 @@ public class ToolBuildInfoEntity extends CommonEntity
     @Deprecated
     @Field("defect_bas_build_num")
     private String defectBaseBuildNum;
+
+    @Field("commit_since")
+    private Long commitSince;
 }

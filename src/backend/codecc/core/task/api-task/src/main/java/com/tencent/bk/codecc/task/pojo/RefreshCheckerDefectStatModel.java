@@ -29,4 +29,19 @@ public class RefreshCheckerDefectStatModel {
 
     private String dataFrom;
 
+    /**
+     * 统计日期 yyyy-MM-dd
+     */
+    private String statDate;
+
+    /**
+     * 触发部分统计任务，为空则统计所有
+     */
+    private String triggerPart;
+
+    public RefreshCheckerDefectStatModel(String dataFrom, String statDate) {
+        this.dataFrom = dataFrom;
+        this.statDate = statDate;
+    }
+
 }

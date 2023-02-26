@@ -13,6 +13,7 @@
 package com.tencent.bk.codecc.defect.consumer;
 
 import com.alibaba.fastjson.JSONReader;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.component.NewLintDefectTracingComponent;
@@ -21,19 +22,24 @@ import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.FileDefectGatherRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.FileDefectGatherDao;
+import com.tencent.bk.codecc.defect.dao.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.FileDefectGatherEntity;
-import com.tencent.bk.codecc.defect.model.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.LintFileV2Entity;
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity;
+import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoEntity;
+import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
+import com.tencent.bk.codecc.defect.model.redline.RedLineExtraParams;
 import com.tencent.bk.codecc.defect.pojo.DefectClusterDTO;
-import com.tencent.bk.codecc.defect.service.BuildDefectService;
+import com.tencent.bk.codecc.defect.pojo.statistic.DefectStatisticModel;
+import com.tencent.bk.codecc.defect.service.BuildSnapshotService;
 import com.tencent.bk.codecc.defect.service.IV3CheckerSetBizService;
 import com.tencent.bk.codecc.defect.service.git.GitRepoApiService;
-import com.tencent.bk.codecc.defect.service.statistic.LintDefectStatisticService;
+import com.tencent.bk.codecc.defect.service.impl.redline.LintRedLineReportServiceImpl;
+import com.tencent.bk.codecc.defect.service.statistic.LintDefectStatisticServiceImpl;
 import com.tencent.bk.codecc.defect.vo.CommitDefectVO;
 import com.tencent.bk.codecc.defect.vo.FileDefectGatherVO;
 import com.tencent.bk.codecc.defect.vo.customtool.RepoSubModuleVO;
@@ -44,9 +50,14 @@ import com.tencent.devops.common.api.checkerset.CheckerPropVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.ToolPattern;
+import com.tencent.devops.common.redis.lock.RedisLock;
+import com.tencent.devops.common.service.BaseDataCacheService;
 import com.tencent.devops.common.service.utils.ToolParamUtils;
+import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.DateTimeUtils;
 import com.tencent.devops.common.util.GsonUtils;
+import com.tencent.devops.common.web.mq.ConstantsKt;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -57,16 +68,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.amqp.rabbit.AsyncRabbitTemplate;
-import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
 
 /**
@@ -78,10 +94,11 @@ import org.springframework.stereotype.Component;
 @Component("lintDefectCommitConsumer")
 @Slf4j
 public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
+
     @Autowired
     private LintDefectV2Repository lintDefectV2Repository;
     @Autowired
-    private BuildDefectService buildDefectService;
+    private LintDefectV2Dao lintDefectV2Dao;
     @Autowired
     private NewLintDefectTracingComponent newLintDefectTracingComponent;
     @Autowired
@@ -93,25 +110,35 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
     @Autowired
     private GitRepoApiService gitRepoApiService;
     @Autowired
-    private LintDefectStatisticService lintDefectStatisticService;
+    private LintDefectStatisticServiceImpl lintDefectStatisticServiceImpl;
     @Autowired
     private IV3CheckerSetBizService iv3CheckerSetBizService;
+    @Autowired
+    private LintRedLineReportServiceImpl lintRedLineReportServiceImpl;
+    @Autowired
+    private BuildSnapshotService buildSnapshotService;
+    @Autowired
+    private BaseDataCacheService baseDataCacheService;
 
     @Override
-    protected void uploadDefects(CommitDefectVO commitDefectVO, Map<String, ScmBlameVO> fileChangeRecordsMap,
-                                 Map<String, RepoSubModuleVO> codeRepoIdMap) {
+    protected boolean uploadDefects(
+            CommitDefectVO commitDefectVO,
+            Map<String, ScmBlameVO> fileChangeRecordsMap,
+            Map<String, RepoSubModuleVO> codeRepoIdMap
+    ) {
         long taskId = commitDefectVO.getTaskId();
         String streamName = commitDefectVO.getStreamName();
         String toolName = commitDefectVO.getToolName();
         String buildId = commitDefectVO.getBuildId();
 
         TaskDetailVO taskVO = thirdPartySystemCaller.getTaskInfo(streamName);
-        BuildEntity buildEntity = buildDao.getAndSaveBuildInfo(buildId);
+        String createFrom = taskVO.getCreateFrom();
+        BuildEntity buildEntity = buildService.getBuildEntityByBuildId(buildId);
 
         // 判断本次是增量还是全量扫描
         ToolBuildStackEntity toolBuildStackEntity =
                 toolBuildStackRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
-        boolean isFullScan = toolBuildStackEntity != null ? toolBuildStackEntity.isFullScan() : true;
+        boolean isFullScan = toolBuildStackEntity == null || toolBuildStackEntity.isFullScan();
 
         // 获取工具侧上报的已删除文件
         Set<String> deleteFiles;
@@ -120,6 +147,10 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
         } else {
             deleteFiles = Sets.newHashSet();
         }
+        // 获取工具上报的已删除文件相对路径
+        Set<String> rootPaths = toolBuildStackEntity == null
+                || CollectionUtils.isEmpty(toolBuildStackEntity.getRootPaths()) ? Sets.newHashSet()
+                : toolBuildStackEntity.getRootPaths();
 
         // 1.解析工具上报的告警文件，并做告警跟踪
         long beginTime = System.currentTimeMillis();
@@ -127,78 +158,164 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
         // 1.1 获取规则列表
         // 获取当前任务规则集列表
         List<CheckerSetVO> checkerSetsOfTask = iv3CheckerSetBizService.getTaskCheckerSets(taskVO.getProjectId(),
-            taskId,
-            toolName,
-            "",
-            true);
+                taskId,
+                toolName,
+                "",
+                true);
         // 取出规则集中的规则ID
         Set<String> checkerKeyList = checkerSetsOfTask.stream()
-            .flatMap(it -> it.getCheckerProps().stream())
-            .filter(it -> toolName.equalsIgnoreCase(it.getToolName()))
-            .map(CheckerPropVO::getCheckerKey)
-            .map(checkerKey -> {
-                if (checkerKey.contains("-tosa")) {
-                    return checkerKey.replaceAll("-tosa", "");
-                }
-                return checkerKey;
-            })
-            .collect(Collectors.toSet());
+                .flatMap(it -> it.getCheckerProps().stream())
+                .filter(it -> toolName.equalsIgnoreCase(it.getToolName()))
+                .map(CheckerPropVO::getCheckerKey)
+                .map(checkerKey -> {
+                    if (checkerKey.contains("-tosa")) {
+                        return checkerKey.replaceAll("-tosa", "");
+                    }
+                    return checkerKey;
+                })
+                .collect(Collectors.toSet());
         List<CheckerDetailEntity> checkerDetailEntityList =
-            checkerRepository.findByToolNameAndCheckerKeyIn(toolName, checkerKeyList);
+                checkerRepository.findByToolNameAndCheckerKeyIn(toolName, checkerKeyList);
 
         Map<String, Integer> checkerSeverityMap =
-            checkerDetailEntityList.stream().collect(Collectors.toMap(CheckerDetailEntity::getCheckerKey,
-                CheckerDetailEntity::getSeverity));
+                checkerDetailEntityList.stream().collect(Collectors.toMap(CheckerDetailEntity::getCheckerKey,
+                        CheckerDetailEntity::getSeverity));
+        log.info("parseDefectJsonFile checker data ready cost: {}, {}, {}, {}",
+                System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
 
         List<LintFileV2Entity> gatherFileList = new ArrayList<>();
-        Set<String> currentFileSet =
-                parseDefectJsonFile(commitDefectVO, taskVO, buildEntity, fileChangeRecordsMap,
-                        codeRepoIdMap, gatherFileList, deleteFiles, checkerSeverityMap);
-        log.info("parseDefectJsonFile cost: {}, {}, {}, {}",
-                System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
-
-        // 2.处理告警收敛
-        processFileDefectGather(
-                commitDefectVO, gatherFileList, fileChangeRecordsMap, currentFileSet, isFullScan, deleteFiles);
-
-        // 查询所有告警
         beginTime = System.currentTimeMillis();
-        List<LintDefectV2Entity> allNewDefectList = lintDefectV2Repository.findByTaskIdAndToolNameAndStatus(
-                taskId, toolName, ComConstants.DefectStatus.NEW.value());
-        log.info("find lint file list cost: {}, {}, {}, {}, {}",
-                System.currentTimeMillis() - beginTime, taskId, toolName, buildId, allNewDefectList.size());
 
-        // 3.更新文件状态
-        beginTime = System.currentTimeMillis();
-        updateFileEntityInfo(
-            allNewDefectList, currentFileSet, deleteFiles, isFullScan, buildEntity, checkerSeverityMap);
-        log.info("update lint file list cost: {}, {}, {}, {}",
-                System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
+        RedisLock locker = null;
+        List<LintDefectV2Entity> allNewDefectList = Lists.newArrayList();
+        Set<String> currentFileSet = Sets.newHashSet();
+        long tryBeginTime = System.currentTimeMillis();
+
+        try {
+            // 非工蜂项目上锁提单过程
+            if (!ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value().equals(createFrom) && !lockModeIsClosed()) {
+                // 上线时，MQ可能有未消费完消息，需兼容
+                if (commitDefectVO.getDefectFileSize() == null) {
+                    long fileSize = scmJsonComponent.getDefectFileSize(streamName, toolName, buildId);
+                    commitDefectVO.setDefectFileSize(fileSize);
+                }
+
+                Pair<Boolean, RedisLock> pair = continueWithLock(commitDefectVO);
+                Boolean beContinue = pair.getFirst();
+                locker = pair.getSecond();
+
+                if (!beContinue) {
+                    return false;
+                }
+            }
+
+            // 检查是否超过了重试次数（5），达到限制会报错
+            checkIfReachRetryLimit(commitDefectVO);
+
+            // 1.分批解析处理
+            currentFileSet = parseDefectJsonFile(
+                    commitDefectVO, taskVO, buildEntity, fileChangeRecordsMap,
+                    codeRepoIdMap, gatherFileList, deleteFiles, checkerSeverityMap
+            );
+            log.info("parseDefectJsonFile cost: {}, {}, {}, {}",
+                    System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
+
+            // 2.处理告警收敛
+            processFileDefectGather(
+                    commitDefectVO, gatherFileList, fileChangeRecordsMap, currentFileSet, isFullScan, deleteFiles);
+
+            // 查询所有告警
+            beginTime = System.currentTimeMillis();
+            allNewDefectList = lintDefectV2Repository.findNoneInstancesFieldByTaskIdAndToolNameAndStatus(
+                    taskId,
+                    toolName,
+                    ComConstants.DefectStatus.NEW.value()
+            );
+
+            log.info("find lint file list cost: {}, {}, {}, {}, {}",
+                    System.currentTimeMillis() - beginTime, taskId, toolName, buildId, allNewDefectList.size());
+
+            // 3.更新文件状态
+            beginTime = System.currentTimeMillis();
+            updateFileEntityInfo(
+                    taskId,
+                    toolName,
+                    allNewDefectList,
+                    currentFileSet,
+                    deleteFiles,
+                    rootPaths,
+                    isFullScan,
+                    buildEntity,
+                    checkerSeverityMap,
+                    toolBuildStackEntity
+            );
+            log.info("update lint file list cost: {}, {}, {}, {}",
+                    System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
+        } finally {
+            if (locker != null && locker.isLocked()) {
+                locker.unlock();
+            }
+
+            log.info("defect commit, lock try to finally cost total: {}, {}, {}, {}",
+                    System.currentTimeMillis() - tryBeginTime, taskId, toolName, buildId);
+        }
+
+        keepOnlyUnfixedDefect(allNewDefectList);
+
+        String buildNum = buildEntity.getBuildNo();
+        List<String> newCountCheckerList = StringUtils.isEmpty(buildNum)
+                ? Lists.newArrayList()
+                : allNewDefectList.stream()
+                        .filter(x -> buildNum.equals(x.getCreateBuildNumber()))
+                        .map(y -> y.getChecker())
+                        .collect(Collectors.toList());
 
         // 4.统计本次扫描的告警
         beginTime = System.currentTimeMillis();
-        lintDefectStatisticService.statistic(taskVO, toolName, buildId, toolBuildStackEntity, allNewDefectList);
+        lintDefectStatisticServiceImpl.statistic(
+                new DefectStatisticModel<>(
+                        taskVO,
+                        toolName,
+                        0,
+                        buildId,
+                        toolBuildStackEntity,
+                        allNewDefectList,
+                        null,
+                        null,
+                        newCountCheckerList
+                )
+        );
         log.info("statistic cost: {}, {}, {}, {}", System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
 
         // 5.更新构建告警快照
+        // 查询所有的已忽略告警
+        Integer historyIgnoreType = baseDataCacheService.getHistoryIgnoreType();
+        List<LintDefectV2Entity> allIgnoreDefectList = lintDefectV2Dao.findIgnoreDefect(
+                taskId,
+                toolName,
+                buildId,
+                historyIgnoreType
+        );
         beginTime = System.currentTimeMillis();
-        buildDefectService.saveLintBuildDefect(taskId, toolName, buildEntity, allNewDefectList);
+        buildSnapshotService.saveLintBuildDefect(taskId, toolName, buildEntity, allNewDefectList, allIgnoreDefectList);
         log.info("saveBuildDefect cost: {}, {}, {}, {}", System.currentTimeMillis() - beginTime, taskId, toolName,
                 buildId);
 
         // 6.保存质量红线数据
         beginTime = System.currentTimeMillis();
-        redLineReportService.saveRedLineData(taskVO, toolName, buildId);
+        RedLineExtraParams<LintDefectV2Entity> redLineExtraParams = new RedLineExtraParams<>(allIgnoreDefectList);
+        lintRedLineReportServiceImpl.saveRedLineData(taskVO, toolName, buildId, allNewDefectList, redLineExtraParams);
         log.info("redLineReportService.saveRedLineData cost: {}, {}, {}, {}", System.currentTimeMillis() - beginTime,
                 taskId, toolName, buildId);
 
         // 7.回写工蜂mr信息
         beginTime = System.currentTimeMillis();
-        gitRepoApiService
-                .addLintGitCodeAnalyzeComment(taskVO, buildEntity.getBuildId(), buildEntity.getBuildNo(), toolName,
-                        currentFileSet);
+        gitRepoApiService.addLintGitCodeAnalyzeComment(taskVO, buildEntity.getBuildId(), buildEntity.getBuildNo(),
+                toolName, currentFileSet, allNewDefectList);
         log.info("gitRepoApiService.addLintGitCodeAnalyzeComment cost: {}, {}, {}, {}",
                 System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
+
+        return true;
     }
 
     /**
@@ -212,9 +329,9 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
      * @param deleteFiles
      */
     private void processFileDefectGather(CommitDefectVO commitDefectVO,
-                                         List<LintFileV2Entity> gatherFileList,
-                                         Map<String, ScmBlameVO> fileChangeRecordsMap,
-                                         Set<String> currentFileSet, boolean isFullScan, Set<String> deleteFiles) {
+            List<LintFileV2Entity> gatherFileList,
+            Map<String, ScmBlameVO> fileChangeRecordsMap,
+            Set<String> currentFileSet, boolean isFullScan, Set<String> deleteFiles) {
         long taskId = commitDefectVO.getTaskId();
         String toolName = commitDefectVO.getToolName();
         List<FileDefectGatherEntity> allGatherEntityList = fileDefectGatherRepository.findByTaskIdAndToolName(taskId,
@@ -325,14 +442,14 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
      * @return
      */
     private Set<String> parseDefectJsonFile(
-        CommitDefectVO commitDefectVO,
-        TaskDetailVO taskVO,
-        BuildEntity buildEntity,
-        Map<String, ScmBlameVO> fileChangeRecordsMap,
-        Map<String, RepoSubModuleVO> codeRepoIdMap,
-        List<LintFileV2Entity> gatherFileList,
-        Set<String> deleteFiles,
-        Map<String, Integer> checkerSeverityMap) {
+            CommitDefectVO commitDefectVO,
+            TaskDetailVO taskVO,
+            BuildEntity buildEntity,
+            Map<String, ScmBlameVO> fileChangeRecordsMap,
+            Map<String, RepoSubModuleVO> codeRepoIdMap,
+            List<LintFileV2Entity> gatherFileList,
+            Set<String> deleteFiles,
+            Map<String, Integer> checkerSeverityMap) {
 
         long taskId = commitDefectVO.getTaskId();
         String streamName = commitDefectVO.getStreamName();
@@ -365,22 +482,37 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
         Set<String> currentFileSet = new HashSet<>();
         // 通过流式读json文件
         try (FileInputStream fileInputStram = new FileInputStream(defectFile);
-             InputStreamReader inputStreamReader = new InputStreamReader(fileInputStram, StandardCharsets.UTF_8);
-             JSONReader reader = new JSONReader(inputStreamReader)) {
+                InputStreamReader inputStreamReader = new InputStreamReader(fileInputStram, StandardCharsets.UTF_8);
+                JSONReader reader = new JSONReader(inputStreamReader)) {
             reader.startArray();
             int cursor = 0;
             int chunkNo = 0;
             Set<String> eachBatchFilePathSet = new HashSet<>();
             Set<String> eachBatchRelPathSet = new HashSet<>();
             List<LintDefectV2Entity> lintDefectList = new ArrayList<>();
+            //用于存储因为阻塞队列满了以后无法塞入队列的发送结果
             List<AsyncRabbitTemplate.RabbitConverterFuture<Boolean>> asyncResultList = new ArrayList<>();
-            while (reader.hasNext())
-            {
+            AtomicBoolean running = new AtomicBoolean(true);
+            CountDownLatch finishLatch = new CountDownLatch(1);
+            Set<Long> taskList = concurrentDefectTracingConfigCache.getVipTaskSet();
+            Boolean isVip = CollectionUtils.isNotEmpty(taskList) && taskList.contains(taskId);
+            LinkedBlockingQueue<AsyncRabbitTemplate.RabbitConverterFuture<Boolean>> asyncResultQueue =
+                    setConcurrentBlockingQueue(
+                            taskId,
+                            toolName,
+                            buildId,
+                            running,
+                            finishLatch,
+                            isVip
+                    );
+
+            while (reader.hasNext()) {
                 LintFileV2Entity lintFileEntity = reader.readObject(LintFileV2Entity.class);
+
                 if (CollectionUtils.isNotEmpty(lintFileEntity.getDefects())) {
                     // 填充文件内的告警的信息，其中如果告警的规则不属于已录入平台的规则，则移除告警
                     List<LintDefectV2Entity> tmpDefectList = lintFileEntity.getDefects().stream()
-                            .filter(defect -> fillDefectInfo(defect, lintFileEntity.getFile(),
+                            .filter(defect -> fillDefectInfo(taskVO, toolName, defect, lintFileEntity.getFile(),
                                     fileChangeRecordsMap.get(lintFileEntity.getFile()), codeRepoIdMap,
                                     checkerSeverityMap))
                             .collect(Collectors.toList());
@@ -390,21 +522,21 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
                         deleteFiles.add(lintFileEntity.getFile());
                         continue;
                     }
-                    if(StringUtils.isNotBlank(tmpDefectList.get(0).getRelPath()))
-                    {
+                    if (StringUtils.isNotBlank(tmpDefectList.get(0).getRelPath())) {
                         eachBatchRelPathSet.add(tmpDefectList.get(0).getRelPath());
-                    }
-                    else
-                    {
+                    } else {
                         eachBatchFilePathSet.add(lintFileEntity.getFile());
                     }
-                    String filePath = StringUtils.isEmpty(tmpDefectList.get(0).getRelPath()) ? lintFileEntity.getFile() : tmpDefectList.get(0).getRelPath();
+                    String filePath = StringUtils.isEmpty(tmpDefectList.get(0).getRelPath()) ? lintFileEntity.getFile()
+                            : tmpDefectList.get(0).getRelPath();
                     currentFileSet.add(filePath);
                     lintDefectList.addAll(tmpDefectList);
                     cursor += tmpDefectList.size();
                     if (cursor > MAX_PER_BATCH) {
                         // 分批处理告警文件
-                        asyncResultList.add(processFileDefect(commitDefectVO, lintDefectList, taskVO, eachBatchFilePathSet, eachBatchRelPathSet, filterPaths, buildEntity, chunkNo, transferAuthorList));
+                        processFileDefect(commitDefectVO, lintDefectList, taskVO, eachBatchFilePathSet,
+                                eachBatchRelPathSet, filterPaths, buildEntity, chunkNo, transferAuthorList,
+                                asyncResultQueue, asyncResultList, isVip);
                         cursor = 0;
                         lintDefectList = new ArrayList<>();
                         eachBatchFilePathSet = new HashSet<>();
@@ -419,26 +551,31 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
             }
             reader.endArray();
 
-            if (lintDefectList.size() > 0)
-            {
-                asyncResultList.add(processFileDefect(commitDefectVO, lintDefectList, taskVO, eachBatchFilePathSet, eachBatchRelPathSet, filterPaths, buildEntity, chunkNo, transferAuthorList));
+            if (lintDefectList.size() > 0) {
+                processFileDefect(commitDefectVO, lintDefectList, taskVO, eachBatchFilePathSet,
+                        eachBatchRelPathSet, filterPaths, buildEntity, chunkNo, transferAuthorList,
+                        asyncResultQueue, asyncResultList, isVip);
             }
 
             // 直到所有的异步处理否都完成了，才继续往下走
-            asyncResultList.forEach(asyncResult ->
-            {
-                try
-                {
+            asyncResultList.forEach(asyncResult -> {
+                try {
                     Boolean clusterResult = asyncResult.get();
-                    if(null == clusterResult || !clusterResult){
+                    if (null == clusterResult || !clusterResult) {
                         log.info("cluster result is not true!");
                     }
-                }
-                catch (InterruptedException | ExecutionException e)
-                {
+                } catch (InterruptedException | ExecutionException e) {
                     log.warn("handle file defect fail!{}", commitDefectVO, e);
                 }
             });
+            running.set(false);
+            log.info("wait for count down latch to pass, {}, {}, {}", taskId, toolName, buildId);
+            try {
+                finishLatch.await(2, TimeUnit.HOURS);
+            } catch (InterruptedException e) {
+                log.info("finish latch await failed!");
+                e.printStackTrace();
+            }
         } catch (IOException e) {
             log.warn("Read defect file exception: {}", fileIndex, e);
         }
@@ -456,22 +593,45 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
      * @param buildEntity
      * @param checkerSeverityMap
      */
-    private void updateFileEntityInfo(List<LintDefectV2Entity> allDefectEntityList,
-                                      Set<String> currentFileSet,
-                                      Set<String> deleteFiles,
-                                      boolean isFullScan,
-                                      BuildEntity buildEntity,
-                                      Map<String, Integer> checkerSeverityMap) {
+    private void updateFileEntityInfo(long taskId,
+            String toolName,
+            List<LintDefectV2Entity> allDefectEntityList,
+            Set<String> currentFileSet,
+            Set<String> deleteFiles,
+            Set<String> rootPaths,
+            boolean isFullScan,
+            BuildEntity buildEntity,
+            Map<String, Integer> checkerSeverityMap,
+            ToolBuildStackEntity toolBuildStackEntity) {
         if (CollectionUtils.isEmpty(allDefectEntityList)) {
             log.info("allNewDefectList is empty. buildId:{}", buildEntity.getBuildId());
             return;
         }
+        //获取已删除文件的相对路径
+        Set<String> deleteRelFiles = new HashSet<>();
+        if (CollectionUtils.isNotEmpty(rootPaths) && CollectionUtils.isNotEmpty(deleteFiles)) {
+            deleteFiles.forEach(deleteFile -> rootPaths.forEach(
+                    rootPath -> {
+                        if (deleteFile.startsWith(rootPath)) {
+                            deleteRelFiles.add(deleteFile.replaceFirst(rootPath, ""));
+                        }
+                    }
+            ));
+        }
+
         Map<String, CodeRepoEntity> repoIdMap = Maps.newHashMap();
         Map<String, CodeRepoEntity> urlMap = Maps.newHashMap();
         getCodeRepoMap(allDefectEntityList.get(0).getTaskId(), isFullScan, buildEntity, repoIdMap, urlMap);
 
         List<LintDefectV2Entity> needUpdateDefectList = new ArrayList<>();
         long currentTime = System.currentTimeMillis();
+        long earliestTime;
+        long minLineUpdateTime = Long.MAX_VALUE;
+        if (toolBuildStackEntity == null || toolBuildStackEntity.getCommitSince() == null) {
+            earliestTime = 0L;
+        } else {
+            earliestTime = toolBuildStackEntity.getCommitSince();
+        }
         for (LintDefectV2Entity defect : allDefectEntityList) {
             String filePath = defect.getFilePath();
             String relPath = defect.getRelPath();
@@ -490,25 +650,40 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
                 defectCheckerSeverity = defect.getSeverity();
             }
             boolean needUpdate = false;
-            if (deleteFiles.contains(filePath)
-                    || (StringUtils.isNotEmpty(relPath) && deleteFiles.stream().anyMatch(it -> it.endsWith(relPath)))
-                    || (isFullScan && notCurrentBuildUpload)) {
-                defect.setStatus(defect.getStatus() | ComConstants.DefectStatus.FIXED.value());
-                defect.setFixedTime(currentTime);
-                defect.setFixedBuildNumber(buildEntity.getBuildNo());
-                needUpdate = true;
-            } else if (!isFullScan && notCurrentBuildUpload) {
-                String newBranch = null;
-                String url = defect.getUrl();
-                String repoId = defect.getRepoId();
-                if (StringUtils.isNotEmpty(url) && urlMap.get(url) != null) {
-                    newBranch = urlMap.get(url).getBranch();
-                } else if (StringUtils.isNotEmpty(repoId) && repoIdMap.get(repoId) != null) {
-                    newBranch = repoIdMap.get(repoId).getBranch();
-                }
-                if (StringUtils.isNotEmpty(newBranch) && !newBranch.equals(defect.getBranch())) {
-                    defect.setBranch(newBranch);
+            if (!toolName.equals(ComConstants.Tool.WOODPECKER_COMMITSCAN.name())) {
+                if (deleteFiles.contains(filePath)
+                        || (StringUtils.isNotEmpty(relPath)
+                        && deleteRelFiles.stream().anyMatch(it -> it.equals(relPath)))
+                        || (isFullScan && notCurrentBuildUpload)) {
+                    defect.setStatus(defect.getStatus() | ComConstants.DefectStatus.FIXED.value());
+                    defect.setFixedTime(currentTime);
+                    defect.setFixedBuildNumber(buildEntity.getBuildNo());
                     needUpdate = true;
+                } else if (!isFullScan && notCurrentBuildUpload) {
+                    String newBranch = null;
+                    String url = defect.getUrl();
+                    String repoId = defect.getRepoId();
+                    if (StringUtils.isNotEmpty(url) && urlMap.get(url) != null) {
+                        newBranch = urlMap.get(url).getBranch();
+                    } else if (StringUtils.isNotEmpty(repoId) && repoIdMap.get(repoId) != null) {
+                        newBranch = repoIdMap.get(repoId).getBranch();
+                    }
+                    if (StringUtils.isNotEmpty(newBranch)
+                            && !newBranch.equals(defect.getBranch())) {
+                        defect.setBranch(newBranch);
+                        needUpdate = true;
+                    }
+                }
+            } else {
+                needUpdate = incrementFixDefect(
+                        earliestTime,
+                        currentTime,
+                        buildEntity,
+                        defect,
+                        currentFileSet);
+                if (defect.getStatus() == ComConstants.DefectStatus.NEW.value()
+                        && defect.getLineUpdateTime() < minLineUpdateTime) {
+                    minLineUpdateTime = defect.getLineUpdateTime();
                 }
             }
 
@@ -521,12 +696,76 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
                 needUpdateDefectList.add(defect);
             }
         }
+
+        if (toolName.equals(ComConstants.Tool.WOODPECKER_COMMITSCAN.name())) {
+            ToolBuildInfoEntity toolBuildInfo = toolBuildInfoRepository.findFirstByTaskIdAndToolName(
+                    taskId, toolName);
+
+            if (minLineUpdateTime == Long.MAX_VALUE) {
+                minLineUpdateTime = 0L;
+            }
+            toolBuildInfo.setCommitSince(minLineUpdateTime);
+            toolBuildInfoRepository.save(toolBuildInfo);
+        }
+
         if (CollectionUtils.isNotEmpty(needUpdateDefectList)) {
-            lintDefectV2Repository.saveAll(needUpdateDefectList);
+            lintDefectV2Dao.batchUpdateByFile(needUpdateDefectList);
         }
     }
 
-    private AsyncRabbitTemplate.RabbitConverterFuture<Boolean> processFileDefect(
+    /**
+     * 按commit时间增量的工具修复未上报文件告警(WOODPECKER_COMMITSCAN)
+     *
+     * @param defect
+     * @param buildEntity
+     * @param currentFileSet
+     * @param currentTime
+     * @param earliestTime
+     */
+    private boolean incrementFixDefect(
+            long earliestTime,
+            long currentTime,
+            BuildEntity buildEntity,
+            LintDefectV2Entity defect,
+            Set<String> currentFileSet) {
+        // 所有本次增量扫描时间点之后的"待修复"告警中筛选出本次未上报的告警文件，将状态置为"已修复"
+        if (defect.getLineUpdateTime() >= earliestTime
+                && !currentFileSet.contains(defect.getFilePath())) {
+            defect.setStatus(ComConstants.DefectStatus.NEW.value()
+                    | ComConstants.DefectStatus.FIXED.value());
+            defect.setFixedTime(currentTime);
+            defect.setFixedBuildNumber(buildEntity.getBuildNo());
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 对于用阻塞队列判断消息的优先级的机制：
+     * 1. 配置定长的阻塞队列，长度为一个扫描任务最大能够占有消息队列处理的数量
+     * 2. 对于处理完的消息会推入阻塞队列，采用循环判断无阻塞推入结果的方式（推入过程加锁）
+     * （2-1）如果推入成功，则说明阻塞队列还有空余位置，正常往下走
+     * （2-2）如果推入失败，则说明阻塞队列已满，则会继续尝试推入，知道固定的时间（默认为10分钟），从而减缓推入的速度，达到限流的效果
+     * 3. 另起线程，实时消费阻塞队列中推入的结果，获取的方式为，取出一个，判断是否完成，完成则继续取，没有完成则重新推入队列（该过程加同样的锁）
+     * <p>
+     * <p>
+     * 优点：
+     * 1. 通过正常下发聚类任务的过程加了推入阻塞队列的方式，达到限流的效果
+     * 2. 取出队列判断的过程，可以解决了队列中有序的任务完成顺序为无序时，取出判断不会阻塞在某个特定的慢速任务上，达到谁先完成，谁先出队列的效果
+     *
+     * @param commitDefectVO
+     * @param currentDefectEntityList
+     * @param taskDetailVO
+     * @param filePathSet
+     * @param relPathSet
+     * @param filterPathSet
+     * @param buildEntity
+     * @param chunkNo
+     * @param transferAuthorList
+     * @param asyncResultQueue
+     * @return
+     */
+    private void processFileDefect(
             CommitDefectVO commitDefectVO,
             List<LintDefectV2Entity> currentDefectEntityList,
             TaskDetailVO taskDetailVO,
@@ -535,8 +774,10 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
             Set<String> filterPathSet,
             BuildEntity buildEntity,
             int chunkNo,
-            List<TransferAuthorEntity.TransferAuthorPair> transferAuthorList)
-    {
+            List<TransferAuthorEntity.TransferAuthorPair> transferAuthorList,
+            @NotNull LinkedBlockingQueue<AsyncRabbitTemplate.RabbitConverterFuture<Boolean>> asyncResultQueue,
+            List<AsyncRabbitTemplate.RabbitConverterFuture<Boolean>> secondResultList,
+            Boolean isVip) {
         DefectClusterDTO defectClusterDTO = new DefectClusterDTO(
                 commitDefectVO,
                 buildEntity,
@@ -544,13 +785,39 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
                 "",
                 ""
         );
-        return newLintDefectTracingComponent.executeCluster(defectClusterDTO,
-                taskDetailVO,
-                chunkNo,
-                currentDefectEntityList,
-                relPathSet,
-                filePathSet,
-                filterPathSet);
+        AsyncRabbitTemplate.RabbitConverterFuture<Boolean> clusterResult = newLintDefectTracingComponent
+                .executeCluster(defectClusterDTO,
+                        taskDetailVO,
+                        chunkNo,
+                        currentDefectEntityList,
+                        relPathSet,
+                        filePathSet,
+                        filterPathSet);
+        log.info("ready to insert into blocking queue, task id: {}, tool name: {}, build id: {}, chunk no: {}",
+                commitDefectVO.getTaskId(), commitDefectVO.getToolName(), commitDefectVO.getBuildId(), chunkNo);
+        //如果不能够添加进阻塞队列，则说明阻塞队列已满，则本线程阻塞，进行等待,等待10分钟，如果还不行，再进行下发
+        try {
+            int i = 0;
+            while (true) {
+                synchronized (asyncResultQueue) {
+                    if (asyncResultQueue.offer(clusterResult)) {
+                        break;
+                    }
+                }
+                Thread.sleep(200L);
+                i++;
+                if (i > concurrentDefectTracingConfigCache.getTaskSendDelay(isVip)) {
+                    log.info("concurrent defect tracing count is beyond limit and should be expired, task id: {}, "
+                                    + "tool name: {}, build id: {}", commitDefectVO.getTaskId(),
+                            commitDefectVO.getToolName(), commitDefectVO.getBuildId());
+                    secondResultList.add(clusterResult);
+                    break;
+                }
+            }
+        } catch (InterruptedException e) {
+            log.info("blocked queue was unexpectedly interrupted, task id: {}, tool name: {}, build id: {}",
+                    commitDefectVO.getTaskId(), commitDefectVO.getToolName(), commitDefectVO.getBuildId());
+        }
     }
 
     /**
@@ -563,11 +830,13 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
      * @param checkerSeverityMap
      * @return
      */
-    private boolean fillDefectInfo(LintDefectV2Entity defectEntity,
-                                   String filePath,
-                                   ScmBlameVO fileLineAuthorInfo,
-                                   Map<String, RepoSubModuleVO> codeRepoIdMap,
-                                   Map<String, Integer> checkerSeverityMap) {
+    private boolean fillDefectInfo(TaskDetailVO taskDetailVO,
+            String toolName,
+            LintDefectV2Entity defectEntity,
+            String filePath,
+            ScmBlameVO fileLineAuthorInfo,
+            Map<String, RepoSubModuleVO> codeRepoIdMap,
+            Map<String, Integer> checkerSeverityMap) {
         defectEntity.setFilePath(filePath);
         int fileNameIndex = filePath.lastIndexOf("/");
         if (fileNameIndex == -1) {
@@ -587,6 +856,10 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
             setAuthor(defectEntity, fileLineAuthorInfo);
         }
 
+        if (toolName.equals(ComConstants.Tool.BLACKDUCK.name())) {
+            defectEntity.setAuthor(Lists.newArrayList(taskDetailVO.getCreatedBy()));
+        }
+
         if (StringUtils.isEmpty(defectEntity.getSubModule())) {
             defectEntity.setSubModule("");
         }
@@ -598,28 +871,27 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
             RepoSubModuleVO> codeRepoIdMap) {
         defectEntity.setFileUpdateTime(fileLineAuthorInfo.getFileUpdateTime());
         defectEntity.setRevision(fileLineAuthorInfo.getRevision());
-        defectEntity.setUrl(fileLineAuthorInfo.getUrl());
+        // 兼容处理错误的历史数据: devops-virtual-https://xxx.yyy/zzz.git
+        String urlFinal = fileLineAuthorInfo.getUrl();
+        String urlFlag = "devops-virtual-";
+        if (StringUtils.isNotEmpty(urlFinal) && urlFinal.startsWith(urlFlag)) {
+            urlFinal = urlFinal.replaceFirst(urlFlag, "");
+        }
+        defectEntity.setUrl(urlFinal);
         defectEntity.setRelPath(fileLineAuthorInfo.getFileRelPath());
         defectEntity.setBranch(fileLineAuthorInfo.getBranch());
         if (MapUtils.isNotEmpty(codeRepoIdMap)) {
             //如果是svn用rootUrl关联
             if (ComConstants.CodeHostingType.SVN.name().equalsIgnoreCase(fileLineAuthorInfo.getScmType())) {
                 if (codeRepoIdMap.get(fileLineAuthorInfo.getRootUrl()) != null) {
-                    RepoSubModuleVO repoSubModuleVO = codeRepoIdMap.get(fileLineAuthorInfo.getRootUrl());
-                    if (null != repoSubModuleVO) {
-                        defectEntity.setRepoId(repoSubModuleVO.getRepoId());
-                    }
+                    defectEntity.setRepoId(codeRepoIdMap.get(fileLineAuthorInfo.getRootUrl()).getRepoId());
                 }
-            }
-            //其他用rootUrl关联
-            else {
+            } else { //其他用url关联
                 if (codeRepoIdMap.get(defectEntity.getUrl()) != null) {
                     RepoSubModuleVO repoSubModuleVO = codeRepoIdMap.get(defectEntity.getUrl());
-                    if (null != repoSubModuleVO) {
-                        defectEntity.setRepoId(repoSubModuleVO.getRepoId());
-                        if (StringUtils.isNotEmpty(repoSubModuleVO.getSubModule())) {
-                            defectEntity.setSubModule(repoSubModuleVO.getSubModule());
-                        }
+                    defectEntity.setRepoId(repoSubModuleVO.getRepoId());
+                    if (StringUtils.isNotEmpty(repoSubModuleVO.getSubModule())) {
+                        defectEntity.setSubModule(repoSubModuleVO.getSubModule());
                     }
                 }
             }
@@ -652,7 +924,8 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
                             }
                         }
                         if (isFound) {
-                            defectEntity.setAuthor(ToolParamUtils.trimUserName(changeRecord.getAuthor()));
+                            String author = ToolParamUtils.trimUserName(changeRecord.getAuthor());
+                            defectEntity.setAuthor(Lists.newArrayList(author));
                             long lineUpdateTime = DateTimeUtils.getThirteenTimestamp(changeRecord.getLineUpdateTime());
                             defectEntity.setLineUpdateTime(lineUpdateTime);
                             break;
@@ -664,5 +937,15 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
                 }
             }
         }
+    }
+
+    @Override
+    protected String getRecommitMQExchange(CommitDefectVO vo) {
+        return ConstantsKt.PREFIX_EXCHANGE_DEFECT_COMMIT + ToolPattern.LINT.name().toLowerCase();
+    }
+
+    @Override
+    protected String getRecommitMQRoutingKey(CommitDefectVO vo) {
+        return ConstantsKt.PREFIX_ROUTE_DEFECT_COMMIT + ToolPattern.LINT.name().toLowerCase();
     }
 }

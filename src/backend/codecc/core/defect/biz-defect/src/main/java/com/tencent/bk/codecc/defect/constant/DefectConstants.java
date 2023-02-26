@@ -153,5 +153,5 @@ public interface DefectConstants
      */
     long PASS_COUNT = 0L;
 
-
+    double PASS_COUNT_D = 0.0;
 }

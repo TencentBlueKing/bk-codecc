@@ -28,7 +28,7 @@ package com.tencent.bk.codecc.defect.service.impl;
 
 import com.tencent.bk.codecc.defect.dao.mongorepository.CommonStatisticRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildStackRepository;
-import com.tencent.bk.codecc.defect.model.CommonStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CommonStatisticEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
 import com.tencent.bk.codecc.defect.service.IQueryStatisticBizService;
 import com.tencent.devops.common.api.analysisresult.BaseLastAnalysisResultVO;

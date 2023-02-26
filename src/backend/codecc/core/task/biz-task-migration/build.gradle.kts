@@ -5,7 +5,6 @@ plugins {
 
 dependencies {
     api(project(":core:task:biz-task"))
-    api(group = "org.apache.lucene", name = "lucene-core", version = "8.6.0")
     api(group = "com.tencent.bk.devops.ci.process", name = "api-process"){
         isChanging=true
     }
@@ -30,10 +29,8 @@ dependencies {
     api(group = "com.tencent.bk.devops.ci.plugin", name = "api-codecc"){
         isChanging=true
     }
-    api(group = "com.tencent.bk.devops.ci.project", name = "api-project"){
+    api(group = "com.tencent.bk.devops.ci.common", name = "common-pipeline"){
         isChanging=true
     }
-    api(group = "com.tencent.bk.devops.ci.common", name = "common-pipeline")
-    api(group = "com.vdurmont", name = "emoji-java",version = "5.1.1")
-    api(group = "org.apache.commons", name = "commons-csv",version = "1.9.0")
+
 }

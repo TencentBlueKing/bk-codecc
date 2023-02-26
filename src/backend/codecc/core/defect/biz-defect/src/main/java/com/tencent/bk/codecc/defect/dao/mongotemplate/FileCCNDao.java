@@ -1,6 +1,5 @@
 package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
-import com.tencent.bk.codecc.defect.model.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.model.FileCCNEntity;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;

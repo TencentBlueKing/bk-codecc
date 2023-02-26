@@ -6,18 +6,14 @@ import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.CheckerDetailHisEntity;
 import com.tencent.bk.codecc.defect.service.ICheckerIntegratedBizService;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -30,11 +26,14 @@ public class CheckerIntegratedBizServiceImpl implements ICheckerIntegratedBizSer
     private CheckerHisRepository checkerHisRepository;
 
     @Override
-    public List<String> updateToStatus(String userName,
-                                       String buildId,
-                                       String toolName,
-                                       ToolIntegratedStatus toStatus) {
-        List<CheckerDetailEntity> fromCheckerList = init(toolName, toStatus);
+    public List<String> updateToStatus(
+            String userName,
+            String buildId,
+            String toolName,
+            ToolIntegratedStatus fromStatus,
+            ToolIntegratedStatus toStatus
+    ) {
+        List<CheckerDetailEntity> fromCheckerList = init(toolName, fromStatus, toStatus);
 
         backup(toolName, fromCheckerList, buildId);
 
@@ -63,19 +62,16 @@ public class CheckerIntegratedBizServiceImpl implements ICheckerIntegratedBizSer
         return newCheckerList;
     }
 
-    private List<CheckerDetailEntity> init(String toolName, ToolIntegratedStatus toStatus) {
-        if (toStatus == ToolIntegratedStatus.T) {
-            log.info("update checker status do nothing: {}, {}", toolName, toStatus);
-            return new ArrayList<>();
-        }
-
-        ToolIntegratedStatus fromStatus = toStatus == ToolIntegratedStatus.P
-            ? ToolIntegratedStatus.G : ToolIntegratedStatus.T;
+    private List<CheckerDetailEntity> init(
+            String toolName,
+            ToolIntegratedStatus fromStatus,
+            ToolIntegratedStatus toStatus
+    ) {
 
         log.info("start to copy checker: {}, {}, {}", toolName, fromStatus, toStatus);
 
         List<CheckerDetailEntity> fromCheckerList =
-            checkerRepository.findByToolNameAndCheckerVersion(toolName, fromStatus.value());
+                checkerRepository.findByToolNameAndCheckerVersion(toolName, fromStatus.value());
 
         if (CollectionUtils.isEmpty(fromCheckerList)) {
             log.info("no changed checker, do nothing: {}, {}", toolName, toStatus);

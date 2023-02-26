@@ -27,8 +27,13 @@
 package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
 import com.tencent.bk.codecc.defect.model.FileDefectGatherEntity;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.BulkOperations;
@@ -52,6 +57,25 @@ public class FileDefectGatherDao
 {
     @Autowired
     private MongoTemplate mongoTemplate;
+
+    public List<FileDefectGatherEntity> findByTaskIdInAndToolNameInAndStatus(
+            Map<Long, List<String>> taskToolMap,
+            int status
+    ) {
+        if (MapUtils.isEmpty(taskToolMap)) {
+            return Lists.newArrayList();
+        }
+
+        List<Criteria> innerOrOpList = taskToolMap.entrySet().stream()
+                .map(entry ->
+                        Criteria.where("task_id").is(entry.getKey())
+                                .and("tool_name").in(entry.getValue())
+                ).collect(Collectors.toList());
+        Criteria rootCriteria = new Criteria().orOperator(innerOrOpList.toArray(new Criteria[]{}));
+        rootCriteria.and("status").is(status);
+
+        return mongoTemplate.find(Query.query(rootCriteria), FileDefectGatherEntity.class);
+    }
 
     /**
      * 插入或更新收敛文件信息

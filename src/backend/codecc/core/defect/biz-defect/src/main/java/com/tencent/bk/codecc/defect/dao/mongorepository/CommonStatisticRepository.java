@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.dao.mongorepository;
 
-import com.tencent.bk.codecc.defect.model.CommonStatisticEntity;
-import com.tencent.bk.codecc.defect.model.LintStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CommonStatisticEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -50,16 +49,6 @@ public interface CommonStatisticRepository extends MongoRepository<CommonStatist
      * @return
      */
     CommonStatisticEntity findFirstByTaskIdAndToolNameOrderByTimeDesc(long taskId, String toolName);
-
-
-    /**
-     * 通过任务id和工具名查询统计列表
-     *
-     * @param taskId
-     * @param toolName
-     * @return
-     */
-    List<CommonStatisticEntity> findByTaskIdAndToolNameOrderByTimeDesc(long taskId, String toolName);
 
     CommonStatisticEntity findFirstByTaskIdAndToolNameAndBuildId(long taskId, String toolName, String buildId);
 }

@@ -26,13 +26,12 @@
 
 package com.tencent.bk.codecc.codeccjob.dao.mongorepository;
 
-import com.tencent.bk.codecc.defect.model.CCNDefectEntity;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -65,4 +64,12 @@ public interface CCNDefectRepository extends MongoRepository<CCNDefectEntity, St
     List<CCNDefectEntity> findByTaskId(long taskId);
 
     List<CCNDefectEntity> findByTaskIdAndStatus(Long taskId, int status);
+
+    /**
+     * 根据告警主键id查找CCN告警
+     *
+     * @param ids
+     * @return
+     */
+    List<CCNDefectEntity> findByEntityIdIn(Collection<String> ids);
 }

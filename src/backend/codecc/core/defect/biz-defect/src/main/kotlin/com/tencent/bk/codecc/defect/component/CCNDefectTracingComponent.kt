@@ -2,14 +2,13 @@ package com.tencent.bk.codecc.defect.component
 
 import com.tencent.bk.codecc.defect.component.abstract.AbstractDefectTracingClass
 import com.tencent.bk.codecc.defect.model.BuildEntity
-import com.tencent.bk.codecc.defect.model.CCNDefectEntity
+import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectInputModel
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectOutputModel
 import com.tencent.bk.codecc.task.vo.TaskDetailVO
 import com.tencent.devops.common.constant.ComConstants
 import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
-import org.springframework.amqp.rabbit.AsyncRabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 

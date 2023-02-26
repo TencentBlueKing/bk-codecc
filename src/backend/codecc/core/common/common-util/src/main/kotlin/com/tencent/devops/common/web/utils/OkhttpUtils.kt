@@ -48,6 +48,12 @@ object OkhttpUtils {
             .writeTimeout(30L, TimeUnit.MINUTES)
             .build()!!
 
+    val shortRunHttpClient = okhttp3.OkHttpClient.Builder()
+        .connectTimeout(5L, TimeUnit.SECONDS)
+        .readTimeout(10L, TimeUnit.SECONDS)
+        .writeTimeout(10L, TimeUnit.SECONDS)
+        .build()!!
+
     fun doGet(url: String, headers: Map<String, String> = mapOf()): String {
         val requestBuilder = Request.Builder()
                 .url(url)
@@ -81,8 +87,45 @@ object OkhttpUtils {
         return okHttpClient.newCall(request).execute()
     }
 
+    fun doHttpPost(url: String,
+                   body: String,
+                   headers: Map<String, String> = mapOf()): String {
+        return doHttpPost(url, body, headers, exitFail = true)
+    }
 
-    fun doHttpPost(url: String, body: String, headers: Map<String, String> = mapOf()): String {
+    /**
+     * 发起短时间响应的请求
+     */
+    fun doShortRunHttpPost(url: String,
+                   body: String,
+                   headers: Map<String, String> = mapOf()
+    ): String {
+        val requestBuilder = Request.Builder()
+            .url(url)
+            .post(RequestBody.create(
+                MediaType.parse("application/json; charset=utf-8"), body))
+        if (headers.isNotEmpty()) {
+            headers.forEach { (key, value) ->
+                requestBuilder.addHeader(key, value)
+            }
+        }
+        val client = shortRunHttpClient.newBuilder().build()
+        val request = requestBuilder.build()
+        client.newCall(request).execute().use { response ->
+            val responseContent = response.body()!!.string()
+            if (!response.isSuccessful) {
+                logger.warn(
+                    "request failed, url: $url requestBody: $body message: ${response.message()}, content: $responseContent")
+                throw CodeCCException(CommonMessageCode.THIRD_PARTY_SYSTEM_FAIL)
+            }
+            return responseContent
+        }
+    }
+
+    fun doHttpPost(url: String,
+                   body: String,
+                   headers: Map<String, String> = mapOf(),
+                   exitFail: Boolean): String {
         val requestBuilder = Request.Builder()
                 .url(url)
                 .post(RequestBody.create(
@@ -98,7 +141,9 @@ object OkhttpUtils {
             val responseContent = response.body()!!.string()
             if (!response.isSuccessful) {
                 logger.warn("request failed, url: $url requestBody: $body message: ${response.message()}, content: $responseContent")
-                throw CodeCCException(CommonMessageCode.THIRD_PARTY_SYSTEM_FAIL)
+                if (exitFail) {
+                    throw CodeCCException(CommonMessageCode.THIRD_PARTY_SYSTEM_FAIL)
+                }
             }
             return responseContent
         }
@@ -152,9 +197,9 @@ object OkhttpUtils {
 
     fun doFileStreamPut(url: String, file: File, headers: Map<String, String> = mapOf()): String {
         val requestBuilder = Request.Builder()
-            .url(url)
-            .put(RequestBody.create(
-                MediaType.parse("application/octet-stream; charset=utf-8"), file))
+                .url(url)
+                .put(RequestBody.create(
+                    MediaType.parse("application/octet-stream; charset=utf-8"), file))
         if (headers.isNotEmpty()) {
             headers.forEach { key, value ->
                 requestBuilder.addHeader(key, value)
@@ -179,8 +224,8 @@ object OkhttpUtils {
     // NOCC:NestedBlockDepth(设计如此:)
     fun downloadFile(url: String, destPath: File, headers: Map<String, String> = mapOf()) {
         val requestBuilder = Request.Builder()
-            .url(url)
-            .get()
+                .url(url)
+                .get()
 
         if (headers.isNotEmpty()) {
             headers.forEach { key, value ->
@@ -212,6 +257,7 @@ object OkhttpUtils {
         }
     }
 
+
     fun downloadFile(response: Response, destPath: File) {
         if (response.code() == HttpStatus.NOT_MODIFIED.value()) {
             logger.info("file is newest, do not download to $destPath")
@@ -233,4 +279,6 @@ object OkhttpUtils {
             }
         }
     }
+
+
 }

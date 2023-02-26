@@ -3,7 +3,7 @@ apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
 kind: Deployment
 metadata:
   name: {{ include "common.names.fullname" . }}-quartz
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
+  labels: {{- include "codecc.labels.standard" . | nindent 4 }}
     app.kubernetes.io/name: quartz
     app.kubernetes.io/component: microservice
     {{- if .Values.commonLabels }}
@@ -14,13 +14,13 @@ metadata:
   {{- end }}
 spec:
   selector:
-    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+    matchLabels: {{- include "codecc.labels.matchLabels" . | nindent 6 }}
       app.kubernetes.io/name: quartz
       app.kubernetes.io/component: microservice
   replicas: {{ default 1 .Values.quartz.replicaCount }}
   template:
     metadata:
-      labels: {{- include "common.labels.standard" . | nindent 8 }}
+      labels: {{- include "codecc.labels.standard" . | nindent 8 }}
         app.kubernetes.io/name: quartz
         app.kubernetes.io/component: microservice
         {{- if .Values.quartz.podLabels }}
@@ -67,8 +67,12 @@ spec:
               value: {{ .Values.quartz.env.JVM_XMS }}
             - name: JVM_XMX
               value: {{ .Values.quartz.env.JVM_XMX }}
+            - name: JVM_OPTIONS
+              value: {{ .Values.quartz.env.JVM_OPTIONS }}
             - name: SERVICE_PREFIX
-              value: {{ include "common.names.fullname" . }}
+              value: {{ include "common.names.fullname" . }}-
+            - name: SERVICE_SUFFIX
+              value: {{ .Values.config.bkCodeccServiceSuffix }}
             - name: SERVER_FULLNAME
               value: {{ include "common.names.fullname" . }}-quartz
             - name: SERVER_COMMON_NAME
@@ -79,13 +83,10 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
-            - name: monitor
-              containerPort: 18080
-              protocol: TCP
           livenessProbe:
             httpGet:
               path: /management/health/liveness
-              port: monitor
+              port: http
             initialDelaySeconds: 120
             periodSeconds: 15
             timeoutSeconds: 10
@@ -94,7 +95,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /management/health/readiness
-              port: monitor
+              port: http
             initialDelaySeconds: 60
             periodSeconds: 15
             timeoutSeconds: 10

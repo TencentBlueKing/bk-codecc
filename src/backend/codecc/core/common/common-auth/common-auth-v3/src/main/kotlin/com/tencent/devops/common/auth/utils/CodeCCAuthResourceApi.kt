@@ -50,8 +50,8 @@ class CodeCCAuthResourceApi @Autowired constructor(
         ancestors.add(AncestorsApiReq(
             system = iamConfiguration.systemId,
             id = projectCode,
-            type = AuthResourceType.PROJECT.value
-        ))
+            type = AuthResourceType.PROJECT.value)
+        )
 
         val iamApiReq = EsbCreateApiReq(
             creator = user,

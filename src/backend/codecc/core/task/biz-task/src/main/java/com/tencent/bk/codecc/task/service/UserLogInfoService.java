@@ -34,4 +34,50 @@ public interface UserLogInfoService {
      */
     public Boolean intiUserLogInfoStatScript();
 
+
+    /**
+     * 初始化脚本,初始化codeCC/PreCI周活历史数据
+     *
+     * @return boolean
+     */
+    Boolean initCodeCCAndPreCIUserLogWeek();
+
+    /**
+     * 初始化脚本,初始化codeCC/PreCI月活历史数据
+     *
+     * @return boolean
+     */
+    Boolean initCodeCCAndPreCIUserLogMonth();
+
+    /**
+     * 定时任务查询当前周codeCC的活跃用户,添加进redis中
+     *
+     * @param date 查询日期
+     * @return boolean
+     */
+    Boolean getCodeCCWeekUserList(String date);
+
+    /**
+     * 定时任务查询当前月codeCC的活跃用户,添加进redis中
+     *
+     * @param date 查询日期
+     * @return boolean
+     */
+    Boolean getCodeCCMonthUserList(String date);
+
+    /**
+     * 定时任务查询当前周preCI的活跃用户,添加进redis中
+     *
+     * @param date 查询日期
+     * @return boolean
+     */
+    Boolean getPreCIWeekUserList(String date);
+
+    /**
+     * 定时任务查询当前月preCI的活跃用户,添加进redis中
+     *
+     * @param date 查询日期
+     * @return boolean
+     */
+    Boolean getPreCIMonthUserList(String date);
 }

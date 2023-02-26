@@ -3,6 +3,7 @@ package com.tencent.bk.codecc.defect.service.impl
 import com.tencent.bk.codecc.defect.dao.mongorepository.BuildRepository
 import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogOverviewRepository
 import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository
+import com.tencent.bk.codecc.defect.dao.mongotemplate.CodeRepoInfoDao
 import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskLogDao
 import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskLogOverviewDao
 import com.tencent.bk.codecc.defect.dto.WebsocketDTO
@@ -11,6 +12,7 @@ import com.tencent.bk.codecc.defect.model.TaskLogOverviewEntity
 import com.tencent.bk.codecc.defect.service.IQueryStatisticBizService
 import com.tencent.bk.codecc.defect.service.TaskLogOverviewService
 import com.tencent.bk.codecc.defect.vo.TaskLogOverviewVO
+import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO
 import com.tencent.bk.codecc.defect.vo.TaskLogVO
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
@@ -25,7 +27,7 @@ import com.tencent.devops.common.redis.lock.RedisLock
 import com.tencent.devops.common.service.BaseDataCacheService
 import com.tencent.devops.common.service.BizServiceFactory
 import com.tencent.devops.common.service.utils.PageableUtils
-import com.tencent.devops.common.web.mq.EXCHANGE_TASKLOG_DEFECT_WEBSOCKET
+import com.tencent.devops.common.web.mq.EXCHANGE_CODECCJOB_TASKLOG_WEBSOCKET
 import org.apache.commons.beanutils.BeanUtils
 import org.apache.commons.collections.CollectionUtils
 import org.bson.types.ObjectId
@@ -40,16 +42,17 @@ import java.util.concurrent.TimeUnit
 
 @Service
 class TaskLogOverviewServiceImpl @Autowired constructor(
-        private val taskLogDao: TaskLogDao,
-        private val taskLogRepository: TaskLogRepository,
-        private val taskLogOverviewDao: TaskLogOverviewDao,
-        private val taskLogOverviewRepository: TaskLogOverviewRepository,
-        private val redisTemplate: RedisTemplate<String, String>,
-        private val baseDataCacheService: BaseDataCacheService,
-        private val buildRepository: BuildRepository,
-        private val taskLogAndDefectFactory: BizServiceFactory<IQueryStatisticBizService>,
-        private val rabbitTemplate: RabbitTemplate,
-        private val client: Client
+    private val taskLogDao: TaskLogDao,
+    private val taskLogRepository: TaskLogRepository,
+    private val taskLogOverviewDao: TaskLogOverviewDao,
+    private val taskLogOverviewRepository: TaskLogOverviewRepository,
+    private val redisTemplate: RedisTemplate<String, String>,
+    private val baseDataCacheService: BaseDataCacheService,
+    private val buildRepository: BuildRepository,
+    private val taskLogAndDefectFactory: BizServiceFactory<IQueryStatisticBizService>,
+    private val rabbitTemplate: RabbitTemplate,
+    private val client: Client,
+    private val codeRepoInfoDao: CodeRepoInfoDao
 ) : TaskLogOverviewService {
 
     /**
@@ -61,15 +64,15 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
     override fun saveActualExeTools(taskLogOverviewVO: TaskLogOverviewVO): Boolean {
         logger.info("save task log overview actual tools: ${taskLogOverviewVO.taskId} | ${taskLogOverviewVO.buildId} | ${taskLogOverviewVO.tools.size}")
         var taskLogOverviewEntity: TaskLogOverviewEntity? =
-                taskLogOverviewRepository.findFirstByTaskIdAndBuildId(taskLogOverviewVO.taskId, taskLogOverviewVO.buildId)
+            taskLogOverviewRepository.findFirstByTaskIdAndBuildId(taskLogOverviewVO.taskId, taskLogOverviewVO.buildId)
         if (taskLogOverviewEntity == null) {
             taskLogOverviewEntity = TaskLogOverviewEntity(
-                    ObjectId.get().toString(),
-                    taskLogOverviewVO.taskId,
-                    taskLogOverviewVO.buildId,
-                    ComConstants.ScanStatus.PROCESSING.code,
-                    System.currentTimeMillis(),
-                    mutableListOf()
+                ObjectId.get().toString(),
+                taskLogOverviewVO.taskId,
+                taskLogOverviewVO.buildId,
+                ComConstants.ScanStatus.PROCESSING.code,
+                System.currentTimeMillis(),
+                mutableListOf()
             )
         }
         val toolSet = taskLogOverviewVO.tools.toSet()
@@ -90,6 +93,30 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
     }
 
     /**
+     * 获取上一次成功扫描实际执行的工具
+     *
+     * @param taskId
+     */
+    override fun getLastAnalyzeTool(pipelineId: String, multiPipelineMark: String?): List<String> {
+        val taskId = client.get(ServiceTaskRestResource::class.java)
+                .getTaskIdByPipelineInfo(pipelineId, multiPipelineMark).data ?: return listOf()
+        return getLastAnalyzeTool(taskId)
+    }
+
+    /**
+     * 获取上一次成功扫描实际执行的工具
+     *
+     * @param taskId
+     */
+    override fun getLastAnalyzeTool(taskId: Long): List<String> {
+        val buildId = taskLogOverviewRepository.findFirstByTaskIdAndStatusOrderByStartTimeDesc(
+            taskId, ComConstants.ScanStatus.SUCCESS.code
+        )?.buildId ?: return listOf()
+        logger.info("debug find first buildId: $buildId")
+        return getActualExeTools(taskId, buildId) ?: listOf()
+    }
+
+    /**
      * 计算任务状态，根据taskLog中的工具状态进行判断
      * 每次执行都更新 taskLog list
      * 任务最后成功后 task log list中的工具与 toolList 对齐
@@ -101,16 +128,16 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
         val toolName = uploadTaskLogStepVO.toolName
         val buildId = uploadTaskLogStepVO.pipelineBuildId
         val taskLogEntity = taskLogRepository.findFirstByTaskIdAndToolNameAndBuildId(
-                taskId,
-                toolName,
-                buildId
+            taskId,
+            toolName,
+            buildId
         )
 
         logger.info("cal status, begin to get lock: $taskId $toolName $buildId ${uploadTaskLogStepVO.triggerFrom} ${uploadTaskLogStepVO.isFinish}")
         val redisLock = RedisLock(
-                redisTemplate,
-                "${RedisKeyConstants.TOOL_FINISH_CONFIRM_LOCK}:$taskId:$buildId",
-                10
+            redisTemplate,
+            "${RedisKeyConstants.TOOL_FINISH_CONFIRM_LOCK}:$taskId:$buildId",
+            10
         )
 
         try {
@@ -121,17 +148,17 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
             logger.info("cal status, get lock success: $taskId $toolName $buildId")
             // 不存在说明是第一个上报的工具触发的，记录还不存在，新建一条记录
             var taskLogOverviewEntity: TaskLogOverviewEntity? =
-                    taskLogOverviewRepository.findFirstByTaskIdAndBuildId(taskId, buildId)
+                taskLogOverviewRepository.findFirstByTaskIdAndBuildId(taskId, buildId)
 
             if (taskLogOverviewEntity == null) {
                 logger.info("task log overview entity is null")
                 taskLogOverviewEntity = TaskLogOverviewEntity(
-                        ObjectId.get().toString(),
-                        taskId,
-                        buildId,
-                        ComConstants.ScanStatus.PROCESSING.code,
-                        System.currentTimeMillis(),
-                        mutableListOf()
+                    ObjectId.get().toString(),
+                    taskId,
+                    buildId,
+                    ComConstants.ScanStatus.PROCESSING.code,
+                    System.currentTimeMillis(),
+                    mutableListOf()
                 )
                 val result = client.get(ServiceTaskRestResource::class.java).getTaskToolList(taskId)
                 if (result.isOk() && result.data != null) {
@@ -152,7 +179,8 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
 
             // 工具失败或中断，将任务状态设为失败，这里注意线程安全
             if (taskLogEntity.flag == ComConstants.StepFlag.FAIL.value()
-                    || taskLogEntity.flag == ComConstants.StepFlag.ABORT.value()) {
+                    || taskLogEntity.flag == ComConstants.StepFlag.ABORT.value()
+            ) {
                 logger.info("cal task status: $taskId $toolName $buildId is fail")
                 taskStatus = ComConstants.ScanStatus.FAIL.code
             }
@@ -165,11 +193,14 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
                 taskLogOverviewEntity.taskLogEntityList
             }
             taskLogOverviewEntity.taskLogEntityList.add(taskLogEntity)
-            taskLogOverviewEntity.taskLogEntityList = taskLogOverviewEntity.taskLogEntityList.distinctBy(TaskLogEntity::getToolName)
+            taskLogOverviewEntity.taskLogEntityList =
+                taskLogOverviewEntity.taskLogEntityList.distinctBy(TaskLogEntity::getToolName)
             logger.info("cal status, finally status is $taskStatus: $taskId $toolName $buildId ${System.currentTimeMillis()}")
 
-            logger.info("cal status, set start and end time ${uploadTaskLogStepVO.startTime}: ${taskLogOverviewEntity.startTime}" +
-                    " ${uploadTaskLogStepVO.endTime} ${taskLogOverviewEntity.endTime}")
+            logger.info(
+                "cal status, set start and end time ${uploadTaskLogStepVO.startTime}: ${taskLogOverviewEntity.startTime}" +
+                        " ${uploadTaskLogStepVO.endTime} ${taskLogOverviewEntity.endTime}"
+            )
 
             // 设置分析 开始/结束 时间
             setTime(uploadTaskLogStepVO, taskLogOverviewEntity)
@@ -232,10 +263,12 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
      */
     override fun getTaskLogOverviewList(taskId: Long, page: Int?, pageSize: Int?): PageImpl<TaskLogOverviewVO> {
         logger.info("get task log overview list: $taskId $page $pageSize")
-        val pageAble = PageableUtils.getPageable(page ?: 0, pageSize
-                ?: 50, "start_time", Sort.Direction.DESC, "start_time")
+        val pageAble = PageableUtils.getPageable(
+            page ?: 0, pageSize
+                ?: 50, "start_time", Sort.Direction.DESC, "start_time"
+        )
         var taskLogOverviewEntityList =
-                taskLogOverviewDao.getTaskLogOverviewList(taskId, pageAble)
+            taskLogOverviewDao.getTaskLogOverviewList(taskId, pageAble)
 
         if (taskLogOverviewEntityList.isNullOrEmpty()) {
             taskLogOverviewEntityList = convertTaskLog2TaskLogOverview(taskId)
@@ -255,7 +288,13 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
             BeanUtils.copyProperties(taskLogOverviewVO, it)
             val taskLogVOList = ArrayList<TaskLogVO>(it.taskLogEntityList.size)
             // 根据工具展示顺序排序 TaskLog 信息
-            it.taskLogEntityList.sortBy { taskLogEntity -> toolOrderList.indexOf(taskLogEntity.toolName) }
+            it.taskLogEntityList.sortBy { taskLogEntity ->
+                if (toolOrderList.contains(taskLogEntity.toolName)) {
+                    toolOrderList.indexOf(taskLogEntity.toolName)
+                } else {
+                    Int.MAX_VALUE
+                }
+            }
             it.taskLogEntityList.forEach { taskLogEntity ->
                 val taskLogVO = TaskLogVO()
                 BeanUtils.copyProperties(taskLogVO, taskLogEntity)
@@ -278,10 +317,10 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
             taskLogOverviewVO.elapseTime = if (taskLogOverviewVO.endTime == null || taskLogOverviewVO.endTime == 0L) {
                 0L
             } else {
-                taskLogOverviewVO.endTime - (taskLogOverviewVO.startTime?:0)
+                taskLogOverviewVO.endTime - (taskLogOverviewVO.startTime ?: 0)
             }
             taskLogOverviewVO.buildUser =
-                    buildRepository.findFirstByBuildId(taskLogOverviewVO.buildId)?.buildUser?:"获取失败"
+                buildRepository.findFirstByBuildId(taskLogOverviewVO.buildId)?.buildUser ?: "获取失败"
             taskLogOverviewVOList.add(taskLogOverviewVO)
         }
         val totalCount = taskLogOverviewRepository.countByTaskId(taskId)
@@ -300,7 +339,7 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
     override fun getAnalyzeResult(taskId: Long, buildId: String?, buildNum: String?, status: Int?): TaskLogOverviewVO? {
         logger.info("get analyze result: $taskId $buildId $buildNum $status")
         val queryData =
-                QueryData(false, buildId == null, buildNum == null, status == null)
+            QueryData(false, buildId == null, buildNum == null, status == null)
 
         val taskLogOverviewVO = TaskLogOverviewVO()
         val taskLogOverviewEntity: TaskLogOverviewEntity?
@@ -309,32 +348,32 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
             queryLatest -> {
                 logger.info("query latest: $taskId")
                 taskLogOverviewEntity =
-                        taskLogOverviewRepository.findFirstByTaskIdOrderByStartTimeDesc(taskId)
-                                ?: return null
+                    taskLogOverviewRepository.findFirstByTaskIdOrderByStartTimeDesc(taskId)
+                        ?: return null
                 setAnalyzeList(taskLogOverviewVO, taskLogOverviewEntity)
                 BeanUtils.copyProperties(taskLogOverviewVO, taskLogOverviewEntity)
             }
             queryByBuildId -> {
                 logger.info("query by buildId: $taskId $buildId")
                 taskLogOverviewEntity =
-                        taskLogOverviewRepository.findFirstByTaskIdAndBuildId(taskId, buildId)
-                                ?: return null
+                    taskLogOverviewRepository.findFirstByTaskIdAndBuildId(taskId, buildId)
+                        ?: return null
                 setAnalyzeList(taskLogOverviewVO, taskLogOverviewEntity)
                 BeanUtils.copyProperties(taskLogOverviewVO, taskLogOverviewEntity)
             }
             queryByBuildNum -> {
                 logger.info("query by buildNum: $taskId $buildNum")
                 taskLogOverviewEntity =
-                        taskLogOverviewRepository.findFirstByTaskIdAndBuildNum(taskId, buildNum)
-                                ?: return null
+                    taskLogOverviewRepository.findFirstByTaskIdAndBuildNum(taskId, buildNum)
+                        ?: return null
                 setAnalyzeList(taskLogOverviewVO, taskLogOverviewEntity)
                 BeanUtils.copyProperties(taskLogOverviewVO, taskLogOverviewEntity)
             }
             queryLatestByStatus -> {
                 logger.info("query by status: $taskId $status")
                 taskLogOverviewEntity =
-                        taskLogOverviewRepository.findFirstByTaskIdAndStatusOrderByStartTimeDesc(taskId, status!!)
-                                ?: return null
+                    taskLogOverviewRepository.findFirstByTaskIdAndStatusOrderByStartTimeDesc(taskId, status!!)
+                        ?: return null
                 setAnalyzeList(taskLogOverviewVO, taskLogOverviewEntity)
                 BeanUtils.copyProperties(taskLogOverviewVO, taskLogOverviewEntity)
             }
@@ -345,6 +384,98 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
         }
 
         return taskLogOverviewVO
+    }
+
+    /**
+     * 统计任务分析次数
+     *
+     * @param taskIds
+     * @param status
+     * @param startTime
+     * @param endTime
+     */
+    override fun statTaskAnalyzeCount(taskIds: Collection<Long>, status: Int?, startTime: Long?, endTime: Long?): Int {
+        return Math.toIntExact(taskLogOverviewDao.queryTaskAnalyzeCount(taskIds, status, startTime, endTime))
+    }
+
+    /**
+     * 取指定工具集中每个工具的最后一次执行成功时间点
+     *
+     * @param taskId
+     * @param toolNameSet
+     */
+    override fun getLatestTime(taskId: Long, toolNameSet: MutableList<String>): MutableMap<String, Long> {
+        logger.error("start get tools latest log: {} {}", taskId, toolNameSet)
+        // 深拷贝 toolNameSet，这里的逻辑对 toolNameSet 的拷贝做修改， 防止后续逻辑用到 toolNameSet
+        val toolList = toolNameSet.toMutableList()
+        val lastAnalyzeTimeMap = mutableMapOf<String, Long>()
+        toolList.forEach { lastAnalyzeTimeMap[it] = 0L }
+
+        // 一次性取最后五次分析记录，分别取其中工具最后一次的成功时间，通常情况下只用到最后一次记录的信息，取最后五次是为了防止边界情况
+        val taskLogOverviewEntityList = taskLogOverviewDao.findByTaskIdAndStatusOrderByEndTimeDescLimit(
+            taskId, ComConstants.ScanStatus.SUCCESS.code, 5
+        )
+
+        if (taskLogOverviewEntityList.isNullOrEmpty()) {
+            logger.info("get tools latest log fail, task log overview is empty: {} {}", taskId, toolNameSet)
+            return lastAnalyzeTimeMap
+        }
+
+        taskLogOverviewEntityList.forEach { taskLogOverviewEntity ->
+            if (toolList.isEmpty()) {
+                return@forEach
+            }
+
+            taskLogOverviewEntity.toolList.filter {
+                toolList.contains(it)
+            }.forEach {
+                lastAnalyzeTimeMap[it] = taskLogOverviewEntity.endTime
+                toolList.remove(it)
+            }
+        }
+
+        if (toolList.isNotEmpty()) {
+            logger.error(
+                "get tools latest log fail: {} {}, set time for {}",
+                taskId, toolList, taskLogOverviewEntityList.last().buildId
+            )
+            toolList.forEach {
+                lastAnalyzeTimeMap[it] = taskLogOverviewEntityList.last().endTime
+            }
+        }
+
+        return lastAnalyzeTimeMap
+    }
+
+    /**
+     * 通过tasklog信息拿代码仓库信息
+     *
+     * @param taskIdList
+     */
+    override fun batchGetRepoInfo(taskIdList: List<Long>): Map<Long, Map<String, TaskLogRepoInfoVO>> {
+        val resMap = mutableMapOf<Long, Map<String, TaskLogRepoInfoVO>>()
+        val codeRepoInfo = codeRepoInfoDao.findFirstByTaskIdOrderByCreatedDate(taskIdList.toSet())
+        codeRepoInfo.filter {
+            !it.repoList.isNullOrEmpty()
+        }.forEach {
+            val repoInfo = mutableMapOf<String, TaskLogRepoInfoVO>()
+            it.repoList.filter { repo ->
+                repo != null && !repo.url.isNullOrEmpty()
+            }.forEach { repo ->
+                val taskLogRepoInfoVO =
+                    TaskLogRepoInfoVO(
+                        repo.url ?: "",
+                        repo.revision ?: "",
+                        "",
+                        "",
+                        repo.branch ?: ""
+                    )
+                repoInfo[repo.url] = taskLogRepoInfoVO
+            }
+            resMap[it.taskId] = repoInfo
+        }
+
+        return resMap
     }
 
     /**
@@ -366,14 +497,21 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
         // 当缓存值为空，初始化缓存值为实际执行工具数
         if (confirmNum == null) {
             val actualExeToolsSize = getActualExeTools(taskId, buildId)?.size
-                    ?: throw Exception("invalid actual execute tool num")
+                ?: throw Exception("invalid actual execute tool num")
             confirmNum = actualExeToolsSize - 1
             // 如果只有一个工具，直接返回已完成状态，不写入 Redis
             if (actualExeToolsSize > 1) {
+                val seconds =
+                    client.get(ServiceTaskRestResource::class.java).getTaskInfoById(taskId)?.data?.timeout?.toLong()
+                        ?: TimeUnit.HOURS.toSeconds(24)
                 redisTemplate.opsForValue()
-                        .set("${RedisKeyConstants.TOOL_FINISH_CONFIRM}:$taskId:$buildId", confirmNum.toString(), 24, TimeUnit.HOURS)
+                        .set(
+                            "${RedisKeyConstants.TOOL_FINISH_CONFIRM}:$taskId:$buildId",
+                            confirmNum.toString(),
+                            seconds,
+                            TimeUnit.SECONDS
+                        )
             }
-
             return confirmNum == 0
         }
 
@@ -423,11 +561,14 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
         if (CollectionUtils.isNotEmpty(taskLogGroupEntities)) {
             for (taskLogGroupEntity in taskLogGroupEntities) {
                 val toolLastAnalysisResultVO = ToolLastAnalysisResultVO()
-                BeanUtils.copyProperties(taskLogGroupEntity, toolLastAnalysisResultVO)
+                org.springframework.beans.BeanUtils.copyProperties(taskLogGroupEntity, toolLastAnalysisResultVO)
                 val queryStatisticBizService: IQueryStatisticBizService = taskLogAndDefectFactory
-                        .createBizService(toolLastAnalysisResultVO.toolName,
-                                ComConstants.BusinessType.QUERY_STATISTIC.value(), IQueryStatisticBizService::class.java)
-                val lastAnalysisResultVO: BaseLastAnalysisResultVO = queryStatisticBizService.processBiz(toolLastAnalysisResultVO, true)
+                        .createBizService(
+                            toolLastAnalysisResultVO.toolName,
+                            ComConstants.BusinessType.QUERY_STATISTIC.value(), IQueryStatisticBizService::class.java
+                        )
+                val lastAnalysisResultVO: BaseLastAnalysisResultVO =
+                    queryStatisticBizService.processBiz(toolLastAnalysisResultVO, true)
                 toolLastAnalysisResultVO.lastAnalysisResultVO = lastAnalysisResultVO
                 toolLastAnalysisResultVOList.add(toolLastAnalysisResultVO)
             }
@@ -444,12 +585,18 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
      * @param taskLogVO
      * @param taskLogOverviewEntity
      */
-    private fun sendWebSocketMsg(taskDetailVO: TaskDetailVO, taskLogVO: TaskLogVO, taskLogOverviewEntity: TaskLogOverviewEntity?) {
+    private fun sendWebSocketMsg(
+        taskDetailVO: TaskDetailVO,
+        taskLogVO: TaskLogVO,
+        taskLogOverviewEntity: TaskLogOverviewEntity?
+    ) {
         logger.info("send finish status by websocket")
         val taskLogOverviewVO = entity2VO(taskLogOverviewEntity)
         val websocketDTO = WebsocketDTO(taskLogVO, TaskOverviewVO.LastAnalysis(), taskDetailVO, taskLogOverviewVO)
-        rabbitTemplate.convertAndSend(EXCHANGE_TASKLOG_DEFECT_WEBSOCKET, "",
-                websocketDTO)
+        rabbitTemplate.convertAndSend(
+            EXCHANGE_CODECCJOB_TASKLOG_WEBSOCKET, "",
+            websocketDTO
+        )
     }
 
     /**
@@ -472,11 +619,18 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
         // 拿到工具展示顺序信息排序
         val orderToolIds = baseDataCacheService.toolOrder
         val toolOrderList = orderToolIds.paramValue.split(",")
-        taskLogVOList.sortBy { taskLogEntity -> toolOrderList.indexOf(taskLogEntity.toolName) }
+        taskLogVOList.sortBy { taskLogEntity ->
+            if (toolOrderList.contains(taskLogEntity.toolName)) {
+                toolOrderList.indexOf(taskLogEntity.toolName)
+            } else {
+                Int.MAX_VALUE
+            }
+        }
 
         val taskLogOverviewVO = TaskLogOverviewVO()
         BeanUtils.copyProperties(taskLogOverviewVO, taskLogOverviewEntity)
         taskLogOverviewVO.taskLogVOList = taskLogVOList
+        taskLogOverviewVO.tools = taskLogOverviewEntity?.toolList
         taskLogOverviewVO.repoInfoStrList = pickUpRepoInfo(taskLogOverviewEntity?.taskLogEntityList)
         return taskLogOverviewVO
     }
@@ -495,8 +649,8 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
                     taskLogOverviewEntity.taskId = taskId
                     taskLogOverviewEntity.buildId = buildId
                     taskLogOverviewEntity.buildNum = taskLogGroup.firstOrNull()?.buildNum
-                    taskLogOverviewEntity.startTime = taskLogGroup.map { it.startTime }.minOrNull ()
-                    taskLogOverviewEntity.endTime = taskLogGroup.map { it.endTime }.maxOrNull ()
+                    taskLogOverviewEntity.startTime = taskLogGroup.map { it.startTime }.min()
+                    taskLogOverviewEntity.endTime = taskLogGroup.map { it.endTime }.max()
                     taskLogOverviewEntity.taskLogEntityList = taskLogGroup
                     taskLogOverviewEntity.status = calTaskStatus(taskLogGroup)
                     taskLogOverviewEntityList.add(taskLogOverviewEntity)
@@ -512,7 +666,7 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
 
         var status = ComConstants.ScanStatus.SUCCESS.code
         taskLogGroup.forEach {
-            when(it.flag) {
+            when (it.flag) {
                 ComConstants.StepFlag.ABORT.value() -> {
                     return ComConstants.ScanStatus.FAIL.code
                 }
@@ -538,40 +692,44 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
         if (uploadTaskLogStepVO.startTime < (taskLogOverviewEntity.startTime ?: Long.MAX_VALUE)) {
             taskLogOverviewEntity.startTime = uploadTaskLogStepVO.startTime
         }
-        if (uploadTaskLogStepVO.endTime > taskLogOverviewEntity.endTime ?: Long.MIN_VALUE) {
+        if (uploadTaskLogStepVO.endTime > (taskLogOverviewEntity.endTime ?: Long.MIN_VALUE)) {
             taskLogOverviewEntity.endTime = uploadTaskLogStepVO.endTime
         }
     }
 
     companion object {
         private val logger = LoggerFactory.getLogger(TaskLogOverviewServiceImpl::class.java)
+
         // 查询最后一次分析记录
         private val queryLatest = QueryData(
-                isTaskIdNull = false,
-                isBuildIdNull = true,
-                isBuildNumNull = true,
-                isStatusNull = true
+            isTaskIdNull = false,
+            isBuildIdNull = true,
+            isBuildNumNull = true,
+            isStatusNull = true
         )
+
         // 查询指定扫描状态的最后一次分析记录
         private val queryLatestByStatus = QueryData(
-                isTaskIdNull = false,
-                isBuildIdNull = true,
-                isBuildNumNull = true,
-                isStatusNull = false
+            isTaskIdNull = false,
+            isBuildIdNull = true,
+            isBuildNumNull = true,
+            isStatusNull = false
         )
+
         // 查询指定构建号分析记录
         private val queryByBuildId = QueryData(
-                isTaskIdNull = false,
-                isBuildIdNull = false,
-                isBuildNumNull = true,
-                isStatusNull = true
+            isTaskIdNull = false,
+            isBuildIdNull = false,
+            isBuildNumNull = true,
+            isStatusNull = true
         )
+
         // 查询指定构建号分析记录
         private val queryByBuildNum = QueryData(
-                isTaskIdNull = false,
-                isBuildIdNull = true,
-                isBuildNumNull = false,
-                isStatusNull = true
+            isTaskIdNull = false,
+            isBuildIdNull = true,
+            isBuildNumNull = false,
+            isStatusNull = true
         )
     }
 
@@ -584,17 +742,9 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
      * 其他查询条件可根据需要添加
      */
     data class QueryData(
-            val isTaskIdNull: Boolean,
-            val isBuildIdNull: Boolean,
-            val isBuildNumNull: Boolean,
-            val isStatusNull: Boolean
+        val isTaskIdNull: Boolean,
+        val isBuildIdNull: Boolean,
+        val isBuildNumNull: Boolean,
+        val isStatusNull: Boolean
     )
-
-    /**
-     * 统计任务分析次数
-     */
-    override fun statTaskAnalyzeCount(taskIds: Collection<Long>, status: Int?, startTime: Long?, endTime: Long?): Int {
-        return Math.toIntExact(taskLogOverviewDao.queryTaskAnalyzeCount(taskIds, status, startTime, endTime))
-    }
-
 }

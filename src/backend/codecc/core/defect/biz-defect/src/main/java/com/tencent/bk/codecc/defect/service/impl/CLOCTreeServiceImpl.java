@@ -2,14 +2,14 @@ package com.tencent.bk.codecc.defect.service.impl;
 
 import com.tencent.bk.codecc.defect.common.CLOCTree;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCDefectRepository;
-import com.tencent.bk.codecc.defect.model.CLOCDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.CLOCDefectEntity;
 import com.tencent.bk.codecc.defect.service.TreeService;
 import com.tencent.bk.codecc.defect.vo.CLOCTreeNodeVO;
 import com.tencent.bk.codecc.defect.vo.TreeNodeVO;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.constant.CommonMessageCode;
@@ -24,11 +24,11 @@ import java.util.TreeSet;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 @Slf4j
-@Component("CLOCTreeBizService")
+@Service("CLOCTreeBizService")
 public class CLOCTreeServiceImpl implements TreeService {
     @Autowired
     private Client client;
@@ -50,7 +50,8 @@ public class CLOCTreeServiceImpl implements TreeService {
         if (taskId == null) {
             return new CLOCTreeNodeVO();
         }
-        List<CLOCDefectEntity> defectEntityList = clocDefectRepository.findByTaskIdAndToolNameInAndStatusIsNot(taskId, toolNames, "DISABLED");
+        List<CLOCDefectEntity> defectEntityList =
+                clocDefectRepository.findByTaskIdAndToolNameInAndStatusIsNot(taskId, toolNames, "DISABLED");
 
         if (CollectionUtils.isEmpty(defectEntityList)) {
             return new CLOCTreeNodeVO();

@@ -26,20 +26,10 @@
 
 package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
-import com.google.common.collect.Lists;
 import com.mongodb.BasicDBObject;
-import com.tencent.bk.codecc.defect.constant.DefectConstants;
 import com.tencent.bk.codecc.defect.model.*;
-import com.tencent.bk.codecc.defect.vo.LintDefectQueryRspVO;
-import com.tencent.bk.codecc.defect.service.newdefectjudge.NewDefectJudgeService;
-import com.tencent.bk.codecc.defect.vo.CCNDefectVO;
-import com.tencent.bk.codecc.defect.vo.LintDefectQueryRspVO;
-import com.tencent.bk.codecc.defect.vo.LintDefectVO;
-import com.tencent.bk.codecc.defect.vo.LintFileVO;
+import com.tencent.bk.codecc.defect.model.statistic.LintStatisticEntity;
 import com.tencent.devops.common.constant.ComConstants;
-import com.tencent.devops.common.util.DateTimeUtils;
-import com.tencent.devops.common.util.JsonUtil;
-import com.tencent.devops.common.util.PathUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -47,9 +37,6 @@ import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -61,7 +48,6 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * lint类工具持久层代码

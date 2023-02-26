@@ -54,6 +54,12 @@ public class ScmFileInfoCacheEntity
 
     private String url;
 
+    /**
+     * SVN使用
+     */
+    @Field("root_url")
+    private String rootUrl;
+
     @Field("scm_type")
     private String scmType;
 

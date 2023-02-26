@@ -13,6 +13,8 @@
 package com.tencent.bk.codecc.defect.service;
 
 import com.tencent.bk.codecc.defect.vo.FileDefectGatherVO;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 文件告警收敛的业务逻辑类
@@ -20,13 +22,13 @@ import com.tencent.bk.codecc.defect.vo.FileDefectGatherVO;
  * @version V1.0
  * @date 2020/5/26
  */
-public interface FileDefectGatherService
-{
+public interface FileDefectGatherService {
+
     /**
      * 查询文件告警收敛清单
      *
-     * @param taskId
+     * @param taskToolMap
      * @return
      */
-    FileDefectGatherVO getFileDefectGather(long taskId, String toolName, String dimension);
+    FileDefectGatherVO getFileDefectGather(Map<Long, List<String>> taskToolMap);
 }

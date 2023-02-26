@@ -26,11 +26,12 @@
 
 package com.tencent.bk.codecc.task.api;
 
+import com.tencent.bk.codecc.task.vo.GrayToolProjectReqVO;
 import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
 import com.tencent.bk.codecc.task.vo.TriggerGrayToolVO;
 import com.tencent.devops.common.api.pojo.Page;
 import com.tencent.bk.codecc.task.vo.GrayToolReportVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -77,8 +78,7 @@ public interface UserGrayToolProjectRestResource {
     @Path("/projects/list")
     @POST
     Result<Page<GrayToolProjectVO>> queryGrayToolProjectList(
-            @ApiParam(value = "按灰度项目查询任务告警请求", required = true) @Valid
-                    GrayToolProjectVO grayToolProjectVO,
+            @ApiParam(value = "按灰度项目查询任务告警请求", required = true) @Valid GrayToolProjectReqVO grayToolProjectReqVO,
             @ApiParam(value = "页数") @QueryParam(value = "pageNum") Integer pageNum,
             @ApiParam(value = "每页多少条") @QueryParam(value = "pageSize") Integer pageSize,
             @ApiParam(value = "排序字段") @QueryParam(value = "sortField") String sortField,
@@ -106,23 +106,20 @@ public interface UserGrayToolProjectRestResource {
     );
 
     @ApiOperation("创建灰度池")
-    @Path("/task/pool/toolName/{toolName}")
+    @Path("/task/pool/toolName/{toolName}/stage/{stage}")
     @POST
     Result<Boolean> createGrayTaskPool(
-            @ApiParam(value = "工具名", required = true)
-            @PathParam("toolName")
-            String toolName,
-            @ApiParam(value = "工具名", required = true)
-            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-            String user);
+            @ApiParam(value = "工具名", required = true) @PathParam("toolName") String toolName,
+            @ApiParam(value = "阶段", required = true) @PathParam("stage") String stage,
+            @ApiParam(value = "工具名", required = true) @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String user);
 
     @ApiOperation("触发灰度池项目")
-    @Path("/task/pool/trigger/toolName/{toolName}")
-    @POST
+    @Path("/task/pool/trigger/toolName/{toolName}/taskNum")
+    @GET
     Result<TriggerGrayToolVO> triggerGrayTaskPool(
-            @ApiParam(value = "工具名", required = true)
-            @PathParam("toolName")
-            String toolName);
+            @ApiParam(value = "工具名", required = true) @PathParam("toolName") String toolName,
+            @ApiParam(value = "执行任务数", required = false) @QueryParam("taskNum") String taskNum
+    );
 
     @ApiOperation("根据工具名查询灰度项目信息")
     @Path("/project/toolName/{toolName}")

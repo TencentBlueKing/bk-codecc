@@ -26,6 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo.redline;
 
+import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -40,8 +41,7 @@ import java.util.Map;
  */
 @Data
 @ApiModel("LINT类工具红线告警")
-public class RLLintDefectVO
-{
+public class RLLintDefectVO {
 
     @ApiModelProperty("接入后严重告警数")
     private long newSerious;
@@ -81,4 +81,24 @@ public class RLLintDefectVO
      */
     @ApiModelProperty("规则历史遗留告警数")
     private Map<String, Long> historyCheckerCounts;
+
+    public RLLintDefectVO newCheckerPkgCounts() {
+        newCheckerPkgCounts = Maps.newHashMap();
+        return this;
+    }
+
+    public RLLintDefectVO historyCheckerPkgCounts() {
+        historyCheckerPkgCounts = Maps.newHashMap();
+        return this;
+    }
+
+    public RLLintDefectVO newCheckerCounts() {
+        newCheckerCounts = Maps.newHashMap();
+        return this;
+    }
+
+    public RLLintDefectVO historyCheckerCounts() {
+        historyCheckerCounts = Maps.newHashMap();
+        return this;
+    }
 }

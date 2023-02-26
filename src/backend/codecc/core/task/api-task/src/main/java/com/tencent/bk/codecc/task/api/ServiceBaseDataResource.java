@@ -28,7 +28,8 @@ package com.tencent.bk.codecc.task.api;
 
 import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.bk.codecc.task.vo.RepoInfoVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.checkerset.CheckerSetVO;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -118,14 +119,30 @@ public interface ServiceBaseDataResource
             @ApiParam(value = "当前用户", required = true) @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String userName,
             @ApiParam(value = "屏蔽名单请求体", required = true) @Valid BaseDataVO baseDataVO);
 
+    @ApiOperation("更新OP管理员名单")
+    @Path("/op/adminMember/update")
+    @POST
+    Result<Boolean> updateOpAdminMember(
+            @ApiParam(value = "当前用户", required = true) @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String userName,
+            @ApiParam(value = "屏蔽名单请求体", required = true) @Valid BaseDataVO baseDataVO);
 
     @ApiOperation("获取管理员名单")
     @Path("/adminMember/list")
     @GET
     Result<List<String>> queryAdminMember();
 
+    @ApiOperation("获取op管理员用户名单")
+    @Path("/op/adminMember/list")
+    @GET
+    Result<List<String>> queryOpAdminMember();
+
     @ApiOperation("获取语言元数据")
     @Path("/")
     @POST
     Result<List<BaseDataVO>> findBaseData();
+
+    @ApiOperation("更新各语言的预发布规则集")
+    @Path("/updateLangPreProdConfig")
+    @POST
+    Result<Set<String>> updateLangPreProdConfig(List<CheckerSetVO> checkerSetVOS);
 }

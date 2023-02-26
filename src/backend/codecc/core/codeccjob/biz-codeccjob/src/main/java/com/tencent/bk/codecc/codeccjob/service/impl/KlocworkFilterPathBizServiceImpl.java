@@ -12,7 +12,9 @@
 
 package com.tencent.bk.codecc.codeccjob.service.impl;
 
+import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.devops.common.util.PathUtils;
+import kotlin.Pair;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -29,9 +31,14 @@ import java.util.Set;
 public class KlocworkFilterPathBizServiceImpl extends CommonFilterPathBizServiceImpl
 {
     @Override
-    protected Boolean checkIfMaskByPath(String filePathname, Set<String> filterPaths)
+    protected Boolean checkIfMaskByPath(CommonDefectEntity defectEntity, Set<String> filterPaths)
     {
         Set<String> filterPathSet = PathUtils.convertPathsToLowerCase(filterPaths);
-        return PathUtils.checkIfMaskByPath(filePathname.toLowerCase(), filterPathSet);
+        Pair<Boolean, String> pair = PathUtils.checkIfMaskByPath(
+                defectEntity.getFilePath().toLowerCase(), filterPathSet);
+        if (pair.getFirst()) {
+            defectEntity.setMaskPath(pair.getSecond());
+        }
+        return pair.getFirst();
     }
 }

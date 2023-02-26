@@ -102,7 +102,7 @@ public interface TaskMessageCode
     String REGISTER_KW_PROJ_FAIL = "2301012";
 
     /**
-     * 校验工蜂项目失败
+     * 流水线任务数量达到上限
      */
-    String CHECK_GONGFENG_PROJ_FAIL = "2301013";
+    String PIPELINE_TASK_REACH_LIMIT = "2301014";
 }

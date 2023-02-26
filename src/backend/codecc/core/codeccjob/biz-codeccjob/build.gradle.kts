@@ -3,10 +3,11 @@ plugins {
 }
 
 dependencies {
-
+    api(project(":core:common:common-client"))
     api(project(":core:common:common-service"))
     api(project(":core:common:common-web"))
     api(project(":core:common:common-client"))
+//    api(project(":common:common-auth"))
     api(project(":core:common:common-db"))
     api(project(":core:codeccjob:model-codeccjob"))
     api(project(":core:codeccjob:api-codeccjob"))
@@ -25,4 +26,3 @@ dependencies {
         exclude(group = "com.tencent.bk.devops.ci.project", module = "common-auth")
     }
 }
-

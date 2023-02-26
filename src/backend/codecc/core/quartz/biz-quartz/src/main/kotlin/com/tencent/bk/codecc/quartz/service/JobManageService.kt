@@ -31,7 +31,7 @@ interface JobManageService {
     /**
      * 根据job名字查询单个job
      */
-    fun findJobByName(jobName: String): JobInstanceEntity
+    fun findJobByName(jobName: String): JobInstanceEntity?
 
     /**
      * 保存job清单
@@ -78,4 +78,5 @@ interface JobManageService {
      */
     fun refreshOpensourceCronExpression(period : Int, startTime : Int)
 
+    fun findJobListByClassName(className: String): List<JobInfoVO>
 }

@@ -15,6 +15,7 @@ package com.tencent.codecc.common.db;
 import com.tencent.devops.common.api.pojo.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.bson.types.ObjectId;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -108,7 +109,7 @@ public class MongoPageHelper
         {
             if (pageNum != FIRST_PAGE_NUM)
             {
-                criteria.and(ID).gt(lastId);
+                criteria.and(ID).gt(new ObjectId(lastId));
             }
             query.limit(pageSize);
         }

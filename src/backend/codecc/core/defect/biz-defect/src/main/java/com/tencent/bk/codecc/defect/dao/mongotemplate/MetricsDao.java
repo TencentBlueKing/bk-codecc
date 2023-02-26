@@ -2,15 +2,22 @@ package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
 import com.tencent.bk.codecc.defect.model.MetricsEntity;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
+@Slf4j
 @Repository
 public class MetricsDao {
 
@@ -28,6 +35,21 @@ public class MetricsDao {
             return null;
         }
         return metricsEntityList.get(0);
+    }
+
+    public List<MetricsEntity> findLastByTaskIdIn(List<Long> taskIds) {
+        MatchOperation match = Aggregation.match(Criteria.where("task_id").in(taskIds));
+        SortOperation sort = Aggregation.sort(Sort.by(Direction.DESC, "_id"));
+        GroupOperation group = Aggregation.group("task_id")
+                .first("task_id").as("task_id")
+                .first("rd_indicators_score").as("rd_indicators_score")
+                .first("build_id").as("build_id")
+                .first("is_open_scan").as("is_open_scan");
+        Aggregation agg = Aggregation.newAggregation(match, sort, group);
+        AggregationResults<MetricsEntity> queryResult = mongoTemplate.aggregate(agg, "t_metrics", MetricsEntity.class);
+        List<MetricsEntity> retList = queryResult.getMappedResults();
+
+        return retList;
     }
 
     public boolean upsert(MetricsEntity metricsEntity) {

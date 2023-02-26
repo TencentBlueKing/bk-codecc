@@ -28,14 +28,14 @@ package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.bk.codecc.defect.vo.CheckerPkgRspVO;
 import com.tencent.bk.codecc.defect.vo.ConfigCheckersPkgReqVO;
+import com.tencent.bk.codecc.defect.vo.QueryTaskCheckerDimensionRequest;
 import com.tencent.bk.codecc.defect.vo.checkerset.AddCheckerSet2TaskReqVO;
 import com.tencent.bk.codecc.defect.vo.checkerset.GetCheckerSetsReqVO;
 import com.tencent.bk.codecc.defect.vo.checkerset.PipelineCheckerSetVO;
 import com.tencent.bk.codecc.defect.vo.checkerset.UserCheckerSetsVO;
-import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
 import com.tencent.bk.codecc.task.vo.checkerset.ClearTaskCheckerSetReqVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -142,4 +142,8 @@ public interface ServiceCheckerRestResource
                     String user
     );
 
+    @ApiOperation("根据任务关联工具以及其关联规则获取维度信息")
+    @Path("/listDimensionByToolAndChecker")
+    @POST
+    Result<List<String>> queryDimensionByToolChecker(QueryTaskCheckerDimensionRequest request);
 }

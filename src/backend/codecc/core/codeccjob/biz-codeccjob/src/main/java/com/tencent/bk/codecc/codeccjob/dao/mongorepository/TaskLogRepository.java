@@ -33,6 +33,7 @@ package com.tencent.bk.codecc.codeccjob.dao.mongorepository;
 import com.tencent.bk.codecc.defect.model.TaskLogEntity;
 import java.util.List;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -66,4 +67,6 @@ public interface TaskLogRepository extends MongoRepository<TaskLogEntity, String
      * @return
      */
     List<TaskLogEntity> findByTaskIdAndBuildId(long taskId, String buildId);
+
+    void deleteAllByTaskIdAndToolNameInAndBuildIdIn(long taskId, List<String> toolNames, List<String> buildIds);
 }

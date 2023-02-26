@@ -9,8 +9,7 @@ import lombok.Data;
  * @date 2020/3/26
  */
 @Data
-public class RepoSubModuleVO
-{
+public class RepoSubModuleVO {
     /**
      * 子模块名称
      */
@@ -25,4 +24,9 @@ public class RepoSubModuleVO
      * 仓库ID
      */
     private String repoId;
+
+    /**
+     * 子模块提交id
+     */
+    private String commitId;
 }

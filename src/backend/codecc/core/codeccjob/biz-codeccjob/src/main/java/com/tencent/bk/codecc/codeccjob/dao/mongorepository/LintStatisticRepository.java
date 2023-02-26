@@ -26,10 +26,11 @@
 
 package com.tencent.bk.codecc.codeccjob.dao.mongorepository;
 
-import com.tencent.bk.codecc.defect.model.LintStatisticEntity;
-import org.jetbrains.annotations.NotNull;
+import com.tencent.bk.codecc.defect.model.statistic.LintStatisticEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 /**
  * Lint每次分析的统计信息持久化
@@ -56,4 +57,6 @@ public interface LintStatisticRepository extends MongoRepository<LintStatisticEn
      * @param buildId
      */
     LintStatisticEntity findByTaskIdAndToolNameAndBuildId(long taskId, String toolName, String buildId);
+
+    void deleteAllByTaskIdAndToolNameInAndBuildIdIn(long taskId, List<String> toolNames, List<String> buildIds);
 }

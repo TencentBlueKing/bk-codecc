@@ -43,8 +43,28 @@ import java.util.Set;
  */
 @Data
 @ApiModel("屏蔽路径树输入参数视图")
-public class FilterPathInputVO
-{
+public class FilterPathInputVO<T> {
+
+    public FilterPathInputVO() {
+    }
+
+    public FilterPathInputVO(
+            Set<String> whitePath, Set<String> allFilterPath, T defectEntity, long excludeTime) {
+        this.whitePath = whitePath;
+        this.allFilterPath = allFilterPath;
+        this.defectEntity = defectEntity;
+        this.excludeTime = excludeTime;
+    }
+
+    public FilterPathInputVO(
+            Set<String> whitePath,
+            Set<String> allFilterPath,
+            T defectEntity,
+            long excludeTime,
+            String toolName) {
+        this(whitePath, allFilterPath, defectEntity, excludeTime);
+        this.toolName = toolName;
+    }
 
     @NotNull(message = "任务ID不能为空")
     @ApiModelProperty(value = "任务ID", required = true)
@@ -61,6 +81,12 @@ public class FilterPathInputVO
 
     @ApiModelProperty(value = "手动输入的自定义过滤路径")
     private List<String> customPath;
+
+    @ApiModelProperty(value = "路径白名单")
+    private Set<String> whitePath;
+
+    @ApiModelProperty(value = "全量路径黑名单")
+    private Set<String> allFilterPath;
 
     @NotNull(message = "过滤路径类型不能为空")
     @ApiModelProperty(value = "过滤路径类型")
@@ -98,4 +124,14 @@ public class FilterPathInputVO
      * 代码规范工具
      */
     private Set<String> standardToolSet;
+
+    /**
+     * 告警实体类
+     */
+    private T defectEntity;
+
+    /**
+     * 屏蔽时间
+     */
+    private long excludeTime;
 }

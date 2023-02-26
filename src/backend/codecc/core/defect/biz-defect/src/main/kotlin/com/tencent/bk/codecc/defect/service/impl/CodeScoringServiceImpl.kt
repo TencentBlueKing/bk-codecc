@@ -3,17 +3,15 @@ package com.tencent.bk.codecc.defect.service.impl
 import com.tencent.bk.codecc.defect.constant.DefectConstants
 import com.tencent.bk.codecc.defect.dao.ToolMetaCacheServiceImpl
 import com.tencent.bk.codecc.defect.dao.mongorepository.*
-import com.tencent.bk.codecc.defect.model.LintStatisticEntity
+import com.tencent.bk.codecc.defect.model.statistic.LintStatisticEntity
 import com.tencent.bk.codecc.defect.model.MetricsEntity
 import com.tencent.bk.codecc.defect.model.TaskLogEntity
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerPropsEntity
 import com.tencent.bk.codecc.defect.pojo.StandardScoringConfig
 import com.tencent.bk.codecc.defect.service.AbstractCodeScoringService
-import com.tencent.bk.codecc.defect.service.TaskLogOverviewService
-import com.tencent.bk.codecc.defect.service.TaskLogService
+import com.tencent.bk.codecc.defect.utils.CommonKafkaClient
 import com.tencent.bk.codecc.task.vo.GrayTaskStatVO
 import com.tencent.bk.codecc.task.vo.TaskDetailVO
-import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.constant.ComConstants
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -44,16 +42,12 @@ class CodeScoringServiceImpl @Autowired constructor(
         private val checkerSetProjectRelationshipRepository: CheckerSetProjectRelationshipRepository,
         private val checkerSetRepository: CheckerSetRepository,
         redisTemplate: RedisTemplate<String, String>,
-        clocStatisticRepository: CLOCStatisticRepository,
-        client: Client,
-        taskLogService: TaskLogService,
-        taskLogOverviewService: TaskLogOverviewService
+        commonKafkaClient: CommonKafkaClient,
+        clocStatisticRepository: CLOCStatisticRepository
 ): AbstractCodeScoringService(
-        redisTemplate,
-        taskLogService,
-        client,
-        taskLogOverviewService,
-        clocStatisticRepository
+    redisTemplate,
+    commonKafkaClient,
+    clocStatisticRepository
 ) {
 
     companion object {
@@ -80,193 +74,171 @@ class CodeScoringServiceImpl @Autowired constructor(
      * @param buildId 构建号
      */
     override fun scoring(taskDetailVO: TaskDetailVO, buildId: String): MetricsEntity? {
-        try {
-            val taskId = taskDetailVO.taskId
-            val taskLogList: MutableList<TaskLogEntity> =
-                    taskLogRepository.findByTaskIdAndBuildId(taskId, buildId)
-                            .filter { it.toolName != ComConstants.Tool.SCC.name }.toMutableList()
-            var lines = mutableMapOf<String, Long>()
-            val tools = mutableMapOf<String, Pair<Double, Double>>()
-            var totalCcnExceedNum = 0.0
-            var totalSeriousRiskCount = 0
-            var totalNormalRiskCount = 0
-            var totalCoveritySeriousWaringCount = 0
-            var totalCoverityNormalWaringCount = 0
-            // 分别对应当前任务是否含有三个维度对应的工具，没有的话这个维度分数计为 100
-            var styleExists = false
-            var measureExists = false
-            var securityExists = false
-            var ccnExists = false
-            var covExists = false
-            // 没有CLOC工具的任务不合法，无法计算分数
-            val isLegal = taskLogList.stream()
-                .anyMatch { taskLog -> taskLog.toolName == ComConstants.Tool.CLOC.name }
-            if (!isLegal) {
-                logger.error("fail to scoring: task {} no match CLOC", taskId)
-                return null
-            }
-
-            for (taskLog in taskLogList) {
-                val tool = toolMetaCacheServiceImpl.getToolBaseMetaCache(taskLog.toolName)
-                logger.info("scoring toolName: {} {}", tool.name, tool.type)
-                if (taskLog.toolName == ComConstants.Tool.CLOC.name) {
-                    // 代码行工具
-                    lines = getCLOCDefectNum(taskId, taskLog.toolName, taskLog.buildId)
-                } else if (taskLog.toolName == ComConstants.Tool.CCN.name) {
-                    // 圈复杂度工具
-                    totalCcnExceedNum = getCCNDefectNum(taskId, taskLog.buildId).first
-                    measureExists = true
-                    ccnExists = true
-                } else if (taskLog.toolName == ComConstants.Tool.DUPC.name) {
-                    // 重复率工具，不参与度量计算
-                    continue
-                } else if (taskLog.toolName == ComConstants.Tool.COVERITY.name) {
-                    // Coverity工具需要同时获取安全告警和度量告警
-                    val pair = getDefectNum(ComConstants.Tool.COVERITY.name, taskDetailVO)
-                    totalSeriousRiskCount += pair.first.first
-                    totalNormalRiskCount += pair.first.second
-                    totalCoveritySeriousWaringCount += pair.second.first
-                    totalCoverityNormalWaringCount += pair.second.second
-                    measureExists = true
-                    securityExists = true
-                    covExists = true
-                    continue
-                } else if (tool.type == ComConstants.ToolType.SECURITY.name) {
-                    // 安全工具
-                    val pair = getSecurityDefectNum(taskId, taskLog.buildId, tool.name)
-                    totalNormalRiskCount += (pair?.second?.toInt() ?: 0)
-                    totalSeriousRiskCount += (pair?.first?.toInt() ?: 0)
-                    securityExists = true
-                } else if (tool.name != ComConstants.Tool.IP_CHECK.name
-                    && tool.type == ComConstants.ToolType.STANDARD.name
-                ) {
-                    // 代码格式工具
-                    tools[taskLog.toolName] = getLintDefectNum(
-                        taskLog.toolName,
-                        taskId,
-                        taskLog.buildId
-                    )
-                    styleExists = true
-                }
-            }
-
-            val totalLine = lines.values.stream().mapToLong { line -> line }.sum()
-            val metricsEntity = MetricsEntity()
-            metricsEntity.taskId = taskId
-            metricsEntity.buildId = buildId
-            metricsEntity.isOpenScan = true
-            // 代码规范得分
-            val scoringConfigs = initScoringConfigs(taskDetailVO, lines)
-            if (scoringConfigs.isNullOrEmpty() || !styleExists) {
-                metricsEntity.codeStyleScore = 100.toDouble()
-            } else {
-                newScoringStandard(metricsEntity, tools.keys.toMutableList(), scoringConfigs)
-            }
-
-            // 代码安全得分
-            metricsEntity.codeSecurityScore = if (securityExists) {
-                calCodeSecurityScore(
-                    totalSeriousRiskCount = totalSeriousRiskCount,
-                    totalNormalRiskCount = totalNormalRiskCount
-                )
-            } else {
-                100.toDouble()
-            }
-
-            // 度量得分
-            val codeMeasureScorePair = if (measureExists) {
-                calCodeMeasureScore(
-                    totalCoveritySeriousWaringCount = totalCoveritySeriousWaringCount,
-                    totalCoverityNormalWaringCount = totalCoverityNormalWaringCount,
-                    totalLine = totalLine,
-                    totalCcnExceedNum = totalCcnExceedNum
-                )
-            } else {
-                Pair(100.toDouble(), 0.toDouble())
-            }
-
-            metricsEntity.codeMeasureScore = codeMeasureScorePair.first
-            // 圈复杂度千行超标数
-            metricsEntity.averageThousandDefect = codeMeasureScorePair.second
-            // 圈复杂度得分
-            metricsEntity.codeCcnScore = if (ccnExists) {
-                calCcnScore(
-                    totalLine = totalLine,
-                    totalCcnExceedNum = totalCcnExceedNum
-                )
-            } else {
-                100.toDouble()
-            }
-            // 缺陷得分，开源治理只有 Coverity 工具
-            metricsEntity.codeDefectScore = if (covExists) {
-                calCoverityScore(
-                    totalCoveritySeriousWaringCount,
-                    totalCoverityNormalWaringCount,
-                    totalLine
-                )
-            } else {
-                100.toDouble()
-            }
-
-            // 总分
-            metricsEntity.rdIndicatorsScore = calRDIndicatorsScore(
-                codeStyleScore = metricsEntity.codeStyleScore,
-                codeSecurityScore = metricsEntity.codeSecurityScore,
-                codeMeasureScore = metricsEntity.codeMeasureScore
-            )
-
-            // 记录各个维度分数计算所需的告警数据，存表以便于概览页面直接显示
-            val codeDefectNormalDefectCount = totalCoverityNormalWaringCount
-
-            val codeDefectSeriousDefectCount = totalCoveritySeriousWaringCount
-
-            metricsEntity.codeDefectNormalDefectCount = codeDefectNormalDefectCount
-            metricsEntity.codeDefectSeriousDefectCount = codeDefectSeriousDefectCount
-            metricsEntity.codeSecurityNormalDefectCount = totalNormalRiskCount
-            metricsEntity.codeSecuritySeriousDefectCount = totalSeriousRiskCount
-            metricsEntity.averageNormalDefectThousandDefect = BigDecimal(
-                1000.toDouble() *
-                    (codeDefectNormalDefectCount.toDouble() / totalLine.toDouble())
-            )
-                .setScale(2, BigDecimal.ROUND_HALF_UP)
-                .toDouble()
-            metricsEntity.averageSeriousDefectThousandDefect = BigDecimal(
-                1000.toDouble() *
-                    (codeDefectSeriousDefectCount.toDouble() / totalLine.toDouble())
-            )
-                .setScale(2, BigDecimal.ROUND_HALF_UP)
-                .toDouble()
-
-            // 保存得分结果
-            /*val metricsEntity = MetricsEntity(
-                taskId,
-                buildId,
-                true,
-                codeStyleScore,
-                codeSecurityScore,
-                codeMeasureScore,
-                ccnScore,
-                coverityScore,
-                rdIndicatorsScore,
-                averageThousandDefect,
-                codeStyleNormalDefectCount,
-                averageNormalStandardThousandDefect,
-                codeStyleSeriousDefectCount,
-                averageSeriousStandardThousandDefect,
-                codeDefectNormalDefectCount,
-                averageNormalDefectThousandDefect,
-                codeDefectSeriousDefectCount,
-                averageSeriousDefectThousandDefect,
-                codeSecurityNormalDefectCount,
-                codeSecuritySeriousDefectCount
-            )*/
-
-            metricsRepository.save(metricsEntity)
-            return metricsEntity
-        } catch (e: Throwable) {
-            logger.info("codecc scoring exception: ", e)
+        val taskId = taskDetailVO.taskId
+        val taskLogList: MutableList<TaskLogEntity> =
+                taskLogRepository.findByTaskIdAndBuildId(taskId, buildId)
+                        .filter { it.toolName != ComConstants.Tool.CLOC.name }.toMutableList()
+        var lines = mutableMapOf<String, Long>()
+        val tools = mutableMapOf<String, Pair<Double, Double>>()
+        var totalCcnExceedNum = 0.0
+        var totalSeriousRiskCount = 0
+        var totalNormalRiskCount = 0
+        var totalCoveritySeriousWaringCount = 0
+        var totalCoverityNormalWaringCount = 0
+        // 分别对应当前任务是否含有三个维度对应的工具，没有的话这个维度分数计为 100
+        var styleExists = false
+        var measureExists = false
+        var securityExists = false
+        var ccnExists = false
+        var covExists = false
+        // 没有CLOC工具的任务不合法，无法计算分数
+        val isLegal = taskLogList.stream()
+            .anyMatch { taskLog -> taskLog.toolName == ComConstants.Tool.SCC.name }
+        if (!isLegal) {
+            logger.error("fail to scoring: task {} no match CLOC", taskId)
+            return null
         }
-        return null
+
+        for (taskLog in taskLogList) {
+            val tool = toolMetaCacheServiceImpl.getToolBaseMetaCache(taskLog.toolName)
+            logger.info("scoring toolName: {} {}", tool.name, tool.type)
+            if (taskLog.toolName == ComConstants.Tool.SCC.name) {
+                // 代码行工具
+                lines = getCLOCDefectNum(taskId, taskLog.toolName, taskLog.buildId)
+            } else if (taskLog.toolName == ComConstants.Tool.CCN.name) {
+                // 圈复杂度工具
+                totalCcnExceedNum = getCCNDefectNum(taskId, taskLog.buildId).first
+                measureExists = true
+                ccnExists = true
+            } else if (taskLog.toolName == ComConstants.Tool.DUPC.name) {
+                // 重复率工具，不参与度量计算
+                continue
+            } else if (taskLog.toolName == ComConstants.Tool.COVERITY.name) {
+                // Coverity工具需要同时获取安全告警和度量告警
+                // cov下架，代码缺陷维度不参与算分
+//                val pair = getDefectNum(ComConstants.Tool.COVERITY.name, taskDetailVO)
+//                totalSeriousRiskCount += pair.first.first
+//                totalNormalRiskCount += pair.first.second
+//                totalCoveritySeriousWaringCount += pair.second.first
+//                totalCoverityNormalWaringCount += pair.second.second
+//                measureExists = true
+//                securityExists = true
+//                covExists = true
+                continue
+            } else if (tool.type == ComConstants.ToolType.SECURITY.name) {
+                // 安全工具
+                val pair = getSecurityDefectNum(taskId, taskLog.buildId, tool.name)
+                totalNormalRiskCount += (pair?.second?.toInt() ?: 0)
+                totalSeriousRiskCount += (pair?.first?.toInt() ?: 0)
+                securityExists = true
+            } else if (tool.name != ComConstants.Tool.IP_CHECK.name
+                && tool.type == ComConstants.ToolType.STANDARD.name
+            ) {
+                // 代码格式工具
+                tools[taskLog.toolName] = getLintDefectNum(
+                    taskLog.toolName,
+                    taskId,
+                    taskLog.buildId
+                )
+                styleExists = true
+            }
+        }
+
+        val totalLine = lines.values.stream().mapToLong { line -> line }.sum()
+        val metricsEntity = MetricsEntity()
+        metricsEntity.taskId = taskId
+        metricsEntity.buildId = buildId
+        metricsEntity.isOpenScan = true
+        // 代码规范得分
+        val scoringConfigs = initScoringConfigs(taskDetailVO, lines)
+        if (scoringConfigs.isNullOrEmpty() || !styleExists) {
+            metricsEntity.codeStyleScore = 100.toDouble()
+        } else {
+            newScoringStandard(metricsEntity, tools.keys.toMutableList(), scoringConfigs)
+        }
+
+        // 代码安全得分
+        metricsEntity.codeSecurityScore = if (securityExists) {
+            calCodeSecurityScore(
+                totalSeriousRiskCount = totalSeriousRiskCount,
+                totalNormalRiskCount = totalNormalRiskCount
+            )
+        } else {
+            100.toDouble()
+        }
+
+        // 度量得分
+        val codeMeasureScorePair = if (measureExists) {
+            calCodeMeasureScore(
+                totalCoveritySeriousWaringCount = totalCoveritySeriousWaringCount,
+                totalCoverityNormalWaringCount = totalCoverityNormalWaringCount,
+                totalLine = totalLine,
+                totalCcnExceedNum = totalCcnExceedNum
+            )
+        } else {
+            Pair(100.toDouble(), 0.toDouble())
+        }
+
+        metricsEntity.codeMeasureScore = codeMeasureScorePair.first
+        // 圈复杂度千行超标数
+        metricsEntity.averageThousandDefect = codeMeasureScorePair.second
+        // 圈复杂度得分
+        metricsEntity.codeCcnScore = if (ccnExists) {
+            calCcnScore(
+                totalLine = totalLine,
+                totalCcnExceedNum = totalCcnExceedNum
+            )
+        } else {
+            100.toDouble()
+        }
+        // 缺陷得分，开源治理只有 Coverity 工具
+        metricsEntity.codeDefectScore = if (covExists) {
+            calCoverityScore(
+                totalCoveritySeriousWaringCount,
+                totalCoverityNormalWaringCount,
+                totalLine
+            )
+        } else {
+            100.toDouble()
+        }
+
+        // 总分
+        metricsEntity.rdIndicatorsScore = calRDIndicatorsScore(
+            codeStyleScore = metricsEntity.codeStyleScore,
+            codeSecurityScore = metricsEntity.codeSecurityScore,
+            codeMeasureScore = metricsEntity.codeMeasureScore
+        )
+
+        // 记录各个维度分数计算所需的告警数据，存表以便于概览页面直接显示
+        val codeDefectNormalDefectCount = totalCoverityNormalWaringCount
+
+        val codeDefectSeriousDefectCount = totalCoveritySeriousWaringCount
+
+        metricsEntity.codeDefectNormalDefectCount = codeDefectNormalDefectCount
+        metricsEntity.codeDefectSeriousDefectCount = codeDefectSeriousDefectCount
+        metricsEntity.codeSecurityNormalDefectCount = totalNormalRiskCount
+        metricsEntity.codeSecuritySeriousDefectCount = totalSeriousRiskCount
+        metricsEntity.averageNormalDefectThousandDefect = if (totalLine == 0L) {
+            BigDecimal.ZERO
+        } else {
+            BigDecimal(
+                    1000.toDouble() *
+                            (codeDefectNormalDefectCount.toDouble() / totalLine.toDouble())
+            )
+        }.setScale(2, BigDecimal.ROUND_HALF_UP)
+                .toDouble()
+        metricsEntity.averageSeriousDefectThousandDefect = if (totalLine == 0L) {
+            BigDecimal.ZERO
+        } else {
+            BigDecimal(
+                    1000.toDouble() *
+                            (codeDefectSeriousDefectCount.toDouble() / totalLine.toDouble())
+            )
+        }.setScale(2, BigDecimal.ROUND_HALF_UP)
+                .toDouble()
+
+        metricsRepository.save(metricsEntity)
+        return metricsEntity
     }
 
     /**
@@ -332,8 +304,7 @@ class CodeScoringServiceImpl @Autowired constructor(
         val peckerCheckerSet = mutableSetOf<CheckerPropsEntity>()
         checkerSetProj.filter { it.checkerSetId.matches(Regex("^pecker_.*_no_coverity")) }
             .forEach {
-                val checkerSetEntity =
-                    checkerSetRepository.findFirstByCheckerSetIdAndVersion(it.checkerSetId, it.version)
+                val checkerSetEntity = checkerSetRepository.findFirstByCheckerSetIdAndVersion(it.checkerSetId, it.version)
                 peckerCheckerSet.addAll(checkerSetEntity.checkerProps)
             }
 
@@ -342,12 +313,12 @@ class CodeScoringServiceImpl @Autowired constructor(
             .toList()
 
         val securitySeriousCount = defectList.filter {
-            checkerNameList.contains(it.checkerName)
+            checkerNameList.contains(it.checker)
                 && it.severity == DefectConstants.DefectSeverity.SERIOUS.value()
         }.count()
 
         val securityNormalCount = defectList.filter {
-            checkerNameList.contains(it.checkerName)
+            checkerNameList.contains(it.checker)
                 && it.severity == DefectConstants.DefectSeverity.NORMAL.value()
         }.count()
 
@@ -520,7 +491,6 @@ class CodeScoringServiceImpl @Autowired constructor(
                     config,
                     totalLine
             )
-            actualExeTools.removeAll(matchingTools)
         }
 
         if (totalLine > 0) {
@@ -586,20 +556,25 @@ class CodeScoringServiceImpl @Autowired constructor(
         line: Long,
         totalLine: Long
     ): Double {
-        val hundredWaringCount = if (line == 0L) {
-            0.toDouble()
-        } else {
-            (totalDefect / line) * 100.toDouble()
+        try {
+            val hundredWaringCount = if (line == 0L) {
+                0.toDouble()
+            } else {
+                (totalDefect / line) * 100.toDouble()
+            }
+            // 计算行占比
+            val linePercentage = line.toDouble() / totalLine.toDouble()
+            logger.info("cal style score, hundred: $hundredWaringCount linepercent: $linePercentage")
+            // 计算代码规范评分
+            return BigDecimal(
+                100 * linePercentage * ((0.6.pow(1.toDouble() / languageWaringConfigCount)).pow(
+                    hundredWaringCount
+                ))
+            ).setScale(2, BigDecimal.ROUND_HALF_UP).toDouble()
+        } catch (e: Exception) {
+            logger.error("cal code style score fail: ", e)
+            return 0.toDouble()
         }
-        // 计算行占比
-        val linePercentage = line.toDouble() / totalLine.toDouble()
-        logger.info("cal style score, hundred: $hundredWaringCount linepercent: $linePercentage")
-        // 计算代码规范评分
-        return BigDecimal(
-            100 * linePercentage * ((0.6.pow(1.toDouble() / languageWaringConfigCount)).pow(
-                hundredWaringCount
-            ))
-        ).setScale(2, BigDecimal.ROUND_HALF_UP).toDouble()
     }
 
     /**
@@ -671,9 +646,10 @@ class CodeScoringServiceImpl @Autowired constructor(
             }
         logger.info("cal defect of measure: $totalCoveritySeriousWaringCount $totalCoverityNormalWaringCount $totalLine")
         return Pair(
-            BigDecimal(0.9 * ccnScore + 0.08 * coveritySeriousWaringScore + 0.02 * coverityNormalWaringScore)
-                .setScale(2, BigDecimal.ROUND_HALF_UP)
-                .toDouble(), thousandCcnCount
+            //BigDecimal(0.9 * ccnScore + 0.08 * coveritySeriousWaringScore + 0.02 * coverityNormalWaringScore)
+            BigDecimal(1 * ccnScore)
+                    .setScale(2, BigDecimal.ROUND_HALF_UP)
+                    .toDouble(), thousandCcnCount
         )
     }
 

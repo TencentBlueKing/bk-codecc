@@ -16,22 +16,29 @@ import com.tencent.bk.codecc.defect.api.OpDefectRestResource;
 import com.tencent.bk.codecc.defect.service.CodeRepoService;
 import com.tencent.bk.codecc.defect.service.GetTaskLogService;
 import com.tencent.bk.codecc.defect.service.ICLOCQueryCodeLineService;
+import com.tencent.bk.codecc.defect.service.IIgnoreTypeService;
 import com.tencent.bk.codecc.defect.service.IQueryWarningBizService;
 import com.tencent.bk.codecc.defect.service.IV3CheckerSetBizService;
 import com.tencent.bk.codecc.defect.service.RefreshCheckerScriptService;
+import com.tencent.bk.codecc.defect.service.ToolBuildInfoService;
+import com.tencent.bk.codecc.defect.vo.ToolBuildInfoReqVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectRspVO;
 import com.tencent.bk.codecc.defect.vo.admin.DeptTaskDefectReqVO;
 import com.tencent.bk.codecc.defect.vo.admin.DeptTaskDefectRspVO;
+import com.tencent.bk.codecc.defect.vo.ignore.IgnoreTypeSysVO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetParamsVO;
 import com.tencent.devops.common.api.checkerset.V3UpdateCheckerSetReqExtVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.auth.api.OpAuthApi;
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.BizServiceFactory;
+import com.tencent.devops.common.util.ThreadPoolUtil;
 import com.tencent.devops.common.web.RestResource;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -44,6 +51,7 @@ import org.springframework.data.domain.Sort;
  */
 @RestResource
 public class OpDefectRestResourceImpl implements OpDefectRestResource {
+
     @Autowired
     private BizServiceFactory<IQueryWarningBizService> fileAndDefectQueryFactory;
 
@@ -51,17 +59,26 @@ public class OpDefectRestResourceImpl implements OpDefectRestResource {
     private AuthExPermissionApi authExPermissionApi;
 
     @Autowired
-    private GetTaskLogService getTaskLogService;
+    private GetTaskLogService tencentGetTaskLogService;
 
     @Autowired
     private RefreshCheckerScriptService refreshCheckerScriptService;
 
     @Autowired
     private ICLOCQueryCodeLineService queryCodeLineService;
+
     @Autowired
     private IV3CheckerSetBizService checkerSetBizService;
+
     @Autowired
     private CodeRepoService codeRepoService;
+
+    @Autowired
+    private ToolBuildInfoService toolBuildInfoService;
+    @Autowired
+    private IIgnoreTypeService iIgnoreTypeService;
+
+    private OpAuthApi opAuthApi;
 
     @Override
     public Result<DeptTaskDefectRspVO> queryDeptTaskDefect(String userName, DeptTaskDefectReqVO deptTaskDefectReqVO) {
@@ -98,7 +115,7 @@ public class OpDefectRestResourceImpl implements OpDefectRestResource {
             throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER);
         }
 
-        return new Result<>(getTaskLogService.getActiveTaskList(deptTaskDefectReqVO));
+        return new Result<>(tencentGetTaskLogService.getActiveTaskList(deptTaskDefectReqVO));
     }
 
     @Override
@@ -116,9 +133,9 @@ public class OpDefectRestResourceImpl implements OpDefectRestResource {
     @Override
     public Result<Boolean> updateCheckerSetBaseInfo(String userName,
             V3UpdateCheckerSetReqExtVO updateCheckerSetReqExtVO) {
-        // 判断是否为管理员
-        if (!authExPermissionApi.isAdminMember(userName)) {
-            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, userName + " is not an admin member");
+        // 判断是否为OP管理员
+        if (!opAuthApi.isOpAdminMember(userName)) {
+            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, new String[]{"op admin member"});
         }
         return new Result<>(checkerSetBizService.updateCheckerSetBaseInfoByOp(userName, updateCheckerSetReqExtVO));
     }
@@ -135,7 +152,63 @@ public class OpDefectRestResourceImpl implements OpDefectRestResource {
     }
 
     @Override
+    public Result<Boolean> codeRepoStatisticFixed(DeptTaskDefectReqVO reqVO) {
+        return new Result<>(codeRepoService.codeRepoStatisticFixed(reqVO));
+    }
+
+    @Override
     public Result<Boolean> initCodeRepoStatTrend(QueryTaskListReqVO reqVO) {
         return new Result<>(codeRepoService.initCodeRepoStatTrend(reqVO));
+    }
+
+    @Override
+    public Result<List<QueryTaskListReqVO>> queryAccessedTaskAndToolName(QueryTaskListReqVO reqVO) {
+        return new Result<>(tencentGetTaskLogService.queryAccessedTaskAndToolName(reqVO));
+    }
+
+    @Override
+    public Result<Boolean> editOneToolBuildInfo(ToolBuildInfoReqVO reqVO, String userName) {
+        // 判断是否为OP管理员
+        if (!opAuthApi.isOpAdminMember(userName)) {
+            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, new String[]{"op admin member"});
+        }
+        return new Result<>(toolBuildInfoService.editOneToolBuildInfo(reqVO));
+    }
+
+    @Override
+    public Result<Boolean> editToolBuildInfo(ToolBuildInfoReqVO reqVO, String userName) {
+        // 判断是否为OP管理员
+        if (!opAuthApi.isOpAdminMember(userName)) {
+            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, new String[]{"op admin member"});
+        }
+        return new Result<>(toolBuildInfoService.editToolBuildInfo(reqVO));
+    }
+
+
+    @Override
+    public Result<String> queryCheckerSetNameByCheckerSetId(String checkerSetId) {
+        return new Result<>(checkerSetBizService.queryCheckerSetNameByCheckerSetId(checkerSetId));
+    }
+
+    @Override
+    public Result<Boolean> ignoreTypeSysUpdate(String userName, IgnoreTypeSysVO reqVO) {
+        // 判断是否为管理员
+        if (!authExPermissionApi.isAdminMember(userName)) {
+            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, userName + " is not an admin member");
+        }
+        return new Result<>(iIgnoreTypeService.ignoreTypeSysUpdate(userName, reqVO));
+    }
+
+    @Override
+    public Result<Boolean> triggerProjectStatisticAndSend(String userName, String projectId, String ignoreTypeName,
+            Integer ignoreTypeId, String createFrom) {
+        // 判断是否为管理员
+        if (!authExPermissionApi.isAdminMember(userName)) {
+            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, userName + " is not an admin member");
+        }
+        ThreadPoolUtil.addRunnableTask(() -> {
+            iIgnoreTypeService.triggerProjectStatisticAndSend(projectId, ignoreTypeName, ignoreTypeId, createFrom);
+        });
+        return new Result<>(true);
     }
 }

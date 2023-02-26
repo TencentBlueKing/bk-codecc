@@ -26,4 +26,6 @@ import java.util.List;
 public class CCNDefectJsonFileEntity<T> extends DefectJsonFileEntity<T>
 {
     private List<FileCCNEntity> filesTotalCCN;
+
+    private SummaryGatherInfo gather;
 }

@@ -12,7 +12,7 @@
 
 package com.tencent.bk.codecc.defect.dao.mongorepository;
 
-import com.tencent.bk.codecc.defect.model.CLOCStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -20,7 +20,7 @@ import java.util.List;
 
 /**
  * cloc统计持久
- * 
+ *
  * @date 2020/4/9
  * @version V1.0
  */
@@ -79,4 +79,12 @@ public interface CLOCStatisticRepository extends MongoRepository<CLOCStatisticEn
      */
     List<CLOCStatisticEntity> findByTaskIdAndToolNameAndBuildId(Long taskId, String toolName, String buildId);
 
+    /**
+     * 根据 task_id、tool_name 和 build_id 查询单个记录
+     *
+     * @param taskId   任务ID
+     * @param toolName 工具名
+     * @param buildId  构建ID
+     */
+    CLOCStatisticEntity findFirstByTaskIdAndToolNameAndBuildId(long taskId, String toolName, String buildId);
 }

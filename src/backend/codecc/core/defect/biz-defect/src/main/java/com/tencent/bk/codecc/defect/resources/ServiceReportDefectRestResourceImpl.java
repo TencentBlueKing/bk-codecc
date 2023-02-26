@@ -27,21 +27,24 @@
 package com.tencent.bk.codecc.defect.resources;
 
 import com.tencent.bk.codecc.defect.api.ServiceReportDefectRestResource;
+import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.defect.service.CommonDefectMigrationService;
 import com.tencent.bk.codecc.defect.service.IUpdateDefectBizService;
 import com.tencent.bk.codecc.defect.service.impl.CommonQueryWarningBizServiceImpl;
 import com.tencent.bk.codecc.defect.vo.UpdateDefectVO;
 import com.tencent.bk.codecc.defect.vo.UploadDefectVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.BizServiceFactory;
 import com.tencent.devops.common.service.IBizService;
 import com.tencent.devops.common.web.RestResource;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-
-import java.util.Set;
+import org.springframework.util.StringUtils;
 
 /**
  * 工具侧上报告警的接口实现
@@ -51,39 +54,48 @@ import java.util.Set;
  */
 @RestResource
 @Slf4j
-public class ServiceReportDefectRestResourceImpl implements ServiceReportDefectRestResource
-{
+public class ServiceReportDefectRestResourceImpl implements ServiceReportDefectRestResource {
+
     @Autowired
     private BizServiceFactory<IBizService> bizServiceFactory;
-
     @Autowired
     private IUpdateDefectBizService updateDefectBizService;
-
     @Qualifier("CommonQueryWarningBizService")
     @Autowired
     private CommonQueryWarningBizServiceImpl commonQueryWarningBizService;
+    @Autowired
+    private CommonDefectMigrationService commonDefectMigrationService;
+    @Autowired
+    private LintDefectV2Repository lintDefectV2Repository;
 
     @Override
-    public Result<Set<Long>> queryIds(long taskId, String toolName)
-    {
-        Set<Long> idSet = commonQueryWarningBizService.queryIds(taskId, toolName);
-        return new Result<>(idSet);
+    public Result<Set<Long>> queryIds(long taskId, String toolName, Boolean migrationSuccessful) {
+        if (Boolean.TRUE.equals(migrationSuccessful)) {
+            Set<Long> idSet = lintDefectV2Repository.findIdsByTaskIdAndToolName(taskId, toolName)
+                    .stream()
+                    .filter(x -> !StringUtils.isEmpty(x.getId()))
+                    .map(x -> Long.valueOf(x.getId()))
+                    .collect(Collectors.toSet());
+
+            return new Result<>(idSet);
+        }
+
+        return new Result<>(commonQueryWarningBizService.queryIds(taskId, toolName));
     }
 
     @Override
-    public Result updateDefectStatus(UpdateDefectVO updateDefectVO)
-    {
+    public Result updateDefectStatus(UpdateDefectVO updateDefectVO) {
         updateDefectBizService.updateDefectStatus(updateDefectVO);
         return new Result(CommonMessageCode.SUCCESS, "update defectStatus success.");
     }
 
     @Override
-    public Result reportDefects(UploadDefectVO uploadDefectVO)
-    {
-        log.info("report defects, taskId:{}, toolName:{}, buildId:{}", uploadDefectVO.getTaskId(), uploadDefectVO.getToolName(), uploadDefectVO.getBuildId());
+    public Result reportDefects(UploadDefectVO uploadDefectVO) {
+        log.info("report defects, taskId:{}, toolName:{}, buildId:{}", uploadDefectVO.getTaskId(),
+                uploadDefectVO.getToolName(), uploadDefectVO.getBuildId());
 
         IBizService uploadDefectService = bizServiceFactory.createBizService(uploadDefectVO.getToolName(),
-                    ComConstants.BusinessType.UPLOAD_DEFECT.value(), IBizService.class);
+                ComConstants.BusinessType.UPLOAD_DEFECT.value(), IBizService.class);
         return uploadDefectService.processBiz(uploadDefectVO);
     }
 
@@ -91,5 +103,10 @@ public class ServiceReportDefectRestResourceImpl implements ServiceReportDefectR
     public Result updateDefects(UpdateDefectVO updateDefectVO) {
         updateDefectBizService.updateDefects(updateDefectVO);
         return new Result(CommonMessageCode.SUCCESS, "update defectDetail success.");
+    }
+
+    @Override
+    public Result<Boolean> commonToLintMigrationSuccessful(long taskId) {
+        return new Result<>(commonDefectMigrationService.isMigrationSuccessful(taskId));
     }
 }

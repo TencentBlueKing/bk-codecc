@@ -26,7 +26,7 @@
 
 package com.tencent.devops.common.service;
 
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 
 /**
  * 处理器接口

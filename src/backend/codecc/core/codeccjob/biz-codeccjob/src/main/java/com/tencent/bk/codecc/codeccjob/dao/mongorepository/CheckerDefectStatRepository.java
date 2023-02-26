@@ -24,5 +24,4 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface CheckerDefectStatRepository extends MongoRepository<CheckerDefectStatEntity, String> {
-
 }

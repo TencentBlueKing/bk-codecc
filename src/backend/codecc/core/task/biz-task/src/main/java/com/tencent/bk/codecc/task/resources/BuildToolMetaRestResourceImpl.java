@@ -33,8 +33,12 @@ import com.tencent.bk.codecc.task.service.ToolMetaService;
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
 import com.tencent.bk.codecc.task.vo.pipeline.PipelineBuildInfoVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.constant.CommonMessageCode;
+import com.tencent.devops.common.api.exception.CodeCCException;
+import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.service.ToolMetaCacheService;
 import com.tencent.devops.common.web.RestResource;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -46,21 +50,30 @@ import java.util.List;
  * @date 2020/8/8
  */
 @RestResource
-public class BuildToolMetaRestResourceImpl implements BuildToolMetaRestResource
-{
+public class BuildToolMetaRestResourceImpl implements BuildToolMetaRestResource {
 
     @Autowired
     private ToolMetaService toolMetaService;
 
+    @Autowired
+    private ToolMetaCacheService toolMetaCacheService;
+
     @Override
-    public Result<ToolMetaDetailVO> register(String userName, ToolMetaDetailVO toolMetaDetailVO)
-    {
+    public Result<ToolMetaDetailVO> register(String userName, ToolMetaDetailVO toolMetaDetailVO) {
         return new Result<>(toolMetaService.register(userName, toolMetaDetailVO));
     }
 
     @Override
-    public Result<List<ToolMetaDetailVO>> queryToolMetaDataList(String projectId)
-    {
-        return new Result<>(toolMetaService.queryToolMetaDataList(projectId));
+    public Result<List<ToolMetaDetailVO>> queryToolMetaDataList(String projectId, Long taskId) {
+        return new Result<>(toolMetaService.queryToolMetaDataList(projectId, taskId));
     }
+
+    @Override
+    public Result<ToolMetaDetailVO> queryToolMetaData(String projectId, String toolName) {
+        if (StringUtils.isBlank(toolName)) {
+            throw new CodeCCException(CommonMessageCode.ERROR_INVALID_PARAM_);
+        }
+        return new Result<>(toolMetaCacheService.getToolDetailFromCache(toolName.toUpperCase()));
+    }
+
 }

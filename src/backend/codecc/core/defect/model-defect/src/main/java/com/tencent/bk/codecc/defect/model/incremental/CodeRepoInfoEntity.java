@@ -58,4 +58,10 @@ public class CodeRepoInfoEntity extends CommonEntity
     @Deprecated
     @Field("temp_delete_files")
     private List<String> tempDeleteFiles;
+
+    /**
+     * 拉取仓库子路径
+     */
+    @Field("repo_relative_path_list")
+    private List<String> repoRelativePathList;
 }

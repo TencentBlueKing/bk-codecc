@@ -6,7 +6,7 @@ import com.tencent.bk.codecc.defect.vo.CheckerSetListQueryReq;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetRelationshipVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.web.RestResource;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -63,8 +63,8 @@ public class ServiceCheckerSetRestResourceImpl implements ServiceCheckerSetRestR
     }
 
     @Override
-    public Result<List<CheckerSetVO>> queryCheckerSetsForOpenScan(Set<CheckerSetVO> checkerSetList, String projectId) {
-        return new Result<>(checkerSetBizService.queryCheckerSetsForOpenScan(checkerSetList, projectId));
+    public Result<List<CheckerSetVO>> queryCheckerSetsForOpenScan(Set<CheckerSetVO> checkerSetList) {
+        return new Result<>(checkerSetBizService.queryCheckerSetsForOpenScan(checkerSetList));
     }
 
     @Override

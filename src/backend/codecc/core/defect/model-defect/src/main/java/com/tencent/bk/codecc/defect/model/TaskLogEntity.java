@@ -49,8 +49,7 @@ import java.util.List;
 @CompoundIndexes({
         @CompoundIndex(name = "task_id_1_tool_name_1_build_id_1", def = "{'task_id': 1, 'tool_name': 1, 'build_id': 1}")
 })
-public class TaskLogEntity extends CommonEntity
-{
+public class TaskLogEntity extends CommonEntity {
 
     @Indexed
     @Field("stream_name")
@@ -102,8 +101,8 @@ public class TaskLogEntity extends CommonEntity
     private List<TaskUnit> stepArray;
 
     @Data
-    public static class TaskUnit
-    {
+    public static class TaskUnit {
+
         private int stepNum;
         private long startTime;
         private long endTime;
@@ -121,5 +120,7 @@ public class TaskLogEntity extends CommonEntity
          */
         private String compileResult;
 
+        // 重提交次数
+        private Integer recommitTimes;
     }
 }

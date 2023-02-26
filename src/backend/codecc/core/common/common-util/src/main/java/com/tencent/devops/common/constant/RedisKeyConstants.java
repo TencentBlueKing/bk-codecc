@@ -32,8 +32,7 @@ package com.tencent.devops.common.constant;
  * @version V1.0
  * @date 2019/5/6
  */
-public interface RedisKeyConstants
-{
+public interface RedisKeyConstants {
     /**
      * 工具的顺序表
      */
@@ -239,6 +238,11 @@ public interface RedisKeyConstants
     String CHECKER_DEFECT_STAT_TIME = "CHECKER_DEFECT_STAT_TIME";
 
     /**
+     * 规则误报率统计时间
+     */
+    String CHECKER_DEFECT_STAT_IGNORE_TIME = "CHECKER_DEFECT_STAT_IGNORE_TIME";
+
+    /**
      * 统计每天活跃任务数
      */
     String PREFIX_ACTIVE_TASK = "ACTIVE_TASK:";
@@ -257,6 +261,11 @@ public interface RedisKeyConstants
      * 统计工具成功失败次数
      */
     String PREFIX_ANALYZE_SUCC_COUNT = "ANALYZE_SUCC_COUNT:";
+
+    /**
+     * TOOL_BUILD_ID_SET:taskId:tool
+     */
+    String PREDIX_TOOL_BUILD_ID_SET = "TOOL_BUILD_ID_SET:";
 
     /**
      * 工具类型维度告警聚类
@@ -307,5 +316,58 @@ public interface RedisKeyConstants
      * 记录文件名
      */
     String DIMENSION_FILE_NAME = "DIMENSION_FILE_NAME";
+
+    /**
+     * BG管理员:gongfeng:rtx set
+     */
+    String PREFIX_BG_ADMIN = "BG_ADMIN:";
+
+    /**
+     * CodCC当前周的活跃用户
+     */
+    String USER_LOG_WEEK_RETAIN = "USER_LOG_WEEK_RETAIN:";
+
+    /**
+     * CodCC当前月的活跃用户
+     */
+    String USER_LOG_MONTH_RETAIN = "USER_LOG_MONTH_RETAIN:";
+
+    /**
+     * PRECI当前周的活跃用户
+     */
+    String PRECI_USER_LOG_WEEK_RETAIN = "PRECI_USER_LOG_WEEK_RETAIN:";
+
+    /**
+     * PRECI当前月的活跃用户
+     */
+    String PRECI_USER_LOG_MONTH_RETAIN = "PRECI_USER_LOG_MONTH_RETAIN:";
+
+    /**
+     * coverity/klocwork分析任务的分析服务器缓存
+     */
+    String ANALYZE_HOST_CACHE = "ANALYZE_HOST_CACHE";
+
+    /**
+     * commit到platform的并发锁
+     */
+    String CONCURRENT_COMMIT_LOCK = "CONCURRENT_COMMIT_LOCK";
+
+    /**
+     * 自定义redis队列的所有key的缓存
+     */
+    String CUSTOM_REDIS_MQ_KEYS = "CUSTOM_REDIS_MQ_KEYS";
+
+    /**
+     * 自定义redis队列key的锁，在新增队列且往队列里面写消息 或者 删除队列的时候 需要先加锁
+     */
+    String PREFIX_REDIS_MQ_KEY_LOCK = "REDIS_MQ_KEY_LOCK:";
+
+    /**
+     * commit platform的队列key前缀
+     */
+    String PREFIX_QUEUE_COMMIT_PLATFORM = "QUEUE_COMMIT_PLATFORM";
+
+    String CLEAN_DATA_TASK_LIST = "CLEAN_DATA_TASK_LIST";
+
 
 }

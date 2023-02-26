@@ -1,11 +1,17 @@
 package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
+import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetTaskCountEntity;
+import com.tencent.bk.codecc.defect.pojo.CheckerMaxVersionAggModel;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetCategory;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetSource;
+import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.devops.common.constant.CheckerConstants;
 import com.tencent.devops.common.constant.ComConstants;
+import java.util.HashMap;
+import java.util.Map.Entry;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
@@ -17,6 +23,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.Fields;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
 import org.springframework.data.mongodb.core.aggregation.LimitOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
@@ -77,7 +84,7 @@ public class CheckerSetDao {
     public List<CheckerSetEntity> findByComplexCheckerSetCondition(String keyWord, Set<String> checkerSetIds,
                                                                    Set<String> codeLang,
                                                                    Set<CheckerSetCategory> checkerSetCategory,
-                                                                   Set<String> tool,
+                                                                   Set<String> tool, Integer toolIntegratedStatus,
                                                                    Set<CheckerSetSource> checkerSetSource,
                                                                    String creator, Boolean officialFlag,
                                                                    Pageable pageable, boolean needCheckerSetFilter) {
@@ -97,15 +104,13 @@ public class CheckerSetDao {
         }
         if (CollectionUtils.isNotEmpty(codeLang)) {
             List<Criteria> langCriteria = new ArrayList<>();
-            langCriteria.add(Criteria.where("checker_set_lang").in(codeLang));
-            Criteria langArrayCriteria = Criteria.where("legacy").is(true);
             List<Criteria> langOrCriteria = new ArrayList<>();
             for (String lang : codeLang) {
                 langOrCriteria.add(Criteria.where("checker_set_lang").regex(lang));
             }
-            langCriteria.add(new Criteria().andOperator(langArrayCriteria,
-                    new Criteria().orOperator(langOrCriteria.toArray(new Criteria[0]))));
-            andCriteriaList.add(new Criteria().orOperator(langCriteria.toArray(new Criteria[0])));
+            langCriteria.add(new Criteria().orOperator(langOrCriteria.toArray(new Criteria[0])));
+
+            andCriteriaList.addAll(langCriteria);
         }
         if (CollectionUtils.isNotEmpty(checkerSetCategory)) {
             andCriteriaList.add(Criteria.where("catagories").elemMatch(Criteria.where("en_name").in(checkerSetCategory)));
@@ -125,6 +130,9 @@ public class CheckerSetDao {
             }
             andCriteriaList.add(new Criteria().orOperator(sourceCriteria.toArray(new Criteria[0])));
         }
+        if (toolIntegratedStatus != null) {
+            andCriteriaList.add(Criteria.where("version").is(toolIntegratedStatus));
+        }
         if (CollectionUtils.isNotEmpty(andCriteriaList)) {
             firstCriteria.andOperator(andCriteriaList.toArray(new Criteria[0]));
             finalCriteriaList.add(firstCriteria);
@@ -136,8 +144,12 @@ public class CheckerSetDao {
             if (StringUtils.isNotBlank(keyWord)) {
                 secondAndCriteriaList.add(Criteria.where("checker_set_name").regex(keyWord));
             }
+            List<Criteria> langOrCriteria = new ArrayList<>();
             if (CollectionUtils.isNotEmpty(codeLang)) {
-                secondAndCriteriaList.add(Criteria.where("checker_set_lang").in(codeLang));
+                for (String lang : codeLang) {
+                    langOrCriteria.add(Criteria.where("checker_set_lang").regex(lang));
+                }
+                secondAndCriteriaList.add(new Criteria().orOperator(langOrCriteria.toArray(new Criteria[0])));
             }
             if (CollectionUtils.isNotEmpty(checkerSetCategory)) {
                 secondAndCriteriaList.add(Criteria.where("catagories").elemMatch(Criteria.where("en_name").in(checkerSetCategory)));
@@ -187,18 +199,19 @@ public class CheckerSetDao {
     /**
      * updateCheckerSetUsage
      *
-     * @param checkerSetUsageMap
+     * @param checkerSetTaskCountList
      */
-    public void updateCheckerSetUsage(Map<String, Long> checkerSetUsageMap) {
+    public void updateCheckerSetUsage(List<CheckerSetTaskCountEntity> checkerSetTaskCountList) {
         BulkOperations ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, CheckerSetEntity.class);
-        if (MapUtils.isNotEmpty(checkerSetUsageMap)) {
-            checkerSetUsageMap.forEach((checkerSetId, usage) ->
-            {
-                Query query = new Query();
-                query.addCriteria(Criteria.where("checker_set_id").is(checkerSetId));
-                Update update = new Update();
-                update.set("task_usage", usage);
-                ops.upsert(query, update);
+        if (CollectionUtils.isNotEmpty(checkerSetTaskCountList)) {
+            checkerSetTaskCountList.forEach(it -> {
+                if (StringUtils.isNotEmpty(it.getCheckerSetId())) {
+                    Query query = new Query();
+                    query.addCriteria(Criteria.where("checker_set_id").is(it.getCheckerSetId()));
+                    Update update = new Update();
+                    update.set("task_usage", it.getTaskInUseCount());
+                    ops.updateMulti(query, update);
+                }
             });
             ops.execute();
         }
@@ -326,5 +339,75 @@ public class CheckerSetDao {
         query.addCriteria(Criteria.where("checker_set_id").in(checkerSetIdList)
                 .and("tool_integrated_status").in(versionList));
         return mongoTemplate.find(query, CheckerSetEntity.class);
+    }
+
+    /**
+     * 查询规则列表通过规则id和指定版本
+     *
+     * @param checkerIdAndVersionMap 规则id和指定版本列表
+     * @return
+     */
+    public List<CheckerSetEntity> queryCheckerDetailForPreCI(Map<String, Integer> checkerIdAndVersionMap) {
+        if (MapUtils.isEmpty(checkerIdAndVersionMap)) {
+            return Lists.newArrayList();
+        }
+        Query query = new Query();
+        Criteria criteria = new Criteria();
+        List<Criteria> orCriteriaList = Lists.newArrayList();
+
+        for (Entry<String, Integer> kv : checkerIdAndVersionMap.entrySet()) {
+            orCriteriaList.add(Criteria.where("checker_set_id").is(kv.getKey())
+                    .and("version").is(kv.getValue()));
+        }
+
+        if (CollectionUtils.isNotEmpty(orCriteriaList)) {
+            criteria.orOperator(orCriteriaList.toArray(new Criteria[0]));
+        }
+        query.addCriteria(criteria);
+
+        return mongoTemplate.find(query, CheckerSetEntity.class, "t_checker_set");
+    }
+
+
+    /**
+     * 根据规则集id查询规则集名称
+     *
+     * @param checkerSetId 规则集id
+     * @return checkerSetEntity
+     */
+    public CheckerSetEntity queryCheckerSetNameByCheckerSetId(String checkerSetId) {
+        CheckerSetEntity checkerSetEntity = mongoTemplate
+                .findOne(new Query(Criteria.where("checker_set_id").is(checkerSetId)), CheckerSetEntity.class,
+                        "t_checker_set");
+        return checkerSetEntity;
+    }
+
+    /**
+     * 获取规则集最大版本关系
+     *
+     * @param checkIdSet
+     * @return
+     */
+    public Map<String, Integer> queryCheckerMaxVersion(Set<String> checkIdSet) {
+        if (CollectionUtils.isEmpty(checkIdSet)) {
+            return Maps.newHashMap();
+        }
+        Criteria criteria = Criteria.where("checker_set_id").in(checkIdSet);
+        MatchOperation match = Aggregation.match(criteria);
+        GroupOperation group = Aggregation.group("checker_set_id").max("version").as("maxVersion");
+        AggregationResults<CheckerMaxVersionAggModel> retAgg = mongoTemplate.aggregate(
+                Aggregation.newAggregation(match, group),
+                "t_checker_set",
+                CheckerMaxVersionAggModel.class
+        );
+
+        if (retAgg != null && CollectionUtils.isNotEmpty(retAgg.getMappedResults())) {
+            return retAgg.getMappedResults().stream().collect(Collectors.toMap(
+                    CheckerMaxVersionAggModel::getCheckerSetId,
+                    CheckerMaxVersionAggModel::getMaxVersion, (k1, k2) -> k2)
+            );
+        }
+
+        return Maps.newHashMap();
     }
 }

@@ -30,10 +30,10 @@ import com.tencent.bk.codecc.defect.vo.CheckerCustomVO;
 import com.tencent.bk.codecc.defect.vo.TreeNodeVO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
-
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import lombok.Data;
 
 /**
  * 公共规则类型与作者视图
@@ -43,13 +43,26 @@ import java.util.Set;
  */
 @Data
 @ApiModel("公共规则类型与作者视图")
-public class QueryWarningPageInitRspVO
-{
+public class QueryWarningPageInitRspVO {
+    /**
+     * 代码规则展示维度
+     */
     @ApiModelProperty("规则列表")
     private List<CheckerCustomVO> checkerList;
 
     @ApiModelProperty("作者清单")
-    private Set<String> authorList;
+    private Collection<String> authorList;
+
+    /**
+     * 代码缺陷展示数量
+     */
+    @ApiModelProperty("规则列表")
+    private Map<String, Integer> checkerMap;
+
+    @ApiModelProperty("作者列表")
+    private Map<String, Integer> authorMap;
+
+
 
     @ApiModelProperty("文件路径树")
     private TreeNodeVO filePathTree;
@@ -84,6 +97,4 @@ public class QueryWarningPageInitRspVO
     @ApiModelProperty("符合条件的告警总数")
     private int totalCount;
 
-    @ApiModelProperty("新老告警判定时间")
-    private long newDefectJudgeTime;
 }

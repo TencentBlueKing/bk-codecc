@@ -154,7 +154,7 @@ public class RabbitMQListenerConfig {
         container.setConnectionFactory(connectionFactory);
         container.setQueueNames(queueName);
         container.setAcknowledgeMode(AcknowledgeMode.MANUAL);
-
+        container.setPrefetchCount(1);
         return container;
     }
 }

@@ -44,8 +44,7 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ApiModel("任务批量查询模型")
-public class QueryTaskListReqVO extends CommonPageVO
-{
+public class QueryTaskListReqVO extends CommonPageVO {
     @ApiModelProperty(value = "任务ID集合", required = true)
     private Collection<Long> taskIds;
 
@@ -84,6 +83,9 @@ public class QueryTaskListReqVO extends CommonPageVO
 
     @ApiModelProperty(value = "初始化天数")
     private Integer initDay;
+
+    @ApiModelProperty(value = "任务ID")
+    private Long taskId;
 
     @ApiModelProperty(value = "用户名")
     private String userId;

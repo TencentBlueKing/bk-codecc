@@ -45,7 +45,8 @@ public class CheckerDefectStatTask implements IScheduleTask {
         }
 
         String dataFrom = (String) jobCustomParam.get("dataFrom");
-        RefreshCheckerDefectStatModel model = new RefreshCheckerDefectStatModel(dataFrom);
+        String statDate = (String) jobCustomParam.get("statDate");
+        RefreshCheckerDefectStatModel model = new RefreshCheckerDefectStatModel(dataFrom, statDate);
 
         logger.info("beginning checker defect statistics: {}.", dataFrom);
         rabbitTemplate.convertAndSend("exchange.checker.defect.stat", "route.checker.defect.stat", model);

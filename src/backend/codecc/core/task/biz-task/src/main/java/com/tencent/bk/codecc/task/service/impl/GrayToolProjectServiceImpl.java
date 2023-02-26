@@ -30,6 +30,7 @@
 package com.tencent.bk.codecc.task.service.impl;
 
 import com.tencent.bk.codecc.task.service.GrayToolProjectService;
+import com.tencent.bk.codecc.task.vo.GrayToolProjectReqVO;
 import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
 import com.tencent.bk.codecc.task.vo.GrayToolReportVO;
 import com.tencent.bk.codecc.task.vo.TriggerGrayToolVO;
@@ -52,58 +53,52 @@ public class GrayToolProjectServiceImpl implements GrayToolProjectService {
 
     @Override
     public GrayToolProjectVO findGrayInfoByProjectId(String projectId) {
-        // TODO("not implemented")
-        GrayToolProjectVO mockResult = new GrayToolProjectVO();
-        mockResult.setProjectId(projectId);
-        mockResult.setOpenSourceProject(false);
-        return mockResult;
-    }
-
-    @Override
-    public Boolean updateGrayInfo(String userId, GrayToolProjectVO grayToolProjectVO) {
-        // TODO("not implemented")
         return null;
     }
 
     @Override
-    public Page<GrayToolProjectVO> queryGrayToolProjectList(GrayToolProjectVO reqVO, Integer pageNum,
+    public Boolean updateGrayInfo(String userId, GrayToolProjectVO grayToolProjectVO) {
+        return null;
+    }
+
+    @Override
+    public Page<GrayToolProjectVO> queryGrayToolProjectList(GrayToolProjectReqVO reqVO, Integer pageNum,
                                                             Integer pageSize, String sortField, String sortType) {
-        // TODO("not implemented")
         return null;
     }
 
     @Override
     public Boolean save(String userId, GrayToolProjectVO grayToolProjectVO) {
-        // TODO("not implemented")
         return null;
     }
 
     @Override
-    public void selectGrayTaskPool(String toolName, String userName) {
-        // TODO("not implemented")
+    public void selectGrayTaskPool(String toolName, String stage, String userName) {
+
     }
 
     @Override
     public Set<Long> findTaskListByToolName(String toolName) {
-        // TODO("not implemented")
         return null;
     }
 
     @Override
-    public TriggerGrayToolVO triggerGrayToolTasks(String toolName) {
-        // TODO("not implemented")
+    public TriggerGrayToolVO triggerGrayToolTasks(String toolName, String taskNum) {
         return null;
     }
 
     @Override
     public GrayToolReportVO findGrayToolReportByToolNameAndBuildId(String toolName, String codeccBuildId) {
-        // TODO("not implemented")
         return null;
     }
 
     @Override
     public List<GrayToolProjectVO> findGrayToolProjectByProjectIds(Set<String> projectIdSet) {
-        // TODO("not implemented")
+        return null;
+    }
+
+    @Override
+    public Set<String> findAllGrayProjectIdSet() {
         return null;
     }
 }

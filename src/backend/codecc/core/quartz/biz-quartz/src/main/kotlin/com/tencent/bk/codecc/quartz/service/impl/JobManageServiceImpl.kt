@@ -134,6 +134,11 @@ class JobManageServiceImpl @Autowired constructor(
         jobInstanceRepository.saveAll(jobInstances)
     }
 
+    override fun findJobListByClassName(className: String): List<JobInfoVO> =
+        jobInstanceRepository.findByClassName(className).map {
+            convert(it)
+        }
+
     //将定时时间全天平均，以10分钟为间隔
     private fun getGongfengTriggerCronExpression(gongfengId: Int, period : Int, startTime : Int): String {
         val remainder = gongfengId % (period * 6)
@@ -151,7 +156,8 @@ class JobManageServiceImpl @Autowired constructor(
                 triggerName = triggerName,
                 cronExpression = cronExpression,
                 jobParam = jobParam,
-                shardTag = shardTag
+                shardTag = shardTag,
+                updatedDate = updatedDate ?: 0L
             )
         }
     }

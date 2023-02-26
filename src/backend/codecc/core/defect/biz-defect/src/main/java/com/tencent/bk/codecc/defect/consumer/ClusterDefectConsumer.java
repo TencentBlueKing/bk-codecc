@@ -21,7 +21,7 @@ public class ClusterDefectConsumer implements IConsumer<CommitDefectVO> {
                     commitDefectVO.getBuildId(),
                     commitDefectVO.getToolName());
         } catch (Throwable e) {
-            log.info("", e);
+            log.error("ClusterDefectConsumer error, mq obj: {}", commitDefectVO, e);
         }
     }
 }

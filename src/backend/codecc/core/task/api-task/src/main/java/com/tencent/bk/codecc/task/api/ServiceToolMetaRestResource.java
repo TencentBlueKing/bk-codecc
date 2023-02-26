@@ -28,7 +28,7 @@ package com.tencent.bk.codecc.task.api;
 
 import com.tencent.devops.common.api.RefreshDockerImageHashReqVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import java.util.List;
@@ -72,6 +72,20 @@ public interface ServiceToolMetaRestResource {
             @PathParam("toolName")
                     String toolName
     );
+
+
+    @ApiOperation("获取工具元数据")
+    @Path("/tool/pattern/{pattern}")
+    @GET
+    Result<List<ToolMetaDetailVO>> getToolByPattern(
+            @PathParam("pattern")
+            String pattern
+    );
+
+    @ApiOperation("获取工具元数据")
+    @Path("/tool/allTools")
+    @GET
+    Result<List<ToolMetaDetailVO>> getAllTools();
 
     @ApiOperation("刷新工具docker镜像的hash值")
     @Path("/dockerImageHash")

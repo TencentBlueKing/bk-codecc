@@ -30,7 +30,9 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.Map;
 
-import static com.tencent.devops.common.web.mq.ConstantsKt.*;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_CHECK_THREAD_ALIVE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_CHECK_THREAD_ALIVE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CHECK_THREAD_ALIVE;
 
 /**
  * 分析任务消息队列的消费者
@@ -40,11 +42,9 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.*;
  */
 @Component
 @Slf4j
-public class AnalyzeTaskConsumer
-{
+public class AnalyzeTaskConsumer {
     @Autowired
     private ScheduleService scheduleService;
-
     @Autowired
     private AnalyzeHostPoolDao analyzeHostPoolDao;
 
@@ -53,59 +53,51 @@ public class AnalyzeTaskConsumer
      *
      * @param pushVO
      */
-    public void schedule(PushVO pushVO, Channel channel, @Headers Map<String,Object> headers)
-    {
-        log.info("schedule：{}", pushVO);
-        long deliveryTag = (Long)headers.get(AmqpHeaders.DELIVERY_TAG);
+    public void schedule(PushVO pushVO, Channel channel, @Headers Map<String, Object> headers) {
+        log.info("schedule: {}", pushVO);
+        long deliveryTag = (Long) headers.get(AmqpHeaders.DELIVERY_TAG);
 
         // 判断是否需要卡住项目暂时不分析
         String dispatchFlag = analyzeHostPoolDao.getStopDispatchFlag();
-        if (Boolean.FALSE.toString().equalsIgnoreCase(dispatchFlag))
-        {
+        if (Boolean.FALSE.toString().equalsIgnoreCase(dispatchFlag)) {
             log.info("schedule stop by DispatchFlag");
             nack(channel, deliveryTag);
             return;
         }
 
-        // 分发分析任务前，先检查中断当前正在分析的任务
+        // 分发分析任务前，先检查中断当前正在分析的同一次构建的任务
         scheduleService.abort(pushVO);
 
         AnalyzeHostPoolModel idleHost = null;
-        try
-        {
+        try {
             // 挑选出当前空闲线程数最多的机器
             idleHost = analyzeHostPoolDao.getMostIdleHost(pushVO);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             log.error("schedule fail!", e);
         }
 
-        if (idleHost == null)
-        {
+        if (idleHost == null) {
             nack(channel, deliveryTag);
             return;
         }
 
         log.info("schedule to host: {}", idleHost);
 
-        try
-        {
+        try {
             // 挑选出当前空闲线程数最多的机器
             Boolean dispatchSuccess = scheduleService.dipatch(pushVO, idleHost);
-            if (dispatchSuccess != null && dispatchSuccess)
-            {
+            if (dispatchSuccess != null && dispatchSuccess) {
                 log.info("schedule success: {}", pushVO);
                 channel.basicAck(deliveryTag, true);
                 Long queueCount = analyzeHostPoolDao.getSetProjectQueueCount(pushVO.getProjectId(), -1);
-                if (queueCount < 0){
+                if (queueCount < 0) {
                     analyzeHostPoolDao.resetProjectQueueCount(pushVO.getProjectId());
                 }
+                analyzeHostPoolDao.cacheAnalyzeHost(pushVO.getStreamName(), pushVO.getToolName(), pushVO.getBuildId(),
+                        String.format("%s:%s", idleHost.getIp(), idleHost.getPort()));
                 return;
             }
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             log.error("schedule fail: {}", pushVO, e);
         }
 
@@ -118,16 +110,12 @@ public class AnalyzeTaskConsumer
     @RabbitListener(bindings = @QueueBinding(key = ROUTE_CHECK_THREAD_ALIVE,
             value = @Queue(value = QUEUE_CHECK_THREAD_ALIVE, durable = "true"),
             exchange = @Exchange(value = EXCHANGE_CHECK_THREAD_ALIVE, durable = "true", delayed = "true")))
-    public void checkAnalyzeHostThreadAlive()
-    {
+    public void checkAnalyzeHostThreadAlive() {
         log.info("begin checkAnalyzeHostThreadAlive.");
 
-        try
-        {
+        try {
             scheduleService.checkAnalyzeHostThreadAlive();
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             log.error("checkAnalyzeHostThreadAlive fail.", e);
         }
         log.info("end checkAnalyzeHostThreadAlive.");
@@ -135,26 +123,20 @@ public class AnalyzeTaskConsumer
 
     /**
      * 给消息队列发送确认消息：消息没有被消费，重新放回队列
+     *
      * @param channel
      * @param deliveryTag
      */
-    private void nack(Channel channel, long deliveryTag)
-    {
-        try
-        {
+    private void nack(Channel channel, long deliveryTag) {
+        try {
             channel.basicNack(deliveryTag, true, true);
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             log.error("nack fail!", e);
         }
 
-        try
-        {
+        try {
             Thread.sleep(1000);
-        }
-        catch (InterruptedException e)
-        {
+        } catch (InterruptedException e) {
             log.error("sleep exception!", e);
         }
     }

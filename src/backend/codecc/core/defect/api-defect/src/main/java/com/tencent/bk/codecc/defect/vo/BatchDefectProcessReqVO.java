@@ -9,35 +9,42 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package com.tencent.bk.codecc.defect.vo;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
-import org.hibernate.validator.constraints.NotEmpty;
-
 import java.util.List;
 import java.util.Set;
+import lombok.Data;
 
 /**
  * 批量告警处理的请求对象
- * 
- * @date 2019/10/31
+ *
  * @version V1.0
+ * @date 2019/10/31
  */
 @Data
 @ApiModel("批量告警处理的请求对象")
-public class BatchDefectProcessReqVO 
-{
+public class BatchDefectProcessReqVO {
+
+    @ApiModelProperty("操作的用户")
+    private String userName;
+
     @ApiModelProperty("任务ID")
-    private long taskId;
+    private Long taskId;
+
+    @ApiModelProperty("任务ID列表")
+    private List<Long> taskIdList;
+
+    @ApiModelProperty("项目ID")
+    private String projectId;
 
     @ApiModelProperty("工具名称")
-    private String toolName;
+    private List<String> toolNameList;
 
     @ApiModelProperty("工具名称")
-    private String dimension;
+    private List<String> dimensionList;
 
     @ApiModelProperty("业务类型：忽略IgnoreDefect、分配AssignDefect、标志修改MarkDefect")
     private String bizType;
@@ -54,6 +61,9 @@ public class BatchDefectProcessReqVO
     @ApiModelProperty("告警查询条件json")
     private String queryDefectCondition;
 
+    @ApiModelProperty("源告警处理人")
+    private Set<String> sourceAuthor;
+
     @ApiModelProperty("分配给新的处理人")
     private Set<String> newAuthor;
 
@@ -68,4 +78,21 @@ public class BatchDefectProcessReqVO
 
     @ApiModelProperty("标志修改，0表示取消标志，1表示标志修改")
     private Integer markFlag;
+
+    @ApiModelProperty(value = "数据迁移是否成功", required = false)
+    private Boolean dataMigrationSuccessful;
+
+    public String getToolName() {
+        if (getToolNameList() == null || getToolNameList().isEmpty()) {
+            return null;
+        }
+        return String.join(",", getToolNameList());
+    }
+
+    public String getDimension() {
+        if (getDimensionList() == null || getDimensionList().isEmpty()) {
+            return null;
+        }
+        return String.join(",", getDimensionList());
+    }
 }

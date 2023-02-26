@@ -3,7 +3,7 @@ package com.tencent.bk.codecc.defect.resources
 import com.tencent.bk.codecc.defect.api.ServiceStatisticRestResource
 import com.tencent.bk.codecc.defect.service.impl.CodeScoringServiceImpl
 import com.tencent.bk.codecc.task.vo.GrayTaskStatVO
-import com.tencent.devops.common.api.pojo.Result
+import com.tencent.devops.common.api.pojo.codecc.Result
 import com.tencent.devops.common.web.RestResource
 import org.springframework.beans.factory.annotation.Autowired
 

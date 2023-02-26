@@ -36,8 +36,8 @@ import lombok.Data;
  * @date 2019/4/25
  */
 @Data
-public class CommonVO
-{
+public class CommonVO {
+
     @ApiModelProperty(value = "主键")
     private String entityId;
 

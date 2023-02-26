@@ -15,10 +15,13 @@ package com.tencent.bk.codecc.defect.model;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import sun.util.resources.ga.LocaleNames_ga;
+
+import java.util.Set;
 
 /**
  * 代码仓库 分支 实体类
@@ -28,6 +31,9 @@ import sun.util.resources.ga.LocaleNames_ga;
  */
 @Data
 @Document(collection = "t_code_repo_statistic")
+@CompoundIndexes({
+        @CompoundIndex(name = "data_from_1_url_1", def = "{'data_from': 1, 'url': 1}", background = true)
+})
 public class CodeRepoStatisticEntity {
 
     @Id
@@ -71,4 +77,11 @@ public class CodeRepoStatisticEntity {
      */
     @Field("branch_last_scan")
     private Long branchLastScan;
+
+    /**
+     * 关联的任务id集合
+     */
+    @Field("task_id_set")
+    private Set<Long> taskIdSet;
+
 }

@@ -26,6 +26,7 @@
 
 package com.tencent.bk.codecc.task.service;
 
+import com.tencent.bk.codecc.task.vo.GrayToolProjectReqVO;
 import com.tencent.bk.codecc.task.vo.TriggerGrayToolVO;
 import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
 import com.tencent.devops.common.api.pojo.Page;
@@ -64,7 +65,7 @@ public interface GrayToolProjectService {
      * @param reqVO
      * @return
      */
-    Page<GrayToolProjectVO> queryGrayToolProjectList(GrayToolProjectVO reqVO, Integer pageNum, Integer pageSize,
+    Page<GrayToolProjectVO> queryGrayToolProjectList(GrayToolProjectReqVO reqVO, Integer pageNum, Integer pageSize,
                                     String sortField, String sortType);
 
     /**
@@ -79,7 +80,7 @@ public interface GrayToolProjectService {
      * 创建灰度任务池
      * @param toolName
      */
-    void selectGrayTaskPool(String toolName, String userName);
+    void selectGrayTaskPool(String toolName, String stage, String userName);
 
     /**
      * 通过工具名获取灰度任务清单
@@ -92,7 +93,7 @@ public interface GrayToolProjectService {
      * 触发灰度任务池
      * @param toolName
      */
-    TriggerGrayToolVO triggerGrayToolTasks(String toolName);
+    TriggerGrayToolVO triggerGrayToolTasks(String toolName, String taskNum);
 
     /**
      * 查询灰度报告
@@ -109,4 +110,10 @@ public interface GrayToolProjectService {
      */
     List<GrayToolProjectVO> findGrayToolProjectByProjectIds(Set<String> projectIdSet);
 
+    /**
+     * 获取灰度项目ID列表
+     *
+     * @return list
+     */
+    Set<String> findAllGrayProjectIdSet();
 }

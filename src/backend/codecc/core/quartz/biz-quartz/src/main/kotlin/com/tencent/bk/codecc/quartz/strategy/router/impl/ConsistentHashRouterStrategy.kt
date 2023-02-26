@@ -8,7 +8,7 @@ import com.tencent.bk.codecc.quartz.pojo.ShardingResult
 import com.tencent.bk.codecc.quartz.strategy.router.AbstractRouterStrategy
 import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.constant.CommonMessageCode
-import java.util.*
+import java.util.TreeMap
 
 class ConsistentHashRouterStrategy : AbstractRouterStrategy() {
 
@@ -30,9 +30,8 @@ class ConsistentHashRouterStrategy : AbstractRouterStrategy() {
         initShardToCircle(shardingResult.shardList)
         //过滤出当前分片下的job实例
         return jobInstances.filter {
-            val jobHashCode = getHashCode(it.jobName)
-            val currentShardInfo = getShardForKey(jobHashCode)
-            currentShardInfo?.tag ?: "" == shardingResult.currentShard.tag
+            !it.jobName.isNullOrBlank() &&
+                    (getShardForKey(getHashCode(it.jobName))?.tag ?: "") == shardingResult.currentShard.tag
         }
     }
 

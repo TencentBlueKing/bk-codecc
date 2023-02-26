@@ -12,8 +12,8 @@ import lombok.Data;
  */
 @Data
 @ApiModel("构建视图")
-public class BuildVO
-{
+public class BuildVO {
+
     @ApiModelProperty("构建ID")
     private String buildId;
 
@@ -25,4 +25,13 @@ public class BuildVO
 
     @ApiModelProperty("启动构建的用户")
     private String buildUser;
+
+    @ApiModelProperty("任务Id")
+    private Long taskId;
+
+    @ApiModelProperty("项目Id")
+    private String projectId;
+
+    @ApiModelProperty("流水线Id")
+    private String pipelineId;
 }

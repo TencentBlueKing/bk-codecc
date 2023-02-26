@@ -1,11 +1,9 @@
 package com.tencent.bk.codecc.defect.dao.mongorepository;
 
-import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetProjectRelationshipEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetTaskRelationshipEntity;
-import org.springframework.data.mongodb.repository.MongoRepository;
-
 import java.util.List;
 import java.util.Set;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
 /**
  * 规则集与其他对象关联持久化
@@ -13,8 +11,9 @@ import java.util.Set;
  * @version V1.0
  * @date 2020/1/5
  */
-public interface CheckerSetTaskRelationshipRepository extends MongoRepository<CheckerSetTaskRelationshipEntity, String>
-{
+public interface CheckerSetTaskRelationshipRepository
+        extends MongoRepository<CheckerSetTaskRelationshipEntity, String> {
+
     /**
      * 根据规则集ID查询
      *
@@ -32,14 +31,14 @@ public interface CheckerSetTaskRelationshipRepository extends MongoRepository<Ch
     List<CheckerSetTaskRelationshipEntity> findByTaskId(Long taskId);
 
     /**
-     * 根据规则集ID列表查询
+     * 根据规则集ID和版本号列表查询
      *
-     * @param checkerSetIds
+     * @param checkerSetId
      * @return
      */
-    List<CheckerSetTaskRelationshipEntity> findByCheckerSetIdIn(Set<String> checkerSetIds);
+    List<CheckerSetTaskRelationshipEntity> findByCheckerSetIdAndVersion(String checkerSetId, int version);
 
-	/**
+    /**
      * 根据规则集ID，类型和关联方编码查询
      *
      * @param checkerSetId
@@ -50,6 +49,7 @@ public interface CheckerSetTaskRelationshipRepository extends MongoRepository<Ch
 
     /**
      * 通过项目id查询
+     *
      * @param projectId
      * @return
      */
@@ -57,10 +57,15 @@ public interface CheckerSetTaskRelationshipRepository extends MongoRepository<Ch
 
     /**
      * 通过项目id查询
+     *
      * @param checkerSetId
      * @param projectIdSet
      * @return
      */
-    List<CheckerSetTaskRelationshipEntity> findByCheckerSetIdAndProjectIdIn(String checkerSetId,
-                                                                            Set<String> projectIdSet);
+    List<CheckerSetTaskRelationshipEntity> findByCheckerSetIdAndProjectIdIn(
+            String checkerSetId,
+            Set<String> projectIdSet
+    );
+
+    List<CheckerSetTaskRelationshipEntity> findByTaskIdIn(List<Long> taskIdList);
 }

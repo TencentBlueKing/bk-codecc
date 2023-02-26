@@ -32,13 +32,13 @@ import com.tencent.bk.codecc.defect.model.OperationHistoryEntity;
 import com.tencent.bk.codecc.defect.service.OperationHistoryService;
 import com.tencent.bk.codecc.defect.vo.OperationHistoryVO;
 import com.tencent.devops.common.api.pojo.GlobalMessage;
+import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.service.utils.GlobalMessageUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -58,9 +58,8 @@ import static com.tencent.devops.common.constant.RedisKeyConstants.PREFIX_OPERAT
  * @date 2019/6/18
  */
 @Service
-public class OperationHistoryServiceImpl implements OperationHistoryService
-{
-    private static Logger logger = LoggerFactory.getLogger(OperationHistoryServiceImpl.class);
+public class OperationHistoryServiceImpl implements OperationHistoryService {
+    private static final Logger logger = LoggerFactory.getLogger(OperationHistoryServiceImpl.class);
 
     @Autowired
     private OperationHistoryRepository operationHistoryRepository;
@@ -75,8 +74,7 @@ public class OperationHistoryServiceImpl implements OperationHistoryService
     private GlobalMessageUtil globalMessageUtil;
 
     @Override
-    public List<OperationHistoryVO> getOperHisByTaskIdAndFuncId(long taskId, String toolName, List<String> funcId)
-    {
+    public List<OperationHistoryVO> getOperHisByTaskIdAndFuncId(long taskId, String toolName, List<String> funcId) {
         //1.获取操作记录消息的国际化信息
         Map<String, GlobalMessage> operMsgDetail = globalMessageUtil.getGlobalByList(convertionKey(funcId));
 
@@ -126,16 +124,47 @@ public class OperationHistoryServiceImpl implements OperationHistoryService
      * @param funcIdList
      * @return
      */
-    private List<String> convertionKey(List<String> funcIdList)
-    {
-        if (CollectionUtils.isNotEmpty(funcIdList))
-        {
-            return funcIdList.stream()
-                    .map(funId -> String.format("%s%s", PREFIX_OPERATION_HISTORY_MSG, funId))
+    private List<String> convertionKey(List<String> funcIdList) {
+        if (CollectionUtils.isNotEmpty(funcIdList)) {
+            return funcIdList.stream().map(funId -> String.format("%s%s", PREFIX_OPERATION_HISTORY_MSG, funId))
                     .collect(Collectors.toList());
         }
         return new ArrayList<>();
     }
 
+    /**
+     * 设置codeCC任务用户权限操作记录
+     *
+     * @param reqVOList 请求参数
+     * @param userId    用户名
+     * @param taskId    任务ID
+     * @return boolean
+     */
+    @Override
+    public Boolean saveSettingsAuthorityOperationHistory(List<String> reqVOList, String userId, long taskId) {
+        logger.info("saveSettingsAuthorityOperationHistory test taskId:{}, uestId:{}, reqVO:{}", taskId, userId,
+                reqVOList);
 
+        if (CollectionUtils.isEmpty(reqVOList)) {
+            logger.info("save operation history error, req is null!");
+            return false;
+        }
+
+        long currentTime = System.currentTimeMillis();
+        OperationHistoryEntity operationHistoryEntity = new OperationHistoryEntity();
+        operationHistoryEntity.setParamArray(reqVOList.toArray(new String[0]));
+        operationHistoryEntity.setTaskId(taskId);
+        operationHistoryEntity.setFuncId(ComConstants.FUNC_SETTINGS_AUTHORITY);
+        operationHistoryEntity.setOperType(ComConstants.SETTINGS_AUTHORITY);
+        operationHistoryEntity.setOperator(userId);
+        operationHistoryEntity.setTime(currentTime);
+        operationHistoryEntity.setCreatedDate(currentTime);
+        operationHistoryEntity.setCreatedBy(ComConstants.SYSTEM_USER);
+        operationHistoryEntity.setUpdatedDate(currentTime);
+        operationHistoryEntity.setUpdatedBy(ComConstants.SYSTEM_USER);
+
+        operationHistoryRepository.save(operationHistoryEntity);
+
+        return true;
+    }
 }

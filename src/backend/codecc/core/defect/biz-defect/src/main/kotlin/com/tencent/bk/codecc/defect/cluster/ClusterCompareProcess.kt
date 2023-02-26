@@ -46,7 +46,6 @@ object ClusterCompareProcess {
         val startTime = System.currentTimeMillis()
         //1.读取输入文件内容
         val inputFileName = aggregateDispatchModel.inputFileName
-
         val inputFile = File(inputFileName)
         var inputDefects =
             JsonUtil.to(inputFile.readText(), object : TypeReference<List<AggregateDefectInputModel>>() {})
@@ -118,12 +117,14 @@ object ClusterCompareProcess {
 
         //3. 开始逐个比较，相似的告警分在一组
         pinpointHashMap.forEach lit@{ t, u ->
+            val lineNumList = getLineNumList(u)
             val fuzzyHashInfoModel =
                 configNodeProperties(
                     u,
                     t,
                     index,
-                    unionFindClass
+                    unionFindClass,
+                    lineNumList
                 ) ?: return@lit
             for (i in 0 until index) {
                 try {
@@ -134,9 +135,9 @@ object ClusterCompareProcess {
                     }
                     val preFuzzyHashInfoModel = preElement.fuzzyHashInfoModel ?: continue
                     if (FuzzyCompare.fuzzyCompare(
-                            preFuzzyHashInfoModel,
-                            fuzzyHashInfoModel
-                        ) >= similarityThreshold
+                                preFuzzyHashInfoModel,
+                                fuzzyHashInfoModel
+                            ) >= similarityThreshold
                     ) {
                         unionFindClass.unionCollection(i, index)
                     }
@@ -191,12 +192,13 @@ object ClusterCompareProcess {
         aggregateDefectInputModel: List<AggregateDefectInputModel>,
         pinpointHash: String,
         index: Int,
-        unionFindClass: UnionFindClass<AggregateDefectInputModel>
+        unionFindClass: UnionFindClass<AggregateDefectInputModel>,
+        lineNumList: Set<Int>?
     ): FuzzyHashInfoModel? {
         val unionFindNodeInfo = unionFindClass.getArrayElement(index) ?: return null
         unionFindNodeInfo.aggregateDefectInputModel = aggregateDefectInputModel
         unionFindNodeInfo.pinpointHash = pinpointHash
-        val emptyFuzzyHashInfoModel = FuzzyHashInfoModel(null, null, null, null, null, null, null, false)
+        val emptyFuzzyHashInfoModel = FuzzyHashInfoModel(null, null, null, null, null, null, null, false, null)
         //如果hash为空，则置为false
         if (pinpointHash.isBlank()) {
             logger.info("pinpoint hash is empty!")
@@ -256,10 +258,22 @@ object ClusterCompareProcess {
             b2 = strb2,
             b2Length = strb2Length,
             b2ParArray = null,
-            valid = true
+            valid = true,
+            lineNumList = lineNumList
         )
         unionFindNodeInfo.fuzzyHashInfoModel = fuzzyHashInfoModel
         return fuzzyHashInfoModel
+    }
+
+
+    private fun getLineNumList(aggregateDefectInputList: List<AggregateDefectInputModel>): Set<Int> {
+        val lineNumSet = mutableSetOf<Int>()
+        aggregateDefectInputList.forEach {
+            if (null != it.lineNum) {
+                lineNumSet.add(it.lineNum)
+            }
+        }
+        return lineNumSet
     }
 
 

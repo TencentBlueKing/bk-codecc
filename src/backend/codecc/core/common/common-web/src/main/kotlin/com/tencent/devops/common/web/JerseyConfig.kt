@@ -27,8 +27,19 @@
 package com.tencent.devops.common.web
 
 import com.tencent.devops.common.api.annotation.UserLogin
-import com.tencent.devops.common.web.handler.*
+import com.tencent.devops.common.web.handler.AllExceptionMapper
+import com.tencent.devops.common.web.handler.ClientExceptionMapper
+import com.tencent.devops.common.web.handler.CodeCCExceptionMapper
+import com.tencent.devops.common.web.handler.ErrorCodeExceptionMapper
+import com.tencent.devops.common.web.handler.IOExceptionMapper
+import com.tencent.devops.common.web.handler.JsonMappingExceptionMapper
+import com.tencent.devops.common.web.handler.MissingKotlinParameterExceptionMapper
+import com.tencent.devops.common.web.handler.PatternSyntaxExceptionMapper
+import com.tencent.devops.common.web.handler.RuntimeExceptionMapper
+import com.tencent.devops.common.web.handler.UnauthorizedExceptionMapper
+import com.tencent.devops.common.web.handler.ValidationExceptionMapper
 import com.tencent.devops.common.web.security.PermissionAuthDynamicFeature
+import com.tencent.devops.common.web.validate.ValidateProjectDynamicFeature
 import org.glassfish.jersey.media.multipart.MultiPartFeature
 import org.glassfish.jersey.server.ResourceConfig
 import org.slf4j.LoggerFactory
@@ -58,8 +69,10 @@ open class JerseyConfig : ResourceConfig(), ApplicationContextAware, Initializin
         register(MultiPartFeature::class.java)
         register(ErrorCodeExceptionMapper::class.java)
         register(PermissionAuthDynamicFeature::class.java)
+        register(ValidateProjectDynamicFeature::class.java)
         register(ValidationExceptionMapper::class.java)
         register(IOExceptionMapper::class.java)
+        register(PatternSyntaxExceptionMapper::class.java)
         logger.info("JerseyConfig-mapper-register-end")
         val restResources = applicationContext.getBeansWithAnnotation(RestResource::class.java)
         logger.info("JerseyConfig-RestResource-register-start")
@@ -82,5 +95,13 @@ open class JerseyConfig : ResourceConfig(), ApplicationContextAware, Initializin
             register(it)
         }
         logger.info("JerseyConfig-RequestFilter-register-end")
+        
+        val containerResponseFilter = applicationContext.getBeansWithAnnotation(ResponseFilter::class.java)
+        logger.info("JerseyConfig-ResponseFilter-register-start")
+        containerResponseFilter.values.forEach {
+            logger.info("ResponseFilter: $it")
+            register(it)
+        }
+        logger.info("JerseyConfig-ResponseFilter-register-end")
     }
 }

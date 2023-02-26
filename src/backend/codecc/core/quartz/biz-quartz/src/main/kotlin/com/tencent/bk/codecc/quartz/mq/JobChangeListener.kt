@@ -32,7 +32,7 @@ class JobChangeListener @Autowired constructor(
             if (shardingResult.currentShard.shardNum == 1 &&
                 shardingResult.currentNode.nodeNum == 1
             ) {
-                val jobInstance: JobInstanceEntity
+                var jobInstance: JobInstanceEntity? = null
                 when (jobExternalDto.operType) {
                     OperationType.ADD -> {
                         jobInstance = jobManageService.saveJob(jobExternalDto)
@@ -41,11 +41,16 @@ class JobChangeListener @Autowired constructor(
                         if (jobExternalDto.jobName.isNullOrBlank()) {
                             return
                         }
+
                         val jobInstanceEntity = jobManageService.findJobByName(jobExternalDto.jobName!!)
-                        jobInstanceEntity.cronExpression = jobExternalDto.cronExpression
-                        jobInstanceEntity.updatedBy = "sysadmin"
-                        jobInstanceEntity.updatedDate = System.currentTimeMillis()
-                        jobInstance = jobManageService.saveJob(jobInstanceEntity)
+                        if (jobInstanceEntity != null) {
+                            jobInstanceEntity.cronExpression = jobExternalDto.cronExpression
+                            jobInstanceEntity.updatedBy = "sysadmin"
+                            jobInstanceEntity.updatedDate = System.currentTimeMillis()
+                            jobInstance = jobManageService.saveJob(jobInstanceEntity)
+                        } else {
+                            logger.info("reschedule job fail, entity is null, job name: ${jobExternalDto.jobName}")
+                        }
                     }
                     OperationType.REMOVE -> {
                         jobManageService.deleteJob(jobExternalDto.jobName)
@@ -56,23 +61,38 @@ class JobChangeListener @Autowired constructor(
                         if(jobExternalDto.jobName.isNullOrBlank()){
                             return
                         }
+
                         val jobInstanceEntity = jobManageService.findJobByName(jobExternalDto.jobName!!)
-                        jobInstanceEntity.updatedBy = "sysadmin"
-                        jobInstanceEntity.updatedDate = System.currentTimeMillis()
-                        jobInstanceEntity.status = 1
-                        jobInstance = jobManageService.saveJob(jobInstanceEntity)
+                        if (jobInstanceEntity != null) {
+                            jobInstanceEntity.updatedBy = "sysadmin"
+                            jobInstanceEntity.updatedDate = System.currentTimeMillis()
+                            jobInstanceEntity.status = 1
+                            jobInstance = jobManageService.saveJob(jobInstanceEntity)
+                        }
                     }
                     OperationType.RESUME -> {
                         if(jobExternalDto.jobName.isNullOrBlank()){
                             return
                         }
+
                         val jobInstanceEntity = jobManageService.findJobByName(jobExternalDto.jobName!!)
-                        jobInstanceEntity.updatedBy = "sysadmin"
-                        jobInstanceEntity.updatedDate = System.currentTimeMillis()
-                        jobInstanceEntity.status = 0
-                        jobInstance = jobManageService.saveJob(jobInstanceEntity)
+                        if (jobInstanceEntity != null) {
+                            jobInstanceEntity.updatedBy = "sysadmin"
+                            jobInstanceEntity.updatedDate = System.currentTimeMillis()
+                            jobInstanceEntity.status = 0
+                            jobInstance = jobManageService.saveJob(jobInstanceEntity)
+                        }
                     }
                 }
+
+                // 由internal逻辑可知，RESUME/PARSE均需要triggerName和jobName，REMOVE只需jobName
+                // RESCHEDULE额外还需要cronExpression，ADD的话jobInstance不可能null
+                jobInstance = jobInstance ?: JobInstanceEntity().apply {
+                    jobName = jobExternalDto.jobName
+                    triggerName = jobExternalDto.jobName
+                    cronExpression = jobExternalDto.cronExpression
+                }
+
                 rabbitTemplate.convertAndSend(
                     EXCHANGE_INTERNAL_JOB,
                     ROUTE_INTERNAL_JOB,
@@ -80,7 +100,7 @@ class JobChangeListener @Autowired constructor(
                 )
             }
         } catch (e: Exception) {
-            logger.error("handle external job fail! e: ${e.message}")
+            logger.error("handle external job fail!", e)
         }
     }
 

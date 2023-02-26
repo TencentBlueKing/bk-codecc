@@ -8,5 +8,6 @@ data class AggregateDefectInputModel(
         val pinpointHash : String,
         val filePath : String,
         @JsonIgnore
-        val relPath : String?
+        val relPath : String?,
+        val lineNum : Int? = null
 )

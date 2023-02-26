@@ -33,6 +33,8 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * 工具元数据
  *
@@ -42,7 +44,7 @@ import lombok.Data;
 @Data
 @ApiModel("工具完整信息视图")
 public class ToolVersionVO {
-    @ApiModelProperty("工具版本类型，T-测试版本，G-灰度版本，P-正式发布版本")
+    @ApiModelProperty("工具版本类型，T-测试版本，G-灰度版本，P-正式发布版本，O-开源扫描")
     private String versionType;
 
     @ApiModelProperty("docker启动运行的命令，命令由工具开发者提供，并支持带选项--json传入input.json")
@@ -60,9 +62,14 @@ public class ToolVersionVO {
     @ApiModelProperty("docker镜像hash值")
     private String dockerImageHash;
 
+    @ApiModelProperty(value = "工具二进制相关信息")
+    private ToolMetaDetailVO.Binary binary;
+
     @ApiModelProperty("更新时间")
     private Long updatedDate;
 
     @ApiModelProperty("更新人")
     private String updatedBy;
 }
+
+

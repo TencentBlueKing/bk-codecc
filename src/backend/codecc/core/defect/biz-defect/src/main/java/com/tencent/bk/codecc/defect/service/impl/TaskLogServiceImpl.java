@@ -45,11 +45,12 @@ import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.analysisresult.BaseLastAnalysisResultVO;
 import com.tencent.devops.common.api.analysisresult.ToolLastAnalysisResultVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.StepFlag;
 import com.tencent.devops.common.constant.ComConstants.Tool;
+import com.tencent.devops.common.service.BaseDataCacheService;
 import com.tencent.devops.common.service.BizServiceFactory;
 import com.tencent.devops.common.service.IBizService;
 import java.util.ArrayList;
@@ -102,6 +103,9 @@ public class TaskLogServiceImpl implements TaskLogService {
 
     @Autowired
     private BuildRepository buildRepository;
+
+    @Autowired
+    private BaseDataCacheService baseDataCacheService;
 
     @Override
     public TaskLogVO getLatestTaskLog(long taskId, String toolName) {
@@ -395,12 +399,12 @@ public class TaskLogServiceImpl implements TaskLogService {
      * 查询任务构建列表
      *
      * @param taskId
-     * @param limit
      * @return
      */
     @Override
-    public List<BuildVO> getTaskBuildInfos(long taskId, int limit) {
+    public List<BuildVO> getTaskBuildInfos(long taskId) {
         List<TaskLogEntity> taskLogEntities = taskLogRepository.findByTaskId(taskId);
+        int limit = baseDataCacheService.getMaxBuildListSize();
         Map<String, BuildVO> buildVOMap = Maps.newTreeMap(((o1, o2) -> Integer.valueOf(o2).compareTo(Integer.valueOf(o1))));
         if (CollectionUtils.isNotEmpty(taskLogEntities)) {
             for (TaskLogEntity taskLogEntity : taskLogEntities) {
@@ -452,6 +456,7 @@ public class TaskLogServiceImpl implements TaskLogService {
     }
 
     @Override
+    @Deprecated
     public List<TaskLogVO> batchTaskLogListByTime(Set<Long> taskIdSet, Long startTime, Long endTime) {
         List<TaskLogEntity> taskLogEntityList = taskLogDao.findTaskLogByTime(taskIdSet, startTime, endTime);
         return entity2TaskLogVos(taskLogEntityList);

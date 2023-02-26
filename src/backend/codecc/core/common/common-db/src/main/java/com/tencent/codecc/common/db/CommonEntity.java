@@ -27,6 +27,7 @@
 package com.tencent.codecc.common.db;
 
 import lombok.Data;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -37,8 +38,8 @@ import org.springframework.data.mongodb.core.mapping.Field;
  * @date 2019/4/25
  */
 @Data
-public class CommonEntity
-{
+public class CommonEntity {
+
     @Id
     private String entityId;
 
@@ -66,4 +67,32 @@ public class CommonEntity
     @Field("updated_by")
     private String updatedBy;
 
+    /**
+     * 填充审计信息
+     *
+     * @param createdBy
+     * @param updatedBy
+     */
+    public void applyAuditInfo(String createdBy, String updatedBy) {
+        long now = System.currentTimeMillis();
+
+        if (StringUtils.isNotEmpty(createdBy)) {
+            this.createdBy = createdBy;
+            this.createdDate = now;
+        }
+
+        if (StringUtils.isNotEmpty(updatedBy)) {
+            this.updatedBy = updatedBy;
+            this.updatedDate = now;
+        }
+    }
+
+    /**
+     * 填充审计信息
+     *
+     * @param updatedBy
+     */
+    public void applyAuditInfo(String updatedBy) {
+        this.applyAuditInfo(null, updatedBy);
+    }
 }

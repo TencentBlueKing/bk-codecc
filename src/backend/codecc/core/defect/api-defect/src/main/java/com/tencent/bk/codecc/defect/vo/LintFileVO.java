@@ -109,7 +109,7 @@ public class LintFileVO
     private String subModule;
 
     @ApiModelProperty(value = "作者清单")
-    private Set<String> authorList;
+    private Set<List<String>> authorList;
 
     @ApiModelProperty(value = "规则清单")
     private Set<String> checkerList;

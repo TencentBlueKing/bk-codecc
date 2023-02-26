@@ -28,17 +28,18 @@ package com.tencent.bk.codecc.task.resources;
 
 import com.tencent.bk.codecc.task.api.UserGrayToolProjectRestResource;
 import com.tencent.bk.codecc.task.service.GrayToolProjectService;
+import com.tencent.bk.codecc.task.vo.GrayToolProjectReqVO;
 import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
-import com.tencent.bk.codecc.task.vo.GrayToolReportVO;
 import com.tencent.bk.codecc.task.vo.TriggerGrayToolVO;
+import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.Page;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.auth.api.OpAuthApi;
+import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
+import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.web.RestResource;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.List;
 
 /**
  * 灰度工具项目调用接口实现
@@ -53,22 +54,35 @@ public class UserGrayToolProjectRestResourceImpl implements UserGrayToolProjectR
     @Autowired
     private GrayToolProjectService grayToolProjectService;
 
+    @Autowired
+    private AuthExPermissionApi authExPermissionApi;
+
+    @Autowired
+    private OpAuthApi opAuthApi;
 
     @Override
     public Result<Boolean> register(String userId, GrayToolProjectVO grayToolProjectVO) {
+        // 判断是否为OP管理员
+        if (!opAuthApi.isOpAdminMember(userId)) {
+            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, new String[]{"op admin member"});
+        }
         return new Result<>(grayToolProjectService.save(userId,grayToolProjectVO));
     }
 
     @Override
-    public Result<Page<GrayToolProjectVO>> queryGrayToolProjectList(GrayToolProjectVO grayToolProjectVO,
+    public Result<Page<GrayToolProjectVO>> queryGrayToolProjectList(GrayToolProjectReqVO grayToolProjectReqVO,
                                            Integer pageNum, Integer pageSize, String sortField, String sortType) {
         Page<GrayToolProjectVO> grayToolProjectVOList = grayToolProjectService.queryGrayToolProjectList(
-                                            grayToolProjectVO, pageNum, pageSize, sortField, sortType);
+                                            grayToolProjectReqVO, pageNum, pageSize, sortField, sortType);
         return new Result<>(grayToolProjectVOList);
     }
 
     @Override
     public Result<Boolean> updateGrayToolProject(String userId, GrayToolProjectVO grayToolProjectVO) {
+        // 判断是否为OP管理员
+        if (!opAuthApi.isOpAdminMember(userId)) {
+            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, new String[]{"op admin member"});
+        }
         return new Result<>(grayToolProjectService.updateGrayInfo(userId,grayToolProjectVO));
     }
 
@@ -78,16 +92,16 @@ public class UserGrayToolProjectRestResourceImpl implements UserGrayToolProjectR
     }
 
     @Override
-    public Result<Boolean> createGrayTaskPool(String toolName, String user)
+    public Result<Boolean> createGrayTaskPool(String toolName, String stage, String user)
     {
-        grayToolProjectService.selectGrayTaskPool(toolName, user);
+        grayToolProjectService.selectGrayTaskPool(toolName, stage, user);
         return new Result<>(true);
     }
 
     @Override
-    public Result<TriggerGrayToolVO> triggerGrayTaskPool(String toolName)
+    public Result<TriggerGrayToolVO> triggerGrayTaskPool(String toolName, String taskNum)
     {
-        return new Result<>(grayToolProjectService.triggerGrayToolTasks(toolName));
+        return new Result<>(grayToolProjectService.triggerGrayToolTasks(toolName, taskNum));
     }
 
     @Override

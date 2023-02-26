@@ -29,7 +29,7 @@ package com.tencent.bk.codecc.task.resources;
 import com.tencent.bk.codecc.task.api.ServicePlatformRestResource;
 import com.tencent.bk.codecc.task.service.PlatformService;
 import com.tencent.bk.codecc.task.vo.PlatformVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.web.RestResource;
 import org.springframework.beans.factory.annotation.Autowired;
 

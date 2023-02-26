@@ -1,14 +1,14 @@
 package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildRepository;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
-import com.tencent.bk.codecc.defect.service.PipelineService;
-import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.constant.CommonMessageCode;
-import com.tencent.devops.common.redis.lock.RedisLock;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -21,61 +21,29 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class BuildDao
 {
-    /**
-     * 字符串锁前缀
-     */
-    private static final String LOCK_KEY_PREFIX = "SAVE_BUILD_INFO:";
-
-    /**
-     * 分布式锁超时时间
-     */
-    private static final Long LOCK_TIMEOUT = 10L;
 
     @Autowired
-    private BuildRepository buildRepository;
+    private MongoTemplate mongoTemplate;
 
-    @Autowired
-    private PipelineService pipelineService;
-
-    @Autowired
-    private RedisTemplate redisTemplate;
 
     /**
-     * 获取并保存构建信息
-     *
-     * @param buildId
+     * 更新并返回构建信息
+     * @param buildEntity
      * @return
      */
-    public BuildEntity getAndSaveBuildInfo(String buildId)
-    {
-        BuildEntity buildInfo = buildRepository.findFirstByBuildId(buildId);
-        if (buildInfo == null)
-        {
-            RedisLock lock = new RedisLock(redisTemplate, LOCK_KEY_PREFIX + buildId, LOCK_TIMEOUT);
-            try
-            {
-                lock.lock();
-                buildInfo = buildRepository.findFirstByBuildId(buildId);
-                if (buildInfo == null)
-                {
-                    buildInfo = pipelineService.getBuildIdInfo(buildId);
-                    if (buildInfo != null)
-                    {
-                        buildRepository.save(buildInfo);
-                    }
-                    else
-                    {
-                        String errMsg = String.format("can not get build info from pipeline, buildId: {}", buildId);
-                        log.error(errMsg);
-                        throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL, new String[]{errMsg}, null);
-                    }
-                }
-            }
-            finally
-            {
-                lock.unlock();
-            }
+    public BuildEntity upsertBuildInfo(BuildEntity buildEntity) {
+        if (StringUtils.isBlank(buildEntity.getBuildId())) {
+            return null;
         }
-        return buildInfo;
+        Query query = new Query();
+        query.addCriteria(Criteria.where("build_id").is(buildEntity.getBuildId()));
+        Update update = new Update();
+        update.set("build_num", buildEntity.getBuildNo());
+        update.set("build_time", buildEntity.getBuildTime());
+        update.set("build_user", buildEntity.getBuildUser());
+        FindAndModifyOptions findAndModifyOptions = new FindAndModifyOptions();
+        findAndModifyOptions.upsert(true);
+        findAndModifyOptions.returnNew(true);
+        return mongoTemplate.findAndModify(query, update, findAndModifyOptions, BuildEntity.class);
     }
 }

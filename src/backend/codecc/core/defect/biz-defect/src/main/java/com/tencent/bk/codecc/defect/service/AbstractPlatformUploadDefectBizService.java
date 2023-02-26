@@ -28,30 +28,35 @@ package com.tencent.bk.codecc.defect.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.TransferAuthorRepository;
-import com.tencent.bk.codecc.defect.model.DefectEntity;
+import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.TaskLogEntity;
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity;
+import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
 import com.tencent.bk.codecc.defect.vo.UploadDefectVO;
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
 import com.tencent.bk.codecc.task.vo.OpenCheckerVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.checkerset.CheckerPropVO;
+import com.tencent.devops.common.api.checkerset.CheckerSetVO;
+import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.CommonMessageCode;
-import com.tencent.devops.common.util.JsonUtil;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-
+import com.tencent.devops.common.util.FileUtils;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * 告警上报抽象类
@@ -72,12 +77,17 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
     private ThirdPartySystemCaller thirdPartySystemCaller;
     @Autowired
     private FilterPathService filterPathService;
+    @Autowired
+    private IV3CheckerSetBizService iv3CheckerSetBizService;
+    @Autowired
+    private CheckerRepository checkerRepository;
 
     @Override
     public Result processBiz(UploadDefectVO uploadDefectVO)
     {
         String defectListJson = decompressDefects(uploadDefectVO.getDefectsCompress());
-        List<DefectEntity> defectList = JsonUtil.INSTANCE.to(defectListJson, new TypeReference<List<DefectEntity>>()
+        List<CommonDefectEntity> defectList = JsonUtil.INSTANCE.to(
+                defectListJson, new TypeReference<List<CommonDefectEntity>>()
         {
         });
         uploadDefectVO.setDefectsCompress(null);
@@ -85,6 +95,13 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
         {
             log.error("defect list is empty.");
             return new Result(CommonMessageCode.SUCCESS, "defect list is empty.");
+        }
+        //设置FileName
+        for (CommonDefectEntity entity : defectList) {
+            String fileName = StringUtils.isNotBlank(entity.getFileName())
+                    ? entity.getFileName() :
+                    FileUtils.getFileNameByPath(entity.getFilePath());
+            entity.setFileName(fileName);
         }
 
         long taskId = uploadDefectVO.getTaskId();
@@ -103,9 +120,9 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
             transferAuthorList = transferAuthorEntity.getTransferAuthorList();
         }
 
-        Set<String> pathSet = new HashSet<>();
+        Set<String> whitePaths = new HashSet<>();
         if (CollectionUtils.isNotEmpty(taskDetailVO.getWhitePaths())) {
-            pathSet.addAll(taskDetailVO.getWhitePaths());
+            whitePaths.addAll(taskDetailVO.getWhitePaths());
         }
 
         log.info("begin to save defect");
@@ -113,7 +130,7 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
                 defectList,
                 taskDetailVO,
                 filterPathSet,
-                pathSet,
+                whitePaths,
                 transferAuthorList,
                 buildNum);
 
@@ -127,16 +144,16 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
      * @param defectList
      * @param taskDetailVO
      * @param filterPathSet
-     * @param pathSet
+     * @param whitePaths
      * @param transferAuthorList
      * @param buildNum
      */
     public abstract void saveAndStatisticDefect(
             UploadDefectVO uploadDefectVO,
-            List<DefectEntity> defectList,
+            List<CommonDefectEntity> defectList,
             TaskDetailVO taskDetailVO,
             Set<String> filterPathSet,
-            Set<String> pathSet,
+            Set<String> whitePaths,
             List<TransferAuthorEntity.TransferAuthorPair> transferAuthorList,
             String buildNum);
 
@@ -182,13 +199,51 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
     }
 
 
-    protected void refreshDefectInfo(DefectEntity oldDefect, DefectEntity defectEntity)
-    {
-        oldDefect.setLineNumber(defectEntity.getLineNumber());
-        oldDefect.setDisplayCategory(defectEntity.getDisplayCategory());
-        oldDefect.setDisplayType(defectEntity.getDisplayType());
-        oldDefect.setFilePathname(defectEntity.getFilePathname());
-        oldDefect.setPlatformBuildId(defectEntity.getPlatformBuildId());
-        oldDefect.setDefectInstances(defectEntity.getDefectInstances());
+    protected void refreshDefectInfo(CommonDefectEntity oldDefect, CommonDefectEntity commonDefectEntity) {
+        oldDefect.setLineNum(commonDefectEntity.getLineNum());
+        oldDefect.setDisplayCategory(commonDefectEntity.getDisplayCategory());
+        oldDefect.setDisplayType(commonDefectEntity.getDisplayType());
+        String fileName = StringUtils.isNotBlank(commonDefectEntity.getFileName())
+                ? commonDefectEntity.getFileName()
+                : FileUtils.getFileNameByPath(commonDefectEntity.getFilePath());
+        oldDefect.setFileName(fileName);
+        oldDefect.setFilePath(commonDefectEntity.getFilePath());
+        oldDefect.setPlatformBuildId(commonDefectEntity.getPlatformBuildId());
+        oldDefect.setDefectInstances(commonDefectEntity.getDefectInstances());
+
+        // scm带出的新值可能是null
+        if (commonDefectEntity.getLineUpdateTime() != null && commonDefectEntity.getLineUpdateTime() > 0) {
+            oldDefect.setLineUpdateTime(commonDefectEntity.getLineUpdateTime());
+        }
+    }
+
+    /**
+     * 获取task任务配置的规则，对齐: LintDefectCommitConsumer#uploadDefects
+     *
+     * @param taskDetailVO
+     * @param toolName
+     * @return
+     */
+    protected Set<String> getTaskCheckers(TaskDetailVO taskDetailVO, String toolName) {
+        if (taskDetailVO == null || StringUtils.isEmpty(toolName)) {
+            return Sets.newHashSet();
+        }
+
+        List<CheckerSetVO> checkers = iv3CheckerSetBizService.getTaskCheckerSets(taskDetailVO.getProjectId(),
+                taskDetailVO.getTaskId(), toolName, "", true);
+
+        // 配置的规则
+        Set<String> checkersOnConfig = checkers.stream()
+                .flatMap(x -> x.getCheckerProps().stream())
+                .filter(y -> toolName.equalsIgnoreCase(y.getToolName()) && StringUtils.isNotEmpty(y.getCheckerKey()))
+                .map(CheckerPropVO::getCheckerKey)
+                .map(checkerKey -> checkerKey.contains("-tosa") ? checkerKey.replaceAll("-tosa", "") : checkerKey)
+                .collect(Collectors.toSet());
+
+        // 校验规则存在与否
+        return checkerRepository.findByToolNameAndCheckerKeyIn(toolName, checkersOnConfig)
+                .stream()
+                .map(CheckerDetailEntity::getCheckerKey)
+                .collect(Collectors.toSet());
     }
 }

@@ -1,6 +1,4 @@
 subprojects {
-    base.archivesBaseName = "codecc-${base.archivesBaseName}"
-
     apply(plugin = "kotlin")
     apply(plugin = "kotlin-spring")
 

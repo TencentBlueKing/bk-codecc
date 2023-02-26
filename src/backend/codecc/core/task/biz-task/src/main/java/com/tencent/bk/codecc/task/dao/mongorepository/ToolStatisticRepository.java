@@ -36,5 +36,4 @@ public interface ToolStatisticRepository extends MongoRepository<ToolStatisticEn
      * @return entity
      */
     List<ToolStatisticEntity> findByDateAndDataFrom(String date, String dataFrom);
-
 }

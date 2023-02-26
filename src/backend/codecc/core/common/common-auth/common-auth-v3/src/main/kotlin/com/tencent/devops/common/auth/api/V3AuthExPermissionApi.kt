@@ -1,21 +1,23 @@
 package com.tencent.devops.common.auth.api
 
 import com.tencent.devops.common.auth.api.external.AbstractAuthExPermissionApi
-import com.tencent.devops.common.auth.api.external.AuthTaskService
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction
 import com.tencent.devops.common.auth.api.pojo.external.model.BkAuthExResourceActionModel
+import com.tencent.devops.common.auth.api.service.AuthTaskService
 import com.tencent.devops.common.auth.pojo.CodeCCAuthServiceCode
 import com.tencent.devops.common.client.Client
 import org.slf4j.LoggerFactory
 import org.springframework.data.redis.core.RedisTemplate
 
-class V3AuthExPermissionApi(client: Client,
-                            redisTemplate: RedisTemplate<String, String>,
-                            private val authTaskService: AuthTaskService,
-                            private val codeccAuthPermissionApi: AuthPermissionStrApi)
-    : AbstractAuthExPermissionApi(
+class V3AuthExPermissionApi(
+    client: Client,
+    redisTemplate: RedisTemplate<String, String>,
+    private val authTaskService: AuthTaskService,
+    private val codeccAuthPermissionApi: AuthPermissionStrApi
+) : AbstractAuthExPermissionApi(
     client,
-    redisTemplate) {
+    redisTemplate
+) {
 
     private val logger = LoggerFactory.getLogger(V3AuthExPermissionApi::class.java)
 
@@ -46,20 +48,25 @@ class V3AuthExPermissionApi(client: Client,
                 serviceCode = CodeCCAuthServiceCode(),
                 resourceType = CODECC_RESOURCE_TYPE,
                 projectCode = projectId,
-                permissions = actions) { mutableListOf() }
+                permissions = actions
+            ) { mutableListOf() }
             val resourceSet = mutableSetOf<String>()
             resultMap.values.forEach {
                 if (it.firstOrNull() == "*") {
-                    resourceSet.addAll(authTaskService.queryTaskListForUser(user, projectId, actions))
+                    resourceSet.addAll(queryTaskListForUser(user, projectId, actions))
                 } else {
                     resourceSet.addAll(it)
                 }
             }
             return resourceSet
-        } catch (e : Exception){
+        } catch (e: Exception) {
             logger.error(e.message, e)
             setOf()
         }
+    }
+
+    override fun queryPipelineUserListForAction(taskId: String, projectId: String, actions: Set<String>): List<String> {
+        return emptyList()
     }
 
     /**
@@ -79,7 +86,7 @@ class V3AuthExPermissionApi(client: Client,
      */
     override fun validatePipelineBatchPermission(
         user: String,
-        pipelineId: String,
+        taskId: String,
         projectId: String,
         actions: Set<String>
     ): List<BkAuthExResourceActionModel> {
@@ -98,19 +105,15 @@ class V3AuthExPermissionApi(client: Client,
         return listOf(BkAuthExResourceActionModel(isPass = true))
     }
 
-    /**
-     * 校验工蜂平台权限
-     */
-    override fun validateGongfengPermission(
-        user: String,
-        taskId: String,
-        projectId: String,
-        actions: List<CodeCCAuthAction>
-    ): Boolean {
+    override fun authProjectManager(projectId: String, user: String): Boolean {
         return true
     }
 
-    override fun authProjectManager(projectId: String, user: String): Boolean {
+    override fun authProjectMultiManager(projectId: String, user: String): Boolean {
+        return true
+    }
+
+    override fun authProjectRole(projectId: String, user: String, role: String): Boolean {
         return true
     }
 }

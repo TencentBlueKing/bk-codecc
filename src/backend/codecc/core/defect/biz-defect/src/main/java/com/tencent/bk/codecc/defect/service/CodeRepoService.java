@@ -55,10 +55,12 @@ public interface CodeRepoService {
             String sortType);
 
     /**
-     * 初始化新增代码库/代码分支数数据
+     * 定时任务及初始化 代码库/代码分支数数据
      *
      * @param reqVO 请求体
-     * @return
+     * @return boolean
      */
     Boolean initCodeRepoStatTrend(QueryTaskListReqVO reqVO);
+
+    Boolean codeRepoStatisticFixed(DeptTaskDefectReqVO reqVO);
 }

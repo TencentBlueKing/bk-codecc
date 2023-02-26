@@ -26,10 +26,12 @@
 
 package com.tencent.bk.codecc.task.dao;
 
+import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_TOOL_DESCRIPTION;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.tencent.bk.codecc.task.constant.TaskConstants;
+import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.task.dao.mongorepository.ToolMetaRepository;
 import com.tencent.bk.codecc.task.model.ToolMetaEntity;
 import com.tencent.bk.codecc.task.model.ToolVersionEntity;
@@ -38,33 +40,30 @@ import com.tencent.devops.common.api.ToolMetaDetailVO;
 import com.tencent.devops.common.api.ToolVersionVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.GlobalMessage;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import com.tencent.devops.common.service.utils.GlobalMessageUtil;
+import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.CompressionUtils;
-import com.tencent.devops.common.util.JsonUtil;
-
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
-
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-
-import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_TOOL_DESCRIPTION;
 
 /**
  * 工具缓存
@@ -90,6 +89,11 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
     private Map<String, ToolMetaBaseVO> toolMetaBasicMap = Maps.newConcurrentMap();
 
     /**
+     * 工具维度基础信息缓存
+     */
+    private Map<String, Set<ToolMetaBaseVO>> toolMetaBasicDimensionMap = Maps.newConcurrentMap();
+
+    /**
      * 加载工具缓存
      */
     @Override
@@ -99,6 +103,8 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
         Map<String, GlobalMessage> globalMessageMap = globalMessageUtil.getGlobalMessageMap(GLOBAL_TOOL_DESCRIPTION);
 
         toolMetaBasicMap.clear();
+        toolMetaBasicDimensionMap.clear();
+
         for (ToolMetaEntity tool : toolMetaList) {
             // 缓存基础信息
             cacheToolBaseMeta(tool);
@@ -155,6 +161,11 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
             versionList.forEach(toolVersionEntity -> {
                 ToolVersionVO toolVersionVO = new ToolVersionVO();
                 BeanUtils.copyProperties(toolVersionEntity, toolVersionVO);
+                if (Objects.nonNull(toolVersionEntity.getBinary())) {
+                    ToolMetaDetailVO.Binary binary = new ToolMetaDetailVO.Binary();
+                    BeanUtils.copyProperties(toolVersionEntity.getBinary(), binary);
+                    toolVersionVO.setBinary(binary);
+                }
                 versionVOList.add(toolVersionVO);
             });
         }
@@ -178,6 +189,25 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
             pattern = toolMetaDetailVO.getPattern();
         }
         return pattern;
+    }
+
+    /**
+     * 查询工具执行聚类逻辑的类型
+     *
+     * @param toolName
+     * @return
+     */
+    @Override
+    public String getClusterType(String toolName) {
+        String clusterType;
+        if (toolMetaBasicMap.get(toolName) != null
+                && StringUtils.isNotEmpty(toolMetaBasicMap.get(toolName).getClusterType())) {
+            clusterType = toolMetaBasicMap.get(toolName).getClusterType();
+        } else {
+            ToolMetaBaseVO toolMetaDetailVO = getToolBaseMetaCache(toolName);
+            clusterType = toolMetaDetailVO.getClusterType();
+        }
+        return clusterType;
     }
 
     /**
@@ -269,7 +299,23 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
 
     @Override
     public List<String> getToolDetailByDimension(String dimension) {
-        return null;
+        if (StringUtils.isEmpty(dimension)) {
+            return Lists.newArrayList();
+        }
+
+        if (CollectionUtils.isEmpty(toolMetaBasicDimensionMap.get(dimension))) {
+            loadToolBaseCache();
+        }
+
+        return toolMetaBasicDimensionMap.get(dimension)
+                .stream()
+                .map(ToolMetaBaseVO::getName)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<String> getToolNameListByDimensionList(List<String> dimensionList) {
+        throw new UnsupportedOperationException("not supported yet");
     }
 
     /**
@@ -354,6 +400,23 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
         List<ToolVersionVO> versionVOList = getToolVersionVOs(toolMetaEntity);
         newToolMetaBaseVO.setToolVersions(versionVOList);
         toolMetaBasicMap.put(newToolMetaBaseVO.getName(), newToolMetaBaseVO);
+
+        // 缓存维度基础信息
+        // DEFECT类型的工具特殊处理下
+        String dimensionMapKey = newToolMetaBaseVO.getType();
+        if (dimensionMapKey.equals(ComConstants.ToolType.DEFECT.name())
+                && newToolMetaBaseVO.getPattern().equals(ComConstants.ToolPattern.LINT.name())) {
+            dimensionMapKey = ComConstants.ToolPattern.LINT.name();
+        }
+
+        Set<ToolMetaBaseVO> toolDimensionSet = toolMetaBasicDimensionMap.get(dimensionMapKey);
+        if (toolDimensionSet == null) {
+            toolDimensionSet = new CopyOnWriteArraySet<>();
+        }
+
+        toolDimensionSet.add(newToolMetaBaseVO);
+        toolMetaBasicDimensionMap.put(dimensionMapKey, toolDimensionSet);
+
         return newToolMetaBaseVO;
     }
 

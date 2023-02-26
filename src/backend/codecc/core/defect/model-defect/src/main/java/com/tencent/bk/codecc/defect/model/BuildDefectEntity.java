@@ -11,11 +11,13 @@ import org.springframework.data.mongodb.core.mapping.Field;
 import java.util.Set;
 
 /**
- * 描述
+ * 新快照功能已迁移
  *
  * @version V1.0
  * @date 2019/12/16
+ * @see com.tencent.bk.codecc.defect.model.BuildDefectV2Entity
  */
+@Deprecated
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Document(collection = "t_build_defect")

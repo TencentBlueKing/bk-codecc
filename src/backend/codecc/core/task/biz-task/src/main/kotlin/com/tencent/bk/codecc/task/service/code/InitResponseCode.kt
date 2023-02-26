@@ -106,6 +106,8 @@ class InitResponseCode @Autowired constructor(private val objectMapper: ObjectMa
                 getUUID(), "2301009", "01", "失效任务失败", null, "Close task failed")
         val taskCode13 = GlobalMessage(
                 getUUID(), "2301013", "01", "{0}", null, "{0}")
+        val taskCode14 = GlobalMessage(
+            getUUID(), "2301014", "01", "单一流水线创建扫描任务数量达到限制，当前限制值：{0}", null, "The number of scan tasks created by a single pipeline has reached the limit, the current limit value：{0}")
         codeMap["2301001"] = objectMapper.writeValueAsString(taskCode1)
         codeMap["2301002"] = objectMapper.writeValueAsString(taskCode2)
         codeMap["2301003"] = objectMapper.writeValueAsString(taskCode3)
@@ -116,6 +118,7 @@ class InitResponseCode @Autowired constructor(private val objectMapper: ObjectMa
         codeMap["2301008"] = objectMapper.writeValueAsString(taskCode8)
         codeMap["2301009"] = objectMapper.writeValueAsString(taskCode9)
         codeMap["2301013"] = objectMapper.writeValueAsString(taskCode13)
+        codeMap["2301014"] = objectMapper.writeValueAsString(taskCode14)
 
         return codeMap
     }
@@ -221,6 +224,27 @@ class InitResponseCode @Autowired constructor(private val objectMapper: ObjectMa
         val operMsg10 = GlobalMessage(
                 getUUID(), FUNC_CHECKER_CONFIG, "00",
                 "{0}更新规则配置信息", null, "{0} updated checker config information")
+        val operaMsg11 = GlobalMessage(
+                getUUID(), FUNC_DEFECT_IGNORE,"00",
+                "{0}，忽略原因：{1}", null,"{0},ignore reason：{1}")
+        val operaMsg12 = GlobalMessage(
+            getUUID(), FUNC_REVERT_IGNORE, "00", "{0}", null, "{0}")
+        val operaMsg13 = GlobalMessage(getUUID(), FUNC_DEFECT_MARKED, "00", "{0}", null,
+            "{0} have been marked")
+        val operaMsg14 = GlobalMessage(getUUID(), FUNC_DEFECT_UNMARKED, "00", "{0}", null,
+            "{0} have been unmarked")
+        val operaMsg15 = GlobalMessage(getUUID(), FUNC_ASSIGN_DEFECT, "00", "{0}，处理人{1}修改为{2}", null,
+            "{0}, issue author {1} change to {2}")
+        val operaMsg16 = GlobalMessage(getUUID(), FUNC_CODE_COMMENT_ADD, "00", "{0}，新增了代码评论：{1}", null,
+            "{0}, add code comment: {1}")
+        val operaMsg17 = GlobalMessage(getUUID(), FUNC_CODE_COMMENT_DEL, "00", "{0}，删除了代码评论：{1}", null,
+            "{0}, delete code comment: {1}")
+        val operaMsg18 = GlobalMessage(getUUID(), FUNC_ISSUE_DEFECT, "00", "{0}", null,
+            "{0}")
+        val operaMsg19 = GlobalMessage(getUUID(), FUNC_SETTINGS_AUTHORITY, "00",
+            "管理员:{0}; 开发人员:{1}; 关注人员:{2}; 执行分析:{3}; 问题管理:{4}; 查看问题:{5}; 查看报表:{6}; 任务设置:{7}", null,
+            "manager:{0}; member:{1}; viewer:{2}; analyze:{3}; defectManage:{4}; " +
+                    "defectView:{5}; reportView:{6}; taskManage:{7}")
 
         codeMap["${RedisKeyConstants.PREFIX_OPERATION_HISTORY_MSG}$FUNC_REGISTER_TOOL"] = objectMapper.writeValueAsString(operMsg1)
         codeMap["${RedisKeyConstants.PREFIX_OPERATION_HISTORY_MSG}$FUNC_TASK_INFO"] = objectMapper.writeValueAsString(operMsg2)
@@ -232,7 +256,24 @@ class InitResponseCode @Autowired constructor(private val objectMapper: ObjectMa
         codeMap["${RedisKeyConstants.PREFIX_OPERATION_HISTORY_MSG}$FUNC_DEFECT_MANAGE"] = objectMapper.writeValueAsString(operMsg8)
         codeMap["${RedisKeyConstants.PREFIX_OPERATION_HISTORY_MSG}$FUNC_CODE_REPOSITORY"] = objectMapper.writeValueAsString(operMsg9)
         codeMap["${RedisKeyConstants.PREFIX_OPERATION_HISTORY_MSG}$FUNC_CHECKER_CONFIG"] = objectMapper.writeValueAsString(operMsg10)
-
+        codeMap["${RedisKeyConstants.PREFIX_OPERATION_HISTORY_MSG}$FUNC_DEFECT_IGNORE"] = objectMapper
+            .writeValueAsString(operaMsg11)
+        codeMap["${RedisKeyConstants.PREFIX_OPERATION_HISTORY_MSG}$FUNC_REVERT_IGNORE"] = objectMapper
+            .writeValueAsString(operaMsg12)
+        codeMap["${RedisKeyConstants.PREFIX_OPERATION_HISTORY_MSG}$FUNC_DEFECT_MARKED"] = objectMapper
+            .writeValueAsString(operaMsg13)
+        codeMap["${RedisKeyConstants.PREFIX_OPERATION_HISTORY_MSG}$FUNC_DEFECT_UNMARKED"] = objectMapper
+            .writeValueAsString(operaMsg14)
+        codeMap["${RedisKeyConstants.PREFIX_OPERATION_HISTORY_MSG}$FUNC_ASSIGN_DEFECT"] = objectMapper
+            .writeValueAsString(operaMsg15)
+        codeMap["${RedisKeyConstants.PREFIX_OPERATION_HISTORY_MSG}$FUNC_CODE_COMMENT_ADD"] = objectMapper
+            .writeValueAsString(operaMsg16)
+        codeMap["${RedisKeyConstants.PREFIX_OPERATION_HISTORY_MSG}$FUNC_CODE_COMMENT_DEL"] = objectMapper
+            .writeValueAsString(operaMsg17)
+        codeMap["${RedisKeyConstants.PREFIX_OPERATION_HISTORY_MSG}$FUNC_ISSUE_DEFECT"] = objectMapper
+            .writeValueAsString(operaMsg18)
+        codeMap["${RedisKeyConstants.PREFIX_OPERATION_HISTORY_MSG}$FUNC_SETTINGS_AUTHORITY"] = objectMapper
+            .writeValueAsString(operaMsg19)
         return codeMap
     }
 
@@ -483,7 +524,18 @@ class InitResponseCode @Autowired constructor(private val objectMapper: ObjectMa
                 getUUID(), OPEN_CHECKER, "00", "打开规则", null, "open checker")
         val operType8 = GlobalMessage(
                 getUUID(), CLOSE_CHECKER, "00", "关闭规则", null, "close checker")
-
+        val operaType9 = GlobalMessage(
+            getUUID(), DEFECT_IGNORE, "00", "忽略问题", null, "ignore defect")
+        val operaType10 = GlobalMessage(
+            getUUID(), REVERT_IGNORE, "00", "恢复忽略", null, "revert ignore")
+        val operaType11 = GlobalMessage(
+            getUUID(), DEFECT_MARKED, "00", "标记问题", null, "marked defect")
+        val operaType12 = GlobalMessage(getUUID(), DEFECT_UNMARKED, "00", "取消标记", null, "unmarked defect")
+        val operaType13 = GlobalMessage(getUUID(), ASSIGN_DEFECT, "00", "处理人修改", null, "assign defect")
+        val operaType14 = GlobalMessage(getUUID(), CODE_COMMENT_ADD, "00", "新增代码评论", null, "add code comment")
+        val operaType15 = GlobalMessage(getUUID(), CODE_COMMENT_DEL, "00", "删除代码评论", null, "delete code comment")
+        val operaType16 = GlobalMessage(getUUID(), ISSUE_DEFECT, "00", "问题提单", null, "issue submit to TAPD")
+        val operaType17 = GlobalMessage(getUUID(), SETTINGS_AUTHORITY, "00", "更改人员权限", null, "settings authority")
         return mapOf(
                 REGISTER_TOOL to objectMapper.writeValueAsString(operType1),
                 MODIFY_INFO to objectMapper.writeValueAsString(operType2),
@@ -492,7 +544,16 @@ class InitResponseCode @Autowired constructor(private val objectMapper: ObjectMa
                 TRIGGER_ANALYSIS to objectMapper.writeValueAsString(operType5),
                 AUTHOR_TRANSFER to objectMapper.writeValueAsString(operType6),
                 OPEN_CHECKER to objectMapper.writeValueAsString(operType7),
-                CLOSE_CHECKER to objectMapper.writeValueAsString(operType8)
+                CLOSE_CHECKER to objectMapper.writeValueAsString(operType8),
+                DEFECT_IGNORE to objectMapper.writeValueAsString(operaType9),
+                REVERT_IGNORE to objectMapper.writeValueAsString(operaType10),
+                DEFECT_MARKED to objectMapper.writeValueAsString(operaType11),
+                DEFECT_UNMARKED to objectMapper.writeValueAsString(operaType12),
+                ASSIGN_DEFECT to objectMapper.writeValueAsString(operaType13),
+                CODE_COMMENT_ADD to objectMapper.writeValueAsString(operaType14),
+                CODE_COMMENT_DEL to objectMapper.writeValueAsString(operaType15),
+                ISSUE_DEFECT to objectMapper.writeValueAsString(operaType16),
+                SETTINGS_AUTHORITY to objectMapper.writeValueAsString(operaType17)
         )
     }
 

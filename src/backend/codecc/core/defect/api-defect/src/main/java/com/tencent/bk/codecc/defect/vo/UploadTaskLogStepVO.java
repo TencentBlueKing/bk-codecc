@@ -102,4 +102,9 @@ public class UploadTaskLogStepVO
      * 用于切面
      */
     private boolean isFinish = false;
+
+    /**
+     * 重提交次数
+     */
+    private Integer recommitTimes;
 }

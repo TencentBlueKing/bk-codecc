@@ -28,6 +28,7 @@ package com.tencent.bk.codecc.task.service;
 
 import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.bk.codecc.task.vo.OpenScanAndEpcToolNameMapVO;
+import com.tencent.bk.codecc.task.vo.OpenScanAndPreProdCheckerSetMapVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
 
@@ -82,4 +83,9 @@ public interface MetaService
      * 获取开源治理/EPC对应工具列表映射
      */
     OpenScanAndEpcToolNameMapVO getOpenScanAndEpcToolNameMap();
+
+    /**
+     * 获取开源治理/预发布版对应规则集映射
+     */
+    OpenScanAndPreProdCheckerSetMapVO getOpenScanAndPreProdCheckerSetMap();
 }

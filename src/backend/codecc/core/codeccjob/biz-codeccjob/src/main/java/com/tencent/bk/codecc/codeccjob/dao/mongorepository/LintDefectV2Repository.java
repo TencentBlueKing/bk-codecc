@@ -26,18 +26,13 @@
 
 package com.tencent.bk.codecc.codeccjob.dao.mongorepository;
 
-import com.tencent.bk.codecc.defect.model.LintDefectV2Entity;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
-import org.springframework.stereotype.Repository;
-
+import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
+import org.springframework.stereotype.Repository;
 
 /**
  * 查询分析记录持久层代码
@@ -46,15 +41,38 @@ import java.util.Set;
  * @date 2019/5/5
  */
 @Repository
-public interface LintDefectV2Repository extends MongoRepository<LintDefectV2Entity, String>
-{
-    @Query(fields = "{'author':1}", value = "{'task_id': ?0, 'tool_name': ?1, 'status': ?2, 'author': {'$in': ?3}}")
-    List<LintDefectV2Entity> findDefectsNeedTransferAuthor(long taskId, String toolName, int status, Set<String> authorSet);
+public interface LintDefectV2Repository extends MongoRepository<LintDefectV2Entity, String> {
 
-    @Query(fields = "{'checker':1, 'status': 1, 'exclude_time': 1}", value = "{'task_id': ?0, 'tool_name': ?1, 'status': {'$nin': ?2}, 'checker': {'$in': ?3}}")
-    List<LintDefectV2Entity> findDefectsByCheckers(long taskId, String toolName, Set<Integer> statusSet, Set<String> checkerSet);
+    @Query(fields = "{'author':1}", value = "{'task_id': ?0, 'tool_name': ?1, 'status': ?2, 'author': {'$in': ?3}}")
+    List<LintDefectV2Entity> findDefectsNeedTransferAuthor(
+            long taskId,
+            String toolName,
+            int status,
+            Set<String> authorSet
+    );
+
+    @Query(
+            fields = "{'checker':1, 'status': 1, 'exclude_time': 1}",
+            value = "{'task_id': ?0, 'tool_name': ?1, 'status': {'$nin': ?2}, 'checker': {'$in': ?3}}"
+    )
+    List<LintDefectV2Entity> findDefectsByCheckers(
+            long taskId,
+            String toolName,
+            Set<Integer> statusSet,
+            Set<String> checkerSet
+    );
 
     List<LintDefectV2Entity> findByTaskIdAndStatus(long taskId, int status);
 
     List<LintDefectV2Entity> findByTaskIdAndToolNameAndStatus(Long taskId, String toolName, int status);
+
+    List<LintDefectV2Entity> findByTaskIdAndToolNameAndStatusAndSeverityIn(
+            Long taskId,
+            String toolName,
+            int status,
+            Set<Integer> severity
+    );
+
+    List<LintDefectV2Entity> findByEntityIdIn(Collection<String> ids);
 }
+

@@ -25,6 +25,14 @@ public interface ToolMetaCacheService
     String getToolPattern(String toolName);
 
     /**
+     * 查询工具执行聚类逻辑的类型
+     *
+     * @param toolName
+     * @return
+     */
+    String getClusterType(String toolName);
+
+    /**
      * 加载工具缓存
      */
     List<ToolMetaBaseVO> loadToolBaseCache();
@@ -74,4 +82,12 @@ public interface ToolMetaCacheService
      * @return
      */
     List<String> getToolDetailByDimension(String dimension);
+
+    /**
+     * 根据维度列表获取工具列表
+     *
+     * @param dimensionList
+     * @return
+     */
+    List<String> getToolNameListByDimensionList(List<String> dimensionList);
 }

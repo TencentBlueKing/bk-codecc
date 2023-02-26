@@ -2,6 +2,8 @@ package com.tencent.devops.common.storage;
 
 import com.tencent.devops.common.storage.sdk.BkRepoApi;
 import com.tencent.devops.common.storage.service.AbstractStorageService;
+import java.io.File;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigureOrder;
@@ -10,9 +12,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
-
-import java.io.File;
-import java.util.Map;
 
 @Configuration
 @ConditionalOnWebApplication
@@ -36,19 +35,16 @@ public class BkRepoStorageService extends AbstractStorageService {
     @Value("${storage.bkrepo.host:#{null}}")
     private String bkrepoHost;
 
-    @Value("${storage.bkrepo.schema:http}")
-    protected String bkrepoSchema;
-
     @Autowired
     private BkRepoApi bkRepoApi;
 
     @Bean
     public BkRepoApi bkRepoApi() {
-        return new BkRepoApi(username, password, project, repo, bkrepoHost, bkrepoSchema);
+        return new BkRepoApi(username, password, project, repo, bkrepoHost);
     }
 
     @Override
-    public String upload(String subPath,String filename, File file) {
+    public String upload(String subPath, String filename, File file) {
         return bkRepoApi.genericSimpleUpload(getUploadFilePath(subPath, filename), file);
     }
 
@@ -71,7 +67,7 @@ public class BkRepoStorageService extends AbstractStorageService {
     }
 
     @Override
-    public String finishChunk(String subPath, String filename, String uploadId)  {
+    public String finishChunk(String subPath, String filename, String uploadId) {
         return bkRepoApi.genericFinishChunk(getUploadFilePath(subPath, filename), uploadId);
     }
 

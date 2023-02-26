@@ -32,11 +32,12 @@ import redis.clients.jedis.Jedis
 import redis.clients.jedis.JedisCluster
 import redis.clients.jedis.params.SetParams
 import java.util.*
+import java.util.concurrent.TimeoutException
 
 class RedisLock(
-        private val redisTemplate: RedisTemplate<String, String>,
-        private val lockKey: String,
-        private val expiredTimeInSeconds: Long
+    private val redisTemplate: RedisTemplate<String, String>,
+    private val lockKey: String,
+    private val expiredTimeInSeconds: Long
 ) : AutoCloseable {
     companion object {
         /**
@@ -56,7 +57,8 @@ class RedisLock(
 
         private val logger = LoggerFactory.getLogger(RedisLock::class.java)
 
-        private val UNLOCK_LUA = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end"
+        private val UNLOCK_LUA =
+            "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end"
     }
 
     private val lockValue = UUID.randomUUID().toString()
@@ -69,6 +71,12 @@ class RedisLock(
      * @return 是否成功获得锁
      */
     fun lock() {
+        lock(null)
+    }
+
+    @Throws(TimeoutException::class)
+    fun lock(timeoutMillis: Long?) {
+        val start = System.currentTimeMillis()
         while (true) {
             logger.info("Start to lock($lockKey) of value($lockValue) for $expiredTimeInSeconds sec")
             val result = set(lockKey, lockValue, expiredTimeInSeconds)
@@ -77,6 +85,10 @@ class RedisLock(
             if (l) {
                 locked = true
                 return
+            }
+            val curTime = System.currentTimeMillis()
+            if (timeoutMillis != null && (curTime - start > timeoutMillis)) {
+                throw TimeoutException("get lock wait timeout")
             }
             Thread.sleep(100)
         }
@@ -111,15 +123,14 @@ class RedisLock(
 
             val nativeConnection = connection.nativeConnection
             val result =
-                    when (nativeConnection) {
-                        is JedisCluster -> nativeConnection.set(key, value,
-                            SetParams.setParams().nx().ex(seconds.toInt()))
-                        is Jedis -> nativeConnection.set(key, value, SetParams.setParams().nx().ex(seconds.toInt()))
-                        else -> {
-                            logger.warn("Unknown redis connection($nativeConnection)")
-                            null
-                        }
+                when (nativeConnection) {
+                    is JedisCluster -> nativeConnection.set(key, value, SetParams.setParams().nx().ex(seconds.toInt()))
+                    is Jedis -> nativeConnection.set(key, value, SetParams.setParams().nx().ex(seconds.toInt()))
+                    else -> {
+                        logger.warn("Unknown redis connection($nativeConnection)")
+                        null
                     }
+                }
             result
         }
     }
@@ -143,22 +154,29 @@ class RedisLock(
                 val keys = listOf(lockKey)
                 val values = listOf(lockValue)
                 val result =
-                        when (nativeConnection) {
-                            is JedisCluster -> nativeConnection.eval(UNLOCK_LUA, keys, values)
-                            is Jedis -> nativeConnection.eval(UNLOCK_LUA, keys, values)
-                            else -> {
-                                logger.warn("Unknown redis connection($nativeConnection)")
-                                0L
-                            }
+                    when (nativeConnection) {
+                        is JedisCluster -> nativeConnection.eval(UNLOCK_LUA, keys, values)
+                        is Jedis -> nativeConnection.eval(UNLOCK_LUA, keys, values)
+                        else -> {
+                            logger.warn("Unknown redis connection($nativeConnection)")
+                            0L
                         }
+                    }
                 locked = result == 0L
                 result == 1L
-            }?:false
-        } else {
+            } ?: false
+        } /*else {
             logger.info("It's already unlock")
-        }
+        }*/
 
         return true
+    }
+
+    /**
+     * 获取当前上锁状态
+     */
+    fun isLocked(): Boolean {
+        return locked
     }
 
     override fun close() {

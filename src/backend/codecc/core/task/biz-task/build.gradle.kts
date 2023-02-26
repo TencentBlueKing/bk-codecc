@@ -5,6 +5,7 @@ dependencies {
     api(project(":core:common:common-util"))
     api(project(":core:common:common-db"))
     api(project(":core:common:common-auth:common-auth-api"))
+    api(project(":core:common:common-auth"))
     api(project(":core:common:common-redis"))
     api(project(":core:task:model-task"))
     api(project(":core:task:api-task"))

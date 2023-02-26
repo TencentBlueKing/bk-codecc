@@ -28,5 +28,5 @@ package com.tencent.devops.common.auth.pojo
  */
 
 enum class CodeCCAuthResourceType(val value: String) {
-    CODECC_TASK("CODECC_TASK"); // codecc任务
+    CODECC_TASK("codecc_task"); // codecc任务
 }

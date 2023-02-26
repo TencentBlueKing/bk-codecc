@@ -31,13 +31,13 @@ import com.tencent.bk.codecc.task.service.MetaService;
 import com.tencent.bk.codecc.task.service.ToolMetaService;
 import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import com.tencent.devops.common.web.RestResource;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * 任务管理接口的实现类
@@ -67,10 +67,13 @@ public class BuildMetaRestResourceImpl implements BuildMetaRestResource
     }
 
     @Override
-    public Result<String> updateToolIntegratedToStatus(String username,
-                                                       String toolName,
-                                                       ComConstants.ToolIntegratedStatus status) {
-        return new Result<>(toolMetaService.updateToolMetaToStatus(toolName, status, username));
+    public Result<String> updateToolIntegratedToStatus(
+            String username,
+            String toolName,
+            ToolIntegratedStatus fromStatus,
+            ToolIntegratedStatus toStatus
+    ) {
+        return new Result<>(toolMetaService.updateToolMetaToStatus(toolName, fromStatus, toStatus, username));
     }
 
     @Override

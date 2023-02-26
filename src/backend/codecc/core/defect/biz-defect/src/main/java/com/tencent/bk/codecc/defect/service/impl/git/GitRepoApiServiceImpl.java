@@ -6,10 +6,9 @@ import com.tencent.bk.codecc.defect.dao.mongorepository.BuildDefectRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
-import com.tencent.bk.codecc.defect.model.BuildDefectEntity;
-import com.tencent.bk.codecc.defect.model.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
-import com.tencent.bk.codecc.defect.model.LintDefectV2Entity;
+import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.service.CheckerService;
 import com.tencent.bk.codecc.defect.service.TaskLogService;
 import com.tencent.bk.codecc.defect.service.git.GitRepoApiService;
@@ -18,15 +17,23 @@ import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
 import com.tencent.devops.common.api.util.DateTimeUtil;
 import com.tencent.devops.common.client.Client;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.pipeline.enums.ChannelCode;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import com.tencent.devops.common.util.GitUtil;
 import com.tencent.devops.common.util.HttpPathUrlUtil;
-import com.tencent.devops.common.util.JsonUtil;
+import com.tencent.devops.common.util.IterableUtils;
 import com.tencent.devops.common.util.OkhttpUtils;
 import com.tencent.devops.process.api.service.ServiceBuildResource;
 import com.tencent.devops.process.pojo.BuildHistoryVariables;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -37,26 +44,21 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 @Service
 @Slf4j
 public class GitRepoApiServiceImpl implements GitRepoApiService {
 
-    @Value("${git.host:}")
+    @Value("${git.path:#{null}}")
     private String gitHost;
 
-    @Value("${scm.git.file.token:1719ff6db1b1afb00e4f01c839260eab}")
+    @Value("${git.file.token:#{null}}")
     private String gitFileToken;
 
-    @Value("${bkci.public.url:#{null}}")
+    @Value("${devopsGateway.idchost:#{null}}")
     protected String devopsHost;
+
+    @Value("${codecc.gateway.host:#{null}}")
+    private String codeccHost;
 
     private static final String GIT_CODECC_TYPE = "ieg_codecc";
 
@@ -112,75 +114,99 @@ public class GitRepoApiServiceImpl implements GitRepoApiService {
 
     @Override
     @Async("asyncTaskExecutor")
-    public void addLintGitCodeAnalyzeComment(TaskDetailVO taskDetailVO, String buildId, String buildNum, String toolName, Set<String> currentFileSet)
-    {
-        if (!preCheck(taskDetailVO, buildId, toolName, currentFileSet))
-        {
+    public void addLintGitCodeAnalyzeComment(
+            TaskDetailVO taskDetailVO,
+            String buildId,
+            String buildNum,
+            String toolName,
+            Set<String> currentFileSet,
+            List<LintDefectV2Entity> newDefectList
+    ) {
+        if (CollectionUtils.isEmpty(newDefectList)) {
             return;
         }
 
-        Set<String> defectIds = getDefectIdsByBuildId(taskDetailVO.getTaskId(), toolName, buildId);
-
-        List<LintDefectV2Entity> currentLintFileList = lintDefectV2Repository.findByEntityIdIn(defectIds);
+        if (!preCheck(taskDetailVO, buildId, toolName, currentFileSet)) {
+            return;
+        }
 
         String displayName = toolMetaCacheService.getToolDisplayName(toolName);
-
         // 获取规则列表
         List<CheckerDetailEntity> checkerDetailEntityList = checkerRepository.findByToolName(toolName);
         Map<String, String> checkerTypeMap = checkerDetailEntityList.stream()
-            .filter((it) -> it != null && it.getCheckerKey() != null && it.getCheckerType() != null)
-            .collect(Collectors.toMap(CheckerDetailEntity::getCheckerKey, CheckerDetailEntity::getCheckerType));
+                .filter((it) -> it != null && it.getCheckerKey() != null && it.getCheckerType() != null)
+                .collect(Collectors.toMap(CheckerDetailEntity::getCheckerKey, CheckerDetailEntity::getCheckerType));
 
         List<ScanFileRequest> requestList = new ArrayList<>();
-        currentLintFileList.forEach(defectEntity ->
-            {
-                if (preEntityCheck(defectEntity.getUrl(), defectEntity.getRelPath(), taskDetailVO.getTaskId()))
-                {
-                    ScanFileRequest request = getScanFileRequest(defectEntity.getUrl(),
-                        defectEntity.getRelPath(),
-                        defectEntity.getBranch(),
-                        defectEntity.getAuthor(),
-                        toolName,
-                        Integer.parseInt(buildNum));
-                    String title = escapeHtml(defectEntity.getMessage());
-
-                    request.setStartLine(defectEntity.getLineNum());
-                    request.setEndLine(defectEntity.getLineNum());
-                    request.setTitle(title.substring(0, Math.min(MAX_TITLE_LENGTH, title.length())));
-                    request.setDescription(getCheckerCodeDesc(defectEntity, displayName, checkerTypeMap, buildNum));
-                    request.setTargetUrl(HttpPathUrlUtil.getLintTargetUrl(devopsHost, taskDetailVO.getProjectId(), taskDetailVO.getTaskId(),
-                        toolName, defectEntity.getEntityId()));
-                    request.setSeverity(getLintSeverity(defectEntity.getSeverity()));
-                    request.setCommitId(getMrCommit(taskDetailVO.getNameEn(), buildId));
-
-                    requestList.add(request);
-
-                    if (requestList.size() == CODECC_REQUEST_BATCH_SIZE)
-                    {
-                        doMrCommentHttp(taskDetailVO, buildId, requestList);
-                        requestList.clear();
-                    }
-                }
-            });
-
-        if (CollectionUtils.isNotEmpty(requestList))
+        String commitId = getMrCommit(taskDetailVO.getNameEn(), buildId);
+        newDefectList.forEach(defectEntity ->
         {
+            if (!preEntityCheck(defectEntity.getUrl(), defectEntity.getRelPath(), taskDetailVO.getTaskId())) {
+                return;
+            }
+
+            ScanFileRequest request = getScanFileRequest(defectEntity.getUrl(),
+                    defectEntity.getRelPath(),
+                    defectEntity.getBranch(),
+                    IterableUtils.getFirst(defectEntity.getAuthor(), ""),
+                    toolName,
+                    Integer.parseInt(buildNum));
+            request.setStartLine(defectEntity.getLineNum());
+            request.setEndLine(defectEntity.getLineNum());
+            String title = escapeHtml(defectEntity.getMessage());
+            request.setTitle(title.substring(0, Math.min(MAX_TITLE_LENGTH, title.length())));
+            request.setDescription(getCheckerCodeDesc(defectEntity, displayName, checkerTypeMap, buildNum));
+
+            // 判断区分 蓝盾任务 及 stream任务和开源扫描任务
+            String host = devopsHost;
+            boolean containsConsole = true;
+            Pattern pattern = Pattern.compile("^git_|^CODE_");
+            if (pattern.matcher(taskDetailVO.getProjectId()).find()) {
+                host = codeccHost;
+                containsConsole = false;
+            }
+
+            request.setTargetUrl(
+                    HttpPathUrlUtil.getLintTargetUrl(
+                        host,
+                        taskDetailVO.getProjectId(),
+                        taskDetailVO.getTaskId(),
+                        toolName,
+                        defectEntity.getEntityId(),
+                        containsConsole)
+            );
+            request.setSeverity(getLintSeverity(defectEntity.getSeverity()));
+            request.setCommitId(commitId);
+            requestList.add(request);
+
+            if (requestList.size() == CODECC_REQUEST_BATCH_SIZE) {
+                doMrCommentHttp(taskDetailVO, buildId, requestList);
+                requestList.clear();
+            }
+        });
+
+        if (CollectionUtils.isNotEmpty(requestList)) {
             doMrCommentHttp(taskDetailVO, buildId, requestList);
         }
     }
 
     @Override
     @Async("asyncTaskExecutor")
-    public void addCcnGitCodeAnalyzeComment(TaskDetailVO taskDetailVO, String buildId, String buildNum, String toolName, Set<String> currentFileSet)
-    {
-        if (!preCheck(taskDetailVO, buildId, toolName, currentFileSet))
-        {
+    public void addCcnGitCodeAnalyzeComment(
+            TaskDetailVO taskDetailVO,
+            String buildId,
+            String buildNum,
+            String toolName,
+            Set<String> currentFileSet,
+            List<CCNDefectEntity> newDefectList
+    ) {
+        if (CollectionUtils.isEmpty(newDefectList)) {
             return;
         }
 
-        Set<String> defectIds = getCcnDefectIdsByBuildId(taskDetailVO.getTaskId(), toolName, buildId);
-
-        List<CCNDefectEntity> currentLintFileList = ccnDefectRepository.findByEntityIdIn(defectIds);
+        if (!preCheck(taskDetailVO, buildId, toolName, currentFileSet)) {
+            return;
+        }
 
         ToolConfigInfoVO toolConfigInfoVO = taskDetailVO.getToolConfigInfoList()
                 .stream()
@@ -190,35 +216,54 @@ public class GitRepoApiServiceImpl implements GitRepoApiService {
         int ccnThreshold = checkerService.getCcnThreshold(toolConfigInfoVO);
 
         List<ScanFileRequest> requestList = new ArrayList<>();
-        currentLintFileList.forEach((defectEntity) -> {
-            if (preEntityCheck(defectEntity.getUrl(), defectEntity.getRelPath(), taskDetailVO.getTaskId()))
-            {
-                ScanFileRequest request = getScanFileRequest(defectEntity.getUrl(),
+        String commitId = getMrCommit(taskDetailVO.getNameEn(), buildId);
+        newDefectList.forEach((defectEntity) -> {
+            if (!preEntityCheck(defectEntity.getUrl(), defectEntity.getRelPath(), taskDetailVO.getTaskId())) {
+                return;
+            }
+
+            ScanFileRequest request = getScanFileRequest(defectEntity.getUrl(),
                     defectEntity.getRelPath(),
                     defectEntity.getBranch(),
                     defectEntity.getAuthor(),
                     toolName,
                     Integer.parseInt(buildNum));
-                request.setStartLine(defectEntity.getStartLines());
-                request.setEndLine(defectEntity.getEndLines());
-                request.setTitle(String.format("圈复杂度为%s，超过%s的建议值，请进行函数功能拆分降低代码复杂度。", defectEntity.getCcn(), ccnThreshold));
-                request.setDescription(getCcnCheckerCodeDesc(defectEntity, buildNum));
-                request.setTargetUrl(HttpPathUrlUtil.getCcnTargetUrl(devopsHost, taskDetailVO.getProjectId(), taskDetailVO.getTaskId(),
-                    toolName, defectEntity.getEntityId(), defectEntity.getFilePath()));
-                request.setSeverity(getCcnSeverity(defectEntity.getRiskFactor()));
-                request.setCommitId(getMrCommit(taskDetailVO.getNameEn(), buildId));
-                requestList.add(request);
+            request.setStartLine(defectEntity.getStartLines());
+            request.setEndLine(defectEntity.getEndLines());
+            request.setTitle(String.format("圈复杂度为%s，超过%s的建议值，请进行函数功能拆分降低代码复杂度。",
+                    defectEntity.getCcn(), ccnThreshold));
+            request.setDescription(getCcnCheckerCodeDesc(defectEntity, buildNum));
 
-                if (requestList.size() == CODECC_REQUEST_BATCH_SIZE)
-                {
-                    doMrCommentHttp(taskDetailVO, buildId, requestList);
-                    requestList.clear();
-                }
+            // 判断区分 蓝盾任务 及 stream任务和开源扫描任务
+            String host = devopsHost;
+            boolean containsConsole = true;
+            Pattern pattern = Pattern.compile("^git_|^CODE_");
+            if (pattern.matcher(taskDetailVO.getProjectId()).find()) {
+                host = codeccHost;
+                containsConsole = false;
+            }
+
+            request.setTargetUrl(
+                    HttpPathUrlUtil.getCcnTargetUrl(
+                        host,
+                        taskDetailVO.getProjectId(),
+                        taskDetailVO.getTaskId(),
+                        toolName,
+                        defectEntity.getEntityId(),
+                        defectEntity.getFilePath(),
+                        containsConsole)
+            );
+            request.setSeverity(getCcnSeverity(defectEntity.getRiskFactor()));
+            request.setCommitId(commitId);
+            requestList.add(request);
+
+            if (requestList.size() == CODECC_REQUEST_BATCH_SIZE) {
+                doMrCommentHttp(taskDetailVO, buildId, requestList);
+                requestList.clear();
             }
         });
 
-        if (CollectionUtils.isNotEmpty(requestList))
-        {
+        if (CollectionUtils.isNotEmpty(requestList)) {
             doMrCommentHttp(taskDetailVO, buildId, requestList);
         }
     }
@@ -249,37 +294,6 @@ public class GitRepoApiServiceImpl implements GitRepoApiService {
             }
         }
         return sb.toString();
-    }
-
-    protected Set<String> getDefectIdsByBuildId(long taskId, String toolName, String buildId)
-    {
-        Set<String> defectIdSet = new HashSet<>();
-        List<BuildDefectEntity> buildFiles = buildDefectRepository.findByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
-        if (CollectionUtils.isNotEmpty(buildFiles))
-        {
-            for (BuildDefectEntity buildDefectEntity : buildFiles)
-            {
-                if (CollectionUtils.isNotEmpty(buildDefectEntity.getFileDefectIds()))
-                {
-                    defectIdSet.addAll(buildDefectEntity.getFileDefectIds());
-                }
-            }
-        }
-        return defectIdSet;
-    }
-
-    protected Set<String> getCcnDefectIdsByBuildId(long taskId, String toolName, String buildId)
-    {
-        Set<String> defectIdSet = new HashSet<>();
-        List<BuildDefectEntity> buildFiles = buildDefectRepository.findByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
-        if (CollectionUtils.isNotEmpty(buildFiles))
-        {
-            for (BuildDefectEntity buildDefectEntity : buildFiles)
-            {
-                defectIdSet.add(buildDefectEntity.getDefectId());
-            }
-        }
-        return defectIdSet;
     }
 
     private boolean preEntityCheck(String url, String relPath, Long taskId) {
@@ -323,7 +337,10 @@ public class GitRepoApiServiceImpl implements GitRepoApiService {
             return false;
         }
 
-        if (taskDetailVO.getScanType() != null && taskDetailVO.getScanType() != ComConstants.ScanType.DIFF_MODE.code) {
+        if (taskDetailVO.getScanType() != null
+                && (taskDetailVO.getScanType() != ComConstants.ScanType.DIFF_MODE.code
+                && taskDetailVO.getScanType() != ComConstants.ScanType.FILE_DIFF_MODE.code
+                && taskDetailVO.getScanType() != ComConstants.ScanType.BRANCH_DIFF_MODE.code)) {
             log.info("no diff mode, do not add git code analyze comment, {}, {}", taskDetailVO.getTaskId(), buildId);
             return false;
         }

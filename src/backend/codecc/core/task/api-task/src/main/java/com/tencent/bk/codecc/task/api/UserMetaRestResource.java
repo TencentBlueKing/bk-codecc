@@ -29,9 +29,10 @@ package com.tencent.bk.codecc.task.api;
 import com.tencent.bk.codecc.task.vo.BuildEnvVO;
 import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.bk.codecc.task.vo.OpenScanAndEpcToolNameMapVO;
+import com.tencent.bk.codecc.task.vo.OpenScanAndPreProdCheckerSetMapVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -89,4 +90,9 @@ public interface UserMetaRestResource
     @Path("/getOpenScanAndEpcToolNameMap")
     @GET
     Result<OpenScanAndEpcToolNameMapVO> getOpenScanAndEpcToolNameMap();
+
+    @ApiOperation("查询开源治理/预发布版对应规则集映射")
+    @Path("/getOpenScanAndPreProdCheckerSetMap")
+    @GET
+    Result<OpenScanAndPreProdCheckerSetMapVO> getOpenScanAndPreProdCheckerSetMap();
 }

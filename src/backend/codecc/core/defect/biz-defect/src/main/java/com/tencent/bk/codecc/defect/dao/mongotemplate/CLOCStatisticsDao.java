@@ -13,7 +13,7 @@
 package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
 import com.mongodb.bulk.BulkWriteResult;
-import com.tencent.bk.codecc.defect.model.CLOCStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.web.aop.annotation.ActiveStatistic;
 import org.apache.commons.collections.CollectionUtils;
@@ -39,17 +39,15 @@ import java.util.List;
 /**
  * cloc统计持久类
  *
- * @date 2020/4/9
  * @version V1.0
+ * @date 2020/4/9
  */
 @Repository
-public class CLOCStatisticsDao
-{
+public class CLOCStatisticsDao {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    public void upsertCLOCStatistic(CLOCStatisticEntity clocStatisticEntity)
-    {
+    public void upsertCLOCStatistic(CLOCStatisticEntity clocStatisticEntity) {
         Query query = new Query();
         query.addCriteria(Criteria.where("task_id").is(clocStatisticEntity.getTaskId()))
                 .addCriteria(Criteria.where("tool_name").is(clocStatisticEntity.getToolName()))
@@ -67,10 +65,10 @@ public class CLOCStatisticsDao
 
     /**
      * 批量失效cloc统计数据
+     *
      * @param taskId
      */
-    public void batchDisableClocStatistic(Long taskId, String toolName)
-    {
+    public void batchDisableClocStatistic(Long taskId, String toolName) {
         Query query = new Query();
         query.addCriteria(Criteria.where("task_id").is(taskId).and("tool_name").is(toolName));
         Update update = new Update();
@@ -80,41 +78,22 @@ public class CLOCStatisticsDao
         mongoTemplate.updateMulti(query, update, CLOCStatisticEntity.class);
     }
 
-    /**
-     * 按任务ID集合 批量统计代码行总数
-     *
-     * @param taskIdSet 任务ID集合
-     * @param langList  代码语言类型列表
-     * @return taskId code
-     */
-    public List<CLOCStatisticEntity> batchQueryCodeLineSum(Collection<Long> taskIdSet, List<String> langList)
-    {
-        // 以taskId language进行过滤
-        MatchOperation match = Aggregation.match(Criteria.where("task_id").in(taskIdSet)
-                .and("tool_name").is(Tool.CLOC.name())
-                .and("language").in(langList));
-
-        // 以taskId, language进行分组，并统计所有语言类型的代码行总数
-        GroupOperation group = Aggregation.group("task_id")
-                .first("task_id").as("task_id")
-                .sum("sum_code").as("sum_code");
-
-        Aggregation agg = Aggregation.newAggregation(match, group);
-
-        AggregationResults<CLOCStatisticEntity> queryResult =
-                mongoTemplate.aggregate(agg, "t_cloc_statistic", CLOCStatisticEntity.class);
-        return queryResult.getMappedResults();
-    }
 
     public List<CLOCStatisticEntity> batchQueryClocStaticByTaskId(Collection<Long> taskIdSet) {
         Query query = new Query();
-        query.addCriteria(Criteria.where("task_id").in(taskIdSet).and("tool_name").is(Tool.CLOC.name()));
+        query.addCriteria(Criteria.where("task_id").in(taskIdSet)
+                .and("tool_name").in(Tool.CLOC.name(), Tool.SCC.name()));
         return mongoTemplate.find(query, CLOCStatisticEntity.class);
     }
 
+    /**
+     * 批量更新代码量信息
+     *
+     * @param clocStatisticEntity 代码统计entity集合
+     * @return result
+     */
     @ActiveStatistic
-    public BulkWriteResult batchUpsertCLOCStatistic(Collection<CLOCStatisticEntity> clocStatisticEntity)
-    {
+    public BulkWriteResult batchUpsertCLOCStatistic(Collection<CLOCStatisticEntity> clocStatisticEntity) {
         if (CollectionUtils.isNotEmpty(clocStatisticEntity)) {
             List<Pair<Query, Update>> upsertCondition = new ArrayList<>();
             for (CLOCStatisticEntity entity : clocStatisticEntity) {
@@ -132,7 +111,8 @@ public class CLOCStatisticsDao
                         .set("sum_code", entity.getSumCode())
                         .set("sum_blank", entity.getSumBlank())
                         .set("sum_comment", entity.getSumComment())
-                        .set("sum_efficient_comment", entity.getSumEfficientComment())
+                        .set("sum_efficient_comment", entity.getSumEfficientComment() == null ? 0L
+                                : entity.getSumEfficientComment())
                         .set("blank_change", entity.getBlankChange())
                         .set("code_change", entity.getCodeChange())
                         .set("comment_change", entity.getCommentChange())
@@ -153,26 +133,6 @@ public class CLOCStatisticsDao
         return null;
     }
 
-    /**
-     * 按任务ID批量获取最新构建ID
-     * @param taskIds 任务ID集合
-     * @return build id
-     */
-    public List<CLOCStatisticEntity> queryLastBuildIdByTaskIds(Collection<Long> taskIds) {
-        MatchOperation match = Aggregation.match(Criteria.where("task_id").in(taskIds)
-                .and("tool_name").is(Tool.CLOC.name()));
-
-        SortOperation sort = Aggregation.sort(Sort.Direction.DESC, "_id");
-
-        GroupOperation group = Aggregation.group("task_id")
-                .first("task_id").as("task_id")
-                .first("build_id").as("build_id");
-
-        Aggregation agg = Aggregation.newAggregation(match, sort, group);
-        AggregationResults<CLOCStatisticEntity> queryResult =
-                mongoTemplate.aggregate(agg, "t_cloc_statistic", CLOCStatisticEntity.class);
-        return queryResult.getMappedResults();
-    }
 
     /**
      * 按任务ID和最新构建ID统计总代码数
@@ -182,22 +142,31 @@ public class CLOCStatisticsDao
      * @return list
      */
     public List<CLOCStatisticEntity> batchStatClocStatisticByTaskId(Collection<Long> taskIds,
-            List<String> lastBuildIds) {
+                                                                    List<String> lastBuildIds) {
         MatchOperation match =
                 Aggregation.match(Criteria.where("task_id").in(taskIds)
                         .and("build_id").in(lastBuildIds)
-                        .and("tool_name").is(Tool.CLOC.name()));
+                        .and("tool_name").in(Tool.CLOC.name(), Tool.SCC.name()));
 
-        GroupOperation group = Aggregation.group("task_id")
+        SortOperation sort =
+                Aggregation.sort(Sort.Direction.DESC, "tool_name");
+
+        GroupOperation exclude = Aggregation.group("task_id", "language")
+                .first("task_id").as("task_id")
+                .first("build_id").as("build_id")
+                .first("sum_code").as("sum_code")
+                .first("sum_blank").as("sum_blank")
+                .first("sum_comment").as("sum_comment");
+
+        GroupOperation calc = Aggregation.group("task_id")
                 .first("task_id").as("task_id")
                 .sum("sum_code").as("sum_code")
                 .sum("sum_blank").as("sum_blank")
                 .sum("sum_comment").as("sum_comment");
 
-        Aggregation agg = Aggregation.newAggregation(match, group);
+        Aggregation agg = Aggregation.newAggregation(match, sort, exclude, calc);
         AggregationResults<CLOCStatisticEntity> queryResult =
                 mongoTemplate.aggregate(agg, "t_cloc_statistic", CLOCStatisticEntity.class);
         return queryResult.getMappedResults();
     }
-
 }

@@ -16,7 +16,7 @@ import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.api.ServiceRepoResource;
 import com.tencent.bk.codecc.defect.service.CodeRepoService;
 import com.tencent.bk.codecc.defect.vo.CodeRepoVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.web.RestResource;
 import java.util.Collection;
 import java.util.Map;

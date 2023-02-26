@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.consumer;
 
 import com.tencent.bk.codecc.defect.dao.mongorepository.StatStatisticRepository;
-import com.tencent.bk.codecc.defect.model.StatStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.StatStatisticEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;

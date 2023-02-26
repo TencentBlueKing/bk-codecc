@@ -26,10 +26,11 @@
 
 package com.tencent.bk.codecc.task.service;
 
+import com.tencent.bk.codecc.task.vo.gongfeng.ToolVersionExtVO;
 import com.tencent.devops.common.api.RefreshDockerImageHashReqVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
 import com.tencent.devops.common.constant.ComConstants;
-
+import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import java.util.List;
 
 /**
@@ -38,8 +39,7 @@ import java.util.List;
  * @version V1.0
  * @date 2019/4/25
  */
-public interface ToolMetaService
-{
+public interface ToolMetaService {
     /**
      * 蓝盾批量注册工具
      *
@@ -53,7 +53,7 @@ public interface ToolMetaService
      * 根据工具名查询工具元数据
      * @return
      */
-    List<ToolMetaDetailVO> queryToolMetaDataList(String projectId);
+    List<ToolMetaDetailVO> queryToolMetaDataList(String projectId, Long taskId);
 
     Boolean validateToolType(String toolType);
 
@@ -68,7 +68,30 @@ public interface ToolMetaService
      */
     Boolean refreshDockerImageHash(RefreshDockerImageHashReqVO refreshDockerImageHashReqVO);
 
-    String updateToolMetaToStatus(String toolName, ComConstants.ToolIntegratedStatus status, String username);
+    String updateToolMetaToStatus(
+            String toolName,
+            ToolIntegratedStatus fromStatus,
+            ToolIntegratedStatus toStatus,
+            String username
+    );
 
     String revertToolMetaStatus(String toolName, ComConstants.ToolIntegratedStatus status, String username);
+
+    /**
+     * 查询所有工具元数据
+     * @return
+     */
+    List<ToolMetaDetailVO> queryAllToolMetaDataList();
+
+
+    /**
+     * 获取preci自动语言过滤器
+     *
+     * @return
+     */
+    String getSCCLangFilterForPreCI();
+
+    Boolean updateOpenSourceToolVersionInfo(ToolVersionExtVO reqVO, String userName);
+
+    List<ToolMetaDetailVO> getToolsByPattern(String pattern);
 }

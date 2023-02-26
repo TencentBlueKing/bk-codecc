@@ -1,19 +1,18 @@
 package com.tencent.devops.common.storage.sdk;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.tencent.devops.common.api.codecc.util.JsonUtil;
 import com.tencent.devops.common.storage.vo.BkRepoResult;
 import com.tencent.devops.common.storage.vo.BkRepoStartChunkVo;
-import com.tencent.devops.common.util.JsonUtil;
 import com.tencent.devops.common.util.OkhttpUtils;
-import lombok.AllArgsConstructor;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
-
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.AllArgsConstructor;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * 封装BkRepo的接口调用
@@ -31,21 +30,20 @@ public class BkRepoApi {
 
     private String bkrepoHost;
 
-    protected String bkrepoSchema;
-
 
     public String genericSimpleUpload(String filepath, File file) {
-        String url = String.format("%s://%s/generic/%s/%s/%s", bkrepoSchema, bkrepoHost, project, repo, filepath);
+        String url = String.format("%s/generic/%s/%s/%s", bkrepoHost, project, repo, filepath);
         OkhttpUtils.INSTANCE.doFileStreamPut(url, file, getAuthHeaders());
         return url + "?download=true";
     }
 
     public String startChunk(String filepath) throws Exception {
-        String url = String.format("%s://%s/generic/block/%s/%s/%s", bkrepoSchema, bkrepoHost, project, repo, filepath);
-        String resp = OkhttpUtils.INSTANCE.doHttpPost(url, "{}",getAuthHeaders());
+        String url = String.format("%s/generic/block/%s/%s/%s", bkrepoHost, project, repo, filepath);
+        String resp = OkhttpUtils.INSTANCE.doHttpPost(url, "{}", getAuthHeaders());
         BkRepoResult<BkRepoStartChunkVo> result =
-                JsonUtil.INSTANCE.to(resp, new TypeReference<BkRepoResult<BkRepoStartChunkVo>>(){});
-        if(result == null || !result.isOk() || result.getData() == null){
+                JsonUtil.INSTANCE.to(resp, new TypeReference<BkRepoResult<BkRepoStartChunkVo>>() {
+                });
+        if (result == null || !result.isOk() || result.getData() == null) {
             throw new Exception("startChunk : " + filepath + " return " +
                     JsonUtil.INSTANCE.toJson(result) + " cause error.");
         }
@@ -53,9 +51,9 @@ public class BkRepoApi {
     }
 
 
-    public Boolean genericChunkUpload(String filepath, File file,Integer chunkNo,String uploadId) {
-        String url = String.format("%s://%s/generic/%s/%s/%s", bkrepoSchema, bkrepoHost, project, repo, filepath);
-        Map<String,String> headers = getAuthHeaders();
+    public Boolean genericChunkUpload(String filepath, File file, Integer chunkNo, String uploadId) {
+        String url = String.format("%s/generic/%s/%s/%s", bkrepoHost, project, repo, filepath);
+        Map<String, String> headers = getAuthHeaders();
         if (chunkNo != null) {
             headers.put("X-BKREPO-SEQUENCE", chunkNo.toString());
         }
@@ -67,8 +65,8 @@ public class BkRepoApi {
     }
 
     public String genericFinishChunk(String filepath, String uploadId) {
-        String url = String.format("%s://%s/generic/block/%s/%s/%s", bkrepoSchema, bkrepoHost, project, repo, filepath);
-        Map<String,String> headers = getAuthHeaders();
+        String url = String.format("%s/generic/block/%s/%s/%s", bkrepoHost, project, repo, filepath);
+        Map<String, String> headers = getAuthHeaders();
         if (StringUtils.hasLength(uploadId)) {
             headers.put("X-BKREPO-UPLOAD-ID", uploadId);
         }
@@ -78,6 +76,7 @@ public class BkRepoApi {
 
     /**
      * 认证头信息
+     *
      * @return
      */
     public Map<String, String> getAuthHeaders() {
@@ -90,6 +89,7 @@ public class BkRepoApi {
 
     /**
      * 设置上传文件的超时信息
+     *
      * @param headers
      * @param expires
      * @return
@@ -102,7 +102,6 @@ public class BkRepoApi {
         newHeaders.put("X-BKREPO-EXPIRES", expires.toString());
         return headers;
     }
-
 
 
 }

@@ -35,8 +35,7 @@ import java.util.Map;
 @CompoundIndexes({
         @CompoundIndex(name = "custom_proj_source_url_indx", def = "{'custom_proj_source': 1, 'url': 1}")
 })
-public class CustomProjEntity extends CommonEntity
-{
+public class CustomProjEntity extends CommonEntity {
     /**
      * 传入项目的url
      */
@@ -45,6 +44,39 @@ public class CustomProjEntity extends CommonEntity
 
     @Field("branch")
     private String branch;
+
+    /**
+     * 指定git路径，多个用英文逗号分隔
+     */
+    @Field("include_path")
+    private String includePath;
+
+    @Field("task_owner")
+    private String taskOwner;
+
+    /**
+     * 一级部门ID
+     */
+    @Field("bg_id")
+    private Long bgId;
+
+    /**
+     * 二级部门ID
+     */
+    @Field("dept_id")
+    private Long deptId;
+
+    /**
+     * 三级部门ID
+     */
+    @Field("center_id")
+    private Long centerId;
+
+    /**
+     * 四级部门ID
+     */
+    @Field("group_id")
+    private Long groupId;
 
     /**
      * 代码仓库类型

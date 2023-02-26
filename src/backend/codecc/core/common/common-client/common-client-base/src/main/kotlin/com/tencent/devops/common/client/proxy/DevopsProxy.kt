@@ -9,11 +9,14 @@ import javax.ws.rs.HeaderParam
 import javax.ws.rs.PathParam
 import javax.ws.rs.QueryParam
 
-class DevopsProxy constructor(private val any: Any,
-                              private val clz: Class<*>) : InvocationHandler {
+class DevopsProxy constructor(
+    private val any: Any,
+    private val clz: Class<*>
+) : InvocationHandler {
 
-    companion object{
+    companion object {
         val projectIdThreadLocal = ThreadLocal<Any>()
+        val gatewayTagThreadLocal = ThreadLocal<String>()
         private val methodProjectInfoMap = mutableMapOf<String, Int>()
         private val logger = LoggerFactory.getLogger(DevopsProxy::class.java)
     }
@@ -23,28 +26,43 @@ class DevopsProxy constructor(private val any: Any,
         if (null != argIndex) {
             projectIdThreadLocal.set(args[argIndex])
         } else {
+            if (clz.simpleName.equals("ServicePublicScanResource") && method.name.equals("createCodeCCScanProject")) {
+                gatewayTagThreadLocal.set("auto")
+            }
+
             method.parameters.forEachIndexed { index, parameter ->
-                if(parameter.annotations.any {
-                        when (it) {
-                            is PathParam -> it.value == "projectId"
-                            is QueryParam -> it.value == "projectId"
-                            is HeaderParam -> it.value == AUTH_HEADER_DEVOPS_PROJECT_ID
-                            else -> false
-                        }
-                    }) {
+                if (parameter.annotations.any {
+                            when (it) {
+                                is PathParam -> it.value == "projectId"
+                                is QueryParam -> it.value == "projectId"
+                                is HeaderParam -> it.value == AUTH_HEADER_DEVOPS_PROJECT_ID
+                                else -> false
+                            }
+                        }) {
                     methodProjectInfoMap[Feign.configKey(clz, method)] = index
                     projectIdThreadLocal.set(args[index])
                 }
             }
         }
 
-        return try {
-            method.invoke(any, *args)
-        } catch (t : Throwable){
+        return  try {
+            val result = method.invoke(any, *args)
+            //后置处理
+            val invokeHandlers = DevopsAfterInvokeHandlerFactory.SINGLETON?.getInvokeHandlers() ?: emptyList()
+            invokeHandlers.forEach{ invokeHandler ->
+                try {
+                    invokeHandler.handleAfterInvoke(method, args, result)
+                } catch (e: Exception) {
+                    logger.error("execute devops service fail ${e.message}")
+                }
+            }
+            result
+        } catch (t: Throwable) {
             logger.error("execute devops service fail, message: ${t.message}")
             throw t.cause ?: t
         } finally {
             projectIdThreadLocal.remove()
+            gatewayTagThreadLocal.remove()
         }
     }
 }

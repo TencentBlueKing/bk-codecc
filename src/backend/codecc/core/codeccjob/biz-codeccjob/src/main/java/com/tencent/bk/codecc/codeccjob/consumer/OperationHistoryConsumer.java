@@ -46,9 +46,8 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.*;
  * @date 2019/6/18
  */
 @Component
-public class OperationHistoryConsumer
-{
-    private static Logger logger = LoggerFactory.getLogger(OperationHistoryConsumer.class);
+public class OperationHistoryConsumer {
+    private static final Logger logger = LoggerFactory.getLogger(OperationHistoryConsumer.class);
 
     @Autowired
     private OperationHistoryService operationHistoryService;
@@ -60,18 +59,15 @@ public class OperationHistoryConsumer
      */
     @RabbitListener(bindings = @QueueBinding(key = ROUTE_OPERATION_HISTORY,
             value = @Queue(value = QUEUE_OPERATION_HISTORY, durable = "true"),
-            exchange = @Exchange(value = EXCHANGE_OPERATION_HISTORY, durable = "true", delayed = "true", type = "topic")))
-    public void saveOpHistoryMessage(OperationHistoryDTO operationHistoryDTO)
-    {
+            exchange = @Exchange(value = EXCHANGE_OPERATION_HISTORY, durable = "true", delayed = "true",
+                    type = "topic")))
+    public void saveOpHistoryMessage(OperationHistoryDTO operationHistoryDTO) {
         logger.info("save operation history message");
-        try
-        {
+        try {
             operationHistoryService.saveOperationHistory(operationHistoryDTO);
-        }
-        catch (Exception e)
-        {
-            logger.error("save operation history error! task id: {}, func id: {}",
-                    operationHistoryDTO.getTaskId(), operationHistoryDTO.getFuncId());
+        } catch (Exception e) {
+            logger.error("save operation history error! task id: {}, func id: {}", operationHistoryDTO.getTaskId(),
+                    operationHistoryDTO.getFuncId(), e);
         }
 
     }

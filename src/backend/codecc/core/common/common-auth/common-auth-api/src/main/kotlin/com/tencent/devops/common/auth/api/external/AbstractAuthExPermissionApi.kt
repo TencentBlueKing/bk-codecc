@@ -26,11 +26,19 @@
 
 package com.tencent.devops.common.auth.api.external
 
+import com.google.common.collect.Sets
+import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction
+import com.tencent.devops.common.auth.api.service.AuthTaskService
 import com.tencent.devops.common.auth.api.util.AuthApiUtils
 import com.tencent.devops.common.client.Client
+import com.tencent.devops.common.constant.ComConstants
+import com.tencent.devops.common.constant.RedisKeyConstants
+import com.tencent.devops.common.service.utils.SpringContextUtil
+import org.apache.commons.collections.CollectionUtils
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.redis.core.RedisTemplate
+import kotlin.streams.toList
 
 abstract class AbstractAuthExPermissionApi @Autowired constructor(
         val client: Client,
@@ -45,6 +53,72 @@ abstract class AbstractAuthExPermissionApi @Autowired constructor(
     ): Boolean {
         return AuthApiUtils.isAdminMember(redisTemplate, user)
     }
+
+    override fun getAdminMembers(): List<String> {
+        return AuthApiUtils.getAdminMember(redisTemplate)
+    }
+
+    /**
+     * 校验用户是否是BG管理员
+     */
+    override fun isBgAdminMember(
+        user: String,
+        taskId: String,
+        createFrom: String?
+    ): Boolean {
+        val authTaskService = SpringContextUtil.getBean(AuthTaskService::class.java)
+        var createFromStr = createFrom ?: authTaskService.getTaskCreateFrom(taskId.toLong())
+        if (ComConstants.DefectStatType.GONGFENG_SCAN.value() != createFromStr) {
+            createFromStr = ComConstants.DefectStatType.USER.value()
+        }
+        val bgIdStr = redisTemplate.opsForHash<String, String>().get(RedisKeyConstants.KEY_TASK_BG_MAPPING, taskId)
+        val bgId = if (null == bgIdStr || bgIdStr == "0" || bgIdStr == "-1") {
+            authTaskService.getTaskBgId(taskId.toLong())
+        } else {
+            bgIdStr
+        }
+
+        logger.info("judge user is bg admin member: $user taskId: $taskId bgId: $bgId")
+        val isMember = redisTemplate.opsForSet().isMember("${RedisKeyConstants.PREFIX_BG_ADMIN}$createFromStr:$user",
+            bgId)
+        return if (isMember == true) {
+            logger.info("Is bg admin member: $user")
+            true
+        } else {
+            logger.info("Not bg admin member: $user")
+            false
+        }
+    }
+
+    override fun authDefectOpsPermissions(
+        taskId: Long,
+        projectId: String,
+        username: String,
+        createFrom: String,
+        actions: List<CodeCCAuthAction>
+    ): Boolean {
+        return checkPipelineDefectOpsPermissions(taskId, projectId, username, actions)
+    }
+
+    fun checkPipelineDefectOpsPermissions(taskId: Long, projectId: String, username: String,
+                                          actions: List<CodeCCAuthAction>): Boolean {
+        val actionsStr = actions.stream().map(CodeCCAuthAction::actionName).toList().toSet()
+        val result = validateTaskBatchPermission(
+                username, taskId.toString(),
+                projectId, actionsStr
+            )
+        if (CollectionUtils.isEmpty(result)) {
+            return false
+        }
+        for (actionResult in result) {
+            if ((actionResult.isPass != null) && actionResult.isPass) {
+                return true
+            }
+        }
+        return false
+    }
+
+
 
     companion object {
         private val logger = LoggerFactory.getLogger(AbstractAuthExPermissionApi::class.java)

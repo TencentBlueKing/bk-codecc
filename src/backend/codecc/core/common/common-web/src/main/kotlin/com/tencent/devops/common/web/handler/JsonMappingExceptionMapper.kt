@@ -27,7 +27,7 @@
 package com.tencent.devops.common.web.handler
 
 import com.fasterxml.jackson.databind.JsonMappingException
-import com.tencent.devops.common.api.pojo.Result
+import com.tencent.devops.common.api.pojo.codecc.Result
 import com.tencent.devops.common.service.Profile
 import com.tencent.devops.common.service.utils.SpringContextUtil
 import org.slf4j.LoggerFactory

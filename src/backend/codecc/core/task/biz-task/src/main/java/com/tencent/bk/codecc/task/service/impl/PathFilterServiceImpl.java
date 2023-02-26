@@ -43,7 +43,7 @@ import com.tencent.bk.codecc.task.vo.FilterPathOutVO;
 import com.tencent.bk.codecc.task.vo.TreeNodeTaskVO;
 import com.tencent.bk.codecc.task.vo.path.CodeYmlFilterPathVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
@@ -490,13 +490,9 @@ public class PathFilterServiceImpl implements PathFilterService
     public TreeNodeTaskVO filterPathTree(Long taskId)
     {
         TreeNodeTaskVO treeNodeVO = new TreeNodeTaskVO();
-        List<String> tools = toolService.getEffectiveToolList(taskId);
-        if (CollectionUtils.isEmpty(tools))
-        {
-            return treeNodeVO;
-        }
 
-        Result<TreeNodeVO> treeNode = client.get(ServiceDefectTreeResource.class).getTreeNode(taskId, tools);
+        List<String> toolNames = Collections.singletonList("SCC");
+        Result<TreeNodeVO> treeNode = client.get(ServiceDefectTreeResource.class).getTreeNode(taskId, toolNames);
         if (treeNode.isNotOk())
         {
             throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);

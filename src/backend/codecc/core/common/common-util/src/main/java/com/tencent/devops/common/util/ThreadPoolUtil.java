@@ -27,10 +27,15 @@
 package com.tencent.devops.common.util;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.*;
 
 /**
  * 统一线程池工具类
@@ -38,8 +43,8 @@ import java.util.concurrent.*;
  * @version V4.0
  * @date 2019/3/4
  */
-public class ThreadPoolUtil
-{
+public class ThreadPoolUtil {
+
     private static Logger logger = LoggerFactory.getLogger(ThreadPoolUtil.class);
 
     /**
@@ -60,19 +65,20 @@ public class ThreadPoolUtil
     /**
      * 线程工厂
      */
-    private static ThreadFactory NAMED_THREAD_FACTORY = new ThreadFactoryBuilder().setNameFormat("codecc-business-pool-%d").build();
+    private static ThreadFactory NAMED_THREAD_FACTORY = new ThreadFactoryBuilder().setNameFormat(
+            "codecc-business-pool-%d").build();
 
     /**
      * 执行器（由于目前都是能快速完成的小任务，因此不需要维持阻塞队列，使用SynchronousQueue）
      */
-    private static ExecutorService EXECUTOR = new ThreadPoolExecutor(CORE_POOL_SIZE, MAXIMUM_POOL_SIZE, KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
+    private static ExecutorService EXECUTOR = new ThreadPoolExecutor(CORE_POOL_SIZE, MAXIMUM_POOL_SIZE, KEEP_ALIVE_TIME,
+            TimeUnit.MILLISECONDS,
             new SynchronousQueue<>(), NAMED_THREAD_FACTORY, new ThreadPoolExecutor.AbortPolicy());
 
     /**
      * 禁用构造方法
      */
-    private ThreadPoolUtil()
-    {
+    private ThreadPoolUtil() {
     }
 
     /**
@@ -80,21 +86,10 @@ public class ThreadPoolUtil
      *
      * @param task
      */
-    public static void addRunnableTask(Runnable task)
-    {
-        EXECUTOR.execute(() ->
-        {
-            try
-            {
-                logger.info("@@@@@@@task start");
-                task.run();
-                logger.info("@@@@@@@task end");
-            }
-            finally
-            {
-                // TODO 子线程是否需要做资源的释放？
-            }
-        });
+    public static void addRunnableTask(Runnable task) {
+        // 封装自动的Runnable，可以增加切面
+        ThreadRunnable runnable = new ThreadRunnable(TraceBuildIdThreadCacheUtils.INSTANCE.getBuildId(), task);
+        EXECUTOR.execute(runnable);
     }
 
 
@@ -104,18 +99,11 @@ public class ThreadPoolUtil
      * @version V3.5.0
      * @date 2019/3/8
      */
-    public static <T> Future<T> addCallableTask(Callable<T> task)
-    {
-        return EXECUTOR.submit((Callable) () ->
-        {
-            try
-            {
-                return task.call();
-            }
-            finally
-            {
-                // TODO 子线程是否需要做资源的释放？
-            }
-        });
+    public static <T> Future<T> addCallableTask(Callable<T> task) {
+        // 封装自动的ThreadCallable，可以增加切面
+        ThreadCallable callable = new ThreadCallable(TraceBuildIdThreadCacheUtils.INSTANCE.getBuildId(), task);
+        return EXECUTOR.submit(callable);
     }
+
+
 }

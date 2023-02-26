@@ -9,11 +9,12 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package com.tencent.bk.codecc.schedule.vo;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.ToString;
 
@@ -21,15 +22,14 @@ import javax.validation.constraints.NotNull;
 
 /**
  * 分析任务推送请求VO
- * 
- * @date 2019/11/5
+ *
  * @version V1.0
+ * @date 2019/11/5
  */
 @Data
 @ApiModel("分析任务推送请求VO")
 @ToString
-public class PushVO 
-{
+public class PushVO {
     @NotNull(message = "流名称不能为空")
     @ApiModelProperty(value = "流名称", required = true)
     private String streamName;

@@ -218,4 +218,17 @@ public class ToolMetaEntity extends CommonEntity
      */
     @Field("last_tool_versions")
     private List<ToolVersionEntity> lastToolVersions;
+
+    /**
+     * 工具在插件端处理工具输出告警的任务链
+     */
+    @Field("process_list")
+    private List<String> processList;
+
+    /**
+     * 工具在插件端处理工具输出告警的任务链
+     */
+    @Field("cluster_type")
+    private String clusterType;
+
 }

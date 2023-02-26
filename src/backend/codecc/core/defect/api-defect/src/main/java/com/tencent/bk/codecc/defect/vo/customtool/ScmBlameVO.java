@@ -2,6 +2,7 @@ package com.tencent.bk.codecc.defect.vo.customtool;
 
 import com.tencent.devops.common.api.CommonVO;
 import lombok.Data;
+
 import java.util.List;
 import java.util.Map;
 
@@ -12,8 +13,7 @@ import java.util.Map;
  * @date 2019/10/15
  */
 @Data
-public class ScmBlameVO extends CommonVO
-{
+public class ScmBlameVO extends CommonVO {
     private long taskId;
 
     private String branch;

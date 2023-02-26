@@ -1,11 +1,11 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.tencent.bk.codecc.defect.dao.mongotemplate.StatDefectDao;
-import com.tencent.bk.codecc.defect.model.StatDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.StatDefectEntity;
 import com.tencent.bk.codecc.defect.service.IStatQueryWarningService;
 import com.tencent.bk.codecc.defect.vo.StatDefectQueryRespVO;
 import com.tencent.devops.common.constant.ComConstants.Tool;
-import com.tencent.devops.common.util.JsonUtil;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;

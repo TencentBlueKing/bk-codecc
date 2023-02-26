@@ -29,7 +29,7 @@ package com.tencent.bk.codecc.defect.api;
 import com.tencent.bk.codecc.defect.vo.CheckerSetListQueryReq;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
 import com.tencent.devops.common.api.checkerset.*;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -101,6 +101,14 @@ public interface ServiceCheckerSetRestResource
                     Long taskId
     );
 
+    @ApiOperation("查询规则集列表")
+    @Path("/list")
+    @POST
+    Result<List<CheckerSetVO>> getCheckerSets(
+        @ApiParam(value = "配置规则包参数", required = true)
+            CheckerSetListQueryReq queryCheckerSetReq
+    );
+
     @ApiOperation("根据任务和语言解绑相应的规则集")
     @Path("/task/{taskId}/codeLang/{codeLang}")
     @POST
@@ -142,20 +150,9 @@ public interface ServiceCheckerSetRestResource
     );
 
     @ApiOperation("根据规则ID列表查询规则集")
-    @Path("/project/openscan/{projectId}")
+    @Path("/project/openscan/checkerSet")
     @POST
     Result<List<CheckerSetVO>> queryCheckerSetsForOpenScan(
             @ApiParam(value = "规则集列表", required = true)
-                    Set<CheckerSetVO> checkerSetList,
-            @ApiParam(value = "项目Id", required = true)
-            @PathParam("projectId")
-                    String projectId);
-
-    @ApiOperation("查询规则集列表")
-    @Path("/list")
-    @POST
-    Result<List<CheckerSetVO>> getCheckerSets(
-        @ApiParam(value = "配置规则包参数", required = true)
-            CheckerSetListQueryReq queryCheckerSetReq
-    );
+                    Set<CheckerSetVO> checkerSetList);
 }

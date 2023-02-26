@@ -40,12 +40,20 @@ public class GrayDefectTaskSubVO {
     @ApiModelProperty("本次耗时")
     private Long currentElapsedTime;
 
-    @ApiModelProperty("是否成功")
-    private Boolean success;
+    /**
+     * int TASK_FLAG_SUCC = 1;  成功
+     * int TASK_FLAG_FAIL = 2;  失败
+     * int TASK_FLAG_PROCESSING = 3;  进行中
+     */
+    @ApiModelProperty("任务状态")
+    private int taskState;
 
     @ApiModelProperty("仓库url")
     private String gitUrl;
 
     @ApiModelProperty("codecc链接")
     private String codeccUrl;
+
+    @ApiModelProperty("最近分析状态")
+    private String analyzeDate;
 }

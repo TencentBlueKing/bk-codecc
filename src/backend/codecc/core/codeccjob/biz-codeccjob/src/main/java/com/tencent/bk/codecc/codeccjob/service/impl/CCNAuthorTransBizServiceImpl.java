@@ -12,11 +12,11 @@
 
 package com.tencent.bk.codecc.codeccjob.service.impl;
 
-import com.tencent.bk.codecc.defect.model.CCNDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.vo.common.AuthorTransferVO;
 import com.tencent.bk.codecc.codeccjob.dao.mongorepository.CCNDefectRepository;
 import com.tencent.bk.codecc.codeccjob.service.AbstractAuthorTransBizService;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import lombok.extern.slf4j.Slf4j;

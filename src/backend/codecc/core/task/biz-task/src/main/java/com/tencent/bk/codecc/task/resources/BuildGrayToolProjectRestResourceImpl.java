@@ -32,7 +32,7 @@ import com.tencent.bk.codecc.task.service.GrayToolProjectService;
 import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
 import com.tencent.bk.codecc.task.vo.GrayToolReportVO;
 import com.tencent.bk.codecc.task.vo.TriggerGrayToolVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.web.RestResource;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -52,14 +52,14 @@ public class BuildGrayToolProjectRestResourceImpl implements BuildGrayToolProjec
     private GrayToolProjectService grayToolProjectService;
 
     @Override
-    public Result<Boolean> createGrayTaskPool(String toolName, String user) {
-        grayToolProjectService.selectGrayTaskPool(toolName, user);
+    public Result<Boolean> createGrayTaskPool(String toolName,String stage, String user) {
+        grayToolProjectService.selectGrayTaskPool(toolName, stage, user);
         return new Result<>(true);
     }
 
     @Override
-    public Result<TriggerGrayToolVO> triggerGrayTaskPool(String toolName) {
-        return new Result<>(grayToolProjectService.triggerGrayToolTasks(toolName));
+    public Result<TriggerGrayToolVO> triggerGrayTaskPool(String toolName, String taskNum) {
+        return new Result<>(grayToolProjectService.triggerGrayToolTasks(toolName, taskNum));
     }
 
     @Override

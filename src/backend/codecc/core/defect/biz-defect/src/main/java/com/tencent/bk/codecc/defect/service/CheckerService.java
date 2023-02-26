@@ -27,6 +27,7 @@
 package com.tencent.bk.codecc.defect.service;
 
 import com.tencent.bk.codecc.defect.vo.CheckerCommonCountVO;
+import com.tencent.bk.codecc.defect.vo.CheckerDetailListQueryReqVO;
 import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
 import com.tencent.bk.codecc.defect.vo.CheckerListQueryReq;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerListSortType;
@@ -141,6 +142,8 @@ public interface CheckerService
     List<CheckerDetailVO> queryCheckerDetailList(CheckerListQueryReq checkerListQueryReq, String projectId, Integer pageNum,
                                                  Integer pageSize, Sort.Direction sortType, CheckerListSortType sortField);
 
+    List<CheckerDetailVO> queryCheckerDetailList(CheckerDetailListQueryReqVO checkerListQueryReq);
+
     /**
      * 查询规则相应数量集
      *
@@ -179,4 +182,15 @@ public interface CheckerService
      * @return
      */
     boolean updateCheckerByCheckerKey(CheckerDetailVO checkerDetailVO);
+
+
+    /**
+     * 查询任务关联规则所对应的维度信息
+     *
+     * @param taskIdList
+     * @param projectId
+     * @param toolNameList
+     * @return
+     */
+    List<String> queryTaskCheckerDimension(List<Long> taskIdList, String projectId, List<String> toolNameList);
 }

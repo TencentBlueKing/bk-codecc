@@ -12,10 +12,10 @@
  
 package com.tencent.bk.codecc.codeccjob.service.impl;
 
-import com.tencent.bk.codecc.defect.model.DefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.defect.vo.common.AuthorTransferVO;
 import com.tencent.bk.codecc.codeccjob.dao.mongorepository.DefectRepository;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.IBizService;
@@ -44,7 +44,7 @@ public class CommonAuthorTransBizServiceImpl implements IBizService<AuthorTransf
     {
         long taskId = authorTransferVO.getTaskId();
         String toolName = authorTransferVO.getToolName();
-        List<DefectEntity> defectList = defectRepository.findByTaskIdAndToolNameAndStatus(taskId, toolName, ComConstants.DefectStatus.NEW.value());
+        List<CommonDefectEntity> defectList = defectRepository.findByTaskIdAndToolNameAndStatus(taskId, toolName, ComConstants.DefectStatus.NEW.value());
 
         if (CollectionUtils.isNotEmpty(defectList))
         {
@@ -57,7 +57,7 @@ public class CommonAuthorTransBizServiceImpl implements IBizService<AuthorTransf
                 transferAuthorPairMap.put(sourceAuthorList, targetAuthorList);
             });
 
-            List<DefectEntity> needRefreshDefectList = new ArrayList<>();
+            List<CommonDefectEntity> needRefreshDefectList = new ArrayList<>();
             defectList.forEach(defectEntity ->
             {
                 Set<String> authorList = defectEntity.getAuthorList();

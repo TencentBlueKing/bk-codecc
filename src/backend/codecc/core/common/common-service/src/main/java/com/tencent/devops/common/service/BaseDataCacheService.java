@@ -9,4 +9,12 @@ public interface BaseDataCacheService {
     List<BaseDataVO> getLanguageBaseDataFromCache(Long codeLang);
 
     BaseDataVO getToolOrder();
+
+    int getMaxBuildListSize();
+
+    /**
+     * 获取存量告警的忽略类型
+     * @return
+     */
+    Integer getHistoryIgnoreType();
 }

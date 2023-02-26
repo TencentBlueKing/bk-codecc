@@ -25,4 +25,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CodeRepoStatisticRepository extends MongoRepository<CodeRepoStatisticEntity, String> {
 
+    long countByDataFromAndUrlAndBranch(String dataFrom, String url, String branch);
+
 }

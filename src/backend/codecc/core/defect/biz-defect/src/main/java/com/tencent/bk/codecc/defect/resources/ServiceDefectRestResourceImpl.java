@@ -27,18 +27,24 @@
 package com.tencent.bk.codecc.defect.resources;
 
 import com.tencent.bk.codecc.defect.api.ServiceDefectRestResource;
-import com.tencent.bk.codecc.defect.service.MetricsService;
+import com.tencent.bk.codecc.defect.service.CommonDefectMigrationService;
+import com.tencent.bk.codecc.defect.service.GetTaskLogService;
+import com.tencent.bk.codecc.defect.service.IQueryWarningBizService;
 import com.tencent.bk.codecc.defect.service.impl.StatQueryWarningServiceImpl;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
-import com.tencent.bk.codecc.defect.vo.MetricsVO;
-import com.tencent.devops.common.api.constant.CommonMessageCode;
-import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.bk.codecc.defect.vo.ToolDefectIdVO;
+import com.tencent.bk.codecc.defect.vo.ToolDefectPageVO;
+import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.ToolType;
 import com.tencent.devops.common.service.BizServiceFactory;
 import com.tencent.devops.common.service.IBizService;
 import com.tencent.devops.common.web.RestResource;
-import org.apache.commons.lang.StringUtils;
+import java.util.List;
+import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -48,16 +54,19 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @date 2019/10/20
  */
 @RestResource
+@Slf4j
 public class ServiceDefectRestResourceImpl implements ServiceDefectRestResource {
 
     @Autowired
     private BizServiceFactory<IBizService> bizServiceFactory;
-
-    @Autowired
-    private MetricsService metricsService;
-
     @Autowired
     private StatQueryWarningServiceImpl statQueryWarningService;
+    @Autowired
+    private BizServiceFactory<IQueryWarningBizService> fileAndDefectQueryFactory;
+    @Autowired
+    private GetTaskLogService getTaskLogService;
+    @Autowired
+    private CommonDefectMigrationService commonDefectMigrationService;
 
     @Override
     public Result<Boolean> batchDefectProcess(long taskId,
@@ -66,31 +75,54 @@ public class ServiceDefectRestResourceImpl implements ServiceDefectRestResource 
         batchDefectProcessReqVO.setTaskId(taskId);
         batchDefectProcessReqVO.setIgnoreAuthor(userName);
         IBizService<BatchDefectProcessReqVO> bizService =
-                bizServiceFactory.createBizService(batchDefectProcessReqVO.getToolName(),
-                        batchDefectProcessReqVO.getDimension(),
+                bizServiceFactory.createBizService(batchDefectProcessReqVO.getToolNameList(),
+                        batchDefectProcessReqVO.getDimensionList(),
                         ComConstants.BATCH_PROCESSOR_INFIX + batchDefectProcessReqVO.getBizType(),
                         IBizService.class);
         return bizService.processBiz(batchDefectProcessReqVO);
     }
 
     @Override
-    public Result<MetricsVO> getMetrics(String repoId, String buildId) {
-        if (StringUtils.isBlank(repoId)) {
-            throw new CodeCCException(CommonMessageCode.ERROR_INVALID_PARAM_);
-        }
-
-        try {
-            MetricsVO mericsInfo = metricsService.getMetrics(repoId, buildId);
-            return new Result<>(mericsInfo);
-        } catch (CodeCCException e) {
-            MetricsVO failData = new MetricsVO();
-            failData.setStatus(2);
-            return new Result<>(failData);
-        }
-    }
-
-    @Override public Result<Long> lastestStatDefect(long taskId, String toolName) {
+    public Result<Long> lastestStatDefect(long taskId, String toolName) {
         return new Result<>(statQueryWarningService.getLastestMsgTime(taskId));
     }
 
+    @Override
+    public Result<Map<Long, String>> getLatestAnalyzeStatus(List<Long> taskIds) {
+        return new Result<>(getTaskLogService.getLatestAnalyzeStatus(taskIds));
+    }
+
+    @Override
+    public Result<List<ToolDefectIdVO>> queryDefectIdByCondition(
+            long taskId,
+            @NotNull DefectQueryReqVO reqVO
+    ) {
+        IQueryWarningBizService service = fileAndDefectQueryFactory.createBizService(
+                reqVO.getToolNameList(),
+                reqVO.getDimensionList(),
+                ComConstants.BusinessType.QUERY_WARNING.value(),
+                IQueryWarningBizService.class
+        );
+
+        return new Result<>(service.queryDefectsByQueryCond(taskId, reqVO));
+    }
+
+    @Override
+    public Result<ToolDefectPageVO> queryDefectIdPageByCondition(long taskId, DefectQueryReqVO reqVO,
+            int pageNum, int pageSize) {
+        IQueryWarningBizService service = fileAndDefectQueryFactory.createBizService(
+                reqVO.getToolNameList(),
+                reqVO.getDimensionList(),
+                ComConstants.BusinessType.QUERY_WARNING.value(),
+                IQueryWarningBizService.class
+        );
+
+        return new Result<>(service.queryDefectsByQueryCondWithPage(taskId, reqVO, pageNum, pageSize));
+    }
+
+
+    @Override
+    public Result<Boolean> commonToLintMigrationSuccessful(long taskId) {
+        return new Result<>(commonDefectMigrationService.isMigrationSuccessful(taskId));
+    }
 }

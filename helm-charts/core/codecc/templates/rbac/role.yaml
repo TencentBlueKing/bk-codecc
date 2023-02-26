@@ -3,7 +3,7 @@ apiVersion: {{ include "common.capabilities.rbac.apiVersion" . }}
 kind: Role
 metadata:
   name: {{ include "common.names.fullname" . }}
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
+  labels: {{- include "codecc.labels.standard" . | nindent 4 }}
     {{- if .Values.commonLabels }}
       {{- include "common.tplvalues.render" (dict "value" .Values.commonLabels "context" $) | nindent 4 }}
     {{- end }}
@@ -13,14 +13,20 @@ metadata:
 rules:
   - apiGroups: 
     - ""
+    - networking.k8s.io
     resources: 
     - configmaps
     - services
     - secrets
     - endpoints
     - persistentvolumeclaims
+    - pods
+    - namespaces
+    - ingresses
     verbs: 
     - get
     - watch
     - list
+    - create
+    - update
 {{- end -}}

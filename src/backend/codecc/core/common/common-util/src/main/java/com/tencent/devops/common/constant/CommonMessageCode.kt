@@ -72,7 +72,6 @@ object CommonMessageCode {
      */
     const val FILE_CONTENT_TOO_LARGE = "2100019"
 
-
     /**
      *  {0}无权限
      */
@@ -147,4 +146,9 @@ object CommonMessageCode {
      * 通过json文件传入的参数非法
      */
     const val JSON_PARAM_IS_INVALID = "2300020"
+
+    /**
+     * 任务提单没oauth授权
+     */
+    const val REACH_LIMIT = "2300023"
 }

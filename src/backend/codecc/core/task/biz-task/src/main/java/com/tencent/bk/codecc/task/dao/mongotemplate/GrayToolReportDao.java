@@ -12,8 +12,12 @@
  
 package com.tencent.bk.codecc.task.dao.mongotemplate;
 
+import com.tencent.bk.codecc.task.constant.TaskConstants;
 import com.tencent.bk.codecc.task.model.GrayDefectTaskSubEntity;
 import com.tencent.bk.codecc.task.model.GrayToolReportEntity;
+import kotlin.Unit;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -90,7 +94,11 @@ public class GrayToolReportDao
             update.inc("current_report_info.elapsed_time", elapsedTime);
             update.set("defect_task_list.$.current_elapsed_time", elapsedTime);
         }
-        update.set("defect_task_list.$.success", success);
+        if (null != success && success) {
+            update.set("defect_task_list.$.task_state", TaskConstants.TASK_FLAG_SUCC);
+        } else {
+            update.set("defect_task_list.$.task_state", TaskConstants.TASK_FLAG_FAIL);
+        }
         mongoTemplate.updateFirst(query, update, GrayToolReportEntity.class);
     }
 
