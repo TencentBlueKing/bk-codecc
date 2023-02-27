@@ -1,13 +1,5 @@
 rootProject.name = "codecc"
 
-pluginManagement {
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-
 
 include("core")
 include("core:common")

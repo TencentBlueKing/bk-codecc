@@ -1,13 +1,13 @@
-import com.tencent.devops.conventions.AssemblyMode
 import com.tencent.devops.utils.findPropertyOrEmpty
+import com.tencent.devops.enums.AssemblyMode
 
 plugins {
-    id("com.tencent.devops.boot") version "0.0.5"
+    id("com.tencent.devops.boot") version "0.0.6"
 }
 
 allprojects {
     group = "com.tencent.bk.codecc"
-    version = "0.0.2"
+    version = "1.7.37-RELEASE"
 
     apply(plugin = "com.tencent.devops.boot")
 
@@ -15,6 +15,20 @@ allprojects {
     repositories {
         mavenLocal()
         maven(url = mavenRepoUrl)
+        if (System.getenv("GITHUB_WORKFLOW") == null) { // 普通环境
+            maven(url = "https://mirrors.tencent.com/nexus/repository/maven-public")
+            maven(url = "https://mirrors.tencent.com/nexus/repository/gradle-plugins/")
+        } else { // GitHub Action 环境
+//            maven {
+//                name = "MavenSnapshot"
+//                url = java.net.URI("https://oss.sonatype.org/content/repositories/snapshots/")
+//                mavenContent {
+//                    snapshotsOnly()
+//                }
+//            }
+            mavenCentral()
+            gradlePluginPortal()
+        }
         mavenCentral()
         jcenter()
     }
@@ -190,9 +204,6 @@ allprojects {
         it.exclude(group = "com.tencent.bk.devops.ci.common", module = "common-archive-tencent")
         it.exclude(group = "com.tencent.bk.devops.ci.common", module = "common-client")
         it.exclude(group = "com.github.ulisesbocchio", module = "jasypt-spring-boot-starter")
-        it.exclude(group = "org.bouncycastle", module = "bcprov-jdk15on")
-        it.exclude(group = "org.bouncycastle", module = "bcpkix-jdk15on")
-        it.exclude(group = "org.bouncycastle", module = "bcprov-ext-jdk15on")
         if (project.name.contains("biz-codeccjob") && project.name != "boot-codeccjob") {
             it.exclude("io.undertow", "undertow-websockets-jsr")
         }
