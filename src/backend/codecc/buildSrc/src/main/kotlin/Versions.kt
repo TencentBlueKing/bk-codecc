@@ -44,7 +44,7 @@ object Versions {
     const val commonsIOVersion = "2.8.0"
     const val xmlrpcVersion = "3.1.3"
     const val commonsHttpclientVersion = "3.1"
-    const val devopsVersion = "1.7.37-RELEASE"
+    const val devopsVersion = "1.8.27-RELEASE"
     const val devopsNotifyVersion = "1.9.0-SNAPSHOT"
     const val jsonVersion = "20180130"
     const val redissionVersion = "3.15.4"
