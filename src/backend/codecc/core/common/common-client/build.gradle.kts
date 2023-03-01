@@ -1,5 +1,5 @@
-import com.tencent.devops.utils.findPropertyOrEmpty
 import com.tencent.devops.enums.AssemblyMode
+import com.tencent.devops.utils.findPropertyOrEmpty
 
 plugins {
     id("com.tencent.devops.boot")
