@@ -5,7 +5,7 @@ object Release {
 
 object Versions {
     const val Kotlin = "1.3.72"
-    const val kotlinVersion = "1.4.10"
+    const val kotlinVersion = "1.4.32"
     const val swaggerVersion = "1.6.2"
     const val jaxrsVersion = "2.0"
     const val jacksonVersion = "2.11.4"
