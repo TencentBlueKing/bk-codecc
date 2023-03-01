@@ -8,7 +8,7 @@ object Versions {
     const val kotlinVersion = "1.4.32"
     const val swaggerVersion = "1.6.2"
     const val jaxrsVersion = "2.0"
-    const val jacksonVersion = "2.11.4"
+    const val jacksonVersion = "2.12.6"
     const val hashidsVersion = "1.0.3"
     const val feignVersion = "10.10.1"
     const val svnkitVersion = "1.9.3"
