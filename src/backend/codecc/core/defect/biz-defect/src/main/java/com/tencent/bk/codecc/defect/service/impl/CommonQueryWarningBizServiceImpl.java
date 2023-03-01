@@ -141,7 +141,7 @@ public class CommonQueryWarningBizServiceImpl extends AbstractQueryWarningBizSer
     @Autowired
     private RedisTemplate redisTemplate;
 
-    @Value("${codecc.gateway.host}")
+    @Value("${codecc.public.url}")
     private String codeccGateWay;
 
     @Autowired

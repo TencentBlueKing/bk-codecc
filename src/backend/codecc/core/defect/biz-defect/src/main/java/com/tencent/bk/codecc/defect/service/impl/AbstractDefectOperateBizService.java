@@ -56,7 +56,7 @@ public abstract class AbstractDefectOperateBizService implements IDefectOperateB
     @Autowired
     private Client client;
 
-    @Value("${codecc.gateway.host}")
+    @Value("${codecc.public.url}")
     private String codeccGateWay;
 
     @Override

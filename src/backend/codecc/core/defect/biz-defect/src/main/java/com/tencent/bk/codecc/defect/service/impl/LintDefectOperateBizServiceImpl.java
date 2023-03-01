@@ -47,7 +47,7 @@ public class LintDefectOperateBizServiceImpl extends AbstractDefectOperateBizSer
     @Autowired
     private Client client;
 
-    @Value("${codecc.gateway.host}")
+    @Value("${codecc.public.url}")
     private String codeccGateWay;
 
     @Override

@@ -129,7 +129,7 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
     private AuthExPermissionApi authExPermissionApi;
     @Value("${devopsGateway.idchost}")
     private String devopsHost;
-    @Value("${codecc.gateway.host:#{null}}")
+    @Value("${codecc.public.url:#{null}}")
     private String codeccHost;
     private LoadingCache<String, List<IgnoreTypeSysEntity>> sysIgnoreTypeCache = CacheBuilder.newBuilder()
             .maximumSize(1)

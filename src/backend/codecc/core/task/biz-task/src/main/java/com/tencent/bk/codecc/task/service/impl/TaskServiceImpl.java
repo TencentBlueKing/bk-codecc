@@ -286,12 +286,6 @@ public class TaskServiceImpl implements TaskService {
     @Autowired
     private BaseDataService baseDataService;
 
-    @Value("${git.path:#{null}}")
-    private String gitCodePath;
-
-    @Value("${codecc.privatetoken:#{null}}")
-    private String gitPrivateToken = null;
-
     private LoadingCache<String, BaseDataEntity> toolTypeBaseDataCache = CacheBuilder.newBuilder()
             .refreshAfterWrite(2, TimeUnit.HOURS)
             .build(new CacheLoader<String, BaseDataEntity>() {
