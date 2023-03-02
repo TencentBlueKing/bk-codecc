@@ -22,7 +22,6 @@ import com.tencent.bk.codecc.task.dao.mongorepository.AnalyzeCountStatRepository
 import com.tencent.bk.codecc.task.dao.mongorepository.ToolElapseTimeRepository;
 import com.tencent.bk.codecc.task.model.AnalyzeCountStatEntity;
 import com.tencent.bk.codecc.task.model.ToolElapseTimeEntity;
-import com.tencent.bk.codecc.task.service.UserLogInfoService;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.StatisticTaskCodeLineToolVO;
 import com.tencent.devops.common.api.codecc.util.JsonUtil;
@@ -74,8 +73,6 @@ public class ActiveStatisticConsumer {
     private AnalyzeCountStatRepository analyzeCountStatRepository;
     @Autowired
     private ToolElapseTimeRepository toolElapseTimeRepository;
-    @Autowired
-    private UserLogInfoService userLogInfoService;
 
     /**
      * 定时任务统计每日数据
@@ -103,14 +100,6 @@ public class ActiveStatisticConsumer {
             toolAnalyzeElapseTimeStat(date, DefectStatType.GONGFENG_SCAN.value(), toolOrder);
             toolAnalyzeElapseTimeStat(date, DefectStatType.USER.value(), toolOrder);
             log.info("toolAnalyzeElapseTimeStat finish.");
-
-            // 定时任务查询当前周codeCC的活跃用户,添加进redis中
-            log.info("Start querying codeCC active users(week)");
-            userLogInfoService.getCodeCCWeekUserList(null);
-
-            // 定时任务查询当前月codeCC的活跃用户,添加进redis中
-            log.info("Start querying codeCC active users(month)");
-            userLogInfoService.getCodeCCMonthUserList(null);
 
             // 统计每日新增代码库/代码分支数
             codeRepoStatDaily();
