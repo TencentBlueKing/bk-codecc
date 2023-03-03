@@ -95,10 +95,10 @@ abstract class Client constructor(
     protected val jacksonDecoder = JacksonDecoder(objectMapper)
     protected val jacksonEncoder = JacksonEncoder(objectMapper)
 
-    @Value("\${service.prefix.codecc:#{null}}")
+    @Value("\${service.prefix:#{null}}")
     private val servicePrefix: String? = null
 
-    @Value("\${service.suffix.codecc:#{null}}")
+    @Value("\${service.suffix:#{null}}")
     private val serviceSuffix: String? = null
 
     companion object {
