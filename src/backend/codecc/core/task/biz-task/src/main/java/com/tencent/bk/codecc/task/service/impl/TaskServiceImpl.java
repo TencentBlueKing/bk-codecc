@@ -2347,7 +2347,7 @@ public class TaskServiceImpl implements TaskService {
         if (taskListReqVO.getPageable() != null && taskListReqVO.getPageable()) {
             enableProjs.addAll(disableProjs);
             int startIndex = (taskListReqVO.getPage() - 1) * taskListReqVO.getPageSize();
-            int endIndex = taskListReqVO.getPage() * taskListReqVO.getPageSize();
+            int endIndex = Math.min(enableProjs.size(), taskListReqVO.getPage() * taskListReqVO.getPageSize());
             List<TaskDetailVO> pageProjs = enableProjs.subList(startIndex, endIndex);
             Result<List<MetricsVO>> result = client.get(ServiceMetricsRestResource.class)
                     .getMetrics(pageProjs.stream().map(TaskDetailVO::getTaskId).collect(Collectors.toList()));
