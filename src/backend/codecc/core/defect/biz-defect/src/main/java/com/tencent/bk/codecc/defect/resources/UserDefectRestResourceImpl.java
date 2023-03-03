@@ -243,6 +243,25 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
     }
 
     @Override
+    public Result<CommonDefectQueryRspVO> queryDefectListWithIssue(String userId, String projectId,
+            DefectQueryReqVO defectQueryReqVO, int pageNum, int pageSize, String sortField, Direction sortType) {
+        IQueryWarningBizService service = fileAndDefectQueryFactory.createBizService(
+                defectQueryReqVO.getToolNameList(),
+                defectQueryReqVO.getDimensionList(),
+                ComConstants.BusinessType.QUERY_WARNING.value(),
+                IQueryWarningBizService.class
+        );
+
+        long taskId = CollectionUtils.isEmpty(defectQueryReqVO.getTaskIdList()) ? 0L
+                : defectQueryReqVO.getTaskIdList().get(0);
+
+
+        return new Result<>(
+                service.processQueryWarningRequest(taskId, defectQueryReqVO, pageNum, pageSize, sortField, sortType)
+        );
+    }
+
+    @Override
     public Result<CommonDefectDetailQueryRspVO> queryDefectDetail(
             Long taskId,
             String userId,
@@ -264,6 +283,11 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
         );
     }
 
+    @Override
+    public Result<CommonDefectDetailQueryRspVO> queryDefectDetailWithIssue(Long taskId, String userId,
+            CommonDefectDetailQueryReqVO commonDefectDetailQueryReqVO, String sortField, Direction sortType) {
+        return queryDefectDetail(taskId, userId, commonDefectDetailQueryReqVO, sortField, sortType);
+    }
 
 
     @Override

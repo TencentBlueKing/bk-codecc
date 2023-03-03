@@ -1,3 +1,5 @@
+
+ 
 /*
  * Tencent is pleased to support the open source community by making BK-CODECC 蓝鲸代码检查平台 available.
  *
@@ -24,13 +26,10 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
 package com.tencent.bk.codecc.defect.api;
-
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TASK_ID;
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
-
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessRspVO;
 import com.tencent.bk.codecc.defect.vo.CountDefectFileRequest;
@@ -71,7 +70,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import org.springframework.data.domain.Sort;
-
 /**
  * 告警查询服务
  */
@@ -80,7 +78,6 @@ import org.springframework.data.domain.Sort;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface UserDefectRestResource {
-
     /**
      * 目前在用：CCN、DUPC
      *
@@ -111,7 +108,6 @@ public interface UserDefectRestResource {
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId
     );
-
     @ApiOperation("初始化告警管理页面的缺陷类型、作者以及树")
     @Path("/checker/authors/list")
     @GET
@@ -135,7 +131,6 @@ public interface UserDefectRestResource {
             @QueryParam(value = "buildId")
             String buildId
     );
-
     @ApiOperation("初始化告警管理页面的缺陷类型、作者以及文件树")
     @Path("/checker/authors/list")
     @POST
@@ -146,6 +141,7 @@ public interface UserDefectRestResource {
             String projectId,
             QueryCheckersAndAuthorsRequest request
     );
+
 
     @ApiOperation("查询告警清单")
     @Path("/list")
@@ -159,6 +155,31 @@ public interface UserDefectRestResource {
             @ApiParam(value = "查询参数详情", required = true)
             @Valid
             DefectQueryReqVO_Old requestVO,
+            @ApiParam(value = "页数")
+            @QueryParam(value = "pageNum")
+            int pageNum,
+            @ApiParam(value = "页面大小")
+            @QueryParam(value = "pageSize")
+            int pageSize,
+            @ApiParam(value = "排序字段")
+            @QueryParam(value = "sortField")
+            String sortField,
+            @ApiParam(value = "排序方式")
+            @QueryParam(value = "sortType")
+            Sort.Direction sortType
+    );
+
+    @ApiOperation("查询告警清单(带提单信息)")
+    @Path("/issue/list")
+    @POST
+    Result<CommonDefectQueryRspVO> queryDefectListWithIssue(
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userId,
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId,
+            @ApiParam(value = "查询参数详情", required = true)
+            @Valid
+            DefectQueryReqVO defectQueryReqVO,
             @ApiParam(value = "页数")
             @QueryParam(value = "pageNum")
             int pageNum,
@@ -194,6 +215,27 @@ public interface UserDefectRestResource {
             Sort.Direction sortType
     );
 
+    @ApiOperation("查询告警详情(带提单信息)")
+    @Path("/issue/detail")
+    @POST
+    Result<CommonDefectDetailQueryRspVO> queryDefectDetailWithIssue(
+            @ApiParam(value = "任务ID", required = false)
+            @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
+            Long taskId,
+            @ApiParam(value = "用户ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userId,
+            @ApiParam(value = "查询参数详情", required = true)
+            @Valid
+            CommonDefectDetailQueryReqVO commonDefectDetailQueryReqVO,
+            @ApiParam(value = "排序字段")
+            @QueryParam(value = "sortField")
+            String sortField,
+            @ApiParam(value = "排序方式")
+            @QueryParam(value = "sortType")
+            Sort.Direction sortType
+    );
+
     @ApiOperation("获取文件片段")
     @Path("/fileContentSegment")
     @POST
@@ -207,7 +249,6 @@ public interface UserDefectRestResource {
             @ApiParam(value = "获取文件片段", required = true)
             @Valid
             GetFileContentSegmentReqVO getFileContentSegmentReqVO);
-
     @ApiOperation("告警批量处理")
     @Path("/batch")
     @POST
@@ -222,7 +263,6 @@ public interface UserDefectRestResource {
             @Valid
             BatchDefectProcessReqVO batchDefectProcessReqVO
     );
-
     @ApiOperation("查询构建列表")
     @Path("/tasks/{taskId}/buildInfos")
     @GET
@@ -231,7 +271,6 @@ public interface UserDefectRestResource {
             @PathParam(value = "taskId")
             Long taskId
     );
-
     @ApiOperation("查询构建快照相关信息")
     @Path("/tasks/{taskId}/buildInfosWithBranches")
     @GET
@@ -240,7 +279,6 @@ public interface UserDefectRestResource {
             @PathParam(value = "taskId")
             Long taskId
     );
-
     @ApiOperation("运营数据:按条件获取任务告警统计信息")
     @Path("/deptTaskDefect")
     @POST
@@ -252,7 +290,6 @@ public interface UserDefectRestResource {
             @Valid
             DeptTaskDefectReqVO deptTaskDefectReqVO
     );
-
     @ApiOperation("添加代码评论")
     @Path("/codeComment/toolName/{toolName}")
     @POST
@@ -287,8 +324,6 @@ public interface UserDefectRestResource {
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             String taskId
     );
-
-
     @ApiOperation("更新代码评论")
     @Path("/codeComment/commentId/{commentId}/toolName/{toolName}")
     @PUT
@@ -305,8 +340,6 @@ public interface UserDefectRestResource {
             @ApiParam(value = "评论信息", required = true)
             SingleCommentVO singleCommentVO
     );
-
-
     @ApiOperation("删除代码评论")
     @Path("/codeComment/commentId/{commentId}/singleCommentId/{singleCommentId}/toolName/{toolName}")
     @DELETE
@@ -330,8 +363,6 @@ public interface UserDefectRestResource {
             @QueryParam(value = "comment")
             String comment
     );
-
-
     @ApiOperation("查询文件告警收敛清单")
     @Path("/gather/taskId/{taskId}/toolName/{toolName}")
     @GET
@@ -343,8 +374,6 @@ public interface UserDefectRestResource {
             @PathParam(value = "toolName")
             String toolName
     );
-
-
     @ApiOperation("查询文件告警收敛清单")
     @Path("/queryFileDefectGather")
     @POST
@@ -355,7 +384,6 @@ public interface UserDefectRestResource {
             String projectId,
             QueryFileDefectGatherRequest request
     );
-
     @ApiOperation("查询代码统计清单")
     @Path("/list/toolName/{toolName}/orderBy/{orderBy}")
     @GET
@@ -372,7 +400,6 @@ public interface UserDefectRestResource {
             @PathParam(value = "orderBy")
             ComConstants.CLOCOrder orderBy
     );
-
     @ApiOperation("告警管理初始化页面")
     @Path("/initpage")
     @POST
@@ -386,7 +413,6 @@ public interface UserDefectRestResource {
             @Valid
             DefectQueryReqVO defectQueryReqVO
     );
-
     @ApiOperation("查询代码统计清单")
     @Path("/list/tool/stat/toolName/{toolName}")
     @GET
@@ -404,7 +430,6 @@ public interface UserDefectRestResource {
             @QueryParam(value = "endTime")
             long endTime
     );
-
     @ApiOperation("获取当时真实执行过的工具列表(工具可能后期停用了)")
     @Path("/listToolName")
     @POST
@@ -415,7 +440,6 @@ public interface UserDefectRestResource {
             String projectId,
             ListToolNameRequest request
     );
-
     @ApiOperation("数据是否迁移成功")
     @Path("/commonToLintMigrationSuccessful/{taskId}")
     @GET
@@ -424,7 +448,6 @@ public interface UserDefectRestResource {
             @PathParam("taskId")
             long taskId
     );
-
     @ApiOperation("统计含告警的文件数")
     @Path("/getNewDefectFileCount")
     @POST
