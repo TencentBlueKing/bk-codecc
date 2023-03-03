@@ -136,7 +136,7 @@ trap 'rm -rf $tmp_dir' EXIT TERM
 if [[ $ALL -eq 1 || $GATEWAY -eq 1 ]] ; then
     log "编译frontend..."
     cd $FRONTEND_DIR
-    npm i --registry http://mirrors.tencent.com/npm/ && npm run build
+    npm i --force && npm run build
     # 打包gateway镜像
     log "构建gateway镜像..."
     cd $WORKING_DIR
