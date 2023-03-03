@@ -79,3 +79,10 @@ dist/
 
 # local
 index-dev.html
+
+index-bundle.html
+
+.temp/
+
+eslint-out.html
+.codecc

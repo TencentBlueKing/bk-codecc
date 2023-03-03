@@ -12,12 +12,38 @@
     <body>
         <div id="app"></div>
         <script>
+            var projectId = ''
+            var projectIdArr = document.location.pathname.match(/^\/codecc\/([\w-]+)\//)
+            if (projectIdArr && projectIdArr[1]) {
+                projectId = projectIdArr[1]
+            }
+            if (projectId) {
+                document.cookie = 'X-DEVOPS-PROJECT-ID=' + projectId + ';domain=' + location.host + ';path=/'
+            }
+        </script>
+        <script>
             var PAAS_SERVICE_URL = 'http://__PAAS_SERVICE_URL__'
-            var AJAX_URL_PREFIX = '__BK_CODECC_PUBLIC_URL__/ms'
-            var CODECC_SITE_URL = '__BK_CODECC_PUBLIC_URL__'
-            var DEVOPS_SITE_URL = '__BK_CI_PUBLIC_URL__'
-            var DEVOPS_API_URL = '__BK_CI_PUBLIC_URL__/ms'
-            var JUMP_SITE_URL = window.self === window.top ? CODECC_SITE_URL : DEVOPS_SITE_URL + '/console'
+            var AJAX_URL_PREFIX = '//' + location.host + '/ms'
+            var OP_AJAX_URL_PREFIX = '//' + '__CODECC_OP_GATEWAY_HOST__'
+            var DEVOPS_SITE_URL = '//__DEVOPS_PREFIX__' + (location.host.includes('woa') ? '.woa' : '.oa') + '.com'
+            var STREAM_SITE_URL = 'https://' + '__STREAM_SITE_URL__' 
+            var DEVOPS_API_URL = DEVOPS_SITE_URL + '/ms'
+            if (location.protocol == 'https:') {
+                OP_AJAX_URL_PREFIX = '//' + '__CODECC_OP_HTTPS_GATEWAY_HOST__'
+            }
+
+            // 链接
+            var IWIKI_CODECC_HOME = 'https://__IWIKI_CODECC_HOME__'
+            var IWIKI_CODECC_TOOL = 'https://__IWIKI_CODECC_TOOL__'
+            var ROBOT_DESC = 'https://__ROBOT_DESC__'
+            var IWIKI_OPEN_SCORE = 'https://__IWIKI_OPEN_SCORE__'
+            var TECHMAP_REPORT = 'https://__TECHMAP_REPORT__'
+            var IWIKI_MRPR_SCAN = 'https://__IWIKI_MRPR_SCAN__'
+            var IWIKI_PROHIBIT = 'https://__IWIKI_PROHIBIT__'
+            var IWIKI_SITE_URL = 'https://__IWIKI_SITE_URL__'
+
+            // aegis监控
+            var AEGISID = '__AEGISID__'
         </script>
         <script>
             (function(){
