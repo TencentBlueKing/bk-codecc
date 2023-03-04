@@ -1,4 +1,4 @@
-package com.tencent.bk.codecc.defect.resources;
+package com.tencent.bk.codecc.task.resources;
 
 import com.tencent.bk.codecc.task.api.ServiceGrayToolProjectResource;
 import com.tencent.bk.codecc.task.vo.GrayTaskStatVO;
