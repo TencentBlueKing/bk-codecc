@@ -29,14 +29,13 @@ package com.tencent.bk.codecc.task.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.tencent.bk.codecc.task.enums.TaskSortType;
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
-import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigRequest;
-import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse;
-import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.bk.codecc.task.vo.NotifyCustomVO;
 import com.tencent.bk.codecc.task.vo.RuntimeUpdateMetaVO;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
 import com.tencent.bk.codecc.task.vo.TaskCodeLibraryVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
+import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigRequest;
+import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse;
 import com.tencent.bk.codecc.task.vo.TaskListReqVO;
 import com.tencent.bk.codecc.task.vo.TaskListVO;
 import com.tencent.bk.codecc.task.vo.TaskMemberVO;
@@ -151,15 +150,6 @@ public interface TaskService {
      * @return
      */
     Boolean updateRuntimeInfo(Long taskId, RuntimeUpdateMetaVO runtimeUpdateMetaVO, String userName);
-
-    /**
-     * 修改任务基本信息 - 内部服务间调用
-     *
-     * @param taskUpdateVO
-     * @param userName
-     * @return
-     */
-    Boolean updateTaskByServer(TaskUpdateVO taskUpdateVO, String userName);
 
     /**
      * 获取任务信息概览
@@ -373,14 +363,6 @@ public interface TaskService {
     TaskInfoEntity getTaskById(Long taskId);
 
     /**
-     * 保存任务信息
-     *
-     * @param taskInfoEntity
-     * @return
-     */
-    Boolean saveTaskInfo(TaskInfoEntity taskInfoEntity);
-
-    /**
      * 根据bg id查询任务清单
      *
      * @param bgId
@@ -394,7 +376,7 @@ public interface TaskService {
      * @param taskIds
      * @return
      */
-    public List<TaskBaseVO> getTasksByIds(List<Long> taskIds);
+    List<TaskBaseVO> getTasksByIds(List<Long> taskIds);
 
 
     /**
@@ -469,14 +451,6 @@ public interface TaskService {
     Set<Integer> queryDeptIdByBgId(Integer bgId);
 
     /**
-     * 按工蜂id获取任务实体清单
-     *
-     * @param gongfengProjectId
-     * @return
-     */
-    TaskInfoEntity getTaskByGongfengId(Integer gongfengProjectId);
-
-    /**
      * 多条件查询任务列表
      *
      * @param taskListReqVO 请求体
@@ -507,24 +481,11 @@ public interface TaskService {
      */
     void updateTaskOwnerAndMember(TaskOwnerAndMemberVO vo, Long taskId);
 
-    /**
-     * 获取蓝盾插件开源扫描任务信息
-     */
-    List<Long> getBkPluginTaskIds();
 
     /**
      * 触发蓝盾插件打分任务
      */
     Boolean triggerBkPluginScoring();
-
-    List<MetadataVO> listTaskToolDimension(List<Long> taskIdList, String projectId);
-
-
-
-    /**
-     * 根据工蜂代码库创建扫描任务并计入开源扫描任务
-     */
-//    Boolean createTaskByRepoId(String repoId, List<String> langs);
 
     /**
      * 按创建来源查询任务ID
@@ -533,14 +494,6 @@ public interface TaskService {
      * @return list
      */
     List<Long> queryTaskIdByCreateFrom(List<String> taskCreateFrom);
-
-    /**
-     * 按创建来源查询任务ID,排除灰度任务
-     *
-     * @param taskCreateFrom 任务来源列表
-     * @return list
-     */
-    List<Long> queryTaskIdByCreateFromExcludeGray(List<String> taskCreateFrom, Integer pageNum, Integer pageSize);
 
     /**
      * 获取开源或非开源的任务ID
@@ -630,5 +583,4 @@ public interface TaskService {
     Map<Long, String> listTaskNameCn(List<Long> taskIdList);
 
 
-    List<Long> queryTaskIdByProjectIdWithPermission(String projectId, String userId);
 }

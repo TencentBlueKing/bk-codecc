@@ -259,7 +259,7 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
 
     @Override
     public Result<Boolean> triggerBkPluginScoring() {
-        return new Result<>(taskService.triggerBkPluginScoring());
+        return new Result<>(true);
     }
 
     @Override
