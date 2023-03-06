@@ -87,7 +87,7 @@ public class NotifyUtils {
             return String.format(CODE_ISSUE_FMT, codeccHost, projectId, taskId, dimension.toLowerCase(), dimension);
         }
         return String
-                .format("http://%s/console/codecc/%s/task/%s/defect/%s/list?dimension=%s", devopsHost, projectId,
+                .format("%s/console/codecc/%s/task/%s/defect/%s/list?dimension=%s", devopsHost, projectId,
                         taskId, dimension.toLowerCase(), dimension);
     }
 
@@ -100,6 +100,6 @@ public class NotifyUtils {
                 || isStream2_0(projectId)) {
             return String.format(CODE_CCN_FMT, codeccHost, projectId, taskId);
         }
-        return String.format("http://%s/console/codecc/%s/task/%s/defect/ccn/list", devopsHost, projectId, taskId);
+        return String.format("%s/console/codecc/%s/task/%s/defect/ccn/list", devopsHost, projectId, taskId);
     }
 }

@@ -812,8 +812,8 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
      */
     private String generateEmailRootUrl(String projectId) {
         return NotifyUtils.isGongfengScanProject(projectId) || NotifyUtils.isStream2_0(projectId)
-                ? String.format("http://%s/codecc/%s/", codeccHost, projectId)
-                : String.format("http://%s/console/codecc/%s/", devopsHost, projectId);
+                ? String.format("%s/codecc/%s/", codeccHost, projectId)
+                : String.format("%s/console/codecc/%s/", devopsHost, projectId);
     }
 
     /**

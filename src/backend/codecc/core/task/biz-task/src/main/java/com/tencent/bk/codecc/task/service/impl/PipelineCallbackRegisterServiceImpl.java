@@ -115,7 +115,7 @@ public class PipelineCallbackRegisterServiceImpl implements PipelineCallbackRegi
     }
 
     private String getCallbackUrl() {
-        return "http://" + codeccHost + "/ms/task/api/service/task/pipeline/callback";
+        return codeccHost + "/ms/task/api/service/task/pipeline/callback";
     }
 
     private RedisLock getRegisterRedisLock(String pipelineId, String event) {
