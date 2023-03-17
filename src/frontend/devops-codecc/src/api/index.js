@@ -12,6 +12,7 @@ import RequestQueue from './request-queue'
 import { bus } from '../common/bus'
 import { messageError } from '@/common/bkmagic'
 import store from '@/store'
+import I18n from '@/i18n'
 // import router from '@/router'
 
 // axios 实例
@@ -199,7 +200,7 @@ function handleReject(error, config) {
     } else if (status === 403) {
       bus.$emit('show-permission-dialog')
     } else if (status === 500) {
-      nextError.message = '系统出现异常'
+      nextError.message = I18n.t('系统出现异常')
       messageError(nextError.message)
     } else if (data && data.message) {
       nextError.message = data.message

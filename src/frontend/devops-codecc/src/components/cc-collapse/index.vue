@@ -56,10 +56,10 @@
       searchFormat() {
         const list = this.search.filter(item => item.name !== 'total')
         const { selectedList } = this
-        const severityMap = ['', '严重', '一般', '', '提示']
+        const severityMap = ['', this.$t('严重'), this.$t('一般'), '', this.$t('提示')]
         const editableMap = {
-          false: '不可修改',
-          true: '可修改',
+          false: this.$t('不可修改'),
+          true: this.$t('可修改'),
         }
         list.forEach((item) => {
           if (item.name === 'toolName') {

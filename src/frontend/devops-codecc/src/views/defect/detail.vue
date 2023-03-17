@@ -343,6 +343,7 @@
           this.traceActiveId = this.currentTrace.id
           this.mainTraceId = this.currentTrace.id
           this.currentTraceIndex = this.traceDataList.findIndex(item => item.id === this.currentTrace.id)
+          this.updateCodeViewer()
           // this.locateHint()
         },
         deep: true,

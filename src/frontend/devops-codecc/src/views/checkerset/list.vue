@@ -33,7 +33,7 @@
           <bk-button icon="plus" theme="primary" @click="handleCreate">{{$t('创建规则集')}}</bk-button>
           <bk-button :text="true" icon-right="icon-plus-circle" @click="installMore">{{$t('更多规则集')}}</bk-button>
         </section>
-        <span class="total-count">共<span v-if="checkersetList">{{checkersetList.length}}</span>{{$t('个规则集')}}</span>
+        <span class="total-count">{{$t('共')}} <span v-if="checkersetList">{{checkersetList.length}}</span> {{$t('个规则集')}}</span>
       </div>
       <main class="checkerset-content" v-show="isFetched">
         <bk-virtual-scroll v-if="isFetched && checkersetList.length" ref="domVirtualScroll"

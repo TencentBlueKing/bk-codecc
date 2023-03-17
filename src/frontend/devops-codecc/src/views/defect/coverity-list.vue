@@ -588,7 +588,7 @@
               <bk-input v-model="operateParams.sourceAuthor" :disabled="operateParams.changeAuthorType === 1" style="width: 290px;"></bk-input>
             </bk-form-item>
             <bk-form-item :label="$t('新处理人')">
-              <bk-tag-input allow-create v-model="operateParams.targetAuthor" style="width: 290px;"></bk-tag-input>
+              <bk-member-selector v-model="operateParams.targetAuthor" style="width: 290px;"></bk-member-selector>
             </bk-form-item>
           </bk-form>
         </div>

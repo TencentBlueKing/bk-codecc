@@ -51,9 +51,9 @@
           },
         },
         panels: [
-          { name: 'task', label: '任务' },
-          { name: 'checkerset', label: '规则集' },
-          { name: 'checker', label: '规则' },
+          { name: 'task', label: this.$t('任务') },
+          { name: 'checkerset', label: this.$t('规则集') },
+          { name: 'checker', label: this.$t('规则') },
         ],
         iwikiCodeccHome: window.IWIKI_CODECC_HOME,
         hasRedPointStore: window.localStorage.getItem('redtips-tab-cloc-20200704'),

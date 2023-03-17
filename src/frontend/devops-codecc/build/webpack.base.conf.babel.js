@@ -70,7 +70,7 @@ export default {
           loader: 'babel-loader',
           options: {
             // include: [resolve('src')],
-            include: [resolve('src'), resolve('node_modules/bk-magic-vue')],
+            include: [resolve('src'), resolve('node_modules/@tencent/bk-magic-vue')],
             cacheDirectory: './webpack_cache/',
             // 确保 JS 的转译应用到 node_modules 的 Vue 单文件组件
             exclude: file => (

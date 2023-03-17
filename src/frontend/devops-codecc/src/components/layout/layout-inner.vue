@@ -483,7 +483,21 @@
         this.show = true
       },
       triggerAnalyse() {
-        if (this.taskDetail.createFrom.indexOf('pipeline') !== -1) {
+        if (this.taskDetail.projectId.startsWith('git_')) {
+          const { projectName, pipelineId } = this.taskDetail
+          const { buildId } = this.latestUpdate
+          this.$bkInfo({
+            title: this.$t('立即检查'),
+            subTitle: this.$t('此代码检查任务需要到Stream启动，是否前往Stream？'),
+            maskClose: true,
+            confirmFn(name) {
+              window.open(
+                `${window.STREAM_SITE_URL}/pipeline/${pipelineId}/detail/${buildId}/?page=1#${projectName}`
+                , '_blank',
+              )
+            },
+          })
+        } else if (this.taskDetail.createFrom.indexOf('pipeline') !== -1) {
           const { projectId, pipelineId } = this.taskDetail
           this.$bkInfo({
             title: this.$t('立即检查'),

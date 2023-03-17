@@ -49,7 +49,7 @@
         </bk-select>
       </div>
       <div class="task-filter-switcher">
-        <label class="task-total-count">显示已停用任务</label>
+        <label class="task-total-count">{{$t('显示已停用任务')}}</label>
         <bk-switcher v-model="searchInfo.showDisabledTask" theme="primary" />
       </div>
     </div>
@@ -73,15 +73,15 @@
         isFilter: true,
         showOrderType: false,
         statusList: [
-          { id: 'SUCCESS', name: '成功' },
-          { id: 'FAIL', name: '失败' },
-          { id: 'WAITING', name: '待分析' },
-          { id: 'ANALYSING', name: '分析中' },
+          { id: 'SUCCESS', name: this.$t('成功') },
+          { id: 'FAIL', name: this.$t('失败') },
+          { id: 'WAITING', name: this.$t('待分析') },
+          { id: 'ANALYSING', name: this.$t('分析中') },
           // { id: 'DISABLED', name: '已停用' },
         ],
         codelibList: [],
         orderList: [
-          { id: 'SIMPLIFIED_PINYIN', name: `${this.$t('按名称')}A-Z` },
+          { id: 'SIMPLIFIED_PINYIN', name: `${this.$t('按名称')} A-Z` },
           { id: 'CREATE_DATE', name: this.$t('按创建时间') },
           { id: 'LAST_EXECUTE_DATE', name: this.$t('按最近执行时间') },
         ],

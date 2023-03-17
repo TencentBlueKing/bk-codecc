@@ -10,7 +10,7 @@ const config = {
    * record 操作记录
    * manage 任务管理
    */
-  settings: ['code', 'checkerset', 'issue', 'trigger', 'ignore', 'record', 'manage'],
+  settings: ['code', 'checkerset', 'report', 'issue', 'trigger', 'ignore', 'authority', 'record', 'manage'],
 }
 
 export default config
