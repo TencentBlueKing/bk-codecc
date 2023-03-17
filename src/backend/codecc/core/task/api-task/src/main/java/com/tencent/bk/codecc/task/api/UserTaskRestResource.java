@@ -87,6 +87,9 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
 @Consumes(MediaType.APPLICATION_JSON)
 public interface UserTaskRestResource {
 
+    @Path("/testEx")
+    @POST
+    Result<Boolean> testEx();
 
     @ApiOperation("触发通知")
     @Path("/triggerNotify")

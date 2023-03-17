@@ -153,7 +153,7 @@ public abstract class AbstractDefectOperateBizService implements IDefectOperateB
 
             // 发送内容
             String substance =
-                    String.format("规则：%s\n查看详情：%s/codecc/%s/task/%s/defect/lint/%s/list?entityId=%s", checker,
+                    String.format("规则：%s\n查看详情：http://%s/codecc/%s/task/%s/defect/lint/%s/list?entityId=%s", checker,
                             codeccGateWay, projectId, taskId, toolName, defectId);
 
             String title = String.format("%s在 %s 的%s中@了你：%s", userName, nameCn, fileName, comment);

@@ -33,6 +33,7 @@ import com.tencent.bk.codecc.defect.service.IConfigCheckerPkgBizService;
 import com.tencent.bk.codecc.defect.vo.*;
 import com.tencent.bk.codecc.defect.vo.checkerset.*;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerListSortType;
+import com.tencent.devops.common.api.annotation.I18NResponse;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.OpAuthApi;
@@ -119,6 +120,7 @@ public class UserCheckerRestResourceImpl implements UserCheckerRestResource {
     }
 
     @Override
+    @I18NResponse
     public Result<List<CheckerDetailVO>> queryCheckerDetailList(CheckerListQueryReq checkerListQueryReq, String projectId, Integer pageNum,
                                                                 Integer pageSize, Sort.Direction sortType, CheckerListSortType sortField) {
         return new Result<>(checkerService.queryCheckerDetailList(checkerListQueryReq, projectId, pageNum, pageSize, sortType, sortField));

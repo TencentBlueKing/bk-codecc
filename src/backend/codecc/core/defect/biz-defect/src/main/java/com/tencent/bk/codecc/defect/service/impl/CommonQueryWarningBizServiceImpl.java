@@ -198,8 +198,10 @@ public class CommonQueryWarningBizServiceImpl extends AbstractQueryWarningBizSer
                 defectRepository.findFirstByEntityId(queryWarningDetailReq.getEntityId());
         if (commonDefectEntity == null) {
             log.error("can't find defect entity by entityId: {}", queryWarningDetailReq.getEntityId());
-            throw new CodeCCException(CommonMessageCode.RECORD_NOT_EXITS,
-                    new String[]{queryWarningDetailReq.getEntityId()}, null);
+            throw new CodeCCException(
+                    CommonMessageCode.RECORD_NOT_EXITS,
+                    new String[]{queryWarningDetailReq.getEntityId()}
+            );
         }
 
         // 修正快照查
@@ -792,7 +794,7 @@ public class CommonQueryWarningBizServiceImpl extends AbstractQueryWarningBizSer
                 String projectId = taskDefectVO.getProjectId();
                 long taskId = taskDetailVO.getTaskId();
                 taskDefectVO.setRepoUrl(
-                        String.format("%s/codecc/%s/task/%s/detail", codeccGateWay, projectId, taskId));
+                        String.format("http://%s/codecc/%s/task/%s/detail", codeccGateWay, projectId, taskId));
                 setAnalyzeDateStatus(taskId, taskLogVoMap, taskDefectVO);
 
                 CommonChartAuthorVO newAddCount = new CommonChartAuthorVO();

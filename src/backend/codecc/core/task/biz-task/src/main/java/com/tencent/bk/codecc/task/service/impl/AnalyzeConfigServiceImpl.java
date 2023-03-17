@@ -34,6 +34,7 @@ import com.tencent.bk.codecc.defect.api.ServiceAnalyzeConfigRestResource;
 import com.tencent.bk.codecc.defect.api.ServiceDefectRestResource;
 import com.tencent.bk.codecc.defect.api.ServiceToolBuildInfoResource;
 import com.tencent.bk.codecc.defect.vo.ToolBuildStackReqVO;
+import com.tencent.bk.codecc.task.constant.TaskMessageCode;
 import com.tencent.bk.codecc.task.dao.mongorepository.BaseDataRepository;
 import com.tencent.bk.codecc.task.dao.mongorepository.TaskRepository;
 import com.tencent.bk.codecc.task.dao.mongorepository.ToolRepository;
@@ -123,15 +124,17 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
         // 任务详细信息
         TaskInfoEntity taskInfoEntity = taskRepository.findFirstByNameEn(streamName);
         if (null == taskInfoEntity) {
-            throw new CodeCCException("empty task info found out! stream name: {}", new String[]{streamName});
+            throw new CodeCCException(TaskMessageCode.TASK_NOT_FOUND);
         }
 
         // 工具详细信息
         ToolConfigInfoEntity toolConfigInfoEntity =
                 toolRepository.findFirstByTaskIdAndToolName(taskInfoEntity.getTaskId(), toolName);
         if (toolConfigInfoEntity == null) {
-            throw new CodeCCException("empty tool info found out ! stream name: {}, toolName: {}, task: {} ",
-                    new String[]{streamName, toolName, taskInfoEntity + ""});
+            throw new CodeCCException(
+                    TaskMessageCode.TOOL_CONFIG_NOT_FOUND,
+                    new String[]{"task id: " + taskInfoEntity.getTaskId()}
+            );
         }
         analyzeConfigInfoVO.setTaskId(taskInfoEntity.getTaskId());
         analyzeConfigInfoVO.setMultiToolType(toolName.toUpperCase());

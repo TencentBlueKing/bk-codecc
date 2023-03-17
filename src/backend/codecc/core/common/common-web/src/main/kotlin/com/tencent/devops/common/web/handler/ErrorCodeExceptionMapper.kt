@@ -28,6 +28,7 @@ package com.tencent.devops.common.web.handler
 
 import com.tencent.devops.common.api.exception.ErrorCodeException
 import com.tencent.devops.common.api.pojo.codecc.Result
+import com.tencent.devops.common.service.utils.I18NUtils
 import com.tencent.devops.common.service.utils.MessageCodeUtil
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
@@ -39,14 +40,16 @@ class ErrorCodeExceptionMapper : ExceptionMapper<ErrorCodeException> {
 
     override fun toResponse(exception: ErrorCodeException): Response {
         val status = Response.Status.BAD_REQUEST
-        val errorMsg = MessageCodeUtil.generateResponseDataObject<String>(exception.errorCode, exception.params)
-        return Response.status(status).type(MediaType.APPLICATION_JSON_TYPE)
+        val i18nErrMsg = I18NUtils.getMessage(exception.errorCode, exception.params)
+        return Response.status(status)
+                .type(MediaType.APPLICATION_JSON_TYPE)
                 .entity(
-                        Result<Void>(
-                                status = status.statusCode,
-                                message = errorMsg.message ?: exception.message
-                                ?: "Unknown Error: ${exception.errorCode}"
-                        )
-                ).build()
+                    Result<Void>(
+                        status = status.statusCode,
+                        errCode = exception.errorCode,
+                        message = i18nErrMsg ?: exception.message ?: "Unknown Error: ${exception.errorCode}"
+                    )
+                )
+                .build()
     }
 }

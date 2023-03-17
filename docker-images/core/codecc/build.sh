@@ -26,6 +26,7 @@ ROOT_DIR=${WORKING_DIR%/*/*/*}
 BACKEND_DIR=$ROOT_DIR/src/backend/codecc
 FRONTEND_DIR=$ROOT_DIR/src/frontend
 GATEWAY_DIR=$ROOT_DIR/support-files/kubernetes/images/gateway/conf
+NOSQL_DIR=$ROOT_DIR/support-files/codecc/nosql
 
 usage () {
     cat <<EOF
@@ -178,7 +179,7 @@ if [[ $ALL -eq 1 || $INIT -eq 1 ]] ; then
     log "构建init镜像..."
     rm -rf tmp/*
     cp -rf mongodb/init-mongodb.sh tmp/
-    cp -rf mongodb/nosql tmp/
+    cp -rf $NOSQL_DIR tmp/
     docker build -f mongodb/init.Dockerfile -t $REGISTRY/bkce/codecc/codecc-init:$VERSION tmp --no-cache --network=host
     if [[ $PUSH -eq 1 ]] ; then
         docker push $REGISTRY/bkce/codecc/codecc-init:$VERSION

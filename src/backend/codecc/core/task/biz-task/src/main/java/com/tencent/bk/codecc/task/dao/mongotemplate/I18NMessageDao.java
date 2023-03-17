@@ -18,7 +18,13 @@ public class I18NMessageDao {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    public List<I18NMessageEntity> get(List<I18NQueryModel> queryModelList) {
+    /**
+     * 根据条件列表查询
+     *
+     * @param queryModelList
+     * @return
+     */
+    public List<I18NMessageEntity> query(List<I18NQueryModel> queryModelList) {
         if (CollectionUtils.isEmpty(queryModelList)) {
             return Lists.newArrayList();
         }
@@ -38,7 +44,7 @@ public class I18NMessageDao {
             );
         }
 
-        Query query = Query.query(new Criteria().orOperator(orCriteriaList.toArray(new Criteria[]{})));
+        Query query = Query.query(new Criteria().orOperator(orCriteriaList.toArray(new Criteria[0])));
 
         return mongoTemplate.find(query, I18NMessageEntity.class);
     }

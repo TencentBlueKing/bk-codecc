@@ -27,6 +27,8 @@
 
 package com.tencent.devops.common.api;
 
+import com.tencent.devops.common.api.annotation.I18NFieldMarker;
+import com.tencent.devops.common.constant.I18NModuleCode;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -63,6 +65,7 @@ public class ToolMetaBaseVO extends CommonVO {
      * 工具的展示名
      */
     @ApiModelProperty(value = "工具的展示名", required = true)
+    @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.TOOL_DISPLAY_NAME)
     private String displayName;
 
     /**

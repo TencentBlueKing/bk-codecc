@@ -47,6 +47,9 @@ public class LintDefectOperateBizServiceImpl extends AbstractDefectOperateBizSer
     @Autowired
     private Client client;
 
+    @Value("${codecc.public.url}")
+    private String codeccGateWay;
+
     @Override
     public void addCodeComment(
             String defectId, String toolName, String commentId, String userName,

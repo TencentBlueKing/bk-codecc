@@ -69,6 +69,7 @@ import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
 import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolVersionVO;
+import com.tencent.devops.common.api.annotation.I18NResponse;
 import com.tencent.devops.common.api.checkerset.CheckerPropVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
@@ -81,6 +82,8 @@ import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import com.tencent.devops.common.codecc.util.JsonUtil;
+import com.tencent.devops.common.service.aop.AbstractI18NResponseAspect;
+import com.tencent.devops.common.service.utils.SpringContextUtil;
 import com.tencent.devops.common.util.StringCompress;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -594,6 +597,20 @@ public class CheckerServiceImpl implements CheckerService
         }).collect(Collectors.toList());
     }
 
+    @I18NResponse
+    @Override
+    public List<CheckerDetailVO> getCheckerDetailVOList(List<CheckerDetailEntity> checkerDetailEntityList) {
+        if (CollectionUtils.isEmpty(checkerDetailEntityList)) {
+            return Lists.newArrayList();
+        }
+
+        return checkerDetailEntityList.stream().map(x -> {
+            CheckerDetailVO checkerDetailVO = new CheckerDetailVO();
+            BeanUtils.copyProperties(x, checkerDetailVO);
+            return checkerDetailVO;
+        }).collect(Collectors.toList());
+    }
+
     @Override
     public List<CheckerCommonCountVO> queryCheckerCountListNew(CheckerListQueryReq checkerListQueryReq, String projectId)
     {
@@ -652,6 +669,7 @@ public class CheckerServiceImpl implements CheckerService
         }
         //4. 规则标签
         Map<String, Integer> tagMap = new HashMap<>();
+        Map<String,String> tagNameMap= Maps.newHashMap();
         //5. 规则严重级别数量(数量不变，初始化就把所有规则放上去)
         Map<Integer, Integer> severityMap = new HashMap<Integer, Integer>()
         {{
@@ -691,8 +709,14 @@ public class CheckerServiceImpl implements CheckerService
             checkerKeySet = getCheckerSetKeys(projectId);
         }
 
+        List<CheckerDetailVO> checkerDetailVOList = SpringContextUtil.Companion.getBean(CheckerService.class)
+                .getCheckerDetailVOList(checkerDetailEntityList);
+        Map<String, CheckerDetailVO> checkerDetailVOMap = checkerDetailVOList.stream()
+                .collect(Collectors.toMap(CheckerDetailVO::getEntityId, Function.identity(), (k, v) -> k));
+
         //9. 总数
         List<CheckerDetailEntity> totalList = new ArrayList<>();
+        List<String> checkerTagI18NFailList = Lists.newArrayList();
 
         checkerDetailEntityList.forEach(checkerDetailEntity ->
         {
@@ -760,20 +784,32 @@ public class CheckerServiceImpl implements CheckerService
                     null, checkerListQueryReq.getSeverity(), checkerListQueryReq.getEditable(),
                     checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(), checkerKeySet, checkerDetailEntity) && CollectionUtils.isNotEmpty(checkerDetailEntity.getCheckerTag()))
             {
-                checkerDetailEntity.getCheckerTag().forEach(checkerTag ->
+                if (CollectionUtils.isNotEmpty(checkerDetailEntity.getCheckerTag())) {
+                    // vo是已处理过i18n
+                    CheckerDetailVO vo = checkerDetailVOMap.get(checkerDetailEntity.getEntityId());
+                    boolean i18_OK = vo != null && CollectionUtils.isNotEmpty(vo.getCheckerTag())
+                            && vo.getCheckerTag().size() == checkerDetailEntity.getCheckerTag().size();
+
+                    for (int i = 0; i < checkerDetailEntity.getCheckerTag().size(); i++) {
+                        // 以中文字符作为统计的KEY
+                        String checkerTag = checkerDetailEntity.getCheckerTag().get(i);
                         tagMap.compute(checkerTag, (k, v) ->
                         {
-                            if (null == v)
-                            {
+                            if (null == v) {
                                 return 1;
-                            }
-                            else
-                            {
+                            } else {
                                 v++;
                                 return v;
                             }
-                        })
-                );
+                        });
+
+                        if (i18_OK) {
+                            tagNameMap.put(checkerTag, vo.getCheckerTag().get(i));
+                        } else {
+                            checkerTagI18NFailList.add(checkerDetailEntity.getEntityId());
+                        }
+                    }
+                }
             }
 
             //5. 计算严重级别数量
@@ -862,6 +898,10 @@ public class CheckerServiceImpl implements CheckerService
             }
         });
 
+        if (CollectionUtils.isNotEmpty(checkerTagI18NFailList)) {
+            log.error("checker detail tag i18n message error: {}", String.join(", ", checkerTagI18NFailList));
+        }
+
         //按照语言顺序
         List<CheckerCountListVO> checkerLangCountVOList = langMap.entrySet().stream().map(entry ->
                 new CheckerCountListVO(entry.getKey(), null, entry.getValue())
@@ -869,10 +909,17 @@ public class CheckerServiceImpl implements CheckerService
                 ? langOrder.indexOf(o.getKey()) : Integer.MAX_VALUE)).collect(Collectors.toList());
         //按照枚举中的排序
         List<CheckerCategory> categoryOrder = Arrays.asList(CheckerCategory.values());
-        List<CheckerCountListVO> checkerCateCountVOList = categoryMap.entrySet().stream().map(entry ->
-                new CheckerCountListVO(CheckerCategory.valueOf(entry.getKey()).name(),
-                        CheckerCategory.valueOf(entry.getKey()).getName(), entry.getValue())
-        ).sorted(Comparator.comparingInt(o -> categoryOrder.indexOf(CheckerCategory.valueOf(o.getKey())))).collect(Collectors.toList());
+        boolean isEN = "en".equalsIgnoreCase(AbstractI18NResponseAspect.getLocale().toString());
+        List<CheckerCountListVO> checkerCateCountVOList = categoryMap.entrySet().stream().map(entry -> {
+                    CheckerCategory category = CheckerCategory.valueOf(entry.getKey());
+                    return new CheckerCountListVO(
+                            category.name(),
+                            isEN ? category.name() : category.getName(),
+                            entry.getValue()
+                    );
+                })
+                .sorted(Comparator.comparingInt(o -> categoryOrder.indexOf(CheckerCategory.valueOf(o.getKey()))))
+                .collect(Collectors.toList());
 
         //按照工具的排序
         List<CheckerCountListVO> checkerToolCountVOList = toolMap.entrySet().stream().filter(stringIntegerEntry -> stringIntegerEntry.getValue() > 0).
@@ -880,26 +927,68 @@ public class CheckerServiceImpl implements CheckerService
                         new CheckerCountListVO(entry.getKey(), null, entry.getValue())
                 ).sorted(Comparator.comparingInt(o -> toolOrder.contains(o.getKey())
                 ? toolOrder.indexOf(o.getKey()) : Integer.MAX_VALUE)).collect(Collectors.toList());
-        List<CheckerCountListVO> checkerTagCountVOList = tagMap.entrySet().stream().map(entry ->
-                new CheckerCountListVO(entry.getKey(), null, entry.getValue())
-        ).sorted(Comparator.comparing(CheckerCountListVO::getCount).reversed()).collect(Collectors.toList());
-        List<CheckerCountListVO> checkerSeverityCountVOList = severityMap.entrySet().stream().map(entry ->
-                new CheckerCountListVO(String.valueOf(entry.getKey()), null, entry.getValue())
-        ).collect(Collectors.toList());
-        List<CheckerCountListVO> checkerEditableCountVOList = editableMap.entrySet().stream().map(entry ->
-                new CheckerCountListVO(String.valueOf(entry.getKey()), null, entry.getValue())
-        ).collect(Collectors.toList());
+        List<CheckerCountListVO> checkerTagCountVOList = tagMap.entrySet().stream().map(entry -> {
+                    // 前端优先读name，没有name则展示key
+                    String key = entry.getKey();
+                    return new CheckerCountListVO(key, tagNameMap.get(key), entry.getValue());
+                })
+                .sorted(Comparator.comparing(CheckerCountListVO::getCount).reversed())
+                .collect(Collectors.toList());
+        List<CheckerCountListVO> checkerSeverityCountVOList = severityMap.entrySet().stream().map(entry -> {
+            Integer key = entry.getKey();
+            String nameCN = "";
+            String nameEN = "";
+            if (key == 1) {
+                nameCN = "严重";
+                nameEN = "Serious";
+            } else if (key == 2) {
+                nameCN = "一般";
+                nameEN = "Normal";
+            } else if (key == 4) {
+                nameCN = "提示";
+                nameEN = "Prompt";
+            }
+            return new CheckerCountListVO(
+                    String.valueOf(key),
+                    isEN ? nameEN : nameCN,
+                    entry.getValue()
+            );
+        }).collect(Collectors.toList());
+        List<CheckerCountListVO> checkerEditableCountVOList = editableMap.entrySet().stream().map(entry -> {
+            Boolean key = entry.getKey();
+            String nameCN = key ? "可修改" : "不可修改";
+            String nameEN = key ? "Editable" : "Immutable";
+            return new CheckerCountListVO(
+                    String.valueOf(key),
+                    isEN ? nameEN : nameCN,
+                    entry.getValue()
+            );
+        }).collect(Collectors.toList());
 
         //按照枚举中排序
         List<CheckerRecommendType> recommendOrder = Arrays.asList(CheckerRecommendType.values());
-        List<CheckerCountListVO> checkerRecommendCountVOList = recommendMap.entrySet().stream().map(entry ->
-                new CheckerCountListVO(CheckerRecommendType.valueOf(entry.getKey()).name(), CheckerRecommendType.valueOf(entry.getKey()).getName(),
-                        entry.getValue())
-        ).sorted(Comparator.comparingInt(o -> recommendOrder.indexOf(CheckerRecommendType.valueOf(o.getKey())))).collect(Collectors.toList());
+        List<CheckerCountListVO> checkerRecommendCountVOList = recommendMap.entrySet().stream().map(entry -> {
+                    CheckerRecommendType checkerRecommendType = CheckerRecommendType.valueOf(entry.getKey());
+                    return new CheckerCountListVO(
+                            checkerRecommendType.name(),
+                            isEN ? checkerRecommendType.name() : checkerRecommendType.getName(),
+                            entry.getValue()
+                    );
+                })
+                .sorted(Comparator.comparingInt(o -> recommendOrder.indexOf(CheckerRecommendType.valueOf(o.getKey()))))
+                .collect(Collectors.toList());
 
-        List<CheckerCountListVO> checkerSetSelectCountVOList = selectMap.entrySet().stream().map(entry ->
-                new CheckerCountListVO(String.valueOf(entry.getKey()), entry.getKey() ? "启用中" : "未启用", entry.getValue())
-        ).collect(Collectors.toList());
+        List<CheckerCountListVO> checkerSetSelectCountVOList = selectMap.entrySet().stream().map(entry -> {
+            Boolean key = entry.getKey();
+            String nameCN = key ? "启用中" : "未启用";
+            String nameEN = key ? "Active" : "Inactive";
+            return new CheckerCountListVO(
+                    String.valueOf(key),
+                    isEN ? nameEN : nameCN,
+                    entry.getValue()
+            );
+        }).collect(Collectors.toList());
+
         List<CheckerCountListVO> checkerTotalCountVOList = Collections.singletonList(new CheckerCountListVO("total", null, totalList.size()));
 
 

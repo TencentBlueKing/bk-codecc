@@ -87,12 +87,12 @@ public class DUPCCheckReportBizServiceImpl implements ICheckReportBizService
         dupcSnapShotEntity.setToolNameEn(toolName);
         if (StringUtils.isNotEmpty(projectId)) {
             String defectDetailUrl = String.format(
-                    "%s/console/codecc/%s/task/%d/defect/dupc/list",
+                    "https://%s/console/codecc/%s/task/%d/defect/dupc/list",
                     devopsHost, projectId, taskId
             );
 
             String defectReportUrl = String.format(
-                    "%s/console/codecc/%s/task/%d/defect/dupc/charts",
+                    "https://%s/console/codecc/%s/task/%d/defect/dupc/charts",
                     devopsHost, projectId, taskId
             );
 

@@ -1,10 +1,11 @@
 package com.tencent.devops.common.service.aop;
 
+import static com.tencent.devops.common.constant.ComConstants.BLUEKING_LANGUAGE;
+
 import com.esotericsoftware.reflectasm.MethodAccess;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.tencent.devops.common.api.annotation.I18NFieldMarker;
 import com.tencent.devops.common.api.pojo.codecc.Result;
@@ -13,35 +14,45 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import javax.servlet.http.Cookie;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Slf4j
 public abstract class AbstractI18NResponseAspect {
 
-    private final static Cache<Class<?>, I18NReflection> CACHE_CONTAINER =
+    /**
+     * 反射缓存
+     *
+     * @link https://github.com/ben-manes/caffeine/wiki/Eviction-zh-CN
+     */
+    private static final Cache<Class<?>, I18NReflection> CACHE_CONTAINER =
             Caffeine.newBuilder().maximumSize(100).build();
-    private final static String DEFAULT_LOCALE = "zh_CN";
+    private static final Locale DEFAULT_LOCALE = new Locale("zh", "CN");
 
+    // NOCC:MissingJavadocMethod(设计如此:)
     @Pointcut("@annotation(com.tencent.devops.common.api.annotation.I18NResponse)")
     public void i18nResponse() {
     }
 
+    // NOCC:MissingJavadocMethod(设计如此:)
     @Around("i18nResponse()")
     public Object translate(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
-        long beginTime = System.currentTimeMillis();
         Object originReturning = proceedingJoinPoint.proceed();
-        log.info("AbstractI18NResponseAspect proceedingJoinPoint.proceed() {}", System.currentTimeMillis() - beginTime);
-
-        beginTime = System.currentTimeMillis();
-        // http protocol:accept-language:en-US => java:en_US
-        String localeString = LocaleContextHolder.getLocale().toString();
-        if (originReturning == null || DEFAULT_LOCALE.equals(localeString)) {
+        String localeString = getLocale().toString();
+        log.info("AbstractI18NResponseAspect localeString: {}", localeString);
+        if (originReturning == null
+                || ObjectUtils.isEmpty(localeString)
+                || DEFAULT_LOCALE.toString().equals(localeString)) {
             return originReturning;
         }
 
@@ -68,33 +79,17 @@ public abstract class AbstractI18NResponseAspect {
             isListGeneric = true;
         }
 
-        log.info("AbstractI18NResponseAspect unwrap returning {}", System.currentTimeMillis() - beginTime);
-
-        beginTime = System.currentTimeMillis();
         Class<?> unwrapReturningClazz = unwrapReturning.getClass();
         I18NReflection i18NReflection = generateI18NReflection(unwrapReturningClazz);
-        log.info("AbstractI18NResponseAspect generateI18NReflection {}", System.currentTimeMillis() - beginTime);
-
         if (CollectionUtils.isEmpty(i18NReflection.getFieldMetaDataList())
                 || i18NReflection.getMethodAccess() == null) {
             return originReturning;
         }
 
-        beginTime = System.currentTimeMillis();
         List<?> returningList = repackReturning(isResultGeneric, isListGeneric, originReturning);
-        log.info("AbstractI18NResponseAspect repackReturning {}", System.currentTimeMillis() - beginTime);
-
-        beginTime = System.currentTimeMillis();
         extractResourceCode(i18NReflection, returningList);
-        log.info("AbstractI18NResponseAspect extractResourceCode {}", System.currentTimeMillis() - beginTime);
-
-        beginTime = System.currentTimeMillis();
         addInternationalization(i18NReflection, localeString);
-        log.info("AbstractI18NResponseAspect addInternationalization {}", System.currentTimeMillis() - beginTime);
-
-        beginTime = System.currentTimeMillis();
         renderReturning(i18NReflection, returningList);
-        log.info("AbstractI18NResponseAspect renderReturning {}", System.currentTimeMillis() - beginTime);
 
         return originReturning;
     }
@@ -106,6 +101,42 @@ public abstract class AbstractI18NResponseAspect {
      * @param localeString
      */
     public abstract void addInternationalization(I18NReflection i18NReflection, String localeString);
+
+    /**
+     * 获取语言信息
+     *
+     * @return
+     */
+    public static Locale getLocale() {
+        // 优先级从高到低: cookie -> header:accept-language
+        ServletRequestAttributes requestAttributes =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+        String cookieVal = "";
+        if (requestAttributes != null) {
+            Cookie[] cookies = requestAttributes.getRequest().getCookies();
+            if (cookies != null) {
+                for (Cookie cookie : cookies) {
+                    if (BLUEKING_LANGUAGE.equals(cookie.getName())) {
+                        cookieVal = cookie.getValue();
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!ObjectUtils.isEmpty(cookieVal)) {
+            return Locale.forLanguageTag(cookieVal);
+        }
+
+        // header:accept-language:zh-cn => java:zh_CN
+        String acceptLanguageHeader = requestAttributes.getRequest().getHeader("accept-language");
+        if (ObjectUtils.isEmpty(acceptLanguageHeader)) {
+            return DEFAULT_LOCALE;
+        } else {
+            return LocaleContextHolder.getLocale();
+        }
+    }
 
     /**
      * 生成反射元数据
@@ -122,17 +153,16 @@ public abstract class AbstractI18NResponseAspect {
 
         List<Field> allFields = getAllFields(new ArrayList<>(), clazz);
         List<FieldMetaData> fieldMetaDataList = Lists.newArrayList();
-        Map<String, List<FieldMetaData>> map = Maps.newHashMap();
-        i18NReflection = new I18NReflection(fieldMetaDataList, MethodAccess.get(clazz));
-
         for (Field field : allFields) {
             I18NFieldMarker annotation = field.getAnnotation(I18NFieldMarker.class);
             if (annotation != null) {
+                boolean isListType = field.getType() == List.class;
                 fieldMetaDataList.add(
                         new I18NReflection.FieldMetaData(
                                 field.getName(),
                                 annotation.keyFieldHolder(),
                                 annotation.moduleCode(),
+                                isListType,
                                 null,
                                 null
                         )
@@ -140,14 +170,15 @@ public abstract class AbstractI18NResponseAspect {
             }
         }
 
+        MethodAccess methodAccess = MethodAccess.get(clazz);
+        i18NReflection = new I18NReflection(fieldMetaDataList, methodAccess);
         CACHE_CONTAINER.put(clazz, i18NReflection);
-        log.info("AbstractI18NResponseAspect generateI18NReflection generated");
 
         return i18NReflection.getClone();
     }
 
     /**
-     * 根据泛型信息，将原始返回对象拆包，再重新打包为List<TargetObject>
+     * 根据泛型信息，将原始返回对象拆包，再重新打包为{@codec List<T>}
      *
      * @param isResultGeneric
      * @param isListGeneric
@@ -200,10 +231,6 @@ public abstract class AbstractI18NResponseAspect {
      */
     private void renderReturning(I18NReflection i18NReflection, List<?> objList) {
         for (FieldMetaData fieldMetaData : i18NReflection.getFieldMetaDataList()) {
-            if (CollectionUtils.isEmpty(fieldMetaData.getKeyAndValueMap())) {
-                continue;
-            }
-
             String getterName = getGetterMethodName(fieldMetaData.getResourceCodeField());
             MethodAccess methodAccess = i18NReflection.getMethodAccess();
             int getterCallIndex = methodAccess.getIndex(getterName);
@@ -212,8 +239,23 @@ public abstract class AbstractI18NResponseAspect {
 
             for (Object obj : objList) {
                 Object resourceCode = methodAccess.invoke(obj, getterCallIndex);
-                if (resourceCode != null) {
-                    String value = fieldMetaData.getKeyAndValueMap().get(String.valueOf(resourceCode));
+                if (resourceCode == null) {
+                    continue;
+                }
+
+                String key = String.valueOf(resourceCode);
+                Map<String, String> keyAndValueMap = fieldMetaData.getKeyAndValueMap();
+                String value = CollectionUtils.isEmpty(keyAndValueMap) ? null : keyAndValueMap.get(key);
+
+                if (fieldMetaData.isListType()) {
+                    List<String> stringSet = ObjectUtils.isEmpty(value)
+                            ? Lists.newArrayList()
+                            : Lists.newArrayList(value.split(","));
+                    methodAccess.invoke(obj, setterCallIndex, stringSet);
+                } else {
+                    if (value == null) {
+                        value = "";
+                    }
                     methodAccess.invoke(obj, setterCallIndex, value);
                 }
             }

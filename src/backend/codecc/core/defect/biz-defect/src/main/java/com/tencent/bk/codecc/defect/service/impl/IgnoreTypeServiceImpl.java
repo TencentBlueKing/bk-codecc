@@ -15,6 +15,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.component.ScheduleJobComponent;
+import com.tencent.bk.codecc.defect.constant.DefectMessageCode;
 import com.tencent.bk.codecc.defect.dao.mongorepository.IgnoreTypeProjectRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.IgnoreTypeSysRepository;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.CCNDefectDao;
@@ -563,9 +564,11 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
         } catch (Exception e) {
             log.error("generateId CodeCC Ignore Type Id Error.", e);
         }
+
         if (index == null) {
-            throw new CodeCCException("generateId CodeCC Ignore Type Id Error.");
+            throw new CodeCCException(DefectMessageCode.IGNORE_GENERATE_ID_FAIL);
         }
+
         return index.intValue();
     }
 
@@ -812,8 +815,8 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
      */
     private String generateEmailRootUrl(String projectId) {
         return NotifyUtils.isGongfengScanProject(projectId) || NotifyUtils.isStream2_0(projectId)
-                ? String.format("%s/codecc/%s/", codeccHost, projectId)
-                : String.format("%s/console/codecc/%s/", devopsHost, projectId);
+                ? String.format("http://%s/codecc/%s/", codeccHost, projectId)
+                : String.format("http://%s/console/codecc/%s/", devopsHost, projectId);
     }
 
     /**

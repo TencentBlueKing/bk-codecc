@@ -5,6 +5,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Maps;
+import com.tencent.bk.codecc.defect.constant.DefectMessageCode;
 import com.tencent.bk.codecc.task.api.ServiceBaseDataResource;
 import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
@@ -17,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -140,7 +140,7 @@ public class BaseDataCacheServiceImpl implements BaseDataCacheService {
         Result<List<BaseDataVO>> result = client.get(ServiceBaseDataResource.class).findBaseData();
         if (result.isNotOk() || result.getData() == null || result.getData().isEmpty()) {
             log.error("all tool base data is null");
-            throw new CodeCCException("all tool base data is null");
+            throw new CodeCCException(DefectMessageCode.BASE_DATA_NOT_FOUND);
         }
         baseDataVOMap.clear();
         result.getData().forEach(baseDataVO -> {

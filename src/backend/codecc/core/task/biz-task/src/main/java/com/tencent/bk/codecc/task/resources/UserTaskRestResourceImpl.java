@@ -102,6 +102,11 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
     }
 
     @Override
+    public Result<Boolean> testEx() {
+        return null;
+    }
+
+    @Override
     public Result<Boolean> triggerNotify(Long taskId, Integer type) {
         if (type.equals(1)) {
             emailNotifyService.sendReport(new EmailNotifyModel(taskId, null, EmailType.INSTANT));

@@ -38,8 +38,10 @@ import com.tencent.devops.common.client.pojo.AllProperties
 import com.tencent.devops.common.client.proxy.DevopsAfterInvokeHandlerFactory
 import com.tencent.devops.common.client.proxy.DevopsProxy
 import com.tencent.devops.common.codecc.util.JsonUtil
+import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.service.Profile
 import com.tencent.devops.common.service.ServiceAutoConfiguration
+import com.tencent.devops.common.service.aop.AbstractI18NResponseAspect
 import com.tencent.devops.common.util.TraceBuildIdThreadCacheUtils
 import feign.RequestInterceptor
 import org.slf4j.LoggerFactory
@@ -91,12 +93,13 @@ class KubernetesClientAutoConfiguration {
         return RequestInterceptor { requestTemplate ->
             val attributes = RequestContextHolder.getRequestAttributes() as? ServletRequestAttributes
                 ?: return@RequestInterceptor
-            val request = attributes.request
-            val languageHeaderValue = request.getHeader(languageHeaderName)
-            if (!languageHeaderValue.isNullOrBlank()) {
-                // 设置Accept-Language请求头
-                requestTemplate.header(languageHeaderName, languageHeaderValue)
+
+            // 设置Accept-Language请求头
+            val locale = AbstractI18NResponseAspect.getLocale();
+            if (locale != null) {
+                requestTemplate.header(languageHeaderName, locale.toLanguageTag())
             }
+
             val traceBuildId = TraceBuildIdThreadCacheUtils.getBuildId()
             if (!traceBuildId.isNullOrBlank()) {
                 // 设置TraceBuildId请求头, 用于告知后续的被调服务，该请求来自构建接口

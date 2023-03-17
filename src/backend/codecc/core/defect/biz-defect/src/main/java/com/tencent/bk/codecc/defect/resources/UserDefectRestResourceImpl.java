@@ -82,6 +82,7 @@ import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.List2StrUtil;
 import com.tencent.devops.common.web.RestResource;
 import com.tencent.devops.common.web.aop.annotation.OperationHistory;
+import com.tencent.devops.common.web.condition.CommunityCondition;
 import com.tencent.devops.common.web.security.AuthMethod;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -91,6 +92,7 @@ import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.util.Pair;
@@ -99,6 +101,7 @@ import org.springframework.data.util.Pair;
  * 告警查询服务实现
  */
 @RestResource
+@Conditional(CommunityCondition.class)
 @AuthMethod(permission = {CodeCCAuthAction.DEFECT_VIEW})
 public class UserDefectRestResourceImpl implements UserDefectRestResource {
 

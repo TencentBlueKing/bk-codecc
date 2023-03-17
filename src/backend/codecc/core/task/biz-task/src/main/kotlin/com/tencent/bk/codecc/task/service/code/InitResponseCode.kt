@@ -52,11 +52,11 @@ class InitResponseCode @Autowired constructor(private val objectMapper: ObjectMa
     fun getGlobalMessageMap(): Map<String, String> {
         val codeMap = HashMap<String, String>()
         // 任务响应码
-        getTaskMessageCode(codeMap)
+        // getTaskMessageCode(codeMap)
         // 告警响应码
-        getDefectMessageCode(codeMap)
+        // getDefectMessageCode(codeMap)
         // 公用响应码
-        getCommonMessageCode(codeMap)
+        // getCommonMessageCode(codeMap)
         // 操作记录国际化
         getOperationHistory(codeMap)
 
@@ -67,6 +67,7 @@ class InitResponseCode @Autowired constructor(private val objectMapper: ObjectMa
     /**
      * 告警响应码
      */
+    @Deprecated("")
     fun getDefectMessageCode(codeMap: HashMap<String, String>): Map<String, String> {
         val defectCode = GlobalMessage(getUUID(), TYPE_NOT_EXITS, "03", "{0}类型服务不存在", null, "{0} type service does not exist")
         val defectCode1 = GlobalMessage(getUUID(), NOT_FIND_CHECKER_PACKAGE, "03", "找不到规则包{0}", null, "Rule package not found {0}")
@@ -85,6 +86,7 @@ class InitResponseCode @Autowired constructor(private val objectMapper: ObjectMa
     /**
      * 任务响应码
      */
+    @Deprecated("")
     fun getTaskMessageCode(codeMap: HashMap<String, String>): Map<String, String> {
         val taskCode1 = GlobalMessage(
                 getUUID(), "2301001", "01", "添加工具失败", null, "Add tool failed")
@@ -127,6 +129,7 @@ class InitResponseCode @Autowired constructor(private val objectMapper: ObjectMa
     /**
      * 公用模块响应码
      */
+    @Deprecated("")
     fun getCommonMessageCode(codeMap: HashMap<String, String>): Map<String, String> {
         val commonCode = GlobalMessage(
                 getUUID(), "0", "00", "成功", null, "Succeed")

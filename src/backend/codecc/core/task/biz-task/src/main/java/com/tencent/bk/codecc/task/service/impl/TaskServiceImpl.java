@@ -701,7 +701,7 @@ public class TaskServiceImpl implements TaskService {
         Set<String> pipelines = authExPermissionApi.queryPipelineListForUser(user, projectId,
                 Sets.newHashSet(PipelineAuthAction.VIEW.getActionName()));
 
-        List<String> adminMembers = authExPermissionApi.getAdminMembers();
+        Set<String> adminMemberSet = Sets.newHashSet(authExPermissionApi.getAdminMembers());
 
         // 查询任务清单速度优化
         List<TaskInfoEntity> resultTasks = taskInfoEntities.stream().filter(taskInfoEntity -> {
@@ -714,7 +714,7 @@ public class TaskServiceImpl implements TaskService {
                     && tasks.contains(String.valueOf(taskInfoEntity.getTaskId())))
                     || (CollectionUtils.isNotEmpty(pipelines) && pipelines.contains(taskInfoEntity.getPipelineId()))
                     // 系统管理员有权限查询任务清单
-                    || adminMembers.contains(user)
+                    || adminMemberSet.contains(user)
                     || (!ComConstants.BsTaskCreateFrom.BS_PIPELINE.value()
                     .equalsIgnoreCase(taskInfoEntity.getCreateFrom())
                     && !ComConstants.BsTaskCreateFrom.BS_CODECC.value()
