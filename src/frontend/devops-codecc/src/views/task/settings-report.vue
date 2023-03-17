@@ -136,7 +136,7 @@
               <custom-receiver ref="emailMember" :target-list="formData.emailReceiverList" :list="taskMemberData" :visiable="isEmailRecieverShow"></custom-receiver>
             </bk-dialog>
             <bk-form-item :label="$t('抄送人')">
-              <bk-member-selector v-model="formData.emailCCReceiverList" type="all"></bk-member-selector>
+              <bk-tag-input allow-create v-model="formData.emailCCReceiverList" type="all"></bk-tag-input>
             </bk-form-item>
             <divider></divider>
             <bk-form-item :label="$t('定时报告')">

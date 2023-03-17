@@ -63,10 +63,10 @@
           <bk-button v-else @click="jumpTo('change')">{{$t('授权OAuth')}}</bk-button>
         </bk-form-item>
         <bk-form-item :label="$t('缺陷处理人')" property="resolvers">
-          <bk-member-selector v-model="issueData.resolvers" :placeholder="$t('默认为问题处理人')"></bk-member-selector>
+          <bk-tag-input allow-create v-model="issueData.resolvers" :placeholder="$t('默认为问题处理人')"></bk-tag-input>
         </bk-form-item>
         <bk-form-item :label="$t('缺陷抄送人')">
-          <bk-member-selector v-model="issueData.receivers"></bk-member-selector>
+          <bk-tag-input allow-create v-model="issueData.receivers"></bk-tag-input>
         </bk-form-item>
         <bk-form-item :label="$t('发现版本')">
           <bk-input v-model="issueData.findByVersion"></bk-input>

@@ -4,8 +4,8 @@
  */
 /* eslint-disable */
 import Vue from 'vue'
-import '@tencent/bk-magic-vue/dist/bk-magic-vue.min.css'
-import bkMagic from '@tencent/bk-magic-vue'
+import 'bk-magic-vue/dist/bk-magic-vue.min.css'
+import bkMagic from 'bk-magic-vue'
 
 Vue.use(bkMagic)
 

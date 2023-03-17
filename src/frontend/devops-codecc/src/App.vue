@@ -67,7 +67,7 @@
   import { bus } from './common/bus'
   import { toggleLang } from './i18n'
   import { getToolMeta, getToolList, getTaskList } from './common/preload'
-  import Aegis from '@tencent/aegis-web-sdk'
+  import Aegis from 'aegis-web-sdk'
 
   export default {
     name: 'app',

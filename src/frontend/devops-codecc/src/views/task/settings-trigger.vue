@@ -131,7 +131,7 @@
           <bk-form-item :label-width="110" class="input" v-for="(item, index) in authorList" :key="index">
             <bk-input v-model="item.sourceAuthor"></bk-input>
             <!-- <bk-input class="compile-version" v-model="item.targetAuthor" :palceholder="'新处理人'"></bk-input> -->
-            <bk-member-selector class="compile-version" v-model="item.targetAuthor" :palceholder="'新处理人'"></bk-member-selector>
+            <bk-tag-input allow-create class="compile-version" v-model="item.targetAuthor" :palceholder="'新处理人'"></bk-tag-input>
             <div class="tool-icon">
               <i class="bk-icon icon-plus" @click="addTool(index)" v-if="index === authorList.length - 1"></i>
               <i class="bk-icon icon-close" @click="deleteTool(index)" v-if="authorList.length > 1"></i>
