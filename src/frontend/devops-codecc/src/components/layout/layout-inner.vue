@@ -415,7 +415,7 @@
       },
     },
     created() {
-      if (!window.localStorage.getItem('tips-analyse-20211119')) {
+      if (!window.localStorage.getItem('tips-analyse-20211119') && !this.$route.query.entityId) {
         this.tipsHtmlConfig = {
           allowHtml: true,
           width: 280,
@@ -608,7 +608,7 @@
         this.tipsHtmlConfig.content = false
       },
       fetchDimension() {
-        this.$store.dispatch('defect/getDimension', { taskId: this.$route.params.taskId }).then((res) => {
+        this.$store.dispatch('defect/getDimension', { taskIdList: [this.$route.params.taskId] }).then((res) => {
           const list = res
             .filter(item => item.key !== 'CCN' && item.key !== 'DUPC'
               && item.key !== 'CLOC' && item.key !== 'STAT' && item.key !== 'SCC')

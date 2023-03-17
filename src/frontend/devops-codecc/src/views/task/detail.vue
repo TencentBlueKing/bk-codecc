@@ -302,8 +302,8 @@
         })
       },
       fetchCheckerSet() {
-        const params = { taskId: this.$route.params.taskId }
-        this.$store.dispatch('checkerset/listForTask', params).then((res) => {
+        const params = { taskIdList: [this.$route.params.taskId] }
+        this.$store.dispatch('checkerset/listForDefect', params).then((res) => {
           const checkersetMap = {}
           if (res && res.length) {
             res.forEach((checkerSet) => {

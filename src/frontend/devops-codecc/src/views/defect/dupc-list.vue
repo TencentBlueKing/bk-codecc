@@ -10,22 +10,24 @@
               :key="index">
             </bk-tab-panel>
           </bk-tab>
-          <span :class="{ 'filter-search-icon': true, 'mac-filter-search-icon': isMac }">
-            <bk-popover ext-cls="handle-menu" ref="handleMenu" theme="light" placement="left-start" trigger="click">
-              <i class="bk-icon codecc-icon icon-shaixuan" v-bk-tooltips="$t('筛选项设置')"></i>
-              <div slot="content">
-                <filter-search-option
-                  :default-option="defaultOption"
-                  :custom-option="customOption"
-                  @selectAll="handleSelectAllSearchOption"
-                  @confirm="handleConfirmSearchOption" />
-              </div>
-            </bk-popover>
-          </span>
-          <span class="excel-icon">
-            <bk-button style="border: 0" v-if="exportLoading" icon="loading" :disabled="true" :title="$t('导出Excel')"></bk-button>
-            <span v-else class="codecc-icon icon-export-excel excel-download" @click="downloadExcel" v-bk-tooltips="$t('导出Excel')"></span>
-          </span>
+          <div class="tab-extra-icon is-ccn">
+            <!-- <span :class="{ 'filter-search-icon': true, 'mac-filter-search-icon': isMac }">
+              <bk-popover ext-cls="handle-menu" ref="handleMenu" theme="light" placement="left-start" trigger="click">
+                <i class="bk-icon codecc-icon icon-filter-set" v-bk-tooltips="$t('设置筛选条件')"></i>
+                <div slot="content">
+                  <filter-search-option
+                    :default-option="defaultOption"
+                    :custom-option="customOption"
+                    @selectAll="handleSelectAllSearchOption"
+                    @confirm="handleConfirmSearchOption" />
+                </div>
+              </bk-popover>
+            </span> -->
+            <span class="excel-icon pl20">
+              <bk-button style="border: 0" v-if="exportLoading" icon="loading" :disabled="true" :title="$t('导出Excel')"></bk-button>
+              <span v-else class="codecc-icon icon-export-excel excel-download" @click="downloadExcel" v-bk-tooltips="$t('导出Excel')"></span>
+            </span>
+          </div>
         </div>
       </div>
       <div class="main-container">
@@ -134,25 +136,6 @@
                   </bk-checkbox-group>
                 </bk-form-item>
               </div>
-              <div class="cc-col" v-show="allRenderColumnMap.defectType">
-                <bk-form-item :label="$t('时期')">
-                  <bk-checkbox-group v-model="searchParams.defectType" class="checkbox-group">
-                    <bk-checkbox
-                      v-for="(value, key, index) in defectTypeMap"
-                      :value="Number(key)"
-                      :key="index">
-                      {{value}}({{getDefectCountByType(key)}})
-                    </bk-checkbox>
-                    <bk-popover placement="top" width="220" class="popover">
-                      <i class="codecc-icon icon-tips"></i>
-                      <div slot="content">
-                        {{$t('起始时间x之后产生的文件为新文件', { accessTime: newDefectJudgeTime })}}
-                        <a href="javascript:;" @click="toLogs">{{$t('前往设置')}}>></a>
-                      </div>
-                    </bk-popover>
-                  </bk-checkbox-group>
-                </bk-form-item>
-              </div>
             </container>
           </bk-form>
 
@@ -172,7 +155,7 @@
             <bk-table-column type="index" :label="$t('序号')" align="center" width="70"></bk-table-column>
             <bk-table-column :label="$t('文件名')" prop="fileName">
               <template slot-scope="props">
-                <span v-bk-tooltips="props.row.filePath">{{props.row.fileName}}</span>
+                <span v-bk-tooltips="{ content: props.row.filePath, delay: 600 }">{{props.row.fileName}}</span>
               </template>
             </bk-table-column>
             <bk-table-column :label="$t('重复块数')" prop="blockNum"></bk-table-column>
@@ -238,7 +221,7 @@
   import util from '@/mixins/defect-list'
   import dupcDetail from './dupc-detail'
   import Empty from '@/components/empty'
-  import filterSearchOption from './filter-search-option'
+  // import filterSearchOption from './filter-search-option'
   // eslint-disable-next-line
   import { export_json_to_excel } from 'vendor/export2Excel'
 
@@ -249,7 +232,7 @@
     components: {
       dupcDetail,
       Empty,
-      filterSearchOption,
+      // filterSearchOption,
     },
     mixins: [util],
     data() {
@@ -261,7 +244,6 @@
       this.getCustomOption = function (val) {
         return [
           { id: 'severity', name: this.$t('风险级别'), isChecked: val },
-          { id: 'defectType', name: this.$t('时期'), isChecked: val },
         ]
       }
       const { query } = this.$route
@@ -285,6 +267,8 @@
         searchParams: {
           taskId: this.$route.params.taskId,
           toolName: 'DUPC',
+          taskIdList: [this.$route.params.taskId],
+          toolNameList: ['DUPC'],
           checker: query.checker || '',
           author: query.author,
           severity: this.numToArray(query.severity),

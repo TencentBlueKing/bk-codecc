@@ -19,8 +19,8 @@
       </div>
     </div>
     <div class="option-footer">
+      <span class="btn" @click="handleSelectAll">{{ isSelectAll ? $t('取消全选') : $t('全选') }}</span>
       <span class="btn" @click="handleConfirm">{{ $t('确认') }}</span>
-      <span class="btn" @click="handleSelectAll">{{ $t('全选') }}</span>
     </div>
   </section>
 </template>
@@ -35,6 +35,11 @@
       customOption: {
         type: Array,
         default: () => [],
+      },
+    },
+    computed: {
+      isSelectAll() {
+        return this.customOption.every(item => item.isChecked)
       },
     },
     methods: {

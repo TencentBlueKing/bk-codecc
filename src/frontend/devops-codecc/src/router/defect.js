@@ -1,4 +1,4 @@
-const DefectList = () => import(/* webpackChunkName: 'defect-list' */'../views/defect/list')
+const DefectList = () => import(/* webpackChunkName: 'defect-list' */'../views/defect/defect-list')
 const DefectCoverityList = () => import(/* webpackChunkName: 'defect-list' */'../views/defect/coverity-list')
 const DefectCoverityCharts = () => import(/* webpackChunkName: 'defect-charts' */'../views/defect/coverity-charts')
 const DefectDupcList = () => import(/* webpackChunkName: 'defect-list' */'../views/defect/dupc-list')
@@ -12,6 +12,26 @@ const DefectClocLang = () => import(/* webpackChunkName: 'defect-list' */'../vie
 const DefectLintCharts = () => import(/* webpackChunkName: 'defect-charts' */'../views/defect/lint-charts')
 
 const routes = [
+  {
+    path: '/codecc/:projectId/defect/list',
+    name: 'project-defect-list',
+    component: DefectList,
+    meta: {
+      layout: 'outer',
+      title: '问题',
+      notNeedToolList: true,
+    },
+  },
+  {
+    path: '/codecc/:projectId/ccn/list',
+    name: 'project-ccn-list',
+    component: DefectCcnList,
+    meta: {
+      layout: 'outer',
+      title: '问题',
+      notNeedToolList: true,
+    },
+  },
   {
     path: '/codecc/:projectId/task/:taskId/defect/tool/:toolId/list',
     name: 'defect-list',

@@ -1,4 +1,5 @@
 <template>
+  <!-- deprecated -->
   <bk-table
     class="file-list-table"
     ref="fileListTable"
@@ -74,8 +75,17 @@
                 </p>
               </template> -->
               <!-- 已忽略问题的操作 -->
+              <p v-if="props.row.status & 4" class="entry-link" @click.stop="handleRevertIgnoreAndMark(props.row.entityId)">
+                {{$t('取消忽略并标记处理')}}
+              </p>
+              <p v-if="props.row.status & 4" class="entry-link" @click.stop="handleRevertIgnoreAndCommit(props.row.entityId)">
+                {{$t('取消忽略并提单')}}
+              </p>
               <p v-if="props.row.status & 4" class="entry-link" @click.stop="handleIgnore('RevertIgnore', false, props.row.entityId)">
-                {{$t('恢复忽略')}}
+                {{$t('取消忽略')}}
+              </p>
+              <p v-if="props.row.status & 4" class="entry-link" @click.stop="handleChangeIgnoreType(props.row, false)">
+                {{$t('修改忽略类型')}}
               </p>
               <p v-else class="entry-link" @click.stop="handleIgnore('IgnoreDefect', false, props.row.entityId, props.row.filePath)">
                 {{$t('批量忽略')}}

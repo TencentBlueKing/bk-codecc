@@ -49,34 +49,10 @@
             <div class="table">
               <bk-table :data="trendTableData" :outer-border="false">
                 <bk-table-column :label="$t('日期')" prop="tips" align="center"></bk-table-column>
-                <bk-table-column :label="$t('新问题数')" align="center">
+                <bk-table-column :label="$t('待修复问题数')" align="center">
                   <template slot-scope="{ row, column, $index }">
-                    <a v-if="$index === trendTableData.length - 1" @click="handleHref({ defectType: 1 })" href="javascript:;">{{row.newCount}}</a>
-                    <span v-else>{{row.newCount}}</span>
-                  </template>
-                </bk-table-column>
-                <div slot="empty">
-                  <div class="codecc-table-empty-text">
-                    <img src="../../images/empty.png" class="empty-img">
-                    <div>{{$t('暂无数据')}}</div>
-                  </div>
-                </div>
-              </bk-table>
-            </div>
-          </div>
-        </div>
-        <div class="trend-box">
-          <div class="trend-charts">
-            <div id="hisTrendChart" ref="hisTrendChart"></div>
-          </div>
-          <div class="trend-table">
-            <div class="table">
-              <bk-table :data="trendTableData" :outer-border="false">
-                <bk-table-column :label="$t('日期')" prop="tips" align="center"></bk-table-column>
-                <bk-table-column :label="$t('存量问题数')" align="center">
-                  <template slot-scope="{ row, column, $index }">
-                    <a v-if="$index === trendTableData.length - 1" @click="handleHref({ defectType: 2 })" href="javascript:;">{{row.historyCount}}</a>
-                    <span v-else>{{row.historyCount}}</span>
+                    <a v-if="$index === trendTableData.length - 1" @click="handleHref({ defectType: 1 })" href="javascript:;">{{row.count}}</a>
+                    <span v-else>{{row.count}}</span>
                   </template>
                 </bk-table-column>
                 <div slot="empty">
@@ -97,7 +73,7 @@
         <div class="authors-table">
           <div class="table">
             <bk-table :data="newAuthorsTableData" :outer-border="false">
-              <bk-table-column :label="$t('问题处理人')" prop="authorName" align="center"></bk-table-column>
+              <bk-table-column show-overflow-tooltip :label="$t('问题处理人')" prop="authorName" align="center"></bk-table-column>
               <bk-table-column :label="$t('总数')" prop="total" align="center">
                 <template slot-scope="{ row }">
                   <a v-if="row.authorName !== 'Total'" href="javascript:;" @click="handleHref({ author: row.authorName, defectType: 1 })">{{row.total}}</a>
@@ -120,48 +96,6 @@
                 <template slot-scope="{ row }">
                   <a v-if="row.authorName !== 'Total'" href="javascript:;" @click="handleHref({ author: row.authorName, severity: 4, defectType: 1 })">{{row.prompt}}</a>
                   <a v-else href="javascript:;" @click="handleHref({ severity: 4, defectType: 1 })">{{row.prompt}}</a>
-                </template>
-              </bk-table-column>
-              <div slot="empty">
-                <div class="codecc-table-empty-text">
-                  <img src="../../images/empty.png" class="empty-img">
-                  <div>{{$t('暂无数据')}}</div>
-                </div>
-              </div>
-            </bk-table>
-          </div>
-        </div>
-      </div>
-      <div class="authors-wrapper">
-        <div class="authors-charts">
-          <div id="hisAuthorsChart" ref="hisAuthorsChart"></div>
-        </div>
-        <div class="authors-table">
-          <div class="table">
-            <bk-table :data="hisAuthorsTableData" :outer-border="false">
-              <bk-table-column :label="$t('问题处理人')" prop="authorName" align="center"></bk-table-column>
-              <bk-table-column :label="$t('总数')" prop="total" align="center">
-                <template slot-scope="{ row }">
-                  <a v-if="row.authorName !== 'Total'" href="javascript:;" @click="handleHref({ author: row.authorName, defectType: 2 })">{{row.total}}</a>
-                  <a v-else href="javascript:;" @click="handleHref({ defectType: 2 })">{{row.total}}</a>
-                </template>
-              </bk-table-column>
-              <bk-table-column :label="$t('严重')" prop="serious" align="center">
-                <template slot-scope="{ row }">
-                  <a v-if="row.authorName !== 'Total'" href="javascript:;" @click="handleHref({ author: row.authorName, severity: 1, defectType: 2 })">{{row.serious}}</a>
-                  <a v-else href="javascript:;" @click="handleHref({ severity: 1, defectType: 2 })">{{row.serious}}</a>
-                </template>
-              </bk-table-column>
-              <bk-table-column :label="$t('一般')" prop="normal" align="center">
-                <template slot-scope="{ row }">
-                  <a v-if="row.authorName !== 'Total'" href="javascript:;" @click="handleHref({ author: row.authorName, severity: 2, defectType: 2 })">{{row.normal}}</a>
-                  <a v-else href="javascript:;" @click="handleHref({ severity: 2, defectType: 2 })">{{row.normal}}</a>
-                </template>
-              </bk-table-column>
-              <bk-table-column :label="$t('提示')" prop="prompt" align="center">
-                <template slot-scope="{ row }">
-                  <a v-if="row.authorName !== 'Total'" href="javascript:;" @click="handleHref({ author: row.authorName, severity: 4, defectType: 2 })">{{row.prompt}}</a>
-                  <a v-else href="javascript:;" @click="handleHref({ severity: 4, defectType: 2 })">{{row.prompt}}</a>
                 </template>
               </bk-table-column>
               <div slot="empty">
@@ -197,16 +131,13 @@
         ],
         trendTableData: [],
         newAuthorsTableData: [],
-        hisAuthorsTableData: [],
         searchParams: {
           taskId: this.$route.params.taskId,
           toolId: this.$route.params.toolId,
           daterange: [query.startTime, query.endTime],
         },
         newTrendChart: undefined,
-        hisTrendChart: undefined,
         newAuthorsChart: undefined,
-        hisAuthorsChart: undefined,
       }
     },
     computed: {
@@ -223,8 +154,7 @@
         handler() {
           this.fetchLintList().then((res) => {
             this.initTrend(res.chartLegacys && res.chartLegacys.legacyList)
-            this.initAuthor('new', res.chartAuthors && res.chartAuthors.newAuthorList)
-            this.initAuthor('his', res.chartAuthors && res.chartAuthors.historyAuthorList)
+            this.initAuthor('new', res.chartAuthors && res.chartAuthors.authorList)
           })
         },
         deep: true,
@@ -256,16 +186,15 @@
       initTrend(elemList = []) {
         this.trendTableData = elemList.reverse()
         const xAxisData = elemList.map(item => item.tips)
-        const newCount = elemList.map(item => item.newCount)
-        const historyCount = elemList.map(item => item.historyCount)
+        const count = elemList.map(item => item.count)
 
         const optionNew = {
           title: {
-            text: this.$t('新问题遗留趋势'),
+            text: this.$t('待修复问题数量趋势'),
           },
           legend: {
             data: [{
-              name: this.$t('新问题数'),
+              name: this.$t('待修复问题数'),
             }],
           },
           xAxis: {
@@ -279,59 +208,19 @@
             left: '65',
           },
           series: [{
-            name: this.$t('新问题数'),
-            data: newCount,
+            name: this.$t('待修复问题数'),
+            data: count,
+            cursor: 'default',
           }],
         }
         this.handleChartOption('newTrendChart', optionNew, 'chartLineOption')
-
-        const optionHis = {
-          title: {
-            text: this.$t('存量问题遗留趋势'),
-          },
-          legend: {
-            data: [{
-              name: this.$t('存量问题数'),
-            }],
-          },
-          xAxis: {
-            data: xAxisData,
-          },
-          yAxis: {
-            splitNumber: 4,
-            minInterval: 1,
-          },
-          grid: {
-            left: '65',
-          },
-          series: [{
-            name: this.$t('存量问题数'),
-            data: historyCount,
-            itemStyle: {
-              normal: {
-                color: '#2dcb56',
-              },
-            },
-            lineStyle: {
-              normal: {
-                color: '#2dcb56',
-              },
-            },
-          }],
-        }
-        this.handleChartOption('hisTrendChart', optionHis, 'chartLineOption')
       },
       initAuthor(authorType, list = {}) {
         const authorTypeMap = {
           new: {
             data: 'newAuthorsTableData',
-            title: this.$t('新问题处理人分布'),
+            title: this.$t('待修复问题处理人分布'),
             chart: 'newAuthorsChart',
-          },
-          his: {
-            data: 'hisAuthorsTableData',
-            title: this.$t('存量问题处理人分布'),
-            chart: 'hisAuthorsChart',
           },
         }
         this.handleInitAuthor(authorTypeMap, authorType, list)
@@ -341,33 +230,21 @@
       },
       downloadExcel() {
         const excelData1 = this.getExcelData(
-          [this.$t('日期'), this.$t('新问题数')],
-          ['tips', 'newCount'],
+          [this.$t('日期'), this.$t('待修复问题数')],
+          ['tips', 'count'],
           this.trendTableData,
-          '新问题遗留趋势',
+          '待修复问题数量趋势',
         )
         const excelData2 = this.getExcelData(
-          [this.$t('日期'), this.$t('存量问题数')],
-          ['tips', 'historyCount'],
-          this.trendTableData,
-          '存量问题遗留趋势',
-        )
-        const excelData3 = this.getExcelData(
           [this.$t('问题处理人'), this.$t('总数'), this.$t('严重'), this.$t('一般'), this.$t('提示')],
           ['authorName', 'total', 'serious', 'normal', 'prompt'],
           this.newAuthorsTableData,
-          '新问题处理人分布',
+          '待修复问题处理人分布',
         )
-        const excelData4 = this.getExcelData(
-          [this.$t('问题处理人'), this.$t('总数'), this.$t('严重'), this.$t('一般'), this.$t('提示')],
-          ['authorName', 'total', 'serious', 'normal', 'prompt'],
-          this.hisAuthorsTableData,
-          '存量问题处理人分布',
-        )
-        const excelData = [excelData1, excelData2, excelData3, excelData4]
+        const excelData = [excelData1, excelData2]
         const title = `${this.taskDetail.nameCn}-${this.taskDetail.taskId}-${this.toolId}
 -数据报表-${new Date().toISOString()}`
-        const sheets = ['新问题遗留趋势', '存量问题遗留趋势', '新问题处理人分布', '存量问题处理人分布']
+        const sheets = ['待修复问题数量趋势', '待修复问题处理人分布']
         export_json_to_excel('', excelData, title, sheets)
       },
       getExcelData(tHeader, filterVal, list, sheetName) {
@@ -421,7 +298,7 @@
       .trend-wrapper {
         display: flex;
         .trend-box {
-          width: calc(50% - 7.5px);
+          width: 100%;
           background: #fff;
           border: 1px solid $borderColor;
           margin-bottom: 15px;
@@ -429,9 +306,6 @@
           .trend-table {
             width: 100%;
             padding: 15px;
-          }
-          &:first-of-type {
-            margin-right: 15px;
           }
           #newTrendChart,
           #hisTrendChart {

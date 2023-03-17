@@ -75,12 +75,15 @@ export default {
         series: [
           {
             data: prompt,
+            cursor: 'default',
           },
           {
             data: normal,
+            cursor: 'default',
           },
           {
             data: serious,
+            cursor: 'default',
           },
         ],
       }

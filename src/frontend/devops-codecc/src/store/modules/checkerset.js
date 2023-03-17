@@ -54,12 +54,10 @@ export default {
         })
     },
     listForDefect({ commit, rootState }, params) {
-      const { taskId, toolName, dimension, buildId = '', dataMigrationSuccessful } = params
-      return http.get(`/defect/api/user/checkerSet/task/${taskId}/list?dimension=${dimension}&toolName=${toolName}&buildId=${buildId}&dataMigrationSuccessful=${!!dataMigrationSuccessful}`)
-        .then((res) => {
-          const data = res.data || {}
-          return data
-        })
+      return http.post('/defect/api/user/checkerSet/queryTaskCheckerSets', params).then((res) => {
+        const data = res.data || {}
+        return data
+      })
         .catch((e) => {
           console.error(e)
         })
@@ -177,9 +175,6 @@ export default {
         .catch((e) => {
           console.error(e)
         })
-    },
-    listForTask({ commit }, params) {
-      return http.get(`/defect/api/user/checkerSet/task/${params.taskId}/list`).then(res => res.data || {})
     },
   },
 }

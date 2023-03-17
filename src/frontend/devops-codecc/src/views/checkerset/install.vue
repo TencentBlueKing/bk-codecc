@@ -43,7 +43,7 @@
               <div :class="['checkerset-icon', getIconColorClass(checkerSet.checkerSetId)]">{{(checkerSet.checkerSetName || '')[0]}}</div>
               <div class="info-content">
                 <p class="checkerset-main">
-                  <span class="name">{{checkerSet.checkerSetName}}</span>
+                  <span class="name" :title="checkerSet.checkerSetName">{{checkerSet.checkerSetName}}</span>
                   <span v-if="['DEFAULT', 'RECOMMEND'].includes(checkerSet.checkerSetSource)"
                         :class="['use-mark', { 'preferred': checkerSet.checkerSetSource === 'DEFAULT', 'recommend': checkerSet.checkerSetSource === 'RECOMMEND' }]"
                   >{{$t(checkerSet.checkerSetSource === 'DEFAULT' ? '精选' : '推荐')}}</span>

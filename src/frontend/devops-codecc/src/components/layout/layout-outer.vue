@@ -11,7 +11,7 @@
           </a>
         </div>
       </div>
-      <bk-tab ext-cls="cc-panels" :label-height="59" :active.sync="currentNavTab" type="unborder-card" @tab-change="changeTab">
+      <bk-tab ext-cls="cc-panels" :label-height="59" type="unborder-card" :active.sync="currentNavTab" @tab-change="changeTab">
         <bk-tab-panel
           v-for="(panel, index) in panels"
           v-bind="panel"
@@ -36,6 +36,7 @@
 <script>
   import logo from '@/images/logo.svg'
   import { mapGetters, mapState } from 'vuex'
+  import { leaveConfirm } from '@/common/leave-confirm'
   // import NavTop from './nav-top'
 
   export default {
@@ -52,11 +53,18 @@
         },
         panels: [
           { name: 'task', label: this.$t('任务') },
+          { name: 'defect', label: this.$t('问题') },
           { name: 'checkerset', label: this.$t('规则集') },
           { name: 'checker', label: this.$t('规则') },
+          { name: 'ignore', label: this.$t('忽略配置') },
         ],
         iwikiCodeccHome: window.IWIKI_CODECC_HOME,
         hasRedPointStore: window.localStorage.getItem('redtips-tab-cloc-20200704'),
+        moreDropdownList: [
+          // { name: 'pathShield', label: this.$t('路径屏蔽') },
+          { name: 'ignoreList', label: this.$t('忽略配置') },
+          // { name: 'operationAudit', label: this.$t('操作审计') },
+        ],
       }
     },
     computed: {
@@ -74,11 +82,14 @@
         const routeName = this.$route.name
         const navMap = {
           'task-list': 'task',
+          'project-defect-list': 'defect',
+          'project-ccn-list': 'defect',
           'checker-list': 'checker',
           'checkerset-list': 'checkerset',
           'checkerset-manage': 'checkerset',
+          ignoreList: 'ignore',
         }
-        return navMap[routeName] || 'task'
+        return navMap[routeName]
       },
     },
     methods: {
@@ -89,6 +100,10 @@
           this.$router.push({ name: 'task-list' })
         } else if (name === 'checkerset') {
           this.$router.push({ name: 'checkerset-list' })
+        } else if (name === 'ignore') {
+          this.$router.push({ name: 'ignoreList' })
+        } else if (name === 'defect') {
+          this.$router.push({ name: 'project-defect-list', query: { dimension: 'DEFECT' } })
         }
       },
       handleRedPoint(name) {
@@ -96,6 +111,15 @@
           window.localStorage.setItem('redtips-tab-cloc-20200704', '1')
           this.hasRedPointStore = true
         }
+      },
+      triggerHandler(item) {
+        if (this.$route.name === item.name) return
+        leaveConfirm().then(() => {
+          this.showMoreCom = true
+          this.$router.push({
+            name: item.name,
+          })
+        })
       },
     },
   }

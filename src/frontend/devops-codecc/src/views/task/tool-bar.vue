@@ -6,9 +6,9 @@
         <span class="task-total-count">{{$t('共x个任务', { num: taskCount })}}</span>
       </section>
       <section class="bar-handle">
-        <i class="icon codecc-icon icon-filter" @click="isFilter = !isFilter"></i>
+        <i class="icon codecc-icon icon-filter" v-bk-tooltips="$t('筛选')" @click="isFilter = !isFilter"></i>
         <div v-bk-clickoutside="hideFeedBackMenu" style="display: inline">
-          <i class="icon codecc-icon icon-sort" @click.stop="toggleFeedBackMenu"></i>
+          <i class="icon codecc-icon icon-sort" v-bk-tooltips="$t('排序')" @click.stop="toggleFeedBackMenu"></i>
           <ul class="feedback-menu" v-show="showOrderType">
             <li v-for="(order, index) in orderList" :key="`order${index}`">
               <a @click.stop="changeOrderType(order.id)">{{ order.name }}</a>

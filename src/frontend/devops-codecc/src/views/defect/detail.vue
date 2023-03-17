@@ -5,9 +5,9 @@
       <div class="col-aside-left-header">
         <bk-icon @click="closeDetail" class="arrows-left" type="arrows-left" />
         <div class="header-index">{{fileIndex + 1}}/{{totalCount}}</div>
-        <i class="codecc-icon icon-share" @click="shareVisiable = true"></i>
-        <i class="codecc-icon icon-operate" @click="operateDialogVisiable = true"></i>
-        <div class="share-block" v-if="shareVisiable">
+        <i class="codecc-icon icon-share" v-bk-tooltips="$t('分享此问题')" @click="shareVisiable = true"></i>
+        <i class="codecc-icon icon-operate" v-bk-tooltips="$t('键盘操作指引')" @click="operateDialogVisiable = true"></i>
+        <div class="dialog-block" v-if="shareVisiable">
           <div class="share-header">{{$t('分享此问题')}}</div>
           <i class="bk-icon icon-close" @click="shareVisiable = false"></i>
           <div class="share-content" @click="shareDefect">
@@ -40,27 +40,21 @@
         <div class="basic-info-defect" :class="{ 'full-screen-info': isFullScreen }" v-if="currentFile">
           <div class="block">
             <div class="item disb">
-              <span class="fail" :class="{ 'cc-status': currentFile.mark }" v-if="currentFile.status === 1">
+              <span class="fail cc-status" v-if="currentFile.status === 1">
                 <span class="cc-dot"></span>
                 <span v-if="buildNum" v-bk-tooltips="`#${buildNum}待修复(当前分支最新构建#${lintDetail.lastBuildNumOfSameBranch}该问题为${lintDetail.defectIsFixedOnLastBuildNumOfSameBranch ? '已修复' : '待修复'})`">
                   #{{buildNum}}{{$t('待修复')}}
                   <span style="color: #63656e">(#{{lintDetail.lastBuildNumOfSameBranch}}{{lintDetail.defectIsFixedOnLastBuildNumOfSameBranch ? $t('已修复') : $t('待修复')}})</span>
                 </span>
                 <span v-else>{{$t('待修复')}}</span>
-                <span v-if="currentFile.defectIssueInfoVO && currentFile.defectIssueInfoVO.submitStatus && currentFile.defectIssueInfoVO.submitStatus !== 4">{{$t('(已提单)')}}</span>
               </span>
-              <span class="success" v-else-if="currentFile.status & 2"><span class="cc-dot"></span>{{$t('已修复')}}</span>
-              <span class="warn" v-else-if="currentFile.status & 4"><span class="cc-dot"></span>{{$t('已忽略')}}</span>
-              <span class="warn" v-else-if="currentFile.status & 8 || currentFile.status & 16"><span class="cc-dot"></span>{{$t('已屏蔽')}}</span>
-              <span v-if="currentFile.status === 1 && currentFile.mark" class="cc-mark disb">
-                <span v-if="currentFile.mark === 1" v-bk-tooltips="'已标记处理'">
-                  <span class="codecc-icon icon-mark"></span>
-                  <span>{{$t('已标记处理')}}</span>
-                </span>
-                <span v-if="currentFile.mark === 2" v-bk-tooltips="'标记处理后重新扫描仍为问题'">
-                  <span class="codecc-icon icon-mark re-mark"></span>
-                  <span>{{$t('已标记处理')}}</span>
-                </span>
+              <span class="success cc-status" v-else-if="currentFile.status & 2"><span class="cc-dot"></span>{{$t('已修复')}}</span>
+              <span class="warn cc-status" v-else-if="currentFile.status & 4"><span class="cc-dot"></span>{{$t('已忽略')}}</span>
+              <span class="warn cc-status" v-else-if="currentFile.status & 8 || currentFile.status & 16"><span class="cc-dot"></span>{{$t('已屏蔽')}}</span>
+              <span>
+                <span v-if="currentFile.status === 1 && currentFile.mark === 1" v-bk-tooltips="$t('已标记处理')" class="codecc-icon icon-mark mr5"></span>
+                <span v-if="currentFile.status === 1 && currentFile.markButNoFixed" v-bk-tooltips="$t('标记处理后重新扫描仍为问题')" class="codecc-icon icon-mark re-mark mr5"></span>
+                <span v-if="currentFile.defectIssueInfoVO?.submitStatus && currentFile.defectIssueInfoVO.submitStatus !== 4" v-bk-tooltips="$t('已提单')" class="codecc-icon icon-tapd"></span>
               </span>
             </div>
             <div v-if="currentFile.status === 1" class="item">
@@ -71,21 +65,38 @@
                 {{$t('标记处理')}}
               </bk-button>
             </div>
-            <div class="item">
-              <bk-button class="item-button" @click="handleComent(entityId)">{{$t('评论')}}</bk-button>
+            <div v-if="currentFile.status & 4 && !currentFile.ignoreCommentDefect">
+              <div class="item">
+                <bk-button class="item-button" @click="handleRevertIgnoreAndMark(entityId)">
+                  {{$t('取消忽略并标记处理')}}
+                </bk-button>
+              </div>
+              <div class="item">
+                <bk-button class="item-button" @click="handleRevertIgnoreAndCommit(entityId)">
+                  {{$t('取消忽略并提单')}}
+                </bk-button>
+              </div>
             </div>
             <div class="item">
               <bk-button v-if="currentFile.status & 4 && currentFile.ignoreCommentDefect" class="item-button" disabled :title="$t('注释忽略的问题不允许页面进行恢复操作')">
-                {{$t('恢复忽略')}}
+                {{$t('取消忽略')}}
               </bk-button>
               <bk-button v-else-if="currentFile.status & 4" class="item-button" @click="handleIgnore('RevertIgnore', false, entityId)">
-                {{$t('恢复忽略')}}
+                {{$t('取消忽略')}}
               </bk-button>
               <bk-button v-else-if="prohibitIgnore" disabled class="item-button" :title="$t('已设置禁止页面忽略，可在代码行末或上一行使用注释忽略，例如// NOCC:rule1(ignore reason)')">
                 {{$t('忽略问题')}}
               </bk-button>
               <bk-button v-else-if="!(currentFile.status & 2 || currentFile.status & 8 || currentFile.status & 16)" class="item-button" @click="handleIgnore('IgnoreDefect', false, entityId)">
                 {{$t('忽略问题')}}
+              </bk-button>
+            </div>
+            <div class="item">
+              <bk-button class="item-button" @click="handleComent(entityId)">{{$t('评论')}}</bk-button>
+            </div>
+            <div class="item" v-if="currentFile.status & 4 && !currentFile.ignoreCommentDefect">
+              <bk-button class="item-button" @click="handleChangeIgnoreType(currentFile, true)">
+                {{$t('修改忽略类型')}}
               </bk-button>
             </div>
             <div v-if="currentFile.status === 1 && !(currentFile.defectIssueInfoVO && currentFile.defectIssueInfoVO.submitStatus && currentFile.defectIssueInfoVO.submitStatus !== 4)" class="item">
@@ -141,14 +152,16 @@
           </div>
           <div class="block">
             <div class="item">
-              <dt v-if="currentFile.status === 1" class="curpt" @click.stop="handleAuthor(1, entityId, currentFile.author)">
-                {{$t('处理人')}}
-                <span class="bk-icon icon-edit2 fs20"></span>
-              </dt>
-              <dt v-else>
+              <dt>
                 {{$t('处理人')}}
               </dt>
-              <dd>{{currentFile.author && currentFile.author.join(',')}}</dd>
+              <dd>
+                {{currentFile.author && currentFile.author.join(',')}}
+                <span v-if="currentFile.status & 1 || currentFile.status & 4"
+                      @click.stop="handleAuthor(1, entityId, currentFile.author)"
+                      class="curpt bk-icon icon-edit2 fs20">
+                </span>
+              </dd>
             </div>
           </div>
           <div class="block">
@@ -254,10 +267,26 @@
       buildNum: {
         type: String,
       },
+      handleRevertIgnoreAndMark: {
+        type: Function,
+      },
+      handleRevertIgnoreAndCommit: {
+        type: Function,
+      },
+      handleChangeIgnoreType: {
+        type: Function,
+      },
+      isProjectDefect: {
+        type: Boolean,
+      },
       handleFileListRowClick: Function,
       isFileListLoadMore: Boolean,
       nextPageStartNum: Number,
       nextPageEndNum: Number,
+      ignoreList: {
+        type: Array,
+        default: () => [],
+      },
     },
     data() {
       return {
@@ -498,17 +527,6 @@
                             ${detailVO.checker} ${detailVO.checkerType ? `| ${detailVO.checkerType}` : ''}
                             | ${defectSeverityDetailMap[detailVO.severity]}
                         </span>
-                        <span class="tag">
-                            <span class="codecc-icon icon-creator"></span>
-                            ${detailVO.author || '--'}
-                            ${this.type === 'defect' ? '' : `<span class="bk-icon icon-edit2 fs20"
-                            data-entityid="${detailVO.entityId}" data-author="${detailVO.author || '--'}"></span>`}
-                        </span>
-                        <span class="tag">
-                            <span class="codecc-icon icon-time"></span>
-                            ${this.formatDate(detailVO.createTime)}
-                            ${detailVO.createBuildNumber ? `#${detailVO.createBuildNumber}` : '--'}创建
-                        </span>
                     </p>
                 </div>
                 <div class="checker-detail">${newcheckerDetailArr.join('')}</div>
@@ -681,11 +699,10 @@
         })
       },
       getIgnoreReasonByType(type) {
-        const typeMap = {
-          1: this.$t('检查工具误报'),
-          2: this.$t('设计如此'),
-          4: this.$t('其他'),
-        }
+        const typeMap = this.ignoreList.reduce((result, item) => {
+          result[item.ignoreTypeId] = item.name
+          return result
+        }, {})
         return typeMap[type]
       },
       formatTime(time) {
@@ -776,8 +793,12 @@
         if (window.self !== window.top) {
           prefix = `${location.protocol}${window.DEVOPS_SITE_URL}/console`
         }
-        const url = `${prefix}/codecc/${projectId}/task/${taskId}/defect/lint/${toolName}/list
+        let url = `${prefix}/codecc/${projectId}/task/${taskId}/defect/lint/${toolName}/list
 ?entityId=${entityId}&status=${status}`
+        if (this.isProjectDefect) {
+          url = `${prefix}/codecc/${projectId}/defect/list
+?entityId=${entityId}&status=${status}`
+        }
         const input = document.createElement('input')
         document.body.appendChild(input)
         input.setAttribute('value', url)
@@ -1008,7 +1029,7 @@
     .icon-operate {
       right: 60px;
     }
-    .share-block {
+    .dialog-block {
       position: absolute;
       right: 24px;
       width: 272px;

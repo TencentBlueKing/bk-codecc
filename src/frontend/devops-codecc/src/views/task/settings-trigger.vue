@@ -33,11 +33,6 @@
         <span class="fs14">{{ taskDetail.executeTime }}</span>
       </div>
       <div>
-        <span class="pipeline-label">{{$t('新问题判定')}}</span>
-        <span class="fs14">{{ fromDate || '--' }}</span>
-        <span class="fs14" v-if="fromDate">{{$t('之后产生的问题为新问题')}}</span>
-      </div>
-      <div>
         <span class="pipeline-label">{{$t('处理人转换')}}</span>
         <div v-if="authorList" class="handler-replace">
           <div v-for="(item, index) in authorList" :key="index">
@@ -108,21 +103,6 @@
           </div>
         </template>
 
-        <div class="settings-header">
-          <b class="settings-header-title">{{$t('新问题判定')}}</b>
-        </div>
-        <div class="settings-body">
-          <bk-form-item :label-width="110">
-            <bk-date-picker
-              :placeholder="$t('选择日期')"
-              style="width: 200px"
-              class="date-picker"
-              @change="handleTimeChange"
-              v-model="fromDate"
-              value-format="yyyy-MM-dd">
-            </bk-date-picker>{{$t('之后产生的问题为新问题')}}
-          </bk-form-item>
-        </div>
         <div class="settings-header">
           <b class="settings-header-title">{{$t('处理人转换')}}</b>
           <span class="fs12 pl10">{{$t('各工具原处理人的问题都将自动转给新处理人')}}</span>

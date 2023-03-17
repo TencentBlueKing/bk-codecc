@@ -12,13 +12,11 @@
     <body>
         <div id="app"></div>
         <script>
-            var projectId = ''
-            var projectIdArr = document.location.pathname.match(/^\/codecc\/([\w-]+)\//)
-            if (projectIdArr && projectIdArr[1]) {
-                projectId = projectIdArr[1]
-            }
-            if (projectId) {
+            var projectId = document.location.pathname.match(/^\/codecc\/([\w-]+)\/?/)?.[1] || ''
+            var projectIdInCookie = document.cookie.replace(/(?:(?:^|.*;\s*)X-DEVOPS-PROJECT-ID\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+            if (projectId !== projectIdInCookie) {
                 document.cookie = 'X-DEVOPS-PROJECT-ID=' + projectId + ';domain=' + location.host + ';path=/'
+                document.location.reload()
             }
         </script>
         <script>

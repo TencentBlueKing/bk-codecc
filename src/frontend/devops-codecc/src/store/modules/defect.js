@@ -90,14 +90,8 @@ export default {
         return params
       })
     },
-    lintOtherParams({ commit }, data) {
-      // const extraParams = data.toolId ? `&toolName=${data.toolId}` : ''
-      const { status, ...params } = data
-      return http.get(`/defect/api/user/warn/checker/authors/list?${json2Query(params)}&status=${data.status}`)
-        .then((res) => {
-          const params = res.data || {}
-          return params
-        })
+    lintOtherParams({ commit }, params) {
+      return http.post('/defect/api/user/warn/checker/authors/list', params).then(res => res.data || {})
     },
     lintSearchParams({ commit }, data) {
       return http.post('/defect/api/user/warn/initpage', data, { cancelPrevious: false }).then((res) => {
@@ -177,9 +171,7 @@ export default {
         .catch(e => e)
     },
     saveSetAuthorityOperaHis({ commit, state, dispatch }, params) {
-      return http.post('/defect/api/user/operation//settings/authority', params).then((res) => {
-        return res.data || {}
-      })
+      return http.post('/defect/api/user/operation//settings/authority', params).then(res => res.data || {})
         .catch((e) => {
           console.error(e)
         })
@@ -246,11 +238,7 @@ export default {
         })
     },
     gatherFile({ commit, state, dispatch }, params) {
-      const { taskId, toolName, dimension, buildId, dataMigrationSuccessful } = params
-      return http.get(`/defect/api/user/warn/gather/taskId/${taskId}/list?toolName=${toolName}&dimension=${dimension}&buildId=${buildId}&dataMigrationSuccessful=${dataMigrationSuccessful}`).then(res => res.data || {})
-        .catch((e) => {
-          console.error(e)
-        })
+      return http.post('/defect/api/user/warn/queryFileDefectGather', params).then(res => res || {})
     },
     lintListCloc({ commit }, params) {
       return http.get(`/defect/api/user/warn/list/toolName/${params.toolId}/orderBy/${params.type}`).then((res) => {
@@ -259,8 +247,7 @@ export default {
       })
     },
     listToolName({ commit }, params) {
-      return http.get(`/defect/api/user/warn/listToolName?buildId=${params.buildId}&dimension=${params.dimension}&dataMigrationSuccessful=${params.dataMigrationSuccessful}`)
-        .then(res => res.data || [])
+      return http.post('/defect/api/user/warn/listToolName', params).then(res => res.data || [])
     },
     oauthUrl({ commit, state, dispatch }, params) {
       return http.get(`/defect/api/user/repo/oauth/url?toolName=${params.toolName}`).then(res => res.data || {})
@@ -269,10 +256,13 @@ export default {
         })
     },
     getDimension({ commit }, params) {
-      return http.get(`/task/api/user/task/listDimension?taskId=${params.taskId}&dataMigrationSuccessful=${params.dataMigrationSuccessful}`).then(res => res.data || {})
+      return http.post('/task/api/user/task/listDimension', params).then(res => res.data || {})
     },
     defectCommit({ commit }, params) {
       return http.post('/defect/api/user/issue/batchSubmitIssue', params).then(res => res || {})
+    },
+    getTaskList({ commit }, params) {
+      return http.get('/task/api/user/task/listTaskBase', params).then(res => res.data || [])
     },
   },
 }

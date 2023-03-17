@@ -8,7 +8,7 @@
     </div>
     <component :is="layout">
       <div style="height: 100%" v-bkloading="{ isLoading: mainContentLoading, opacity: 0.3 }">
-        <router-view class="main-content" :key="$route.fullPath" />
+        <router-view v-if="isRouterAlive" class="main-content" :key="$route.fullPath" />
       </div>
     </component>
     <app-auth ref="bkAuth"></app-auth>
@@ -78,6 +78,12 @@
         permissionDialogvisiable: false,
         noticeMesVisiable: true,
         newVersionMesVisiable: true,
+        isRouterAlive: true,
+      }
+    },
+    provide() {
+      return {
+        reload: this.reload,
       }
     },
     computed: {
@@ -241,6 +247,12 @@
       comfirmPermission() {
         this.permissionDialogvisiable = false
         this.$router.push({ name: 'task-settings-authority' })
+      },
+      reload() {
+        this.isRouterAlive = false
+        this.$nextTick(() => {
+          this.isRouterAlive = true
+        })
       },
     },
   }
