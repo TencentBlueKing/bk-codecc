@@ -189,7 +189,7 @@ if [[ $ALL -eq 1 || $INIT -eq 1 ]] ; then
     log "构建mongo镜像..."
     rm -rf tmp/*
     cp -rf mongodb/init-mongodb.sh tmp/
-    cp -rf mongodb/nosql tmp/
+    cp -rf $NOSQL_DIR tmp/
     docker build -f mongodb/init.Dockerfile -t $REGISTRY/$NAMESPACE/${PERFIX}mongo-init:$VERSION tmp --no-cache --network=host
     if [[ $PUSH -eq 1 ]] ; then
         docker push $REGISTRY/$NAMESPACE/${PERFIX}mongo-init:$VERSION
