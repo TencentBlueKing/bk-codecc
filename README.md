@@ -1,57 +1,41 @@
 ![LOGO](docs/resource/img/bkci_cn.png)
 ---
-[![license](https://img.shields.io/badge/license-mit-brightgreen.svg?style=flat)](https://github.com/Tencent/bk-ci/blob/master/LICENSE.txt) [![Release Version](https://img.shields.io/github/v/release/Tencent/bk-ci?include_prereleases)](https://github.com/Tencent/bk-ci/releases) [![Backend CI](https://github.com/Tencent/bk-ci/workflows/Backend%20CI/badge.svg?branch=master)](https://img.shields.io/github/workflow/status/Tencent/bk-ci/Tag%20Realse)
+[![license](https://img.shields.io/badge/license-mit-brightgreen.svg?style=flat)](https://github.com/TencentBlueKing/bk-codecc/blob/master/LICENSE.txt)
 
 [English](README_EN.md) | 简体中文
 
 > **重要提示**: `master` 分支在开发过程中可能处于 *不稳定或者不可用状态* 。
-请通过[releases](https://github.com/tencent/bk-ci/releases) 而非 `master` 去获取稳定的二进制文件。
+请通过[releases](https://github.com/TencentBlueKing/bk-codecc/releases) 而非 `master` 去获取稳定的二进制文件。
 
-bk-ci是一个免费并开源的CI服务，可助你自动化构建-测试-发布工作流，持续、快速、高质量地交付你的产品。
+代码检查，一般又称为静态代码分析，是指无需运行被测代码，仅通过分析或检查源程序的语法、结构、过程、接口等来检查程序的正确性，找出代码隐藏的错误和缺陷，如内存泄漏，空指针引用，死代码，变量未初始化，复制粘贴错误，重复代码，函数复杂度过高等等。
 
-使用bk-ci屏蔽掉所有研发流程中的繁琐环节，让你聚焦于编码。它通常被用于：
-- 工程编译
-- 静态代码检查
-- 运行测试用例，及时发现BUG
-- 部署与发布
+CodeCC（蓝鲸代码检查中心）构建开放的代码检查平台，提供专业的代码检查解决方案及服务，为产品质量保驾护航。
 
-bk-ci提供了流水线、代码检查、代码库、凭证管理、环境管理、研发商店、编译加速 7 大核心服务，多重组合，满足企业不同场景的需求：
-- **流水线**：将团队现有的研发流程以可视化方式呈现出来，编译、测试、部署，一条流水线搞定
-- **代码检查**：提供专业的代码检查解决方案，检查缺陷、安全漏洞、规范等多种维度代码问题，为产品质量保驾护航。
-- **代码库**：将企业内已有的代码托管服务关联至bk-ci
-- **凭证管理**：为代码库、流水线等服务提供不同类型的凭据、证书管理功能
-- **环境管理**：可以将企业内部的开发编译机托管至bk-ci
-- **研发商店**：由流水线插件和流水线模板组成，插件用于对接企业内部的各种第三方服务，模板助力企业内部的研发流程规范化
-- **编译加速**：基于蓝鲸自研加速引擎，支持C/C++编译、UE4 代码编译、UE4 Shader 编译等多场景下的加速，让构建任务飞起来
+![image](https://user-images.githubusercontent.com/46527215/227879236-b0dc6b63-cd54-466b-a3bf-e65bd2d51589.png)
 
 ## Overview
-- [架构设计](docs/overview/architecture.md)
-- [代码目录](docs/overview/code_framework.md)
-- [设计理念](docs/overview/design.md)
+- [架构设计(待补充)](docs/overview/architecture.md)
+- [代码目录（待补充）](docs/overview/code_framework.md)
+- [设计理念（待补充）](docs/overview/design.md)
 
 ## Features
-- 持续集成和持续交付: 由于框架的可扩展性，bk-ci既可以用作简单的CI场景，也可以成为企业内所有项目的持续交付中心
-- 所见即所得:  bk-ci提供了灵活的可视化编排流水线，动动指尖，将研发流程描述与此
-- 架构平行可扩展: 灵活的架构设计可以随意横向扩容，满足企业大规模使用
-- 分布式: bk-ci可以便捷的管控多台构建机，助你更快的跨多平台构建、测试和部署
-- 流水线插件: bk-ci拥有完善的插件开发体系，其具备了低门槛、灵活可扩展等特性
-- 流水线模板: 流水线模板将是企业内部推行研发规范的一大助力
-- 代码检查规则集：沉淀团队的代码要求，并能跨项目共享和升级
+- 多种检查维度：目前已集成十余款含开源、自研的代码检查工具，覆盖代码缺陷、安全漏洞、编码规范、圈复杂度、代码重复率多种维度；
+- 丰富的平台功能：通过快速准确地分析源代码，找出质量问题和安全漏洞，并提供自助接入、实时扫描、告警展示、告警屏蔽、定时日报、修复激励等功能；
+- 工具自助上架：支持工具开发框架和自助上架。
 
 ## Experience
-- [bk-ci in docker](https://hub.docker.com/r/blueking/bk-ci)
-- [bk-repo in docker](https://hub.docker.com/r/bkrepo/bkrepo)
+- [bk-codecc in docker（待补充）](https://hub.docker.com/r/blueking/bk-codecc)
 
 ## Getting started
-- [下载与编译](docs/overview/source_compile.md)
-- [一分钟安装部署](docs/overview/installation.md)
-- [独立部署storage模块](docs/storage/README.md)
+- [下载与编译（待补充）](docs/overview/source_compile.md)
+- [一分钟安装部署（待补充）](docs/overview/installation.md)
 
 ## Support
-1. [GitHub讨论区](https://github.com/Tencent/bk-ci/discussions)
+1. [GitHub讨论区](https://github.com/TencentBlueKing/bk-codecc/discussions)
 2. QQ群：495299374
 
 ## BlueKing Community
+- [BK-CI](https://github.com/Tencent/bk-ci)：蓝盾是一个免费并开源的CI服务，可助你自动化构建-测试-发布工作流，持续、快速、高质量地交付你的产品。
 - [BK-BCS](https://github.com/Tencent/bk-bcs)：蓝鲸容器管理平台是以容器技术为基础，为微服务业务提供编排管理的基础服务平台。
 - [BK-CMDB](https://github.com/Tencent/bk-cmdb)：蓝鲸配置平台（蓝鲸CMDB）是一个面向资产及应用的企业级配置管理平台。
 - [BK-JOB](https://github.com/Tencent/bk-job)：蓝鲸作业平台(Job)是一套运维脚本管理系统，具备海量任务并发处理能力。
@@ -59,11 +43,11 @@ bk-ci提供了流水线、代码检查、代码库、凭证管理、环境管理
 - [BK-SOPS](https://github.com/Tencent/bk-sops)：蓝鲸标准运维（SOPS）是通过可视化的图形界面进行任务流程编排和执行的系统，是蓝鲸体系中一款轻量级的调度编排类SaaS产品。
 
 ## Contributing
-- 关于 bk-ci 分支管理、issue 以及 pr 规范，请阅读 [Contributing](CONTRIBUTING.md)
+- 关于 bk-codecc 分支管理、issue 以及 pr 规范，请阅读 [Contributing](CONTRIBUTING.md)
 - [腾讯开源激励计划](https://opensource.tencent.com/contribution) 鼓励开发者的参与和贡献，期待你的加入
 
 
 ## License
-BK-CI 是基于 MIT 协议， 详细请参考 [LICENSE](LICENSE.txt)
+BK-CODECC是基于 MIT 协议， 详细请参考 [LICENSE](LICENSE.txt)
 
 我们承诺未来不会更改适用于交付给任何人的当前项目版本的开源许可证（MIT 协议）。
