@@ -54,10 +54,10 @@ abstract class Client constructor(
         protected val objectMapper: ObjectMapper
 ) {
 
-    @Value("\${server.prefix:codecc:#{null}}")
+    @Value("\${server.prefix:#{null}}")
     private val serverPrefix: String? = null
 
-    @Value("\${service.suffix.codecc:#{null}}")
+    @Value("\${service.suffix:#{null}}")
     private val serviceSuffix: String? = null
 
     private val interfaces = ConcurrentHashMap<KClass<*>, String>()
