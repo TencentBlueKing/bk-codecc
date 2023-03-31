@@ -42,18 +42,18 @@ class RBACAuthProperties {
     /**
      * RBAC权限系统资源类型
      */
-    @Value("\${auth.rbac.resourceType:#{null}}")
+    @Value("\${auth.rbac.resourceType:codecc_task}")
     val rbacResourceType: String? = null
 
     /**
      * RBAC权限系统资源类型
      */
-    @Value("\${auth.rbac.pipelineResourceType:#{null}}")
+    @Value("\${auth.rbac.pipelineResourceType:pipeline}")
     val pipeLineResourceType: String? = null
 
     /**
      * 接口access token
      */
-    @Value("\${auth.v3.token:#{null}}")
+    @Value("\${auth.rbac.token:#{null}}")
     val token: String? = null
 }
