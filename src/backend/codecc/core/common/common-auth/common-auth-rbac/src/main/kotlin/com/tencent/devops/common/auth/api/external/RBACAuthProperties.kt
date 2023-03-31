@@ -42,13 +42,13 @@ class RBACAuthProperties {
     /**
      * RBAC权限系统资源类型
      */
-    @Value("\${auth.rbacResourceType:#{null}}")
+    @Value("\${auth.rbac.resourceType:#{null}}")
     val rbacResourceType: String? = null
 
     /**
      * RBAC权限系统资源类型
      */
-    @Value("\${auth.pipelineResourceType:#{null}}")
+    @Value("\${auth.rbac.pipelineResourceType:#{null}}")
     val pipeLineResourceType: String? = null
 
     /**
