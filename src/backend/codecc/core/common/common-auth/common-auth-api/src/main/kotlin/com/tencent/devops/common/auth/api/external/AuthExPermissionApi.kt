@@ -77,4 +77,10 @@ interface AuthExPermissionApi {
      * @return
      */
     fun authProjectManager(projectId: String, user: String): Boolean
+
+
+    /**
+     * 校验是否项目角色
+     */
+    fun authProjectRole(projectId: String, user: String, role: String?): Boolean
 }

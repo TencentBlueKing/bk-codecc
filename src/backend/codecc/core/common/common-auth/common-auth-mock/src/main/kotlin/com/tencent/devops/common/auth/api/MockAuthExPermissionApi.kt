@@ -43,4 +43,8 @@ class MockAuthExPermissionApi(client: Client,
     override fun authProjectManager(projectId: String, user: String): Boolean {
         return true
     }
+
+    override fun authProjectRole(projectId: String, user: String, role: String?): Boolean {
+        return true
+    }
 }

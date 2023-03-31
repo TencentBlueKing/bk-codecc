@@ -65,11 +65,22 @@ class PermissionAuthFilter(
         }
 
 
-        val taskId = requestContext.getHeaderString(AUTH_HEADER_DEVOPS_TASK_ID)
+
         val projectId = requestContext.getHeaderString(AUTH_HEADER_DEVOPS_PROJECT_ID)
-        if (user.isNullOrBlank() || taskId.isNullOrBlank() || projectId.isNullOrBlank()) {
-            logger.error("insufficient param info! user: $user, taskId: $taskId, projectId: $projectId")
+        if (user.isNullOrBlank()  || projectId.isNullOrBlank()) {
+            logger.error("insufficient param info! user: $user, projectId: $projectId")
             throw UnauthorizedException("insufficient param info!")
+        }
+
+        // 当没获取到任务id时，只校验项目维度的权限
+        val taskId = requestContext.getHeaderString(AUTH_HEADER_DEVOPS_TASK_ID)
+        if (taskId.isNullOrBlank()) {
+            logger.warn("permission auth task id isNullOrBlank")
+            val isProjectRole = authExPermissionApi.authProjectRole(projectId, user, role = null)
+            if (!isProjectRole) {
+                throw UnauthorizedException("unauthorized user permission!")
+            }
+            return
         }
 
         val taskCreateFrom = authTaskService.getTaskCreateFrom(taskId.toLong())
