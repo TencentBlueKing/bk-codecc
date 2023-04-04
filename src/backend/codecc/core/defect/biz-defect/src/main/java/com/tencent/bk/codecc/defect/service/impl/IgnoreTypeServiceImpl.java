@@ -128,7 +128,7 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
     private IgnoreTypeProjectDao ignoreTypeProjectDao;
     @Autowired
     private AuthExPermissionApi authExPermissionApi;
-    @Value("${devopsGateway.idchost}")
+    @Value("${bkci.public.url:#{null}}")
     private String devopsHost;
     @Value("${codecc.public.url:#{null}}")
     private String codeccHost;
