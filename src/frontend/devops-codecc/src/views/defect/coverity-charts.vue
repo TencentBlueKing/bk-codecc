@@ -398,7 +398,7 @@
             'prompt',
           ],
           this.existAuthorsTableData,
-          '待修复问题处理人分布',
+          this.$t('待修复问题处理人分布'),
         )
         const excelData2 = this.getExcelData(
           [

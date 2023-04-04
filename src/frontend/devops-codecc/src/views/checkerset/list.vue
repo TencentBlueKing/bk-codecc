@@ -9,7 +9,7 @@
       </div>
       <bk-input
         class="checker-search"
-        :placeholder="'请输入，按enter键搜索'"
+        :placeholder="$t('请输入，按enter键搜索')"
         :clearable="true"
         :right-icon="'bk-icon icon-search'"
         v-model="keyWord"
@@ -66,9 +66,9 @@
       :mask-close="false"
       @cancel="delVisiable = false"
       @confirm="handleDelete"
-      :title="curHandleItem.projectId === projectId ? '删除规则集' : '卸载规则集'">
-      <span v-if="curHandleItem.projectId === projectId">{{`删除【${curHandleItem.checkerSetName}】规则集后无法恢复。本项目中将无法使用该规则集，其他项目中若已安装该规则集仍可继续使用。`}}</span>
-      <span v-else>{{`【卸载${curHandleItem.checkerSetName}】规则集后，本项目将无法使用该规则集。可通过“更多规则集”重新安装。`}}</span>
+      :title="curHandleItem.projectId === projectId ? this.$t('删除规则集') : this.$t('卸载规则集')">
+      <span v-if="curHandleItem.projectId === projectId">{{this.$t('删除【x】规则集后无法恢复。本项目中将无法使用该规则集，其他项目中若已安装该规则集仍可继续使用。', [curHandleItem.checkerSetName])}}</span>
+      <span v-else>{{this.$t('卸载【x】规则集后，本项目将无法使用该规则集。可通过“更多规则集”重新安装。', [curHandleItem.checkerSetName])}}</span>
     </bk-dialog>
     <create
       :visiable.sync="sliderVisiable"
@@ -258,7 +258,7 @@
       handleManage(params) {
         this.$store.dispatch('checkerset/manage', params).then((res) => {
           if (res.code === '0') {
-            this.$bkMessage({ theme: 'success', message: '操作成功' })
+            this.$bkMessage({ theme: 'success', message: this.$t('操作成功') })
             this.initSearch(false)
             this.fetchList(false)
           }
@@ -299,15 +299,17 @@
           const that = this
           let titleTxt; let subTitleTxt
           if (type === 'setDefault') {
-            titleTxt = !checkerset.defaultCheckerSet ? '设置规则集为默认' : '取消规则集为默认'
+            titleTxt = !checkerset.defaultCheckerSet ? this.$t('设置规则集为默认') : this.$t('取消规则集为默认')
             subTitleTxt = !checkerset.defaultCheckerSet
-              ? `设置【${checkerset.checkerSetName}】规则集为默认后，接入${this.getCodeLang(checkerset.codeLang)}语言任务时该规则集将会被自动选中。`
-              : `取消【${checkerset.checkerSetName}】规则集为默认后，接入${this.getCodeLang(checkerset.codeLang)}语言任务时该规则集将不会被自动选中。`
+              ? this.$t('设置【x】规则集为默认后，接入y语言任务时该规则集将会被自动选中。'
+                        , [checkerset.checkerSetName, this.getCodeLang(checkerset.codeLang)])
+              : this.$t('取消【x】规则集为默认后，接入y语言任务时该规则集将不会被自动选中。'
+                        , [checkerset.checkerSetName, this.getCodeLang(checkerset.codeLang)])
           } else {
-            titleTxt = checkerset.scope === 2 ? '设为公开规则集' : '设为私密规则集'
+            titleTxt = checkerset.scope === 2 ? this.$t('设为公开规则集') : this.$t('设为私密规则集')
             subTitleTxt = checkerset.scope === 2
-              ? `将【${checkerset.checkerSetName}】规则集设为公开后，其他项目可以安装并使用该规则集。`
-              : `将【${checkerset.checkerSetName}】规则集设为私密后，其他项目不可以安装且使用该规则集。`
+              ? this.$t('将【x】规则集设为公开后，其他项目可以安装并使用该规则集。', [checkerset.checkerSetName])
+              : this.$t('将【x】规则集设为私密后，其他项目不可以安装且使用该规则集。', [checkerset.checkerSetName])
           }
           this.$bkInfo({
             title: titleTxt,

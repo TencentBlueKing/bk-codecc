@@ -208,9 +208,9 @@
                         v-for="item in buildList"
                         :key="item.buildId"
                         :id="item.buildId"
-                        :name="`#${item.buildNum} ${item.branch} ${item.buildUser} ${formatDate(item.buildTime) || ''}触发`">
-                        <div class="cc-ellipsis" :title="`#${item.buildNum} ${item.branch} ${item.buildUser} ${formatDate(item.buildTime) || ''}触发`">
-                          {{`#${item.buildNum} ${item.branch} ${item.buildUser} ${formatDate(item.buildTime) || ''}触发`}}
+                        :name="`#${item.buildNum} ${item.branch} ${item.buildUser} ${formatDate(item.buildTime) || ''}${$t('触发')}`">
+                        <div class="cc-ellipsis" :title="`#${item.buildNum} ${item.branch} ${item.buildUser} ${formatDate(item.buildTime) || ''}${$t('触发')}`">
+                          {{`#${item.buildNum} ${item.branch} ${item.buildUser} ${formatDate(item.buildTime) || ''}${$t('触发')}`}}
                         </div>
                       </bk-option>
                     </bk-select>
@@ -518,7 +518,7 @@
           :false-value="false"
           v-model="memberNeverShow"
           :value="true">
-          {{this.$t('不再提示')}}
+          {{$t('不再提示')}}
         </bk-checkbox>
         <template slot="footer">
           <bk-button theme="primary" @click="toLogs()">{{$t('去配置')}}</bk-button>
@@ -942,7 +942,8 @@
           return this.$t('忽略')
         }
         return (this.isSelectAll === 'Y' ? this.totalCount : this.selectedLen) > 1
-          ? `${this.$t('忽略')}（共${this.isSelectAll === 'Y' ? this.totalCount : this.selectedLen}个问题）` : this.$t('忽略')
+          ? `${this.$t('忽略')}（
+          ${this.$t('共x个问题', { num: this.isSelectAll === 'Y' ? this.totalCount : this.selectedLen })}）` : this.$t('忽略')
       },
       ignoreDialogPositionConfig() {
         const { clientHeight } = document.body

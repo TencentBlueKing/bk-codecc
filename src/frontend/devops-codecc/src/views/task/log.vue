@@ -207,7 +207,7 @@
               <div class="cc-circle12 cc-circle"></div>
             </li>
             <i v-else class="status-icon" :class="{ 'fail': scope.row.status === 1 }"></i>
-            {{ ['成功', '失败', '', '进行中'][scope.row.status] }}
+            {{ [$t('成功'), $t('失败'), '', $t('进行中')][scope.row.status] }}
           </span>
           <bk-popover theme="light" class="msg-popover" v-if="handleStepArray(scope.row.stepArray)">
             <i class="codecc-icon icon-tips"></i>

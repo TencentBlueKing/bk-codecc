@@ -308,12 +308,12 @@
           [this.$t('风险级别'), this.$t('文件个数')],
           ['riskLevel', 'fileNum'],
           data,
-          '重复文件分布',
+          this.$t('重复文件分布'),
         )
         const excelData = [excelData1]
         const title = `${this.taskDetail.nameCn}-${this.taskDetail.taskId}-${this.toolId}
 -${this.$t('数据报表')}-${new Date().toISOString()}`
-        const sheets = ['重复文件分布']
+        const sheets = [this.$t('重复文件分布')]
         export_json_to_excel('', excelData, title, sheets)
       },
       getExcelData(tHeader, filterVal, list, sheetName) {

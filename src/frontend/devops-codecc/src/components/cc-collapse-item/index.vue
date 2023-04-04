@@ -2,7 +2,7 @@
   <div class="cc-collapse-item">
     <bk-input
       class="collapse-search"
-      :placeholder="'搜索'"
+      :placeholder="this.$t('搜索')"
       :clearable="true"
       :right-icon="'bk-icon icon-search'"
       v-if="needSearch"

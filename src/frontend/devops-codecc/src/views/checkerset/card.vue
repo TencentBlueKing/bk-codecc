@@ -46,11 +46,11 @@
       <label class="col-label">{{$t('发布者')}}</label>
     </section>
     <section class="item-labels">
-      <label v-for="(category, categoryIndex) in checkerset.catagories" :key="categoryIndex" v-if="checkerset.catagories && categoryIndex <= 3">{{ category.cnName }}</label>
+      <label v-for="(category, categoryIndex) in checkerset.catagories" :key="categoryIndex" v-if="checkerset.catagories && categoryIndex <= 3">{{ isEn ? category.enName : category.cnName }}</label>
       <bk-popover placement="bottom-top" v-if="checkerset.catagories && checkerset.catagories.length > 3">
         <label class="more-label">...</label>
         <div slot="content" class="menu-content">
-          <span v-for="(category, categoryIndex) in checkerset.catagories" :key="categoryIndex">{{category.cnName}}
+          <span v-for="(category, categoryIndex) in checkerset.catagories" :key="categoryIndex">{{ isEn ? category.enName : category.cnName }}
             <span v-if="categoryIndex < checkerset.catagories.length - 1" class="cut-line">|</span>
           </span>
         </div>
@@ -104,6 +104,7 @@
 
 <script>
   import { mapState } from 'vuex'
+  import { language } from '../../i18n'
 
   export default {
     props: {
@@ -185,7 +186,7 @@
       useContentPrompt() {
         return this.isSmallScreen ? {
           theme: 'light',
-          content: this.checkerset.taskUsage ? `使用中 (${this.checkerset.taskUsage})` : '空闲中 (0)',
+          content: this.checkerset.taskUsage ? this.$t('使用中 (x)', [this.checkerset.taskUsage]) : this.$t('空闲中 (0)'),
           delay: 300,
         } : ''
       },
@@ -193,30 +194,30 @@
         return [
           {
             name: 'edit',
-            label: '编辑',
+            label: this.$t('编辑'),
             isEnable: !(this.checkerset.legacy && this.checkerset.codeLangList.length > 1) // 单语言旧可编辑
               && this.isPertainProject
               && (this.isCreator || this.isManager),
           },
           {
             name: 'copy',
-            label: '复制',
+            label: this.$t('复制'),
             isEnable: !(this.checkerset.legacy && this.checkerset.codeLangList.length > 1),
           },
           {
             name: 'setDefault',
-            label: `${this.checkerset.defaultCheckerSet ? '取消' : '设为'}默认`,
+            label: `${this.checkerset.defaultCheckerSet ? this.$t('取消') : this.$t('设为')} ${this.$t('默认')}`,
             isEnable: !(this.checkerset.legacy && this.checkerset.codeLangList.length > 1),
           },
           {
             name: 'setPublish',
-            label: `设为${this.checkerset.scope === 1 ? '私密' : '公开'}`,
+            label: `${this.$t('设为')}${this.checkerset.scope === 1 ? this.$t('私密') : this.$t('公开')}`,
             isEnable: !this.checkerset.legacy && this.isPertainProject
               && (this.isCreator || this.isManager),
           },
           {
             name: 'delete',
-            label: this.isPertainProject ? '删除' : '卸载',
+            label: this.isPertainProject ? this.$t('删除') : this.$t('卸载'),
             isEnable: (this.isPertainProject
               && (this.isCreator || this.isManager))
               || (!this.isPertainProject),
@@ -244,6 +245,9 @@
       },
       hasNewTips() {
         return this.hasNew && !localStorage.getItem('new-tips')
+      },
+      isEn() {
+        return language === 'en'
       },
     },
     mounted() {
@@ -284,7 +288,7 @@
           const params = { projectId, checkerSetId, discardFromTask: taskId }
           this.$store.dispatch('checkerset/manage', params).then((res) => {
             if (res.code === '0') {
-              this.$bkMessage({ theme: 'success', message: '操作成功' })
+              this.$bkMessage({ theme: 'success', message: this.$t('操作成功') })
               this.checkerset.taskUsing = false
             }
           })
@@ -298,7 +302,7 @@
           const params = { projectId, taskId, type, checkerSetId }
           this.$store.dispatch('checkerset/install', params).then((res) => {
             if (res.code === '0') {
-              this.$bkMessage({ theme: 'success', message: '操作成功' })
+              this.$bkMessage({ theme: 'success', message: this.$t('操作成功') })
               this.checkerset.taskUsing = true
             }
           })
@@ -347,7 +351,7 @@
         input.select()
         document.execCommand('copy')
         document.body.removeChild(input)
-        this.$bkMessage({ theme: 'success', message: `已复制规则集ID【${checkersetId}】至剪贴板` })
+        this.$bkMessage({ theme: 'success', message: this.$t('已复制规则集ID【x】至剪贴板', [checkersetId]) })
       },
     },
   }

@@ -314,12 +314,12 @@
               if (res.data && res.data.code === 0) {
                 this.saveOperationHistory()
                 this.$bkMessage({
-                  message: '保存权限成功',
+                  message: this.$t('保存权限成功'),
                   theme: 'success',
                 })
               } else {
                 this.$bkMessage({
-                  message: res.data.message || '保存权限失败',
+                  message: res.data.message || this.$t('保存权限失败'),
                   theme: 'error',
                 })
               }

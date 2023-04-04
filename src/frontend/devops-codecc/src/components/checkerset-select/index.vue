@@ -86,7 +86,7 @@
           const formItem = formItems.find(item => item.label === key)
           if (!selectSets[key] || !selectSets[key].length) {
             formItem.validator.state = 'error'
-            formItem.validator.content = '必填项'
+            formItem.validator.content = this.$t('必填项')
             hasError = true
           }
         })

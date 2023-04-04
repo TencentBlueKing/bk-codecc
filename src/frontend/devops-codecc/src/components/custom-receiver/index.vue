@@ -25,8 +25,8 @@
     },
     data() {
       return {
-        title: ['不接收通知', '接收通知'],
-        emptyContent: ['无数据', '未选择'],
+        title: [this.$t('不接收通知'), this.$t('接收通知')],
+        emptyContent: [this.$t('无数据'), this.$t('未选择')],
         selectedList: [],
       }
     },

@@ -54,7 +54,7 @@
               <span>
                 <span v-if="currentFile.status === 1 && currentFile.mark === 1" v-bk-tooltips="$t('已标记处理')" class="codecc-icon icon-mark mr5"></span>
                 <span v-if="currentFile.status === 1 && currentFile.markButNoFixed" v-bk-tooltips="$t('标记处理后重新扫描仍为问题')" class="codecc-icon icon-mark re-mark mr5"></span>
-                <span v-if="currentFile.defectIssueInfoVO?.submitStatus && currentFile.defectIssueInfoVO.submitStatus !== 4" v-bk-tooltips="$t('已提单')" class="codecc-icon icon-tapd"></span>
+                <span v-if="currentFile.defectIssueInfoVO && currentFile.defectIssueInfoVO.submitStatus && currentFile.defectIssueInfoVO.submitStatus !== 4" v-bk-tooltips="$t('已提单')" class="codecc-icon icon-tapd"></span>
               </span>
             </div>
             <div v-if="currentFile.status === 1" class="item">
@@ -606,8 +606,8 @@
         if (delHandle) {
           const that = this
           this.$bkInfo({
-            title: '删除评论',
-            subTitle: '确定要删除该条评论吗？',
+            title: this.$t('删除评论'),
+            subTitle: this.$t('确定要删除该条评论吗？'),
             maskClose: true,
             confirmFn() {
               const delSingleObj = delHandle.getAttribute('data-singlecommentid')
@@ -805,7 +805,7 @@
         input.select()
         document.execCommand('copy')
         document.body.removeChild(input)
-        this.$bkMessage({ theme: 'success', message: '链接已复制到粘贴板' })
+        this.$bkMessage({ theme: 'success', message: this.$t('链接已复制到粘贴板') })
       },
     },
   }

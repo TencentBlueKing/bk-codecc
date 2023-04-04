@@ -375,12 +375,12 @@
            'medium',
            'low'],
           this.authorsData,
-          '待修复函数处理人分布',
+          this.$t('待修复函数处理人分布'),
         )
         const excelData = [excelData1]
         const title = `${this.taskDetail.nameCn}-${this.taskDetail.taskId}-${this.toolId}-${this.$t('数据报表')}
 -${new Date().toISOString()}`
-        const sheets = ['待修复函数处理人分布']
+        const sheets = [this.$t('待修复函数处理人分布')]
         export_json_to_excel('', excelData, title, sheets)
       },
       getExcelData(tHeader, filterVal, list, sheetName) {

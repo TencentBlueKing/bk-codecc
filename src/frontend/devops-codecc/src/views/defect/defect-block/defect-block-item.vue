@@ -76,7 +76,7 @@
         input.select()
         document.execCommand('copy')
         document.body.removeChild(input)
-        this.$bkMessage({ theme: 'success', message: '复制成功' })
+        this.$bkMessage({ theme: 'success', message: this.$t('复制成功') })
       },
     },
   }

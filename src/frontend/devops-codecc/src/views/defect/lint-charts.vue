@@ -233,18 +233,18 @@
           [this.$t('日期'), this.$t('待修复问题数')],
           ['tips', 'count'],
           this.trendTableData,
-          '待修复问题数量趋势',
+          this.$t('待修复问题数量趋势'),
         )
         const excelData2 = this.getExcelData(
           [this.$t('问题处理人'), this.$t('总数'), this.$t('严重'), this.$t('一般'), this.$t('提示')],
           ['authorName', 'total', 'serious', 'normal', 'prompt'],
           this.newAuthorsTableData,
-          '待修复问题处理人分布',
+          this.$t('待修复问题处理人分布'),
         )
         const excelData = [excelData1, excelData2]
         const title = `${this.taskDetail.nameCn}-${this.taskDetail.taskId}-${this.toolId}
 -数据报表-${new Date().toISOString()}`
-        const sheets = ['待修复问题数量趋势', '待修复问题处理人分布']
+        const sheets = [this.$t('待修复问题数量趋势'), this.$t('待修复问题处理人分布')]
         export_json_to_excel('', excelData, title, sheets)
       },
       getExcelData(tHeader, filterVal, list, sheetName) {

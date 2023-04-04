@@ -153,7 +153,7 @@
                       :key="item.buildId"
                       :id="item.buildId"
                       :name="`#${item.buildNum} ${item.branch} ${item.buildUser} ${formatDate(item.buildTime) || ''}${$t('触发')}`">
-                      <div class="cc-ellipsis" :title="`#${item.buildNum} ${item.branch} ${item.buildUser} ${formatDate(item.buildTime) || ''}触发`">
+                      <div class="cc-ellipsis" :title="`#${item.buildNum} ${item.branch} ${item.buildUser} ${formatDate(item.buildTime) || ''}${$t('触发')}`">
                         {{`#${item.buildNum} ${item.branch} ${item.buildUser} ${formatDate(item.buildTime) || ''}${$t('触发')}`}}
                       </div>
                     </bk-option>
@@ -455,7 +455,7 @@
                         <span>
                           <span v-if="currentLintFile.status === 1 && currentLintFile.mark === 1" v-bk-tooltips="$t('已标记处理')" class="codecc-icon icon-mark mr5"></span>
                           <span v-if="currentLintFile.status === 1 && currentLintFile.markButNoFixed" v-bk-tooltips="$t('标记处理后重新扫描仍为问题')" class="codecc-icon icon-mark re-mark mr5"></span>
-                          <span v-if="currentLintFile.defectIssueInfoVO?.submitStatus && currentLintFile.defectIssueInfoVO.submitStatus !== 4" v-bk-tooltips="$t('已提单')" class="codecc-icon icon-tapd"></span>
+                          <span v-if="currentLintFile.defectIssueInfoVO && currentLintFile.defectIssueInfoVO.submitStatus && currentLintFile.defectIssueInfoVO.submitStatus !== 4" v-bk-tooltips="$t('已提单')" class="codecc-icon icon-tapd"></span>
                         </span>
                       </div>
                       <div v-if="currentLintFile.status === 1" class="item">
@@ -1134,7 +1134,8 @@
           return this.$t('忽略')
         }
         return (this.isSelectAll === 'Y' ? this.totalCount : this.selectedLen) > 1
-          ? `${this.$t('忽略')}（共${this.isSelectAll === 'Y' ? this.totalCount : this.selectedLen}个问题）` : this.$t('忽略')
+          ? `${this.$t('忽略')}（
+          ${this.$t('共x个问题', {num: this.isSelectAll === 'Y' ? this.totalCount : this.selectedLen})}）` : this.$t('忽略')
       },
       ignoreDialogPositionConfig() {
         const { clientHeight } = document.body

@@ -320,8 +320,8 @@
         const id = '820084513'
         const directive = {
           name: 'bkTooltips',
-          content: `<p>根据腾讯代码委员会要求，注释行需排除重复文件头注释、代码注释、无内容注释行等无信息量的内容。
-          <a target="_blank" href="${window.IWIKI_SITE_URL}/${id}">查看详细说明</a></p>`,
+          content: `<p>${this.$t('根据腾讯代码委员会要求，注释行需排除重复文件头注释、代码注释、无内容注释行等无信息量的内容。')}
+          <a target="_blank" href="${window.IWIKI_SITE_URL}/${id}">${this.$t('查看详细说明')}</a></p>`,
         }
         return <span class="custom-header-cell" v-bk-tooltips={ directive }>{ data.column.label }</span>
       },

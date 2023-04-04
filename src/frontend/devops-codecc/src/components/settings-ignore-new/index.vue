@@ -119,14 +119,14 @@
           customPath: [
             {
               max: 50,
-              message: '不能多于50个字符',
+              message: this.$t('不能多于x个字符', { num: 50 }),
               trigger: 'blur',
             },
           ],
           searchData: [
             {
               max: 50,
-              message: '不能多于50个字符',
+              message: this.$t('不能多于x个字符', { num: 50 }),
               trigger: 'blur',
             },
           ],

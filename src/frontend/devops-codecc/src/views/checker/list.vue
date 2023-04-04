@@ -32,7 +32,7 @@
                    class="save-conf"
                    @click="saveConf"
                    :class="hasNoPermission || !selectedConf.length ? 'disable-save' : ''"
-                   v-bk-tooltips="{ content: (hasNoPermission || !selectedConf.length) ? hasNoPermission ? $t('暂无规则集管理权限，可在新建/复制规则集后进行修改。') : $t('请至少选中1条规则') : null }"
+                   v-bk-tooltips="{ content: (hasNoPermission || !selectedConf.length) ? hasNoPermission ? $t('暂无规则集管理权限，可在新建/复制规则集后进行修改') : $t('请至少选中1条规则') : null }"
         >{{$t('保存')}}</bk-button>
         <span class="config-txt">
           {{$t('共找到')}}<span class="num">{{totalCount}}</span>，{{ $t('已选中') }}<span class="num">{{selectedConf.length}}</span>

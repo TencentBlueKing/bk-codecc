@@ -33,7 +33,7 @@
               <bk-option v-for="category in catatories"
                          :key="category.enName"
                          :id="category.enName"
-                         :name="category.cnName">
+                         :name="isEn ? category.enName : category.cnName">
               </bk-option>
             </bk-select>
           </bk-form-item>
@@ -74,6 +74,7 @@
 </template>
 <script>
   import axios from 'axios'
+  import { language } from '../../i18n'
 
   export default {
     props: {
@@ -186,6 +187,9 @@
           matchList = matchList.filter(item => item.codeLang === this.newCheckersetParams.codeLang)
         }
         return matchList
+      },
+      isEn() {
+        return language === 'en'
       },
     },
     watch: {

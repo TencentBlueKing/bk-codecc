@@ -10,10 +10,10 @@
       <div class="col-item checkerset-name" :title="detailInfo.checkerSetName">{{detailInfo.checkerSetName}}</div>
       <div class="col-item checkerset-desc" v-if="detailInfo.description" :title="detailInfo.description">{{detailInfo.description}}</div>
       <div class="col-item code-lang">
-        <span>语言</span>{{getCodeLang(detailInfo.codeLang)}}
+        <span>{{$t('语言')}}</span> {{getCodeLang(detailInfo.codeLang)}}
       </div>
       <div class="col-item">
-        <span class="checker-tag" v-for="(category, index) in detailInfo.catagories" :key="index">{{category.cnName}}</span>
+        <span class="checker-tag" v-for="(category, index) in detailInfo.catagories" :key="index">{{isEn ? category.enName : category.cnName}}</span>
       </div>
       <span class="codecc-icon icon-edit" @click="edit"></span>
     </div>
@@ -44,6 +44,7 @@
   import { mapState } from 'vuex'
   import checkerList from '../checker/list'
   import create from './create'
+  import { language } from '../../i18n'
 
   export default {
     components: { checkerList, create },
@@ -104,8 +105,12 @@
         }
         return {}
       },
+      isEn() {
+        return language === 'en'
+      },
     },
     mounted() {
+      console.log(language)
       this.checkPermission()
       this.getCheckersetDetail()
     },
@@ -212,7 +217,7 @@
           if (res.code === '0') {
             const nextVersion = this.detailInfo.initCheckers
               || this.detailInfo.legacy ? this.detailInfo.version + 1 : this.detailInfo.version
-            this.$bkMessage({ theme: 'success', message: `规则配置已保存至V${nextVersion}版本` })
+            this.$bkMessage({ theme: 'success', message: this.$t('规则配置已保存至V{0}版本', [nextVersion]) })
             // this.getCheckersetDetail()
             if (this.isFromSettings) {
               this.updateCheckerList()
@@ -238,8 +243,8 @@
           const nextVersion = this.detailInfo.initCheckers
             || this.detailInfo.legacy ? this.detailInfo.version + 1 : this.detailInfo.version
           this.$bkInfo({
-            title: '确认',
-            subTitle: `是否保存规则配置，并创建新的规则集版本V${nextVersion}？`,
+            title: this.$t('确认'),
+            subTitle: this.$t('是否保存规则配置，并创建新的规则集版本V{0}？', [nextVersion]),
             maskClose: true,
             confirmFn(name) {
               self.submit()

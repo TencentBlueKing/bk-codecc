@@ -111,7 +111,7 @@
           pageSize: 20,
         },
         classifyCode: 'all',
-        classifyCodeList: [{ cnName: '所有', enName: 'all' }],
+        classifyCodeList: [{ cnName: this.$t('所有'), enName: 'all' }],
         checkerSetList: [],
         codeLangs: [],
       }

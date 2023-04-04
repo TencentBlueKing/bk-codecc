@@ -416,10 +416,10 @@
       }
       .card-empty {
         /* padding-top: 10px; */
-        :deep(.empty) .title {
+        >>> .empty .title {
           color: #737987;
         }
-        :deep(.empty) .empty-img {
+        >>> .empty .empty-img {
           width: 110px;
         }
       }

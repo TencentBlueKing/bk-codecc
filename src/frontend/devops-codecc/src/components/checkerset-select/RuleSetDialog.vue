@@ -159,9 +159,10 @@
       },
       classifyCodeList() {
         if (this.categoryList.length) {
-          return [{ cnName: '所有', enName: 'all' }, ...this.categoryList, { cnName: '研发商店', enName: 'store' }]
+          return [{ cnName: this.$t('所有'), enName: 'all' },
+                  ...this.categoryList, { cnName: this.$t('研发商店'), enName: 'store' }]
         }
-        return [{ cnName: '所有', enName: 'all' }, { cnName: '研发商店', enName: 'store' }]
+        return [{ cnName: this.$t('所有'), enName: 'all' }, { cnName: this.$t('研发商店'), enName: 'store' }]
       },
       positionTop() {
         const top = (window.innerHeight - 693) / 2
@@ -244,12 +245,12 @@
       getSelectText(checkerSet, index) {
         let txt = ''
         if (this.classifyCode === 'store' && !checkerSet.projectInstalled) {
-          txt = '安装'
+          txt = this.$t('安装')
         } else {
           if (this.checkIsSelected(checkerSet.checkerSetId)) {
-            txt = this.currentHoverItem === index ? '取消选中' : '已选中'
+            txt = this.currentHoverItem === index ? this.$t('取消选中') : this.$t('已选中')
           } else {
-            txt = '选择'
+            txt = this.$t('选择')
           }
         }
         return txt
@@ -327,22 +328,22 @@
         this.loading = true
         this.$store.dispatch('checkerset/install', params).then((res) => {
           if (res.code === '0') {
-            this.$bkMessage({ theme: 'success', message: '安装成功' })
+            this.$bkMessage({ theme: 'success', message: this.$t('安装成功') })
             this.refresh()
           }
         })
           .catch((e) => {
             this.$bkMessage({
-              message: '安装失败',
+              message: this.$t('安装失败'),
               theme: 'error',
             })
           })
       },
       getToolTips(hasMultiLang, notCurLang) {
         if (hasMultiLang) {
-          return '该规则集不适用于当前插件'
+          return this.$t('该规则集不适用于当前插件')
         } if (notCurLang) {
-          return '该规则集不适用于当前插件已选择的语言'
+          return this.$t('该规则集不适用于当前插件已选择的语言')
         }
         return { disabled: true }
       },

@@ -249,10 +249,10 @@ export default {
           && !this.dimenList.find(item => this.dimensionStr.includes(item.key))
           && this.toolId !== 'CCN' && this.toolId !== 'DUPC') {
           const isFromPipeline = this.taskDetail.createFrom.indexOf('pipeline') !== -1
-          const title = isFromPipeline ? '前往流水线' : ''
+          const title = isFromPipeline ? this.$t('前往流水线') : ''
           this.$bkInfo({
             title: this.$t('前往配置'),
-            subTitle: `暂无此维度规则，请先${title}配置相关的规则集。`,
+            subTitle: this.$t('暂无此维度规则，请先x配置相关的规则集。', [title]),
             confirmFn: () => {
               if (isFromPipeline) {
                 window.open(`${window.DEVOPS_SITE_URL}/console/pipeline/${this.taskDetail.projectId}
@@ -334,7 +334,7 @@ export default {
             this.$bkMessage({
               theme: 'success',
               message: h('p', {}, [
-                '待修复问题提单至',
+                this.$t('待修复问题提单至'),
                 h('a', {
                   attrs: {
                     href: submitIssueList[0]?.sysHomeUrl,
@@ -344,7 +344,7 @@ export default {
                     cursor: 'pointer',
                   },
                 }, submitIssueList[0]?.sysNameCn),
-                '成功',
+                this.$t('成功'),
               ]),
             })
 
@@ -381,7 +381,7 @@ export default {
                 },
               }, index === failTaskList.length - 1 || index > 3 ? item.nameCn : `${item.nameCn}、`))
               this.$bkInfo({
-                title: '请先设置问题提单',
+                title: this.$t('请先设置问题提单'),
                 container: this.$refs.mainContainer,
                 okText: this.$t('我授权好了'),
                 subHeader: h('p', {
@@ -389,7 +389,7 @@ export default {
                     'font-size': '14px',
                   },
                 }, [
-                  h('p', {}, `请先前往以下${failTaskList.length}个任务的设置-问题提单，将你的相关TAPD项目OAuth授权给蓝盾CodeCC：`),
+                  h('p', {}, this.$t('请先前往以下x个任务的设置-问题提单，将你的相关TAPD项目OAuth授权给蓝盾CodeCC：', [failTaskList.length])),
                   ...vnodeList,
                 ]),
               })
@@ -404,8 +404,8 @@ export default {
               }
             } else {
               this.$bkInfo({
-                title: '请先设置问题提单',
-                subTitle: '请先前往设置-问题提单，将你的相关TAPD项目OAuth授权给蓝盾CodeCC。',
+                title: this.$t('请先设置问题提单'),
+                subTitle: this.$t('请先前往设置-问题提单，将你的相关TAPD项目OAuth授权给蓝盾CodeCC。'),
                 okText: this.$t('确定'),
                 confirmFn: () => {
                   this.$router.push({ name: 'task-settings-issue' })
