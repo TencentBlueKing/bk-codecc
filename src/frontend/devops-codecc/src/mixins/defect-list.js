@@ -5,7 +5,6 @@ export default {
   data() {
     const { query } = this.$route
     return {
-      active: 'defect',
       pathPanels: [
         { name: 'choose', label: this.$t('选择路径') },
         { name: 'input', label: this.$t('手动输入') },
@@ -18,13 +17,10 @@ export default {
       toolList: [], // 搜索栏工具列表
     }
   },
+  inject: ['reload'],
   watch: {
     toolMap(val) { // 处理toolMap加载慢情况
       if (!this.dimension && this.searchParams.toolName) {
-        const dimension = val[this.searchParams.toolName]?.type
-        if (!this.isMigration) {
-          this.dimension = dimension
-        }
         this.fetchListTool()
       }
     },
@@ -62,6 +58,12 @@ export default {
       const level = getLevel(this.treeList)
       const width = level < 10 ? 480 : 480 + (30 * (level - 9))
       return `width: ${width}px`
+    },
+    ignoreTypeDisabled() {
+      return !this.searchParams.status.includes(4)
+    },
+    ignoreToolTips() {
+      return this.ignoreTypeDisabled ? this.$t('忽略类型筛选仅对已忽略问题生效。请先选择“已忽略”问题状态') : ''
     },
   },
   created() {
@@ -220,31 +222,16 @@ export default {
 
       this.$refs.filePathDropdown.hide()
     },
-    handleSelectDimen(value) {
-      if (!this.isMigration) {
-        const name = value.toLowerCase()
-        this.$router.push({
-          name: `defect-${name}-list`,
-          query: {
-            dimension: value,
-          },
-        })
-      }
-    },
     fetchDimension() {
       this.$store.dispatch(
         'defect/getDimension',
-        { taskId: this.$route.params.taskId, dataMigrationSuccessful: this.isMigration },
+        { taskIdList: this.taskIdList },
       )
         .then((res) => {
           const list = res.filter(item => item.key !== 'CCN' && item.key !== 'DUPC' && item.key !== 'CLOC')
           this.dimenList = list
           this.dimenListFetched = true
           if (!this.dimension && this.searchParams.toolName && this.toolMap) { // 从工具过来
-            const dimension = this.toolMap[this.searchParams.toolName]?.type
-            if (!this.isMigration) {
-              this.dimension = dimension
-            }
             this.fetchListTool()
           } else {
             this.fetchListTool()
@@ -259,8 +246,7 @@ export default {
           this.openCheckerset()
         } else if (this.$route.query.isOpenScan !== true
           && this.isFromOverview
-          && !this.isMigration
-          && !this.dimenList.find(item => item.key === this.dimension)
+          && !this.dimenList.find(item => this.dimensionStr.includes(item.key))
           && this.toolId !== 'CCN' && this.toolId !== 'DUPC') {
           const isFromPipeline = this.taskDetail.createFrom.indexOf('pipeline') !== -1
           const title = isFromPipeline ? '前往流水线' : ''
@@ -318,7 +304,7 @@ export default {
     handleCommit(type, batchFlag, entityId, filePath) {
       if (type === 'commit') {
         const bizType = 'IssueDefect'
-        const { toolNameStr, dimensionStr, isMigration, toolName, dimension } = this
+        const { toolNameStr, dimensionStr, toolName, dimension, taskIdList, toolNameList } = this
         const defectKeySet = []
         if (batchFlag) {
           const table = this.$refs.fileListTable || this.$refs.table.$refs.fileListTable || {}
@@ -332,74 +318,100 @@ export default {
         let payload = {
           toolName: toolNameStr || toolName,
           dimension: dimensionStr || dimension,
+          taskIdList,
+          toolNameList: toolNameList || toolName,
+          dimensionList: dimension,
           defectKeySet,
           bizType,
-          dataMigrationSuccessful: isMigration,
         }
         if (this.isSelectAll === 'Y') {
           payload = { ...payload, isSelectAll: 'Y', queryDefectCondition: JSON.stringify(this.getSearchParams()) }
         }
         this.$store.dispatch('defect/defectCommit', payload).then((res) => {
-          if (res.data && res.data.code === '2300022') {
-            this.$bkInfo({
-              title: '请先设置问题提单',
-              subTitle: '请先前往设置-问题提单，将你的相关TAPD项目OAuth授权给蓝盾CodeCC。',
-              confirmFn: () => {
-                this.$router.push({ name: 'task-settings-issue' })
-              },
-            })
-          } else if (res.status === 0) {
-            const h = this.$createElement
+          const h = this.$createElement
+          if (res.data.submitSuccess) {
+            const { submitIssueList = [] } = res.data
             this.$bkMessage({
               theme: 'success',
               message: h('p', {}, [
                 '待修复问题提单至',
                 h('a', {
                   attrs: {
-                    href: res.data.sysHomeUrl,
+                    href: submitIssueList[0]?.sysHomeUrl,
                     target: '_blank',
                   },
                   style: {
                     cursor: 'pointer',
                   },
-                }, res.data.sysNameCn),
+                }, submitIssueList[0]?.sysNameCn),
                 '成功',
               ]),
             })
 
             if (batchFlag) {
-              if (this.isMigration || this.dimension === 'SECURITY' || this.dimension === 'STANDARD') {
-                this.fetchList()
-              } else {
+              if (this.toolName === 'CCN') {
                 this.init()
+              } else {
+                this.fetchList()
               }
             } else {
-              if (this.isMigration || this.dimension === 'SECURITY' || this.dimension === 'STANDARD') {
-                const list = this.listData.defectList.records
-                list.forEach((item) => {
-                  if (item.entityId === entityId) {
-                    item.defectIssueInfoVO.submitStatus = 1
-                  }
-                })
-                this.listData.defectList.records = list.slice()
-              } else {
-                const list = this.listData.defectList.content
-                list.forEach((item) => {
-                  if (item.entityId === entityId) {
-                    item.defectIssueInfoVO.submitStatus = 1
-                  }
-                })
-                this.listData.defectList.content = list.slice()
+              let list = this.listData.defectList.records
+              if (this.toolName === 'CCN') {
+                list = this.listData.defectList.content
               }
+              list.forEach((item) => {
+                if (item.entityId === entityId) {
+                  item.defectIssueInfoVO.submitStatus = 1
+                }
+              })
+              this.listData.defectList.records = list.slice()
             }
             if (this.defectDetailDialogVisiable) {
               this.fetchLintDetail('scroll')
             }
           } else {
-            this.$bkMessage({
-              theme: 'error',
-              message: res.message || '提单失败',
-            })
+            if (this.isProjectDefect) {
+              const { failTaskList = [] } = res.data
+              const vnodeList = failTaskList.slice(0, 5).map((item, index) => h('a', {
+                on: {
+                  click: () => goToTaskSetting(item.taskId),
+                },
+                style: {
+                  cursor: 'pointer',
+                },
+              }, index === failTaskList.length - 1 || index > 3 ? item.nameCn : `${item.nameCn}、`))
+              this.$bkInfo({
+                title: '请先设置问题提单',
+                container: this.$refs.mainContainer,
+                okText: this.$t('我授权好了'),
+                subHeader: h('p', {
+                  style: {
+                    'font-size': '14px',
+                  },
+                }, [
+                  h('p', {}, `请先前往以下${failTaskList.length}个任务的设置-问题提单，将你的相关TAPD项目OAuth授权给蓝盾CodeCC：`),
+                  ...vnodeList,
+                ]),
+              })
+
+              const goToTaskSetting = (id) => {
+                let prefix = `${location.protocol}//${location.host}`
+                if (window.self !== window.top) {
+                  prefix = `${location.protocol}${window.DEVOPS_SITE_URL}/console`
+                }
+                const route = this.$router.resolve({ name: 'task-settings-issue', params: { taskId: id } })
+                window.open(prefix + route.href, '_blank')
+              }
+            } else {
+              this.$bkInfo({
+                title: '请先设置问题提单',
+                subTitle: '请先前往设置-问题提单，将你的相关TAPD项目OAuth授权给蓝盾CodeCC。',
+                okText: this.$t('确定'),
+                confirmFn: () => {
+                  this.$router.push({ name: 'task-settings-issue' })
+                },
+              })
+            }
           }
         })
       }
@@ -417,15 +429,63 @@ export default {
     /** 获取工具列表 */
     fetchListTool() {
       const { name } = this.$route
-      if (name === 'defect-ccn-list' || name === 'defect-dupc-list') return
-      const { searchParams: { buildId } } = this
+      if (name === 'defect-ccn-list' || name === 'defect-dupc-list' || name === 'project-ccn-list') return
+      const { searchParams: { buildId }, dimension, taskIdList } = this
       const params = {
         buildId,
-        dimension: this.dimensionStr,
-        dataMigrationSuccessful: !!this.isMigration,
+        dimensionList: dimension,
+        taskIdList,
       }
       this.$store.dispatch('defect/listToolName', params).then((res) => {
         this.toolList = res
+      })
+    },
+    /** 新手引导 */
+    showIgnoreTypeSelect() {
+      if (!this.guideFlag && !this.$route.query.entityId) {
+        this.$nextTick(() => {
+          if (this.$refs.statusSelect) {
+            this.$refs.statusSelect?.show()
+            setTimeout(() => {
+              this.$refs.guidePopover.showHandler()
+            }, 1000)
+          } else {
+            setTimeout(() => {
+              this.$refs.statusSelect?.show()
+              setTimeout(() => {
+                this.$refs.guidePopover.showHandler()
+              }, 1000)
+            }, 1000)
+          }
+        })
+      } else if (!localStorage.getItem('guide2End') && !this.$route.query.entityId) {
+        setTimeout(() => {
+          this.handleGuideNextStep()
+        }, 500)
+      }
+    },
+    handleStatusRemote(keyword) {
+      this.$refs.statusTree && this.$refs.statusTree.filter(keyword)
+    },
+    handleStatusCheckChange(id, checked) {
+      let list = id
+      if (id.includes(4)) {
+        list = id.filter(item => !/^4-/.test(item))
+      }
+      this.searchParams.statusUnion = [...list]
+    },
+    handleStatusValuesChange(options) {
+      this.$refs.statusTree && this.$refs.statusTree.setChecked(options.id, { emitEvent: true, checked: false })
+    },
+    handleStatusClear() {
+      this.$refs.statusTree && this.$refs.statusTree.removeChecked({ emitEvent: false })
+    },
+    goToTask(taskId) {
+      this.$router.push({
+        name: 'task-detail',
+        params: {
+          taskId,
+        },
       })
     },
   },

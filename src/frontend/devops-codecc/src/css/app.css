@@ -147,8 +147,11 @@ a:hover {
 .txac {
   text-align: center;
 }
+.txal {
+  text-align: left!important;
+}
 .codecc-table-empty-text .empty-img {
-  width: 60px;
+  width: 220px;
 
   /* height: 56px; */
 }

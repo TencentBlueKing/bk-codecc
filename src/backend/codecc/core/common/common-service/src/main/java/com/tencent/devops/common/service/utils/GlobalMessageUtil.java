@@ -58,6 +58,7 @@ import static com.tencent.devops.common.constant.ComConstants.*;
  * @date 2019/7/17
  */
 @Component
+@Deprecated
 public class GlobalMessageUtil {
 
     @Autowired

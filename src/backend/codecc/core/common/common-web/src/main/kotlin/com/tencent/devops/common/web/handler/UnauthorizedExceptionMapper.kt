@@ -28,7 +28,9 @@ package com.tencent.devops.common.web.handler
 
 import com.tencent.devops.common.api.exception.UnauthorizedException
 import com.tencent.devops.common.api.pojo.codecc.Result
+import com.tencent.devops.common.constant.CommonMessageCode
 import com.tencent.devops.common.service.Profile
+import com.tencent.devops.common.service.utils.I18NUtils
 import com.tencent.devops.common.service.utils.SpringContextUtil
 import org.slf4j.LoggerFactory
 import javax.ws.rs.core.MediaType
@@ -52,8 +54,18 @@ class UnauthorizedExceptionMapper : ExceptionMapper<UnauthorizedException> {
         val message = if (SpringContextUtil.getBean(Profile::class.java).isDebug()) {
             exception.message
         } else {
-            "未授权访问的资源"
+            I18NUtils.getMessage(CommonMessageCode.UNAUTHORIZED_ACCESS_TO_RESOURCES)
         }
-        return Response.status(status).type(MediaType.APPLICATION_JSON_TYPE).entity(Result<Void>(status.statusCode, message)).build()
+
+        return Response.status(status)
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .entity(
+                    Result<Void>(
+                        status = status.statusCode,
+                        errCode = CommonMessageCode.UNAUTHORIZED_ACCESS_TO_RESOURCES,
+                        message = message
+                    )
+                )
+                .build()
     }
 }

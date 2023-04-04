@@ -151,4 +151,18 @@ object CommonMessageCode {
      * 任务提单没oauth授权
      */
     const val REACH_LIMIT = "2300023"
+
+    const val UNKNOWN_ERROR = "2300024"
+
+    const val INTERNAL_SERVICE_ERROR = "2300025"
+
+    const val IO_ERROR = "2300026"
+
+    const val QUERY_PARAM_REQUEST_ERROR = "2300027"
+
+    const val REQUEST_BODY_PARAM_ERROR = "2300028"
+
+    const val REGULAR_EXP_INVALID = "2300029"
+
+    const val UNAUTHORIZED_ACCESS_TO_RESOURCES = "2300030"
 }

@@ -17,6 +17,11 @@ public class I18NReflection {
     private List<FieldMetaData> fieldMetaDataList;
     private MethodAccess methodAccess;
 
+    /**
+     * 深拷贝，methodAccess除外
+     *
+     * @return
+     */
     public I18NReflection getClone() {
         List<FieldMetaData> cloneFieldMetaDataList = Lists.newArrayList();
 
@@ -27,6 +32,7 @@ public class I18NReflection {
                                 fieldMetaData.willTranslateField,
                                 fieldMetaData.resourceCodeField,
                                 fieldMetaData.moduleCode,
+                                fieldMetaData.isListType,
                                 null,
                                 null
                         )
@@ -49,6 +55,7 @@ public class I18NReflection {
         private String willTranslateField;
         private String resourceCodeField;
         private String moduleCode;
+        private boolean isListType;
         private Set<String> keySet;
         private Map<String, String> keyAndValueMap;
     }

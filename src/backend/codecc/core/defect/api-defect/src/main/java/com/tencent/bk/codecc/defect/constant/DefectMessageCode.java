@@ -70,4 +70,14 @@ public interface DefectMessageCode
      * 找不到告警文件
      */
     String DEFECT_FILE_NOT_FOUND = "2303006";
+
+    String REPOID_IS_INVALID = "2303007";
+
+    String BASE_DATA_NOT_FOUND = "2303008";
+
+    String IGNORE_GENERATE_ID_FAIL = "2303009";
+
+    String ISSUE_SUBMIT_FAIL = "2303010";
+
+    String DEFECT_NOT_FOUND = "2303011";
 }

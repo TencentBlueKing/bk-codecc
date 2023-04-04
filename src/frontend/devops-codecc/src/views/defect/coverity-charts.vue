@@ -337,11 +337,11 @@
         let series = []
         if (trendTypeMap[trendType].name2) {
           legend = [{ name: trendTypeMap[trendType].name }, { name: trendTypeMap[trendType].name2 }]
-          series = [{ name: trendTypeMap[trendType].name, type: 'line', data: seriesData },
-                    { name: trendTypeMap[trendType].name2, type: 'line', data: seriesData2 }]
+          series = [{ name: trendTypeMap[trendType].name, type: 'line', cursor: 'default', data: seriesData },
+                    { name: trendTypeMap[trendType].name2, type: 'line', cursor: 'default', data: seriesData2 }]
         } else {
           legend = [{ name: trendTypeMap[trendType].name }]
-          series = [{ name: trendTypeMap[trendType].name, data: seriesData }]
+          series = [{ name: trendTypeMap[trendType].name, cursor: 'default', data: seriesData }]
         }
         // console.log('initTrend -> legend', legend)
         // console.log('initTrend -> series', series)

@@ -12,12 +12,12 @@
     @select-all="toSelectAll">
     <bk-table-column :selectable="handleSelectable" type="selection" width="60" align="center">
     </bk-table-column>
-    <bk-table-column width="15" class-name="mark-row">
+    <!-- <bk-table-column width="15" class-name="mark-row">
       <template slot-scope="props">
         <span v-if="props.row.status === 1 && props.row.mark === 1" v-bk-tooltips="$t('已标记处理')" class="codecc-icon icon-mark"></span>
         <span v-if="props.row.status === 1 && props.row.mark === 2" v-bk-tooltips="$t('标记处理后重新扫描仍为问题')" class="codecc-icon icon-mark re-mark"></span>
       </template>
-    </bk-table-column>
+    </bk-table-column> -->
     <!-- <bk-table-column :label="$t('ID')" prop="defectId" sortable="custom"></bk-table-column> -->
     <!-- <bk-table-column :label="$t('位置')" prop="fileName" sortable="custom">
       <template slot-scope="props">
@@ -30,13 +30,13 @@
       </template>
     </bk-table-column>
     <bk-table-column :label="$t('行号')" prop="lineNum" width="70"></bk-table-column>
-    <bk-table-column :label="$t('规则')" prop="checker"></bk-table-column>
-    <bk-table-column :label="$t('问题描述')" prop="message" min-width="120"></bk-table-column>
+    <bk-table-column show-overflow-tooltip :label="$t('规则')" prop="checker"></bk-table-column>
+    <bk-table-column show-overflow-tooltip :label="$t('问题描述')" prop="message" min-width="120"></bk-table-column>
     <!-- <bk-table-column :label="$t('类型子类')" prop="displayType"></bk-table-column> -->
-    <bk-table-column :label="$t('处理人')" prop="author" min-width="70">
+    <bk-table-column show-overflow-tooltip :label="$t('处理人')" prop="author" min-width="70">
       <template slot-scope="props">
         <div
-          v-if="props.row.status === 1"
+          v-if="props.row.status & 1 || props.row.status & 4"
           @mouseenter="handleAuthorIndex(props.$index)"
           @mouseleave="handleAuthorIndex(-1)"
           @click.stop="handleAuthor(1, props.row.entityId, props.row.author)">
@@ -71,7 +71,17 @@
     </bk-table-column>
     <bk-table-column :label="$t('状态')" prop="status" width="110">
       <template slot-scope="props">
-        <span>{{handleStatus(props.row.status, props.row.defectIssueInfoVO)}}</span>
+        <div>{{handleStatus(props.row.status, props.row.ignoreReasonType)}}</div>
+        <div>
+          <span v-if="props.row.status === 1 && props.row.mark === 1" v-bk-tooltips="$t('已标记处理')" class="codecc-icon icon-mark mr5"></span>
+          <span v-if="props.row.status === 1 && props.row.markButNoFixed" v-bk-tooltips="$t('标记处理后重新扫描仍为问题')" class="codecc-icon icon-mark re-mark mr5"></span>
+          <span v-if="props.row.defectIssueInfoVO.submitStatus && props.row.defectIssueInfoVO.submitStatus !== 4" v-bk-tooltips="$t('已提单')" class="codecc-icon icon-tapd"></span>
+        </div>
+      </template>
+    </bk-table-column>
+    <bk-table-column show-overflow-tooltip v-if="isProjectDefect" :label="$t('任务')" prop="task">
+      <template slot-scope="props">
+        <span class="cc-link" @click.stop="goToTask(props.row.taskId)">{{props.row.taskNameCn || '--'}}</span>
       </template>
     </bk-table-column>
     <bk-table-column :label="$t('操作')" width="60">
@@ -79,8 +89,8 @@
         <!-- 已修复问题没有这些操作 -->
         <span v-if="!(props.row.status & 2)" class="cc-operate-more" @click.prevent.stop>
           <bk-popover theme="light" placement="bottom" trigger="click">
-            <span class="bk-icon icon-more"></span>
-            <div slot="content" class="handle-menu-tips">
+            <span class="bk-icon icon-more guide-icon"></span>
+            <div slot="content" class="handle-menu-tips txal">
               <!-- 待修复问题的操作 -->
               <template v-if="props.row.status === 1">
                 <p v-if="props.row.mark" class="entry-link" @click.stop="handleMark(0, false, props.row.entityId)">
@@ -92,16 +102,39 @@
               </template>
               <!-- 已忽略问题的操作 -->
               <p v-if="props.row.status & 4 && props.row.ignoreCommentDefect" class="disabled" :title="$t('注释忽略的问题不允许页面进行恢复操作')">
-                {{$t('恢复忽略')}}
+                {{$t('取消忽略')}}
               </p>
               <p v-else-if="props.row.status & 4" class="entry-link" @click.stop="handleIgnore('RevertIgnore', false, props.row.entityId)">
-                {{$t('恢复忽略')}}
+                {{$t('取消忽略')}}
+              </p>
+              <p v-if="props.row.status & 4 && !props.row.ignoreCommentDefect" class="entry-link" @click.stop="handleRevertIgnoreAndMark(props.row.entityId)">
+                {{$t('取消忽略并标记处理')}}
+              </p>
+              <p v-if="props.row.status & 4 && !props.row.ignoreCommentDefect" class="entry-link" @click.stop="handleRevertIgnoreAndCommit(props.row.entityId)">
+                {{$t('取消忽略并提单')}}
               </p>
               <p v-else-if="prohibitIgnore" class="entry-link disabled" :title="$t('已设置禁止页面忽略，可在代码行末或上一行使用注释忽略，例如// NOCC:rule1(ignore reason)')">
                 {{$t('忽略问题')}}
               </p>
-              <p v-else class="entry-link" @click.stop="handleIgnore('IgnoreDefect', false, props.row.entityId)">
-                {{$t('忽略问题')}}
+              <bk-popover v-else ref="guidePopover2" placement="left" theme="dot-menu light" trigger="click">
+                <div>
+                  <span class="guide-flag"></span>
+                  <span class="entry-link ignore-item" @click.stop="handleIgnore('IgnoreDefect', false, props.row.entityId)">{{$t('忽略问题')}}</span>
+                </div>
+                <div class="guide-content" slot="content">
+                  <div style="line-height: 22px">
+                    {{ $t('支持忽略无需处理或暂缓处理的问题。') }}
+                    {{ $t('针对特定忽略类型可') }}
+                    <span theme="primary" class="set-tips" @click="handleTableSetReview">{{ $t('设置提醒') }}</span>
+                    {{ $t('，以便定期review和修复。') }}
+                  </div>
+                  <div class="guide-btn">
+                    <span class="btn-item" @click="handleTableGuideNextStep">{{ $t('知道了') }}</span>
+                  </div>
+                </div>
+              </bk-popover>
+              <p v-if="props.row.status & 4 && !props.row.ignoreCommentDefect" class="entry-link" @click.stop="handleChangeIgnoreType(props.row, false)">
+                {{$t('修改忽略类型')}}
               </p>
               <p v-if="props.row.status === 1 && !(props.row.defectIssueInfoVO && props.row.defectIssueInfoVO.submitStatus && props.row.defectIssueInfoVO.submitStatus !== 4)"
                  class="entry-link"
@@ -155,6 +188,12 @@
             color: #c3cdd7;
           }
         }
+        .cell {
+          -webkit-line-clamp: 2;
+        }
+      }
+      >>> td, >>> th {
+        height: 60px;
       }
     }
     .cc-operate-more {
@@ -206,5 +245,16 @@
     .table-append-loading {
       text-align: center;
       padding: 12px 0;
+    }
+    .set-tips {
+      color: #ffffff;
+      text-decoration: underline;
+      cursor: pointer;
+      &:hover {
+        color: #1768ef;
+      }
+      >>> .bk-link-text {
+        font-size: 12px;
+      }
     }
 </style>

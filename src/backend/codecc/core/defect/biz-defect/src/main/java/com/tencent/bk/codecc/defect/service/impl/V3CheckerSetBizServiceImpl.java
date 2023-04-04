@@ -3,6 +3,7 @@ package com.tencent.bk.codecc.defect.service.impl;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.tencent.bk.codecc.defect.constant.DefectMessageCode;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerSetProjectRelationshipRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerSetRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerSetTaskRelationshipRepository;
@@ -3628,7 +3629,7 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
 
         if (result.isNotOk() || CollectionUtils.isEmpty(result.getData())) {
             log.error("all preci checker set base data is null");
-            throw new CodeCCException("all preci checker set base data is null");
+            throw new CodeCCException(DefectMessageCode.BASE_DATA_NOT_FOUND);
         }
 
         List<BaseDataVO> baseDataList = result.getData();

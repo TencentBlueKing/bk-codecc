@@ -1,43 +1,72 @@
 <template>
   <div v-bkloading="{ isLoading: !mainContentLoading && contentLoading, opacity: 0.3 }">
-    <div class="ccn-list" v-if="taskDetail.enableToolList.find(item => item.toolName === 'CCN')">
+    <div class="ccn-list" :class="{ 'project-defect': isProjectDefect }"
+         v-if="taskDetail.enableToolList.find(item => item.toolName === 'CCN') || isProjectDefect">
       <div class="breadcrumb">
         <div class="breadcrumb-name">
-          <bk-tab :active.sync="active" :label-height="42" @tab-change="handleTableChange" type="unborder-card">
+          <defect-panel v-if="isProjectDefect" />
+          <bk-tab v-else :active.sync="active" :label-height="42" @tab-change="handleTableChange" type="unborder-card">
             <bk-tab-panel
               v-for="(panel, index) in panels"
               v-bind="panel"
               :key="index">
             </bk-tab-panel>
           </bk-tab>
-          <span :class="{ 'filter-search-icon': true, 'mac-filter-search-icon': isMac }">
-            <bk-popover ext-cls="handle-menu" ref="handleMenu" theme="light" placement="left-start" trigger="click">
-              <i class="bk-icon codecc-icon icon-shaixuan" v-bk-tooltips="$t('筛选项设置')"></i>
-              <div slot="content">
-                <filter-search-option
-                  :default-option="defaultOption"
-                  :custom-option="customOption"
-                  @selectAll="handleSelectAllSearchOption"
-                  @confirm="handleConfirmSearchOption" />
-              </div>
-            </bk-popover>
-          </span>
-          <span class="excel-icon">
-            <bk-button style="border: 0" v-if="exportLoading" icon="loading" :disabled="true" :title="$t('导出Excel')"></bk-button>
-            <span v-else class="codecc-icon icon-export-excel excel-download" @click="downloadExcel" v-bk-tooltips="$t('导出Excel')"></span>
-          </span>
+          <div class="tab-extra-icon" :class="{ 'is-project': isProjectDefect }">
+            <span class="mr20">
+              <bk-link theme="primary" @click="reload">
+                <span class="f12">{{ $t('重置筛选条件') }}</span>
+              </bk-link>
+            </span>
+            <span :class="{ 'filter-collapse-icon mr20': true, 'mac-filter-search-icon': isMac }">
+              <bk-popover ext-cls="handle-menu" ref="handleMenu" theme="light" placement="left-start" trigger="click">
+                <i class="bk-icon codecc-icon icon-filter-collapse"
+                   :class="isSearchDropdown ? 'icon-filter-collapse' : 'icon-filter-expand'"
+                   v-bk-tooltips="isSearchDropdown ? $t('收起筛选项') : $t('展开筛选项')"
+                   @click="toggleSearch"></i>
+              </bk-popover>
+            </span>
+            <span :class="{ 'filter-search-icon': true, 'mac-filter-search-icon': isMac }">
+              <bk-popover ext-cls="handle-menu" ref="handleMenu" theme="light" placement="left-start" trigger="click">
+                <i class="bk-icon codecc-icon icon-filter-set" v-bk-tooltips="$t('设置筛选条件')"></i>
+                <div slot="content">
+                  <filter-search-option
+                    :default-option="defaultOption"
+                    :custom-option="customOption"
+                    @selectAll="handleSelectAllSearchOption"
+                    @confirm="handleConfirmSearchOption" />
+                </div>
+              </bk-popover>
+            </span>
+            <span class="excel-icon pl20">
+              <bk-button style="border: 0" v-if="exportLoading" icon="loading" :disabled="true" :title="$t('导出Excel')"></bk-button>
+              <span v-else class="codecc-icon icon-export-excel excel-download" @click="downloadExcel" v-bk-tooltips="$t('导出Excel')"></span>
+            </span>
+          </div>
         </div>
       </div>
       <div class="main-container" ref="mainContainer">
         <div class="main-content-inner main-content-list">
-          <bk-form :label-width="60" class="search-form main-form">
+          <bk-form :label-width="60" class="search-form main-form" :class="{ 'collapse': !isSearchDropdown }">
             <container :class="['cc-container', { 'fold': !isSearchDropdown }]">
+              <div class="cc-col" v-if="isProjectDefect">
+                <bk-form-item :label="$t('任务')">
+                  <bk-select searchable v-model="taskIdList" multiple>
+                    <bk-option
+                      v-for="item in taskList"
+                      :key="item.taskId"
+                      :id="item.taskId"
+                      :name="item.nameCn">
+                    </bk-option>
+                  </bk-select>
+                </bk-form-item>
+              </div>
               <div class="cc-col">
                 <bk-form-item :label="$t('处理人')">
                   <bk-select v-model="searchParams.author" searchable>
                     <bk-option
-                      v-for="(author, index) in searchFormData.authorList"
-                      :key="index"
+                      v-for="author in searchFormData.authorList"
+                      :key="author"
                       :id="author"
                       :name="author"
                     >
@@ -45,7 +74,7 @@
                   </bk-select>
                 </bk-form-item>
               </div>
-              <div class="cc-col">
+              <div class="cc-col" v-if="!isProjectDefect">
                 <bk-form-item :label="$t('文件路径')" class="fixed-width">
                   <bk-dropdown-menu @show="isFilePathDropdownShow = true" @hide="isFilePathDropdownShow = false" align="right" trigger="click" ref="filePathDropdown">
                     <bk-button type="primary" slot="dropdown-trigger">
@@ -116,7 +145,7 @@
                   <bk-date-picker v-model="searchParams.daterange" type="daterange"></bk-date-picker>
                 </bk-form-item>
               </div>
-              <div class="cc-col">
+              <div class="cc-col" v-if="!isProjectDefect">
                 <bk-form-item :label="$t('快照')">
                   <bk-select v-model="searchParams.buildId" :clearable="true" searchable>
                     <bk-option
@@ -133,32 +162,47 @@
               </div>
               <div class="cc-col" v-if="allRenderColumnMap.status">
                 <bk-form-item :label="$t('状态')">
-                  <bk-select multiple v-model="searchParams.status" clearable searchable>
-                    <bk-option
-                      v-for="(value, key) in statusTypeMap"
-                      :key="Number(key)"
-                      :id="Number(key)"
-                      :name="value"
-                    >
-                    </bk-option>
-                  </bk-select>
-                </bk-form-item>
-              </div>
-              <div class="cc-col" v-if="allRenderColumnMap.defectType">
-                <bk-form-item :label="$t('时期')">
-                  <bk-checkbox-group v-model="searchParams.defectType" class="checkbox-group">
-                    <bk-checkbox :value="1">{{$t('新函数')}}(<em class="count">{{newDefectCount}}</em>)</bk-checkbox>
-                    <bk-checkbox :value="2">
-                      {{$t('存量函数')}}(<em class="count">{{historyDefectCount}}</em>)
-                    </bk-checkbox>
-                    <bk-popover placement="top" width="220" class="popover">
-                      <i class="codecc-icon icon-tips"></i>
-                      <div slot="content">
-                        {{typeTips}}
-                        <a href="javascript:;" @click="toLogs">{{$t('前往设置')}}>></a>
+                  <bk-select
+                    ref="statusSelect"
+                    searchable
+                    multiple
+                    v-model="searchParams.statusUnion"
+                    :key="statusTreeKey"
+                    :remote-method="handleStatusRemote"
+                    :tag-fixed-height="false"
+                    @tab-remove="handleStatusValuesChange"
+                    @clear="handleStatusClear">
+                    <bk-big-tree
+                      :data="statusTreeData"
+                      size="small"
+                      show-checkbox
+                      class="tree-select"
+                      ref="statusTree"
+                      v-if="hasCountData && hasIgnoreList"
+                      :default-checked-nodes="searchParams.statusUnion"
+                      :default-expand-all="!guideFlag"
+                      @check-change="handleStatusCheckChange">
+                      <div slot-scope="{ node, data }">
+                        <div v-if="data.id === '4-24' && !guideFlag && hasIgnoreList">
+                          <bk-popover ref="guidePopover" placement="right-start" :delay="2000" theme="dot-menu light">
+                            <span>{{ data.name }}</span>
+                            <div class="guide-content" slot="content">
+                              <div style="line-height: 22px; font-weight: bold;">{{ $t('【存量问题】可在这里查看') }}</div>
+                              <div>
+                                {{ $t('针对特定忽略类型可') }}
+                                <span theme="primary" class="set-tips" @click="handleSetReview">{{ $t('设置提醒') }}</span>
+                                {{ $t('，以便定期review和修复。') }}
+                              </div>
+                              <div class="guide-btn">
+                                <span class="btn-item" @click="handleGuideNextStep">{{ $t('知道了') }}</span>
+                              </div>
+                            </div>
+                          </bk-popover>
+                        </div>
+                        <div v-else>{{data.name}}</div>
                       </div>
-                    </bk-popover>
-                  </bk-checkbox-group>
+                    </bk-big-tree>
+                  </bk-select>
                 </bk-form-item>
               </div>
               <div class="cc-col-2" v-if="allRenderColumnMap.severity">
@@ -178,7 +222,7 @@
                         <p>{{$t('高风险：复杂度40-59')}}</p>
                         <p>{{$t('中风险：复杂度20-39')}}</p>
                         <p>{{$t('低风险：复杂度1-19')}}</p>
-                        <p>{{$t('阈值被设置为20，列表中仅展示大于等于该阈值的函数', { ccnThreshold: ccnThreshold })}}</p>
+                        <p v-if="!isProjectDefect">{{$t('阈值被设置为20，列表中仅展示大于等于该阈值的函数', { ccnThreshold: ccnThreshold })}}</p>
                       </div>
                     </bk-popover>
                   </bk-checkbox-group>
@@ -192,20 +236,15 @@
               <span v-show="isSelectAll === 'Y'">{{$t('已选择x条,共y条', { x: totalCount, y: totalCount })}}</span>
               <span v-show="isSelectAll !== 'Y'">{{$t('已选择x条,共y条', { x: selectedLen, y: totalCount })}}</span>
             </div>
-            <!-- <p class="search-more-option">
-              <i :class="['bk-icon codecc-icon icon-codecc-arrow', { 'icon-flip': isSearchDropdown }]"
-                 @click.stop="toggleSearch">
-              </i>
-            </p> -->
             <div v-if="isBatchOperationShow" class="cc-operate pb10">
               <div class="cc-operate-buttons">
                 <bk-button size="small" ext-cls="cc-operate-button" @click="handleMark(1, true)" theme="primary">{{$t('标记处理')}}</bk-button>
                 <bk-button size="small" ext-cls="cc-operate-button" @click="handleAuthor(2)" theme="primary">{{$t('分配')}}</bk-button>
                 <bk-button size="small" ext-cls="cc-operate-button" @click="handleCommit('commit', true)" theme="primary">{{$t('提单')}}</bk-button>
                 <bk-button size="small" ext-cls="cc-operate-button" @click="handleIgnore('RevertIgnore', true)" v-if="!searchParams.status.length || searchParams.status.includes(4)" theme="primary">
-                  {{$t('恢复忽略')}}
+                  {{$t('取消忽略')}}
                 </bk-button>
-                <bk-dropdown-menu ext-cls="cc-operate-button" @show="isDropdownShow = true" @hide="isDropdownShow = false">
+                <bk-dropdown-menu ext-cls="cc-operate-button" ref="operateDropdown" @show="isDropdownShow = true" @hide="isDropdownShow = false">
                   <bk-button size="small" slot="dropdown-trigger">
                     <span>{{$t('更多')}}</span>
                     <i :class="['bk-icon icon-angle-down', { 'icon-flip': isDropdownShow }]"></i>
@@ -244,22 +283,16 @@
               @selection-change="handleSelectionChange"
               @select-all="toSelectAll">
               <bk-table-column :selectable="handleSelectable" type="selection" width="50" align="center"></bk-table-column>
-              <bk-table-column width="15" class-name="mark-row">
-                <template slot-scope="props">
-                  <span v-if="props.row.mark === 1" v-bk-tooltips="$t('已标记处理')" class="codecc-icon icon-mark"></span>
-                  <span v-if="props.row.mark === 2" v-bk-tooltips="$t('标记处理后重新扫描仍为问题')" class="codecc-icon icon-mark re-mark"></span>
-                </template>
-              </bk-table-column>
               <bk-table-column :label="$t('位置')" min-width="100" prop="filePath">
                 <template slot-scope="props">
-                  <span :title="`${props.row.filePath}:${props.row.startLines}`">{{`${getFileName(props.row.filePath)}:${props.row.startLines}`}}</span>
+                  <span v-bk-tooltips="{ content: `${props.row.filePath}:${props.row.startLines}`, delay: 600 }">{{`${getFileName(props.row.filePath)}:${props.row.startLines}`}}</span>
                 </template>
               </bk-table-column>
-              <bk-table-column :label="$t('函数名')" min-width="100" prop="functionName">
-                <template slot-scope="props"> <span :title="props.row.functionName">{{ props.row.functionName }}</span></template>
+              <bk-table-column show-overflow-tooltip :label="$t('函数名')" min-width="100" prop="functionName">
+                <template slot-scope="props"> <span>{{ props.row.functionName }}</span></template>
               </bk-table-column>
               <bk-table-column :label="$t('圈复杂度')" prop="ccn" sortable="custom"></bk-table-column>
-              <bk-table-column :label="$t('处理人')" prop="author">
+              <bk-table-column show-overflow-tooltip :label="$t('处理人')" prop="author">
                 <template slot-scope="props">
                   <div
                     @mouseenter="handleAuthorIndex(props.$index)"
@@ -289,9 +322,19 @@
                   <span>{{props.row.createBuildNumber ? '#' + props.row.createBuildNumber : '--'}}</span>
                 </template>
               </bk-table-column>
-              <bk-table-column :label="$t('最新状态')" prop="status" width="110">
+              <bk-table-column :label="$t('最新状态')" prop="status" width="125">
                 <template slot-scope="props">
-                  <span>{{handleStatus(props.row.status, props.row.defectIssueInfoVO)}}</span>
+                  <span class="mr5">{{handleStatus(props.row.status, props.row.ignoreReasonType)}}</span>
+                  <span>
+                    <span v-if="props.row.status === 1 && props.row.mark === 1" v-bk-tooltips="$t('已标记处理')" class="codecc-icon icon-mark mr5"></span>
+                    <span v-if="props.row.status === 1 && props.row.markButNoFixed" v-bk-tooltips="$t('标记处理后重新扫描仍为问题')" class="codecc-icon icon-mark re-mark mr5"></span>
+                    <span v-if="props.row.defectIssueInfoVO.submitStatus && props.row.defectIssueInfoVO.submitStatus !== 4" v-bk-tooltips="$t('已提单')" class="codecc-icon icon-tapd"></span>
+                  </span>
+                </template>
+              </bk-table-column>
+              <bk-table-column show-overflow-tooltip v-if="isProjectDefect" :label="$t('任务')" prop="task">
+                <template slot-scope="props">
+                  <span class="cc-link" @click.stop="goToTask(props.row.taskId)">{{props.row.taskNameCn || '--'}}</span>
                 </template>
               </bk-table-column>
               <bk-table-column :label="$t('操作')" width="60">
@@ -299,8 +342,8 @@
                   <!-- 已修复问题没有这些操作 -->
                   <span v-if="!(props.row.status & 2)" class="cc-operate-more" @click.prevent.stop>
                     <bk-popover theme="light" placement="bottom" trigger="click">
-                      <span class="bk-icon icon-more"></span>
-                      <div slot="content" class="handle-menu-tips">
+                      <span class="bk-icon icon-more guide-icon"></span>
+                      <div slot="content" class="handle-menu-tips txal">
                         <!-- 待修复问题的操作 -->
                         <template v-if="props.row.status === 1">
                           <p v-if="props.row.mark" class="entry-link" @click.stop="handleMark(0, false, props.row.entityId)">
@@ -311,17 +354,40 @@
                           </p>
                         </template>
                         <!-- 已忽略问题的操作 -->
+                        <p v-if="props.row.status & 4 && !props.row.ignoreCommentDefect" class="entry-link" @click.stop="handleRevertIgnoreAndMark(props.row.entityId)">
+                          {{$t('取消忽略并标记处理')}}
+                        </p>
+                        <p v-if="props.row.status & 4 && !props.row.ignoreCommentDefect" class="entry-link" @click.stop="handleRevertIgnoreAndCommit(props.row.entityId)">
+                          {{$t('取消忽略并提单')}}
+                        </p>
                         <p v-if="props.row.status & 4 && props.row.ignoreCommentDefect" class="disabled" :title="$t('注释忽略的问题不允许页面进行恢复操作')">
-                          {{$t('恢复忽略')}}
+                          {{$t('取消忽略')}}
                         </p>
                         <p v-else-if="props.row.status & 4" class="entry-link" @click.stop="handleIgnore('RevertIgnore', false, props.row.entityId)">
-                          {{$t('恢复忽略')}}
+                          {{$t('取消忽略')}}
                         </p>
                         <p v-else-if="taskDetail.prohibitIgnore" class="entry-link disabled" :title="$t('已设置禁止页面忽略，可在代码行末或上一行使用注释忽略，例如// NOCC:rule1(ignore reason)')">
                           {{$t('忽略函数')}}
                         </p>
-                        <p v-else class="entry-link" @click.stop="handleIgnore('IgnoreDefect', false, props.row.entityId)">
-                          {{$t('忽略函数')}}
+                        <bk-popover v-else ref="guidePopover2" placement="left" theme="dot-menu light" trigger="click">
+                          <div>
+                            <span class="guide-flag"></span>
+                            <span class="entry-link ignore-item" @click.stop="handleIgnore('IgnoreDefect', false, props.row.entityId)">{{$t('忽略函数')}}</span>
+                          </div>
+                          <div class="guide-content" slot="content">
+                            <div style="line-height: 22px">
+                              {{ $t('支持忽略无需处理或暂缓处理的问题。') }}
+                              {{ $t('针对特定忽略类型可') }}
+                              <span theme="primary" class="set-tips" @click="handleTableSetReview">{{ $t('设置提醒') }}</span>
+                              {{ $t('，以便定期review和修复。') }}
+                            </div>
+                            <div class="guide-btn">
+                              <span class="btn-item" @click="handleTableGuideNextStep">{{ $t('知道了') }}</span>
+                            </div>
+                          </div>
+                        </bk-popover>
+                        <p v-if="props.row.status & 4 && !props.row.ignoreCommentDefect" class="entry-link" @click.stop="handleChangeIgnoreType(props.row)">
+                          {{$t('修改忽略类型')}}
                         </p>
                         <p v-if="props.row.status === 1 && !(props.row.defectIssueInfoVO.submitStatus && props.row.defectIssueInfoVO.submitStatus !== 4)"
                            class="entry-link"
@@ -375,7 +441,7 @@
                   <dl class="basic-info" :class="{ 'full-screen-info': isFullScreen }" v-if="currentLintFile">
                     <div class="block">
                       <div class="item">
-                        <span class="fail" :class="{ 'cc-status': currentLintFile.mark }" v-if="currentLintFile.status === 1">
+                        <span class="fail mr5" v-if="currentLintFile.status === 1">
                           <span class="cc-dot"></span>
                           <span v-if="buildNum" v-bk-tooltips="`#${buildNum}待修复(当前分支最新构建#${lintDetail.lastBuildNumOfSameBranch}该问题为${lintDetail.defectIsFixedOnLastBuildNumOfSameBranch ? '已修复' : '待修复'})`">
                             #{{buildNum}}{{$t('待修复')}}
@@ -384,17 +450,12 @@
                           <span v-else>{{$t('待修复')}}</span>
                           <span v-if="currentLintFile.defectIssueInfoVO.submitStatus && currentLintFile.defectIssueInfoVO.submitStatus !== 4">{{$t('(已提单)')}}</span>
                         </span>
-                        <span class="success" v-else-if="currentLintFile.status & 2"><span class="cc-dot"></span>{{$t('已修复')}}</span>
-                        <span class="warn" v-else-if="currentLintFile.status & 4"><span class="cc-dot"></span>{{$t('已忽略')}}</span>
-                        <span v-if="currentLintFile.status === 1 && currentLintFile.mark" class="cc-mark">
-                          <template v-if="currentLintFile.mark === 1">
-                            <span v-bk-tooltips="$t('已标记处理')" class="codecc-icon icon-mark"></span>
-                            <span>{{$t('已标记处理')}}</span>
-                          </template>
-                          <template v-if="currentLintFile.mark === 2">
-                            <span v-bk-tooltips="$t('标记处理后重新扫描仍为问题')" class="codecc-icon icon-mark re-mark"></span>
-                            <span>{{$t('已标记处理')}}</span>
-                          </template>
+                        <span class="success mr5" v-else-if="currentLintFile.status & 2"><span class="cc-dot"></span>{{$t('已修复')}}</span>
+                        <span class="warn mr5" v-else-if="currentLintFile.status & 4"><span class="cc-dot"></span>{{$t('已忽略')}}</span>
+                        <span>
+                          <span v-if="currentLintFile.status === 1 && currentLintFile.mark === 1" v-bk-tooltips="$t('已标记处理')" class="codecc-icon icon-mark mr5"></span>
+                          <span v-if="currentLintFile.status === 1 && currentLintFile.markButNoFixed" v-bk-tooltips="$t('标记处理后重新扫描仍为问题')" class="codecc-icon icon-mark re-mark mr5"></span>
+                          <span v-if="currentLintFile.defectIssueInfoVO?.submitStatus && currentLintFile.defectIssueInfoVO.submitStatus !== 4" v-bk-tooltips="$t('已提单')" class="codecc-icon icon-tapd"></span>
                         </span>
                       </div>
                       <div v-if="currentLintFile.status === 1" class="item">
@@ -405,23 +466,40 @@
                           {{$t('标记处理')}}
                         </bk-button>
                       </div>
-                      <div class="item">
-                        <bk-button class="item-button" @click="handleComent(currentLintFile.entityId)">
-                          {{$t('评论')}}
-                        </bk-button>
+                      <div v-if="currentLintFile.status & 4 && !currentLintFile.ignoreCommentDefect">
+                        <div class="item">
+                          <bk-button class="item-button" @click="handleRevertIgnoreAndMark(currentLintFile.entityId)">
+                            {{$t('取消忽略并标记处理')}}
+                          </bk-button>
+                        </div>
+                        <div class="item">
+                          <bk-button class="item-button" @click="handleRevertIgnoreAndCommit(currentLintFile.entityId)">
+                            {{$t('取消忽略并提单')}}
+                          </bk-button>
+                        </div>
                       </div>
                       <div class="item">
                         <bk-button v-if="currentLintFile.status & 4 && currentLintFile.ignoreCommentDefect" class="item-button" disabled :title="$t('注释忽略的问题不允许页面进行恢复操作')">
-                          {{$t('恢复忽略')}}
+                          {{$t('取消忽略')}}
                         </bk-button>
                         <bk-button v-else-if="currentLintFile.status & 4" class="item-button" @click="handleIgnore('RevertIgnore', false, currentLintFile.entityId)">
-                          {{$t('恢复忽略')}}
+                          {{$t('取消忽略')}}
                         </bk-button>
                         <bk-button v-else-if="taskDetail.prohibitIgnore" disabled class="item-button" :title="$t('已设置禁止页面忽略，可在代码行末或上一行使用注释忽略，例如// NOCC:rule1(ignore reason)')">
                           {{$t('忽略函数')}}
                         </bk-button>
                         <bk-button v-else-if="!(currentLintFile.status & 2)" class="item-button" @click="handleIgnore('IgnoreDefect', false, currentLintFile.entityId)">
                           {{$t('忽略函数')}}
+                        </bk-button>
+                      </div>
+                      <div class="item">
+                        <bk-button class="item-button" @click="handleComent(currentLintFile.entityId)">
+                          {{$t('评论')}}
+                        </bk-button>
+                      </div>
+                      <div class="item" v-if="currentLintFile.status & 4 && !currentLintFile.ignoreCommentDefect">
+                        <bk-button class="item-button" @click="handleChangeIgnoreType(currentLintFile)">
+                          {{$t('修改忽略类型')}}
                         </bk-button>
                       </div>
                       <div class="item" v-if="currentLintFile.status === 1 && !(currentLintFile.defectIssueInfoVO.submitStatus && currentLintFile.defectIssueInfoVO.submitStatus !== 4)">
@@ -478,14 +556,16 @@
                     </div>
                     <div class="block">
                       <div class="item">
-                        <dt v-if="currentLintFile.status === 1" class="curpt" @click.stop="handleAuthor(1, currentLintFile.entityId, currentLintFile.author, currentLintFile.defectId)">
-                          {{$t('处理人')}}
-                          <span class="bk-icon icon-edit2 fs20"></span>
-                        </dt>
-                        <dt v-else>
+                        <dt>
                           {{$t('处理人')}}
                         </dt>
-                        <dd>{{currentLintFile.author}}</dd>
+                        <dd>
+                          {{currentLintFile.author}}
+                          <span v-if="currentLintFile.status & 1 || currentLintFile.status & 4"
+                                @click.stop="handleAuthor(1, currentLintFile.entityId, currentLintFile.author, currentLintFile.defectId)"
+                                class="curpt bk-icon icon-edit2 fs20">
+                          </span>
+                        </dd>
                       </div>
                     </div>
                     <div class="block">
@@ -581,20 +661,47 @@
       <bk-dialog
         v-model="ignoreReasonDialogVisiable"
         width="560"
+        :position="ignoreDialogPositionConfig"
         theme="primary"
         :mask-close="false"
         header-position="left"
-        :title="operateParams.batchFlag ? $t('选择函数忽略原因，共x个函数', { num: isSelectAll === 'Y' ? totalCount : selectedLen }) : $t('选择函数忽略原因')">
-        <div class="pd10 pr50">
-          <bk-form :model="operateParams" :label-width="30" class="search-form">
+        :title="ignoreReasonDialogTitle"
+        @cancel="handleIgnoreCancel">
+        <div class="reason-type-list">
+          <div class="reason-type-header mb20">
+            {{ $t('忽略类型') }}
+            <span class="fr">
+              <bk-button size="small" icon="plus" class="mr10" @click="handleSetReview">新增类型</bk-button>
+              <bk-button size="small" @click="handelFetchIgnoreList"><i class="codecc-icon icon-refresh-2"></i></bk-button>
+            </span>
+          </div>
+          <bk-form :model="operateParams" :label-width="0" class="search-form">
             <bk-form-item property="ignoreReason">
-              <bk-radio-group v-model="operateParams.ignoreReasonType">
-                <bk-radio class="cc-radio" :value="1">{{$t('检查工具误报')}}</bk-radio>
-                <bk-radio class="cc-radio" :value="2">{{$t('设计如此')}}</bk-radio>
-                <bk-radio class="cc-radio" :value="4">{{$t('其他')}}</bk-radio>
+              <bk-radio-group v-model="operateParams.ignoreReasonType" class="ignore-list">
+                <bk-radio
+                  class="cc-radio"
+                  v-for="ignore in ignoreList"
+                  :key="ignore.ignoreTypeId"
+                  :value="ignore.ignoreTypeId"
+                >
+                  {{ ignore.name }}
+                  <span v-if="ignore.ignoreTypeId === 42 && !isProjectDefect">
+                    <a class="ml15" @click.stop="handleToPathShield">
+                      {{ $t('按代码路径屏蔽') }}
+                      <i class="codecc-icon icon-link"></i>
+                    </a>
+                  </span>
+                  <span v-else-if="operateParams.ignoreReasonType === ignore.ignoreTypeId && ignore.notify.notifyDayOfWeeks.length" class="notify-tips">
+                    <span class="f12" v-bk-tooltips="{ content: formatTime(ignore.nextNotifyTime, 'M月D日') + '（' + handleGetNotifyDate(ignore.notify) + '）' + $t('提醒') }">
+                      <i class="codecc-icon icon-time" style="color: #979ba5;"></i>
+                      {{ formatTime(ignore.nextNotifyTime, 'M月D日') }} （{{ handleGetNotifyDate(ignore.notify) }}） {{ $t('提醒') }}
+                    </span>
+                  </span>
+                </bk-radio>
               </bk-radio-group>
             </bk-form-item>
             <bk-form-item property="ignoreReason" :required="ignoreReasonRequired">
+              <span>{{ $t('忽略原因') }}</span>
               <bk-input :type="'textarea'" :maxlength="255" v-model="operateParams.ignoreReason"></bk-input>
             </bk-form-item>
           </bk-form>
@@ -605,11 +712,11 @@
             :disabled="ignoreReasonAble"
             @click.native="handleIgnoreConfirm"
           >
-            {{operateParams.batchFlag ? $t('批量忽略') : $t('确定')}}
+            {{ $t('确定') }}
           </bk-button>
           <bk-button
             theme="primary"
-            @click.native="ignoreReasonDialogVisiable = false"
+            @click.native="handleIgnoreCancel"
           >
             {{$t('取消')}}
           </bk-button>
@@ -688,6 +795,7 @@
   import Empty from '@/components/empty'
   import filterSearchOption from './filter-search-option'
   import { format } from 'date-fns'
+  import DefectPanel from './components/defect-panel.vue'
   // eslint-disable-next-line
   import { export_json_to_excel } from 'vendor/export2Excel'
 
@@ -698,28 +806,47 @@
     components: {
       Empty,
       filterSearchOption,
+      DefectPanel,
     },
     mixins: [util],
     data() {
-      this.getDefaultOption = () => ([
-        { id: 'author', name: this.$t('处理人'), isChecked: true },
-        { id: 'filePath', name: this.$t('文件路径'), isChecked: true },
-        { id: 'buildId', name: this.$t('快照'), isChecked: true },
-      ])
+      const isProjectDefect = this.$route.name === 'project-ccn-list'
+      this.getDefaultOption = () => (
+        isProjectDefect ? [
+          { id: 'task', name: this.$t('任务'), isChecked: true },
+          { id: 'author', name: this.$t('处理人'), isChecked: true },
+        ]
+        : [
+          { id: 'author', name: this.$t('处理人'), isChecked: true },
+          { id: 'filePath', name: this.$t('文件路径'), isChecked: true },
+          { id: 'buildId', name: this.$t('快照'), isChecked: true },
+        ])
 
       this.getCustomOption = function (val) {
         return [
           { id: 'daterange', name: this.$t('日期'), isChecked: val },
           { id: 'status', name: this.$t('状态'), isChecked: val },
-          { id: 'defectType', name: this.$t('时期'), isChecked: val },
           { id: 'severity', name: this.$t('风险级别'), isChecked: val },
         ]
       }
 
       const { query } = this.$route
+      const { taskId } = this.$route.params
       let status = [1]
+      let statusUnion = [1] // 状态和忽略类型组合的新字段
       if (query.status) {
         status = this.numToArray(query.status)
+        statusUnion = status.slice()
+      }
+      let ignoreReasonTypes = []
+      if (query.ignoreTypeId) {
+        ignoreReasonTypes = query.ignoreTypeId.split(',').map(i => Number(i))
+        const statusIndex = statusUnion.findIndex(item => item === 4)
+        if (statusIndex !== -1) {
+          statusUnion.splice(statusIndex, 1)
+        }
+        const typesArr = ignoreReasonTypes.map(item => `4-${item}`)
+        statusUnion = statusUnion.concat(typesArr)
       }
 
       return {
@@ -747,6 +874,16 @@
           authorList: [],
           filePathTree: {},
           filePathShow: this.handleFileList(query.fileList).join(';'),
+          superHighCount: 0,
+          highCount: 0,
+          mediumCount: 0,
+          lowCount: 0,
+        },
+        statusFormData: {
+          existCount: 0,
+          fixCount: 0,
+          ignoreCount: 0,
+          maskCount: 0,
         },
         operateParams: {
           toolName: 'CCN',
@@ -760,18 +897,21 @@
         searchParams: {
           taskId: this.$route.params.taskId,
           toolName: 'CCN',
+          toolNameList: ['CCN'],
           checker: query.checker || '',
           author: query.author,
           severity: this.numToArray(query.severity),
-          defectType: this.numToArray(query.defectType, [1, 2]),
           status,
+          statusUnion,
           buildId: query.buildId ? query.buildId : '',
           fileList: this.handleFileList(query.fileList),
           daterange: [query.startTime, query.endTime],
           sortField: query.sortField || 'ccn',
           sortType: 'DESC',
+          ignoreReasonTypes,
           pageNum: 1,
           pageSize: 50,
+          showTaskNameCn: isProjectDefect,
         },
         defectDetailSearchParams: {
           sortField: '',
@@ -813,7 +953,7 @@
         newDefectJudgeTime: '',
         buildList: [],
         tableLoading: false,
-        isSearchDropdown: false,
+        isSearchDropdown: true,
         lineAverageOpt: 10,
         screenHeight: 336,
         selectedLen: 0,
@@ -838,7 +978,48 @@
         defaultOption: this.getDefaultOption(),
         customOption: this.getCustomOption(true),
         selectedOptionColumn: [],
+        ignoreList: [], // 忽略类型列表,
+        isAddingIgnore: false,
+        monthsStrMap: {
+          1: this.$t('一月'),
+          2: this.$t('二月'),
+          3: this.$t('三月'),
+          4: this.$t('四月'),
+          5: this.$t('五月'),
+          6: this.$t('六月'),
+          7: this.$t('七月'),
+          8: this.$t('八月'),
+          9: this.$t('九月'),
+          10: this.$t('十月'),
+          11: this.$t('十一月'),
+          12: this.$t('十二月'),
+        },
+        weekOfMonthsStrMap: {
+          1: this.$t('第一个星期'),
+          2: this.$t('第二个星期'),
+          3: this.$t('第三个星期'),
+          4: this.$t('第四个星期'),
+          5: this.$t('第五个星期'),
+        },
+        dayOfWeekMap: {
+          1: this.$t('星期一'),
+          2: this.$t('星期二'),
+          3: this.$t('星期三'),
+          4: this.$t('星期四'),
+          5: this.$t('星期五'),
+          6: this.$t('星期六'),
+          7: this.$t('星期日'),
+        },
+        isRowChangeIgnoreType: false,
         toolName: 'CCN',
+        toolNameList: ['CCN'],
+        dimensionList: ['CCN'],
+        guideFlag: false,
+        hasCountData: false,
+        hasIgnoreList: false,
+        statusTreeKey: 1,
+        isProjectDefect,
+        taskIdList: isProjectDefect ? [] : [Number(taskId)],
       }
     },
     computed: {
@@ -878,7 +1059,7 @@
       //     return this.lintFileList[this.fileIndex]
       // },
       defectList() {
-        this.setScreenHeight()
+        this.setTableHeight()
         return this.listData.defectList.content
       },
       newDefectCount() {
@@ -889,14 +1070,30 @@
         const { historyDefectCount } = this.listData
         return historyDefectCount > 100000 ? this.$t('10万+') : historyDefectCount
       },
-      statusTypeMap() {
-        const { existCount, fixCount, ignoreCount, maskCount } = this.listData
-        return {
-          1: `${this.$t('待修复')}（${existCount || 0}）`,
-          2: `${this.$t('已修复')}（${fixCount || 0}）`,
-          4: `${this.$t('已忽略')}（${ignoreCount || 0}）`,
-          8: `${this.$t('已屏蔽')} (${maskCount || 0})`,
-        }
+      statusTreeData() {
+        const { existCount, fixCount, ignoreCount, maskCount } = this.statusFormData
+        const list = this.ignoreList.map(item => ({ id: `4-${item.ignoreTypeId}`, name: `已忽略-${item.name}` }))
+        const statusList = [
+          {
+            id: 1,
+            name: `${this.$t('待修复')}(${existCount || 0})`,
+          },
+          {
+            id: 2,
+            name: `${this.$t('已修复')}(${fixCount || 0})`,
+          },
+          {
+            id: 4,
+            name: `${this.$t('已忽略')}(${ignoreCount || 0})`,
+            children: list,
+          },
+          {
+            id: 8,
+            name: `${this.$t('已屏蔽')}(${maskCount || 0})`,
+          },
+        ]
+        this.statusTreeKey += 1
+        return statusList
       },
       nextPageStartNum() {
         return ((this.searchParams.pageNum - 1) * this.searchParams.pageSize) + 1
@@ -932,11 +1129,51 @@
       isMac() {
         return /macintosh|mac os x/i.test(navigator.userAgent)
       },
+      ignoreReasonDialogTitle() {
+        if (this.isRowChangeIgnoreType) {
+          return this.$t('忽略')
+        }
+        return (this.isSelectAll === 'Y' ? this.totalCount : this.selectedLen) > 1
+          ? `${this.$t('忽略')}（共${this.isSelectAll === 'Y' ? this.totalCount : this.selectedLen}个问题）` : this.$t('忽略')
+      },
+      ignoreDialogPositionConfig() {
+        const { clientHeight } = document.body
+        const config = {
+          top: '200',
+        }
+        if (clientHeight <= 1000 && clientHeight > 900) {
+          config.top = '150'
+        } else if (clientHeight <= 900) {
+          config.top = '100'
+        }
+        return config
+      },
     },
     watch: {
       // 监听查询参数变化，则获取列表
       searchParamsWatch: {
         handler(newVal, oldVal) {
+          // 筛选状态，先特殊处理
+          if (!_.isEqual(newVal.statusUnion, oldVal.statusUnion)) {
+            const status = []
+            let ignoreTypes = []
+            const hasIgnore = newVal.statusUnion.includes(4)
+            newVal.statusUnion.forEach((item) => {
+              if (typeof(item) === 'string' && item.startsWith('4-')) {
+                ignoreTypes.push(Number(item.replace('4-', '')))
+              } else {
+                status.push(item)
+              }
+            })
+            if (newVal.statusUnion.includes(4)) { // 全选已忽略，就不用传忽略类型
+              ignoreTypes = []
+            } else if (ignoreTypes.length && !status.includes(4)) { // 选了忽略类型，参数同时要选已忽略状态
+              status.push(4)
+            }
+            this.searchParams.status = status
+            this.searchParams.ignoreReasonTypes = ignoreTypes
+            return
+          }
           if (this.isSearch) {
             this.tableLoading = true
             this.fetchLintList(!this.pageChange).then((list) => {
@@ -969,6 +1206,8 @@
       },
       defectDetailSearchParams: {
         handler() {
+          this.operateParams.ignoreReasonType = ''
+          this.operateParams.ignoreReason = ''
           this.emptyText = this.$t('未选择文件')
           this.defectDetailDialogVisiable = true
           this.fetchLintDetail()
@@ -1008,13 +1247,20 @@
         deep: true,
       },
       isSearchDropdown() {
-        this.setScreenHeight()
+        this.setTableHeight()
+      },
+      taskIdList(val) {
+        this.init()
+      },
+      'searchParamsWatch.fileList'() {
+        this.fetchSeverityParams()
+        this.fetchStatusParams()
       },
     },
     created() {
       if (!this.taskDetail.nameEn || this.taskDetail.enableToolList.find(item => item.toolName === 'CCN')) {
         this.init(true)
-        this.getBuildList()
+        this.isProjectDefect ? this.fetchTaskList() : this.getBuildList()
       }
 
       // 读取缓存搜索过滤项
@@ -1025,6 +1271,8 @@
       } else {
         this.selectedOptionColumn = this.getCustomOption(true)
       }
+      this.handelFetchIgnoreList()
+      this.guideFlag = Boolean(localStorage.getItem('guideEnd') || '')
     },
     mounted() {
       // this.$nextTick(() => {
@@ -1046,6 +1294,8 @@
     methods: {
       async init(isInit) {
         this.getQueryPreLineNum()
+        this.fetchSeverityParams()
+        this.fetchStatusParams()
         isInit ? this.contentLoading = true : this.fileLoading = true
         await Promise.all([
           this.fetchLintList(),
@@ -1118,6 +1368,12 @@
         const params = { ...this.searchParams, ...this.defectDetailSearchParams, pattern }
         bus.$emit('show-app-loading')
         this.$store.dispatch('defect/lintDetail', params).then((detail) => {
+          if (detail.defectVO.ignoreReasonType) {
+            this.operateParams.ignoreReasonType = detail.defectVO.ignoreReasonType
+          }
+          if (detail.defectVO.ignoreReason) {
+            this.operateParams.ignoreReason = detail.defectVO.ignoreReason
+          }
           if (detail.code === '2300005') {
             this.defectDetailDialogVisiable = false
             setTimeout(() => {
@@ -1154,8 +1410,23 @@
           4: 'mediumCount',
           8: 'lowCount',
         }
-        const count = this.listData[severityFieldMap[severity]]
+        const count = this.searchFormData[severityFieldMap[severity]] || 0
         return count > 100000 ? this.$t('10万+') : count
+      },
+      async fetchSeverityParams() {
+        const params = this.getSearchParams()
+        params.statisticType = 'SEVERITY'
+        const res = await this.$store.dispatch('defect/lintSearchParams', params)
+        const { superHighCount, highCount, mediumCount, lowCount } = res
+        this.searchFormData = Object.assign(this.searchFormData, { superHighCount, highCount, mediumCount, lowCount })
+      },
+      async fetchStatusParams() {
+        const params = this.getSearchParams()
+        params.statisticType = 'STATUS'
+        const res = await this.$store.dispatch('defect/lintSearchParams', params)
+        const { existCount, fixCount, ignoreCount, maskCount } = res
+        this.statusFormData = Object.assign({}, this.statusFormData, { existCount, fixCount, ignoreCount, maskCount })
+        this.hasCountData = true
       },
       handleSortChange({ column, prop, order }) {
         const orders = { ascending: 'ASC', descending: 'DESC' }
@@ -1182,7 +1453,7 @@
         this.pagination.current = 1 // 切换分页大小时要回到第一页
         this.searchParams = { ...this.searchParams, ...{ pageNum: 1, pageSize: currentLimit } }
       },
-      handleStatus(status, defectIssueInfoVO = {}) {
+      handleStatus(status, ignoreReasonType) {
         let key = 1
         if (status === 1) {
           key = 1
@@ -1200,44 +1471,64 @@
           8: this.$t('已屏蔽'),
         }
         /**
-       * submitStatus字段：
-        1 - 排队中
-        2 - 准备开始提单
-        3 - 提单成功
-        4 - 提单失败
-       */
-        let issueStatus = ''
-        if (defectIssueInfoVO.submitStatus && defectIssueInfoVO.submitStatus !== 4) {
-          issueStatus = this.$t('(已提单)')
+         * submitStatus字段：
+          1 - 排队中
+          2 - 准备开始提单
+          3 - 提单成功
+          4 - 提单失败
+        */
+        // let issueStatus = ''
+        // if (defectIssueInfoVO.submitStatus && defectIssueInfoVO.submitStatus !== 4) {
+        //   issueStatus = this.$t('(已提单)')
+        // }
+        let ignoreStr = ''
+        if (status & 4 && ignoreReasonType) {
+          const ignoreName = this.ignoreList.find(item => item.ignoreTypeId === ignoreReasonType)?.name
+          ignoreName && (ignoreStr = `-${ignoreName}`)
         }
-        return `${statusMap[key]}${issueStatus}`
+        return `${statusMap[key]}${ignoreStr}`
       },
-      handleMark(markFlag, batchFlag, entityId, defectId) {
+      handleMark(markFlag, batchFlag, entityId) {
         // markFlag 0: 取消标记, 1: 标记修改
         // batchFlag true: 批量操作
+        let bizType = 'MarkDefect'
         let defectKeySet = []
         if (batchFlag) {
           this.$refs.fileListTable.selection.forEach((item) => {
             defectKeySet.push(item.entityId)
           })
+          if (markFlag) bizType = 'RevertIgnore|MarkDefect'
         } else {
           defectKeySet = [entityId]
         }
-        const bizType = 'MarkDefect'
-        let data = { ...this.operateParams, bizType, defectKeySet, markFlag }
+        const { taskIdList, toolNameList, dimensionList } = this
+        let data = { ...this.operateParams, bizType, defectKeySet, markFlag, taskIdList, toolNameList, dimensionList }
         if (this.isSelectAll === 'Y') {
           data = { ...data, isSelectAll: 'Y', queryDefectCondition: JSON.stringify(this.searchParams) }
         }
         this.tableLoading = true
         this.$store.dispatch('defect/batchEdit', data).then((res) => {
           if (res.code === '0') {
-            this.$bkMessage({
-              theme: 'success',
-              message: markFlag
-                ? this.$t('标记为已处理成功。') : this.$t('取消标记成功'),
-            })
+            let message = markFlag ? this.$t('标记为已处理成功。') : this.$t('取消标记成功')
             if (batchFlag) {
               this.init()
+              if (markFlag) {
+                const list = res.data || []
+                let revertCount = 0
+                let markCount = 0
+                list.forEach((item) => {
+                  if (item.bizType === 'RevertIgnore') {
+                    revertCount = item.count
+                  } else if (item.bizType === 'MarkDefect') {
+                    markCount = item.count
+                  }
+                })
+                const unfixedMarkCount = markCount - revertCount
+                message = ''
+                if (unfixedMarkCount) message = this.$t('x个待修复问题标记为已处理成功', { unfixedMarkCount })
+                if (unfixedMarkCount && revertCount) message += ', '
+                if (revertCount) message += this.$t('x个已忽略问题取消忽略并标记为已处理成功', { revertCount })
+              }
             } else {
               this.listData.defectList.content.forEach((item) => {
                 if (item.entityId === entityId) {
@@ -1246,6 +1537,10 @@
               })
               this.listData.defectList.content = this.listData.defectList.content.slice()
             }
+            this.$bkMessage({
+              theme: 'success',
+              message,
+            })
             if (this.defectDetailDialogVisiable) this.fetchLintDetail()
           }
         })
@@ -1257,6 +1552,7 @@
           })
       },
       handleIgnore(ignoreType, batchFlag, entityId, defectId) {
+        this.$refs.operateDropdown?.hide()
         this.operateParams.bizType = ignoreType
         this.operateParams.batchFlag = batchFlag
         if (batchFlag) {
@@ -1281,22 +1577,47 @@
         if (this.isSelectAll === 'Y') {
           data = { ...data, isSelectAll: 'Y', queryDefectCondition: JSON.stringify(this.searchParams) }
         }
+        const { taskIdList, toolNameList, dimensionList } = this
+        data = { ...data, taskIdList, toolNameList, dimensionList }
+        this.isRowChangeIgnoreType = false
         this.$store.dispatch('defect/batchEdit', data).then((res) => {
           if (res.code === '0') {
+            let message = ''
+            if (this.operateParams.bizType === 'ChangeIgnoreType') {
+              message = this.$t('修改忽略类型成功')
+            } else {
+              message = this.operateParams.bizType === 'IgnoreDefect'
+                ? this.$t('忽略问题成功') : this.$t('恢复问题成功。该问题将重新在待修复列表中显示。')
+            }
             this.$bkMessage({
               theme: 'success',
-              message: this.$t('修改成功'),
+              message,
             })
             if (data.batchFlag) {
               this.init()
             } else {
-              const index = this.listData.defectList.content
-                .findIndex(item => item.entityId === data.defectKeySet[0])
-              this.listData.defectList.content.splice(index, 1)
+              this.listData.defectList.content.forEach((item) => {
+                if (item.entityId === data.defectKeySet[0]) {
+                  if (this.operateParams.bizType === 'ChangeIgnoreType') {
+                    item.ignoreReasonType = this.operateParams.ignoreReasonType
+                    item.ignoreReason = this.operateParams.ignoreReason
+                  } else if (this.operateParams.bizType === 'IgnoreDefect') {
+                    item.status = 4
+                    item.ignoreReasonType = this.operateParams.ignoreReasonType
+                    item.ignoreReason = this.operateParams.ignoreReason
+                  } else {
+                    item.status = 1
+                  }
+                }
+              })
+              this.listData.defectList.content = this.listData.defectList.content.slice()
+              // this.init()
             }
+            this.operateParams.ignoreReason = ''
+            this.operateParams.ignoreReasonType = ''
             if (this.defectDetailDialogVisiable) this.fetchLintDetail()
             this.operateParams.ignoreReason = ''
-            this.defectDetailDialogVisiable = false
+            // this.defectDetailDialogVisiable = false
           }
         })
           .catch((e) => {
@@ -1304,7 +1625,16 @@
           })
           .finally(() => {
             this.tableLoading = false
+            this.isAddingIgnore = false
+            this.fetchSeverityParams()
+            this.fetchStatusParams()
           })
+      },
+      handleIgnoreCancel() {
+        this.operateParams.ignoreReason = ''
+        this.operateParams.ignoreReasonType = ''
+        this.ignoreReasonDialogVisiable = false
+        this.isAddingIgnore = false
       },
       handleComent(id) {
         // 暂不做评论修
@@ -1640,17 +1970,17 @@
       screenScroll() {
         this.$nextTick(() => {
           if (this.$refs.fileListTable.$refs.bodyWrapper) {
-            const childrens = this.$refs.fileListTable.$refs.bodyWrapper
+            const children = this.$refs.fileListTable.$refs.bodyWrapper
             const height = this.fileIndex > 3 ? (this.fileIndex - 3) * 42 : 0
-            childrens.scrollTo({
+            children.scrollTo({
               top: height,
               behavior: 'smooth',
             })
           }
         }, 0)
       },
-      setScreenHeight() {
-        setTimeout(() => {
+      setTableHeight() {
+        this.$nextTick(() => {
           let smallHeight = 0
           let largeHeight = 0
           let tableHeight = 0
@@ -1659,11 +1989,16 @@
             const $main = document.getElementsByClassName('main-form')
             smallHeight = $main.length > 0 ? $main[0].clientHeight : 0
             largeHeight = this.$refs.mainContainer ? this.$refs.mainContainer.clientHeight : 0
-            tableHeight = this.$refs.fileListTable.$el.scrollHeight
+            tableHeight = this.$refs.fileListTable.$el.clientHeight
           }
           this.screenHeight = i * 42 > tableHeight ? largeHeight - smallHeight - 62 : (i * 42) + 43
           this.screenHeight = this.screenHeight === 43 ? 336 : this.screenHeight
-        }, 100)
+        })
+      },
+      toggleSearch() {
+        this.isSearchDropdown = !this.isSearchDropdown
+        window.localStorage.setItem('ccnSearchExpend', JSON.stringify(this.isSearchDropdown))
+        this.getQueryPreLineNum()
       },
       getQueryPreLineNum() {
         let bodyWidth = document.body.offsetWidth
@@ -1696,6 +2031,8 @@
         if (this.isSelectAll === 'Y') {
           data = { ...data, isSelectAll: 'Y', queryDefectCondition: JSON.stringify(this.searchParams) }
         }
+        const { taskIdList, toolNameList, dimensionList } = this
+        data = { ...data, taskIdList, toolNameList, dimensionList }
         const dispatchUrl = data.changeAuthorType === 3 ? 'defect/authorEdit' : 'defect/batchEdit'
         this.authorEditDialogVisiable = false
         this.tableLoading = true
@@ -1754,11 +2091,10 @@
         return rowClass
       },
       getIgnoreReasonByType(type) {
-        const typeMap = {
-          1: this.$t('检查工具误报'),
-          2: this.$t('设计如此'),
-          4: this.$t('其他'),
-        }
+        const typeMap = this.ignoreList.reduce((result, item) => {
+          result[item.ignoreTypeId] = item.name
+          return result
+        }, {})
         return typeMap[type]
       },
       openDetail() {
@@ -1780,16 +2116,19 @@
         const { daterange } = this.searchParams
         params.startCreateTime = this.formatTime(daterange[0], 'YYYY-MM-DD')
         params.endCreateTime = this.formatTime(daterange[1], 'YYYY-MM-DD')
+        params.taskIdList = this.taskIdList
         return params
       },
       /**
        * 重置搜索过滤项
       */
       handleSelectAllSearchOption() {
-        this.$refs.handleMenu.instance.hide()
-        this.customOption = this.getCustomOption(true)
-        this.selectedOptionColumn = _.cloneDeep(this.customOption)
-        localStorage.setItem(CCN_SEARCH_OPTION_CACHE, JSON.stringify(this.selectedOptionColumn))
+        const isSelectAll = this.customOption.every(item => item.isChecked)
+        this.customOption = this.getCustomOption(!isSelectAll)
+        // this.$refs.handleMenu.instance.hide()
+        // this.customOption = this.getCustomOption(true)
+        // this.selectedOptionColumn = _.cloneDeep(this.customOption)
+        // localStorage.setItem(CCN_SEARCH_OPTION_CACHE, JSON.stringify(this.selectedOptionColumn))
       },
 
       /**
@@ -1799,6 +2138,7 @@
         this.$refs.handleMenu.instance.hide()
         this.selectedOptionColumn = _.cloneDeep(this.customOption)
         localStorage.setItem(CCN_SEARCH_OPTION_CACHE, JSON.stringify(this.selectedOptionColumn))
+        this.setTableHeight()
       },
       downloadExcel() {
         const params = this.getSearchParams()
@@ -1819,6 +2159,9 @@
           })
       },
       generateExcel(list = []) {
+        const { isProjectDefect } = this
+        const exHeader = isProjectDefect ? [this.$t('任务')] : []
+        const exVal = isProjectDefect ? ['taskNameCn'] : []
         const tHeader = [
           this.$t('位置'),
           this.$t('路径'),
@@ -1832,6 +2175,7 @@
           this.$t('忽略日期'),
           this.$t('首次发现'),
           this.$t('最新状态'),
+          ...exHeader,
         ]
         const filterVal = [
           'fileName',
@@ -1846,11 +2190,12 @@
           'ignoreTime',
           'createBuildNumber',
           'status',
-          'startLines',
+          ...exVal,
         ]
         const data = this.formatJson(filterVal, list)
         // eslint-disable-next-line
-        const title = `${this.taskDetail.nameCn}-${this.taskDetail.taskId}-${this.toolId}-${this.$t('风险函数')}-${new Date().toISOString()}`
+        const prefix = isProjectDefect ? `${this.projectId}` : `${this.taskDetail.nameCn}-${this.taskDetail.taskId}-${this.toolId}-`
+        const title = `${prefix}${this.$t('风险函数')}-${new Date().toISOString()}`
         export_json_to_excel(tHeader, data, title)
       },
       formatJson(filterVal, list) {
@@ -1864,12 +2209,141 @@
           } if (j === 'createBuildNumber') {
             return `#${item.createBuildNumber}`
           } if (j === 'status') {
-            return this.handleStatus(item.status, item.defectIssueInfoVO)
+            return this.handleStatus(item.status, item.ignoreReasonType)
           } if (j === 'startLines') {
             return ''
           }
           return item[j]
         }))
+      },
+      handelFetchIgnoreList() {
+        this.$store.dispatch('ignore/fetchIgnoreList').then((res) => {
+          this.ignoreList = res.data
+          this.hasIgnoreList = true
+          setTimeout(this.showIgnoreTypeSelect, 1200)
+          // this.showIgnoreTypeSelect()
+        })
+      },
+      handleGuideNextStep() {
+        this.$nextTick(() => {
+          this.$refs.guidePopover?.hideHandler()
+          this.handleNextGuide()
+          localStorage.setItem('guideEnd', true)
+          this.guideFlag = true
+        })
+      },
+      handleSetReview() {
+        this.$refs.guidePopover?.hideHandler()
+        let prefix = `${location.protocol}//${location.host}`
+        if (window.self !== window.top) {
+          prefix = `${location.protocol}${window.DEVOPS_SITE_URL}/console`
+        }
+        const route = this.$router.resolve({
+          name: 'ignoreList',
+        })
+        window.open(prefix + route.href, '_blank')
+        this.handleGuideNextStep()
+      },
+      handleTableSetReview() {
+        let prefix = `${location.protocol}//${location.host}`
+        if (window.self !== window.top) {
+          prefix = `${location.protocol}${window.DEVOPS_SITE_URL}/console`
+        }
+        const route = this.$router.resolve({
+          name: 'ignoreList',
+        })
+        window.open(prefix + route.href, '_blank')
+        localStorage.setItem('guide2End', true)
+        document.body.click()
+      },
+      handleTableGuideNextStep() {
+        document.body.click()
+        localStorage.setItem('guide2End', true)
+      },
+      handleNextGuide() {
+        if (!localStorage.getItem('guide2End')) {
+          const index = this.defectList.findIndex(item => item.status === 1)
+          document.getElementsByClassName('guide-icon')[index]?.click()
+          setTimeout(() => {
+            document.getElementsByClassName('guide-flag')[0]?.click()
+          }, 200)
+        }
+      },
+      handleToIgnoreList() {
+        if (!this.isAddingIgnore) {
+          this.handleSetReview()
+          this.isAddingIgnore = true
+        } else {
+          this.isAddingIgnore = false
+          this.handelFetchIgnoreList()
+        }
+      },
+      handleGetNotifyDate(notify) {
+        let str = ''
+        if (notify.notifyDayOfWeeks && notify.notifyDayOfWeeks.length) {
+          const { notifyMonths, notifyWeekOfMonths, notifyDayOfWeeks, everyMonth, everyWeek } = notify
+          const monthsTextMap = notifyMonths.map(i => this.monthsStrMap[i])
+          const weekOfMonthTextMap = notifyWeekOfMonths.map(i => this.weekOfMonthsStrMap[i])
+          const dayTextMap = notifyDayOfWeeks.map(i => this.dayOfWeekMap[i])
+          if (everyMonth && everyWeek && notifyDayOfWeeks.length === 7) {
+            str = this.$t('每天')
+          } else if (everyMonth && everyWeek && notifyDayOfWeeks.length) {
+            str = this.$t('每个月的每周的') + dayTextMap.join('、')
+          } else if (everyMonth && notifyWeekOfMonths.length && notifyDayOfWeeks.length) {
+            str = this.$t('每个月的') + weekOfMonthTextMap.join('、') + this.$t('的') + dayTextMap.join('、')
+          } else if (notifyMonths.length && everyWeek && notifyDayOfWeeks.length) {
+            str = this.$t('每年的') + monthsTextMap.join('、') + this.$t('每周的') + dayTextMap.join('、')
+          } else if (notifyMonths.length && notifyWeekOfMonths.length && notifyDayOfWeeks.length) {
+            str =  this.$t('每年的') + monthsTextMap.join('、') +  this.$t('的')
+              + weekOfMonthTextMap.join('、') + this.$t('的') + dayTextMap.join('、')
+          }
+        }
+        return str
+      },
+      /**
+       * 取消忽略并标记处理
+       */
+      async handleRevertIgnoreAndMark(entityId) {
+        await this.handleIgnore('RevertIgnore', false, entityId)
+        setTimeout(() => {
+          this.handleMark(1, false, entityId)
+        }, 500)
+      },
+      /**
+       * 取消忽略并提单
+       */
+      async handleRevertIgnoreAndCommit(entityId) {
+        await this.handleIgnore('RevertIgnore', false, entityId)
+        setTimeout(() => {
+          this.handleCommit('commit', false, entityId)
+        }, 500)
+      },
+      /**
+       * 修改忽略类型
+       */
+      handleChangeIgnoreType(row) {
+        this.isSelectAll = 'N'
+        this.isRowChangeIgnoreType = true
+        this.operateParams.ignoreReason = row.ignoreReason
+        this.operateParams.ignoreReasonType = row.ignoreReasonType
+        this.handleIgnore('ChangeIgnoreType', false, row.entityId)
+      },
+      /**
+        * 跳转至设置-路径屏蔽
+        */
+      handleToPathShield() {
+        const routeParams = { ...this.$route.params }
+        const { href } = this.$router.resolve({
+          name: 'task-settings',
+          params: routeParams,
+          query: {
+            panel: 'ignore',
+          },
+        })
+        window.open(href, '_blank')
+      },
+      async fetchTaskList() {
+        this.taskList = await this.$store.dispatch('defect/getTaskList') || []
       },
     },
   }
@@ -1885,16 +2359,12 @@
     @import "./defect-list.css";
 
     .ccn-list {
-      padding: 16px 20px 0px 16px;
-      .search-form {
-        position: relative;
-      }
-      .cc-container {
-        display: inline-block;
-      }
-      .cc-operate-more {
-        >>>.icon-more {
-          font-size: 20px;
+      margin: 16px 20px 0px 16px;
+      &.project-defect {
+        margin: 0 40px;
+        border: 1px solid $borderColor;
+        .main-container {
+          padding: 16px 20px 0 16px;
         }
       }
     }
@@ -2091,9 +2561,6 @@
               width: 200px;
             }
           }
-          .cc-status {
-            width: 60px;
-          }
           .cc-mark {
             width: 114px;
             background: white;
@@ -2118,6 +2585,32 @@
     }
     .full-code-viewer {
       height: calc(100vh - 100px);
+    }
+    .reason-type-list {
+      padding: 20px;
+      background: #FAFBFD;
+      .ignore-list {
+        max-height: 250px;
+        overflow-y: scroll;
+        padding-left: 2px;
+      }
+      .reason-type-header {
+        line-height: 26px;
+      }
+    }
+    /deep/ .bk-radio-text {
+      display: inline-flex;
+      width: 95%;
+    }
+    .notify-tips {
+      flex: 1%;
+      margin-left: 15px;
+      color:#979BA5;
+      display: inline-block;
+      width: 360px;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
     }
     >>>.bk-label {
       font-size: 12px;
@@ -2184,11 +2677,17 @@
       float: right;
       height: 42px;
       font-size: 12px;
-      line-height: 30px;
+      line-height: 26px;
       color: #333;
       .cc-button {
         font-size: 12px;
         color: #699df4;
+      }
+    }
+    .bk-form-radio {
+      margin-right: 15px;
+      >>>.bk-radio-text {
+        font-size: 12px;
       }
     }
     .cc-table {
@@ -2222,11 +2721,41 @@
         color: #3a92ff;
       }
     }
+    ::v-deep .bk-dialog-header {
+      padding: 3px 24px 0px !important;
+    }
 </style>
 <style lang="postcss">
     .file-detail-dialog {
       .bk-dialog {
         min-width: 960px;
       }
+    }
+    .guide-item {
+      background-color: #eaf3ff;
+      color: #3a84ff;
+    }
+    .tippy-tooltip.dot-menu-theme {
+      padding: 10px;
+      width: 280px !important;
+      height: 100px;
+      background-color: #3b91fb;
+      color: #fff;
+      .guide-btn {
+        position: absolute;
+        right: 18px;
+        bottom: 15px;
+      }
+      .btn-item {
+        background-color: #fff;
+        color: #3b91fb;
+        padding: 2px 5px;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+    }
+    .search-form.main-form.collapse {
+      height: 48px;
+      overflow: hidden;
     }
 </style>

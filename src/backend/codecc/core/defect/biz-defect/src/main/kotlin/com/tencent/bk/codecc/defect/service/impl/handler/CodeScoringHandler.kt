@@ -6,6 +6,7 @@ import com.tencent.bk.codecc.defect.pojo.HandlerDTO
 import com.tencent.bk.codecc.defect.service.AbstractCodeScoringService
 import com.tencent.bk.codecc.defect.service.IHandler
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
+import com.tencent.bk.codecc.task.constant.TaskMessageCode
 import com.tencent.bk.codecc.task.vo.TaskDetailVO
 import com.tencent.devops.common.api.BaseDataVO
 import com.tencent.devops.common.api.OpenSourceCheckerSetVO
@@ -102,10 +103,11 @@ class CodeScoringHandler @Autowired constructor(
     private fun getTaskDetail(taskId: Long): TaskDetailVO {
         val result: Result<TaskDetailVO?> = client.get(ServiceTaskRestResource::class.java)
                 .getTaskInfoById(taskId)
+
         if (result.isNotOk() || result.data == null) {
-            logger.error("scoring fail to get project id {}", taskId)
-            throw CodeCCException("scoring fail to get project id")
+            throw CodeCCException(TaskMessageCode.TASK_NOT_FOUND)
         }
+
         return result.data!!
     }
 }

@@ -1,3 +1,4 @@
+import { bus } from '@/common/bus'
 export default {
   props: {
     type: {
@@ -46,6 +47,24 @@ export default {
     isFileListLoadMore: Boolean,
     nextPageStartNum: Number,
     nextPageEndNum: Number,
+    handleRevertIgnoreAndMark: {
+      type: Function,
+    },
+    handleRevertIgnoreAndCommit: {
+      type: Function,
+    },
+    handleChangeIgnoreType: {
+      type: Function,
+    },
+    guideFlag: {
+      type: String,
+      default: '',
+    },
+    taskListMap: {
+      type: Object,
+    },
+    isProjectDefect: Boolean,
+    handleStatus: Function,
   },
   data() {
     return {
@@ -57,38 +76,18 @@ export default {
       hoverAuthorIndex: -1,
     }
   },
+  created() {
+    bus.$on('handleNextGuide', () => {
+      if (!localStorage.getItem('guide2End')) {
+        const index = this.list.findIndex(item => item.status === 1)
+        document.getElementsByClassName('guide-icon')[index]?.click()
+        setTimeout(() => {
+          document.getElementsByClassName('guide-flag')[0]?.click()
+        }, 200)
+      }
+    })
+  },
   methods: {
-    // 处理状态
-    handleStatus(status, defectIssueInfoVO = {}) {
-      let key = 1
-      if (status === 1) {
-        key = 1
-      } else if (status & 2) {
-        key = 2
-      } else if (status & 4) {
-        key = 4
-      } else if (status & 8 || status & 16) { // 8是路径屏蔽，16是规则屏蔽
-        key = 8
-      }
-      const statusMap = {
-        1: this.$t('待修复'),
-        2: this.$t('已修复'),
-        4: this.$t('已忽略'),
-        8: this.$t('已屏蔽'),
-      }
-      /**
-       * submitStatus字段：
-        1 - 排队中
-        2 - 准备开始提单
-        3 - 提单成功
-        4 - 提单失败
-       */
-      let issueStatus = ''
-      if (defectIssueInfoVO.submitStatus && defectIssueInfoVO.submitStatus !== 4) {
-        issueStatus = this.$t('(已提单)')
-      }
-      return `${statusMap[key]}${issueStatus}`
-    },
     handleAuthorIndex(index) {
       this.hoverAuthorIndex = index
     },
@@ -103,6 +102,30 @@ export default {
     },
     handleSelectable(row, index) {
       return !(row.status & 2)
+    },
+    handleTableSetReview() {
+      let prefix = `${location.protocol}//${location.host}`
+      if (window.self !== window.top) {
+        prefix = `${location.protocol}${window.DEVOPS_SITE_URL}/console`
+      }
+      const route = this.$router.resolve({
+        name: 'ignoreList',
+      })
+      window.open(prefix + route.href, '_blank')
+      document.body.click()
+      localStorage.setItem('guide2End', true)
+    },
+    handleTableGuideNextStep() {
+      document.body.click()
+      localStorage.setItem('guide2End', true)
+    },
+    goToTask(taskId) {
+      this.$router.push({
+        name: 'task-detail',
+        params: {
+          taskId,
+        },
+      })
     },
   },
 }

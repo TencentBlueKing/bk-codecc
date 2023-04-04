@@ -56,7 +56,7 @@ public class I18NResponseAspect extends AbstractI18NResponseAspect {
                     .map(x -> new I18NQueryModel(x.getModuleCode(), x.getKeySet(), localeString))
                     .collect(Collectors.toList());
 
-            return i18NMessageDao.get(queryModelList);
+            return i18NMessageDao.query(queryModelList);
         } catch (Throwable t) {
             log.error("get i18 message from db fail", t);
 

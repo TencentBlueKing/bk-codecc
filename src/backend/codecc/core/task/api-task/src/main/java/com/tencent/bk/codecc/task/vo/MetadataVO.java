@@ -26,6 +26,8 @@
 
 package com.tencent.bk.codecc.task.vo;
 
+import com.tencent.devops.common.api.annotation.I18NFieldMarker;
+import com.tencent.devops.common.constant.I18NModuleCode;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -40,13 +42,17 @@ import lombok.Data;
 @ApiModel("元数据信息")
 public class MetadataVO
 {
+    private String entityId;
+
     @ApiModelProperty("键值")
     private String key;
 
     @ApiModelProperty("数据名")
+    @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.BASE_DATA_PARAM_NAME)
     private String name;
 
     @ApiModelProperty("数据全名")
+    @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.BASE_DATA_PARAM_EXTEND1)
     private String fullName;
 
     /**

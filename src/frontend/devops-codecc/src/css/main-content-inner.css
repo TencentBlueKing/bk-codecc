@@ -116,9 +116,33 @@
         }
       }
     }
+    .search-more-option {
+      position: absolute;
+      top: 4px;
+      height: 0;
+
+      /* padding-top: 4px; */
+      padding-right: 30px;
+      width: 100%;
+      text-align: center;
+      .bk-icon {
+        display: inline-block;
+        color: #d8d8d8;
+        font-size: 12px;
+        &:hover {
+          color: #3c96ff;
+        }
+        &.icon-flip {
+          transform: rotate(180deg);
+        }
+      }
+    }
 
     .search-content-inner {
       display: flex;
+      &.collapse {
+        height: 48px;
+      }
     }
     .filter-option {
       width: 30px;

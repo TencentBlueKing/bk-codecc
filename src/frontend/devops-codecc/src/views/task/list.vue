@@ -21,7 +21,7 @@
     </div>
     <div v-else-if="projectId && (!isEmpty || isSearch)">
       <tool-bar :task-count="tasksTotal" :search-info="searchInfo" @changeOrder="changeOrder"></tool-bar>
-      <div class="task-list-inuse" v-if="!isEmpty || isSearch">
+      <div class="task-list-inuse" v-if="!isEmpty">
         <div ref="taskCardList" class="task-card-list">
           <div class="task-card-item"
                v-for="(task, taskIndex) in tasksList"
@@ -29,6 +29,12 @@
             <task-card :task="task" :get-task-link="getTaskLink" :handle-task="handleTask"></task-card>
           </div>
           <div v-if="isMoreLoading" class="more-loading" v-bkloading="{ isLoading: isMoreLoading }"></div>
+        </div>
+      </div>
+      <div slot="empty" v-else-if="isSearch">
+        <div class="codecc-table-empty-text">
+          <img src="../../images/empty-search.png" class="empty-img">
+          <div>{{$t('搜索结果为空')}}</div>
         </div>
       </div>
       <div slot="empty" v-else>
@@ -175,10 +181,11 @@
           }
           this.tasksTotal = res.pageTasks.totalElements
           this.isPageOver = this.tasksList.length === res.pageTasks.totalElements
-          this.isFetched = true
           this.isMoreLoading = false
         } catch {
           return false
+        } finally {
+          this.isFetched = true
         }
       },
       /**

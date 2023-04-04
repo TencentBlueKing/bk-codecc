@@ -101,12 +101,12 @@ public class CCNCheckReportBizServiceImpl implements ICheckReportBizService
         ccnSnapShotEntity.setToolNameEn(toolName);
         if (StringUtils.isNotEmpty(projectId)) {
             String defectDetailUrl = String.format(
-                    "%s/console/codecc/%s/task/%d/defect/ccn/list?buildId=%s",
+                    "https://%s/console/codecc/%s/task/%d/defect/ccn/list?buildId=%s",
                     devopsHost, projectId, taskId, buildId
             );
 
             String defectReportUrl = String.format(
-                    "%s/console/codecc/%s/task/%d/defect/ccn/charts",
+                    "https://%s/console/codecc/%s/task/%d/defect/ccn/charts",
                     devopsHost, projectId, taskId
             );
 

@@ -31,7 +31,7 @@
         <div class="authors-table">
           <div class="table">
             <bk-table :data="authorsData" :outer-border="false">
-              <bk-table-column :label="$t('问题处理人')" prop="authorName" align="center"></bk-table-column>
+              <bk-table-column show-overflow-tooltip :label="$t('问题处理人')" prop="authorName" align="center"></bk-table-column>
               <bk-table-column :label="$t('总数')" prop="total" align="center">
                 <template slot-scope="{ row }">
                   <a v-if="row.authorName !== 'Total'" href="javascript:;" @click="handleHref({ author: row.authorName })">{{row.total}}</a>
@@ -222,18 +222,22 @@
             {
               name: this.$t('低风险'),
               data: lowN,
+              cursor: 'default',
             },
             {
               name: this.$t('中风险'),
               data: mediumN,
+              cursor: 'default',
             },
             {
               name: this.$t('高风险'),
               data: highN,
+              cursor: 'default',
             },
             {
               name: this.$t('极高风险'),
               data: superHighN,
+              cursor: 'default',
             },
           ],
         }
@@ -278,6 +282,7 @@
               name: this.$t('圈复杂度'),
               type: 'line',
               data: averageCCN,
+              cursor: 'default',
             },
             {
               name: this.$t('上限建议值'),
@@ -300,6 +305,7 @@
                 },
               },
               data: recommendValue,
+              cursor: 'default',
             },
           ],
         }
@@ -339,6 +345,7 @@
               name: this.$t('超标圈复杂度总和'),
               type: 'line',
               data: averageCCN,
+              cursor: 'default',
             },
           ],
         }

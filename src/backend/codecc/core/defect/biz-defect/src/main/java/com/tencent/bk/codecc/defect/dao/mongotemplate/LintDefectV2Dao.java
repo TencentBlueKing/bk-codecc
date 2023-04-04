@@ -281,8 +281,6 @@ public class LintDefectV2Dao {
         Set<String> conditionDefectType = defectQueryReqVO.getDefectType();
         // NOCC:VariableDeclarationUsageDistance(设计如此:)
         final Set<String> conditionStatusStrSet = defectQueryReqVO.getStatus();
-        String startTimeStr = defectQueryReqVO.getStartCreateTime();
-        String endTimeStr = defectQueryReqVO.getEndCreateTime();
         String buildId = defectQueryReqVO.getBuildId();
         Set<Integer> ignoreReasonTypes = defectQueryReqVO.getIgnoreReasonTypes();
 
@@ -373,6 +371,8 @@ public class LintDefectV2Dao {
         long maxTime = 0L;
 
         // 7.按日期过滤，告警录入line_update_time可能为null
+        String startTimeStr = defectQueryReqVO.getStartCreateTime();
+        String endTimeStr = defectQueryReqVO.getEndCreateTime();
         if (StringUtils.isNotEmpty(startTimeStr)) {
             minTime = DateTimeUtils.getTimeStamp(startTimeStr + " 00:00:00");
             maxTime = StringUtils.isEmpty(endTimeStr) ? System.currentTimeMillis()

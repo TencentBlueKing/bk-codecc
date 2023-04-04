@@ -105,4 +105,12 @@ public interface TaskMessageCode
      * 流水线任务数量达到上限
      */
     String PIPELINE_TASK_REACH_LIMIT = "2301014";
+
+    String TASK_NOT_FOUND = "2301015";
+
+    String PROJECT_NOT_FOUND = "2301016";
+
+    String TRIGGER_NOT_FOUND = "2301017";
+
+    String TOOL_CONFIG_NOT_FOUND = "2301018";
 }

@@ -13,7 +13,7 @@
     "build": "better-npm-run build",
     "build:analyzer": "better-npm-run build:analyzer",
     "dll": "better-npm-run dll",
-    "push": "git pull && git push && git co dev-frontend && git pull && git merge frontend-defect-0324 && git push && git co frontend-defect-0324",
+    "push": "git pull && git push && git co frontend-dev && git pull && git merge frontend-ignore2 && git push && git co frontend-ignore2",
     "lint:fix": "eslint ./ --fix",
     "lint:out": "eslint src -o ./eslint-out.html -f html"
   },

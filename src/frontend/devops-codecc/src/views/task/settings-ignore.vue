@@ -81,7 +81,7 @@
       @cancel="delVisiable = false"
       @confirm="handleDelete(pathName)"
       :title="$t('确认')">
-      {{$t('确认要删除吗', { pathName })}}
+      <span style="word-break: break-all">{{$t('确认要删除吗', { pathName })}}</span>
     </bk-dialog>
     <SettingsIgnoreNew v-if="isEditable" :visible="isCreateShow" @visibleChange="updateCreateVisible" />
     <SettingsIgnoreInput :selected="defaultSelectList" :list="defaultList" :visible="isInputShow" @visibleChange="updateInputVisible" />

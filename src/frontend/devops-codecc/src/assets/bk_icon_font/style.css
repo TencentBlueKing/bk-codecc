@@ -242,3 +242,15 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-angle-left-1:before {
 	content: "\e1d1";
 }
+.icon-filter-collapse:before {
+	content: "\e1d2";
+}
+.icon-filter-expand:before {
+	content: "\e1d3";
+}
+.icon-filter-set:before {
+	content: "\e1d4";
+}
+.icon-tapd:before {
+	content: "\e1d5";
+}

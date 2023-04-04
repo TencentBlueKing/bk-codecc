@@ -119,6 +119,7 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
     }
 
     @Override
+    @I18NResponse
     public Result<QueryTaskCheckerSetsResponse> queryTaskCheckerSets(
             String userId,
             String projectId,
@@ -172,6 +173,7 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
     }
 
     @Override
+    @I18NResponse
     public Result<CheckerSetVO> getCheckerSetDetail(String checkerSetId, Integer version) {
         return new Result<>(checkerSetBizService.getCheckerSetDetail(checkerSetId, version));
     }

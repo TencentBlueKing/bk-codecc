@@ -81,7 +81,7 @@
         margin-top: 12px;
       }
       .empty-img {
-        width: 60px;
+        width: 220px;
 
         /* height: 56px; */
       }

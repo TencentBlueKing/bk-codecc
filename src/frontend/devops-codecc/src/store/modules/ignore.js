@@ -21,6 +21,13 @@ export default {
           return { data: [] }
         })
     },
+    fetchIgnoreListCount({ commit }) {
+      return http.get('/defect//api/user/ignoreType/project/defect/stat')
+        .catch((e) => {
+          console.error(e)
+          return { data: [] }
+        })
+    },
     createIgnore({ commit }, params) {
       return http.post('/defect/api/user/ignoreType/project/save', params)
         .catch((e) => {
@@ -41,6 +48,12 @@ export default {
     },
     getIgnoreInfo({ commit }, id) {
       return http.get(`/defect/api/user/ignoreType/project/detail?ignoreTypeId=${id}`)
+        .catch((e) => {
+          console.error(e)
+        })
+    },
+    getIgnorePermission({ commit }, id) {
+      return http.get('/defect/api/user/ignoreType/project/hasAddPermissions')
         .catch((e) => {
           console.error(e)
         })

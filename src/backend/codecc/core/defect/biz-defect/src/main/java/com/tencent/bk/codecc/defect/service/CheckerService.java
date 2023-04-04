@@ -26,6 +26,7 @@
 
 package com.tencent.bk.codecc.defect.service;
 
+import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.vo.CheckerCommonCountVO;
 import com.tencent.bk.codecc.defect.vo.CheckerDetailListQueryReqVO;
 import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
@@ -48,6 +49,8 @@ import java.util.Set;
  */
 public interface CheckerService
 {
+
+    List<CheckerDetailVO> getCheckerDetailVOList(List<CheckerDetailEntity> checkerDetailEntityList);
 
     /**
      * 多工具查询单个工具的所有规则信息详情

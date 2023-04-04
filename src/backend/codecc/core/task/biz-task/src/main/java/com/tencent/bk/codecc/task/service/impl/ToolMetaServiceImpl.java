@@ -559,8 +559,8 @@ public class ToolMetaServiceImpl implements ToolMetaService {
                 .sorted(Comparator.comparing(BaseDataEntity::getParamExtend3))
                 .collect(Collectors.toList());
 
-        BaseDataEntity toolOederEntity = baseDataRepository.findFirstByParamType(RedisKeyConstants.KEY_TOOL_ORDER);
-        String toolOrder = toolOederEntity.getParamValue();
+        BaseDataEntity toolOrderEntity = baseDataRepository.findFirstByParamType(RedisKeyConstants.KEY_TOOL_ORDER);
+        String toolOrder = toolOrderEntity.getParamValue();
         String[] toolOrderArr = toolOrder.split(STRING_SPLIT);
 
         // 1.分组
@@ -597,8 +597,8 @@ public class ToolMetaServiceImpl implements ToolMetaService {
             newToolOrder.deleteCharAt(newToolOrder.length() - 1);
         }
 
-        toolOederEntity.setParamValue(newToolOrder.toString());
-        baseDataRepository.save(toolOederEntity);
+        toolOrderEntity.setParamValue(newToolOrder.toString());
+        baseDataRepository.save(toolOrderEntity);
 
         // 同步刷新redis缓存中工具的顺序
         redisTemplate.opsForValue().set(RedisKeyConstants.KEY_TOOL_ORDER, toolOrder);

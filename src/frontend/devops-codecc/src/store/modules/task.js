@@ -20,7 +20,6 @@ export default {
       langs: [],
       enableToolList: [],
       disableToolList: [],
-      dataMigrationSuccessful: false,
     },
     ignore: {},
     ignoreTree: {},

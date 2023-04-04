@@ -28,6 +28,8 @@ package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.task.vo.CovSubcategoryVO;
 import com.tencent.devops.common.api.CommonVO;
+import com.tencent.devops.common.api.annotation.I18NFieldMarker;
+import com.tencent.devops.common.constant.I18NModuleCode;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -64,9 +66,11 @@ public class CheckerDetailVO extends CommonVO
 
     @ApiModelProperty(value = "规则详细描述", required = true)
     @Size(min = 0, max = 150)
+    @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.CHECKER_DETAIL_CHECKER_DESC)
     private String checkerDesc;
 
     @ApiModelProperty(value = "规则详细描述-带占位符")
+    @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.CHECKER_DETAIL_CHECKER_DESC_MODEL)
     private String checkerDescModel;
 
     @ApiModelProperty(value = "规则严重程度，1=>严重，2=>一般，3=>提示", required = true, allowableValues = "{1,2,3}")
@@ -84,6 +88,7 @@ public class CheckerDetailVO extends CommonVO
     private Boolean checkerStatus;
 
     @ApiModelProperty(value = "规则类型", required = true)
+    @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.CHECKER_DETAIL_CHECKER_TYPE)
     private String checkerType;
 
     @ApiModelProperty(value = "规则类型说明", required = true)
@@ -143,13 +148,15 @@ public class CheckerDetailVO extends CommonVO
      * 规则类型中文名
      */
     @ApiModelProperty(value = "规则类型中文名")
+    @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.CHECKER_DETAIL_CHECKER_CATEGORY_NAME)
     private String checkerCategoryName;
 
     /**
      * 规则标签
      */
     @ApiModelProperty(value = "规则标签")
-    private Set<String> checkerTag;
+    @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.CHECKER_DETAIL_CHECKER_TAG)
+    private List<String> checkerTag;
 
     /**
      * 规则推荐类型

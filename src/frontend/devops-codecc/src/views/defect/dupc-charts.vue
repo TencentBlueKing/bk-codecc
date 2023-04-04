@@ -186,6 +186,7 @@
                 },
               },
               data: dupcFileData,
+              cursor: 'default',
               label: {
                 normal: {
                   show: true,
@@ -246,6 +247,7 @@
               name: this.$t('重复率'),
               type: 'line',
               data: dupc,
+              cursor: 'default',
             },
             {
               name: this.$t('上限建议值'),
@@ -268,6 +270,7 @@
                 },
               },
               data: recommendValue,
+              cursor: 'default',
             },
           ],
         }

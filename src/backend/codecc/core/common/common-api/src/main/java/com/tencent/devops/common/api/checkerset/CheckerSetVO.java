@@ -142,6 +142,7 @@ public class CheckerSetVO extends CommonVO
     /**
      * 规则集描述
      */
+    @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.CHECKER_SET_DESCRIPTION)
     private String description;
 
     /**

@@ -55,6 +55,12 @@
         }
       },
     },
+    created() {
+      const { panel } = this.$route.query
+      if (panel) {
+        this.$router.push({ name: `task-settings-${panel}` })
+      }
+    },
     methods: {
       beforeToggle(name) {
         if (this.taskDetail.createFrom.indexOf('pipeline') !== -1) {

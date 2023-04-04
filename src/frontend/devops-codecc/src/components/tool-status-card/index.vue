@@ -1,7 +1,7 @@
 <template>
   <div class="card">
     <div class="card-head">
-      <span class="card-tool" v-if="data.toolName">{{$t(`${(toolMap[data.toolName] && toolMap[data.toolName]['displayName']) || ''}`)}}</span>
+      <span class="card-tool" v-if="data.toolName">{{(toolMap[data.toolName] && toolMap[data.toolName]['displayName']) || ''}}</span>
       <!-- <span v-if="data.lastAnalysisResult" class="card-split">|</span> -->
       <!-- <a class="card-analys" href="javascript:;" @click.stop="toLogs">{{$t('分析详情')}}>></a> -->
       <span v-if="data.lastAnalysisResult" class="card-type">{{ toolMap[data.toolName] && toolType[toolMap[data.toolName].type] }}</span>
@@ -415,9 +415,12 @@
         display: flex;
       }
       .card-empty {
-        padding-top: 10px;
-        >>>.empty .title {
+        /* padding-top: 10px; */
+        :deep(.empty) .title {
           color: #737987;
+        }
+        :deep(.empty) .empty-img {
+          width: 110px;
         }
       }
     }

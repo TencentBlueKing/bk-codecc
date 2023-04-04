@@ -58,12 +58,12 @@
         @select="selectRules"
         @select-all="selectAllRules">
         <bk-table-column v-if="isConfig" type="selection" width="60" align="center" :selectable="() => !hasNoPermission"></bk-table-column>
-        <bk-table-column :label="$t('规则名')" prop="checkerKey" sortable="custom" min-width="120">
+        <bk-table-column show-overflow-tooltip :label="$t('规则名')" prop="checkerKey" sortable="custom" min-width="120">
           <template slot-scope="props">
             <span class="cc-link" @click="handleRowClick(props.row, props.$index)">{{props.row.checkerKey}}</span>
           </template>
         </bk-table-column>
-        <bk-table-column :label="$t('规则描述')" prop="checkerDesc" min-width="280">
+        <bk-table-column show-overflow-tooltip :label="$t('规则描述')" prop="checkerDesc" min-width="280">
           <span slot-scope="props" class="cc-link" @click="handleRowClick(props.row, props.$index)">
             <span :class="{ 'checker-edit': !hasNoPermission && props.row.editable }">{{props.row.checkerDesc}}</span>
             <span v-if="!hasNoPermission && props.row.editable" @click.stop="handleCheckerEdit(props.row, false)" class="codecc-icon icon-edit cc-link"></span>

@@ -24,7 +24,7 @@ public class I18NServiceImpl implements I18NService {
                 .map(vo -> new I18NQueryModel(vo.getModuleCode(), vo.getKeySet(), vo.getLocale()))
                 .collect(Collectors.toList());
 
-        List<I18NMessageEntity> entityList = i18NMessageDao.get(queryModelList);
+        List<I18NMessageEntity> entityList = i18NMessageDao.query(queryModelList);
         List<I18NMessageResponse.BaseVO> voList = entityList.stream()
                 .map(entity -> {
                     I18NMessageResponse.BaseVO target = new I18NMessageResponse.BaseVO();

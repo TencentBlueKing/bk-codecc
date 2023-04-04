@@ -198,7 +198,7 @@ public class CheckerDetailEntity extends CommonEntity
      */
     @Field("checker_tag")
     @Indexed
-    private Set<String> checkerTag;
+    private List<String> checkerTag;
 
     /**
      * 规则推荐类型

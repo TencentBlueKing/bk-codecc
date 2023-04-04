@@ -35,6 +35,15 @@ class AccessTokenRefreshJob @Autowired constructor(
     // 3.添加定时任务
     @Scheduled(fixedRate = 1000 * 60 * 5)
     fun initAccessToken() {
+    }
 
+    private fun accessTokenIsTimeOut(currentTime: Long): Boolean {
+        val accessTokenUpdateTime = redisTemplate.opsForValue().get(KEY_ACCESS_TOKEN_UPDATE_TIME)
+
+        if (accessTokenUpdateTime != null && currentTime - accessTokenUpdateTime.toLong() < TIME_OUT_MILLIS) {
+            return false
+        } else {
+            return true
+        }
     }
 }

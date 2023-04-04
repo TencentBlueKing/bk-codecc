@@ -14,6 +14,7 @@ import taskRoutes from './task'
 import defectRoutes from './defect'
 import checkerRoutes from './checker'
 import checkersetRoutes from './checkerset'
+import ignoreRoutes from './ignore'
 
 Vue.use(VueRouter)
 
@@ -60,7 +61,10 @@ const defaultRouters = [
   },
 ]
 
-const routes = rootRoutes.concat(taskRoutes, defectRoutes, checkerRoutes, checkersetRoutes, defaultRouters)
+const routes = rootRoutes.concat(
+  taskRoutes, defectRoutes, checkerRoutes, checkersetRoutes,
+  ignoreRoutes, defaultRouters,
+)
 
 const router = new VueRouter({
   mode: 'history',
@@ -105,11 +109,10 @@ router.beforeEach(async (to, from, next) => {
     if (to.meta.needDetail && !store.state.task.detail.nameEn) {
       await getTaskDetail()
     }
-    if (store.state.task.detail.dataMigrationSuccessful
-      && (to.name === 'defect-defect-list'
+    if (to.name === 'defect-defect-list'
       || to.name === 'defect-coverity-list'
       || to.name === 'defect-klocwork-list'
-      || to.name === 'defect-pinpoint-list')
+      || to.name === 'defect-pinpoint-list'
     ) {
       next({
         name: 'defect-common-list',

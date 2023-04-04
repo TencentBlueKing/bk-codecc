@@ -80,8 +80,8 @@
     }
   }
 }
-.layout-inner .main-container {
-  height: calc(100vh - 130px);
+.layout-inner .main-container, .defect-list .main-container, .ccn-list .main-container {
+  height: calc(100vh - 144px);
   &.large {
     height: calc(100vh - 90px);
   }
@@ -158,23 +158,51 @@
   color: #ff9c01;
   cursor: pointer;
 }
-.excel-icon {
+
+.tab-extra-icon {
   position: absolute;
-  right: 20px;
-  top: 21px;
+  top: 5px;
+  right: 30px;
+  font-size: 16px;
+  color: #333;
+  &.is-project {
+    right: 50px;
+  }
+  &.is-ccn {
+    top: 21px;
+  }
 }
 
-.filter-search-icon {
-  position: absolute;
-  right: 60px;
-  top: 21px;
-  font-size: 20px;
+.filter-search-icon, .filter-collapse-icon {
   cursor: pointer;
+  &.filter-search-icon {
+    padding-right: 20px;
+    border-right: 1px solid #dcdee5;
+  }
   &:hover {
     color: #3c96ff;
   }
 }
 
 .mac-filter-search-icon {
-  top: 24px;
+  /* top: 10px; */
+}
+
+.cc-col .bk-select.is-disabled >>>.bk-select-name {
+  color: #dcdee5;
+}
+
+.set-tips {
+  color: #ffffff;
+  text-decoration: underline;
+  cursor: pointer;
+  &:hover {
+    color: #1768ef;
+  }
+  >>> .bk-link-text {
+    font-size: 12px;
+  }
+}
+.reason-type-list >>>.bk-textarea-wrapper .bk-form-textarea.textarea-maxlength {
+  margin-bottom: 0;
 }
