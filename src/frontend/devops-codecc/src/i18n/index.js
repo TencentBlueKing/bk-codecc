@@ -19,7 +19,8 @@ const messages = {
 
 let curLocale = Cookies.get('blueking_language') || 'zh-CN'
 curLocale = Object.prototype.hasOwnProperty.call(languageMaps, curLocale) ? languageMaps[curLocale] : curLocale
-
+const langKey = curLocale === 'zh-CN' ? 'zhCN' : 'enUS'
+locale.use(lang[langKey])
 // console.log(locale, messages)
 
 const i18n = new VueI18n({

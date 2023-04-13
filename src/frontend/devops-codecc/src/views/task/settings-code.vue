@@ -288,10 +288,10 @@ ${this.taskDetail.pipelineId}/edit#${this.taskDetail.atomCode}`, '_blank')
       },
       formatCreateFrom(createFrom) {
         const fromMap = {
-          bs_pipeline: '流水线',
-          timing_scan: '开源治理',
-          api_trigger: 'API',
-          bs_codecc: '自建任务',
+          bs_pipeline: this.$t('流水线'),
+          timing_scan: this.$t('开源治理'),
+          api_trigger: this.$t('API'),
+          bs_codecc: this.$t('自建任务'),
         }
         return fromMap[createFrom]
       },

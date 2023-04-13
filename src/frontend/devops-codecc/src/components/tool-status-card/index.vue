@@ -166,6 +166,7 @@
   import { format } from 'date-fns'
   import { getToolStatus, formatSeconds } from '@/common/util'
   import Empty from '@/components/empty'
+  import { language } from '../../i18n'
 
   export default {
     components: {
@@ -199,7 +200,7 @@
         const obj = {}
         this.toolMeta.TOOL_TYPE.forEach((item) => {
           if (item.name === '代码安全') item.name = '安全漏洞'
-          obj[item.key] = item.name
+          obj[item.key] = language === 'en' ? item.key : item.name
         })
         return obj
       },

@@ -43,7 +43,7 @@
             {{ (row.receiverTypesStr && row.receiverTypesStr.join('、')) || '--' }}
           </template>
         </bk-table-column>
-        <bk-table-column :label="$t('通知方式')">
+        <bk-table-column :label="$t('通知方式')" show-overflow-tooltip>
           <template slot-scope="{ row }">
             {{ (row.notifyTypesStr && row.notifyTypesStr.join('、')) || '--' }}
           </template>

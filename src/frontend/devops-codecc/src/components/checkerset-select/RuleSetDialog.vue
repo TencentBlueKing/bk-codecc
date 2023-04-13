@@ -9,7 +9,7 @@
       <div class="info-header">
         <span>{{$t('选择规则集')}}<i class="bk-icon icon-refresh checkerset-fresh" :class="fetchingList ? 'spin-icon' : ''" @click="refresh" /></span>
         <div class="handle-option">
-          <bk-select class="search-select" v-model="language" multiple style="width: 120px;" placeholder="请选择语言">
+          <bk-select class="search-select" v-model="language" multiple style="width: 120px;" :placeholder="$t('请选择')">
             <bk-option v-for="option in codeLangs"
                        :key="option.displayName"
                        :id="option.displayName"
@@ -35,7 +35,7 @@
           v-for="classify in classifyCodeList"
           :key="classify.enName"
           :name="classify.enName"
-          :label="classify.cnName"
+          :label="isEn ? classify.enName : classify.cnName"
           render-directive="if">
           <section ref="checkersetList">
             <div :class="['info-card', { 'disabled': checkerSet.codeLangList.length > 1 || !checkerSet.codeLangList.includes(curLang), 'selected': checkIsSelected(checkerSet.checkerSetId) }]"
@@ -50,7 +50,7 @@
                   >{{$t(checkerSet.checkerSetSource === 'DEFAULT' ? '精选' : '推荐')}}</span>
                   <span class="language" :title="getCodeLang(checkerSet.codeLang)">{{getCodeLang(checkerSet.codeLang)}}</span>
                 </p>
-                <p class="checkerset-desc" :title="checkerSet.description">{{$t(checkerSet.description || '暂无描述')}}</p>
+                <p class="checkerset-desc" :title="checkerSet.description">{{checkerSet.description || $t('暂无描述')}}</p>
                 <p class="other-msg">
                   <span>{{$t('由x发布',{ name: checkerSet.creator })}}</span>
                   <span>{{$t('共x条规则', { sum: checkerSet.checkerCount || 0 })}}</span>
@@ -90,6 +90,7 @@
 
 <script>
   import { mapState } from 'vuex'
+  import { language } from '../../i18n'
 
   export default {
     props: {
@@ -167,6 +168,9 @@
       positionTop() {
         const top = (window.innerHeight - 693) / 2
         return top > 0 ? top : 0
+      },
+      isEn() {
+        return language === 'en'
       },
     },
     watch: {

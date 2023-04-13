@@ -46,7 +46,7 @@
                     <bk-popover placement="bottom" :content="item.extra_user_list.join(',')">
                       <p class="setting-extra-list">{{$t('附加：')}}{{item.extra_user_list.join(',')}}</p>
                     </bk-popover>
-                    <bk-popover class="setting-extra-tip" placement="bottom-end" width="260" content="附加人员或组是拥有你项目下任意流水线相关权限的人员或组，由项目管理员授权，如需移除，请联系你的项目管理员。">
+                    <bk-popover class="setting-extra-tip" placement="bottom-end" width="260" :content="$t('附加人员或组是拥有你项目下任意流水线相关权限的人员或组，由项目管理员授权，如需移除，请联系你的项目管理员。')">
                       <p>{{$t('为什么会有附加人员或组？')}}</p>
                     </bk-popover>
                   </div>
@@ -92,7 +92,7 @@
                     <bk-popover placement="bottom" :content="item.extra_user_list.join(',')">
                       <p class="setting-extra-list">{{$t('附加：')}}{{item.extra_user_list.join(',')}}</p>
                     </bk-popover>
-                    <bk-popover class="setting-extra-tip" placement="bottom-end" width="260" content="附加人员或组是拥有你项目下任意流水线相关权限的人员或组，由项目管理员授权，如需移除，请联系你的项目管理员。">
+                    <bk-popover class="setting-extra-tip" placement="bottom-end" width="260" :content="$t('附加人员或组是拥有你项目下任意流水线相关权限的人员或组，由项目管理员授权，如需移除，请联系你的项目管理员。')">
                       <p>{{$t('为什么会有附加人员或组？')}}</p>
                     </bk-popover>
                   </div>
@@ -363,7 +363,7 @@
         let roleName = name
         switch (name) {
           case '成员':
-            roleName = '开发人员'
+            roleName = this.$t('开发人员')
             break
           default:
             break

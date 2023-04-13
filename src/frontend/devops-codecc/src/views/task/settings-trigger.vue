@@ -449,7 +449,7 @@ ${this.taskDetail.pipelineId}/edit#${this.taskDetail.atomCode}`, '_blank')
       }
       .pipeline-label {
         display: inline-block;
-        width: 120px;
+        width: 130px;
         text-align: left;
         font-size: 14px;
         line-height: 14px;

@@ -46,7 +46,7 @@
       <div class="main-container" ref="mainContainer">
         <div class="main-content-inner main-content-list">
           <div class="search-content-inner" :class="{ 'collapse': !isSearchDropdown }">
-            <bk-form ref="bkForm" :label-width="60" class="search-form main-form">
+            <bk-form ref="bkForm" :label-width="62" class="search-form main-form">
               <container class="cc-container">
                 <div class="cc-col" v-if="isProjectDefect">
                   <bk-form-item :label="$t('任务')">
@@ -1329,11 +1329,11 @@
             return item[j] && item[j].map(i => this.defectSeverityMap[i]).join('、')
           } if (j === 'ignoreReasonType') {
             if (item[j] === 1) {
-              return '工具误报'
+              return this.$t('工具误报')
             } if (item[j] === 2) {
-              return '设计如此'
+              return this.$t('设计如此')
             } if (item[j] === 4) {
-              return '其他'
+              return this.$t('其他')
             }
             return ''
           } if (j === 'dimension') {

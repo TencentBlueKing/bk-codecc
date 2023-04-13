@@ -3,6 +3,7 @@
  * @author blueking
  */
 import { isArray } from 'lodash'
+import i18n from '@/i18n'
 
 /**
  * 函数柯里化
@@ -404,15 +405,16 @@ export function toggleClass(elem, cls) {
 // 工具状态值对应
 // TODO 国际化
 export function getToolStatus(num, tool) {
-  const arr1 = ['等待分析', '构建', '进入等候队列', '分析中，analyze', '分析中，commit', '生成问题', '成功']
-  const arr2 = ['', '启动扫描', '拉取代码', '扫描分析', '生成问题', '成功']
+  const arr1 = [i18n.t('等待分析'), i18n.t('构建'), i18n.t('进入等候队列'),
+    i18n.t('分析中，analyze'), i18n.t('分析中，commit'), i18n.t('生成问题'), i18n.t('成功')]
+  const arr2 = ['', i18n.t('启动扫描'), i18n.t('拉取代码'), i18n.t('扫描分析'), i18n.t('生成问题'), i18n.t('成功')]
   const toolStatus = (tool === 'COVERITY' || tool === 'KLOCWORK') ? arr1 : arr2
   return toolStatus[num]
 }
 
 // 分析日志状态值对应
 export function getLogFlag(num) {
-  const logFlag = ['', '成功', '失败', '进行中', '中断']
+  const logFlag = ['', i18n.t('成功'), i18n.t('失败'), i18n.t('进行中'), i18n.t('中断')]
   return logFlag[num]
 }
 
@@ -439,13 +441,13 @@ export function formatDiff(time) {
   const diff = Math.floor(leave / (60 * 60 * 1000))
   if (diff < 1) {
     const used = Math.floor(leave / (60 * 1000))
-    duration = `${used === 0 ? 1 : used}min前`
+    duration = `${used === 0 ? 1 : used}min${i18n.t('前')}`
   } else if (diff < 24) {
     const used = Math.floor(leave / (60 * 60 * 1000))
-    duration = `${used === 0 ? 1 : used}h前`
+    duration = `${used === 0 ? 1 : used}h${i18n.t('前')}`
   } else if (diff > 24) {
     const used = Math.floor(leave / (24 * 60 * 60 * 1000))
-    duration = `${used === 0 ? 1 : used}天前`
+    duration = `${used === 0 ? 1 : used}d${i18n.t('前')}`
   }
   return time ? duration : '--'
 }

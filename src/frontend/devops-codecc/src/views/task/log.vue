@@ -43,13 +43,13 @@
                         <bk-table-column width="125" :label="$t('步骤')">
                           <template slot-scope="scope">
                             <i class="step" :class="{ 'status': scope.row.index === 1, 'status-success': scope.row.flag === 1, 'status-fail': scope.row.flag === 2 || scope.row.flag === 4 }"></i>
-                            <span>{{ $t(getToolStatus(scope.row.stepNum, item.toolName)) }}</span>
+                            <span>{{ getToolStatus(scope.row.stepNum, item.toolName) }}</span>
                           </template>
                         </bk-table-column>
                         <bk-table-column width="70" :label="$t('状态')">
                           <template slot-scope="scope">
                             <span :class="{ 'status': scope.row.index === 1, 'status-success': scope.row.flag === 1, 'status-fail': scope.row.flag === 2 || scope.row.flag === 4 }">
-                              {{ $t(getLogFlag(scope.row.flag)) }}
+                              {{ getLogFlag(scope.row.flag) }}
                             </span>
                           </template>
                         </bk-table-column>
@@ -118,7 +118,7 @@
                        'going': item.flag === 3
                      }">
                     <span class="tool-col-status cc-ellipsis"
-                          v-if="item.flag === 1 && getToolStatus(item.currStep, item.toolName) === '成功'"
+                          v-if="item.flag === 1 && getToolStatus(item.currStep, item.toolName) === $t('成功')"
                           :title="getAnalyseMsg(item.stepArray) + getToolStatus(item.currStep, item.toolName)">
                       <i class="bk-icon card-tool-status icon-check-circle-shape"></i>
                       {{getAnalyseMsg(item.stepArray)}}{{getToolStatus(item.currStep, item.toolName)}}
