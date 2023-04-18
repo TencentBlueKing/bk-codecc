@@ -8,7 +8,7 @@ import VueRouter from 'vue-router'
 
 import store from '@/store'
 import http from '@/api'
-import preload, { getTaskDetail, getToolMeta, getToolList, getNotice } from '@/common/preload'
+import preload, { getTaskDetail, getToolMeta, getToolList } from '@/common/preload'
 
 import taskRoutes from './task'
 import defectRoutes from './defect'
@@ -153,8 +153,6 @@ router.afterEach(async (to, from) => {
     if (!store.state.tool.mapList.CCN && to.meta && !to.meta.notNeedToolList) {
       getToolList()
     }
-    // 获取公告
-    
     preloading = true
     await preload()
     preloading = false
