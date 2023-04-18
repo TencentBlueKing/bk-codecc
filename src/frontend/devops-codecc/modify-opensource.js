@@ -16,12 +16,13 @@ magicVueList.forEach((item) => {
 
 // 人员选择器处理
 const memberSelectorList =   [
-  './src/views/defect/list.vue',
   './src/views/defect/ccn-list.vue',
   './src/views/defect/coverity-list.vue',
   './src/views/task/settings-issue.vue',
   './src/views/task/settings-report.vue',
   './src/views/task/settings-trigger.vue',
+  './src/views/defect/defect-list.vue',
+  './src/views/ignore/ignore-operation.vue',
 ]
 memberSelectorList.forEach((item) => {
   let fileData = fs.readFileSync(item).toString()
@@ -37,3 +38,13 @@ settings = settings.replace(
   '\'code\', \'checkerset\', \'issue\', \'trigger\', \'ignore\', \'record\', \'manage\'',
 )
 fs.writeFileSync('./config.js', settings)
+
+// 去掉公告相关接口
+const NoticeList =  [
+  './src/router/index.js',
+]
+NoticeList.forEach((item) => {
+  let fileData = fs.readFileSync(item).toString()
+  fileData = fileData.replace(/getNotice\(\)/g, '')
+  fs.writeFileSync(item, fileData)
+})

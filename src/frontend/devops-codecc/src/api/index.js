@@ -186,7 +186,7 @@ function handleReject(error, config) {
     return Promise.reject(error)
   }
   // op接口直接reject, 不出现弹框
-  if (config.url && config.url.includes(window.OP_AJAX_URL_PREFIX)) {
+  if (config.url && config.url.includes(window.CODECC_OP_SITE_URL)) {
     return Promise.reject(error)
   }
   http.queue.delete(config.requestId)

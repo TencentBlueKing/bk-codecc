@@ -215,7 +215,8 @@
       :position="{ top: 50, left: 5 }"
       :title="$t('现已支持键盘操作，提升操作效率')">
       <div>
-        <img src="../../images/operate-checker.svg">
+        <img style="width: 552px" v-if="isEn" src="../../images/operate-checker-en.png">
+        <img v-else src="../../images/operate-checker.svg">
       </div>
       <div class="operate-footer" slot="footer">
         <bk-button
@@ -234,6 +235,7 @@
   import { format } from 'date-fns'
   import ccCollapse from '@/components/cc-collapse'
   import CodeMirror from '@/common/codemirror'
+  import { language } from '../../i18n'
 
   export default {
     components: {
@@ -323,6 +325,9 @@
         let props = this.ruleData.props || '{}'
         props = JSON.parse(props)
         return props[0] && props[0].propValue
+      },
+      isEn() {
+        return language === 'en'
       },
     },
     watch: {

@@ -37,7 +37,7 @@ export default {
   actions: {
     notice({ commit, state, rootState }, config) {
       const params = Object.assign({  operType: 'Q',  findType: '3' }, config)
-      return http.post(`${window.OP_AJAX_URL_PREFIX}/api/op/notice`, params).then((res) => {
+      return http.post(`${window.CODECC_OP_SITE_URL}/api/op/notice`, params).then((res) => {
         const configMap = {
           1: 'maintain',
           2: 'notice',

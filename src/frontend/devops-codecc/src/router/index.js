@@ -154,7 +154,7 @@ router.afterEach(async (to, from) => {
       getToolList()
     }
     // 获取公告
-    getNotice()
+    
     preloading = true
     await preload()
     preloading = false

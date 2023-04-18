@@ -9,11 +9,13 @@
     :title="$t('键盘操作指引')">
     <div class="operate-txt operate-txt-1">1. {{$t('列表')}}</div>
     <div>
-      <img style="width: 592px" src="../../images/operate-1.png">
+      <img v-if="isEn" style="width: 592px" src="../../images/operate-1-en.png">
+      <img v-else style="width: 592px" src="../../images/operate-1.png">
     </div>
     <div class="operate-txt operate-txt-2">2. {{$t('问题详情')}}</div>
     <div>
-      <img style="width: 592px" src="../../images/operate-2.png">
+      <img v-if="isEn" style="width: 592px" src="../../images/operate-2-en.png">
+      <img v-else style="width: 592px" src="../../images/operate-2.png">
     </div>
     <div class="operate-footer" slot="footer">
       <bk-button
@@ -26,6 +28,8 @@
 </template>
 
 <script>
+  import { language } from '../../i18n'
+
   export default {
     name: 'OperateDialog',
     props: {
@@ -33,6 +37,11 @@
     },
     data() {
       return {}
+    },
+    computed: {
+      isEn() {
+        return language === 'en'
+      },
     },
     watch: {
       visiable(value) {

@@ -755,12 +755,19 @@
       </bk-dialog>
       <bk-dialog
         v-model="operateDialogVisiable"
-        width="605"
+        width="640"
         theme="primary"
         :position="{ top: 50, left: 5 }"
         :title="$t('现已支持键盘操作，提升操作效率')">
+        <div class="operate-txt operate-txt-1">1. {{$t('列表')}}</div>
         <div>
-          <img src="../../images/operate-cov.svg">
+          <img v-if="isEn" style="width: 592px" src="../../images/operate-1-en.png">
+          <img v-else style="width: 592px" src="../../images/operate-1.png">
+        </div>
+        <div class="operate-txt operate-txt-2">2. {{$t('问题详情')}}</div>
+        <div>
+          <img v-if="isEn" style="width: 592px" src="../../images/operate-2-en.png">
+          <img v-else style="width: 592px" src="../../images/operate-2.png">
         </div>
         <div class="operate-footer" slot="footer">
           <bk-button
@@ -798,6 +805,7 @@
   import DefectPanel from './components/defect-panel.vue'
   // eslint-disable-next-line
   import { export_json_to_excel } from 'vendor/export2Excel'
+  import { language } from '../../i18n'
 
   // 搜索过滤项缓存
   const CCN_SEARCH_OPTION_CACHE = 'search_option_columns_cnn'
@@ -1135,7 +1143,7 @@
         }
         return (this.isSelectAll === 'Y' ? this.totalCount : this.selectedLen) > 1
           ? `${this.$t('忽略')}（
-          ${this.$t('共x个问题', {num: this.isSelectAll === 'Y' ? this.totalCount : this.selectedLen})}）` : this.$t('忽略')
+          ${this.$t('共x个问题', { num: this.isSelectAll === 'Y' ? this.totalCount : this.selectedLen })}）` : this.$t('忽略')
       },
       ignoreDialogPositionConfig() {
         const { clientHeight } = document.body
@@ -1148,6 +1156,9 @@
           config.top = '100'
         }
         return config
+      },
+      isEn() {
+        return language === 'en'
       },
     },
     watch: {

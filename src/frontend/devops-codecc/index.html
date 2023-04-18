@@ -22,13 +22,11 @@
         <script>
             var PAAS_SERVICE_URL = 'http://__PAAS_SERVICE_URL__'
             var AJAX_URL_PREFIX = '//' + location.host + '/ms'
-            var OP_AJAX_URL_PREFIX = '//' + '__CODECC_OP_GATEWAY_HOST__'
-            var DEVOPS_SITE_URL = '//__DEVOPS_PREFIX__' + (location.host.includes('woa') ? '.woa' : '.oa') + '.com'
-            var STREAM_SITE_URL = 'https://' + '__STREAM_SITE_URL__' 
-            var DEVOPS_API_URL = DEVOPS_SITE_URL + '/ms'
-            if (location.protocol == 'https:') {
-                OP_AJAX_URL_PREFIX = '//' + '__CODECC_OP_HTTPS_GATEWAY_HOST__'
-            }
+            var DEVOPS_SITE_URL = '__BK_CI_PUBLIC_URL__'
+            var DEVOPS_API_URL = '__BK_CI_PUBLIC_URL__/ms'
+            var JUMP_SITE_URL = window.self === window.top ? CODECC_SITE_URL : DEVOPS_SITE_URL + '/console'
+            var STREAM_SITE_URL = '__BK_STREAM_PUBLIC_URL__'
+            var CODECC_OP_SITE_URL = '__BK_CODECC_OP_PUBLIC_URL__'
 
             // 链接
             var IWIKI_CODECC_HOME = 'https://__IWIKI_CODECC_HOME__'

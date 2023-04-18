@@ -52,7 +52,7 @@
         </bk-form-item>
         <bk-form-item :label="$t('附加通知人')">
           <!-- <bk-input v-model="formData.notify.extReceiver"></bk-input> -->
-          <bk-member-selector v-model="formData.notify.extReceiver"></bk-member-selector>
+          <bk-tag-input allow-create v-model="formData.notify.extReceiver"></bk-tag-input>
         </bk-form-item>
         <bk-form-item :label="$t('通知方式')">
           <bk-checkbox-group v-model="formData.notify.notifyTypes">
