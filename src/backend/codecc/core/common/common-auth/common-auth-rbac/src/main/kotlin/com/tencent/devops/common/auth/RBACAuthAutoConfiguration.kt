@@ -21,25 +21,17 @@ class RBACAuthAutoConfiguration {
 
     @Bean
     fun rbacAuthPermissionApi(
-        authPropertiesData: RBACAuthPropertiesData,
+        rbacAuthProperties: RBACAuthProperties,
         redisTemplate: RedisTemplate<String, String>,
         client: Client
-    ) = RBACAuthPermissionApi(client, redisTemplate, authPropertiesData)
+    ) = RBACAuthPermissionApi(client, redisTemplate, rbacAuthProperties)
 
     @Bean
     fun rbacAuthRegisterApi(
-        authPropertiesData: RBACAuthPropertiesData,
-        redisTemplate: RedisTemplate<String, String>,
+        rbacAuthProperties: RBACAuthProperties,
         client: Client
-    ) = RBACAuthRegisterApi(client, authPropertiesData, redisTemplate)
+    ) = RBACAuthRegisterApi(client, rbacAuthProperties)
 
     @Bean
     fun rbacAuthProperties() = RBACAuthProperties()
-
-    @Bean
-    fun rbacAuthPropertiesDev(rbacAuthProperties: RBACAuthProperties) = RBACAuthPropertiesData(
-        rbacResourceType = rbacAuthProperties.rbacResourceType,
-        url = rbacAuthProperties.url,
-        token = rbacAuthProperties.token
-    )
 }

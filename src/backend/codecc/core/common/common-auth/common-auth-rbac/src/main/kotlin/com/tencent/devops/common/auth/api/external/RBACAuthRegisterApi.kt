@@ -44,8 +44,7 @@ import org.springframework.data.redis.core.RedisTemplate
 
 class RBACAuthRegisterApi @Autowired constructor(
     private val client: Client,
-    private val authPropertiesData: RBACAuthPropertiesData,
-    private val redisTemplate: RedisTemplate<String, String>
+    private val rbacAuthProperties: RBACAuthProperties
 ) : AuthExRegisterApi {
 
     companion object {
@@ -60,7 +59,7 @@ class RBACAuthRegisterApi @Autowired constructor(
      * 查询非用户态Access Token
      */
     private fun getBackendAccessToken(): String {
-        return authPropertiesData.token ?: ""
+        return rbacAuthProperties.token ?: ""
     }
 
     /**
@@ -89,7 +88,7 @@ class RBACAuthRegisterApi @Autowired constructor(
                 projectId = projectId,
                 resourceCode = taskId,
                 resourceName = taskName,
-                resourceType = authPropertiesData.rbacResourceType!!,
+                resourceType = rbacAuthProperties.rbacResourceType!!,
                 creator = user
         )
         if (result.isNotOk() || result.data == null || result.data == false) {
@@ -111,7 +110,7 @@ class RBACAuthRegisterApi @Autowired constructor(
         val result = deleteResource(
                 projectCode = projectId,
                 resourceCode = taskId,
-                resourceType = authPropertiesData.rbacResourceType!!
+                resourceType = rbacAuthProperties.rbacResourceType!!
         )
         if (result.isNotOk() || result.data == null || result.data == false) {
             logger.error("delete resource failed! taskId: $taskId, return code:${result.code}," +
@@ -151,7 +150,7 @@ class RBACAuthRegisterApi @Autowired constructor(
             resourceCode: String,
             resourceType: String
     ): Result<Boolean> {
-        val url = "https://${authPropertiesData
+        val url = "https://${rbacAuthProperties
             .url}$baseUrl/open/service/auth/permission/projects/$projectCode/delete/relation"
         val deleteRequest = RBACAuthResourceDeleteRequest(
             resourceCode = resourceCode,

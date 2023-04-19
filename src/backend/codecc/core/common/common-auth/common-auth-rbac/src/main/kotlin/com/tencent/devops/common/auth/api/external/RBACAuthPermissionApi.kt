@@ -21,7 +21,7 @@ import org.springframework.data.redis.core.RedisTemplate
 class RBACAuthPermissionApi(
     client: Client,
     redisTemplate: RedisTemplate<String, String>,
-    private val authPropertiesData: RBACAuthPropertiesData
+    private val rbacAuthProperties: RBACAuthProperties
 ) : AbstractAuthExPermissionApi(
     client,
     redisTemplate
@@ -48,7 +48,7 @@ class RBACAuthPermissionApi(
      * 查询非用户态Access Token
      */
     private fun getBackendAccessToken(): String {
-        return authPropertiesData.token ?: ""
+        return rbacAuthProperties.token ?: ""
     }
 
     /**
@@ -56,11 +56,11 @@ class RBACAuthPermissionApi(
      */
     override fun queryPipelineListForUser(user: String, projectId: String, actions: Set<String>): Set<String> {
         // TODO
-        val newAction = "${authPropertiesData.pipelineResourceType!!}_${actions.first()}"
+        val newAction = "${rbacAuthProperties.pipeLineResourceType!!}_${actions.first()}"
         return queryUserResourceByPermission(
             projectCode = projectId,
             action = newAction,
-            resourceType = authPropertiesData.pipelineResourceType!!,
+            resourceType = rbacAuthProperties.pipeLineResourceType!!,
             userId = user
         ).toSet()
     }
@@ -76,7 +76,7 @@ class RBACAuthPermissionApi(
         return queryUserResourceByPermission(
             projectCode = projectId,
             action = actions.first(),
-            resourceType = authPropertiesData.rbacResourceType!!,
+            resourceType = rbacAuthProperties.rbacResourceType!!,
             userId = user
         ).toSet()
     }
@@ -103,7 +103,7 @@ class RBACAuthPermissionApi(
         val result = validateBatch(
             projectCode = projectId,
             resourceCode = pipelineId,
-            resourceType = authPropertiesData.pipelineResourceType!!,
+            resourceType = rbacAuthProperties.pipeLineResourceType!!,
             actions = actions.toList(),
             userId = user
         )
@@ -126,7 +126,7 @@ class RBACAuthPermissionApi(
         val result = validateBatch(
             projectCode = projectId,
             resourceCode = taskId,
-            resourceType = authPropertiesData.rbacResourceType!!,
+            resourceType = rbacAuthProperties.rbacResourceType!!,
             actions = actions.toList(),
             userId = user
         )
@@ -165,7 +165,7 @@ class RBACAuthPermissionApi(
      * Available values : CIADMIN, MANAGER, DEVELOPER, MAINTAINER, TESTER, PM, QC, CI_MANAGER
      */
     override fun authProjectRole(projectId: String, user: String, role: String?): Boolean {
-        val url = "https://${authPropertiesData
+        val url = "https://${rbacAuthProperties
                 .url}$baseUrl/open/service/auth/projects/${projectId}/users/${user}/isProjectUsers"
         val headers = getCommonHeaders(projectId)
         val params = mutableMapOf<String, String>()
@@ -213,7 +213,7 @@ class RBACAuthPermissionApi(
         projectCode: String,
         userId: String
     ): Boolean {
-        val url = "https://${authPropertiesData.url}$baseUrl/open/service/auth/projects/${projectCode}" +
+        val url = "https://${rbacAuthProperties.url}$baseUrl/open/service/auth/projects/${projectCode}" +
                 "/users/${userId}/checkProjectManager"
         val headers = getCommonHeaders(projectCode).toMutableMap()
         headers[AUTH_HEADER_DEVOPS_USER_ID] = userId
@@ -237,7 +237,7 @@ class RBACAuthPermissionApi(
         actions: List<String>,
         userId: String
     ): Result<Boolean> {
-        val url = "https://${authPropertiesData.url}$baseUrl/open/service/auth/permission/projects/${projectCode}" +
+        val url = "https://${rbacAuthProperties.url}$baseUrl/open/service/auth/permission/projects/${projectCode}" +
             "/relation/validate/batch?resourceCode=${resourceCode}&resourceType=${resourceType}"
         val headers = getCommonHeaders(projectCode).toMutableMap()
         headers[AUTH_HEADER_DEVOPS_USER_ID] = userId
