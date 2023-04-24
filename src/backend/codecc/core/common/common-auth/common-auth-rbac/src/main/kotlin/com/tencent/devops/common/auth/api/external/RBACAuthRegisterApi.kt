@@ -29,22 +29,24 @@ package com.tencent.devops.common.auth.api.external
 import com.fasterxml.jackson.core.type.TypeReference
 import com.tencent.devops.auth.api.service.ServicePermissionAuthResource
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_BK_TOKEN
+import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_TOKEN
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_PROJECT_ID
 import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.api.exception.UnauthorizedException
 import com.tencent.devops.common.api.pojo.Result
 import com.tencent.devops.common.auth.api.pojo.request.RBACAuthResourceDeleteRequest
 import com.tencent.devops.common.client.Client
+import com.tencent.devops.common.client.pojo.AllProperties
 import com.tencent.devops.common.constant.CommonMessageCode
 import com.tencent.devops.common.util.JsonUtil
 import com.tencent.devops.common.util.OkhttpUtils
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.redis.core.RedisTemplate
 
 class RBACAuthRegisterApi @Autowired constructor(
     private val client: Client,
-    private val rbacAuthProperties: RBACAuthProperties
+    private val rbacAuthProperties: RBACAuthProperties,
+    private val allProperties: AllProperties
 ) : AuthExRegisterApi {
 
     companion object {
@@ -68,6 +70,7 @@ class RBACAuthRegisterApi @Autowired constructor(
     private fun getCommonHeaders(projectId: String?): Map<String, String> {
         return mapOf(
             AUTH_HEADER_DEVOPS_BK_TOKEN to getBackendAccessToken(),
+            AUTH_HEADER_DEVOPS_TOKEN to (allProperties.devopsToken ?: ""),
             AUTH_HEADER_DEVOPS_PROJECT_ID to (projectId ?: ""),
             "accept" to "application/json",
             "contentType" to "application/json"

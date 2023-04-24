@@ -28,7 +28,7 @@
 package com.tencent.devops.common.client
 
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_BK_TICKET
-import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_BK_TOKEN
+import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_TOKEN
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_PROJECT_ID
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_USER_ID
 import com.tencent.devops.common.client.discovery.DiscoveryUtils
@@ -123,7 +123,7 @@ class KubernetesClientAutoConfiguration {
                 requestTemplate.header(AUTH_HEADER_DEVOPS_USER_ID, userName)
             }
             if (!bkCiToken.isNullOrBlank()) {
-                requestTemplate.header(AUTH_HEADER_DEVOPS_BK_TOKEN, bkCiToken)
+                requestTemplate.header(AUTH_HEADER_DEVOPS_TOKEN, bkCiToken)
             }
         }
     }

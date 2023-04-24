@@ -2,16 +2,16 @@ package com.tencent.devops.common.auth.api.external
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.tencent.devops.auth.api.service.ServicePermissionAuthResource
-import com.tencent.devops.auth.api.service.ServiceProjectAuthResource
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_BK_TOKEN
+import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_TOKEN
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_PROJECT_ID
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_USER_ID
 import com.tencent.devops.common.api.exception.UnauthorizedException
 import com.tencent.devops.common.api.pojo.Result
-import com.tencent.devops.common.auth.api.AuthPermission
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction
 import com.tencent.devops.common.auth.api.pojo.external.model.BkAuthExResourceActionModel
 import com.tencent.devops.common.client.Client
+import com.tencent.devops.common.client.pojo.AllProperties
 import com.tencent.devops.common.service.utils.SpringContextUtil
 import com.tencent.devops.common.util.JsonUtil
 import com.tencent.devops.common.util.OkhttpUtils
@@ -21,7 +21,8 @@ import org.springframework.data.redis.core.RedisTemplate
 class RBACAuthPermissionApi(
     client: Client,
     redisTemplate: RedisTemplate<String, String>,
-    private val rbacAuthProperties: RBACAuthProperties
+    private val rbacAuthProperties: RBACAuthProperties,
+    private val allProperties: AllProperties
 ) : AbstractAuthExPermissionApi(
     client,
     redisTemplate
@@ -38,6 +39,7 @@ class RBACAuthPermissionApi(
     private fun getCommonHeaders(projectId: String?): Map<String, String> {
         return mapOf(
             AUTH_HEADER_DEVOPS_BK_TOKEN to getBackendAccessToken(),
+            AUTH_HEADER_DEVOPS_TOKEN to (allProperties.devopsToken ?: ""),
             AUTH_HEADER_DEVOPS_PROJECT_ID to (projectId ?: ""),
             "accept" to "application/json",
             "contentType" to "application/json"
