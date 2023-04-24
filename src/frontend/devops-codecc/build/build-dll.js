@@ -49,6 +49,7 @@ if (!ret.length) {
             new HtmlWebpackPlugin({
                 filename: path.join(__dirname, '..', 'index-bundle.html'),
                 template: 'index.html',
+                publicPath: '__BK_PUBLIC_PATH_PREFIX__',
                 inject: true
             }),
 
