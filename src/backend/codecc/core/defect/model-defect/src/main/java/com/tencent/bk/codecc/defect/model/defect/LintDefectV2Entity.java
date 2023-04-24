@@ -59,7 +59,12 @@ import org.springframework.data.mongodb.core.mapping.Field;
         @CompoundIndex(name = "idx_taskid_1_toolname_1_status_1_filepath_1", def = "{'task_id': 1, 'tool_name': 1, 'status': 1, 'file_path': 1}", background = true),
         @CompoundIndex(name = "idx_taskid_1_toolname_1_status_1_author_1_severity_1", def = "{'task_id': 1, 'tool_name': 1, 'status': 1, 'author': 1, 'severity': 1}", background = true),
         @CompoundIndex(name = "idx_taskid_1_toolname_1_status_1_ignore_reason_type_1",
-                def = "{'task_id': 1, 'tool_name': 1, 'status': 1, 'ignore_reason_type': 1}", background = true)
+                def = "{'task_id': 1, 'tool_name': 1, 'status': 1, 'ignore_reason_type': 1}", background = true),
+        @CompoundIndex(
+                name = "idx_task_id_1_tool_name_1_status_1_checker_1_file_name_1_line_num_1",
+                def = "{'task_id': 1, 'tool_name': 1, 'status': 1, 'checker': 1, 'file_name': 1, 'line_num': 1}",
+                background = true
+        )
 })
 public class LintDefectV2Entity extends CommonSpecialEntity {
 

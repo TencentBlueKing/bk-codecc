@@ -172,11 +172,23 @@ public class CheckerServiceImpl implements CheckerService
 
     @Override
     public Map<String, CheckerDetailVO> queryAllChecker(String toolName) {
-        return queryAllChecker(Lists.newArrayList(toolName), null);
+        return queryAllChecker(Lists.newArrayList(toolName), null, false);
     }
 
+    /**
+     * 根据指定条件查询规则
+     *
+     * @param toolNameSet
+     * @param checkerSet
+     * @param returnOnlyMapCheckerKeyAndType false返回的vo是全字段，true返回的vo只包含checkerKey和checkerType
+     * @return
+     */
     @Override
-    public Map<String, CheckerDetailVO> queryAllChecker(List<String> toolNameSet, String checkerSet) {
+    public Map<String, CheckerDetailVO> queryAllChecker(
+            List<String> toolNameSet,
+            String checkerSet,
+            boolean returnOnlyMapCheckerKeyAndType
+    ) {
         Set<String> checkerKeyBySetId = new HashSet<>();
         if (StringUtils.isNotEmpty(checkerSet)) {
             checkerSetRepository.findByCheckerSetId(checkerSet).forEach(checkerSetEntity ->
@@ -188,7 +200,9 @@ public class CheckerServiceImpl implements CheckerService
             );
         }
 
-        List<CheckerDetailEntity> checkerDetailEntityList = checkerRepository.findByToolNameIn(toolNameSet);
+        List<CheckerDetailEntity> checkerDetailEntityList = returnOnlyMapCheckerKeyAndType
+                ? checkerRepository.findCheckerKeyAndTypeByToolNameIn(toolNameSet)
+                : checkerRepository.findByToolNameIn(toolNameSet);
         List<CheckerDetailVO> checkerDetailList = new ArrayList<>();
         checkerDetailEntityList.forEach(checkerDetailEntity -> {
             if (StringUtils.isNotBlank(checkerSet)) {
@@ -669,7 +683,7 @@ public class CheckerServiceImpl implements CheckerService
         }
         //4. 规则标签
         Map<String, Integer> tagMap = new HashMap<>();
-        Map<String,String> tagNameMap= Maps.newHashMap();
+        Map<String, String> tagNameMap = Maps.newHashMap();
         //5. 规则严重级别数量(数量不变，初始化就把所有规则放上去)
         Map<Integer, Integer> severityMap = new HashMap<Integer, Integer>()
         {{
@@ -787,7 +801,7 @@ public class CheckerServiceImpl implements CheckerService
                 if (CollectionUtils.isNotEmpty(checkerDetailEntity.getCheckerTag())) {
                     // vo是已处理过i18n
                     CheckerDetailVO vo = checkerDetailVOMap.get(checkerDetailEntity.getEntityId());
-                    boolean i18_OK = vo != null && CollectionUtils.isNotEmpty(vo.getCheckerTag())
+                    boolean isOK = vo != null && CollectionUtils.isNotEmpty(vo.getCheckerTag())
                             && vo.getCheckerTag().size() == checkerDetailEntity.getCheckerTag().size();
 
                     for (int i = 0; i < checkerDetailEntity.getCheckerTag().size(); i++) {
@@ -803,7 +817,7 @@ public class CheckerServiceImpl implements CheckerService
                             }
                         });
 
-                        if (i18_OK) {
+                        if (isOK) {
                             tagNameMap.put(checkerTag, vo.getCheckerTag().get(i));
                         } else {
                             checkerTagI18NFailList.add(checkerDetailEntity.getEntityId());

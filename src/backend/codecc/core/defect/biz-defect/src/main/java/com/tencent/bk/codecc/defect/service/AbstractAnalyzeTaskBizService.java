@@ -30,7 +30,6 @@ package com.tencent.bk.codecc.defect.service;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.tencent.bk.codecc.defect.component.ScmJsonComponent;
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoFromAnalyzeLogRepository;
@@ -79,6 +78,8 @@ import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.service.BaseDataCacheService;
 import com.tencent.devops.common.service.IBizService;
 import com.tencent.devops.common.service.ToolMetaCacheService;
+import com.tencent.devops.common.service.aop.AbstractI18NResponseAspect;
+import com.tencent.devops.common.service.utils.I18NUtils;
 import com.tencent.devops.common.util.DateTimeUtils;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.util.PathUtils;
@@ -86,6 +87,7 @@ import com.tencent.devops.common.util.ThreadPoolUtil;
 import com.tencent.devops.common.web.aop.annotation.ActiveStatistic;
 import com.tencent.devops.common.web.aop.annotation.EndAnalyze;
 import com.tencent.devops.common.web.mq.ConstantsKt;
+import java.util.Locale;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -411,9 +413,11 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
     protected void updateCodeRepository(UploadTaskLogStepVO uploadTaskLogStepVO, TaskLogEntity taskLogEntity) {
         if (uploadTaskLogStepVO.getStepNum() == getSubmitStepNum()
                 && uploadTaskLogStepVO.getFlag() == ComConstants.StepFlag.SUCC.value()) {
+            Locale locale = AbstractI18NResponseAspect.getLocale();
+
             ThreadPoolUtil.addRunnableTask(() -> {
                 // 保存代码仓信息
-                saveCodeRepoInfo(uploadTaskLogStepVO);
+                saveCodeRepoInfo(uploadTaskLogStepVO, locale);
             });
         }
     }
@@ -424,7 +428,7 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
      * @param uploadTaskLogStepVO
      * @return
      */
-    protected void saveCodeRepoInfo(UploadTaskLogStepVO uploadTaskLogStepVO) {
+    protected void saveCodeRepoInfo(UploadTaskLogStepVO uploadTaskLogStepVO, Locale locale) {
         StringBuffer scmInfoStrBuf = new StringBuffer();
         JSONArray repoInfoJsonArr = scmJsonComponent.loadRepoInfo(uploadTaskLogStepVO.getStreamName(),
                 uploadTaskLogStepVO.getToolName(), uploadTaskLogStepVO.getPipelineBuildId());
@@ -465,11 +469,20 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
 
                     String commitTimeStr = DateTimeUtils.second2Moment(
                         codeRepoInfo.getFileUpdateTime() / ComConstants.COMMON_NUM_1000L);
-                    scmInfoStrBuf.append("代码库：").append(formatUrl).append("，")
-                            .append("版本号：").append(codeRepoInfo.getRevision()).append("，")
-                            .append("提交时间：").append(commitTimeStr).append("，")
-                            .append("提交人：").append(codeRepoInfo.getFileUpdateAuthor()).append("，")
-                            .append("分支：").append(codeRepoInfo.getBranch())
+                    scmInfoStrBuf.append(I18NUtils.getMessage("ANALYZE_SCM_CODE_REPOSITORY", locale))
+                            .append(formatUrl)
+                            .append("，")
+                            .append(I18NUtils.getMessage("ANALYZE_SCM_CODE_VERSION", locale))
+                            .append(codeRepoInfo.getRevision())
+                            .append("，")
+                            .append(I18NUtils.getMessage("ANALYZE_SCM_CODE_COMMIT_TIME", locale))
+                            .append(commitTimeStr)
+                            .append("，")
+                            .append(I18NUtils.getMessage("ANALYZE_SCM_CODE_AUTHOR", locale))
+                            .append(codeRepoInfo.getFileUpdateAuthor())
+                            .append("，")
+                            .append(I18NUtils.getMessage("ANALYZE_SCM_CODE_BRANCH", locale))
+                            .append(codeRepoInfo.getBranch())
                             .append("\n");
                     // 如果数据还没创建
                     CodeRepoEntity codeRepoEntity =
@@ -816,7 +829,7 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
         if (uploadTaskLogStepVO.getStepNum() == ComConstants.Step4MutliTool.SCAN.value()) {
             String scanTypeMsg = "";
             if (uploadTaskLogStepVO.isFastIncrement()) {
-                scanTypeMsg = "超快增量扫描";
+                scanTypeMsg = I18NUtils.getMessage("SCAN_TYPE_FAST_INCREMENT");
             } else {
                 String pattern = toolMetaCacheService.getToolPattern(toolName);
                 if (ComConstants.ToolPattern.LINT.name().equals(pattern)
@@ -826,17 +839,17 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
                             toolBuildStackRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
                     boolean isFullScan = toolBuildStackEntity == null || toolBuildStackEntity.isFullScan();
                     if (taskVO.getScanType() != null && taskVO.getScanType() == ComConstants.ScanType.DIFF_MODE.code) {
-                        scanTypeMsg = "MR/PR扫描(按行号)";
+                        scanTypeMsg = I18NUtils.getMessage("SCAN_TYPE_MR_PR_LINE_NUM");
                     } else if (taskVO.getScanType() != null
                             && taskVO.getScanType() == ComConstants.ScanType.FILE_DIFF_MODE.code) {
-                        scanTypeMsg = "MR/PR扫描(按文件)";
+                        scanTypeMsg = I18NUtils.getMessage("SCAN_TYPE_MR_PR_FILE");
                     } else if (taskVO.getScanType() != null
                             && taskVO.getScanType() == ComConstants.ScanType.BRANCH_DIFF_MODE.code) {
-                        scanTypeMsg = "差异扫描";
+                        scanTypeMsg = I18NUtils.getMessage("SCAN_TYPE_DIFF");
                     } else if (isFullScan) {
-                        scanTypeMsg = "全量扫描";
+                        scanTypeMsg = I18NUtils.getMessage("SCAN_TYPE_FULL");
                     } else {
-                        scanTypeMsg = "快速全量扫描";
+                        scanTypeMsg = I18NUtils.getMessage("SCAN_TYPE_FAST_FULL");
                     }
                 }
             }

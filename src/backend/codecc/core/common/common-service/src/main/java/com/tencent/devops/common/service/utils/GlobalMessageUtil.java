@@ -101,7 +101,7 @@ public class GlobalMessageUtil {
                     // logger.info("key: {}, value: {}", entry.getKey(), messageDetailStr);
                     globalMessage = objectMapper.readValue(messageDetailStr, GlobalMessage.class);
                 } catch (IOException e) {
-                    logger.error("operation type message deserialize fail! key: {}", entry.getKey());
+                    // logger.error("operation type message deserialize fail! key: {}", entry.getKey());
                     continue;
                 }
                 messageCodeDetailMap.put((String) entry.getKey(), globalMessage);

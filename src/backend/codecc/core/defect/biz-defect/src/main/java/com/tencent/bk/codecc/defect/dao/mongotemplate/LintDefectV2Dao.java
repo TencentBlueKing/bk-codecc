@@ -30,6 +30,7 @@ import static com.tencent.devops.common.constant.ComConstants.MASK_STATUS;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.dto.IgnoreTypeStatModel;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
@@ -44,8 +45,11 @@ import com.tencent.devops.common.api.pojo.Page;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.DefectStatus;
 import com.tencent.devops.common.util.DateTimeUtils;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -153,7 +157,8 @@ public class LintDefectV2Dao {
                 defectQueryReqVO,
                 defectMongoIdSet,
                 pkgChecker,
-                defectThirdPartyIdSet
+                defectThirdPartyIdSet,
+                false
         );
         if (startFilePath != null) {
             criteria.and("file_path").gte(startFilePath);
@@ -185,7 +190,7 @@ public class LintDefectV2Dao {
             Map<Long, List<String>> taskToolMap, DefectQueryReqVO defectQueryReqVO, Set<String> defectMongoIdSet,
             Set<String> pkgChecker, Map<String, Boolean> filedMap,
             Integer pageNum, Integer pageSize, String sortField, Sort.Direction sortType,
-            Set<String> defectThirdPartyIdSet
+            Set<String> defectThirdPartyIdSet, String projectId, String userId
     ) {
         // NOCC:VariableDeclarationUsageDistance(设计如此:)
         Query query = getQueryByCondition(
@@ -228,10 +233,22 @@ public class LintDefectV2Dao {
             query.collation(Collation.of("en"));
         }
 
+        // 若是跨任务查询
+        if (MapUtils.isNotEmpty(taskToolMap) && taskToolMap.size() > 1) {
+            query.withHint("idx_task_id_1_tool_name_1_status_1_checker_1_file_name_1_line_num_1");
+        }
+
+        long beginTime = System.currentTimeMillis();
+
         Page<LintDefectV2Entity> pageResult = mongoPageHelper.pageQuery(
                 query, LintDefectV2Entity.class,
                 pageSize, pageNum, sortList
         );
+
+        if (MapUtils.isNotEmpty(taskToolMap) && taskToolMap.size() > 1) {
+            log.info("Multi-Task-Query list cost: {}, project id: {}, user id: {}",
+                    System.currentTimeMillis() - beginTime, projectId, userId);
+        }
 
         return pageResult;
     }
@@ -258,7 +275,8 @@ public class LintDefectV2Dao {
                 defectQueryReqVO,
                 defectMongoIdSet,
                 pkgChecker,
-                defectThirdPartyIdSet
+                defectThirdPartyIdSet,
+                false
         );
         query.addCriteria(criteria);
 
@@ -267,11 +285,12 @@ public class LintDefectV2Dao {
 
     @NotNull
     private Criteria getQueryCriteria(
-            Map<Long,List<String>> taskToolMap,
+            Map<Long, List<String>> taskToolMap,
             DefectQueryReqVO defectQueryReqVO,
             Set<String> defectMongoIdSet,
             Set<String> pkgChecker,
-            Set<String> defectThirdPartyIdSet
+            Set<String> defectThirdPartyIdSet,
+            boolean isAggregate
     ) {
         String checker = defectQueryReqVO.getChecker();
         CheckerSet checkerSet = defectQueryReqVO.getCheckerSet();
@@ -302,21 +321,96 @@ public class LintDefectV2Dao {
             return magicEmptyCriteria;
         }
 
-        List<Criteria> innerOrOpList = Lists.newArrayList();
-        for (Entry<Long, List<String>> entry : taskToolMap.entrySet()) {
-            Long taskId = entry.getKey();
-            List<String> toolNameList = entry.getValue();
-            innerOrOpList.add(
-                    Criteria.where("task_id").is(taskId)
-                            .and("tool_name").in(toolNameList)
-            );
+        /*
+         * 注意事项：
+         * 1、or查询会影响索引命中率
+         * 2、aggregate()因SDK版本不支持hint，应重构查询语句，减少or的影响
+         * 3、find()因数据库版本不支持allowDiskUse=> "Sort operation used more than the maximum 33554432 bytes of RAM"
+         */
+        Criteria rootCriteria = null;
+
+        // 优化掉or查询
+        if (taskToolMap.size() == 1) {
+            Entry<Long, List<String>> kv = taskToolMap.entrySet().stream().findFirst().get();
+            rootCriteria = Criteria.where("task_id").is(kv.getKey()).and("tool_name").in(kv.getValue());
+        } else {
+            // 若任务对应的工具均是一致的
+            boolean isEqual = true;
+            Set<String> toolNameSet = Sets.newHashSet(taskToolMap.values().iterator().next());
+            for (List<String> toolNameList : taskToolMap.values()) {
+                if (toolNameList.size() != toolNameSet.size() || !toolNameSet.containsAll(toolNameList)) {
+                    isEqual = false;
+                    break;
+                }
+            }
+
+            if (isEqual) {
+                rootCriteria = Criteria.where("task_id").in(taskToolMap.keySet())
+                        .and("tool_name").in(toolNameSet);
+            }
         }
 
-        Criteria rootCriteria = new Criteria();
-        rootCriteria.orOperator(innerOrOpList.toArray(new Criteria[]{}));
+        // 若前置的or优化均未能命中时
+        if (rootCriteria == null) {
+            Set<String> allToolNameSet = taskToolMap.values().stream()
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toSet());
+
+            // agg()操作sdk层面不支持指定索引，通过提取关键条件到外层，降低or的干扰
+            if (isAggregate) {
+                rootCriteria = Criteria.where("task_id").in(taskToolMap.keySet())
+                        .and("tool_name").in(allToolNameSet);
+            } else {
+                rootCriteria = new Criteria();
+            }
+
+            List<Criteria> innerOrOpList = Lists.newArrayList();
+            /*
+            // 实测更慢
+            // 63是指除SCC/CLOC/CCN/DUPC之外的工具总数
+            if (taskToolMap.size() > 63) {
+                // Map{taskId, toolNames} => Map{toolName, taskIds}
+                // toolName作为key，Map大小最大为63，在大项目下远小于taskId作为key，从而减少IXSCAN次数
+                Map<String, List<Long>> toolNameToTaskIdMap = Maps.newHashMap();
+
+                for (String toolName : allToolNameSet) {
+                    for (Entry<Long, List<String>> kv : taskToolMap.entrySet()) {
+                        HashSet<String> curToolNameSet = Sets.newHashSet(kv.getValue());
+                        Long curTaskId = kv.getKey();
+                        if (curToolNameSet.contains(toolName)) {
+                            List<Long> taskIdList =
+                                    toolNameToTaskIdMap.computeIfAbsent(toolName, x -> Lists.newArrayList());
+                            taskIdList.add(curTaskId);
+                        }
+                    }
+                }
+
+                for (Entry<String, List<Long>> kv : toolNameToTaskIdMap.entrySet()) {
+                    String toolName = kv.getKey();
+                    List<Long> taskIdList = kv.getValue();
+                    innerOrOpList.add(
+                            Criteria.where("task_id").in(taskIdList)
+                                    .and("tool_name").is(toolName)
+                    );
+                }
+
+            }
+            */
+            for (Entry<Long, List<String>> entry : taskToolMap.entrySet()) {
+                Long taskId = entry.getKey();
+                List<String> toolNameList = entry.getValue();
+                innerOrOpList.add(
+                        Criteria.where("task_id").is(taskId)
+                                .and("tool_name").in(toolNameList)
+                );
+            }
+
+            rootCriteria.orOperator(innerOrOpList.toArray(new Criteria[]{}));
+        }
+
         List<Criteria> andOpList = Lists.newArrayList();
 
-        // 1.buildId对应的告警ID集合过滤
+        // buildId对应的告警ID集合过滤
         if (CollectionUtils.isNotEmpty(defectMongoIdSet) && CollectionUtils.isNotEmpty(defectThirdPartyIdSet)) {
             Criteria orCriteria = new Criteria().orOperator(
                     Criteria.where("_id").in(
@@ -331,17 +425,22 @@ public class LintDefectV2Dao {
             rootCriteria.and("id").in(defectThirdPartyIdSet);
         }
 
-        // 2.状态过滤
+        // 状态过滤
         if (CollectionUtils.isNotEmpty(conditionStatusStrSet)) {
             andOpList.add(getStatusCriteria(conditionStatusStrSet, buildId, ignoreReasonTypes));
         }
 
-        // 3.告警作者过滤
+        // 规则类型过滤
+        if (CollectionUtils.isNotEmpty(pkgChecker)) {
+            rootCriteria.and("checker").in(pkgChecker);
+        }
+
+        // 告警作者过滤
         if (StringUtils.isNotEmpty(author)) {
             rootCriteria.and("author").in(Lists.newArrayList(author));
         }
 
-        // 4.严重程度过滤
+        // 严重程度过滤
         if (CollectionUtils.isNotEmpty(conditionSeverity)) {
             if (conditionSeverity.contains(String.valueOf(ComConstants.PROMPT))) {
                 conditionSeverity.add(String.valueOf(ComConstants.PROMPT_IN_DB));
@@ -355,12 +454,7 @@ public class LintDefectV2Dao {
             }
         }
 
-        // 5.规则类型过滤
-        if (CollectionUtils.isNotEmpty(pkgChecker)) {
-            rootCriteria.and("checker").in(pkgChecker);
-        }
-
-        // 6.路径过滤
+        // 路径过滤
         if (CollectionUtils.isNotEmpty(fileList)) {
             List<Criteria> criteriaList = new ArrayList<>();
             fileList.forEach(file -> criteriaList.add(Criteria.where("file_path").regex(file)));
@@ -370,7 +464,7 @@ public class LintDefectV2Dao {
         long minTime = 0L;
         long maxTime = 0L;
 
-        // 7.按日期过滤，告警录入line_update_time可能为null
+        // 按日期过滤，告警录入line_update_time可能为null
         String startTimeStr = defectQueryReqVO.getStartCreateTime();
         String endTimeStr = defectQueryReqVO.getEndCreateTime();
         if (StringUtils.isNotEmpty(startTimeStr)) {
@@ -397,7 +491,7 @@ public class LintDefectV2Dao {
 
         long langValue = defectQueryReqVO.getCheckerSet() != null ? defectQueryReqVO.getCheckerSet().getCodeLang() : 0L;
 
-        //9. 按选定规则集的语言过滤
+        // 按选定规则集的语言过滤
         if (langValue > 0) {
             Criteria langValueCri = new Criteria();
             langValueCri.orOperator(Criteria.where("lang_value").is(langValue),
@@ -587,7 +681,10 @@ public class LintDefectV2Dao {
             Sort.Direction sortType
     ) {
         // 根据查询条件过滤
-        Criteria criteria = getQueryCriteria(taskToolMap, queryWarningReq, defectIdSet, pkgChecker, Sets.newHashSet());
+        Criteria criteria = getQueryCriteria(
+                taskToolMap, queryWarningReq, defectIdSet,
+                pkgChecker, Sets.newHashSet(), true
+        );
         MatchOperation match = Aggregation.match(criteria);
         // 以filePath进行分组，计算文件总数
         GroupOperation group = Aggregation.group("task_id", "tool_name", "file_path");
@@ -645,21 +742,13 @@ public class LintDefectV2Dao {
     /**
      * 根据状态过滤后获取规则，处理人、文件路径
      */
-    public List<LintFileVO> getCheckerAuthorPathForPageInit(
-            Map<Long, List<String>> taskToolMap,
+    public List<LintFileVO> getCheckerAndAuthorAndPath(
+            long taskId,
+            List<String> toolNameList,
             Set<String> statusSet,
-            Set<String> pkgChecker,
-            boolean groupIncludeFilePath
+            Set<String> pkgChecker
     ) {
-
-        List<Criteria> innerOrOpList = Lists.newArrayList();
-        for (Entry<Long, List<String>> entrySet : taskToolMap.entrySet()) {
-            innerOrOpList.add(
-                    Criteria.where("task_id").is(entrySet.getKey())
-                            .and("tool_name").in(entrySet.getValue())
-            );
-        }
-        Criteria rootCriteria = new Criteria().orOperator(innerOrOpList.toArray(new Criteria[]{}));
+        Criteria rootCriteria = Criteria.where("task_id").is(taskId).and("tool_name").in(toolNameList);
 
         // 状态过滤
         if (CollectionUtils.isNotEmpty(statusSet)) {
@@ -673,23 +762,14 @@ public class LintDefectV2Dao {
         }
 
         MatchOperation match = Aggregation.match(rootCriteria);
-        GroupOperation group;
-
-        if (groupIncludeFilePath) {
-            group = Aggregation.group("task_id", "tool_name", "file_path")
-                    .last("file_path").as("filePath")
-                    .last("url").as("url")
-                    .last("rel_path").as("relPath")
-                    .addToSet("checker").as("checkerList")
-                    .addToSet("author").as("authorList");
-        } else {
-            group = Aggregation.group("task_id", "tool_name")
-                    .addToSet("checker").as("checkerList")
-                    .addToSet("author").as("authorList");
-        }
-
-        Aggregation agg = Aggregation.newAggregation(match, group)
-                .withOptions(Aggregation.newAggregationOptions().allowDiskUse(true).build());
+        GroupOperation group = Aggregation.group("task_id", "tool_name", "file_path")
+                .last("file_path").as("filePath")
+                .last("url").as("url")
+                .last("rel_path").as("relPath")
+                .addToSet("checker").as("checkerList")
+                .addToSet("author").as("authorList");
+        AggregationOptions options = Aggregation.newAggregationOptions().allowDiskUse(true).build();
+        Aggregation agg = Aggregation.newAggregation(match, group).withOptions(options);
         AggregationResults<LintFileVO> queryResult = mongoTemplate.aggregate(agg, "t_lint_defect_v2", LintFileVO.class);
 
         return queryResult.getMappedResults();
@@ -755,10 +835,10 @@ public class LintDefectV2Dao {
      * @return
      */
     public List<LintDefectGroupStatisticVO> statisticByStatus(
-            Map<Long,List<String>> taskToolMap,
+            Map<Long, List<String>> taskToolMap,
             DefectQueryReqVO queryWarningReq,
             Pair<Set<String>, Set<String>> defectIdsPair,
-            Set<String> pkgChecker
+            Set<String> pkgChecker, String projectId, String userId
     ) {
         // 只需要查状态为待修复，已修复，已忽略的告警
         Set<String> needQueryStatusSet = Sets.newHashSet(
@@ -774,7 +854,8 @@ public class LintDefectV2Dao {
                 queryWarningReq,
                 defectIdsPair.getFirst(),
                 pkgChecker,
-                defectIdsPair.getSecond()
+                defectIdsPair.getSecond(),
+                true
         );
 
         MatchOperation match = Aggregation.match(criteria);
@@ -783,10 +864,19 @@ public class LintDefectV2Dao {
                 .last("status").as("status")
                 .count().as("defectCount");
 
-        Aggregation agg = Aggregation.newAggregation(match, group)
-                .withOptions(Aggregation.newAggregationOptions().allowDiskUse(true).build());
+        AggregationOptions options = Aggregation.newAggregationOptions()
+                .maxTime(Duration.ofSeconds(1))
+                .allowDiskUse(true)
+                .build();
+        Aggregation agg = Aggregation.newAggregation(match, group).withOptions(options);
+        long beginTime = System.currentTimeMillis();
         AggregationResults<LintDefectGroupStatisticVO> queryResult = mongoTemplate.aggregate(agg, "t_lint_defect_v2",
                 LintDefectGroupStatisticVO.class);
+
+        if (MapUtils.isNotEmpty(taskToolMap) && taskToolMap.size() > 1) {
+            log.info("Multi-Task-Query statistic by status cost: {}, project id: {}, user id: {}",
+                    System.currentTimeMillis() - beginTime, projectId, userId);
+        }
 
         return queryResult.getMappedResults();
     }
@@ -801,9 +891,9 @@ public class LintDefectV2Dao {
      * @return
      */
     public List<LintDefectGroupStatisticVO> statisticBySeverity(
-            Map<Long,List<String>> taskToolMap, DefectQueryReqVO queryWarningReq,
+            Map<Long, List<String>> taskToolMap, DefectQueryReqVO queryWarningReq,
             Pair<Set<String>, Set<String>> defectIdsPair,
-            Set<String> pkgChecker
+            Set<String> pkgChecker, String projectId, String userId
     ) {
         // 根据查询条件过滤
         Criteria criteria = getQueryCriteria(
@@ -811,7 +901,8 @@ public class LintDefectV2Dao {
                 queryWarningReq,
                 defectIdsPair.getFirst(),
                 pkgChecker,
-                defectIdsPair.getSecond()
+                defectIdsPair.getSecond(),
+                true
         );
         MatchOperation match = Aggregation.match(criteria);
 
@@ -822,8 +913,15 @@ public class LintDefectV2Dao {
 
         Aggregation agg = Aggregation.newAggregation(match, group)
                 .withOptions(Aggregation.newAggregationOptions().allowDiskUse(true).build());
+
+        long beginTime = System.currentTimeMillis();
         AggregationResults<LintDefectGroupStatisticVO> queryResult = mongoTemplate.aggregate(agg, "t_lint_defect_v2",
                 LintDefectGroupStatisticVO.class);
+
+        if (MapUtils.isNotEmpty(taskToolMap) && taskToolMap.size() > 1) {
+            log.info("Multi-Task-Query statistic by severity cost: {}, project id: {}, user id: {}",
+                    System.currentTimeMillis() - beginTime, projectId, userId);
+        }
 
         return queryResult.getMappedResults();
     }
@@ -837,6 +935,7 @@ public class LintDefectV2Dao {
      * @param pkgChecker
      * @return
      */
+    @Deprecated
     public List<LintDefectGroupStatisticVO> statisticByDefectType(
             Map<Long,List<String>> taskToolMap, DefectQueryReqVO queryWarningReq, Pair<Set<String>,
             Set<String>> defectIdsPair, Set<String> pkgChecker,
@@ -850,7 +949,8 @@ public class LintDefectV2Dao {
                 queryWarningReq,
                 defectIdsPair.getFirst(),
                 pkgChecker,
-                defectIdsPair.getSecond()
+                defectIdsPair.getSecond(),
+                true
         );
         queryWarningReq.setDefectType(oldDefectType);
 

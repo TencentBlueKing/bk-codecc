@@ -291,4 +291,9 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
     public Result<ListTaskNameCnResponse> listTaskNameCn(ListTaskNameCnRequest request) {
         return new Result<>(null);
     }
+
+    @Override
+    public Result<Boolean> multiTaskVisitable(String projectId) {
+        return new Result<>(taskService.multiTaskVisitable(projectId));
+    }
 }

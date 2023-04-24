@@ -32,8 +32,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.component.QueryWarningLogicComponent;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.CCNDefectDao;
+import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskPersonalStatisticDao;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.model.statistic.StatisticEntity;
 import com.tencent.bk.codecc.defect.service.AbstractQueryWarningBizService;
@@ -108,26 +108,20 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
     private static Logger logger = LoggerFactory.getLogger(CCNQueryWarningBizServiceImpl.class);
     @Autowired
     CheckerService checkerService;
-
     @Autowired
     private Client client;
     @Autowired
     private CCNDefectRepository ccnDefectRepository;
-
     @Autowired
     private ThirdPartySystemCaller thirdPartySystemCaller;
-
     @Autowired
     private BizServiceFactory<TreeService> treeServiceBizServiceFactory;
-
     @Autowired
     private CCNDefectDao ccnDefectDao;
-
-    @Autowired
-    private CCNStatisticRepository ccnStatisticRepository;
-
     @Autowired
     private QueryWarningLogicComponent queryWarningLogicComponent;
+    @Autowired
+    private TaskPersonalStatisticDao taskPersonalStatisticDao;
 
     @Override
     public Long countNewDefectFile(CountDefectFileRequest request) {
@@ -150,6 +144,12 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
 
     @Override
     public Object pageInit(String projectId, DefectQueryReqVO request) {
+        CCNDefectQueryRspVO response = new CCNDefectQueryRspVO();
+        // 跨任务查询时，不执行聚合统计
+        if (Boolean.TRUE.equals(request.getMultiTaskQuery())) {
+            return response;
+        }
+
         String buildId = request.getBuildId();
         List<Long> taskIdList = ParamUtils.allTaskByProjectIdIfEmpty(
                 request.getTaskIdList(),
@@ -176,8 +176,6 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
                 : Sets.newHashSet();
         String startCreateTimeStr = request.getStartCreateTime();
         String endCreateTimeStr = request.getEndCreateTime();
-
-        CCNDefectQueryRspVO response = new CCNDefectQueryRspVO();
 
         if (ComConstants.StatisticType.STATUS.name().equalsIgnoreCase(type)) {
             statisticByStatus(
@@ -289,46 +287,47 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
             Set<String> statusSet,
             String checkerSet,
             String buildId,
-            String projectId
+            String projectId,
+            boolean isMultiTaskQuery
     ) {
         taskIdList = ParamUtils.allTaskByProjectIdIfEmpty(taskIdList, projectId, userId);
-
         if (taskIdList.size() > 1 && StringUtils.isNotEmpty(buildId)) {
             throw new IllegalArgumentException("build id must be empty when task list size more than 1");
         }
 
-        String toolName = Tool.CCN.name();
-        List<CCNDefectEntity> ccnDefectEntityList = Lists.newArrayList();
-
-        if (StringUtils.isEmpty(buildId)) {
-            ccnDefectEntityList = ccnDefectRepository.findByTaskIdInAndStatus(taskIdList, DefectStatus.NEW.value());
-        } else {
-            // 快照查，必定是单任务
-            Long taskId = taskIdList.get(0);
-            Set<String> defectIdSet = getDefectIdsByBuildId(taskId, Lists.newArrayList(toolName), buildId);
-
-            if (CollectionUtils.isNotEmpty(defectIdSet)) {
-                // 快照查补偿处理
-                Set<Integer> newAndFixedStatusSet = Sets.newHashSet(
-                        DefectStatus.NEW.value(),
-                        DefectStatus.NEW.value() | DefectStatus.FIXED.value()
-                );
-                ccnDefectEntityList =
-                        ccnDefectRepository.findByEntityIdInAndStatusIn(defectIdSet, newAndFixedStatusSet);
-            }
-        }
-
         Set<String> authorSet = new TreeSet<>();
         Set<String> defectPaths = new TreeSet<>();
+        String toolName = Tool.CCN.name();
 
-        for (CCNDefectEntity defect : ccnDefectEntityList) {
-            // 设置作者
-            if (StringUtils.isNotEmpty(defect.getAuthor())) {
-                authorSet.add(defect.getAuthor());
+        if (isMultiTaskQuery) {
+            authorSet.addAll(taskPersonalStatisticDao.getCCNAuthorSet(Sets.newHashSet(taskIdList)));
+        } else {
+            Long taskId = taskIdList.get(0);
+            List<CCNDefectEntity> ccnDefectEntityList = null;
+
+            if (StringUtils.isEmpty(buildId)) {
+                ccnDefectEntityList = ccnDefectRepository.findByTaskIdAndStatus(taskId, DefectStatus.NEW.value());
+            } else {
+                Set<String> defectIdSet = getDefectIdsByBuildId(taskId, Lists.newArrayList(toolName), buildId);
+                if (CollectionUtils.isEmpty(defectIdSet)) {
+                    ccnDefectEntityList = Lists.newArrayList();
+                } else {
+                    // 快照查补偿处理
+                    Set<Integer> newAndFixedStatusSet = Sets.newHashSet(
+                            DefectStatus.NEW.value(),
+                            DefectStatus.NEW.value() | DefectStatus.FIXED.value()
+                    );
+
+                    ccnDefectEntityList =
+                            ccnDefectRepository.findByEntityIdInAndStatusIn(defectIdSet, newAndFixedStatusSet);
+                }
             }
 
-            // 跨任务暂不生成文件路径树
-            if (taskIdList.size() == 1) {
+            for (CCNDefectEntity defect : ccnDefectEntityList) {
+                if (StringUtils.isNotEmpty(defect.getAuthor())) {
+                    authorSet.add(defect.getAuthor());
+                }
+
                 // 获取所有警告文件的相对路径
                 String relativePath = PathUtils.getRelativePath(defect.getUrl(), defect.getRelPath());
                 if (StringUtils.isNotBlank(relativePath)) {

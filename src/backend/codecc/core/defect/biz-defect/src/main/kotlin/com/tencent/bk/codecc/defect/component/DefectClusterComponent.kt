@@ -94,7 +94,7 @@ class DefectClusterComponent @Autowired constructor(
             true
         } catch (t: Throwable) {
             logger.error(
-                "cluster exec fail! $commonLog, input file name: ${defectClusterDTO.inputFileName}", t
+                "cluster exec fail! $commonLog, input file path: ${defectClusterDTO.inputFilePath}", t
             )
 
             false

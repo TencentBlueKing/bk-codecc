@@ -97,7 +97,8 @@ public class DUPCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             Set<String> statusSet,
             String checkerSet,
             String buildId,
-            String projectId
+            String projectId,
+            boolean isMultiTaskQuery
     ) {
         Long taskId = taskIdList.get(0);
         String toolName = toolNameList.get(0);

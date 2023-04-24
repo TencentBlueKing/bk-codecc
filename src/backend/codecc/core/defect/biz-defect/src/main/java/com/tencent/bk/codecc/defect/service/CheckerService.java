@@ -66,7 +66,11 @@ public interface CheckerService
      * @param toolNameSet
      * @return
      */
-    Map<String, CheckerDetailVO> queryAllChecker(List<String> toolNameSet, String checkerSet);
+    Map<String, CheckerDetailVO> queryAllChecker(
+            List<String> toolNameSet,
+            String checkerSet,
+            boolean returnOnlyMapCheckerKeyAndType
+    );
 
     /**
      * 查询打开的规则

@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 public class I18NServiceImpl implements I18NService {
 
     @Autowired
-    private I18NMessageDao i18NMessageDao;
+    private I18NMessageDao i18nMessageDao;
 
     @Override
     public I18NMessageResponse queryByCondition(I18NMessageRequest request) {
@@ -24,7 +24,7 @@ public class I18NServiceImpl implements I18NService {
                 .map(vo -> new I18NQueryModel(vo.getModuleCode(), vo.getKeySet(), vo.getLocale()))
                 .collect(Collectors.toList());
 
-        List<I18NMessageEntity> entityList = i18NMessageDao.query(queryModelList);
+        List<I18NMessageEntity> entityList = i18nMessageDao.query(queryModelList);
         List<I18NMessageResponse.BaseVO> voList = entityList.stream()
                 .map(entity -> {
                     I18NMessageResponse.BaseVO target = new I18NMessageResponse.BaseVO();

@@ -26,26 +26,26 @@ public class I18NResponseAspect extends AbstractI18NResponseAspect {
     private Client client;
 
     @Override
-    public void addInternationalization(I18NReflection i18NReflection, String localeString) {
-        if (i18NReflection == null || CollectionUtils.isEmpty(i18NReflection.getFieldMetaDataList())) {
+    public void addInternationalization(I18NReflection i18nReflection, String localeString) {
+        if (i18nReflection == null || CollectionUtils.isEmpty(i18nReflection.getFieldMetaDataList())) {
             return;
         }
 
-        List<I18NMessageResponse.BaseVO> i18NMessageList = getI18NMessage(i18NReflection, localeString);
-        if (CollectionUtils.isEmpty(i18NMessageList)) {
+        List<I18NMessageResponse.BaseVO> i18nMessageList = getI18NMessage(i18nReflection, localeString);
+        if (CollectionUtils.isEmpty(i18nMessageList)) {
             return;
         }
 
-        Map<String, List<I18NMessageResponse.BaseVO>> i18NMessageMap = i18NMessageList.stream()
+        Map<String, List<I18NMessageResponse.BaseVO>> i18nMessageMap = i18nMessageList.stream()
                 .collect(Collectors.groupingBy(I18NMessageResponse.BaseVO::getModuleCode));
 
-        for (FieldMetaData fieldMetaData : i18NReflection.getFieldMetaDataList()) {
-            List<I18NMessageResponse.BaseVO> i18NMessageVOList = i18NMessageMap.get(fieldMetaData.getModuleCode());
-            if (i18NMessageVOList == null) {
+        for (FieldMetaData fieldMetaData : i18nReflection.getFieldMetaDataList()) {
+            List<I18NMessageResponse.BaseVO> i18nMessageVOList = i18nMessageMap.get(fieldMetaData.getModuleCode());
+            if (i18nMessageVOList == null) {
                 continue;
             }
 
-            Map<String, String> kvMap = i18NMessageVOList.stream()
+            Map<String, String> kvMap = i18nMessageVOList.stream()
                     .collect(
                             Collectors.toMap(
                                     I18NMessageResponse.BaseVO::getKey,
@@ -57,10 +57,10 @@ public class I18NResponseAspect extends AbstractI18NResponseAspect {
         }
     }
 
-    private List<I18NMessageResponse.BaseVO> getI18NMessage(I18NReflection i18NReflection, String localeString) {
+    private List<I18NMessageResponse.BaseVO> getI18NMessage(I18NReflection i18nReflection, String localeString) {
         try {
             I18NMessageRequest request = new I18NMessageRequest();
-            for (FieldMetaData fieldMetaData : i18NReflection.getFieldMetaDataList()) {
+            for (FieldMetaData fieldMetaData : i18nReflection.getFieldMetaDataList()) {
                 request.add(
                         new I18NMessageRequest.BaseVO(
                                 fieldMetaData.getModuleCode(),

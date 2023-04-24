@@ -369,7 +369,7 @@ public class ParamUtils {
         ToolMetaCacheService toolMetaCache = SpringContextUtil.Companion.getBean(ToolMetaCacheService.class);
         ToolMetaBaseVO toolMetaBase = toolMetaCache.getToolBaseMetaCache(toolName);
         if (ComConstants.ToolIntegratedStatus.D.name().equals(toolMetaBase.getStatus())) {
-            log.info("tool was removed: {}, {}", toolName, taskBase.getTaskId());
+            // log.info("tool was removed: {}, {}", toolName, taskBase.getTaskId());
             return true;
         }
 

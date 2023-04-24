@@ -252,7 +252,8 @@ public class CommonQueryWarningBizServiceImpl extends AbstractQueryWarningBizSer
             Set<String> statusSet,
             String checkerSet,
             String buildId,
-            String projectId
+            String projectId,
+            boolean isMultiTaskQuery
     ) {
         return new QueryWarningPageInitRspVO();
         /*long beginTime = System.currentTimeMillis();  // NOCC:VariableDeclarationUsageDistance(设计如此:)

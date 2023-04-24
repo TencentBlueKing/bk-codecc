@@ -82,6 +82,9 @@ public class DefectQueryReqVOBase {
     @ApiModelProperty("是否带出任务名")
     private Boolean showTaskNameCn;
 
+    @ApiModelProperty("是否跨任务查询")
+    private Boolean multiTaskQuery;
+
     @Data
     public static class CheckerSet {
 

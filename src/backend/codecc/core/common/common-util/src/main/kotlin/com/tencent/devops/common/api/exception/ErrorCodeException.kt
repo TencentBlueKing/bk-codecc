@@ -32,12 +32,11 @@ import javax.ws.rs.core.Response
  * 根据错误码会反查错误信息，用于改造现有直接抛出一些错误的异常
  */
 open class ErrorCodeException(
-        val status: Response.Status,    // HTTP状态码
-        val errorCode: String,  // 错误码
-        val params: Array<String> = emptyArray(), // 错误码对应的错误信息中占位的替换参数
-        defaultMessage: String? // 默认错误信息
-) :
-        RuntimeException(defaultMessage) {
+    val status: Response.Status,    // HTTP状态码
+    val errorCode: String,  // 错误码
+    val params: Array<String> = emptyArray(), // 错误码对应的错误信息中占位的替换参数
+    defaultMessage: String? // 默认错误信息
+) : RuntimeException(defaultMessage) {
     constructor(errorCode: String, params: Array<String> = emptyArray(), defaultMessage: String? = null) :
             this(Response.Status.INTERNAL_SERVER_ERROR, errorCode, params, defaultMessage)
 }

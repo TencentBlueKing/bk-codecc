@@ -11,8 +11,18 @@ import com.tencent.bk.codecc.defect.model.SecurityClusterStatisticEntity;
 import com.tencent.bk.codecc.defect.model.StandardClusterStatisticEntity;
 import com.tencent.bk.codecc.defect.service.MetricsService;
 import com.tencent.bk.codecc.defect.vo.MetricsVO;
+import com.tencent.bk.codecc.task.api.ServiceToolConfigRestResource;
+import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
+import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.client.Client;
+import com.tencent.devops.common.constant.ComConstants.Tool;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import com.tencent.devops.common.util.BeanUtils;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +40,9 @@ public class MetricsServiceImpl implements MetricsService {
 
     @Autowired
     private MetricsRepository metricsRepository;
+
+    @Autowired
+    private Client client;
 
     @Autowired
     private StandardClusterStatisticDao standardClusterStatisticDao;
@@ -58,7 +71,7 @@ public class MetricsServiceImpl implements MetricsService {
 
     @Override
     public List<MetricsVO> getMetrics(List<Long> taskIds) {
-        List<MetricsEntity> metricsEntityList = metricsDao.findLastByTaskIdIn(taskIds);
+        List<MetricsEntity> metricsEntityList = getLastByTaskIdIn(taskIds);
         Map<Long, StandardClusterStatisticEntity> standardClusterStatisticEntityMap =
                 standardClusterStatisticDao.findListByTaskIdAndBuildId(metricsEntityList)
                         .stream()
@@ -94,4 +107,26 @@ public class MetricsServiceImpl implements MetricsService {
         });
         return metricsVOList;
     }
+
+    /**
+     * 查询任务最新的指标数据
+     * @param taskIds
+     * @return
+     */
+    private List<MetricsEntity> getLastByTaskIdIn(List<Long> taskIds) {
+        if (CollectionUtils.isEmpty(taskIds)) {
+            return Collections.emptyList();
+        }
+        Result<List<ToolConfigInfoVO>> toolConfigResult =
+                client.get(ServiceToolConfigRestResource.class).getByTaskIdsAndToolName(taskIds, Tool.SCC.name());
+        if (toolConfigResult.isNotOk() || CollectionUtils.isEmpty(toolConfigResult.getData())) {
+            return Collections.emptyList();
+        }
+        List<ToolConfigInfoVO> toolConfigInfoVOList = toolConfigResult.getData();
+        Map<Long, String> taskIdToBuildIds = toolConfigInfoVOList.stream()
+                .filter(toolConfigInfoVO -> StringUtils.isNotBlank(toolConfigInfoVO.getCurrentBuildId()))
+                .collect(Collectors.toMap(ToolConfigInfoVO::getTaskId, ToolConfigInfoVO::getCurrentBuildId));
+        return metricsDao.findByTaskAndBuildIdMap(taskIdToBuildIds);
+    }
+
 }

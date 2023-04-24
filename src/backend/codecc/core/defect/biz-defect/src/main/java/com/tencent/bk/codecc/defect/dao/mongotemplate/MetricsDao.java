@@ -1,7 +1,10 @@
 package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
 import com.tencent.bk.codecc.defect.model.MetricsEntity;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -52,6 +55,28 @@ public class MetricsDao {
         return retList;
     }
 
+    /**
+     * 根据TaskId与BuildId键值对查询，Or查询多条
+     * @param taskIdAndBuildIdMap
+     * @return
+     */
+    public List<MetricsEntity> findByTaskAndBuildIdMap(Map<Long, String> taskIdAndBuildIdMap) {
+        List<Criteria> orCriList = new ArrayList<>();
+        for (Entry<Long, String> taskIdAndBuildId : taskIdAndBuildIdMap.entrySet()) {
+            orCriList.add(Criteria.where("task_id").is(taskIdAndBuildId.getKey())
+                    .and("build_id").is(taskIdAndBuildId.getValue()));
+        }
+        Criteria criteria = new Criteria();
+        criteria.orOperator(orCriList.toArray(new Criteria[]{}));
+        return mongoTemplate.find(Query.query(criteria), MetricsEntity.class);
+    }
+
+    /**
+     * upsert by task id and build id
+     *
+     * @param metricsEntity
+     * @return
+     */
     public boolean upsert(MetricsEntity metricsEntity) {
         Query query = new Query();
         query.addCriteria(Criteria.where("task_id").is(metricsEntity.getTaskId())

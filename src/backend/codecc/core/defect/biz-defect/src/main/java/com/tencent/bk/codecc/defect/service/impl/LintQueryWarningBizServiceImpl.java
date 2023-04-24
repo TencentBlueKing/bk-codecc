@@ -41,6 +41,7 @@ import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildInfoRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.file.ScmFileInfoSnapshotRepository;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.CheckerDetailDao;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskPersonalStatisticDao;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.file.ScmFileInfoSnapshotDao;
 import com.tencent.bk.codecc.defect.model.BuildDefectEntity;
 import com.tencent.bk.codecc.defect.model.BuildDefectV2Entity;
@@ -63,7 +64,6 @@ import com.tencent.bk.codecc.defect.vo.CheckerCustomVO;
 import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
 import com.tencent.bk.codecc.defect.vo.CodeCommentVO;
 import com.tencent.bk.codecc.defect.vo.CountDefectFileRequest;
-import com.tencent.bk.codecc.defect.vo.DefectBaseVO;
 import com.tencent.bk.codecc.defect.vo.DefectDetailVO;
 import com.tencent.bk.codecc.defect.vo.DefectFilesInfoVO;
 import com.tencent.bk.codecc.defect.vo.DefectInstanceVO;
@@ -153,6 +153,8 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
     private QueryWarningLogicComponent queryWarningLogicComponent;
     @Autowired
     private ToolBuildInfoRepository toolBuildInfoRepository;
+    @Autowired
+    private TaskPersonalStatisticDao taskPersonalStatisticDao;
 
     @Override
     public Long countNewDefectFile(CountDefectFileRequest request) {
@@ -215,7 +217,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                 taskIdList,
                 buildId
         );
-        log.info("query lint defect list, task tool map: {}", taskToolMap);
+
         // 多任务维度，有些任务可能曾经开启过某款工具，但现在已经停用了
         taskIdList = Lists.newArrayList(taskToolMap.keySet());
         request.setTaskIdList(taskIdList);
@@ -225,6 +227,9 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         if (MapUtils.isEmpty(taskToolMap)) {
             return lintDefectQueryRsp;
         }
+
+        log.info("query lint defect list, task tool map: {}, \n{}", taskToolMap.size(),
+                JsonUtil.INSTANCE.toJson(taskToolMap));
 
         // 规则集筛选
         Set<String> pkgChecker = getCheckers(request.getCheckerSet(), request.getChecker(), taskToolMap, dimensionList);
@@ -265,7 +270,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             Page<LintDefectV2Entity> result = lintDefectV2Dao.findDefectPageByCondition(
                     taskToolMap, request, defectMongoIdSet, pkgChecker,
                     filedMap, pageNum, pageSize, sortField,
-                    sortType, defectThirdPartyIdSet
+                    sortType, defectThirdPartyIdSet, request.getProjectId(), request.getUserId()
             );
 
             log.info("get defect group by problem for task before snapshot post handle: {}, {}, {}",
@@ -655,13 +660,12 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             List<String> toolNameList,
             List<String> dimensionList,
             Set<String> statusSet,
-            String checkerSet,
+            String checkerSetId,
             String buildId,
-            String projectId
+            String projectId,
+            boolean isMultiTaskQuery
     ) {
-        // NOCC:VariableDeclarationUsageDistance(设计如此:)
-        long beginTime = System.currentTimeMillis();
-        taskIdList = ParamUtils.allTaskByProjectIdIfEmpty(taskIdList, projectId,userId);
+        taskIdList = ParamUtils.allTaskByProjectIdIfEmpty(taskIdList, projectId, userId);
         dimensionList = ParamUtils.allDimensionIfEmptyForLint(dimensionList);
         Map<Long, List<String>> taskToolMap = ParamUtils.getTaskToolMap(
                 toolNameList,
@@ -680,56 +684,57 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                 .flatMap(Collection::stream)
                 .distinct()
                 .collect(Collectors.toList());
-        Set<String> pkgChecker = getCheckers(checkerSet, null, null, toolNameList, dimensionList);
 
-        // 快照查补偿处理
-        if (StringUtils.isNotEmpty(buildId) && CollectionUtils.isNotEmpty(statusSet)) {
-            String newStatusStr = String.valueOf(DefectStatus.NEW.value());
-            String fixedStatusStr = String.valueOf(DefectStatus.FIXED.value());
-
-            if (statusSet.contains(newStatusStr)) {
-                statusSet.add(newStatusStr);
-                statusSet.add(fixedStatusStr);
-            } else {
-                // 快照查，不存在已修复
-                statusSet.remove(newStatusStr);
-                statusSet.remove(fixedStatusStr);
-            }
-        }
-
-        // 是否单任务
-        boolean isSingleTask = taskIdList.size() == 1;
-
-        // 根据状态过滤后获取规则，处理人、文件路径
-        List<LintFileVO> aggInfoList = lintDefectV2Dao.getCheckerAuthorPathForPageInit(
-                taskToolMap,
-                statusSet,
-                pkgChecker,
-                isSingleTask
-        );
-        log.info("get file info size is: {}, tool name: {}", aggInfoList.size(), toolNameList);
+        Set<String> pkgChecker = getCheckers(checkerSetId, null, null, toolNameList, dimensionList);
         Set<String> authors = Sets.newHashSet();
         Set<String> checkerList = Sets.newHashSet();
         Set<String> defectPaths = Sets.newTreeSet();
 
-        for (LintFileVO fileInfo : aggInfoList) {
-            // 设置作者
-            if (CollectionUtils.isNotEmpty(fileInfo.getAuthorList())) {
-                Set<String> authorSet = fileInfo.getAuthorList().stream()
-                        .filter(CollectionUtils::isNotEmpty)
-                        .flatMap(Collection::stream)
-                        .collect(Collectors.toSet());
+        if (isMultiTaskQuery) {
+            authors.addAll(taskPersonalStatisticDao.getLintAuthorSet(taskToolMap.keySet()));
+            checkerList.addAll(pkgChecker);
+        } else {
+            // 快照查补偿处理
+            if (StringUtils.isNotEmpty(buildId) && CollectionUtils.isNotEmpty(statusSet)) {
+                String newStatusStr = String.valueOf(DefectStatus.NEW.value());
+                String fixedStatusStr = String.valueOf(DefectStatus.FIXED.value());
 
-                authors.addAll(authorSet);
+                if (statusSet.contains(newStatusStr)) {
+                    statusSet.add(newStatusStr);
+                    statusSet.add(fixedStatusStr);
+                } else {
+                    // 快照查，不存在已修复
+                    statusSet.remove(newStatusStr);
+                    statusSet.remove(fixedStatusStr);
+                }
             }
 
-            // 设置规则
-            if (CollectionUtils.isNotEmpty(fileInfo.getCheckerList())) {
-                checkerList.addAll(fileInfo.getCheckerList());
-            }
+            Entry<Long, List<String>> kv = taskToolMap.entrySet().stream().findFirst().get();
+            // 根据状态过滤后获取规则，处理人、文件路径
+            List<LintFileVO> aggInfoList = lintDefectV2Dao.getCheckerAndAuthorAndPath(
+                    kv.getKey(),
+                    kv.getValue(),
+                    statusSet,
+                    pkgChecker
+            );
+            log.info("get file info size is: {}, tool name: {}", aggInfoList.size(), toolNameList);
 
-            // 跨任务暂不生成文件路径树
-            if (isSingleTask) {
+            for (LintFileVO fileInfo : aggInfoList) {
+                // 设置作者
+                if (CollectionUtils.isNotEmpty(fileInfo.getAuthorList())) {
+                    Set<String> authorSet = fileInfo.getAuthorList().stream()
+                            .filter(CollectionUtils::isNotEmpty)
+                            .flatMap(Collection::stream)
+                            .collect(Collectors.toSet());
+
+                    authors.addAll(authorSet);
+                }
+
+                // 设置规则
+                if (CollectionUtils.isNotEmpty(fileInfo.getCheckerList())) {
+                    checkerList.addAll(fileInfo.getCheckerList());
+                }
+
                 // 获取所有警告文件的相对路径
                 String relativePath = PathUtils.getRelativePath(fileInfo.getUrl(), fileInfo.getRelPath());
                 if (StringUtils.isNotBlank(relativePath)) {
@@ -742,7 +747,6 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             }
         }
 
-        // 跨任务暂不生成文件路径树
         if (CollectionUtils.isNotEmpty(defectPaths)) {
             TreeService treeService = treeServiceBizServiceFactory.createBizService(
                     toolNameList.get(0), ComConstants.BusinessType.TREE_SERVICE.value(), TreeService.class);
@@ -752,11 +756,9 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
 
         List<String> sortedAuthors = Lists.newArrayList(authors);
         Collections.sort(sortedAuthors, Collator.getInstance(Locale.SIMPLIFIED_CHINESE));
-
         response.setAuthorList(sortedAuthors);
-        response.setCheckerList(handleCheckerList(toolNameList, checkerList, checkerSet));
+        response.setCheckerList(handleCheckerList(toolNameList, checkerList, checkerSetId));
 
-        log.info("===================getCheckerAuthorPathForPageInit cost: {}", System.currentTimeMillis() - beginTime);
         return response;
     }
 
@@ -771,7 +773,14 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
 
     @Override
     public Object pageInit(String projectId, DefectQueryReqVO request) {
+        QueryWarningPageInitRspVO response = new QueryWarningPageInitRspVO();
+        // 跨任务查询时，不执行聚合统计
+        if (Boolean.TRUE.equals(request.getMultiTaskQuery())) {
+            return response;
+        }
+
         String buildId = request.getBuildId();
+        String userId = request.getUserId();
         List<String> dimensionList = ParamUtils.allDimensionIfEmptyForLint(request.getDimensionList());
         List<Long> taskIdList = ParamUtils.allTaskByProjectIdIfEmpty(
                 request.getTaskIdList(),
@@ -784,9 +793,9 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
 
         log.info("begin pageInit, task tool map: {}", taskToolMap);
 
-        QueryWarningPageInitRspVO rspVO = new QueryWarningPageInitRspVO();
+
         if (MapUtils.isEmpty(taskToolMap)) {
-            return rspVO;
+            return response;
         }
 
         // 规则集筛选
@@ -797,7 +806,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
 
         // 规则不属于该规则集
         if (request.getCheckerSet() != null && CollectionUtils.isEmpty(pkgChecker)) {
-            return rspVO;
+            return response;
         }
 
         // 快照查询
@@ -820,30 +829,32 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
 
         if (ComConstants.StatisticType.STATUS.name().equalsIgnoreCase(statisticType)) {
             // 1.根据规则、处理人、快照、路径、日期过滤后计算各状态告警数
-            statisticByStatus(taskToolMap, request, pkgChecker, defectIdsPair, rspVO);
+            statisticByStatus(taskToolMap, request, pkgChecker, defectIdsPair, response, projectId, userId);
         } else if (ComConstants.StatisticType.SEVERITY.name().equalsIgnoreCase(statisticType)) {
             // 2.根据规则、处理人、快照、路径、日期、状态过滤后计算: 各严重级别告警数
-            statisticBySeverity(taskToolMap, request, pkgChecker, defectIdsPair, rspVO);
+            statisticBySeverity(taskToolMap, request, pkgChecker, defectIdsPair, response, projectId, userId);
         } else if (ComConstants.StatisticType.DEFECT_TYPE.name().equalsIgnoreCase(statisticType)) {
             // 3.根据规则、处理人、快照、路径、日期、状态过滤后计算: 新老告警数
-            statisticByDefectType(taskToolMap, request, pkgChecker, defectIdsPair, rspVO);
+            statisticByDefectType(taskToolMap, request, pkgChecker, defectIdsPair, response);
         } else {
             log.error("StatisticType is invalid. {}", GsonUtils.toJson(request));
         }
 
-        return rspVO;
+        return response;
     }
 
     protected void statisticBySeverity(
-            Map<Long,List<String>> taskToolMap, DefectQueryReqVO defectQueryReqVO, Set<String> pkgChecker,
+            Map<Long, List<String>> taskToolMap, DefectQueryReqVO defectQueryReqVO, Set<String> pkgChecker,
             Pair<Set<String>, Set<String>> defectIdsPair,
-            QueryWarningPageInitRspVO rspVO
+            QueryWarningPageInitRspVO rspVO, String projectId, String userId
     ) {
         List<LintDefectGroupStatisticVO> groups = lintDefectV2Dao.statisticBySeverity(
                 taskToolMap,
                 defectQueryReqVO,
                 defectIdsPair,
-                pkgChecker
+                pkgChecker,
+                projectId,
+                userId
         );
 
         groups.forEach(it -> {
@@ -894,15 +905,18 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
     }
 
     protected void statisticByStatus(
-            Map<Long,List<String>> taskToolMap, DefectQueryReqVO defectQueryReqVO, Set<String> pkgChecker,
-            Pair<Set<String>, Set<String>> defectIdsPair, QueryWarningPageInitRspVO rspVO
+            Map<Long, List<String>> taskToolMap, DefectQueryReqVO defectQueryReqVO, Set<String> pkgChecker,
+            Pair<Set<String>, Set<String>> defectIdsPair, QueryWarningPageInitRspVO rspVO,
+            String projectId,String userId
     ) {
         Set<String> condStatusSet = defectQueryReqVO.getStatus();
         List<LintDefectGroupStatisticVO> groups = lintDefectV2Dao.statisticByStatus(
                 taskToolMap,
                 defectQueryReqVO,
                 defectIdsPair,
-                pkgChecker
+                pkgChecker,
+                projectId,
+                userId
         );
 
         groups.forEach(it -> {
@@ -944,7 +958,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         }
         // 获取工具对应的所有警告类型 [初始化新增时一定要检查规则名称是否重复]
         Map<String, CheckerDetailVO> checkerDetailVOMap =
-                multitoolCheckerService.queryAllChecker(toolNameSet, checkerSet);
+                multitoolCheckerService.queryAllChecker(toolNameSet, checkerSet, true);
 
         if (MapUtils.isEmpty(checkerDetailVOMap)) {
             return Lists.newArrayList();

@@ -48,7 +48,7 @@ class CodeCCExceptionMapper : ExceptionMapper<CodeCCException> {
                     "${exception.params?.toList()}, cause exception is ${exception.errorCause}", exception
         )
         val status = Response.Status.OK
-        val i18nErrMsg = I18NUtils.getMessage(exception.errorCode, exception.params)
+        val i18nErrMsg = I18NUtils.getMessageWithParams(exception.errorCode, exception.params)
 
         return Response.status(status)
                 .type(MediaType.APPLICATION_JSON_TYPE)

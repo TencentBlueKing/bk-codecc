@@ -14,31 +14,34 @@ package com.tencent.bk.codecc.defect.vo.enums;
 
 /**
  * 规则集类型枚举
- * 
- * @date 2020/1/6
+ *
  * @version V1.0
+ * @date 2020/1/6
  */
-public enum CheckerSetCategory 
-{
+public enum CheckerSetCategory {
 
-    OPENSOURCE("开源"),
+    OPENSOURCE("开源", "CHECKER_SET_CATEGORY_OPENSOURCE"),
 
-    DEFECT("通用"),
+    DEFECT("通用", "CHECKER_SET_CATEGORY_DEFECT"),
 
-    SECURITY("安全"),
+    SECURITY("安全", "CHECKER_SET_CATEGORY_SECURITY"),
 
-    FORMAT("规范");
+    FORMAT("规范", "CHECKER_SET_CATEGORY_FORMAT");
 
     private String name;
 
-    CheckerSetCategory(String name)
-    {
+    private String i18nResourceCode;
+
+    CheckerSetCategory(String name, String i18nResourceCode) {
         this.name = name;
+        this.i18nResourceCode = i18nResourceCode;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return this.name;
     }
 
+    public String getI18nResourceCode() {
+        return this.i18nResourceCode;
+    }
 }

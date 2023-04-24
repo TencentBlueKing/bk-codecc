@@ -68,6 +68,7 @@ import com.tencent.devops.common.constant.ComConstants.StepFlag;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.redis.lock.JRedisLock;
 import com.tencent.devops.common.service.BaseDataCacheService;
+import com.tencent.devops.common.service.aop.AbstractI18NResponseAspect;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.CompressionUtils;
 import com.tencent.devops.common.util.PathUtils;
@@ -77,6 +78,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -366,6 +368,9 @@ public class CommonAnalyzeTaskBizServiceImpl extends AbstractAnalyzeTaskBizServi
     protected void updateCodeRepository(UploadTaskLogStepVO uploadTaskLogStepVO, TaskLogEntity taskLogEntity) {
         if (uploadTaskLogStepVO.getStepNum() == ComConstants.Step4Cov.COMMIT.value()
                 && uploadTaskLogStepVO.getFlag() == ComConstants.StepFlag.SUCC.value()) {
+
+            Locale locale = AbstractI18NResponseAspect.getLocale();
+
             ThreadPoolUtil.addRunnableTask(() -> {
                 /*
                     工具侧整理输出的文件路径格式跟工具无关，如下：
@@ -379,7 +384,7 @@ public class CommonAnalyzeTaskBizServiceImpl extends AbstractAnalyzeTaskBizServi
                 saveCodeFileUrl(uploadTaskLogStepVO);
 
                 // 保存代码仓信息
-                saveCodeRepoInfo(uploadTaskLogStepVO);
+                saveCodeRepoInfo(uploadTaskLogStepVO, locale);
             });
 
         }

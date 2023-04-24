@@ -216,8 +216,9 @@ public class ScmFileInfoServiceImpl implements ScmFileInfoService {
         FileMD5TotalModel fileMD5TotalModel = scmJsonComponent.loadFileMD5(streamName, toolName, buildId);
         Map<String, FileMD5SingleModel> fileMd5INfoMap = new HashMap<>();
         fileMD5TotalModel.getFileList().forEach((fileInfo) -> {
-            String path = StringUtils.isNotEmpty(fileInfo.getFileRelPath())
-                    ? fileInfo.getFileRelPath() : fileInfo.getFilePath();
+            // 考虑到多仓库情况，优先使用绝对路径，多仓库之间的relPath可能相同
+            String path = StringUtils.isNotEmpty(fileInfo.getFilePath())
+                    ? fileInfo.getFilePath() : fileInfo.getFileRelPath();
             fileMd5INfoMap.put(path, fileInfo);
         });
 
@@ -230,9 +231,9 @@ public class ScmFileInfoServiceImpl implements ScmFileInfoService {
         Map<String, ScmBlameVO> fileChangeRecordsMap = Maps.newHashMap();
         if (CollectionUtils.isNotEmpty(fileChangeRecords)) {
             for (ScmBlameVO fileLineAuthor : fileChangeRecords) {
-                FileMD5SingleModel md5Info = fileMd5INfoMap.get(fileLineAuthor.getFileRelPath()) != null
-                        ? fileMd5INfoMap.get(fileLineAuthor.getFileRelPath())
-                        : fileMd5INfoMap.get(fileLineAuthor.getFilePath());
+                FileMD5SingleModel fileMD5SingleModel = fileMd5INfoMap.get(fileLineAuthor.getFilePath());
+                FileMD5SingleModel md5Info = fileMD5SingleModel != null ? fileMD5SingleModel
+                        : fileMd5INfoMap.get(fileLineAuthor.getFileRelPath());
 
                 // 以md5.json的文件列表为准
                 fileLineAuthor.setExtraInfoMap(new HashMap<>());

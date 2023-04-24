@@ -42,44 +42,43 @@ import org.springframework.data.domain.Page;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ApiModel("圈复杂度查询返回视图")
-public class CCNDefectQueryRspVO extends CommonDefectQueryRspVO
-{
+public class CCNDefectQueryRspVO extends CommonDefectQueryRspVO {
 
     /**
      * 风险系数极高的个数
      */
     @ApiModelProperty("风险系数极高的个数")
-    private Long superHighCount;
+    private long superHighCount;
 
     /**
      * 风险系数高的个数
      */
     @ApiModelProperty("风险系数高的个数")
-    private Long highCount;
+    private long highCount;
 
     /**
      * 风险系数中的个数
      */
     @ApiModelProperty("风险系数中的个数")
-    private Long mediumCount;
+    private long mediumCount;
 
     /**
      * 风险系数低的个数
      */
     @ApiModelProperty("风险系数低的个数")
-    private Long lowCount;
+    private long lowCount;
 
     @ApiModelProperty("待修复告警数")
-    private Long existCount;
+    private long existCount;
 
     @ApiModelProperty("已修复告警数")
-    private Long fixCount;
+    private long fixCount;
 
     @ApiModelProperty("已忽略告警数")
-    private Long ignoreCount;
+    private long ignoreCount;
 
     @ApiModelProperty("已屏蔽告警数")
-    private Long maskCount;
+    private long maskCount;
 
     /**
      * 新增告警的个数
@@ -97,7 +96,7 @@ public class CCNDefectQueryRspVO extends CommonDefectQueryRspVO
      * 告警总数
      */
     @ApiModelProperty("告警总数")
-    private Long totalCount;
+    private long totalCount;
 
     /**
      * 缺陷列表
@@ -109,5 +108,5 @@ public class CCNDefectQueryRspVO extends CommonDefectQueryRspVO
      * 圈复杂度阀值
      */
     @ApiModelProperty(value = "圈复杂度阀值")
-    private Integer ccnThreshold;
+    private int ccnThreshold;
 }

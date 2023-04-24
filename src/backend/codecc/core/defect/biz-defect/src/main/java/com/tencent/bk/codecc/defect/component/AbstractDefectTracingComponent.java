@@ -75,6 +75,7 @@ public abstract class AbstractDefectTracingComponent<T> {
         log.info("aggregate inputFilePath : {}", inputFilePath);
         File inputFile = new File(inputFilePath);
         defectClusterDTO.setInputFilePath(inputFilePath);
+        defectClusterDTO.setInputFileName(inputFileName);
 
         try {
             //写入输入数据

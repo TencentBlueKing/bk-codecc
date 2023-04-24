@@ -38,8 +38,7 @@ package com.tencent.bk.codecc.defect.constant;
  * @version V1.0
  * @date 2019/4/23
  */
-public interface DefectMessageCode
-{
+public interface DefectMessageCode {
 
     /**
      * {0}类型服务不存在
@@ -80,4 +79,6 @@ public interface DefectMessageCode
     String ISSUE_SUBMIT_FAIL = "2303010";
 
     String DEFECT_NOT_FOUND = "2303011";
+
+    String DEFECT_AUTHOR_NOT_FOUND = "2303012";
 }

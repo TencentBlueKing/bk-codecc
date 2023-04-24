@@ -48,8 +48,8 @@ public class DefectQueryReqVO extends DefectQueryReqVOBase {
     private List<Long> taskIdList;
 
     @ApiModelProperty("工具名")
-    protected List<String> toolNameList;
+    private List<String> toolNameList;
 
     @ApiModelProperty("维度")
-    protected List<String> dimensionList;
+    private List<String> dimensionList;
 }

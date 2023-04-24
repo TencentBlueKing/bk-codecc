@@ -14,11 +14,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class ServiceI18NRestResourceImpl implements ServiceI18NRestResource {
 
     @Autowired
-    private I18NService i18NService;
+    private I18NService i18nService;
 
     @Override
     public Result<I18NMessageResponse> getI18NMessage(I18NMessageRequest request) {
         log.info("getI18NMessage req: {}", request);
-        return new Result<>(i18NService.queryByCondition(request));
+        return new Result<>(i18nService.queryByCondition(request));
     }
 }

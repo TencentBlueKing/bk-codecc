@@ -162,6 +162,7 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
     }
 
     @Override
+    @I18NResponse
     public Result<Page<CheckerSetVO>> getOtherCheckerSets(String projectId,
             OtherCheckerSetListQueryReq queryCheckerSetReq) {
         return new Result<>(checkerSetBizService.getOtherCheckerSets(projectId, queryCheckerSetReq));

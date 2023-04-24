@@ -66,6 +66,8 @@ import com.tencent.bk.codecc.defect.vo.common.CommonDefectQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO_Old;
 import com.tencent.bk.codecc.defect.vo.common.QueryWarningPageInitRspVO;
+import com.tencent.devops.common.api.ToolMetaBaseVO;
+import com.tencent.devops.common.api.annotation.I18NResponse;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
@@ -147,6 +149,7 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
         Set<String> statusSet = Sets.newHashSet(List2StrUtil.fromString(status, ComConstants.STRING_SPLIT));
 
         return new Result<>(
+                // 兼容老版本接口，当时还没有跨任务，所以multiTaskQuery固定为false
                 queryWarningBizService.processQueryWarningPageInitRequest(
                         userId,
                         taskId == null ? Lists.newArrayList() : Lists.newArrayList(taskId),
@@ -155,7 +158,8 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
                         statusSet,
                         null,
                         buildId,
-                        projectId
+                        projectId,
+                        false
                 )
         );
     }
@@ -170,9 +174,10 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
         List<String> toolNameList = pair.getFirst();
         List<String> dimensionList = pair.getSecond();
         List<String> statusList = List2StrUtil.fromString(status, ComConstants.STRING_SPLIT);
+        // 兼容老版本接口，当时还没有跨任务，所以multiTaskQuery固定为false
         QueryCheckersAndAuthorsRequest request = new QueryCheckersAndAuthorsRequest(
                 taskIdList, toolNameList, dimensionList,
-                statusList, checkerSet, buildId
+                statusList, checkerSet, buildId, false
         );
 
         return queryCheckersAndAuthors("", "", request);
@@ -191,6 +196,7 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
         List<Long> taskIdList = request.getTaskIdList();
         String checkerSet = request.getCheckerSet();
         String buildId = request.getBuildId();
+        boolean isMultiTaskQuery = Boolean.TRUE.equals(request.getMultiTaskQuery());
 
         IQueryWarningBizService service = fileAndDefectQueryFactory.createBizService(
                 toolNameList,
@@ -207,7 +213,8 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
                 statusSet,
                 checkerSet,
                 buildId,
-                projectId
+                projectId,
+                isMultiTaskQuery
         );
 
         return new Result<>(response);
@@ -486,6 +493,7 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
     }
 
     @Override
+    @I18NResponse
     public Result<ListToolNameResponse> listToolName(
             String userId,
             String projectId,
@@ -502,7 +510,12 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
         ListToolNameResponse resp = new ListToolNameResponse();
 
         for (String toolName : toolNameList) {
-            resp.add(new ToolBase(toolName, toolMetaCache.getToolDisplayName(toolName)));
+            ToolMetaBaseVO toolMetaBaseVO = toolMetaCache.getToolBaseMetaCache(toolName);
+            if (toolMetaBaseVO == null) {
+                continue;
+            }
+
+            resp.add(new ToolBase(toolMetaBaseVO.getEntityId(), toolName, toolMetaBaseVO.getDisplayName()));
         }
 
         return new Result<>(resp);

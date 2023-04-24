@@ -22,41 +22,41 @@ import org.springframework.util.CollectionUtils;
 public class I18NResponseAspect extends AbstractI18NResponseAspect {
 
     @Autowired
-    private I18NMessageDao i18NMessageDao;
+    private I18NMessageDao i18nMessageDao;
 
     @Override
-    public void addInternationalization(I18NReflection i18NReflection, String localeString) {
-        if (i18NReflection == null || CollectionUtils.isEmpty(i18NReflection.getFieldMetaDataList())) {
+    public void addInternationalization(I18NReflection i18nReflection, String localeString) {
+        if (i18nReflection == null || CollectionUtils.isEmpty(i18nReflection.getFieldMetaDataList())) {
             return;
         }
 
-        List<I18NMessageEntity> i18NMessageList = getI18NMessage(i18NReflection, localeString);
-        if (CollectionUtils.isEmpty(i18NMessageList)) {
+        List<I18NMessageEntity> i18nMessageList = getI18NMessage(i18nReflection, localeString);
+        if (CollectionUtils.isEmpty(i18nMessageList)) {
             return;
         }
 
-        Map<String, List<I18NMessageEntity>> i18NMessageMap = i18NMessageList.stream()
+        Map<String, List<I18NMessageEntity>> i18nMessageMap = i18nMessageList.stream()
                 .collect(Collectors.groupingBy(I18NMessageEntity::getModuleCode));
 
-        for (FieldMetaData fieldMetaData : i18NReflection.getFieldMetaDataList()) {
-            List<I18NMessageEntity> i18NMessageEntityList = i18NMessageMap.get(fieldMetaData.getModuleCode());
-            if (i18NMessageEntityList == null) {
+        for (FieldMetaData fieldMetaData : i18nReflection.getFieldMetaDataList()) {
+            List<I18NMessageEntity> i18nMessageEntityList = i18nMessageMap.get(fieldMetaData.getModuleCode());
+            if (i18nMessageEntityList == null) {
                 continue;
             }
 
-            Map<String, String> kvMap = i18NMessageEntityList.stream()
+            Map<String, String> kvMap = i18nMessageEntityList.stream()
                     .collect(Collectors.toMap(I18NMessageEntity::getKey, I18NMessageEntity::getValue, (k1, k2) -> k1));
             fieldMetaData.setKeyAndValueMap(kvMap);
         }
     }
 
-    private List<I18NMessageEntity> getI18NMessage(I18NReflection i18NReflection, String localeString) {
+    private List<I18NMessageEntity> getI18NMessage(I18NReflection i18nReflection, String localeString) {
         try {
-            List<I18NQueryModel> queryModelList = i18NReflection.getFieldMetaDataList().stream()
+            List<I18NQueryModel> queryModelList = i18nReflection.getFieldMetaDataList().stream()
                     .map(x -> new I18NQueryModel(x.getModuleCode(), x.getKeySet(), localeString))
                     .collect(Collectors.toList());
 
-            return i18NMessageDao.query(queryModelList);
+            return i18nMessageDao.query(queryModelList);
         } catch (Throwable t) {
             log.error("get i18 message from db fail", t);
 

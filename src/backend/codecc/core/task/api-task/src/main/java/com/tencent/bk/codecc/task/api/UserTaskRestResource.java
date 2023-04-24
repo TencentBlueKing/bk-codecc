@@ -461,4 +461,13 @@ public interface UserTaskRestResource {
     Result<ListTaskNameCnResponse> listTaskNameCn(
             ListTaskNameCnRequest request
     );
+
+    @ApiOperation("检验跨任务的可视性")
+    @Path("/multiTaskVisitable")
+    @GET
+    Result<Boolean> multiTaskVisitable(
+            @ApiParam(value = "项目ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId
+    );
 }

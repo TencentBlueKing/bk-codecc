@@ -510,10 +510,11 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
                 LintFileV2Entity lintFileEntity = reader.readObject(LintFileV2Entity.class);
 
                 if (CollectionUtils.isNotEmpty(lintFileEntity.getDefects())) {
+                    ScmBlameVO scmBlameVO = fileChangeRecordsMap.get(lintFileEntity.getFile());
                     // 填充文件内的告警的信息，其中如果告警的规则不属于已录入平台的规则，则移除告警
                     List<LintDefectV2Entity> tmpDefectList = lintFileEntity.getDefects().stream()
                             .filter(defect -> fillDefectInfo(taskVO, toolName, defect, lintFileEntity.getFile(),
-                                    fileChangeRecordsMap.get(lintFileEntity.getFile()), codeRepoIdMap,
+                                    scmBlameVO, codeRepoIdMap,
                                     checkerSeverityMap))
                             .collect(Collectors.toList());
                     if (CollectionUtils.isEmpty(tmpDefectList)) {
@@ -830,13 +831,15 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
      * @param checkerSeverityMap
      * @return
      */
-    private boolean fillDefectInfo(TaskDetailVO taskDetailVO,
+    private boolean fillDefectInfo(
+            TaskDetailVO taskDetailVO,
             String toolName,
             LintDefectV2Entity defectEntity,
             String filePath,
             ScmBlameVO fileLineAuthorInfo,
             Map<String, RepoSubModuleVO> codeRepoIdMap,
-            Map<String, Integer> checkerSeverityMap) {
+            Map<String, Integer> checkerSeverityMap
+    ) {
         defectEntity.setFilePath(filePath);
         int fileNameIndex = filePath.lastIndexOf("/");
         if (fileNameIndex == -1) {
@@ -852,8 +855,9 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
 
         if (fileLineAuthorInfo != null) {
             setFileInfo(defectEntity, fileLineAuthorInfo, codeRepoIdMap);
-
             setAuthor(defectEntity, fileLineAuthorInfo);
+        } else {
+            log.warn("fileLineAuthorInfo is null, {}, {}", filePath, defectEntity.getLineNum());
         }
 
         if (toolName.equals(ComConstants.Tool.BLACKDUCK.name())) {

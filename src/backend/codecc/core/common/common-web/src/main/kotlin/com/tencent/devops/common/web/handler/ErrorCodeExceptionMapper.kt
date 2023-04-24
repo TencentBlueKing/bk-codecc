@@ -29,7 +29,6 @@ package com.tencent.devops.common.web.handler
 import com.tencent.devops.common.api.exception.ErrorCodeException
 import com.tencent.devops.common.api.pojo.codecc.Result
 import com.tencent.devops.common.service.utils.I18NUtils
-import com.tencent.devops.common.service.utils.MessageCodeUtil
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.ext.ExceptionMapper
@@ -37,10 +36,9 @@ import javax.ws.rs.ext.Provider
 
 @Provider
 class ErrorCodeExceptionMapper : ExceptionMapper<ErrorCodeException> {
-
     override fun toResponse(exception: ErrorCodeException): Response {
         val status = Response.Status.BAD_REQUEST
-        val i18nErrMsg = I18NUtils.getMessage(exception.errorCode, exception.params)
+        val i18nErrMsg = I18NUtils.getMessageWithParams(exception.errorCode, exception.params)
         return Response.status(status)
                 .type(MediaType.APPLICATION_JSON_TYPE)
                 .entity(

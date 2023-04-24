@@ -11,6 +11,7 @@ import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
 import com.tencent.bk.codecc.defect.vo.CCNDefectQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import java.util.ArrayList;
@@ -67,7 +68,8 @@ public abstract class AbstractCCNBatchDefectProcessBizService extends AbstractBa
                 taskIdList,
                 buildId
         );
-        log.info("query ccn defect list, task tool map: {}", taskToolMap);
+        log.info("query ccn defect list, task tool map: {}, \n{}", taskToolMap.size(),
+                JsonUtil.INSTANCE.toJson(taskToolMap));
         // 多任务维度，有些任务可能曾经开启过圈复杂度，但现在已经停用了
         taskIdList = Lists.newArrayList(taskToolMap.keySet());
         request.setTaskIdList(taskIdList);

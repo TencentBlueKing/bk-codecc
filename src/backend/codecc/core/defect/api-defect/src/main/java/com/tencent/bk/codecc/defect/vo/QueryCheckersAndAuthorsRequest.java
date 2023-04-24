@@ -34,4 +34,7 @@ public class QueryCheckersAndAuthorsRequest {
     @ApiParam(value = "构建Id", required = false)
     @QueryParam(value = "buildId")
     private String buildId;
+
+    @QueryParam(value = "是否跨任务查询")
+    private Boolean multiTaskQuery;
 }

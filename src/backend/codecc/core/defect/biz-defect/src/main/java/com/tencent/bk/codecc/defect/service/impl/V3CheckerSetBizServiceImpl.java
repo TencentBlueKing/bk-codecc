@@ -37,6 +37,7 @@ import com.tencent.bk.codecc.task.vo.TaskBaseVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
 import com.tencent.devops.common.api.BaseDataVO;
+import com.tencent.devops.common.api.annotation.I18NResponse;
 import com.tencent.devops.common.api.checkerset.CheckerPropVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetCategoryVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetCodeLangVO;
@@ -59,10 +60,13 @@ import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.service.BaseDataCacheService;
+import com.tencent.devops.common.service.utils.I18NUtils;
 import com.tencent.devops.common.service.utils.PageableUtils;
 import com.tencent.devops.common.codecc.util.JsonUtil;
+import com.tencent.devops.common.service.utils.SpringContextUtil;
 import com.tencent.devops.common.util.List2StrUtil;
 import com.tencent.devops.common.util.ThreadPoolUtil;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -99,6 +103,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import org.springframework.util.ObjectUtils;
 
 import static com.tencent.devops.common.constant.ComConstants.ONCE_CHECKER_SET_KEY;
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_TASK_CHECKER_CONFIG;
@@ -701,6 +706,7 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
      * @return
      */
     @Override
+    @I18NResponse
     public List<CheckerSetVO> getCheckerSetsOfProject(CheckerSetListQueryReq queryCheckerSetReq) {
         log.info("start to get checker set of project: {}", queryCheckerSetReq.getProjectId());
 
@@ -795,6 +801,9 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
 
         Set<CheckerSetCategory> emptyCheckerSetCategorySet = Sets.newHashSet();
         Set<String> emptyStringSet = Sets.newHashSet();
+        Map<String, String> categoryMap = Stream.of(CheckerSetCategory.values()).collect(
+                Collectors.toMap(CheckerSetCategory::getName, CheckerSetCategory::getI18nResourceCode, (k1, k2) -> k1)
+        );
 
         // 按任务使用量排序
         log.info("sort checkerset by usage or time of project: {}", queryCheckerSetReq.getProjectId());
@@ -815,7 +824,8 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
                             finalCheckerSetEntityMap,
                             isP,
                             toolIntegratedStatus,
-                            checkerIdMaxVersionMap))
+                            checkerIdMaxVersionMap,
+                            categoryMap))
                     .filter(Objects::nonNull)
                     .sorted(Comparator.comparingLong(o -> sortByOfficialProps(o) + (checkerSetCountMap
                             .containsKey(o.getCheckerSetId()) ? -checkerSetCountMap.get(o.getCheckerSetId()) : 0L)))
@@ -840,7 +850,8 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
                             finalCheckerSetEntityMap,
                             isP,
                             toolIntegratedStatus,
-                            checkerIdMaxVersionMap))
+                            checkerIdMaxVersionMap,
+                            categoryMap))
                     .filter(Objects::nonNull)
                     .sorted(Comparator.comparingLong(o -> sortByOfficialProps(o) + coefficient * o.getCreateTime()))
                     .collect(Collectors.toList());
@@ -1037,11 +1048,14 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
         return codeLangs;
     }
 
-    private CheckerSetVO getCheckerSetVO(Map.Entry<String, List<CheckerSetEntity>> entry,
-                                         Map<String, Integer> versionMap, Map<String, Boolean> defaultMap,
-                                         Map<String, Long> checkerSetCountMap, Set<String> latestVersionCheckerSets,
-                                         Map<String, CheckerSetEntity> checkerSetEntityMap, boolean isP, int version,
-                                         Map<String, Integer> checkerIdMaxVersionMap) {
+    private CheckerSetVO getCheckerSetVO(
+            Map.Entry<String, List<CheckerSetEntity>> entry,
+            Map<String, Integer> versionMap, Map<String, Boolean> defaultMap,
+            Map<String, Long> checkerSetCountMap, Set<String> latestVersionCheckerSets,
+            Map<String, CheckerSetEntity> checkerSetEntityMap, boolean isP, int version,
+            Map<String, Integer> checkerIdMaxVersionMap,
+            Map<String, String> categoryMap
+    ) {
         List<CheckerSetEntity> checkerSetEntities = entry.getValue();
 
         CheckerSetVO checkerSetVO = new CheckerSetVO();
@@ -1157,6 +1171,18 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
                 && null == defaultMap.get(checkerSetVO.getCheckerSetId()))
                 || (null != defaultMap.get(checkerSetVO.getCheckerSetId())
                 && defaultMap.get(checkerSetVO.getCheckerSetId())));
+
+        if (CollectionUtils.isNotEmpty(selectedCheckerSet.getCatagories())) {
+            checkerSetVO.setCatagories(Lists.newArrayList());
+            for (CheckerSetCatagoryEntity category : selectedCheckerSet.getCatagories()) {
+                String resourceCode = categoryMap.get(category.getCnName());
+                if (!ObjectUtils.isEmpty(resourceCode)) {
+                    String message = I18NUtils.getMessage(resourceCode);
+                    checkerSetVO.getCatagories().add(new CheckerSetCategoryVO(message, message));
+                }
+            }
+        }
+
         return checkerSetVO;
     }
 
@@ -1303,6 +1329,9 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
         List<CheckerSetVO> taskCheckerSets = Lists.newArrayList();
         List<CheckerSetVO> otherCheckerSets = Lists.newArrayList();
         Set<String> taskCheckerSetIds = checkerSetTaskRelationshipEntityMap.keySet();
+        Map<String, String> categoryMap = Stream.of(CheckerSetCategory.values()).collect(
+                Collectors.toMap(CheckerSetCategory::getName, CheckerSetCategory::getI18nResourceCode, (k1, k2) -> k1)
+        );
 
         if (CollectionUtils.isNotEmpty(checkerSetEntityList)) {
             for (CheckerSetEntity checkerSetEntity : checkerSetEntityList) {
@@ -1361,6 +1390,19 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
                     checkerSetVersionVOList.add(gCheckerSetVersionVO);
                     checkerSetVersionVOList.add(preProdCheckerSetVersionVO);
                     checkerSetVO.setVersionList(checkerSetVersionVOList);
+                }
+
+                // 类型i18n
+                if (CollectionUtils.isNotEmpty(checkerSetEntity.getCatagories())) {
+                    checkerSetVO.setCatagories(Lists.newArrayList());
+                    for (CheckerSetCatagoryEntity category : checkerSetEntity.getCatagories()) {
+                        String resourceCode = categoryMap.get(category.getCnName());
+
+                        if (!ObjectUtils.isEmpty(resourceCode)) {
+                            String message = I18NUtils.getMessage(resourceCode);
+                            checkerSetVO.getCatagories().add(new CheckerSetCategoryVO(message, message));
+                        }
+                    }
                 }
             }
 
@@ -1595,8 +1637,9 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
         checkerSetParams.setCatatories(Lists.newArrayList());
         for (CheckerSetCategory checkerSetCategory : CheckerSetCategory.values()) {
             CheckerSetCategoryVO categoryVO = new CheckerSetCategoryVO();
-            categoryVO.setCnName(checkerSetCategory.getName());
-            categoryVO.setEnName(checkerSetCategory.name());
+            String message = I18NUtils.getMessage(checkerSetCategory.getI18nResourceCode());
+            categoryVO.setCnName(message);
+            categoryVO.setEnName(message);
             checkerSetParams.getCatatories().add(categoryVO);
         }
 
@@ -1620,7 +1663,8 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
         queryCheckerSetReq.setProjectId(projectId);
         queryCheckerSetReq.setSortField(CheckerConstants.CheckerSetSortField.TASK_USAGE.value());
         queryCheckerSetReq.setSortType(Sort.Direction.DESC.name());
-        List<CheckerSetVO> checkerSetVOS = getCheckerSetsOfProject(queryCheckerSetReq);
+        List<CheckerSetVO> checkerSetVOS = SpringContextUtil.Companion.getBean(IV3CheckerSetBizService.class)
+                .getCheckerSetsOfProject(queryCheckerSetReq);
         checkerSetParams.setCheckerSets(checkerSetVOS);
 
         return checkerSetParams;
@@ -1651,21 +1695,38 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
             selectedCheckerSetEntity = checkerSetRepository.findFirstByCheckerSetIdAndVersion(checkerSetId, version);
         }
         CheckerSetVO checkerSetVO = new CheckerSetVO();
+        checkerSetVO.setToolList(Sets.newHashSet());
+
         if (selectedCheckerSetEntity != null) {
             BeanUtils.copyProperties(selectedCheckerSetEntity, checkerSetVO);
             checkerSetVO.setCodeLangList(List2StrUtil.fromString(selectedCheckerSetEntity.getCheckerSetLang(), ","));
-        }
 
-        // 加入工具列表
-        Set<String> toolNames = Sets.newHashSet();
-        if (selectedCheckerSetEntity != null) {
+            // 加入工具列表
             if (CollectionUtils.isNotEmpty(selectedCheckerSetEntity.getCheckerProps())) {
                 for (CheckerPropsEntity checkerPropsEntity : selectedCheckerSetEntity.getCheckerProps()) {
-                    toolNames.add(checkerPropsEntity.getToolName());
+                    checkerSetVO.getToolList().add(checkerPropsEntity.getToolName());
+                }
+            }
+
+            // 类型
+            if (CollectionUtils.isNotEmpty(selectedCheckerSetEntity.getCatagories())) {
+                Map<String, String> categoryMap = Stream.of(CheckerSetCategory.values()).collect(
+                        Collectors.toMap(
+                                CheckerSetCategory::getName,
+                                CheckerSetCategory::getI18nResourceCode,
+                                (k1, k2) -> k1
+                        )
+                );
+                checkerSetVO.setCatagories(Lists.newArrayList());
+                for (CheckerSetCatagoryEntity category : selectedCheckerSetEntity.getCatagories()) {
+                    String resourceCode = categoryMap.get(category.getCnName());
+                    if (!ObjectUtils.isEmpty(resourceCode)) {
+                        String message = I18NUtils.getMessage(resourceCode);
+                        checkerSetVO.getCatagories().add(new CheckerSetCategoryVO(message, message));
+                    }
                 }
             }
         }
-        checkerSetVO.setToolList(toolNames);
 
         return checkerSetVO;
     }
@@ -2774,16 +2835,20 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
                                 checkerSetListQueryReq.getToolName(),
                                 checkerSetListQueryReq.getCheckerSetSource(), checkerSetEntity)
                                 && CollectionUtils.isNotEmpty(checkerSetEntity.getCatagories())) {
-                            checkerSetEntity.getCatagories().forEach(category ->
-                                    checkerSetCateMap.compute(category.getEnName(), (k, v) -> {
-                                        if (null == v) {
-                                            return 1;
-                                        } else {
-                                            v++;
-                                            return v;
-                                        }
-                                    })
-                            );
+                            checkerSetEntity.getCatagories().forEach(category -> {
+                                if (!checkerSetCateMap.containsKey(category.getEnName())) {
+                                    return;
+                                }
+
+                                checkerSetCateMap.compute(category.getEnName(), (k, v) -> {
+                                    if (null == v) {
+                                        return 1;
+                                    } else {
+                                        v++;
+                                        return v;
+                                    }
+                                });
+                            });
                         }
                         //3. 工具数量计算
                         if (judgeQualifiedCheckerSet(checkerSetListQueryReq.getCheckerSetLanguage(),

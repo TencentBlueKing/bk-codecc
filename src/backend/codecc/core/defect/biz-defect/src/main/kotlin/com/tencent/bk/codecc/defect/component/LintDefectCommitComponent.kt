@@ -165,7 +165,7 @@ class LintDefectCommitComponent @Autowired constructor(
         inputFilePath: String
     ): AggregateDefectNewInputModel<LintDefectV2Entity> {
         val inputFileName = inputFilePath.substring(inputFilePath.lastIndexOf("/") + 1)
-        val inputFile = File(inputFileName)
+        val inputFile = File(inputFilePath)
         var i = 0
         while (!inputFile.exists() && i < 3) {
             scmJsonComponent.indexNoThrow(inputFileName, ScmJsonComponent.AGGREGATE)

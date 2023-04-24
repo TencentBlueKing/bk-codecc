@@ -126,4 +126,7 @@ public interface CheckerRepository extends MongoRepository<CheckerDetailEntity, 
 
     @Query(fields = "{'checker_key': 1, 'checker_category': 1, 'tool_name': 1}")
     List<CheckerDetailEntity> findStatisticFieldByToolName(String toolName);
+
+    @Query(fields = "{'checker_key':1, 'checker_type': 1}")
+    List<CheckerDetailEntity> findCheckerKeyAndTypeByToolNameIn(List<String> toolNameSet);
 }

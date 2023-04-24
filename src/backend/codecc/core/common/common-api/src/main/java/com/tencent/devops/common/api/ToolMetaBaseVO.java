@@ -28,7 +28,7 @@
 package com.tencent.devops.common.api;
 
 import com.tencent.devops.common.api.annotation.I18NFieldMarker;
-import com.tencent.devops.common.constant.I18NModuleCode;
+import com.tencent.devops.common.api.annotation.I18NModuleCode;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;

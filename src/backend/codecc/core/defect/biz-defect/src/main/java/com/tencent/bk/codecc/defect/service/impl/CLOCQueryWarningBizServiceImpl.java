@@ -21,6 +21,7 @@ import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
 import com.tencent.bk.codecc.defect.vo.common.QueryWarningPageInitRspVO;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.Tool;
+import com.tencent.devops.common.service.utils.I18NUtils;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -114,7 +115,8 @@ public class CLOCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             Set<String> statusSet,
             String checkerSet,
             String buildId,
-            String projectId
+            String projectId,
+            boolean isMultiTaskQuery
     ) {
         return new QueryWarningPageInitRspVO();
     }
@@ -179,7 +181,7 @@ public class CLOCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
 
         // 注入总计信息
         CLOCDefectQueryRspInfoVO totalInfo = new CLOCDefectQueryRspInfoVO();
-        totalInfo.setLanguage("总计");
+        totalInfo.setLanguage(I18NUtils.getMessage("CODE_STATISTICS_ORDER_BY_LANGUAGE_TOTAL"));
         totalInfo.setSumBlank(totalBlank);
         totalInfo.setSumCode(totalCode);
         totalInfo.setSumComment(totalComment);

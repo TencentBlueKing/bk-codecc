@@ -580,7 +580,9 @@ public interface TaskService {
     List<TaskBaseVO> listTaskBase(String userId, String projectId);
 
 
+    List<Long> queryTaskIdByProjectIdWithPermission(String projectId, String userId);
+
     Map<Long, String> listTaskNameCn(List<Long> taskIdList);
 
-
+    boolean multiTaskVisitable(String projectId);
 }

@@ -3,7 +3,7 @@ package com.tencent.devops.common.api.checkerset;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.tencent.devops.common.api.CommonVO;
 import com.tencent.devops.common.api.annotation.I18NFieldMarker;
-import com.tencent.devops.common.constant.I18NModuleCode;
+import com.tencent.devops.common.api.annotation.I18NModuleCode;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;

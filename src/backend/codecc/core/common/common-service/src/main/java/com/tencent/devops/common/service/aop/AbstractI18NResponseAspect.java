@@ -17,11 +17,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.data.domain.Page;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -37,7 +39,7 @@ public abstract class AbstractI18NResponseAspect {
      */
     private static final Cache<Class<?>, I18NReflection> CACHE_CONTAINER =
             Caffeine.newBuilder().maximumSize(100).build();
-    private static final Locale DEFAULT_LOCALE = new Locale("zh", "CN");
+    private static final Locale DEFAULT_LOCALE = new Locale("en", "US");
 
     // NOCC:MissingJavadocMethod(设计如此:)
     @Pointcut("@annotation(com.tencent.devops.common.api.annotation.I18NResponse)")
@@ -59,6 +61,7 @@ public abstract class AbstractI18NResponseAspect {
         Object unwrapReturning = originReturning;
         boolean isResultGeneric = false;
         boolean isListGeneric = false;
+        boolean isPageGeneric = false;
 
         if (unwrapReturning instanceof Result<?>) {
             unwrapReturning = ((Result<?>) unwrapReturning).getData();
@@ -69,9 +72,17 @@ public abstract class AbstractI18NResponseAspect {
             isResultGeneric = true;
         }
 
-        if (unwrapReturning instanceof List<?>) {
+        if (unwrapReturning instanceof Page<?>) {
+            List<?> pageObj = ((Page<?>) unwrapReturning).getContent();
+            if (pageObj == null || pageObj.size() == 0) {
+                return originReturning;
+            }
+
+            unwrapReturning = pageObj.get(0);
+            isPageGeneric = true;
+        } else if (unwrapReturning instanceof List<?>) {
             List<?> listObj = (List<?>) unwrapReturning;
-            if (listObj.size() == 0) {
+            if (listObj == null || listObj.size() == 0) {
                 return originReturning;
             }
 
@@ -80,16 +91,16 @@ public abstract class AbstractI18NResponseAspect {
         }
 
         Class<?> unwrapReturningClazz = unwrapReturning.getClass();
-        I18NReflection i18NReflection = generateI18NReflection(unwrapReturningClazz);
-        if (CollectionUtils.isEmpty(i18NReflection.getFieldMetaDataList())
-                || i18NReflection.getMethodAccess() == null) {
+        I18NReflection i18nReflection = generateI18NReflection(unwrapReturningClazz);
+        if (CollectionUtils.isEmpty(i18nReflection.getFieldMetaDataList())
+                || i18nReflection.getMethodAccess() == null) {
             return originReturning;
         }
 
-        List<?> returningList = repackReturning(isResultGeneric, isListGeneric, originReturning);
-        extractResourceCode(i18NReflection, returningList);
-        addInternationalization(i18NReflection, localeString);
-        renderReturning(i18NReflection, returningList);
+        List<?> returningList = repackReturning(isResultGeneric, isListGeneric, isPageGeneric, originReturning);
+        extractResourceCode(i18nReflection, returningList);
+        addInternationalization(i18nReflection, localeString);
+        renderReturning(i18nReflection, returningList);
 
         return originReturning;
     }
@@ -97,10 +108,10 @@ public abstract class AbstractI18NResponseAspect {
     /**
      * 添加国际化信息
      *
-     * @param i18NReflection
+     * @param i18nReflection
      * @param localeString
      */
-    public abstract void addInternationalization(I18NReflection i18NReflection, String localeString);
+    public abstract void addInternationalization(I18NReflection i18nReflection, String localeString);
 
     /**
      * 获取语言信息
@@ -112,15 +123,17 @@ public abstract class AbstractI18NResponseAspect {
         ServletRequestAttributes requestAttributes =
                 (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
 
+        if (requestAttributes == null) {
+            return DEFAULT_LOCALE;
+        }
+
         String cookieVal = "";
-        if (requestAttributes != null) {
-            Cookie[] cookies = requestAttributes.getRequest().getCookies();
-            if (cookies != null) {
-                for (Cookie cookie : cookies) {
-                    if (BLUEKING_LANGUAGE.equals(cookie.getName())) {
-                        cookieVal = cookie.getValue();
-                        break;
-                    }
+        Cookie[] cookies = requestAttributes.getRequest().getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (BLUEKING_LANGUAGE.equals(cookie.getName())) {
+                    cookieVal = cookie.getValue();
+                    break;
                 }
             }
         }
@@ -134,7 +147,14 @@ public abstract class AbstractI18NResponseAspect {
         if (ObjectUtils.isEmpty(acceptLanguageHeader)) {
             return DEFAULT_LOCALE;
         } else {
-            return LocaleContextHolder.getLocale();
+            Locale locale = LocaleContextHolder.getLocale();
+
+            // 中英均不是，则返回默认
+            if (!"en".equalsIgnoreCase(locale.getLanguage()) && !"zh".equalsIgnoreCase(locale.getLanguage())) {
+                return DEFAULT_LOCALE;
+            }
+
+            return locale;
         }
     }
 
@@ -145,10 +165,10 @@ public abstract class AbstractI18NResponseAspect {
      * @return
      */
     private I18NReflection generateI18NReflection(Class<?> clazz) {
-        I18NReflection i18NReflection = CACHE_CONTAINER.getIfPresent(clazz);
-        if (i18NReflection != null) {
+        I18NReflection i18nReflection = CACHE_CONTAINER.getIfPresent(clazz);
+        if (i18nReflection != null) {
             log.info("AbstractI18NResponseAspect generateI18NReflection on cached");
-            return i18NReflection.getClone();
+            return i18nReflection.getClone();
         }
 
         List<Field> allFields = getAllFields(new ArrayList<>(), clazz);
@@ -171,10 +191,10 @@ public abstract class AbstractI18NResponseAspect {
         }
 
         MethodAccess methodAccess = MethodAccess.get(clazz);
-        i18NReflection = new I18NReflection(fieldMetaDataList, methodAccess);
-        CACHE_CONTAINER.put(clazz, i18NReflection);
+        i18nReflection = new I18NReflection(fieldMetaDataList, methodAccess);
+        CACHE_CONTAINER.put(clazz, i18nReflection);
 
-        return i18NReflection.getClone();
+        return i18nReflection.getClone();
     }
 
     /**
@@ -185,14 +205,20 @@ public abstract class AbstractI18NResponseAspect {
      * @param originReturning
      * @return
      */
-    private List<?> repackReturning(boolean isResultGeneric, boolean isListGeneric, Object originReturning) {
-        if (isListGeneric && isResultGeneric) {
-            return (List<?>) (((Result<?>) originReturning).getData());
+    private List<?> repackReturning(
+            boolean isResultGeneric,
+            boolean isListGeneric,
+            boolean isPageGeneric,
+            Object originReturning
+    ) {
+        if (isResultGeneric) {
+            originReturning = ((Result<?>) originReturning).getData();
+        }
+
+        if (isPageGeneric) {
+            return ((Page<?>) originReturning).getContent();
         } else if (isListGeneric) {
             return (List<?>) originReturning;
-        } else if (isResultGeneric) {
-            Object data = ((Result<?>) originReturning).getData();
-            return Lists.newArrayList(data);
         } else {
             return Lists.newArrayList(originReturning);
         }
@@ -201,17 +227,17 @@ public abstract class AbstractI18NResponseAspect {
     /**
      * 提取资源编码
      *
-     * @param i18NReflection
+     * @param i18nReflection
      * @param objList
      */
-    private void extractResourceCode(I18NReflection i18NReflection, List<?> objList) {
-        for (FieldMetaData fieldMetaData : i18NReflection.getFieldMetaDataList()) {
+    private void extractResourceCode(I18NReflection i18nReflection, List<?> objList) {
+        for (FieldMetaData fieldMetaData : i18nReflection.getFieldMetaDataList()) {
             if (fieldMetaData.getKeySet() == null) {
                 fieldMetaData.setKeySet(Sets.newHashSetWithExpectedSize(objList.size()));
             }
 
             String getterName = getGetterMethodName(fieldMetaData.getResourceCodeField());
-            MethodAccess methodAccess = i18NReflection.getMethodAccess();
+            MethodAccess methodAccess = i18nReflection.getMethodAccess();
             int getterCallIndex = methodAccess.getIndex(getterName);
 
             for (Object obj : objList) {
@@ -226,19 +252,21 @@ public abstract class AbstractI18NResponseAspect {
     /**
      * 渲染结果
      *
-     * @param i18NReflection
+     * @param i18nReflection
      * @param objList
      */
-    private void renderReturning(I18NReflection i18NReflection, List<?> objList) {
-        for (FieldMetaData fieldMetaData : i18NReflection.getFieldMetaDataList()) {
-            String getterName = getGetterMethodName(fieldMetaData.getResourceCodeField());
-            MethodAccess methodAccess = i18NReflection.getMethodAccess();
-            int getterCallIndex = methodAccess.getIndex(getterName);
-            String setterName = getSetterMethodName(fieldMetaData.getWillTranslateField());
-            int setterCallIndex = methodAccess.getIndex(setterName);
+    private void renderReturning(I18NReflection i18nReflection, List<?> objList) {
+        for (FieldMetaData fieldMetaData : i18nReflection.getFieldMetaDataList()) {
+            MethodAccess methodAccess = i18nReflection.getMethodAccess();
+            int resourceCodeGetterIndex =
+                    methodAccess.getIndex(getGetterMethodName(fieldMetaData.getResourceCodeField()));
+            int translateFieldSetterIndex =
+                    methodAccess.getIndex(getSetterMethodName(fieldMetaData.getWillTranslateField()));
+            int translateFieldGetterIndex =
+                    methodAccess.getIndex(getGetterMethodName(fieldMetaData.getWillTranslateField()));
 
             for (Object obj : objList) {
-                Object resourceCode = methodAccess.invoke(obj, getterCallIndex);
+                Object resourceCode = methodAccess.invoke(obj, resourceCodeGetterIndex);
                 if (resourceCode == null) {
                     continue;
                 }
@@ -248,15 +276,20 @@ public abstract class AbstractI18NResponseAspect {
                 String value = CollectionUtils.isEmpty(keyAndValueMap) ? null : keyAndValueMap.get(key);
 
                 if (fieldMetaData.isListType()) {
-                    List<String> stringSet = ObjectUtils.isEmpty(value)
+                    List<String> stringList = ObjectUtils.isEmpty(value)
                             ? Lists.newArrayList()
                             : Lists.newArrayList(value.split(","));
-                    methodAccess.invoke(obj, setterCallIndex, stringSet);
+                    methodAccess.invoke(obj, translateFieldSetterIndex, stringList);
                 } else {
                     if (value == null) {
-                        value = "";
+                        Object originVal = methodAccess.invoke(obj, translateFieldGetterIndex);
+                        if (originVal instanceof String) {
+                            value = "I18N_ERR_" + originVal;
+                        } else {
+                            value = "I18N_ERR";
+                        }
                     }
-                    methodAccess.invoke(obj, setterCallIndex, value);
+                    methodAccess.invoke(obj, translateFieldSetterIndex, value);
                 }
             }
         }

@@ -36,6 +36,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang.StringUtils;
@@ -1147,6 +1148,17 @@ public interface ComConstants {
         @NotNull
         public static List<Integer> getEffectiveStatus() {
             return Lists.newArrayList(NOT_FOLLOW_UP_0.value, NOT_FOLLOW_UP_1.value, ACCESSED.value, EXPERIENCE.value);
+        }
+
+        @NotNull
+        public static List<Integer> getNeWithDrawList() {
+            List<Integer> statuses = new LinkedList<>();
+            for (FOLLOW_STATUS status : FOLLOW_STATUS.values()) {
+                if (status.value != WITHDRAW.value) {
+                    statuses.add(status.value);
+                }
+            }
+            return statuses;
         }
 
         public int value() {

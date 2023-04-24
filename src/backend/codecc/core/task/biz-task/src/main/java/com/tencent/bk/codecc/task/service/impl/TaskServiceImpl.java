@@ -657,10 +657,14 @@ public class TaskServiceImpl implements TaskService {
             String taskSource
     ) {
         // 将原getQualifiedTaskList逻辑，分拆为getQualifiedTaskListCore和getQualifiedTaskList进行复用
-
         Set<String> createFromSet = StringUtils.isNotEmpty(taskSource)
                 ? Sets.newHashSet(taskSource)
                 : Sets.newHashSet(BsTaskCreateFrom.BS_PIPELINE.value(), BsTaskCreateFrom.BS_CODECC.value());
+
+        if (projectId.startsWith(ComConstants.GONGFENG_PROJECT_ID_PREFIX)) {
+            createFromSet.add(BsTaskCreateFrom.GONGFENG_SCAN.value());
+        }
+
         Set<TaskInfoEntity> taskInfoEntities = taskRepository.findByProjectIdAndCreateFromIn(projectId, createFromSet);
 
         if (CollectionUtils.isNotEmpty(taskInfoEntities)) {
@@ -3309,9 +3313,21 @@ public class TaskServiceImpl implements TaskService {
             return new TaskInfoWithSortedToolConfigResponse(Lists.newArrayList());
         }
 
-        List<TaskInfoEntity> taskInfoEntityList = taskRepository.findByTaskIdIn(request.getTaskIdList());
+        List<TaskInfoEntity> taskInfoEntityList = taskRepository.findNoneDBRefByTaskIdIn(request.getTaskIdList());
         if (CollectionUtils.isEmpty(taskInfoEntityList)) {
             return new TaskInfoWithSortedToolConfigResponse(Lists.newArrayList());
+        }
+
+        List<Long> taskIdList = taskInfoEntityList.stream().map(TaskInfoEntity::getTaskId).collect(Collectors.toList());
+        List<ToolConfigInfoEntity> toolConfigList = toolConfigRepository.findByTaskIdIn(taskIdList);
+        if (CollectionUtils.isNotEmpty(toolConfigList)) {
+            Map<Long, List<ToolConfigInfoEntity>> toolConfigMap =
+                    toolConfigList.stream().collect(Collectors.groupingBy(ToolConfigInfoEntity::getTaskId));
+
+            for (TaskInfoEntity taskInfoEntity : taskInfoEntityList) {
+                long curTaskId = taskInfoEntity.getTaskId();
+                taskInfoEntity.setToolConfigInfoList(toolConfigMap.get(curTaskId));
+            }
         }
 
         if (Boolean.TRUE.equals(request.getNeedSorted())) {
@@ -3396,6 +3412,13 @@ public class TaskServiceImpl implements TaskService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<Long> queryTaskIdByProjectIdWithPermission(String projectId, String userId) {
+        return queryTaskByProjectIdWithPermissionCore(projectId, userId).stream()
+                .map(TaskInfoEntity::getTaskId)
+                .collect(Collectors.toList());
+    }
+
     /**
      * 根据项目获取当前用户有权限的任务列表
      *
@@ -3408,6 +3431,10 @@ public class TaskServiceImpl implements TaskService {
                 BsTaskCreateFrom.BS_PIPELINE.value(),
                 BsTaskCreateFrom.BS_CODECC.value()
         );
+
+        if (projectId.startsWith(ComConstants.GONGFENG_PROJECT_ID_PREFIX)) {
+            createFromList.add(BsTaskCreateFrom.GONGFENG_SCAN.value());
+        }
 
         List<TaskInfoEntity> taskList = taskRepository.findByProjectIdAndCreateFromInAndStatus(
                 projectId,
@@ -3426,6 +3453,29 @@ public class TaskServiceImpl implements TaskService {
 
         return taskRepository.findNoneDBRefByTaskIdIn(taskIdList).stream()
                 .collect(Collectors.toMap(TaskInfoEntity::getTaskId, TaskInfoEntity::getNameCn, (x, y) -> x));
+    }
+
+    @Override
+    public boolean multiTaskVisitable(String projectId) {
+        if (projectId.startsWith(ComConstants.GRAY_PROJECT_PREFIX)) {
+            return false;
+        }
+
+        if (projectId.startsWith(ComConstants.CUSTOMPROJ_ID_PREFIX)) {
+            List<String> createFromList = Lists.newArrayList(
+                    BsTaskCreateFrom.BS_CODECC.value(),
+                    BsTaskCreateFrom.BS_PIPELINE.value()
+            );
+
+            List<TaskInfoEntity> notGongfengList = taskRepository.findPageableByProjectIdAndCreateFromAndStatus(
+                    projectId, createFromList, Status.ENABLE.value(),
+                    PageRequest.of(0, 1)
+            );
+
+            return CollectionUtils.isNotEmpty(notGongfengList);
+        }
+
+        return true;
     }
 
 }

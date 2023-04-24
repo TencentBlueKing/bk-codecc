@@ -299,7 +299,7 @@ public class ServiceTaskRestResourceImpl implements ServiceTaskRestResource {
 
     @Override
     public Result<List<Long>> queryTaskIdByProjectIdWithPermission(String projectId, String userId) {
-        return new Result<>(Lists.newArrayList());
+        return new Result<>(taskService.queryTaskIdByProjectIdWithPermission(projectId, userId));
     }
 
     @Override

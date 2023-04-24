@@ -12,6 +12,7 @@ import com.tencent.devops.common.constant.CheckerConstants;
 import com.tencent.devops.common.constant.ComConstants;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
@@ -48,6 +49,7 @@ import java.util.stream.Collectors;
  * @version V4.0
  * @date 2019/11/2
  */
+@Slf4j
 @Repository
 public class CheckerSetDao {
     @Autowired
@@ -312,7 +314,9 @@ public class CheckerSetDao {
                 .last("legacy").as("legacy")
                 .last("scope").as("scope")
                 .last("enable").as("enable")
-                .last("checker_set_source").as("checker_set_source");
+                .last("checker_set_source").as("checker_set_source")
+                // 借用base_checker_set_id临时存放主键Id，以正确使用I18N
+                .last("_id").as("base_checker_set_id");
         aggOptions.add(group);
 
         // 排序分页
@@ -329,7 +333,17 @@ public class CheckerSetDao {
         Aggregation agg = Aggregation.newAggregation(aggOptions);
         AggregationResults<CheckerSetEntity> queryResult = mongoTemplate.aggregate(agg, "t_checker_set",
                 CheckerSetEntity.class);
-        return queryResult.getMappedResults();
+
+        List<CheckerSetEntity> retList = queryResult.getMappedResults();
+
+        if (CollectionUtils.isNotEmpty(retList)) {
+            for (CheckerSetEntity entity : retList) {
+                entity.setEntityId(entity.getBaseCheckerSetId());
+                entity.setBaseCheckerSetId(null);
+            }
+        }
+
+        return retList;
     }
 
     public List<CheckerSetEntity> findByCheckerSetIdInAndVersionIn(

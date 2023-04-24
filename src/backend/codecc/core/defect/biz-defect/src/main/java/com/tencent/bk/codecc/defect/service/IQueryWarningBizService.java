@@ -88,7 +88,8 @@ public interface IQueryWarningBizService {
             Set<String> statusSet,
             String checkerSet,
             String buildId,
-            String projectId
+            String projectId,
+            boolean isMultiTaskQuery
     );
 
     /**
