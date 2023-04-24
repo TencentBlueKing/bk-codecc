@@ -237,7 +237,7 @@ class RBACAuthPermissionApi(
         actions: List<String>,
         userId: String
     ): Result<Boolean> {
-        val url = "https://${rbacAuthProperties.url}$baseUrl/open/service/auth/permission/projects/${projectCode}" +
+        val url = "${rbacAuthProperties.url}$baseUrl/open/service/auth/permission/projects/${projectCode}" +
             "/relation/validate/batch?resourceCode=${resourceCode}&resourceType=${resourceType}"
         val headers = getCommonHeaders(projectCode).toMutableMap()
         headers[AUTH_HEADER_DEVOPS_USER_ID] = userId
