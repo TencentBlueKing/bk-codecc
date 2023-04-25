@@ -32,6 +32,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-codecc:before {
 	content: "\e193";
 }
+.icon-safety-fill:before {
+	content: "\e1c8";
+}
 .icon-notify:before {
 	content: "\e101";
 }
@@ -217,4 +220,37 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .icon-export-excel:before {
 	content: "\e1c7";
+}
+.icon-copy-line:before {
+	content: "\e1c9";
+}
+.icon-jump:before {
+	content: "\e1ca";
+}
+.icon-shaixuan:before {
+	content: "\e1cc";
+}
+.icon-share:before {
+	content: "\e1cd";
+}
+.icon-link-2:before {
+	content: "\e1ce";
+}
+.icon-operate:before {
+	content: "\e1cf";
+}
+.icon-angle-left-1:before {
+	content: "\e1d1";
+}
+.icon-filter-collapse:before {
+	content: "\e1d2";
+}
+.icon-filter-expand:before {
+	content: "\e1d3";
+}
+.icon-filter-set:before {
+	content: "\e1d4";
+}
+.icon-tapd:before {
+	content: "\e1d5";
 }

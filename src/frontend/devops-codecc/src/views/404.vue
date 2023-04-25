@@ -1,3 +1,3 @@
 <template>
-    <app-exception type="404"></app-exception>
+  <app-exception type="404"></app-exception>
 </template>

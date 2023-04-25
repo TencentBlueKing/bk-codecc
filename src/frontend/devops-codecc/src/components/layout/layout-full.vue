@@ -1,12 +1,12 @@
 <template>
-    <div>
-        <slot />
-    </div>
+  <div>
+    <slot />
+  </div>
 </template>
 
 <script>
-    export default {
-    }
+  export default {
+  }
 </script>
 
 <style lang="postcss" scoped>

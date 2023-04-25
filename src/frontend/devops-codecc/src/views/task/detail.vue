@@ -1,557 +1,535 @@
 <template>
-    <div class="task-detail">
-        <div>
-            <!-- <bk-button :loading="buttonLoading.complete" class="tool-analys" theme="primary" @click="triggerAnalyse">{{$t('开始检查')}}</bk-button> -->
-            <!-- <bk-button theme="primary" @click="addTool">{{$t('添加工具')}}</bk-button> -->
-            <!-- <a class="tool-add" href="javascript:;" @click="addTool">{{$t('添加工具')}}</a> -->
-            <!-- <span class="tool-count">{{$t('质量星级：')}}<i :class="['bk-icon codecc-icon icon-star-gray']" v-for="i in 5" :key="i"></i></span>
-            <span class="tool-count">{{$t('语言：')}} {{ formatLang(taskDetail.codeLang) }}</span>
-            <span class="tool-count">{{$t('代码量：')}} {{ '--' }}</span> -->
-        </div>
-        <container class="task-main" :col="3" :margin="0" :gutter="10">
-            <bk-row>
-                <bk-col class="main-left" v-if="selectedTypeData && selectedTypeData.length">
-                    <!-- <div class="type-box" v-if="showType" v-bk-clickoutside="closeSelectType">
-                        <bk-checkbox-group class="checkbox is-others" v-model="selectedType">
-                            <bk-checkbox style="padding-top: 10px;" v-for="item in toolType" :key="item.key" :value="item.key">{{ item.name }}</bk-checkbox>
-                        </bk-checkbox-group>
-                    </div> -->
-                    <div class="tool-cards">
-                        <!-- <i @click="showSelectType" :class="['bk-icon codecc-icon icon-filter']"></i> -->
-                        <tool-status-card
-                            v-for="(item, index) in selectedTypeData"
-                            :key="index"
-                            :data="item"
-                        >
-                        </tool-status-card>
-                    </div>
-                </bk-col>
-                <bk-col class="main-left" v-else-if="taskDetail">
-                    <tool-status-card :data="{}"></tool-status-card>
-                </bk-col>
-                <bk-col class="main-right">
-                    <section class="task-info" v-if="taskDetail">
-                        <div class="info-header">
-                            <strong>{{$t('基础信息')}}</strong>
-                        </div>
-                        <dl class="info-content">
-                            <div class="item">
-                                <dt>{{$t('任务名称')}}</dt>
-                                <dd>{{ taskDetail.nameCn }}<i class="codecc-icon icon-pipeline-2" v-if="taskDetail.createFrom === 'bs_pipeline'"></i></dd>
-                            </div>
-                            <div class="item">
-                                <dt>{{$t('任务语言')}}</dt>
-                                <dd>{{ formatLang(taskDetail.codeLang) }}</dd>
-                            </div>
-                            <div class="item">
-                                <dt>{{$t('规则集')}}</dt>
-                                <dd>
-                                    <bk-popover class="msg-popover" v-if="taskDetail.checkerSetName">
-                                        <span class="checkerset">{{ taskDetail.checkerSetName || '--' }}</span>
-                                        <div slot="content">
-                                            <p class="msg-content" v-for="(item, msgIndex) in taskDetail.checkerSetName.split(',')" :key="msgIndex">{{ item }}</p>
-                                        </div>
-                                    </bk-popover>
-                                </dd>
-                                <!-- <dd v-bk-tooltips="{ content: taskDetail.checkerSetName }">{{ taskDetail.checkerSetName || '--' }}</dd> -->
-                            </div>
-                            <div class="item">
-                                <dt>{{$t('规则数')}}</dt>
-                                <dd>{{ taskDetail.checkerCount ? $t('x条', { num: taskDetail.checkerCount }) : '--' }} ({{$t('共x个工具', { num: lastAnalysisResultList.length })}})</dd>
-                            </div>
-                            <!-- <div class="item">
-                                <dt>{{$t('英文名')}}</dt>
-                                <dd>{{ taskDetail.nameEn }}</dd>
-                            </div> -->
-                            <!-- <div class="item">
-                                <dt>{{$t('工具数')}}</dt>
-                                <dd>
-                                    {{$t('共x个工具', { num: lastAnalysisResultList.length })}}
-                                    <a @click="addTool" class="tool-add-link">{{$t('添加工具')}}
-                                        <i class="codecc-icon icon-link fs12"></i>
-                                    </a>
-                                </dd>
-                            </div> -->
-                            <!-- <div class="item">
-                                <dt>{{$t('管理员')}}</dt>
-                                <dd :title="roleList">{{ roleList }}</dd>
-                            </div> -->
-                            <div class="item">
-                                <dt>{{$t('创建时间')}}</dt>
-                                <dd>{{ formatDate(taskDetail.createdDate) }}</dd>
-                            </div>
-                        </dl>
-                    </section>
-                    <section class="task-info" v-if="taskDetail">
-                        <div class="info-header">
-                            <strong>{{$t('操作记录')}}</strong>
-                            <a class="log-more" @click="openSlider">{{$t('更多')}}</a>
-                        </div>
-                        <dl class="info-content" v-if="operateRecords.length > 0">
-                            <div class="item" v-for="param in operateRecords.slice(0, 8)" :key="param.index">
-                                <dd :title="param.operMsg">{{param.operMsg}}</dd>
-                                <dt class="time">{{formatDate(param.time)}}</dt>
-                            </div>
-                        </dl>
-                        <dl v-else>
-                            <div style="padding-top: 10px;">{{$t('暂无操作记录')}}</div>
-                        </dl>
-                    </section>
-                </bk-col>
-            </bk-row>
-        </container>
-        <Record :visiable.sync="show" :func-id="funcId" :data="this.$route.name" />
-        <bk-dialog v-model="dialogVisible"
-            :theme="'primary'"
-            :mask-close="false"
-            @confirm="reAnalyse"
-            :title="$t('重新分析')">
-            {{this.$t('任务正在分析中，是否中断并重新分析？')}}
-        </bk-dialog>
+  <div class="task-detail">
+    <div class="task-detail-left">
+      <span class="tool-rate">
+        <span class="mt4 pr10">{{$t('质量星级')}}</span>
+        <bk-popover>
+          <i class="codecc-icon icon-tips f12"></i>
+          <div slot="content">
+            <p><i class="codecc-icon icon-star-gray"></i>{{$t('按公司开源治理要求配置规则集')}}</p>
+            <p><i class="codecc-icon icon-star-gray blue"></i>{{$t('自主配置规则集')}}</p>
+          </div>
+        </bk-popover>
+        <!-- <bk-popover>
+          <bk-rate
+            :rate="0"
+            :edit="false"
+            :width="16"
+            :height="16">
+          </bk-rate>
+          <div slot="content">
+            功能开发中，敬请期待
+          </div>
+        </bk-popover> -->
+        <bk-popover>
+          <bk-rate
+            :rate="rdScore.rdIndicatorsScore ? rdScore.rdIndicatorsScore / 20 : 0"
+            :edit="false"
+            :width="16"
+            :height="16"
+            :ext-cls="{ 'open-scan': !rdScore.openScan }">
+          </bk-rate>
+          <div slot="content">
+            <p>{{ $t('质量星级：') }}<b>{{rdScore.rdIndicatorsScore ? (rdScore.rdIndicatorsScore / 20).toFixed(1) : 0}}</b>，
+              {{$t('综合评分：')}}<b>{{rdScore.rdIndicatorsScore | formatUndefNum('fixed', 2)}}分</b>{{$t('，详情如下：')}}</p>
+            <p>{{$t('【安全漏洞】严重问题数')}}{{rdScore.codeSecuritySeriousDefectCount | formatUndefNum}}，
+              {{ $t('一般问题数') }}{{rdScore.codeSecurityNormalDefectCount | formatUndefNum}}，
+              {{$t('评分：')}}{{rdScore.codeSecurityScore | formatUndefNum('fixed', 2)}}；</p>
+            <p>{{$t('【代码规范】严重问题数密度')}}{{rdScore.averageSeriousStandardThousandDefect | formatUndefNum('fixed', 2)}}{{ $t('千行，') }}
+              {{$t('一般问题数密度')}}{{rdScore.averageNormalStandardThousandDefect | formatUndefNum('fixed', 2)}}{{ $t('千行，') }}
+              {{$t('评分：')}}{{rdScore.codeStyleScore | formatUndefNum('fixed', 2)}}；</p>
+            <p>{{$t('【圈复杂度】千行超标复杂度')}}{{averageThousandDefect | formatUndefNum('fixed', 2)}}，
+              {{$t('评分：')}}{{rdScore.codeCcnScore| formatUndefNum('fixed', 2)}}；</p>
+            <p>{{$t('以上质量评价依照')}}<a target="_blank" :href="handleOpenHref">{{$t('腾讯开源治理指标体系')}}</a>
+              {{$t('(其中文档质量暂按100分计算)，')}}
+              {{$t('评分仅供参考，最终评分请以')}} <a target="_blank" :href="handleTechmapHref">{{$t('技术图谱')}}</a> {{$t('为准。')}}</p>
+            <p>{{$t('技术图谱每日凌晨刷新一次分数。')}}</p>
+          </div>
+        </bk-popover>
+      </span>
+      <bk-tab :active.sync="active" :label-height="42" type="unborder-card" class="detail-tab">
+        <bk-tab-panel
+          v-for="(panel, index) in panels"
+          v-bind="panel"
+          :key="index">
+          <template slot="label">
+            <span class="panel-name">{{panel.label}}</span>
+            <i v-if="panel.name === 'dimension' && !hasRedPointStore" class="red-point"></i>
+          </template>
+        </bk-tab-panel>
+        <detail-tool v-if="active === 'tool'" :selected-type-data="toolDataList"></detail-tool>
+        <detail-dimension v-else :cluster-list="clusterList" :rd-score="rdScore"></detail-dimension>
+      </bk-tab>
     </div>
+    <div class="task-detail-right">
+      <section class="detail-content">
+        <p class="detail-header">{{$t('待处理')}} <span class="flc">({{user.username}})</span></p>
+        <bk-container :col="3" :gutter="4" class="person-data">
+          <bk-row>
+            <bk-col class="person-block">
+              <div class="person-number" @click="handleToPage('defect')">{{personal.defectCount | formatBigNum}}</div>
+              <div class="person-txt">{{$t('缺陷')}}</div>
+            </bk-col>
+            <bk-col class="person-block">
+              <div class="person-number" @click="handleToPage('security')">{{personal.securityCount | formatBigNum}}</div>
+              <div class="person-txt">{{$t('漏洞')}}</div>
+            </bk-col>
+            <bk-col class="person-block">
+              <div class="person-number" @click="handleToPage('standard')">{{personal.standardCount | formatBigNum}}</div>
+              <div class="person-txt">{{$t('规范问题')}}</div>
+            </bk-col>
+          </bk-row>
+          <bk-row>
+            <bk-col class="person-block">
+              <div class="person-number" @click="handleToPage('ccn')">{{personal.riskCount | formatBigNum}}</div>
+              <div class="person-txt">{{$t('风险函数')}}</div>
+            </bk-col>
+            <bk-col class="person-block">
+              <div class="person-number" @click="handleToPage('dupc')">{{personal.dupFileCount | formatBigNum}}</div>
+              <div class="person-txt">{{$t('重复文件')}}</div>
+            </bk-col>
+          </bk-row>
+        </bk-container>
+      </section>
+      <section class="detail-content code-info">
+        <p class="detail-header">{{$t('代码信息')}}</p>
+        <div class="detail-chart">
+          <div id="clocChart" ref="clocChart"></div>
+          <div id="langChart" ref="langChart"></div>
+        </div>
+      </section>
+      <section class="detail-content">
+        <p class="detail-header">{{$t('规则集')}}</p>
+        <div class="checkerset" v-for="(value, key) in checkersetMap" :key="key">
+          <dt class="checkerset-lang cc-ellipsis" :title="key">{{key}}</dt>
+          <bk-popover class="msg-popover">
+            <dd class="checkerset-name">{{value.join(',')}}</dd>
+            <div slot="content">
+              <p class="msg-content" v-for="(item, index) in value" :key="index">{{ item }}</p>
+            </div>
+          </bk-popover>
+        </div>
+      </section>
+    </div>
+  </div>
 </template>
 
 <script>
-    import { mapState } from 'vuex'
-    import { format } from 'date-fns'
-    import toolStatusCard from '@/components/tool-status-card'
-    import Record from '@/components/operate-record/index'
-    import taskWebsocket from '@/common/taskWebSocket'
-    import axios from 'axios'
+  import 'echarts/lib/chart/pie'
+  import 'echarts/lib/chart/bar'
+  import 'echarts/lib/component/tooltip'
+  import 'echarts/lib/component/title'
+  import 'echarts/lib/component/legend'
+  import detailTool from '@/components/detail-tool'
+  import detailDimension from '@/components/detail-dimension'
+  import echarts from 'echarts/lib/echarts'
+  import taskWebsocket from '@/common/taskWebSocket'
+  import { mapState } from 'vuex'
+  import { numToThousand } from '@/common/util'
 
-    export default {
-        components: {
-            toolStatusCard,
-            Record
-        },
-        data () {
-            return {
-                lastAnalysisResultList: [],
-                show: false,
-                dialogVisible: false,
-                dialogAnalyseVisible: false,
-                neverShow: false,
-                buttonLoading: {
-                    complete: false
-                },
-                funcId: [
-                    'register_tool',
-                    'tool_switch',
-                    'task_info',
-                    'task_switch',
-                    'task_code',
-                    'checker_config',
-                    'scan_schedule',
-                    'filter_path',
-                    'defect_manage',
-                    'trigger_analysis'
-                ],
-                roleList: '--',
-                showType: false,
-                selectedType: [],
-                selectedTypeData: []
-            }
-        },
-        computed: {
-            ...mapState([
-                'toolMeta'
-            ]),
-            ...mapState('tool', {
-                toolMap: 'mapList'
-            }),
-            ...mapState('task', {
-                detail: 'detail'
-            }),
-            ...mapState('defect', {
-                operateRecords: 'records'
-            }),
-            toolType () {
-                const arr = []
-                this.toolMeta.TOOL_TYPE.forEach(item => {
-                    arr.push({ 'key': item.key, 'name': item.name })
-                })
-                this.selectedType = arr.map(item => {
-                    return item.key
-                })
-                return arr
-            },
-            projectId () {
-                return this.$route.params.projectId
-            },
-            taskId () {
-                return this.$route.params.taskId
-            },
-            toolId () {
-                return this.$route.query.toolId
-            },
-            isAnalysing () {
-                let isAnalysing = 0
-                this.lastAnalysisResultList.forEach(result => {
-                    if (result.curStep < 5 && result.curStep > 0 && result.stepStatus !== 1) isAnalysing = 1
-                })
-                return isAnalysing
-            },
-            pipelineCondition () {
-                return this.detail.createFrom === 'bs_pipeline'
-            },
-            pipelineId () {
-                return this.detail.pipelineId
-            }
-        },
-        watch: {
-            'selectedType': {
-                handler (newVal, oldVal) {
-                    const selectedTool = []
-                    const allTool = this.lastAnalysisResultList.map(item => {
-                        this.detail.enableToolList.forEach(i => {
-                            if (item.toolName === i.toolName) {
-                                return Object.assign(item, i)
-                            }
-                        })
-                        return item
-                    })
-                    if (newVal.length) {
-                        newVal.forEach(i => {
-                            const arr = allTool.filter(item => {
-                                return item.toolType === i
-                            })
-                            selectedTool.push(...arr)
-                        })
-                        this.selectedTypeData = selectedTool
-                    } else {
-                        this.selectedTypeData = allTool
-                    }
-                }
-            }
-        },
-        created () {
-            this.init()
-            this.recordData()
-        },
-        mounted () {
-            this.subscribeMsg()
-            const neverShow = JSON.parse(window.localStorage.getItem('neverShow'))
-            neverShow === null ? this.neverShow = false : this.neverShow = neverShow
-        },
-        methods: {
-            async init () {
-                const res = await this.$store.dispatch('task/overView', { taskId: this.taskId, showLoading: true })
-                if (res.taskId) {
-                    if (!this.detail.nameEn) {
-                        await this.$store.dispatch('task/detail')
-                    }
-                    this.taskDetail = this.detail
-                    this.lastAnalysisResultList = res.lastAnalysisResultList || []
-                    this.selectedTypeData = res.lastAnalysisResultList
-                    if (this.detail.nameEn.indexOf('LD_') === 0 || this.taskDetail.nameEn.indexOf('DEVOPS_') === 0) {
-                        if (this.$route.params.hasOwnProperty('dialogAnalyseVisible')) {
-                            this.dialogAnalyseVisible = this.$route.params.dialogAnalyseVisible
-                            this.triggerAnalyse()
-                        } else {
-                            this.dialogAnalyseVisible = !this.neverShow
-                        }
-                    }
-                    // 去掉管理员列表
-                    // if (this.detail.createFrom !== 'gongfeng_scan') {
-                    //     this.getUserList()
-                    // }
-                }
-            },
-            getUserList () {
-                axios
-                    .get(`${window.DEVOPS_API_URL}/project/api/user/projects/${this.projectId}`,
-                         { withCredentials: true,
-                           headers:
-                               { 'X-DEVOPS-PROJECT-ID': this.projectId }
-                         })
-                    .then(res => {
-                        this.params = this.pipelineCondition
-                            ? { 'projectId': res.data.data.projectId, 'pipelineId': this.pipelineId }
-                            : { 'projectId': res.data.data.projectId, 'taskId': this.taskId }
-                    }).finally(() => {
-                        this.pipelineCondition ? this.getPipeLineAuth() : this.getCodeccAuth()
-                    })
-            },
-            getPipeLineAuth () {
-                axios
-                    .get(`${window.DEVOPS_API_URL}/backend/api/perm/service/pipeline/mgr_resource/permission/?project_id=${this.params.projectId}&resource_type_code=pipeline&resource_code=${this.pipelineId}`,
-                         { withCredentials: true
-                         })
-                    .then(res => {
-                        this.roleList = res ? res.data.data.role.find((role) =>
-                            role.role_code === 'manager'
-                        ).user_list.join()
-                            : '--'
-                    })
-            },
-            getCodeccAuth () {
-                axios
-                    .get(`${window.DEVOPS_API_URL}/backend/api/perm/service/codecc/mgr_resource/permission/?project_id=${this.params.projectId}&resource_type_code=task&resource_code=${this.params.taskId}`,
-                         { withCredentials: true
-                         })
-                    .then(res => {
-                        this.roleList = res ? res.data.data.role.find((role) =>
-                            role.role_code === 'manager'
-                        ).user_list.join()
-                            : '--'
-                    })
-            },
-            addTool () {
-                if (this.detail.createFrom.indexOf('pipeline') !== -1) {
-                    const that = this
-                    this.$bkInfo({
-                        title: this.$t('添加工具'),
-                        subTitle: this.$t('此代码检查任务为流水线创建，工具需前往相应流水线添加。'),
-                        maskClose: true,
-                        confirmFn (name) {
-                            window.open(`${window.DEVOPS_SITE_URL}/console/pipeline/${that.detail.projectId}/${that.detail.pipelineId}/edit#${that.taskDetail.atomCode}`, '_blank')
-                        }
-                    })
-                } else {
-                    this.$router.push({ name: 'task-settings-tools', query: { add: '1' } })
-                }
-            },
-            formatDate (dateNum, time) {
-                return time ? format(dateNum, 'HH:mm:ss') : format(dateNum, 'YYYY-MM-DD HH:mm:ss')
-            },
-            formatLang (num) {
-                return this.toolMeta.LANG.map(lang => lang.key & num ? lang.name : '').filter(name => name).join('; ')
-            },
-            triggerAnalyse () {
-                if (this.detail.createFrom.indexOf('pipeline') !== -1) {
-                    const that = this
-                    this.$bkInfo({
-                        title: this.$t('开始检查'),
-                        subTitle: this.$t('此代码检查任务需要到流水线启动，是否前往流水线？'),
-                        maskClose: true,
-                        confirmFn (name) {
-                            window.open(`${window.DEVOPS_SITE_URL}/console/pipeline/${that.detail.projectId}/${that.detail.pipelineId}/edit`, '_blank')
-                        }
-                    })
-                } else {
-                    this.isAnalysing ? this.dialogVisible = true : this.analyse()
-                }
-            },
-            async analyse (isAnalysing = 0) {
-                this.buttonLoading.complete = true
-                await this.$store.dispatch('task/triggerAnalyse').finally(() => {
-                    this.buttonLoading.complete = false
-                })
-                await this.init()
-                this.recordData()
-            },
-            reAnalyse () {
-                this.analyse(1)
-            },
-            async recordData () {
-                const postData = {
-                    taskId: this.$route.params.taskId,
-                    funcId: this.funcId
-                }
-                await this.$store.dispatch('defect/getOperatreRecords', postData)
-            },
-            openSlider () {
-                this.show = true
-            },
-            subscribeMsg () {
-                const subscribe = `/topic/analysisInfo/taskId/${this.taskId}`
-                if (taskWebsocket.stompClient.connected) {
-                    taskWebsocket.subscribeMsg(subscribe, {
-                        success: (res) => {
-                            const data = JSON.parse(res.body)
-                            let hasNewTool = 1
-                            this.lastAnalysisResultList.forEach(item => {
-                                if (item.toolName === data.toolName) {
-                                    Object.assign(item, data)
-                                    hasNewTool = item.lastAnalysisResult ? 0 : 1
-                                }
-                            })
-                            if (hasNewTool) this.init()
-                        },
-                        error: (message) => this.$showTips({ message, theme: 'error' })
-                    })
-                } else { // websocket还没连接的话，1s后重试
-                    setTimeout(() => {
-                        this.subscribeMsg()
-                    }, 1000)
-                }
-            },
-            newAnalyse () {
-                this.dialogAnalyseVisible = false
-                this.triggerAnalyse()
-            },
-            changeItem (data) {
-                this.neverShow = data
-            },
-            showSelectType () {
-                this.showType = !this.showType
-            },
-            closeSelectType () {
-                setTimeout(() => {
-                    this.showType = false
-                }, 0)
-            }
+  export default {
+    components: {
+      detailTool,
+      detailDimension,
+    },
+    data() {
+      return {
+        taskId: this.$route.params.taskId,
+        active: window.localStorage.getItem('detail-active-tab') || 'tool',
+        panels: [
+          { name: 'tool', label: this.$t('按工具') },
+          { name: 'dimension', label: this.$t('按维度') },
+        ],
+        personal: {},
+        checkersetMap: {},
+        rdScore: {},
+        toolDataList: [],
+        clusterList: [],
+        hasRedPointStore: window.localStorage.getItem('redtips-dimension-20201207'),
+      }
+    },
+    computed: {
+      ...mapState(['user']),
+      ...mapState('task', {
+        taskDetail: 'detail',
+      }),
+      averageThousandDefect() {
+        let count = 0
+        const list = this.rdScore.lastClusterResultList || []
+        list.forEach((item) => {
+          if (item.baseClusterResultVO
+            && item.baseClusterResultVO.averageThousandDefect
+            && item.baseClusterResultVO.type === 'CCN') {
+            count = item.baseClusterResultVO.averageThousandDefect.toFixed(2)
+          }
+        })
+        return count
+      },
+      handleOpenHref() {
+        return window.IWIKI_OPEN_SCORE
+      },
+      handleTechmapHref() {
+        return window.TECHMAP_REPORT
+      },
+    },
+    watch: {
+      active(value) {
+        window.localStorage.setItem('detail-active-tab', value)
+        if (value === 'dimension') {
+          window.localStorage.setItem('redtips-dimension-20201207', '1')
+          this.hasRedPointStore = true
         }
-    }
+      },
+    },
+    created() {
+      this.init()
+    },
+    mounted() {
+      this.fetchCloc()
+      this.subscribeMsg()
+    },
+    methods: {
+      init() {
+        this.fetchRemain()
+        this.fetchCheckerSet()
+        this.fetchToolList()
+        this.fetchDimensionList()
+      },
+      initChart(fileInfo, langInfo) {
+        const clocChart = echarts.init(this.$refs.clocChart)
+        const option = {
+          color: ['#3a84ff', '#3fc06d', '#c4c6cc'],
+          tooltip: {
+            trigger: 'item',
+            formatter: '{b}: {c} ({d}%)',
+          },
+          title: {
+            text: [
+              `{a| ${this.$t('总行数')}}`,
+              `{b| ${fileInfo.totalLinesFormatted}}`,
+            ].join('\n'),
+            left: 'center',
+            top: 'center',
+            textStyle: {
+              rich: {
+                a: {
+                  fontSize: 10,
+                  height: 20,
+                },
+                b: {
+                  fontSize: 14,
+                  fontWeight: 'bold',
+                },
+              },
+            },
+          },
+          series: [
+            {
+              name: this.$t('代码统计'),
+              type: 'pie',
+              radius: ['55%', '100%'],
+              hoverAnimation: false,
+              labelLine: {
+                show: false,
+              },
+              data: [
+                { value: fileInfo.codeLines, name: this.$t('代码行') },
+                { value: fileInfo.commentLines, name: this.$t('注释行') },
+                { value: fileInfo.blankLines, name: this.$t('空白行') },
+              ],
+            },
+          ],
+        }
+        clocChart.setOption(option)
+
+        const langChart = echarts.init(this.$refs.langChart)
+        const option2  = {
+          color: '#699df4',
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+              type: 'shadow',
+            },
+          },
+          grid: {
+            left: '0',
+            right: '30%',
+            top: '15px',
+            bottom: '-15px',
+            containLabel: true,
+          },
+          xAxis: {
+            type: 'value',
+            show: false,
+            splitLine: false,
+          },
+          yAxis: {
+            type: 'category',
+            axisLine: {
+              show: false,
+            },
+            axisTick: {
+              show: false,
+            },
+            data: langInfo.langName,
+            axisLabel: {
+              fontSize: 10,
+              formatter: value => (value.length > 10 ? `${value.slice(0, 8)}..` : value),
+            },
+          },
+          series: [
+            {
+              name: this.$t('代码量'),
+              type: 'bar',
+              barMaxWidth: '20',
+              label: {
+                show: true,
+                position: 'right',
+                color: '#63656E',
+                formatter(value) {
+                  return numToThousand(value.data)
+                },
+              },
+              data: langInfo.langValue,
+            },
+          ],
+        }
+        langChart.setOption(option2)
+      },
+      fetchRemain() {
+        this.$store.dispatch('task/personal').then((res) => {
+          this.personal = res
+        })
+      },
+      fetchCheckerSet() {
+        const params = { taskIdList: [this.$route.params.taskId] }
+        this.$store.dispatch('checkerset/listForDefect', params).then((res) => {
+          const checkersetMap = {}
+          if (res && res.length) {
+            res.forEach((checkerSet) => {
+              const { checkerSetLang, checkerSetName } = checkerSet
+              if (!checkersetMap[checkerSetLang]) {
+                checkersetMap[checkerSetLang] = [checkerSetName]
+              } else {
+                checkersetMap[checkerSetLang].push(checkerSetName)
+              }
+            })
+          }
+          this.checkersetMap = checkersetMap
+        })
+      },
+      fetchCloc() {
+        const clocFile = this.$store.dispatch('defect/lintListCloc', { toolId: 'CLOC', type: 'FILE' })
+        const clocLang = this.$store.dispatch('defect/lintListCloc', { toolId: 'CLOC', type: 'LANGUAGE' })
+        Promise.all([clocFile, clocLang]).then(([fileData, langData]) => {
+          const { codeLines, commentLines, blankLines, totalLines } = fileData.clocTreeNodeVO
+          const totalLinesFormatted = numToThousand(totalLines)
+          const fileInfo = { codeLines, commentLines, blankLines, totalLines, totalLinesFormatted }
+          const langList = (langData.languageInfo && langData.languageInfo.slice(0, 5)) || []
+          const langName = []
+          const langValue = []
+          langList.forEach((lang) => {
+            if (lang.sumLines >= 100) {
+              langName.unshift(lang.language)
+              langValue.unshift(lang.sumLines)
+              const formatted = numToThousand(lang.sumLines)
+            }
+          })
+          const langInfo = { langName, langValue }
+          this.initChart(fileInfo, langInfo)
+        })
+      },
+      handleToPage(name) {
+        this.$router.push({
+          name: `defect-${name}-list`,
+          query: {
+            dimension: name.toUpperCase(),
+            author: this.user.username,
+            from: 'overview',
+            isOpenScan: this.rdScore.openScan,
+          },
+        })
+      },
+      fetchToolList() {
+        this.$store.dispatch(
+          'task/overView',
+          { taskId: this.taskId, showLoading: true, buildNum: this.$route.query.buildNum },
+        ).then((res) => {
+          if (res.lastAnalysisResultList) {
+            this.toolDataList = res.lastAnalysisResultList.filter(item => item.toolName !== 'CLOC')
+          }
+        })
+      },
+      fetchDimensionList() {
+        this.$store.dispatch(
+          'task/overView',
+          { taskId: this.$route.params.taskId, orderBy: 'dimension', buildNum: this.$route.query.buildNum },
+        ).then((res) => {
+          this.rdScore = res
+          if (res && res.lastClusterResultList) {
+            this.clusterList = res.lastClusterResultList
+          }
+        })
+      },
+      subscribeMsg() {
+        const subscribe = `/topic/analysisInfo/taskId/${this.taskId}`
+        if (taskWebsocket.stompClient.connected) {
+          taskWebsocket.subscribeMsg(subscribe, {
+            success: (res) => {
+              const data = JSON.parse(res.body)
+              console.log('🚀 ~ file: detail.vue ~ line 349 ~ subscribeMsg ~ data', data)
+              let hasNewTool = 1
+              this.toolDataList.forEach((item) => {
+                if (item.toolName === data.toolName) {
+                  Object.assign(item, data)
+                  // hasNewTool = item.lastAnalysisResult ? 0 : 1
+                  hasNewTool = 0
+                }
+              })
+            // 暂时屏蔽刷新页面
+              // if (hasNewTool && data.toolName !== 'CLOC') this.init()
+            },
+            // error: message => this.$showTips({ message, theme: 'error' }),
+            error: message => console.error(message),
+          })
+        } else { // websocket还没连接的话，1s后重试
+          setTimeout(() => {
+            this.subscribeMsg()
+          }, 1000)
+        }
+      },
+    },
+  }
 </script>
 
-<style scoped lang="postcss">
-    @import '../../css/variable.css';
-
-    .task-detail {
-        font-size: 14px;
-
-        .tool-analys {
-            width: 120px;
+<style lang="postcss" scoped>
+  .main-container {
+    background: #fff;
+  }
+  .task-detail {
+    position: relative;
+    .task-detail-left {
+      float: left;
+      width: calc(100% - 325px);
+      border-right: 1px solid #f0f1f5;
+      .tool-rate {
+        display: inline-flex;
+        align-items: center;
+        font-size: 16px;
+        line-height: 36px;
+        padding-left: 30px;
+        padding-top: 20px;
+        color: #000;
+        font-weight: bold;
+      }
+      .detail-tab {
+        height: calc(100% - 52px);
+        >>>.bk-tab-section {
+          height: calc(100% - 42px);
+          min-height: calc(100vh - 154px);
+          background: #f5f7fa;
         }
-        .tool-add {
-            padding: 0 15px;
-        }
-        .tool-count {
-            display: inline-flex;
-            align-items: center;
-            line-height: 32px;
-            margin-top: -12px;
-            padding-right: 30px;
-            .icon-star-gray {
-                margin-right: 2px;
-                line-height: 10px;
-                font-size: 14px;
-                /* color: #D4D9DD; */
-                color: #ffe148;
-                &.active {
-                    color: #ffe148;
-                }
-            }
-        }
-
-        .task-main {
-            padding: 0 0 10px 0;
-            display: block;
-            overflow-x: hidden;
-            .main-left {
-                width: calc(100% - 350px);
-                padding-right: 10px;
-                /* .tool-cards {
-                    padding: 10px 8px 5px 8px;
-                    background-color: white;
-                    border: 1px solid $borderColor;
-                    .icon-filter {
-                        font-size: 16px;
-                        position: relative;
-                        bottom: 3px;
-                        left: calc(100% - 20px);
-                        cursor: pointer;
-                        z-index: 10;
-                    }
-                }
-                .type-box {
-                    height: 0;
-                    position: relative;
-                    top: 31px;
-                    left: calc(100% - 109px);
-                    z-index: 10;
-                    .checkbox {
-                        background-color: #ffffff;
-                        width: 100px;
-                        padding: 10px;
-                        border: 1px solid $borderColor;
-                        box-shadow: 0 3px 8px 0 rgba(0,0,0,.2), 0 0 0 1px rgba(0,0,0,.08);
-                    }
-                    .is-others:before {
-                        content: '';
-                        width: 0;
-                        height: 0;
-                        border: 8px solid transparent;
-                        border-bottom-color: $borderColor;
-                        position: absolute;
-                        left: 79px;
-                        top: -16px;
-                    }
-                    .is-others:after {
-                        content: "";
-                        width: 0;
-                        height: 0;
-                        border: 8px solid transparent;
-                        border-bottom-color: #ffffff;
-                        position: absolute;
-                        left: 79px;
-                        top: 5px;
-                        margin-top: -18px;
-                    }
-                } */
-            }
-            .hidden-scroll {
-                margin-left: -9px;
-            }
-            .main-right {
-                width: 350px;
-            }
-        }
-
-        .task-info {
-            padding: 19px;
-            margin-bottom: 10px;
-            border: 1px solid $borderColor;
-            background: #fff;
-            .info-header {
-                padding-bottom: 5px;
-                border-bottom: 1px solid $borderColor;
-                strong {
-                    color: #63656E;
-                }
-                .log-more {
-                    float: right;
-                    cursor: pointer;
-                }
-            }
-            .info-content {
-                overflow: auto;
-                line-height: 19px;
-            }
-            .item {
-                display: flex;
-                padding: 15px 0 0 0;
-                height: 34px;
-                dt {
-                    width: 110px;
-                    padding-right: 20px;
-                    text-align: right;
-                    &.time {
-                        width: 230px;
-                    }
-                }
-                dd {
-                    width: 210px;
-                    color: #313238;
-                    overflow: hidden;
-                    text-overflow:ellipsis;
-                    white-space: nowrap;
-                    .codecc-icon {
-                        color: #a3c5fd;
-                        margin-left: 4px;
-                        font-size: 16px;
-                        &.icon-link {
-                            font-size: 12px;
-                        }
-                    }
-                    .tool-add-link {
-                        font-size: 12px;
-                        padding-left: 10px;
-                        cursor: pointer;
-                    }
-                    .checkerset {
-                        display: inline-block;
-                        max-width: 210px;
-                        overflow: hidden;
-                        text-overflow:ellipsis;
-                        white-space: nowrap;
-                    }
-                }
-            }
-        }
+      }
     }
-    >>>.bk-checkbox-text {
-        font-size: 12px;
+    .task-detail-right {
+      position: absolute;
+      right: 0;
+      width: 325px;
+      .detail-content {
+        padding: 25px 30px;
+        border-bottom: 1px solid #f0f1f5;
+        &.code-info {
+          padding-right: 10px;
+        }
+        .detail-header {
+          font-size: 14px;
+          color: #000;
+          font-weight: bold;
+          .flc {
+            font-weight: 200;
+          }
+        }
+        .detail-chart {
+          padding-top: 10px;
+          position: relative;
+          height: 110px;
+          #clocChart {
+            position: absolute;
+            left: 0;
+            height: 110px;
+            width: 110px;
+            padding-right: 10px;
+            border-right: 1px solid #f0f1f5;
+          }
+          #langChart {
+            position: absolute;
+            right: 0;
+            height: 110px;
+            width: 170px;
+            padding-left: 5px;
+          }
+        }
+        .checkerset {
+          display: flex;
+          font-size: 14px;
+          padding-top: 15px;
+          .checkerset-lang {
+            font-weight: 550;
+            color: #63656e;
+            width: 75px;
+          }
+          .checkerset-name {
+            max-width: 190px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+        }
+      }
+      .person-data {
+        margin: 0 -20px 0 -20px;
+        .bk-grid-row {
+          padding: 25px 0 13px;
+        }
+      }
+      .person-block {
+        text-align: center;
+        .person-number {
+          color: #000;
+          font-size: 24px;
+          cursor: pointer;
+          &:hover {
+            color: #3a84ff;
+          }
+        }
+        .person-txt {
+          font-size: 12px;
+          color: #979BA5;
+        }
+      }
     }
+    .open-scan {
+      >>>svg.bk-yellow {
+        fill: #3a84ff;
+      }
+    }
+  }
+  .mt4 {
+    margin-top: -4px;
+  }
+  .icon-tips {
+    position: relative;
+    top: -3px;
+    color: #c4c6cc;
+    padding-left: 5px;
+    padding-right: 10px;
+  }
+  .icon-star-gray {
+    color: #fe9c00;
+    position: relative;
+    top: -1px;
+    &.blue {
+      color: #3a84ff;
+    }
+  }
 </style>
