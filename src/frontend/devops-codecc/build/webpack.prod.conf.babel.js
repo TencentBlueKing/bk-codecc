@@ -21,7 +21,7 @@ import manifest from '../static/lib-manifest.json'
 const prodConf = merge(baseConf, {
     mode: 'production',
     entry: {
-        main: './src/main.js'
+        main: './src/entry.js'
     },
     output: {
         filename: assetsPath('js/[name].[chunkhash].js'),
@@ -146,6 +146,7 @@ const prodConf = merge(baseConf, {
             filename: resolve(config.build.assetsRoot + sep + config.build.assetsSubDirectory, '..') + '/index.html',
             template: 'index-bundle.html',
             inject: true,
+            publicPath: '__BK_PUBLIC_PATH_PREFIX__',
             minify: {
                 removeComments: true,
                 collapseWhitespace: true,
