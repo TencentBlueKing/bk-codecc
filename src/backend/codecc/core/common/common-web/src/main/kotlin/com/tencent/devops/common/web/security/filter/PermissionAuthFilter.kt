@@ -63,9 +63,14 @@ class PermissionAuthFilter(
             return
         }
 
-
         val taskId = requestContext.getHeaderString(AUTH_HEADER_DEVOPS_TASK_ID)
         val projectId = requestContext.getHeaderString(AUTH_HEADER_DEVOPS_PROJECT_ID)
+
+        // 跨任务查询不校验，因为project转换出task时已鉴权过
+        if (projectId.isNotBlank() && taskId.isNullOrBlank()) {
+            return
+        }
+
         if (user.isNullOrBlank() || taskId.isNullOrBlank() || projectId.isNullOrBlank()) {
             logger.error("insufficient param info! user: $user, taskId: $taskId, projectId: $projectId")
             throw UnauthorizedException("insufficient param info!")

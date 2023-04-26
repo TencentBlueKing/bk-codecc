@@ -216,7 +216,7 @@ public class ParamUtils {
 
         if (StringUtils.isEmpty(projectId) || StringUtils.isEmpty(userId)) {
             log.warn("all task by project, args can not be null: {}, {}", projectId, userId);
-            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_NULL, new String[]{"projectId", "userId"});
+            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_NULL, new String[]{"project id or user id"});
         }
 
         try {

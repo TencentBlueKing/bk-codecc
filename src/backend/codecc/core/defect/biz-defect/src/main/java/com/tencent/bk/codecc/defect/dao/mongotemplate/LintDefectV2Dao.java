@@ -1076,18 +1076,30 @@ public class LintDefectV2Dao {
     }
 
     /**
+     * 统计指定忽略类型的告警数
+     */
+    public Long getIgnoreTypeDefectCount(Map<Long, Set<String>> taskToolsMap,
+            Integer ignoreTypeId, Integer ignoreStatus) {
+        Criteria criteria = generateQueryCondition(taskToolsMap, ignoreTypeId, ignoreStatus);
+        if (criteria == null) {
+            return 0L;
+        }
+        return mongoTemplate.count(Query.query(criteria), LintDefectV2Entity.class);
+    }
+
+    /**
      * 统计忽略类型的告警数量
      * @param taskToolsMap
      * @param ignoreTypeIds
      * @return
      */
     public List<IgnoreTypeStatModel> statisticIgnoreDefectByIgnoreTypeId(Map<Long, Set<String>> taskToolsMap,
-            Set<Integer> ignoreTypeIds) {
+            Set<Integer> ignoreTypeIds, Integer ignoreStatus) {
         Criteria criteria = getTaskToolsMapQueryCondition(taskToolsMap);
         if (criteria == null) {
             return Collections.emptyList();
         }
-        criteria.and("status").is(DefectStatus.NEW.value() | DefectStatus.IGNORE.value())
+        criteria.and("status").is(ignoreStatus)
                 .and("ignore_reason_type").in(ignoreTypeIds);
 
         MatchOperation match = Aggregation.match(criteria);

@@ -8,6 +8,7 @@ import com.tencent.devops.common.service.aop.AbstractI18NResponseAspect;
 import com.tencent.devops.common.service.aop.I18NReflection;
 import com.tencent.devops.common.service.aop.I18NReflection.FieldMetaData;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -25,12 +26,12 @@ public class I18NResponseAspect extends AbstractI18NResponseAspect {
     private I18NMessageDao i18nMessageDao;
 
     @Override
-    public void addInternationalization(I18NReflection i18nReflection, String localeString) {
+    public void addInternationalization(I18NReflection i18nReflection, Locale locale) {
         if (i18nReflection == null || CollectionUtils.isEmpty(i18nReflection.getFieldMetaDataList())) {
             return;
         }
 
-        List<I18NMessageEntity> i18nMessageList = getI18NMessage(i18nReflection, localeString);
+        List<I18NMessageEntity> i18nMessageList = getI18NMessage(i18nReflection, locale.getLanguage());
         if (CollectionUtils.isEmpty(i18nMessageList)) {
             return;
         }

@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -50,11 +49,9 @@ public abstract class AbstractI18NResponseAspect {
     @Around("i18nResponse()")
     public Object translate(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
         Object originReturning = proceedingJoinPoint.proceed();
-        String localeString = getLocale().toString();
-        log.info("AbstractI18NResponseAspect localeString: {}", localeString);
-        if (originReturning == null
-                || ObjectUtils.isEmpty(localeString)
-                || DEFAULT_LOCALE.toString().equals(localeString)) {
+        Locale locale = getLocale();
+        log.info("AbstractI18NResponseAspect localeString: {}", locale);
+        if (originReturning == null || locale.getLanguage().equals("zh")) {
             return originReturning;
         }
 
@@ -99,7 +96,7 @@ public abstract class AbstractI18NResponseAspect {
 
         List<?> returningList = repackReturning(isResultGeneric, isListGeneric, isPageGeneric, originReturning);
         extractResourceCode(i18nReflection, returningList);
-        addInternationalization(i18nReflection, localeString);
+        addInternationalization(i18nReflection, locale);
         renderReturning(i18nReflection, returningList);
 
         return originReturning;
@@ -111,7 +108,7 @@ public abstract class AbstractI18NResponseAspect {
      * @param i18nReflection
      * @param localeString
      */
-    public abstract void addInternationalization(I18NReflection i18nReflection, String localeString);
+    public abstract void addInternationalization(I18NReflection i18nReflection, Locale locale);
 
     /**
      * 获取语言信息
@@ -124,6 +121,7 @@ public abstract class AbstractI18NResponseAspect {
                 (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
 
         if (requestAttributes == null) {
+            log.info("servlet request is null, return default locale");
             return DEFAULT_LOCALE;
         }
 
@@ -145,9 +143,11 @@ public abstract class AbstractI18NResponseAspect {
         // header:accept-language:zh-cn => java:zh_CN
         String acceptLanguageHeader = requestAttributes.getRequest().getHeader("accept-language");
         if (ObjectUtils.isEmpty(acceptLanguageHeader)) {
+            log.info("accept language header is null, return default locale");
             return DEFAULT_LOCALE;
         } else {
             Locale locale = LocaleContextHolder.getLocale();
+            log.info("get locale from accept language: {}", locale);
 
             // 中英均不是，则返回默认
             if (!"en".equalsIgnoreCase(locale.getLanguage()) && !"zh".equalsIgnoreCase(locale.getLanguage())) {
