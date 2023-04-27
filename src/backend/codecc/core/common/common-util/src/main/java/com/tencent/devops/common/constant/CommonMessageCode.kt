@@ -37,6 +37,8 @@ package com.tencent.devops.common.constant
  */
 object CommonMessageCode {
 
+    const val DB_QUERY_TIME_OUT= "-99"
+
     /**
      * 成功
      */

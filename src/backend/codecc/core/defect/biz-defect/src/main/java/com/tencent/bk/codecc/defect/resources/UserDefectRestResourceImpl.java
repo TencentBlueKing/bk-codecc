@@ -255,6 +255,10 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
     @Override
     public Result<CommonDefectQueryRspVO> queryDefectListWithIssue(String userId, String projectId,
             DefectQueryReqVO defectQueryReqVO, int pageNum, int pageSize, String sortField, Direction sortType) {
+
+        defectQueryReqVO.setProjectId(projectId);
+        defectQueryReqVO.setUserId(userId);
+
         IQueryWarningBizService service = fileAndDefectQueryFactory.createBizService(
                 defectQueryReqVO.getToolNameList(),
                 defectQueryReqVO.getDimensionList(),

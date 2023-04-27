@@ -235,13 +235,17 @@ public class LintDefectV2Dao {
         }
 
         // 若是跨任务查询
+        Duration timeout = null;
         if (MapUtils.isNotEmpty(taskToolMap) && taskToolMap.size() > 1) {
             query.withHint("idx_task_id_1_tool_name_1_status_1_checker_1_file_name_1_line_num_1");
+            timeout = Duration.ofSeconds(60);
         }
 
         long beginTime = System.currentTimeMillis();
-        Page<LintDefectV2Entity> pageResult;
-            pageResult = mongoPageHelper.pageQuery(query, LintDefectV2Entity.class, pageSize, pageNum, sortList, Duration.ofSeconds(2));
+        Page<LintDefectV2Entity> pageResult = mongoPageHelper.pageQuery(
+                query, LintDefectV2Entity.class, pageSize,
+                pageNum, sortList, timeout
+        );
 
         if (MapUtils.isNotEmpty(taskToolMap) && taskToolMap.size() > 1) {
             log.info("Multi-Task-Query list cost: {}, project id: {}, user id: {}",
@@ -425,7 +429,12 @@ public class LintDefectV2Dao {
 
         // 状态过滤
         if (CollectionUtils.isNotEmpty(conditionStatusStrSet)) {
-            andOpList.add(getStatusCriteria(conditionStatusStrSet, buildId, ignoreReasonTypes));
+            Criteria statusCriteria = getStatusCriteria(conditionStatusStrSet, buildId, ignoreReasonTypes);
+            if (statusCriteria != null) {
+                andOpList.add(statusCriteria);
+            } else {
+                return magicEmptyCriteria;
+            }
         }
 
         // 规则类型过滤
@@ -529,25 +538,30 @@ public class LintDefectV2Dao {
                 statusFilter.remove(fixedStatusStr);
             }
         }
+
+        if (CollectionUtils.isEmpty(statusFilter)) {
+            return null;
+        }
+
         List<Criteria> cris = new ArrayList<>();
         // 如果查询已忽略告警，且已忽略类型不为空，需添加忽略类型查询
-        boolean hasIgnore = false;
-        if (CollectionUtils.isNotEmpty(statusFilter)) {
-            hasIgnore = statusFilter.stream().anyMatch(it -> (Integer.parseInt(it) & DefectStatus.IGNORE.value()) > 0);
-        }
+        boolean hasIgnore =
+                statusFilter.stream().anyMatch(it -> (Integer.parseInt(it) & DefectStatus.IGNORE.value()) > 0);
+
         if (hasIgnore && CollectionUtils.isNotEmpty(ignoreReasonTypes)) {
             cris.add(Criteria.where("status").is(DefectStatus.IGNORE.value() | DefectStatus.NEW.value())
                     .and("ignore_reason_type").in(ignoreReasonTypes));
             statusFilter.remove(String.valueOf(DefectStatus.IGNORE.value()));
             statusFilter.remove(String.valueOf(DefectStatus.IGNORE.value() | DefectStatus.NEW.value()));
         }
-        if (CollectionUtils.isNotEmpty(statusFilter)) {
-            Set<Integer> condStatusSet = statusFilter.stream()
-                    .map(it -> Integer.parseInt(it) | DefectStatus.NEW.value())
-                    .collect(Collectors.toSet());
-            cris.add(Criteria.where("status").in(condStatusSet));
-        }
-        return cris.size() > 1 ? new Criteria().orOperator(cris.toArray(new Criteria[]{})) : cris.get(0);
+
+        Set<Integer> condStatusSet = statusFilter.stream()
+                .map(it -> Integer.parseInt(it) | DefectStatus.NEW.value())
+                .collect(Collectors.toSet());
+        cris.add(Criteria.where("status").in(condStatusSet));
+
+        // 1 or ? > 1
+        return cris.size() == 1 ? cris.get(0) : new Criteria().orOperator(cris.toArray(new Criteria[]{}));
     }
 
 

@@ -121,7 +121,9 @@ public class TaskLogDao
         AggregationOptions options = new AggregationOptions.Builder().allowDiskUse(true).build();
         Aggregation aggregation = Aggregation.newAggregation(matchOperation, sortOperation, groupOperation).withOptions(options);
 
-        AggregationResults<TaskLogEntity> queryResult = mongoTemplate.aggregate(aggregation, "t_task_log", TaskLogEntity.class);
+        AggregationResults<TaskLogEntity> queryResult =
+                mongoTemplate.aggregate(aggregation, "t_task_log", TaskLogEntity.class);
+
         return queryResult.getMappedResults();
     }
 

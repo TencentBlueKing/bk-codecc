@@ -269,7 +269,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         } else {
             // 按问题聚类
             Map<String, Boolean> filedMap = getDefectBaseFieldMap();
-            Page<LintDefectV2Entity> result ;
+            Page<LintDefectV2Entity> result;
 
             try {
                 result = lintDefectV2Dao.findDefectPageByCondition(
@@ -278,7 +278,11 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                         sortType, defectThirdPartyIdSet, request.getProjectId(), request.getUserId()
                 );
             } catch (CodeCCException | UncategorizedMongoDbException e) {
-                CodeCCException tipsEx = new CodeCCException("-100", "当前项目问题数过于巨大，请筛选工具后查看。");
+                CodeCCException tipsEx = new CodeCCException(
+                        CommonMessageCode.DB_QUERY_TIME_OUT,
+                        "当前项目问题数过于巨大，请筛选工具后查看。",
+                        e
+                );
 
                 if (e instanceof UncategorizedMongoDbException) {
                     if (e.getCause() instanceof MongoExecutionTimeoutException) {

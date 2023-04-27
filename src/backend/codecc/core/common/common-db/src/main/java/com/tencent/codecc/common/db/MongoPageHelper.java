@@ -14,21 +14,20 @@ package com.tencent.codecc.common.db;
 
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.Page;
+import com.tencent.devops.common.constant.CommonMessageCode;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.bson.types.ObjectId;
-import org.springframework.core.codec.CodecException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * MongoDB分页查询工具类
@@ -43,8 +42,7 @@ public class MongoPageHelper
     public static final String ID = "_id";
     private final MongoTemplate mongoTemplate;
 
-    public MongoPageHelper(MongoTemplate mongoTemplate)
-    {
+    public MongoPageHelper(MongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
     }
 
@@ -93,45 +91,39 @@ public class MongoPageHelper
             Duration timeout
     ) {
         if (timeout != null) {
+            // 实际上该超时并不能作用于count，SDK导致
             query.maxTime(timeout);
         }
 
         long beginTime = System.currentTimeMillis();
         long total = mongoTemplate.count(query, entityClass);
+        log.info("page query get total cost: {}", System.currentTimeMillis() - beginTime);
 
         // 计算剩余可用的超时时间
         long availableTimeout = 0;
         if (timeout != null) {
             availableTimeout = (beginTime + timeout.toMillis()) - System.currentTimeMillis();
             if (availableTimeout <= 0) {
-                throw new CodeCCException("mongodb count time out");
+                throw new CodeCCException(CommonMessageCode.DB_QUERY_TIME_OUT, "mongodb count operation timeout");
             }
         }
 
-        log.info("page query get total cost: {}", System.currentTimeMillis() - beginTime);
-
-        if (total == 0L)
-        {
-            log.info("page query total is 0");
-            log.info("page query get record cost: {}", System.currentTimeMillis() - beginTime);
+        if (total == 0L) {
+            log.info("page query total count is 0");
             return new Page<>(total, pageNum, pageSize, 0, new ArrayList<>());
         }
+
         final Integer pages = (int) Math.ceil(total / (double) pageSize);
-        if (pageNum <= 0 || pageNum > pages)
-        {
+        if (pageNum <= 0 || pageNum > pages) {
             pageNum = FIRST_PAGE_NUM;
         }
         final Criteria criteria = new Criteria();
-        if (StringUtils.isNotBlank(lastId))
-        {
-            if (pageNum != FIRST_PAGE_NUM)
-            {
+        if (StringUtils.isNotBlank(lastId)) {
+            if (pageNum != FIRST_PAGE_NUM) {
                 criteria.and(ID).gt(new ObjectId(lastId));
             }
             query.limit(pageSize);
-        }
-        else
-        {
+        } else {
             int skip = pageSize * (pageNum - 1);
             query.skip(skip).limit(pageSize);
         }
