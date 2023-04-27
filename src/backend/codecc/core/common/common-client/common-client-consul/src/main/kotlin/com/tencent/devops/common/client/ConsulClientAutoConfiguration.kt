@@ -29,6 +29,7 @@ package com.tencent.devops.common.client
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_BK_GATEWAY_TAG
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_BK_TICKET
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_PROJECT_ID
+import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_TOKEN
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_USER_ID
 import com.tencent.devops.common.api.auth.TRACE_HEADER_BUILD_ID
 import com.tencent.devops.common.client.discovery.ConsulDiscoveryUtils
@@ -107,7 +108,7 @@ class ConsulClientAutoConfiguration {
 
 
     @Bean(name = ["devopsRequestInterceptor"])
-    fun bsRequestInterceptor(): RequestInterceptor {
+    fun bsRequestInterceptor(@Autowired allProperties: AllProperties): RequestInterceptor {
         return RequestInterceptor { requestTemplate ->
             val projectId = DevopsProxy.projectIdThreadLocal.get() as String?
             if (!projectId.isNullOrBlank()) {
@@ -126,12 +127,16 @@ class ConsulClientAutoConfiguration {
             val request = attributes.request
             val bkTicket = request.getHeader(AUTH_HEADER_DEVOPS_BK_TICKET)
             val userName = request.getHeader(AUTH_HEADER_DEVOPS_USER_ID)
+            val bkCiToken = allProperties.devopsToken
 
             if (!bkTicket.isNullOrBlank()) {
                 requestTemplate.header(AUTH_HEADER_DEVOPS_BK_TICKET, bkTicket)
             }
             if (!userName.isNullOrBlank()) {
                 requestTemplate.header(AUTH_HEADER_DEVOPS_USER_ID, userName)
+            }
+            if (!bkCiToken.isNullOrBlank()) {
+                requestTemplate.header(AUTH_HEADER_DEVOPS_TOKEN, bkCiToken)
             }
         }
     }

@@ -26,19 +26,11 @@
 
 package com.tencent.devops.common.web
 
-import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_BK_GATEWAY_TAG
-import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_BK_TICKET
-import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_PROJECT_ID
-import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_USER_ID
-import com.tencent.devops.common.api.auth.TRACE_HEADER_BUILD_ID
-import com.tencent.devops.common.client.proxy.DevopsProxy
 import com.tencent.devops.common.codecc.util.JsonUtil
-import com.tencent.devops.common.util.TraceBuildIdThreadCacheUtils
 import com.tencent.devops.common.web.filter.BuildIdHeaderCacheEnterFilter
 import com.tencent.devops.common.web.filter.BuildIdHeaderCacheExitFilter
 import com.tencent.devops.common.web.filter.TraceIdRequestFilter
 import com.tencent.devops.common.web.filter.TraceIdResponseFilter
-import feign.RequestInterceptor
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
@@ -54,8 +46,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.context.annotation.PropertySource
 import org.springframework.core.Ordered
 import org.springframework.core.env.Environment
-import org.springframework.web.context.request.RequestContextHolder
-import org.springframework.web.context.request.ServletRequestAttributes
 
 @Configuration
 @PropertySource("classpath:/common-web.properties")
@@ -86,60 +76,6 @@ class WebAutoConfiguration @Autowired constructor(private val profile: com.tence
 
     @Bean
     fun jmxAutoConfiguration(@Autowired environment: Environment) = JmxAutoConfiguration(environment)
-
-    private val languageHeaderName = "Accept-Language"
-
-    /**
-     * feign调用拦截器
-     */
-    @Bean(name = ["normalRequestInterceptor"])
-    fun requestInterceptor(): RequestInterceptor {
-        return RequestInterceptor { requestTemplate ->
-            val attributes = RequestContextHolder.getRequestAttributes() as? ServletRequestAttributes
-                ?: return@RequestInterceptor
-            val request = attributes.request
-            val languageHeaderValue = request.getHeader(languageHeaderName)
-            if (!languageHeaderValue.isNullOrBlank()) {
-                // 设置Accept-Language请求头
-                requestTemplate.header(languageHeaderName, languageHeaderValue)
-            }
-            val traceBuildId = TraceBuildIdThreadCacheUtils.getBuildId()
-            if (!traceBuildId.isNullOrBlank()) {
-                // 设置构建ID头
-                requestTemplate.header(TRACE_HEADER_BUILD_ID, traceBuildId)
-            }
-        }
-    }
-
-    @Bean(name = ["devopsRequestInterceptor"])
-    fun bsRequestInterceptor(): RequestInterceptor {
-        return RequestInterceptor { requestTemplate ->
-            val projectId = DevopsProxy.projectIdThreadLocal.get() as String?
-            if (!projectId.isNullOrBlank()) {
-                logger.info("project id of header: $projectId")
-                requestTemplate.header(AUTH_HEADER_DEVOPS_PROJECT_ID, projectId)
-            }
-
-            val gatewayTag = DevopsProxy.gatewayTagThreadLocal.get() as String?
-            if (!gatewayTag.isNullOrBlank()) {
-                logger.info("match gateway tag: {}", gatewayTag)
-                requestTemplate.header(AUTH_HEADER_DEVOPS_BK_GATEWAY_TAG, gatewayTag)
-            }
-
-            val attributes = RequestContextHolder.getRequestAttributes() as? ServletRequestAttributes
-                ?: return@RequestInterceptor
-            val request = attributes.request
-            val bkTicket = request.getHeader(AUTH_HEADER_DEVOPS_BK_TICKET)
-            val userName = request.getHeader(AUTH_HEADER_DEVOPS_USER_ID)
-
-            if (!bkTicket.isNullOrBlank()) {
-                requestTemplate.header(AUTH_HEADER_DEVOPS_BK_TICKET, bkTicket)
-            }
-            if (!userName.isNullOrBlank()) {
-                requestTemplate.header(AUTH_HEADER_DEVOPS_USER_ID, userName)
-            }
-        }
-    }
 
     @Bean(name = ["traceIdResponseFilter"])
     fun traceIdResponseFilter() = TraceIdResponseFilter()

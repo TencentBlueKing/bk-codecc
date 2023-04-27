@@ -18,7 +18,6 @@ public class I18NUtils {
      */
     public static String getMessage(String resourceCode) {
         return getMessage(resourceCode, null);
-
     }
 
     /**
@@ -64,7 +63,7 @@ public class I18NUtils {
         try {
             return MessageFormat.format(message, params);
         } catch (Throwable t) {
-            log.error("i18n util get message error, code: {}, params: {}", resourceCode, params, t);
+            log.error("i18n format message error, code: {}, params: {}", resourceCode, params, t);
 
             return "I18N_ERR";
         }

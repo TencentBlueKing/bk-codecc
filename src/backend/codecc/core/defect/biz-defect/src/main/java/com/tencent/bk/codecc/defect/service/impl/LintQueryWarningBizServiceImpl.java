@@ -279,8 +279,8 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                 );
             } catch (CodeCCException | UncategorizedMongoDbException e) {
                 CodeCCException tipsEx = new CodeCCException(
-                        CommonMessageCode.DB_QUERY_TIME_OUT,
-                        "当前项目问题数过于巨大，请筛选工具后查看。",
+                        CommonMessageCode.PROJECT_DEFECT_TOO_MANY,
+                        "当前项目问题数过于巨大，请筛选工具后查看",
                         e
                 );
 

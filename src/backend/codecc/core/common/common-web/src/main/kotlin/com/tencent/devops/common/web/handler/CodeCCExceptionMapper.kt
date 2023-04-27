@@ -44,8 +44,8 @@ class CodeCCExceptionMapper : ExceptionMapper<CodeCCException> {
 
     override fun toResponse(exception: CodeCCException): Response {
         logger.error(
-            "Request fails with the exception, error code: ${exception.errorCode}, params: " +
-                    "${exception.params?.toList()}, cause exception is ${exception.errorCause}", exception
+            "Request fails with the exception, error code: ${exception.errorCode}, " +
+                    "params: ${exception.params?.toList()}", exception
         )
         val status = Response.Status.OK
         val i18nErrMsg = I18NUtils.getMessageWithParams(exception.errorCode, exception.params)
