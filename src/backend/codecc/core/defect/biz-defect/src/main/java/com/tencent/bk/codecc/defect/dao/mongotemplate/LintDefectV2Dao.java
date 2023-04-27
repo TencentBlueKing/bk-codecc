@@ -65,6 +65,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -239,11 +240,8 @@ public class LintDefectV2Dao {
         }
 
         long beginTime = System.currentTimeMillis();
-
-        Page<LintDefectV2Entity> pageResult = mongoPageHelper.pageQuery(
-                query, LintDefectV2Entity.class,
-                pageSize, pageNum, sortList
-        );
+        Page<LintDefectV2Entity> pageResult;
+            pageResult = mongoPageHelper.pageQuery(query, LintDefectV2Entity.class, pageSize, pageNum, sortList, Duration.ofSeconds(2));
 
         if (MapUtils.isNotEmpty(taskToolMap) && taskToolMap.size() > 1) {
             log.info("Multi-Task-Query list cost: {}, project id: {}, user id: {}",
@@ -1084,7 +1082,10 @@ public class LintDefectV2Dao {
         if (criteria == null) {
             return 0L;
         }
-        return mongoTemplate.count(Query.query(criteria), LintDefectV2Entity.class);
+        Query query = Query.query(criteria);
+        // 指定索引
+        query.withHint("idx_taskid_1_toolname_1_status_1_ignore_reason_type_1");
+        return mongoTemplate.count(query, LintDefectV2Entity.class);
     }
 
     /**

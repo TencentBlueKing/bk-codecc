@@ -12,10 +12,13 @@
 
 package com.tencent.codecc.common.db;
 
+import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.Page;
+import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.bson.types.ObjectId;
+import org.springframework.core.codec.CodecException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -47,22 +50,22 @@ public class MongoPageHelper
 
     /**
      * 分页查询，直接返回集合类型的结果.
-     *
-     * @see MongoPageHelper#pageQuery(Query, Class, Function, Integer, Integer, List< Order>)
      */
-    public <T> Page<T> pageQuery(Query query, Class<T> entityClass, Integer pageSize, Integer pageNum, List<Order> sortList)
-    {
-        return pageQuery(query, entityClass, Function.identity(), pageSize, pageNum, sortList);
+    public <T> Page<T> pageQuery(
+            Query query, Class<T> entityClass, Integer pageSize, Integer pageNum,
+            List<Order> sortList, Duration timeout
+    ) {
+        return pageQuery(query, entityClass, Function.identity(), pageSize, pageNum, sortList, timeout);
     }
 
     /**
      * 分页查询，不考虑条件分页，直接使用skip-limit来分页.
-     *
-     * @see MongoPageHelper#pageQuery(Query, Class, Function, Integer, Integer, List< Order>, String)
      */
-    public <T, R> Page<R> pageQuery(Query query, Class<T> entityClass, Function<T, R> mapper, Integer pageSize, Integer pageNum, List<Order> sortList)
-    {
-        return pageQuery(query, entityClass, mapper, pageSize, pageNum, sortList, null);
+    public <T, R> Page<R> pageQuery(
+            Query query, Class<T> entityClass, Function<T, R> mapper, Integer pageSize,
+            Integer pageNum, List<Order> sortList, Duration timeout
+    ) {
+        return pageQuery(query, entityClass, mapper, pageSize, pageNum, sortList, null, timeout);
     }
 
     /**
@@ -86,11 +89,25 @@ public class MongoPageHelper
             Integer pageSize,
             Integer pageNum,
             List<Order> sortList,
-            String lastId)
-    {
-        //分页逻辑
+            String lastId,
+            Duration timeout
+    ) {
+        if (timeout != null) {
+            query.maxTime(timeout);
+        }
+
         long beginTime = System.currentTimeMillis();
         long total = mongoTemplate.count(query, entityClass);
+
+        // 计算剩余可用的超时时间
+        long availableTimeout = 0;
+        if (timeout != null) {
+            availableTimeout = (beginTime + timeout.toMillis()) - System.currentTimeMillis();
+            if (availableTimeout <= 0) {
+                throw new CodeCCException("mongodb count time out");
+            }
+        }
+
         log.info("page query get total cost: {}", System.currentTimeMillis() - beginTime);
 
         if (total == 0L)
@@ -119,13 +136,19 @@ public class MongoPageHelper
             query.skip(skip).limit(pageSize);
         }
 
+        if (timeout != null) {
+            query.maxTime(Duration.ofMillis(availableTimeout));
+        }
+
         beginTime = System.currentTimeMillis();
         final List<T> entityList = mongoTemplate.find(query.addCriteria(criteria).with(Sort.by(sortList)), entityClass);
         log.info("page query get record cost: {}", System.currentTimeMillis() - beginTime);
+
         final Page<R> pageResult = new Page<>(
                 total, pageNum, pageSize, pages,
                 entityList.stream().map(mapper).collect(Collectors.toList())
         );
+
         return pageResult;
     }
 }

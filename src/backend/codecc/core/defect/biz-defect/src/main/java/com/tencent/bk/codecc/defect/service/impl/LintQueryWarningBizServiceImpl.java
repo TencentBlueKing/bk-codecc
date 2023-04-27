@@ -32,6 +32,7 @@ import static com.tencent.devops.common.constant.ComConstants.MASK_STATUS;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.mongodb.MongoExecutionTimeoutException;
 import com.tencent.bk.codecc.defect.component.QueryWarningLogicComponent;
 import com.tencent.bk.codecc.defect.dao.mongorepository.BuildDefectRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerSetRepository;
@@ -123,6 +124,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.mongodb.UncategorizedMongoDbException;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
@@ -267,11 +269,28 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         } else {
             // 按问题聚类
             Map<String, Boolean> filedMap = getDefectBaseFieldMap();
-            Page<LintDefectV2Entity> result = lintDefectV2Dao.findDefectPageByCondition(
-                    taskToolMap, request, defectMongoIdSet, pkgChecker,
-                    filedMap, pageNum, pageSize, sortField,
-                    sortType, defectThirdPartyIdSet, request.getProjectId(), request.getUserId()
-            );
+            Page<LintDefectV2Entity> result ;
+
+            try {
+                result = lintDefectV2Dao.findDefectPageByCondition(
+                        taskToolMap, request, defectMongoIdSet, pkgChecker,
+                        filedMap, pageNum, pageSize, sortField,
+                        sortType, defectThirdPartyIdSet, request.getProjectId(), request.getUserId()
+                );
+            } catch (CodeCCException | UncategorizedMongoDbException e) {
+                CodeCCException tipsEx = new CodeCCException("-100", "当前项目问题数过于巨大，请筛选工具后查看。");
+
+                if (e instanceof UncategorizedMongoDbException) {
+                    if (e.getCause() instanceof MongoExecutionTimeoutException) {
+                        throw tipsEx;
+                    } else {
+                        log.error("mongodb uncategorized ex", e);
+                        throw e;
+                    }
+                }
+
+                throw tipsEx;
+            }
 
             log.info("get defect group by problem for task before snapshot post handle: {}, {}, {}",
                     taskIdList, result.getCount(), pkgChecker.size());

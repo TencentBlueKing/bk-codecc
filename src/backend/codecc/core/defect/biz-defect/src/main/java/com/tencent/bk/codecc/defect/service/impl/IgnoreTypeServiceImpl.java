@@ -64,11 +64,9 @@ import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -1099,13 +1097,10 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
         }
         List<IgnoreTypeDefectStatResponse> statResponses = new LinkedList<>();
         Map<Integer, IgnoreTypeDefectStatResponse> statResponseMap = new HashMap<>();
-        // 记录任务数量
-        Map<Integer, Set<Long>> ignoreTypeToTaskIdMap = new HashMap<>();
         for (Integer ignoreTypeId : ignoreTypeIds) {
             IgnoreTypeDefectStatResponse response = new IgnoreTypeDefectStatResponse(ignoreTypeId, 0L, 0L, 0L);
             statResponses.add(response);
             statResponseMap.put(ignoreTypeId, response);
-            ignoreTypeToTaskIdMap.put(ignoreTypeId, new HashSet<>());
         }
 
         // 对任务进行分批统计，每次1000个任务 获取项目的任务列表
@@ -1119,101 +1114,25 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
             // 分开代码问题与CCN
             Pair<Map<Long, Set<String>>, Set<Long>> toolMapSetPair = ParamUtils.getDefectAndCCNTaskToToolMapByTaskId(
                     pageTaskIds);
-            if (isNewStatWay()) {
-                log.info("stat way is new");
-                statIgnoreTypeDefectNew(ignoreTypeIds, ignoreStatus, toolMapSetPair, statResponseMap);
-            } else {
-                log.info("stat way is old");
-                statIgnoreTypeDefectOld(ignoreTypeIds, ignoreStatus, toolMapSetPair, ignoreTypeToTaskIdMap,
-                        statResponseMap);
+            // 统计代码问题数量，以IgnoreTypeId为维度
+            for (Integer ignoreTypeId : ignoreTypeIds) {
+                Long lintDefectCount = lintDefectV2Dao
+                        .getIgnoreTypeDefectCount(toolMapSetPair.getFirst(), ignoreTypeId, ignoreStatus);
+                IgnoreTypeDefectStatResponse response = statResponseMap.get(ignoreTypeId);
+                response.setDefect(response.getDefect() + lintDefectCount);
             }
-        }
-        // 统计任务数量
-        for (Entry<Integer, IgnoreTypeDefectStatResponse> entry : statResponseMap.entrySet()) {
-            Set<Long> taskIdSet = ignoreTypeToTaskIdMap.get(entry.getKey());
-            entry.getValue().setTaskCount(CollectionUtils.isEmpty(taskIdSet) ? 0L : taskIdSet.size());
+
+            // 统计圈复杂度数量，以IgnoreTypeId为维度
+            for (Integer ignoreTypeId : ignoreTypeIds) {
+                Long ccnDefectCount = ccnDefectDao
+                        .getIgnoreTypeDefectCount(toolMapSetPair.getSecond(), ignoreTypeId, ignoreStatus);
+                IgnoreTypeDefectStatResponse response = statResponseMap.get(ignoreTypeId);
+                response.setRiskFunction(response.getRiskFunction() + ccnDefectCount);
+            }
         }
 
         log.info("getIgnoreTypeDefectStat end projectId:{}, userName:{}", projectId, userName);
         return statResponses;
     }
-
-    private boolean isNewStatWay() {
-        String isNewWay = redisTemplate.opsForValue().get("IGNORE_TYPE_STAT_WITH_NEW_WAY");
-        return StringUtils.isNotBlank(isNewWay) && isNewWay.equals(Boolean.TRUE.toString());
-    }
-
-    /**
-     * 统计方式一 ： 聚合
-     *
-     * @param ignoreTypeIds
-     * @param ignoreStatus
-     * @param toolMapSetPair
-     * @param ignoreTypeToTaskIdMap
-     * @param statResponseMap
-     * @return
-     */
-    private void statIgnoreTypeDefectOld(Set<Integer> ignoreTypeIds, Integer ignoreStatus,
-            Pair<Map<Long, Set<String>>, Set<Long>> toolMapSetPair, Map<Integer, Set<Long>> ignoreTypeToTaskIdMap,
-            Map<Integer, IgnoreTypeDefectStatResponse> statResponseMap) {
-        // 统计代码问题数量，以IgnoreTypeId为维度
-        List<IgnoreTypeStatModel> lintModels = lintDefectV2Dao.statisticIgnoreDefectByIgnoreTypeId(
-                toolMapSetPair.getFirst(), ignoreTypeIds, ignoreStatus);
-        lintModels.forEach(model -> {
-            if (model != null && model.getIgnoreTypeId() != null) {
-                IgnoreTypeDefectStatResponse response = statResponseMap.get(model.getIgnoreTypeId());
-                ignoreTypeToTaskIdMap.get(model.getIgnoreTypeId()).addAll(model.getTaskIdSet());
-                if (response != null) {
-                    response.setDefect(response.getDefect() + model.getDefectCount());
-                }
-            }
-        });
-
-        // 统计圈复杂度数量，以IgnoreTypeId为维度
-        List<IgnoreTypeStatModel> ccnModels = ccnDefectDao.statisticIgnoreDefectByIgnoreTypeId(
-                toolMapSetPair.getSecond(), ignoreTypeIds, ignoreStatus);
-        ccnModels.forEach(model -> {
-            if (model != null && model.getIgnoreTypeId() != null) {
-                IgnoreTypeDefectStatResponse response = statResponseMap.get(model.getIgnoreTypeId());
-                ignoreTypeToTaskIdMap.get(model.getIgnoreTypeId()).addAll(model.getTaskIdSet());
-                if (response != null) {
-                    response.setRiskFunction(response.getRiskFunction() + model.getDefectCount());
-                }
-            }
-        });
-    }
-
-
-    /**
-     * 统计方式二 ： Count
-     *
-     * @param ignoreTypeIds
-     * @param ignoreStatus
-     * @param toolMapSetPair
-     * @param statResponseMap
-     * @return
-     */
-    private void statIgnoreTypeDefectNew(Set<Integer> ignoreTypeIds, Integer ignoreStatus,
-            Pair<Map<Long, Set<String>>, Set<Long>> toolMapSetPair,
-            Map<Integer, IgnoreTypeDefectStatResponse> statResponseMap) {
-
-        // 统计代码问题数量，以IgnoreTypeId为维度
-        for (Integer ignoreTypeId : ignoreTypeIds) {
-            Long lintDefectCount = lintDefectV2Dao
-                    .getIgnoreTypeDefectCount(toolMapSetPair.getFirst(), ignoreTypeId, ignoreStatus);
-            IgnoreTypeDefectStatResponse response = statResponseMap.get(ignoreTypeId);
-            response.setDefect(response.getDefect() + lintDefectCount);
-        }
-
-        // 统计圈复杂度数量，以IgnoreTypeId为维度
-        for (Integer ignoreTypeId : ignoreTypeIds) {
-            Long ccnDefectCount = ccnDefectDao
-                    .getIgnoreTypeDefectCount(toolMapSetPair.getSecond(), ignoreTypeId, ignoreStatus);
-            IgnoreTypeDefectStatResponse response = statResponseMap.get(ignoreTypeId);
-            response.setRiskFunction(response.getDefect() + ccnDefectCount);
-        }
-    }
-
-
 
 }

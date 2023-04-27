@@ -2,10 +2,12 @@ package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
 import com.tencent.bk.codecc.defect.model.MetricsEntity;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
@@ -61,6 +63,9 @@ public class MetricsDao {
      * @return
      */
     public List<MetricsEntity> findByTaskAndBuildIdMap(Map<Long, String> taskIdAndBuildIdMap) {
+        if (taskIdAndBuildIdMap == null || taskIdAndBuildIdMap.isEmpty()) {
+            return Collections.emptyList();
+        }
         List<Criteria> orCriList = new ArrayList<>();
         for (Entry<Long, String> taskIdAndBuildId : taskIdAndBuildIdMap.entrySet()) {
             orCriList.add(Criteria.where("task_id").is(taskIdAndBuildId.getKey())

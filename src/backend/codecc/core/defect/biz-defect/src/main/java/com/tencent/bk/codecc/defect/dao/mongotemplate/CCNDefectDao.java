@@ -32,7 +32,6 @@ package com.tencent.bk.codecc.defect.dao.mongotemplate;
 import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.dto.IgnoreTypeStatModel;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
-import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.statistic.CCNStatisticEntity;
 import com.tencent.bk.codecc.defect.vo.CCNDefectGroupStatisticVO;
 import com.tencent.bk.codecc.defect.vo.admin.DefectCountModel;
@@ -729,7 +728,10 @@ public class CCNDefectDao {
         Criteria criteria = Criteria.where("task_id").in(taskIds)
                 .and("status").is(ignoreStatus)
                 .and("ignore_reason_type").is(ignoreTypeId);
-        return mongoTemplate.count(Query.query(criteria), LintDefectV2Entity.class);
+        Query query = Query.query(criteria);
+        // 指定索引
+        query.withHint("idx_taskid_1_status_1_ignore_reason_type_1");
+        return mongoTemplate.count(query, CCNDefectEntity.class);
     }
 
     public List<IgnoreTypeStatModel> statisticIgnoreDefectByIgnoreTypeId(Set<Long> taskIds,

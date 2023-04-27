@@ -1457,3 +1457,63 @@
     "updated_date" : 1640161640009,
     "updated_by" : "admin"
 }
+{
+  "_id" : {"$oid": "605dd16673a3da7d46867fb6"},
+  "_class" : "com.tencent.bk.codecc.task.model.ToolMetaEntity",
+  "name" : "SCC",
+  "pattern" : "CLOC",
+  "display_name" : "代码统计SCC",
+  "type" : "CLOC",
+  "lang" : 0,
+  "brief_introduction" : "没有简介",
+  "description" : "没有简介",
+  "graphic_details" : "",
+  "status" : "P",
+  "privated" : false,
+  "docker_trigger_shell" : "/bin/bash##-c##\"cd /usr/codecc/tool_scan && /usr/codecc/tool_scan/tool/scan --input={input.json} --output={output.json}\"",
+  "docker_image_url" : "bkcodecc/scc_scan",
+  "docker_image_version" : "0.0.2",
+  "tool_scan_command" : "./tool/scan  --input={input.json} --output={output.json}",
+  "tool_env" : "",
+  "tool_run_type" : "local",
+  "tool_image_revision" : "sha256:801b4a6f6bf2b6c158e15f66849d02318a2fd2fb6324927244e73b15ea327139",
+  "tool_versions" : [
+    {
+      "version_type" : "T",
+      "docker_trigger_shell" : "/bin/bash##-c##\"cd /usr/codecc/tool_scan && /usr/codecc/tool_scan/tool/scan --input={input.json} --output={output.json}\"",
+      "docker_image_url" : "bkcodecc/scc_scan",
+      "docker_image_version" : "0.0.2",
+      "docker_image_hash" : "sha256:801b4a6f6bf2b6c158e15f66849d02318a2fd2fb6324927244e73b15ea327139",
+      "create_date" : 1611233147466,
+      "created_by" : "system_admin",
+      "updated_date" : 1611233147466,
+      "updated_by" : "system_admin"
+    },
+    {
+      "version_type" : "G",
+      "docker_trigger_shell" : "/bin/bash##-c##\"cd /usr/codecc/tool_scan && /usr/codecc/tool_scan/tool/scan --input={input.json} --output={output.json}\"",
+      "docker_image_url" : "bkcodecc/scc_scan",
+      "docker_image_version" : "0.0.2",
+      "docker_image_hash" : "sha256:801b4a6f6bf2b6c158e15f66849d02318a2fd2fb6324927244e73b15ea327139",
+      "create_date" : 1611233147466,
+      "created_by" : "system_admin",
+      "updated_date" : 1611233147466,
+      "updated_by" : "system_admin"
+    },
+    {
+      "version_type" : "P",
+      "docker_trigger_shell" : "/bin/bash##-c##\"cd /usr/codecc/tool_scan && /usr/codecc/tool_scan/tool/scan --input={input.json} --output={output.json}\"",
+      "docker_image_url" : "bkcodecc/scc_scan",
+      "docker_image_version" : "0.0.2",
+      "docker_image_hash" : "sha256:801b4a6f6bf2b6c158e15f66849d02318a2fd2fb6324927244e73b15ea327139",
+      "create_date" : 1611233147466,
+      "created_by" : "system_admin",
+      "updated_date" : 1611233147466,
+      "updated_by" : "system_admin"
+    }
+  ],
+  "create_date" : 1570003800241,
+  "created_by" : "system_admin",
+  "updated_date" : 1570003800241,
+  "updated_by" : "system_admin"
+}

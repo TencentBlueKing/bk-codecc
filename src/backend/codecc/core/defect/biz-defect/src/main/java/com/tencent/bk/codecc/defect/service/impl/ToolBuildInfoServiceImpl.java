@@ -304,7 +304,8 @@ public class ToolBuildInfoServiceImpl implements ToolBuildInfoService {
      */
     @Override
     public Boolean batchSetForceFullScan(Collection<Long> taskIdSet, String toolName) {
-        log.info("batchSetForceFullScan toolName: {}, taskIdSet: {}", toolName, taskIdSet);
+        log.info("batchSetForceFullScan toolName: {}, taskIdSet size: {}", toolName,
+                CollectionUtils.isEmpty(taskIdSet) ? 0 : taskIdSet.size());
 
         if (CollectionUtils.isEmpty(taskIdSet) || StringUtils.isBlank(toolName)) {
             log.warn("batchSetForceFullScan fail! param is empty");
