@@ -19,7 +19,9 @@ public class ServiceDynamicConfigResourceImpl implements ServiceDynamicConfigRes
     public Result<DynamicConfigVO> getConfigByKey(String key) {
         DynamicConfigEntity entity = dynamicConfigRepository.findFirstByKey(key);
         DynamicConfigVO vo = new DynamicConfigVO();
-        BeanUtils.copyProperties(entity, vo);
+        if(entity != null){
+            BeanUtils.copyProperties(entity, vo);
+        }
         return new Result<>(vo);
     }
 }
