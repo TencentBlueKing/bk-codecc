@@ -10,9 +10,9 @@ ENV CODECC_HOME=/data/workspace \
     SERVER_COMMON_NAME=common
 
 
-COPY tmp/ /data/workspace/
+COPY ./ /data/workspace/
 RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo 'Asia/Shanghai' > /etc/timezone && \
     chmod +x /data/workspace/startup.sh
 WORKDIR /data/workspace
-ENTRYPOINT [ "sh", "/data/workspace/startup.sh" ]
+CMD /data/workspace/startup.sh
