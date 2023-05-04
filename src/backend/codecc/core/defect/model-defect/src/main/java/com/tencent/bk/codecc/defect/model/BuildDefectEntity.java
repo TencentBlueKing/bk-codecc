@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.Set;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 /**
  * 新快照功能已迁移
@@ -25,6 +26,7 @@ import java.util.Set;
         @CompoundIndex(name = "taskid_toolname_buildid_filepath_idx", def = "{'task_id': 1, 'tool_name': 1, 'build_id': 1, 'file_path': 1}", background = true),
         @CompoundIndex(name = "taskid_toolname_buildid_defectid_idx", def = "{'task_id': 1, 'tool_name': 1, 'build_id': 1, 'defect_id': 1}", background = true)
 })
+@Sharded(shardKey = "task_id")
 public class BuildDefectEntity extends CommonEntity
 {
     /**

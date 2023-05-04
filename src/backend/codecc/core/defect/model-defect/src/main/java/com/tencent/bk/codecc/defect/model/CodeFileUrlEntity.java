@@ -19,6 +19,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 /**
  * 代码仓库url
@@ -31,6 +32,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @CompoundIndexes({
         @CompoundIndex(name = "taskid_tool_idx", def = "{'task_id': 1, 'file_path': 1}")
 })
+@Sharded(shardKey = "task_id")
 public class CodeFileUrlEntity extends CommonEntity
 {
     /**

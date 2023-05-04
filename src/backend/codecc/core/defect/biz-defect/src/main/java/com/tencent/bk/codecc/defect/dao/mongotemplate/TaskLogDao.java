@@ -283,4 +283,17 @@ public class TaskLogDao
 
         return mongoTemplate.find(query, TaskLogEntity.class, "t_task_log");
     }
+
+    /**
+     * 根据任务ID和工具名称查询最新一次成功的构建记录
+     * @param taskId
+     * @param toolName
+     * @return
+     */
+    public TaskLogEntity findLastTaskLogByTaskIdAndToolName(Long taskId, String toolName) {
+        Query query = Query.query(Criteria.where("task_id").is(taskId)
+                .and("tool_name").is(toolName).and("flag").is(ComConstants.StepFlag.SUCC.value()));
+        query.with(Sort.by(new Sort.Order(Sort.Direction.DESC, "start_time"))).limit(1);
+        return mongoTemplate.findOne(query, TaskLogEntity.class);
+    }
 }

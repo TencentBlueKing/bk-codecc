@@ -5,6 +5,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 @Data
 @Document(collection = "t_scm_file_info_snapshot")
@@ -12,6 +13,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
         @CompoundIndex(name = "task_build_file_indx", def = "{'task_id': 1, 'build_id': 1, 'file_path': 1}",
                 background = true)
 })
+@Sharded(shardKey = "task_id")
 public class ScmFileInfoSnapshotEntity {
     @Field("task_id")
     private Long taskId;

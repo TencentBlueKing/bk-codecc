@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 @Data
 @Document(collection = "t_metrics")
@@ -17,6 +18,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @CompoundIndexes(
     @CompoundIndex(name = "taskid_buildid_idx_1", def = "{'task_id':1, 'build_id':1}", background = true)
 )
+@Sharded(shardKey = "task_id")
 public class MetricsEntity {
     public MetricsEntity(Long taskId, String buildId, double codeStyleScore, double codeSecurityScore, double codeMeasureScore, double rdIndicatorsScore) {
         this.taskId = taskId;

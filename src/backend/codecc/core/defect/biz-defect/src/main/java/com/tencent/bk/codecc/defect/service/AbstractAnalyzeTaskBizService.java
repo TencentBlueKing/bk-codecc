@@ -763,7 +763,7 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
                                            UploadTaskLogStepVO uploadTaskLogStepVO,
                                            TaskBaseVO taskVO) {
         appendStepInfo(taskLogEntity, uploadTaskLogStepVO, taskVO);
-        log.info("111111111111111, {}", taskLogEntity);
+        log.info("111111111111111, \n{}", JsonUtil.INSTANCE.toJson(taskLogEntity));
         taskLogRepository.save(taskLogEntity);
 
         return updateToolStatus(taskLogEntity);

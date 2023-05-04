@@ -21,6 +21,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 /**
  * 可跟踪告警的实体
@@ -36,6 +37,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
         @CompoundIndex(name = "taskid_tool_id_idx", def = "{'task_id': 1, 'tool_name': 1, 'id': 1}"),
         @CompoundIndex(name = "taskid_tool_checker_idx", def = "{'task_id': 1, 'tool_name': 1, 'checker_name': 1, 'author_list': 1}")
 })
+@Sharded(shardKey = "task_id")
 public class CommonDefectEntity extends DefectEntity {
 
     /**

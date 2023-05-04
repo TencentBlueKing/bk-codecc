@@ -37,6 +37,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 /**
  * lint类告警持久实体类
@@ -66,6 +67,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
                 background = true
         )
 })
+@Sharded(shardKey = "task_id")
 public class LintDefectV2Entity extends CommonSpecialEntity {
 
     @Field("id")

@@ -37,6 +37,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.List;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 /**
  * 重复率的缺陷实体
@@ -47,6 +48,7 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Document(collection = "t_dupc_defect")
+@Sharded(shardKey = "task_id")
 public class DUPCDefectEntity extends DefectEntity {
 
     /**

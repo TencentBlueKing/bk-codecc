@@ -27,7 +27,15 @@
 package com.tencent.bk.codecc.defect.resources;
 
 import com.tencent.bk.codecc.defect.api.ServiceReportDefectRestResource;
+import com.tencent.bk.codecc.defect.dao.mongorepository.BuildRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository;
+import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildInfoRepository;
+import com.tencent.bk.codecc.defect.model.BuildEntity;
+import com.tencent.bk.codecc.defect.model.TaskLogEntity;
+import com.tencent.bk.codecc.defect.model.TaskLogEntity.TaskUnit;
+import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
+import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
 import com.tencent.bk.codecc.defect.service.CommonDefectMigrationService;
 import com.tencent.bk.codecc.defect.service.IUpdateDefectBizService;
 import com.tencent.bk.codecc.defect.service.impl.CommonQueryWarningBizServiceImpl;
@@ -39,11 +47,17 @@ import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.BizServiceFactory;
 import com.tencent.devops.common.service.IBizService;
 import com.tencent.devops.common.web.RestResource;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.util.StringUtils;
 
 /**
@@ -67,6 +81,14 @@ public class ServiceReportDefectRestResourceImpl implements ServiceReportDefectR
     private CommonDefectMigrationService commonDefectMigrationService;
     @Autowired
     private LintDefectV2Repository lintDefectV2Repository;
+    @Autowired
+    private TaskLogRepository taskLogRepository;
+    @Autowired
+    private ToolBuildInfoRepository toolBuildInfoRepository;
+    @Autowired
+    private MongoTemplate mongoTemplate;
+    @Autowired
+    private BuildRepository buildRepository;
 
     @Override
     public Result<Set<Long>> queryIds(long taskId, String toolName, Boolean migrationSuccessful) {
@@ -107,6 +129,62 @@ public class ServiceReportDefectRestResourceImpl implements ServiceReportDefectR
 
     @Override
     public Result<Boolean> commonToLintMigrationSuccessful(long taskId) {
+/*        TaskLogEntity taskLogEntity = taskLogRepository.findFirstByTaskIdAndToolNameAndBuildId(
+                144704L,
+                "CHECKSTYLE",
+                "b-28505b2813a841c8923af9e2da62f3d7"
+        );*/
+
+        BuildEntity buildEntity = buildRepository.findById("645365ac3319f39906b6eb56").get();
+        buildEntity.setBuildTime(System.currentTimeMillis());
+        buildRepository.save(buildEntity);
+
+        TaskLogEntity taskLogEntity = taskLogRepository.findById("644a7c36313bf27c5d47dc13").get();
+        taskLogEntity.setUpdatedDate(System.currentTimeMillis());
+        List<TaskUnit> stepArray = taskLogEntity.getStepArray();
+        if (stepArray != null && stepArray.size() > 0) {
+            TaskUnit taskUnit = new TaskUnit();
+            BeanUtils.copyProperties(stepArray.get(0), taskUnit);
+            stepArray.add(taskUnit);
+        }
+
+        try {
+            taskLogRepository.save(taskLogEntity);
+        } catch (Throwable t) {
+            log.error("save task log fail", t);
+        }
+
+        try {
+            Query query1 = Query.query(Criteria.where("_id").is("644a7c36313bf27c5d47dc13").and("task_id").is(144704L));
+            mongoTemplate.updateFirst(query1, new Update().set("created_by", "wj1"), "t_task_log");
+
+            Query query2 = Query.query(Criteria.where("_id").is("644a7c36313bf27c5d47dc13"));
+            mongoTemplate.updateFirst(query2, new Update().set("updated_by", "wj2"), "t_task_log");
+
+/*            taskLogEntity.setUpdatedBy("wj3");
+            mongoTemplate.findAndReplace(query, taskLogEntity);*/
+        } catch (Throwable t) {
+            log.error("upsert fail", t);
+        }
+
+        LintDefectV2Entity lintDefectV2Entity = lintDefectV2Repository.findByEntityId("5f047bc1da6bf218988443bf");
+        lintDefectV2Entity.setUpdatedDate(System.currentTimeMillis());
+        lintDefectV2Entity.setMessage(String.valueOf(System.currentTimeMillis()));
+        try {
+            lintDefectV2Repository.save(lintDefectV2Entity);
+        } catch (Throwable t) {
+            log.error("save lint defect v2 fail", t);
+        }
+
+        try {
+            ToolBuildInfoEntity toolBuildInfoEntity = toolBuildInfoRepository.findById("61e9875a16eaaf9797232d0c")
+                    .get();
+            toolBuildInfoEntity.setUpdatedDate(System.currentTimeMillis());
+            toolBuildInfoRepository.save(toolBuildInfoEntity);
+        } catch (Throwable t) {
+            log.error("save tool build info fail", t);
+        }
+
         return new Result<>(commonDefectMigrationService.isMigrationSuccessful(taskId));
     }
 }

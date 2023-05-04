@@ -219,4 +219,12 @@ public interface TaskLogService
     List<TaskLogVO> getCurrBuildInfo(long taskId, String buildId);
 
     Map<String, Boolean> defectCommitSuccess(long taskId, List<String> toolNameSet, String buildId, int stepNum);
+
+    /**
+     * 根据taskId和toolName获取上一次执行成功的分析记录
+     * @param taskId
+     * @param toolName
+     * @return
+     */
+    TaskLogVO getLastTaskLogByTaskIdAndToolName(long taskId, String toolName);
 }

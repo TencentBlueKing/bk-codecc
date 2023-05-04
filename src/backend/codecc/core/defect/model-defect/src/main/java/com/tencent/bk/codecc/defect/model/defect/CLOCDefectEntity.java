@@ -20,6 +20,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 /**
  * CLOC信息实体类
@@ -35,6 +36,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
         @CompoundIndex(name = "task_id_1_tool_name_1_status_1",
                 def = "{'task_id': 1, 'tool_name': 1, 'status': 1}", background = true)
 })
+@Sharded(shardKey = "task_id")
 public class CLOCDefectEntity extends CommonEntity {
 
     @Field("task_id")

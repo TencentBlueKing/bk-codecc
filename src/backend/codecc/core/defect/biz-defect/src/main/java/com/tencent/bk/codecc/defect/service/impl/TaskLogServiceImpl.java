@@ -56,6 +56,7 @@ import com.tencent.devops.common.service.IBizService;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -602,5 +603,15 @@ public class TaskLogServiceImpl implements TaskLogService {
             }
         });
         return resultMap;
+    }
+
+    @Override
+    public TaskLogVO getLastTaskLogByTaskIdAndToolName(long taskId, String toolName) {
+        TaskLogVO taskLogVO = new TaskLogVO();
+        TaskLogEntity taskLogEntity = taskLogDao.findLastTaskLogByTaskIdAndToolName(taskId, toolName);
+        if (null != taskLogEntity) {
+            BeanUtils.copyProperties(taskLogEntity, taskLogVO);
+        }
+        return taskLogVO;
     }
 }

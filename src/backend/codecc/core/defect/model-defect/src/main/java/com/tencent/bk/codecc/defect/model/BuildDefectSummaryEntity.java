@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -17,6 +18,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
         @CompoundIndex(name = "task_id_1_build_time_1", def = "{'task_id':1, 'build_time':1}"),
         @CompoundIndex(name = "task_id_1_repo_info_branch_1", def = "{'task_id':1, 'repo_info.branch':1}")
 })
+@Sharded(shardKey = "task_id")
 public class BuildDefectSummaryEntity extends CommonEntity {
 
     @Field("task_id")

@@ -38,6 +38,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.List;
 import java.util.Set;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 /**
  * lint类工具文件持久化实体类
@@ -51,6 +52,7 @@ import java.util.Set;
 @CompoundIndexes({
         @CompoundIndex(name = "task_id_1_tool_name_1", def = "{'task_id': 1, 'tool_name': 1}")
 })
+@Sharded(shardKey = "task_id")
 public class LintFileEntity extends CommonEntity
 {
 

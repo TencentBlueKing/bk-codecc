@@ -7,12 +7,14 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.List;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 @Data
 @Document(collection = "t_scm_file_info_cache")
 @CompoundIndexes({
     @CompoundIndex(name = "task_tool_file_indx", def = "{'task_id': 1, 'tool_name': 1, 'file_rel_path': 1}", background = true)
 })
+@Sharded(shardKey = "task_id")
 public class ScmFileInfoCacheEntity
 {
     /**

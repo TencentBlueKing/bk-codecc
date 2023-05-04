@@ -225,7 +225,6 @@ public class BkMetricsServiceImpl implements BkMetricsService {
                 return null;
             }
             dataSize = taskIdList.size();
-            taskTotalCount += dataSize;
 
             // 累计修复数
             fixedDefectCount += this.statDefectByTaskId(taskIdList, startTime, endTime);

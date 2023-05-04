@@ -37,6 +37,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.List;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 /**
  * 每次分析结束的统计数据
@@ -53,6 +54,7 @@ import java.util.List;
         @CompoundIndex(name = "task_id_1_tool_name_1_time_1", def = "{'task_id': 1, 'tool_name': 1, 'time': 1}",
                 background = true)
 })
+@Sharded(shardKey = "task_id")
 public class CCNStatisticEntity extends StatisticEntity
 {
     /**

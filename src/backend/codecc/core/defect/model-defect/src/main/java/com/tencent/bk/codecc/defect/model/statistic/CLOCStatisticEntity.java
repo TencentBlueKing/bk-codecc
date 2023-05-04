@@ -19,6 +19,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 /**
  * cloc统计信息表
@@ -33,6 +34,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
                 def = "{'task_id': 1, 'tool_name': 1, 'build_id': 1, 'language': 1}",
                 background = true)
 })
+@Sharded(shardKey = "task_id")
 public class CLOCStatisticEntity extends CommonEntity {
     @Field("task_id")
     @Indexed

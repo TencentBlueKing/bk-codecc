@@ -40,6 +40,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 /**
  * 任务分析记录持久化对象
@@ -55,6 +56,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @CompoundIndexes({
         @CompoundIndex(name = "task_id_1_tool_name_1", def = "{'task_id': 1, 'tool_name': 1}")
 })
+@Sharded(shardKey = "task_id")
 public class CommonStatisticEntity extends StatisticEntity
 {
     /**

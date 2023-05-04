@@ -36,6 +36,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 /**
  * 圈复杂度告警的实体对象
@@ -51,6 +52,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
         @CompoundIndex(name = "idx_taskid_1_status_1_ignore_reason_type_1",
                 def = "{'task_id': 1,  'status': 1, 'ignore_reason_type': 1}", background = true)
 })
+@Sharded(shardKey = "task_id")
 public class CCNDefectEntity extends DefectEntity {
 
     /**
