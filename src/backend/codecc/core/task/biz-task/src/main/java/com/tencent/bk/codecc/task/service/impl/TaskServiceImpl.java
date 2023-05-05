@@ -792,13 +792,8 @@ public class TaskServiceImpl implements TaskService {
         }
 
         taskBaseVO.setCheckerSetType(ComConstants.CheckerSetType.forValue(taskEntity.getCheckerSetType()));
-
         // 数据迁移标识
-        Result<Boolean> commonToLintMigrationSuccessfulResp = client.get(ServiceReportDefectRestResource.class)
-                .commonToLintMigrationSuccessful(taskEntity.getTaskId());
-        if (commonToLintMigrationSuccessfulResp.isOk()) {
-            taskBaseVO.setDataMigrationSuccessful(Boolean.TRUE.equals(commonToLintMigrationSuccessfulResp.getData()));
-        }
+        taskBaseVO.setDataMigrationSuccessful(true);
 
         return taskBaseVO;
     }

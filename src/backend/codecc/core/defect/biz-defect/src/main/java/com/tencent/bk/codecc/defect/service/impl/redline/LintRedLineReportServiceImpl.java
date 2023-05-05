@@ -232,6 +232,11 @@ public class LintRedLineReportServiceImpl extends AbstractRedLineReportService<L
                 for (LintDefectV2Entity defect : historyDefects) {
                     // 统计存量各 严重级别告警数
                     updateLintSeverityCount(defect.getSeverity(), ComConstants.FileType.HISTORY, lintRLModel);
+
+                    // 统计各规则包告警数，工具与项目语言不符合的不做统计
+                    updateLintCheckerPkgCount(lintRLModel.getHistoryCheckerPkgCounts(), defect.getChecker(),
+                            allCheckerMap, tosaCheckers, isTosaPkgOpened);
+
                     // 统计存量各规则告警数量
                     updateLintCheckerCount(
                             lintRLModel.getHistoryCheckerCounts(), defect.getChecker(), toolName);

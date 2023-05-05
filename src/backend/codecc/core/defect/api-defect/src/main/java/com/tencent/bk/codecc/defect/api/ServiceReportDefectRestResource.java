@@ -92,13 +92,4 @@ public interface ServiceReportDefectRestResource {
     Result updateDefects(
             @ApiParam(value = "告警详细信息", required = true)
             UpdateDefectVO updateDefectVO);
-
-    @ApiOperation("数据是否迁移成功")
-    @Path("/commonToLintMigrationSuccessful/{taskId}")
-    @GET
-    Result<Boolean> commonToLintMigrationSuccessful(
-            @ApiParam(value = "任务ID", required = true)
-            @PathParam("taskId")
-            long taskId
-    );
 }

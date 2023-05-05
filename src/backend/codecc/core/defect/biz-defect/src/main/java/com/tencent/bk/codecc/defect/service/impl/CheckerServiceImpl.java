@@ -732,8 +732,7 @@ public class CheckerServiceImpl implements CheckerService
         List<CheckerDetailEntity> totalList = new ArrayList<>();
         List<String> checkerTagI18NFailList = Lists.newArrayList();
 
-        checkerDetailEntityList.forEach(checkerDetailEntity ->
-        {
+        checkerDetailEntityList.forEach(checkerDetailEntity -> {
             //1. 计算语言数量
             if (judgeQualifiedChecker(null, checkerListQueryReq.getCheckerCategory(), checkerListQueryReq.getToolName(),
                     checkerListQueryReq.getTag(), checkerListQueryReq.getSeverity(), checkerListQueryReq.getEditable(),
@@ -758,16 +757,12 @@ public class CheckerServiceImpl implements CheckerService
             //2. 计算规则数量
             if (judgeQualifiedChecker(checkerListQueryReq.getCheckerLanguage(), null, checkerListQueryReq.getToolName(),
                     checkerListQueryReq.getTag(), checkerListQueryReq.getSeverity(), checkerListQueryReq.getEditable(),
-                    checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(), checkerKeySet, checkerDetailEntity) && StringUtils.isNotEmpty(checkerDetailEntity.getCheckerCategory()))
-            {
-                categoryMap.compute(checkerDetailEntity.getCheckerCategory(), (k, v) ->
-                {
-                    if (null == v)
-                    {
+                    checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(), checkerKeySet, checkerDetailEntity) && StringUtils.isNotEmpty(checkerDetailEntity.getCheckerCategory())) {
+
+                categoryMap.compute(checkerDetailEntity.getCheckerCategory(), (k, v) -> {
+                    if (null == v) {
                         return 1;
-                    }
-                    else
-                    {
+                    } else {
                         v++;
                         return v;
                     }
@@ -777,16 +772,12 @@ public class CheckerServiceImpl implements CheckerService
             //3. 计算工具数量
             if (judgeQualifiedChecker(checkerListQueryReq.getCheckerLanguage(), checkerListQueryReq.getCheckerCategory(), null,
                     checkerListQueryReq.getTag(), checkerListQueryReq.getSeverity(), checkerListQueryReq.getEditable(),
-                    checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(), checkerKeySet, checkerDetailEntity) && StringUtils.isNotEmpty(checkerDetailEntity.getToolName()))
-            {
-                toolMap.compute(checkerDetailEntity.getToolName(), (k, v) ->
-                {
-                    if (null == v)
-                    {
+                    checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(), checkerKeySet, checkerDetailEntity) && StringUtils.isNotEmpty(checkerDetailEntity.getToolName())) {
+
+                toolMap.compute(checkerDetailEntity.getToolName(), (k, v) -> {
+                    if (null == v) {
                         return 1;
-                    }
-                    else
-                    {
+                    } else {
                         v++;
                         return v;
                     }
@@ -796,8 +787,8 @@ public class CheckerServiceImpl implements CheckerService
             //4. 计算规则标签数量
             if (judgeQualifiedChecker(checkerListQueryReq.getCheckerLanguage(), checkerListQueryReq.getCheckerCategory(), checkerListQueryReq.getToolName(),
                     null, checkerListQueryReq.getSeverity(), checkerListQueryReq.getEditable(),
-                    checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(), checkerKeySet, checkerDetailEntity) && CollectionUtils.isNotEmpty(checkerDetailEntity.getCheckerTag()))
-            {
+                    checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(), checkerKeySet, checkerDetailEntity) && CollectionUtils.isNotEmpty(checkerDetailEntity.getCheckerTag())) {
+
                 if (CollectionUtils.isNotEmpty(checkerDetailEntity.getCheckerTag())) {
                     // vo是已处理过i18n
                     CheckerDetailVO vo = checkerDetailVOMap.get(checkerDetailEntity.getEntityId());
@@ -807,8 +798,7 @@ public class CheckerServiceImpl implements CheckerService
                     for (int i = 0; i < checkerDetailEntity.getCheckerTag().size(); i++) {
                         // 以中文字符作为统计的KEY
                         String checkerTag = checkerDetailEntity.getCheckerTag().get(i);
-                        tagMap.compute(checkerTag, (k, v) ->
-                        {
+                        tagMap.compute(checkerTag, (k, v) -> {
                             if (null == v) {
                                 return 1;
                             } else {
@@ -829,55 +819,50 @@ public class CheckerServiceImpl implements CheckerService
             //5. 计算严重级别数量
             if (judgeQualifiedChecker(checkerListQueryReq.getCheckerLanguage(), checkerListQueryReq.getCheckerCategory(), checkerListQueryReq.getToolName(),
                     checkerListQueryReq.getTag(), null, checkerListQueryReq.getEditable(),
-                    checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(), checkerKeySet, checkerDetailEntity) && 0 != checkerDetailEntity.getSeverity())
-            {
-                severityMap.compute(ComConstants.PROMPT_IN_DB == checkerDetailEntity.getSeverity() ? ComConstants.PROMPT : checkerDetailEntity.getSeverity()
-                        , (k, v) ->
-                        {
-                            if (null == v)
-                            {
+                    checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(), checkerKeySet, checkerDetailEntity) && 0 != checkerDetailEntity.getSeverity()) {
+
+                severityMap.compute(
+                        ComConstants.PROMPT_IN_DB == checkerDetailEntity.getSeverity()
+                                ? ComConstants.PROMPT
+                                : checkerDetailEntity.getSeverity(),
+                        (k, v) -> {
+                            if (null == v) {
                                 return 1;
-                            }
-                            else
-                            {
+                            } else {
                                 v++;
                                 return v;
                             }
-                        });
+                        }
+                );
             }
 
             //6. 计算可修改参数数量
             if (judgeQualifiedChecker(checkerListQueryReq.getCheckerLanguage(), checkerListQueryReq.getCheckerCategory(), checkerListQueryReq.getToolName(),
                     checkerListQueryReq.getTag(), checkerListQueryReq.getSeverity(), null,
-                    checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(), checkerKeySet, checkerDetailEntity))
-            {
-                editableMap.compute(null == checkerDetailEntity.getEditable() ? Boolean.FALSE : checkerDetailEntity.getEditable(), (k, v) ->
-                {
-                    if (null == v)
-                    {
-                        return 1;
-                    }
-                    else
-                    {
-                        v++;
-                        return v;
-                    }
-                });
+                    checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(), checkerKeySet, checkerDetailEntity)) {
+
+                editableMap.compute(
+                        null == checkerDetailEntity.getEditable() ? Boolean.FALSE : checkerDetailEntity.getEditable(),
+                        (k, v) -> {
+                            if (null == v) {
+                                return 1;
+                            } else {
+                                v++;
+                                return v;
+                            }
+                        }
+                );
             }
 
             //7. 计算推荐类型数量
             if (judgeQualifiedChecker(checkerListQueryReq.getCheckerLanguage(), checkerListQueryReq.getCheckerCategory(), checkerListQueryReq.getToolName(),
                     checkerListQueryReq.getTag(), checkerListQueryReq.getSeverity(), checkerListQueryReq.getEditable(),
-                    null, checkerListQueryReq.getCheckerSetSelected(), checkerKeySet, checkerDetailEntity) && StringUtils.isNotEmpty(checkerDetailEntity.getCheckerRecommend()))
-            {
-                recommendMap.compute(checkerDetailEntity.getCheckerRecommend(), (k, v) ->
-                {
-                    if (null == v)
-                    {
+                    null, checkerListQueryReq.getCheckerSetSelected(), checkerKeySet, checkerDetailEntity) && StringUtils.isNotEmpty(checkerDetailEntity.getCheckerRecommend())) {
+
+                recommendMap.compute(checkerDetailEntity.getCheckerRecommend(), (k, v) -> {
+                    if (null == v) {
                         return 1;
-                    }
-                    else
-                    {
+                    } else {
                         v++;
                         return v;
                     }
@@ -887,16 +872,12 @@ public class CheckerServiceImpl implements CheckerService
             //8. 计算选中未选中数量
             if (judgeQualifiedChecker(checkerListQueryReq.getCheckerLanguage(), checkerListQueryReq.getCheckerCategory(), checkerListQueryReq.getToolName(),
                     checkerListQueryReq.getTag(), checkerListQueryReq.getSeverity(), checkerListQueryReq.getEditable(),
-                    checkerListQueryReq.getCheckerRecommend(), null, null, checkerDetailEntity))
-            {
-                selectMap.compute(checkerKeySet.contains(checkerDetailEntity.getCheckerKey()), (k, v) ->
-                {
-                    if (null == v)
-                    {
+                    checkerListQueryReq.getCheckerRecommend(), null, null, checkerDetailEntity)) {
+
+                selectMap.compute(checkerKeySet.contains(checkerDetailEntity.getCheckerKey()), (k, v) -> {
+                    if (null == v) {
                         return 1;
-                    }
-                    else
-                    {
+                    } else {
                         v++;
                         return v;
                     }
@@ -906,8 +887,7 @@ public class CheckerServiceImpl implements CheckerService
 
             if (judgeQualifiedChecker(checkerListQueryReq.getCheckerLanguage(), checkerListQueryReq.getCheckerCategory(), checkerListQueryReq.getToolName(),
                     checkerListQueryReq.getTag(), checkerListQueryReq.getSeverity(), checkerListQueryReq.getEditable(),
-                    checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(), checkerKeySet, checkerDetailEntity))
-            {
+                    checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(), checkerKeySet, checkerDetailEntity)) {
                 totalList.add(checkerDetailEntity);
             }
         });
