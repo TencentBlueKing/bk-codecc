@@ -55,8 +55,7 @@ import org.springframework.data.mongodb.core.mapping.Sharded;
                 background = true)
 })
 @Sharded(shardKey = "task_id")
-public class CCNStatisticEntity extends StatisticEntity
-{
+public class CCNStatisticEntity extends StatisticEntity {
     /**
      * 本次分析前的遗留告警数
      */

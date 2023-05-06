@@ -688,8 +688,8 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
             index.setDownloadUrl(url);
             fileIndexRepository.save(index);
         } catch (Exception e) {
-            log.error("uploadToStorage filename:" + fileName + " storage:" +
-                    storageService.getStorageType() + " fail!", e);
+            log.error("uploadToStorage filename:" + fileName + " storage:"
+                    + storageService.getStorageType() + " fail!", e);
         }
     }
 
@@ -715,8 +715,8 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
             storageService.chunkUpload(file.getAbsolutePath(), index.getUploadType(), index.getFileName(),
                     chunkNo, index.getUploadId());
         } catch (Exception e) {
-            log.error("uploadToStorage filename:" + fileName + " storage:" +
-                    storageService.getStorageType() + " fail!", e);
+            log.error("uploadToStorage filename:" + fileName + " storage:"
+                    + storageService.getStorageType() + " fail!", e);
         }
     }
 
@@ -735,8 +735,8 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
             index.setDownloadUrl(url);
             fileIndexRepository.save(index);
         } catch (Exception e) {
-            log.error("finishChunkToStorage filename:" + fileName + " storage:" +
-                    storageService.getStorageType() + " fail!", e);
+            log.error("finishChunkToStorage filename:" + fileName + " storage:"
+                    + storageService.getStorageType() + " fail!", e);
         }
     }
 
@@ -756,8 +756,8 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
         try {
             storageService.download(localFilePath.toString(), index.getStoreType(), index.getDownloadUrl());
         } catch (Exception e) {
-            log.error("downloadFromToStorage filename:" + fileName + " storage:" +
-                    storageService.getStorageType() + " fail!", e);
+            log.error("downloadFromToStorage filename:" + fileName + " storage:"
+                    + storageService.getStorageType() + " fail!", e);
         }
     }
 

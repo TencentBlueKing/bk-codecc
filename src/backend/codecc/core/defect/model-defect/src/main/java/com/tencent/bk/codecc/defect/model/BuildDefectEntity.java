@@ -27,8 +27,7 @@ import org.springframework.data.mongodb.core.mapping.Sharded;
         @CompoundIndex(name = "taskid_toolname_buildid_defectid_idx", def = "{'task_id': 1, 'tool_name': 1, 'build_id': 1, 'defect_id': 1}", background = true)
 })
 @Sharded(shardKey = "task_id")
-public class BuildDefectEntity extends CommonEntity
-{
+public class BuildDefectEntity extends CommonEntity {
     /**
      * 工具名称
      */

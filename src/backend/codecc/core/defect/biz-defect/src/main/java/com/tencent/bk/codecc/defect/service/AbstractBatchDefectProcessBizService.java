@@ -59,7 +59,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
     @Autowired
     private TaskPersonalStatisticService taskPersonalStatisticService;
 
-    private Map<String,BatchDefectProcessHandler> handlers;
+    private Map<String, BatchDefectProcessHandler> handlers;
 
     @Override
     @OperationHistory(funcId = FUNC_BATCH_DEFECT, operType = BATCH_DEFECT)
@@ -81,6 +81,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
 
     /**
      * 校验用户是否可以对任务进行告警管理
+     *
      * @param userName
      * @param projectId
      * @param taskIds
@@ -157,6 +158,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
 
     /**
      * 单个任务批处理
+     *
      * @param batchDefectProcessReqVO
      * @return
      */
@@ -179,6 +181,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
 
     /**
      * 一次性查询处理所有符合条件的告警
+     *
      * @param isSelectAll
      * @param batchDefectProcessReqVO
      * @return
@@ -242,7 +245,8 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
     }
 
     /**
-     *  获取下一轮分页起始的filePath 与 跳过的数量
+     * 获取下一轮分页起始的filePath 与 跳过的数量
+     *
      * @param pageDefectList 默认按照filePath已经排序好
      * @param startFilePath
      * @param currentSkip
@@ -279,6 +283,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
 
     /**
      * 不使用SKIP 的分页，因为数据在查询后，被处理就不符合下次查询条件，所以不需要SKIP
+     *
      * @param pageDefectList
      * @param startFilePath
      * @param currentSkip
@@ -295,6 +300,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
 
     /**
      * 获取defect 的filepath
+     *
      * @param defect
      * @return
      */
@@ -389,7 +395,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
      * @param batchDefectProcessReqVO
      */
     protected void processAfterEachPageDone(List defectList,
-            BatchDefectProcessReqVO batchDefectProcessReqVO){
+            BatchDefectProcessReqVO batchDefectProcessReqVO) {
         // Handler 执行
         processBatchDefectProcessHandler(defectList, batchDefectProcessReqVO);
         // 自定义的操作执行
@@ -407,6 +413,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
 
     /**
      * 所有分页完成后执行
+     *
      * @param batchDefectProcessReqVO
      */
     protected abstract void processAfterAllPageDone(BatchDefectProcessReqVO batchDefectProcessReqVO);
@@ -418,5 +425,5 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
 
     protected abstract List getEffectiveDefectByDefectKeySet(BatchDefectProcessReqVO batchDefectProcessReqVO);
 
-    protected abstract Pair<ComConstants.BusinessType,ComConstants.ToolType> getBusinessTypeToolTypePair();
+    protected abstract Pair<ComConstants.BusinessType, ComConstants.ToolType> getBusinessTypeToolTypePair();
 }

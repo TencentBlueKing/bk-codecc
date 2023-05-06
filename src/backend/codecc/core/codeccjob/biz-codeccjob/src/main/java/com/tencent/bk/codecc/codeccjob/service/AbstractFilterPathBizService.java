@@ -52,7 +52,7 @@ public abstract class AbstractFilterPathBizService implements IBizService<Filter
                 );
     }
 
-    protected void doAfterFilterPathDone(long taskId, String toolName, List defectList){
+    protected void doAfterFilterPathDone(long taskId, String toolName, List defectList) {
         afterFilterPathDoneOpsService.doAfterFilterPathDone(taskId, toolName, defectList);
     }
 }

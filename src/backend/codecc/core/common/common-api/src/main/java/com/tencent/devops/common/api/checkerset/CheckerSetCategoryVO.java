@@ -15,8 +15,8 @@ import lombok.NoArgsConstructor;
 @ApiModel("规则集类型视图")
 @AllArgsConstructor
 @NoArgsConstructor
-public class CheckerSetCategoryVO
-{
+public class CheckerSetCategoryVO {
+
     /**
      * 英文名称
      */

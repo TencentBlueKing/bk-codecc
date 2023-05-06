@@ -685,8 +685,7 @@ public class CheckerServiceImpl implements CheckerService
         Map<String, Integer> tagMap = new HashMap<>();
         Map<String, String> tagNameMap = Maps.newHashMap();
         //5. 规则严重级别数量(数量不变，初始化就把所有规则放上去)
-        Map<Integer, Integer> severityMap = new HashMap<Integer, Integer>()
-        {{
+        Map<Integer, Integer> severityMap = new HashMap<Integer, Integer>() {{
             put(ComConstants.PROMPT, 0);
             put(ComConstants.NORMAL, 0);
             put(ComConstants.SERIOUS, 0);
@@ -713,13 +712,11 @@ public class CheckerServiceImpl implements CheckerService
         //处理规则集的选中问题
         Set<String> checkerKeySet;
         //单个规则集关联
-        if (StringUtils.isNotEmpty(checkerListQueryReq.getCheckerSetId()))
-        {
+        if (StringUtils.isNotEmpty(checkerListQueryReq.getCheckerSetId())) {
             checkerKeySet = getCheckerSetKeys(checkerListQueryReq.getCheckerSetId(), checkerListQueryReq.getVersion());
         }
         //项目下的所有规则集关联
-        else
-        {
+        else {
             checkerKeySet = getCheckerSetKeys(projectId);
         }
 
@@ -785,9 +782,20 @@ public class CheckerServiceImpl implements CheckerService
             }
 
             //4. 计算规则标签数量
-            if (judgeQualifiedChecker(checkerListQueryReq.getCheckerLanguage(), checkerListQueryReq.getCheckerCategory(), checkerListQueryReq.getToolName(),
-                    null, checkerListQueryReq.getSeverity(), checkerListQueryReq.getEditable(),
-                    checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(), checkerKeySet, checkerDetailEntity) && CollectionUtils.isNotEmpty(checkerDetailEntity.getCheckerTag())) {
+            if (
+                    judgeQualifiedChecker(
+                            checkerListQueryReq.getCheckerLanguage(),
+                            checkerListQueryReq.getCheckerCategory(),
+                            checkerListQueryReq.getToolName(),
+                            null,
+                            checkerListQueryReq.getSeverity(),
+                            checkerListQueryReq.getEditable(),
+                            checkerListQueryReq.getCheckerRecommend(),
+                            checkerListQueryReq.getCheckerSetSelected(),
+                            checkerKeySet, checkerDetailEntity
+                    )
+                            && CollectionUtils.isNotEmpty(checkerDetailEntity.getCheckerTag())
+            ) {
 
                 if (CollectionUtils.isNotEmpty(checkerDetailEntity.getCheckerTag())) {
                     // vo是已处理过i18n
@@ -983,7 +991,8 @@ public class CheckerServiceImpl implements CheckerService
             );
         }).collect(Collectors.toList());
 
-        List<CheckerCountListVO> checkerTotalCountVOList = Collections.singletonList(new CheckerCountListVO("total", null, totalList.size()));
+        List<CheckerCountListVO> checkerTotalCountVOList =
+                Collections.singletonList(new CheckerCountListVO("total", null, totalList.size()));
 
 
         checkerCommonCountVOList.add(new CheckerCommonCountVO("checkerLanguage", checkerLangCountVOList));

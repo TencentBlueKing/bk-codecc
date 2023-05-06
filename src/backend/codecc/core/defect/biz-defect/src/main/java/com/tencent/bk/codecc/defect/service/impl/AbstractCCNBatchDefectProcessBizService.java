@@ -106,8 +106,10 @@ public abstract class AbstractCCNBatchDefectProcessBizService extends AbstractBa
                     filedMap);
         }
     }
+
     @Override
-    protected void processCustomizeOpsAfterEachPageDone(List defectList, BatchDefectProcessReqVO batchDefectProcessReqVO) {
+    protected void processCustomizeOpsAfterEachPageDone(List defectList,
+            BatchDefectProcessReqVO batchDefectProcessReqVO) {
 
     }
 

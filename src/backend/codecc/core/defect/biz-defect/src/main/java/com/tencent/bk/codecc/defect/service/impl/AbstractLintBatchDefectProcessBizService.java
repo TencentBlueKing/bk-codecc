@@ -119,7 +119,8 @@ public abstract class AbstractLintBatchDefectProcessBizService extends AbstractB
     }
 
     @Override
-    protected void processCustomizeOpsAfterEachPageDone(List defectList, BatchDefectProcessReqVO batchDefectProcessReqVO) {
+    protected void processCustomizeOpsAfterEachPageDone(List defectList,
+            BatchDefectProcessReqVO batchDefectProcessReqVO) {
 
     }
 

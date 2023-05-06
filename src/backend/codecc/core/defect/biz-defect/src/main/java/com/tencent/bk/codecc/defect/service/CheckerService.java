@@ -47,8 +47,7 @@ import java.util.Set;
  * @version V1.0
  * @date 2019/4/26
  */
-public interface CheckerService
-{
+public interface CheckerService {
 
     List<CheckerDetailVO> getCheckerDetailVOList(List<CheckerDetailEntity> checkerDetailEntityList);
 

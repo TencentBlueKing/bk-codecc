@@ -40,8 +40,7 @@ import lombok.Data;
  */
 @Data
 @ApiModel("元数据信息")
-public class MetadataVO
-{
+public class MetadataVO {
     private String entityId;
 
     @ApiModelProperty("键值")

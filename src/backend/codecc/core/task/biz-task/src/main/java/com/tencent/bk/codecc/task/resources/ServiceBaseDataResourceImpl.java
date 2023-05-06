@@ -68,20 +68,17 @@ public class ServiceBaseDataResourceImpl implements ServiceBaseDataResource
     private OpAuthApi opAuthApi;
 
     @Override
-    public Result<List<BaseDataVO>> getInfoByTypeAndCode(String paramType, String paramCode)
-    {
+    public Result<List<BaseDataVO>> getInfoByTypeAndCode(String paramType, String paramCode) {
         return new Result<>(baseDataService.findBaseDataInfoByTypeAndCode(paramType, paramCode));
     }
 
     @Override
-    public Result<Map<String, RepoInfoVO>> getRepoUrlByProjects(Set<String> bkProjectIds)
-    {
+    public Result<Map<String, RepoInfoVO>> getRepoUrlByProjects(Set<String> bkProjectIds) {
         return new Result<>(pipelineService.getRepoUrlByBkProjects(bkProjectIds));
     }
 
     @Override
-    public Result<List<BaseDataVO>> getParamsByType(String paramType)
-    {
+    public Result<List<BaseDataVO>> getParamsByType(String paramType) {
         return new Result<>(baseDataService.findBaseDataInfoByType(paramType));
     }
 

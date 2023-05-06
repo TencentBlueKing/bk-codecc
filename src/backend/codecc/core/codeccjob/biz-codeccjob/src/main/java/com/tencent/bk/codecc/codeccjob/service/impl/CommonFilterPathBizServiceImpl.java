@@ -109,7 +109,8 @@ public class CommonFilterPathBizServiceImpl extends AbstractFilterPathBizService
                     defectDao.batchUpdateDefectStatusExcludeBit(taskId, needUpdateDefectList);
                 }
 
-                doAfterFilterPathDone(filterPathInputVO.getTaskId(), filterPathInputVO.getToolName(), needUpdateDefectList);
+                doAfterFilterPathDone(filterPathInputVO.getTaskId(), filterPathInputVO.getToolName(),
+                        needUpdateDefectList);
 
                 lastId = defectList.get(size - 1).getEntityId();
             }

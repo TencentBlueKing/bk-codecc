@@ -106,7 +106,7 @@ public abstract class AbstractI18NResponseAspect {
      * 添加国际化信息
      *
      * @param i18nReflection
-     * @param localeString
+     * @param locale
      */
     public abstract void addInternationalization(I18NReflection i18nReflection, Locale locale);
 

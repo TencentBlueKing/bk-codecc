@@ -323,13 +323,13 @@ public class GetTaskLogServiceImpl implements GetTaskLogService {
                 int flag = taskLogEntity.getFlag();
 
                 if (ComConstants.Tool.COVERITY.name().equals(toolName)) {
-                    if (currStep == ComConstants.Step4Cov.DEFECT_SYNS.value() &&
-                            flag == ComConstants.StepFlag.SUCC.value()) {
+                    if (currStep == ComConstants.Step4Cov.DEFECT_SYNS.value()
+                            && flag == ComConstants.StepFlag.SUCC.value()) {
                         activeTaskMap.put(taskId, "活跃");
                     }
                 } else {
-                    if (currStep == ComConstants.Step4MutliTool.COMMIT.value() &&
-                            flag == ComConstants.StepFlag.SUCC.value()) {
+                    if (currStep == ComConstants.Step4MutliTool.COMMIT.value()
+                            && flag == ComConstants.StepFlag.SUCC.value()) {
                         activeTaskMap.put(taskId, "活跃");
                     }
                 }

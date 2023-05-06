@@ -85,7 +85,8 @@ public class DUPCFilterPathBizServiceImpl extends AbstractFilterPathBizService {
 
                 dupcDefectDao.batchUpdateDefectStatusExcludeBit(filterPathInputVO.getTaskId(), needUpdateDefectList);
 
-                doAfterFilterPathDone(filterPathInputVO.getTaskId(), filterPathInputVO.getToolName(), needUpdateDefectList);
+                doAfterFilterPathDone(filterPathInputVO.getTaskId(), filterPathInputVO.getToolName(),
+                        needUpdateDefectList);
 
                 lastId = dupcFileInfoList.get(size - 1).getEntityId();
             }

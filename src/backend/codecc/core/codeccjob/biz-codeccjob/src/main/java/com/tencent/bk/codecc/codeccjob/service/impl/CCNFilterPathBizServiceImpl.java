@@ -86,7 +86,8 @@ public class CCNFilterPathBizServiceImpl extends AbstractFilterPathBizService {
 
                 ccnDefectDao.batchUpdateDefectStatusExcludeBit(filterPathInputVO.getTaskId(), needUpdateDefectList);
 
-                doAfterFilterPathDone(filterPathInputVO.getTaskId(), filterPathInputVO.getToolName(), needUpdateDefectList);
+                doAfterFilterPathDone(filterPathInputVO.getTaskId(), filterPathInputVO.getToolName(),
+                        needUpdateDefectList);
 
                 lastId = ccnFileInfoList.get(size - 1).getEntityId();
             }

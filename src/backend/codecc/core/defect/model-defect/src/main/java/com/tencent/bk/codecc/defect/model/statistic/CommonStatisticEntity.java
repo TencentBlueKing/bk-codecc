@@ -57,8 +57,7 @@ import org.springframework.data.mongodb.core.mapping.Sharded;
         @CompoundIndex(name = "task_id_1_tool_name_1", def = "{'task_id': 1, 'tool_name': 1}")
 })
 @Sharded(shardKey = "task_id")
-public class CommonStatisticEntity extends StatisticEntity
-{
+public class CommonStatisticEntity extends StatisticEntity {
     /**
      * 新增告警数
      * 注：指真实新增，不考虑newDefectJudgeTime的逻辑过滤

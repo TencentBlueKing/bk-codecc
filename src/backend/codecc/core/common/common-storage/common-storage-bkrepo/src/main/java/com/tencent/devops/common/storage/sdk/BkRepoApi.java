@@ -44,8 +44,8 @@ public class BkRepoApi {
                 JsonUtil.INSTANCE.to(resp, new TypeReference<BkRepoResult<BkRepoStartChunkVo>>() {
                 });
         if (result == null || !result.isOk() || result.getData() == null) {
-            throw new Exception("startChunk : " + filepath + " return " +
-                    JsonUtil.INSTANCE.toJson(result) + " cause error.");
+            throw new Exception("startChunk : " + filepath + " return "
+                    + JsonUtil.INSTANCE.toJson(result) + " cause error.");
         }
         return result.getData().getUploadId();
     }

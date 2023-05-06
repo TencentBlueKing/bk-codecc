@@ -42,8 +42,7 @@ import org.springframework.data.mongodb.core.mapping.Sharded;
 @Data
 @Document(collection = "t_build")
 @Sharded(shardKey = "build_user")
-public class BuildEntity
-{
+public class BuildEntity {
     @Id
     private String entityId;
 

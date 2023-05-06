@@ -87,7 +87,8 @@ public class LintFilterPathBizServiceImpl extends AbstractFilterPathBizService {
 
                 lintDefectV2Dao.batchUpdateDefectStatusExcludeBit(taskId, needUpdateDefectList);
 
-                doAfterFilterPathDone(filterPathInputVO.getTaskId(), filterPathInputVO.getToolName(), needUpdateDefectList);
+                doAfterFilterPathDone(filterPathInputVO.getTaskId(), filterPathInputVO.getToolName(),
+                        needUpdateDefectList);
 
                 lastId = defectList.get(size - 1).getEntityId();
             }
