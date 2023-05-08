@@ -622,7 +622,7 @@
   "lang" : 512,
   "brief_introduction" : "一款开源的Golang代码检查工具，支持检查代码规范、死代码、语法错误和安全漏洞等问题",
   "description" : "一款开源的Golang代码检查工具，支持检查代码规范、死代码、语法错误和安全漏洞等问题",
-  "params" : "[{\"varName\":\"go_path\",\"varType\":\"STRING\",\"labelName\":\"GOPATH\",\"varTips\":\"帮助Gometalinter查找代码依赖库，更好地扫描告警。支持输入多条，请用英文分号分隔。默认为$workspace。\",\"varRequired\":false,\"varOptionList\":[]},{\"varName\":\"rel_path\",\"varType\":\"STRING\",\"labelName\":\"代码存放路径\",\"varTips\":\"若正确配置GOPATH要求代码拉取到指定目录下，请填写。\",\"varRequired\":false,\"varOptionList\":[]}]",
+  "params" : "[{\"varName\":\"go_path\",\"varType\":\"STRING\",\"labelName\":\"GOPATH\",\"varTips\":\"Help Gometalinter find code dependencies and scan alarms better. Multiple entries are supported, please separate them with English semicolons. Defaults to $workspace\",\"varRequired\":false,\"varOptionList\":[]},{\"varName\":\"rel_path\",\"varType\":\"STRING\",\"labelName\":\"Code Storage Path\",\"varTips\":\"If the correct configuration of GOPATH requires the code to be pulled to the specified directory, please fill in.\",\"varRequired\":false,\"varOptionList\":[]}]",
   "graphic_details" : "",
   "status" : "P",
   "privated" : false,
