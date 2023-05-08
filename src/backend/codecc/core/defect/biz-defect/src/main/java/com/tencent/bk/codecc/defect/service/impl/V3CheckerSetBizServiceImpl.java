@@ -60,6 +60,7 @@ import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.service.BaseDataCacheService;
+import com.tencent.devops.common.service.aop.AbstractI18NResponseAspect;
 import com.tencent.devops.common.service.utils.I18NUtils;
 import com.tencent.devops.common.service.utils.PageableUtils;
 import com.tencent.devops.common.codecc.util.JsonUtil;
@@ -2920,9 +2921,15 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
                 ? langOrder.indexOf(o.getKey()) : Integer.MAX_VALUE)).collect(Collectors.toList());
         //按照类别枚举排序
         List<CheckerSetCategory> categoryOrder = Arrays.asList(CheckerSetCategory.values());
-        List<CheckerCountListVO> checkerSetCateCountVOList = checkerSetCateMap.entrySet().stream().map(entry ->
-                        new CheckerCountListVO(CheckerSetCategory.valueOf(entry.getKey()).name(),
-                                CheckerSetCategory.valueOf(entry.getKey()).getName(), entry.getValue()))
+        boolean isEN = "en".equalsIgnoreCase(AbstractI18NResponseAspect.getLocale().toString());
+        List<CheckerCountListVO> checkerSetCateCountVOList = checkerSetCateMap.entrySet().stream().map(entry -> {
+                    CheckerSetCategory category = CheckerSetCategory.valueOf(entry.getKey());
+                    return new CheckerCountListVO(
+                            category.name(),
+                            isEN ? category.name() : category.getName(),
+                            entry.getValue()
+                    );
+                })
                 .sorted(Comparator.comparingInt(o -> categoryOrder.indexOf(CheckerSetCategory.valueOf(o.getKey()))))
                 .collect(Collectors.toList());
         //按照工具的排序
@@ -2933,11 +2940,17 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
                         ? toolOrder.indexOf(o.getKey()) : Integer.MAX_VALUE)).collect(Collectors.toList());
 
         List<CheckerSetSource> sourceOrder = Arrays.asList(CheckerSetSource.values());
-        List<CheckerCountListVO> checkerSetSourceCountVOList = sourceMap.entrySet().stream().map(entry ->
-                        new CheckerCountListVO(CheckerSetSource.valueOf(entry.getKey()).name(),
-                                CheckerSetSource.valueOf(entry.getKey()).getName(), entry.getValue()))
+        List<CheckerCountListVO> checkerSetSourceCountVOList = sourceMap.entrySet().stream().map(entry -> {
+                    CheckerSetSource checkerSetSource = CheckerSetSource.valueOf(entry.getKey());
+                    return new CheckerCountListVO(
+                            checkerSetSource.name(),
+                            isEN ? checkerSetSource.name() : checkerSetSource.getName(),
+                            entry.getValue()
+                    );
+                })
                 .sorted(Comparator.comparingInt(o -> sourceOrder.indexOf(CheckerSetSource.valueOf(o.getKey()))))
                 .collect(Collectors.toList());
+
         List<CheckerCountListVO> checkerSetTotalCountVOList = Collections.singletonList(new CheckerCountListVO("total",
                 null, totalList.size()));
 
