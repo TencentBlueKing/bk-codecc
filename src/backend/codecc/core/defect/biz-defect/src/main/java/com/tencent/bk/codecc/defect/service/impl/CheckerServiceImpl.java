@@ -1072,29 +1072,23 @@ public class CheckerServiceImpl implements CheckerService
             else
             {
                 // 不在默认包的默认规则如果被关闭，则要记录到skipCheckers
-                if (SWIFT_DEFAULT_CHECKERS.contains(checkerDetail.getCheckerKey()))
-                {
-                    if (!isOpen)
-                    {
+                if (SWIFT_DEFAULT_CHECKERS.contains(checkerDetail.getCheckerKey())) {
+                    if (!isOpen) {
                         skipCheckers.add(checkerName);
                     }
-                }
-                else
-                {
+                } else {
                     // 其他打开的非默认规则记录到打开规则列表
-                    if (isOpen)
-                    {
+                    if (isOpen) {
                         // PW规则不加入到OpenCheckers里
-                        if (ComConstants.Tool.COVERITY.name().equals(toolName) && ComConstants.CheckerPkgKind.COMPILE.value().equals(checkerDetail.getPkgKind()))
-                        {
+                        if (ComConstants.Tool.COVERITY.name().equals(toolName)
+                                && ComConstants.CheckerPkgKind.COMPILE.value().equals(checkerDetail.getPkgKind())) {
                             covPWCheckers.add(checkerName);
+                        } else {
+                            openCheckerList.add(
+                                    getOpenChecker(checkerName, checkerProp, checkerDetail, analyzeConfigInfoVO)
+                            );
                         }
-                        else
-                        {
-                            openCheckerList.add(getOpenChecker(checkerName, checkerProp, checkerDetail, analyzeConfigInfoVO));
-                        }
-                        if (checkerName.endsWith("-tosa"))
-                        {
+                        if (checkerName.endsWith("-tosa")) {
                             tosaCheckers.add(checkerName);
                         }
                     }
@@ -1202,12 +1196,13 @@ public class CheckerServiceImpl implements CheckerService
                             checkerSetVOCheckerPropVOMap = new LinkedHashMap<>();
                             preMergeTaskCheckers.put(checkerPropVO.getCheckerKey(), checkerSetVOCheckerPropVOMap);
                         }
+
                         CheckerDetailVO checkerDetailVO = checkerDetailMap.get(checkerPropVO.getCheckerKey());
-                        if (StringUtils.isEmpty(checkerPropVO.getProps())
-                                && checkerDetailVO != null && StringUtils.isNotEmpty(checkerDetailVO.getProps()))
-                        {
+                        if (checkerDetailVO != null
+                                && !Objects.equals(checkerDetailVO.getProps(), checkerPropVO.getProps())) {
                             checkerPropVO.setProps(checkerDetailVO.getProps());
                         }
+
                         checkerSetVOCheckerPropVOMap.put(checkerSetVO, checkerPropVO);
                     }
                 });

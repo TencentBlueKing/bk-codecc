@@ -122,7 +122,7 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
         AnalyzeConfigInfoVO analyzeConfigInfoVO = new AnalyzeConfigInfoVO();
 
         // 任务详细信息
-        TaskInfoEntity taskInfoEntity = taskRepository.findFirstByNameEn(streamName);
+        TaskInfoEntity taskInfoEntity = taskRepository.findFirstWithoutToolsByNameEn(streamName);
         if (null == taskInfoEntity) {
             throw new CodeCCException(TaskMessageCode.TASK_NOT_FOUND);
         }

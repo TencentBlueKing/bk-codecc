@@ -71,8 +71,10 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
     }
 
     @Override
-    public Result<Boolean> updateCheckersOfSet(String checkerSetId, String projectId, String user,
-            UpdateCheckersOfSetReqVO updateCheckersOfSetReq) {
+    public Result<Boolean> updateCheckersOfSet(
+            String checkerSetId, String projectId, String user,
+            UpdateCheckersOfSetReqVO updateCheckersOfSetReq
+    ) {
         List<CheckerSetEntity> checkerSetEntities = checkerSetRepository.findByCheckerSetId(checkerSetId);
         if (CollectionUtils.isNotEmpty(checkerSetEntities)) {
             if (!checkerSetEntities.get(0).getProjectId().equals(projectId)) {

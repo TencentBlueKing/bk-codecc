@@ -31,7 +31,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import org.springframework.data.mongodb.core.mapping.Sharded;
 
 /**
  * 构建信息表
@@ -41,8 +40,8 @@ import org.springframework.data.mongodb.core.mapping.Sharded;
  */
 @Data
 @Document(collection = "t_build")
-@Sharded(shardKey = "build_user")
 public class BuildEntity {
+
     @Id
     private String entityId;
 

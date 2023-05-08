@@ -27,7 +27,9 @@
 package com.tencent.bk.codecc.defect.model.checkerset;
 
 import com.tencent.codecc.common.db.CommonEntity;
-import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.api.annotation.I18NFieldMarker;
+import com.tencent.devops.common.api.annotation.I18NModuleCode;
+import java.util.List;
 import lombok.Data;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
@@ -35,9 +37,6 @@ import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * 规则集实体类
@@ -70,6 +69,7 @@ public class CheckerSetEntity extends CommonEntity
      */
     @Field("checker_set_name")
     @Indexed
+    @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.CHECKER_SET_CHECKER_SET_NAME)
     private String checkerSetName;
 
     /**

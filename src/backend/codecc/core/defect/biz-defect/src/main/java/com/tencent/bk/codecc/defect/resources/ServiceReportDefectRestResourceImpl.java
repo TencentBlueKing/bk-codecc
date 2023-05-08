@@ -31,11 +31,6 @@ import com.tencent.bk.codecc.defect.dao.mongorepository.BuildRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildInfoRepository;
-import com.tencent.bk.codecc.defect.model.BuildEntity;
-import com.tencent.bk.codecc.defect.model.TaskLogEntity;
-import com.tencent.bk.codecc.defect.model.TaskLogEntity.TaskUnit;
-import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
-import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
 import com.tencent.bk.codecc.defect.service.CommonDefectMigrationService;
 import com.tencent.bk.codecc.defect.service.IUpdateDefectBizService;
 import com.tencent.bk.codecc.defect.service.impl.CommonQueryWarningBizServiceImpl;
@@ -47,17 +42,12 @@ import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.BizServiceFactory;
 import com.tencent.devops.common.service.IBizService;
 import com.tencent.devops.common.web.RestResource;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.util.StringUtils;
 
 /**
@@ -78,17 +68,7 @@ public class ServiceReportDefectRestResourceImpl implements ServiceReportDefectR
     @Autowired
     private CommonQueryWarningBizServiceImpl commonQueryWarningBizService;
     @Autowired
-    private CommonDefectMigrationService commonDefectMigrationService;
-    @Autowired
     private LintDefectV2Repository lintDefectV2Repository;
-    @Autowired
-    private TaskLogRepository taskLogRepository;
-    @Autowired
-    private ToolBuildInfoRepository toolBuildInfoRepository;
-    @Autowired
-    private MongoTemplate mongoTemplate;
-    @Autowired
-    private BuildRepository buildRepository;
 
     @Override
     public Result<Set<Long>> queryIds(long taskId, String toolName, Boolean migrationSuccessful) {

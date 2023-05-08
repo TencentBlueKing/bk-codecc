@@ -103,9 +103,11 @@ public class LintDefectV2Dao {
         if (CollectionUtils.isNotEmpty(defectList)) {
             BulkOperations ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, LintDefectV2Entity.class);
             defectList.forEach(defectEntity -> {
-                Query query = new Query();
-                query.addCriteria(Criteria.where("_id").is(new ObjectId(defectEntity.getEntityId()))
-                        .and("task_id").is(taskId));
+                Query query = new Query(
+                        Criteria.where("task_id").is(taskId)
+                                .and("_id").is(new ObjectId(defectEntity.getEntityId()))
+                );
+
                 Update update = new Update();
                 update.set("status", defectEntity.getStatus());
                 update.set("exclude_time", defectEntity.getExcludeTime());

@@ -27,11 +27,10 @@ public class MetricsDao {
     private MongoTemplate mongoTemplate;
 
     public boolean upsert(MetricsEntity metricsEntity) {
-        Query query = new Query();
-        query.addCriteria(Criteria.where("task_id")
-                .is(metricsEntity.getTaskId())
-                .and("build_id")
-                .is(metricsEntity.getBuildId()));
+        Query query = new Query(
+                Criteria.where("task_id").is(metricsEntity.getTaskId())
+                        .and("build_id").is(metricsEntity.getBuildId())
+        );
 
         Update update = new Update();
         update.set("task_id", metricsEntity.getTaskId())
@@ -52,11 +51,10 @@ public class MetricsDao {
         BulkOperations ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, MetricsEntity.class);
         if (CollectionUtils.isNotEmpty(metricsEntities)) {
             for (MetricsEntity metricsEntity : metricsEntities) {
-                Query query = new Query();
-                query.addCriteria(Criteria.where("task_id")
-                        .is(metricsEntity.getTaskId())
-                        .and("build_id")
-                        .is(metricsEntity.getBuildId()));
+                Query query = new Query(
+                        Criteria.where("task_id").is(metricsEntity.getTaskId())
+                                .and("build_id").is(metricsEntity.getBuildId())
+                );
 
                 Update update = new Update();
                 update.set("task_id", metricsEntity.getTaskId())

@@ -21,8 +21,8 @@ import java.util.List;
  * @date 2020/2/18
  */
 @Repository
-public class FileCCNDao
-{
+public class FileCCNDao {
+
     private static Logger logger = LoggerFactory.getLogger(FileCCNDao.class);
 
     @Autowired
@@ -33,16 +33,15 @@ public class FileCCNDao
      *
      * @param fileCCNList
      */
-    public void upsertFileCCNList(List<FileCCNEntity> fileCCNList)
-    {
+    public void upsertFileCCNList(List<FileCCNEntity> fileCCNList) {
         BulkOperations ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, FileCCNEntity.class);
-        if (CollectionUtils.isNotEmpty(fileCCNList))
-        {
-            for (FileCCNEntity fileCCN : fileCCNList)
-            {
-                Query query = new Query();
-                query.addCriteria(Criteria.where("file_rel_path").is(fileCCN.getFileRelPath())
-                        .and("task_id").is(fileCCN.getTaskId()));
+        if (CollectionUtils.isNotEmpty(fileCCNList)) {
+            for (FileCCNEntity fileCCN : fileCCNList) {
+                Query query = new Query(
+                        Criteria.where("task_id").is(fileCCN.getTaskId())
+                                .and("file_rel_path").is(fileCCN.getFileRelPath())
+                );
+
                 Update update = new Update();
                 update.set("total_ccn_count", fileCCN.getTotalCCNCount())
                         .set("file_path", fileCCN.getFilePath())

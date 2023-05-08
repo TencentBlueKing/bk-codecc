@@ -14,12 +14,11 @@ package com.tencent.bk.codecc.defect.vo.enums;
 
 /**
  * 规则集来源
- * 
- * @date 2020/1/6
+ *
  * @version V1.0
+ * @date 2020/1/6
  */
-public enum CheckerSetSource 
-{
+public enum CheckerSetSource {
 
     DEFAULT("精选"),
 
@@ -29,14 +28,11 @@ public enum CheckerSetSource
 
     private String name;
 
-    CheckerSetSource(String name)
-    {
+    CheckerSetSource(String name) {
         this.name = name;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return this.name;
     }
-
 }

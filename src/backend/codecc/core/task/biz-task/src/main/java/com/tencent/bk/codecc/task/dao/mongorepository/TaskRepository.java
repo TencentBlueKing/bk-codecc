@@ -81,6 +81,9 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String>
      */
     TaskInfoEntity findFirstByNameEn(String nameEn);
 
+    @Query(fields = "{'tool_config_info_list':0}")
+    TaskInfoEntity findFirstWithoutToolsByNameEn(String nameEn);
+
     /**
      * 根据业务id清单查询对应代码扫描任务清单
      *

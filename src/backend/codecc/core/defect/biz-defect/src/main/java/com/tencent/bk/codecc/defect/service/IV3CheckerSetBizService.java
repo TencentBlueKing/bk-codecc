@@ -229,6 +229,20 @@ public interface IV3CheckerSetBizService
     List<CheckerSetVO> getCheckerSetsByTaskId(Long taskId);
 
     /**
+     * I18N包装: findAvailableCheckerSetsByProject
+     *
+     * @param projectId
+     * @param legacyList
+     * @param toolIntegratedStatus
+     * @return
+     */
+    List<CheckerSetEntity> findAvailableCheckerSetsByProjectI18NWrapper(
+            String projectId,
+            List<Boolean> legacyList,
+            int toolIntegratedStatus
+    );
+
+    /**
      * 根据项目ID查询规则集
      * legacy == true，查询旧插件规则集
      * legacy == false，查询新插件规则集

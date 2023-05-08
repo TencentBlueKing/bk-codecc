@@ -281,6 +281,36 @@ public class CheckerDetailDao {
     }
 
     /**
+     * 根据工具和key查询规则详情
+     *
+     * @param checkerPropVOList
+     * @return
+     */
+    public List<CheckerDetailEntity> findByToolNameAndCheckerKey(List<CheckerPropVO> checkerPropVOList) {
+        if (CollectionUtils.isEmpty(checkerPropVOList)) {
+            return Lists.newArrayList();
+        }
+
+        List<Criteria> orCriteriaList = Lists.newArrayList();
+        for (CheckerPropVO vo : checkerPropVOList) {
+            orCriteriaList.add(
+                    Criteria.where("tool_name").is(vo.getToolName())
+                            .and("checker_key").in(vo.getCheckerKey())
+            );
+        }
+
+        Document fieldsObj = new Document();
+        fieldsObj.put("tool_name", true);
+        fieldsObj.put("checker_key", true);
+        fieldsObj.put("props", true);
+
+        Query query = new BasicQuery(new Document(), fieldsObj);
+        query.addCriteria(new Criteria().orOperator(orCriteriaList.toArray(new Criteria[0])));
+
+        return mongoTemplate.find(query, CheckerDetailEntity.class);
+    }
+
+    /**
      * 根据工具和规则key查询规则
      * @param toolCheckerList
      * @return

@@ -310,10 +310,24 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
         List<CheckerSetEntity> checkerSetEntities = checkerSetRepository.findByCheckerSetId(checkerSetId);
         if (CollectionUtils.isNotEmpty(checkerSetEntities)) {
             List<CheckerPropsEntity> checkerPropsEntities = Lists.newArrayList();
+
             if (CollectionUtils.isNotEmpty(checkerProps)) {
+                List<CheckerDetailEntity> checkerDetailList =
+                        checkerDetailDao.findByToolNameAndCheckerKey(checkerProps);
+                Map<String, CheckerDetailEntity> checkerDetailMap = checkerDetailList.stream()
+                        .collect(Collectors.toMap(x -> x.getCheckerKey() + x.getToolName(), y -> y, (k1, k2) -> k2));
+
                 for (CheckerPropVO checkerPropVO : checkerProps) {
                     CheckerPropsEntity checkerPropsEntity = new CheckerPropsEntity();
                     BeanUtils.copyProperties(checkerPropVO, checkerPropsEntity);
+
+                    // props以checkerDetail为准
+                    String key = checkerPropVO.getCheckerKey() + checkerPropVO.getToolName();
+                    CheckerDetailEntity checkerDetailEntity = checkerDetailMap.get(key);
+                    if (checkerDetailEntity != null) {
+                        checkerPropsEntity.setProps(checkerDetailEntity.getProps());
+                    }
+
                     checkerPropsEntities.add(checkerPropsEntity);
                 }
             }
@@ -916,8 +930,11 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
         legacyList.add(false);
         legacyList.add(true);
         int toolIntegratedStatus = result.getData().getStatus();
-        List<CheckerSetEntity> filteredCheckerSetList =
-                findAvailableCheckerSetsByProject(projectId, legacyList, toolIntegratedStatus);
+
+        List<CheckerSetEntity> filteredCheckerSetList = SpringContextUtil.Companion
+                .getBean(IV3CheckerSetBizService.class)
+                .findAvailableCheckerSetsByProjectI18NWrapper(projectId, legacyList, toolIntegratedStatus);
+
         List<CheckerSetProjectRelationshipEntity> projectRelationshipEntities =
                 checkerSetProjectRelationshipRepository.findByProjectId(projectId);
         Map<String, CheckerSetProjectRelationshipEntity> checkerSetRelationshipMap = Maps.newHashMap();
@@ -2932,6 +2949,16 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
         checkerCommonCountVOList.add(new CheckerCommonCountVO("total", checkerSetTotalCountVOList));
         return checkerCommonCountVOList;
 
+    }
+
+    @I18NResponse
+    @Override
+    public List<CheckerSetEntity> findAvailableCheckerSetsByProjectI18NWrapper(
+            String projectId,
+            List<Boolean> legacyList,
+            int toolIntegratedStatus
+    ) {
+        return findAvailableCheckerSetsByProject(projectId, legacyList, toolIntegratedStatus);
     }
 
     @Override
