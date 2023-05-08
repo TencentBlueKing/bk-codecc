@@ -622,7 +622,7 @@
   "lang" : 512,
   "brief_introduction" : "一款开源的Golang代码检查工具，支持检查代码规范、死代码、语法错误和安全漏洞等问题",
   "description" : "一款开源的Golang代码检查工具，支持检查代码规范、死代码、语法错误和安全漏洞等问题",
-  "params" : "[{\"varName\":\"go_path\",\"varType\":\"STRING\",\"labelName\":\"GOPATH\",\"varTips\":\"Help Gometalinter find code dependencies and scan alarms better. Multiple entries are supported, please separate them with English semicolons. Defaults to $workspace\",\"varRequired\":false,\"varOptionList\":[]},{\"varName\":\"rel_path\",\"varType\":\"STRING\",\"labelName\":\"Code Storage Path\",\"varTips\":\"If the correct configuration of GOPATH requires the code to be pulled to the specified directory, please fill in.\",\"varRequired\":false,\"varOptionList\":[]}]",
+  "params" : "[{\"varName\":\"go_path\",\"varType\":\"STRING\",\"labelName\":\"GOPATH\",\"varTips\":\"Help Gometalinter find code dependencies and scan alarms better. Multiple entries are supported, please separate them with English semicolons. Defaults to $workspace\",\"varRequired\":false,\"varOptionList\":[]},{\"varName\":\"rel_path\",\"varType\":\"STRING\",\"labelName\":\"Code Path\",\"varTips\":\"If the correct configuration of GOPATH requires the code to be pulled to the specified directory, please fill in.\",\"varRequired\":false,\"varOptionList\":[]}]",
   "graphic_details" : "",
   "status" : "P",
   "privated" : false,
