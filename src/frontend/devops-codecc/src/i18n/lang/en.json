@@ -456,7 +456,7 @@
 	"极高风险(>=20%)": "Extremely High Risk (>=20%)",
 	"高风险11%20%": "High Risk [11%,20%)",
 	"中风险5%11%": "Medium Risk [5%,11%)",
-	"低低风险0%5%": "Low Risk [0%,5%)",
+	"低风险0%5%": "Low Risk [0%,5%)",
 	"低风险文件不在列表中显示": "Low Risk are not shown in the list",
 	"高风险": "High Risk",
 	"中风险": "Medium Risk",
@@ -1002,5 +1002,6 @@
 	"前": " before",
 	"问题评论": "Comment",
 	"评论问题成功": "Comment succeeded",
-	"恢复问题成功。该问题将重新在待修复列表中显示。": "Restoration successful. The issue will be displayed again in the to-be-fixed list."
+	"恢复问题成功。该问题将重新在待修复列表中显示。": "Restoration successful. The issue will be displayed again in the to-be-fixed list.",
+	"系统内置忽略配置不可删除": "The built-in ignore configuration in the system cannot be deleted"
 }

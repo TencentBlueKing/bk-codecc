@@ -328,7 +328,7 @@
                   <span>
                     <span v-if="props.row.status === 1 && props.row.mark === 1" v-bk-tooltips="$t('已标记处理')" class="codecc-icon icon-mark mr5"></span>
                     <span v-if="props.row.status === 1 && props.row.markButNoFixed" v-bk-tooltips="$t('标记处理后重新扫描仍为问题')" class="codecc-icon icon-mark re-mark mr5"></span>
-                    <span v-if="props.row.defectIssueInfoVO.submitStatus && props.row.defectIssueInfoVO.submitStatus !== 4" v-bk-tooltips="$t('已提单')" class="codecc-icon icon-tapd"></span>
+                    <span v-if="props.row.defectIssueInfoVO && props.row.defectIssueInfoVO.submitStatus && props.row.defectIssueInfoVO.submitStatus !== 4" v-bk-tooltips="$t('已提单')" class="codecc-icon icon-tapd"></span>
                   </span>
                 </template>
               </bk-table-column>
@@ -389,7 +389,7 @@
                         <p v-if="props.row.status & 4 && !props.row.ignoreCommentDefect" class="entry-link" @click.stop="handleChangeIgnoreType(props.row)">
                           {{$t('修改忽略类型')}}
                         </p>
-                        <p v-if="props.row.status === 1 && !(props.row.defectIssueInfoVO.submitStatus && props.row.defectIssueInfoVO.submitStatus !== 4)"
+                        <p v-if="props.row.status === 1 && !(props.row.defectIssueInfoVO && props.row.defectIssueInfoVO.submitStatus && props.row.defectIssueInfoVO.submitStatus !== 4)"
                            class="entry-link"
                            @click.stop="handleCommit('commit', false, props.row.entityId)">
                           {{$t('提单')}}
@@ -448,7 +448,7 @@
                             <span style="color: #63656e">(#{{lintDetail.lastBuildNumOfSameBranch}}{{lintDetail.defectIsFixedOnLastBuildNumOfSameBranch ? $t('已修复') : $t('待修复')}})</span>
                           </span>
                           <span v-else>{{$t('待修复')}}</span>
-                          <span v-if="currentLintFile.defectIssueInfoVO.submitStatus && currentLintFile.defectIssueInfoVO.submitStatus !== 4">{{$t('(已提单)')}}</span>
+                          <span v-if="currentLintFile.defectIssueInfoVO && currentLintFile.defectIssueInfoVO.submitStatus && currentLintFile.defectIssueInfoVO.submitStatus !== 4">{{$t('(已提单)')}}</span>
                         </span>
                         <span class="success mr5" v-else-if="currentLintFile.status & 2"><span class="cc-dot"></span>{{$t('已修复')}}</span>
                         <span class="warn mr5" v-else-if="currentLintFile.status & 4"><span class="cc-dot"></span>{{$t('已忽略')}}</span>
@@ -502,7 +502,7 @@
                           {{$t('修改忽略类型')}}
                         </bk-button>
                       </div>
-                      <div class="item" v-if="currentLintFile.status === 1 && !(currentLintFile.defectIssueInfoVO.submitStatus && currentLintFile.defectIssueInfoVO.submitStatus !== 4)">
+                      <div class="item" v-if="currentLintFile.status === 1 && !(currentLintFile.defectIssueInfoVO && currentLintFile.defectIssueInfoVO.submitStatus && currentLintFile.defectIssueInfoVO.submitStatus !== 4)">
                         <bk-button
                           class="item-button"
                           @click="handleCommit('commit', false, currentLintFile.entityId)">
@@ -671,7 +671,7 @@
           <div class="reason-type-header mb20">
             {{ $t('忽略类型') }}
             <span class="fr">
-              <bk-button size="small" icon="plus" class="mr10" @click="handleSetReview">新增类型</bk-button>
+              <bk-button size="small" icon="plus" class="mr10" @click="handleSetReview">{{$t('新增类型')}}</bk-button>
               <bk-button size="small" @click="handelFetchIgnoreList"><i class="codecc-icon icon-refresh-2"></i></bk-button>
             </span>
           </div>
@@ -1901,7 +1901,7 @@
           switch (e.keyCode) {
             case 13: // enter
               // e.path.length < 5 防止规则等搜索条件里面的回车触发打开详情
-              if (!vm.defectDetailDialogVisiable && !vm.authorEditDialogVisiable && e.path.length < 5) vm.keyEnter()
+              if (!vm.defectDetailDialogVisiable && !vm.authorEditDialogVisiable) vm.keyEnter()
               break
             case 27: // esc
               if (vm.defectDetailDialogVisiable) vm.defectDetailDialogVisiable = false

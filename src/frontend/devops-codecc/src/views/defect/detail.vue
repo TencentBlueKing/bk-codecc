@@ -789,9 +789,9 @@
       shareDefect() {
         const { projectId, taskId } = this.$route.params
         const { toolName, entityId, status } = this.currentFile
-        let prefix = `${location.protocol}//${location.host}`
+        let prefix = `${location.host}`
         if (window.self !== window.top) {
-          prefix = `${location.protocol}${window.DEVOPS_SITE_URL}/console`
+          prefix = `${window.DEVOPS_SITE_URL}/console`
         }
         let url = `${prefix}/codecc/${projectId}/task/${taskId}/defect/lint/${toolName}/list
 ?entityId=${entityId}&status=${status}`

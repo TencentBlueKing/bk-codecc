@@ -113,7 +113,7 @@
                   </bk-dropdown-menu>
                 </bk-form-item>
               </div>
-              <div class="cc-col" v-show="allRenderColumnMap.severity">
+              <div class="cc-col-2" v-show="allRenderColumnMap.severity">
                 <bk-form-item :label="$t('风险级别')">
                   <bk-checkbox-group v-model="searchParams.severity" class="checkbox-group">
                     <bk-checkbox

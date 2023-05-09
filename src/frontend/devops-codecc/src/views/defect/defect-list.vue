@@ -454,7 +454,7 @@
           <div class="reason-type-header mb20">
             {{ $t('忽略类型') }}
             <span class="fr">
-              <bk-button size="small" icon="plus" class="mr10" @click="handleSetReview">新增类型</bk-button>
+              <bk-button size="small" icon="plus" class="mr10" @click="handleSetReview">{{$t('新增类型')}}</bk-button>
               <bk-button size="small" @click="handelFetchIgnoreList"><i class="codecc-icon icon-refresh-2"></i></bk-button>
             </span>
           </div>
@@ -1541,7 +1541,7 @@
           switch (e.code) {
             case 'Enter': // enter
               // e.path.length < 5 防止规则等搜索条件里面的回车触发打开详情
-              if (!vm.defectDetailDialogVisiable && !vm.authorEditDialogVisiable && e.path.length < 5) vm.keyEnter()
+              if (!vm.defectDetailDialogVisiable && !vm.authorEditDialogVisiable) vm.keyEnter()
               break
             case 'Escape': // esc
               if (vm.defectDetailDialogVisiable) vm.defectDetailDialogVisiable = false
