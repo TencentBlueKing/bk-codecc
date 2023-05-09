@@ -66,6 +66,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.tencent.bk.codecc.defect.api.ServiceCheckerRestResource;
 import com.tencent.bk.codecc.defect.api.ServiceCheckerSetRestResource;
 import com.tencent.bk.codecc.defect.api.ServiceClusterStatisticRestReource;
 import com.tencent.bk.codecc.defect.api.ServiceMetricsRestResource;
@@ -75,6 +76,7 @@ import com.tencent.bk.codecc.defect.api.ServiceTaskLogRestResource;
 import com.tencent.bk.codecc.defect.api.ServiceToolBuildInfoResource;
 import com.tencent.bk.codecc.defect.dto.ScanTaskTriggerDTO;
 import com.tencent.bk.codecc.defect.vo.MetricsVO;
+import com.tencent.bk.codecc.defect.vo.QueryTaskCheckerDimensionRequest;
 import com.tencent.bk.codecc.defect.vo.TaskLogOverviewVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.common.AuthorTransferVO;
@@ -107,6 +109,7 @@ import com.tencent.bk.codecc.task.service.TaskService;
 import com.tencent.bk.codecc.task.service.ToolService;
 import com.tencent.bk.codecc.task.vo.BatchRegisterVO;
 import com.tencent.bk.codecc.task.vo.CodeLibraryInfoVO;
+import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.bk.codecc.task.vo.NotifyCustomVO;
 import com.tencent.bk.codecc.task.vo.RepoInfoVO;
 import com.tencent.bk.codecc.task.vo.RuntimeUpdateMetaVO;
@@ -316,6 +319,18 @@ public class TaskServiceImpl implements TaskService {
                         }
                     }
                     return projectIdSet;
+                }
+            });
+
+    private LoadingCache<String, BaseDataEntity> toolDimensionBaseDataCache = CacheBuilder.newBuilder()
+            .refreshAfterWrite(2, TimeUnit.HOURS)
+            .build(new CacheLoader<String, BaseDataEntity>() {
+                @Override
+                public BaseDataEntity load(String dimension) {
+                    if (StringUtils.isBlank(dimension)) {
+                        return null;
+                    }
+                    return baseDataRepository.findFirstByParamTypeAndParamCode("TOOL_TYPE", dimension);
                 }
             });
 
@@ -3471,6 +3486,59 @@ public class TaskServiceImpl implements TaskService {
         }
 
         return true;
+    }
+
+    @Override
+    public List<MetadataVO> listTaskToolDimension(List<Long> taskIdList, String projectId) {
+        List<TaskInfoEntity> taskInfoEntityList;
+
+        if (CollectionUtils.isEmpty(taskIdList)) {
+            taskInfoEntityList = taskRepository.findByProjectIdAndStatus(projectId, Status.ENABLE.value());
+            taskIdList = taskInfoEntityList.stream().map(TaskInfoEntity::getTaskId).collect(Collectors.toList());
+        } else {
+            taskInfoEntityList = taskRepository.findByTaskIdIn(taskIdList);
+        }
+
+        List<ToolConfigInfoEntity> emptyToolConfigList = Lists.newArrayList();
+        List<String> toolNameList = taskInfoEntityList.stream()
+                .flatMap(
+                        x -> x.getToolConfigInfoList() != null
+                                ? x.getToolConfigInfoList().stream()
+                                : emptyToolConfigList.stream()
+                )
+                .filter(y -> y != null && y.getFollowStatus() != FOLLOW_STATUS.WITHDRAW.value())
+                .map(ToolConfigInfoEntity::getToolName)
+                .collect(Collectors.toList());
+
+        if (CollectionUtils.isEmpty(toolNameList)) {
+            return Lists.newArrayList();
+        }
+
+        Map<String, MetadataVO> resultMap = Maps.newHashMap();
+        List<String> dimensionList = client.get(ServiceCheckerRestResource.class)
+                .queryDimensionByToolChecker(
+                        new QueryTaskCheckerDimensionRequest(taskIdList, toolNameList, projectId)
+                ).getData();
+
+        if (CollectionUtils.isNotEmpty(dimensionList)) {
+            for (String dimension : dimensionList) {
+                try {
+                    BaseDataEntity baseDataEntity = toolDimensionBaseDataCache.get(dimension);
+                    if (baseDataEntity != null) {
+                        MetadataVO metadataVO = new MetadataVO();
+                        metadataVO.setEntityId(baseDataEntity.getEntityId());
+                        metadataVO.setKey(baseDataEntity.getParamCode());
+                        metadataVO.setName(baseDataEntity.getParamName());
+                        metadataVO.setFullName(baseDataEntity.getParamExtend1());
+                        resultMap.put(baseDataEntity.getParamCode(), metadataVO);
+                    }
+                } catch (ExecutionException ignore) { // NOCC:EmptyCatchBlock(设计如此:)
+
+                }
+            }
+        }
+
+        return Lists.newArrayList(resultMap.values());
     }
 
 }

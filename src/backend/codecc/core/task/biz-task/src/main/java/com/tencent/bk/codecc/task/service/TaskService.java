@@ -29,6 +29,7 @@ package com.tencent.bk.codecc.task.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.tencent.bk.codecc.task.enums.TaskSortType;
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
+import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.bk.codecc.task.vo.NotifyCustomVO;
 import com.tencent.bk.codecc.task.vo.RuntimeUpdateMetaVO;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
@@ -573,16 +574,16 @@ public interface TaskService {
             TaskInfoWithSortedToolConfigRequest request
     );
 
-
     List<TaskBaseVO> getTaskIdAndCreateFromWithPage(long lastTaskId, Integer limit);
 
-
     List<TaskBaseVO> listTaskBase(String userId, String projectId);
-
 
     List<Long> queryTaskIdByProjectIdWithPermission(String projectId, String userId);
 
     Map<Long, String> listTaskNameCn(List<Long> taskIdList);
 
     boolean multiTaskVisitable(String projectId);
+
+
+    List<MetadataVO> listTaskToolDimension(List<Long> taskIdList, String projectId);
 }

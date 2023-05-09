@@ -27,6 +27,7 @@
 package com.tencent.bk.codecc.task.resources;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.task.api.UserTaskRestResource;
 import com.tencent.bk.codecc.task.enums.EmailType;
 import com.tencent.bk.codecc.task.enums.TaskSortType;
@@ -58,6 +59,7 @@ import com.tencent.bk.codecc.task.vo.TreeNodeTaskVO;
 import com.tencent.bk.codecc.task.vo.path.CodeYmlFilterPathVO;
 import com.tencent.bk.codecc.task.vo.scanconfiguration.ScanConfigurationVO;
 import com.tencent.devops.common.api.RtxNotifyVO;
+import com.tencent.devops.common.api.annotation.I18NResponse;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
 import com.tencent.devops.common.client.Client;
@@ -270,12 +272,13 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
 
     @Override
     public Result<List<MetadataVO>> listTaskToolDimension(Long taskId) {
-        return new Result<>(null);
+        return new Result<>(taskService.listTaskToolDimension(Lists.newArrayList(taskId), ""));
     }
 
     @Override
+    @I18NResponse
     public Result<List<MetadataVO>> listTaskToolDimension(String projectId, ListTaskToolDimensionRequest request) {
-        return new Result<>(null);
+        return new Result<>(taskService.listTaskToolDimension(request.getTaskIdList(), projectId));
     }
 
     @Override
