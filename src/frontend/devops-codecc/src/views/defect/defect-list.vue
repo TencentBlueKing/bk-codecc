@@ -46,7 +46,7 @@
       <div class="main-container" ref="mainContainer">
         <div class="main-content-inner main-content-list">
           <div class="search-content-inner" :class="{ 'collapse': !isSearchDropdown }">
-            <bk-form ref="bkForm" :label-width="62" class="search-form main-form">
+            <bk-form ref="bkForm" :label-width="65" class="search-form main-form">
               <container class="cc-container">
                 <div class="cc-col" v-if="isProjectDefect">
                   <bk-form-item :label="$t('任务')">

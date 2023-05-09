@@ -75,7 +75,7 @@
         <div>
           <span v-if="props.row.status === 1 && props.row.mark === 1" v-bk-tooltips="$t('已标记处理')" class="codecc-icon icon-mark mr5"></span>
           <span v-if="props.row.status === 1 && props.row.markButNoFixed" v-bk-tooltips="$t('标记处理后重新扫描仍为问题')" class="codecc-icon icon-mark re-mark mr5"></span>
-          <span v-if="props.row.defectIssueInfoVO.submitStatus && props.row.defectIssueInfoVO.submitStatus !== 4" v-bk-tooltips="$t('已提单')" class="codecc-icon icon-tapd"></span>
+          <span v-if="props.row.defectIssueInfoVO && props.row.defectIssueInfoVO.submitStatus && props.row.defectIssueInfoVO.submitStatus !== 4" v-bk-tooltips="$t('已提单')" class="codecc-icon icon-tapd"></span>
         </div>
       </template>
     </bk-table-column>

@@ -14,7 +14,6 @@
               <div>{{$t('全量扫描：每次都扫描全部文件。Klocwork、Pinpoint、Gometalinter、重复率仅支持该扫描方式。')}}</div>
               <div>{{$t('差异扫描：扫描当前工作空间分支与对比分支的差异文件。')}}</div>
               <div>{{$t('MR/PR扫描：扫描MR/PR的源分支与目标分支的差异，默认为差异行，可选择差异文件。源分支代码需拉取到工作空间。MR/PR扫描不支持手动执行或流水线重试。')}}
-                <a target="_blank" :href="handleMrpr">{{$t('了解更多')}}</a>
               </div>
             </div>
           </bk-popover>
@@ -122,7 +121,6 @@
           <b class="settings-header-title">{{$t('禁止页面忽略问题')}}</b>
           <span class="fs12 pl10">
             {{$t('禁止直接从页面忽略问题，可在代码行末或上一行使用注释忽略，例如// NOCC:rule1(ignore reason)。目前Coverity、Klocwork、Pinpoint暂不支持该功能。')}}
-            <a @click="handleToProhibit" href="javascript:;">{{$t('了解详情>>')}}</a>
           </span>
         </div>
         <div class="settings-body">

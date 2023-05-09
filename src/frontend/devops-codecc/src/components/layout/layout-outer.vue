@@ -5,10 +5,10 @@
       <div class="app-logo">
         <img @click="$router.push({ name: 'task-list' })" :src="logo" :alt="this.$t('腾讯代码分析')">
         <div class="breadcrumb">{{$t('腾讯代码分析')}}
-          <a class="sub-header-link" target="_blank"
+          <!-- <a class="sub-header-link" target="_blank"
              :href="iwikiCodeccHome">
             <span class="bk-icon icon-question-circle"></span>
-          </a>
+          </a> -->
         </div>
       </div>
       <bk-tab ext-cls="cc-panels" :label-height="59" type="unborder-card" :active.sync="currentNavTab" @tab-change="changeTab">

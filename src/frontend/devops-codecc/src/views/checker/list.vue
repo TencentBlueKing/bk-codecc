@@ -80,9 +80,9 @@
           </template>
         </bk-table-column>
         <bk-table-column :label="$t('工具')" prop="toolName" sortable="custom">
-          <template slot-scope="props">
+          <!-- <template slot-scope="props">
             <a class="cc-link table-tool" :href="iwikiCodeccTool" target="_blank">{{formatTool(props.row.toolName)}}</a>
-          </template>
+          </template> -->
         </bk-table-column>
         <bk-table-column :label="$t('标签')" prop="checkerTag" sortable="custom" width="170">
           <template slot-scope="props">

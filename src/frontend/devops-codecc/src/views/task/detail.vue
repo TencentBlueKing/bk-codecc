@@ -40,9 +40,9 @@
               {{$t('评分：')}}{{rdScore.codeStyleScore | formatUndefNum('fixed', 2)}}；</p>
             <p>{{$t('【圈复杂度】千行超标复杂度')}}{{averageThousandDefect | formatUndefNum('fixed', 2)}}，
               {{$t('评分：')}}{{rdScore.codeCcnScore| formatUndefNum('fixed', 2)}}；</p>
-            <p>{{$t('以上质量评价依照')}}<a target="_blank" :href="handleOpenHref">{{$t('腾讯开源治理指标体系')}}</a>
+            <p>{{$t('以上质量评价依照')}}{{$t('腾讯开源治理指标体系')}}
               {{$t('(其中文档质量暂按100分计算)，')}}
-              {{$t('评分仅供参考，最终评分请以')}} <a target="_blank" :href="handleTechmapHref">{{$t('技术图谱')}}</a> {{$t('为准。')}}</p>
+              {{$t('评分仅供参考，最终评分请以')}} {{$t('技术图谱')}} {{$t('为准。')}}</p>
             <p>{{$t('技术图谱每日凌晨刷新一次分数。')}}</p>
           </div>
         </bk-popover>
