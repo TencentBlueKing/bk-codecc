@@ -490,6 +490,9 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
     }
 
     private boolean isMatchGitHost(String url) {
+        if (StringUtils.isEmpty(gitHosts)) {
+            return false;
+        }
         List<String> gitHostsList =
                 Arrays.stream(gitHosts.split(",")).map(String::trim).collect(Collectors.toList());
         boolean matchGitHost = false;
