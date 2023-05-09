@@ -323,7 +323,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                                     : defectVO.getSeverity()
                     );
 
-                    if (Boolean.TRUE.equals(request.getShowTaskNameCn())) {
+                    if (Boolean.TRUE.equals(request.getShowTaskNameCn()) && taskNameCnMap != null) {
                         defectVO.setTaskNameCn(taskNameCnMap.get(defectVO.getTaskId()));
                     }
 

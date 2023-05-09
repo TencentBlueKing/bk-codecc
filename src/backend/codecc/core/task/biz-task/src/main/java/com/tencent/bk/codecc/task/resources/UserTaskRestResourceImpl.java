@@ -64,6 +64,7 @@ import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.web.RestResource;
 import com.tencent.devops.common.web.condition.CommunityCondition;
 import com.tencent.devops.common.web.security.AuthMethod;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -289,7 +290,9 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
 
     @Override
     public Result<ListTaskNameCnResponse> listTaskNameCn(ListTaskNameCnRequest request) {
-        return new Result<>(null);
+        Map<Long, String> data = taskService.listTaskNameCn(request.getTaskIdList());
+
+        return new Result<>(new ListTaskNameCnResponse(data));
     }
 
     @Override
