@@ -240,7 +240,7 @@
               <div class="cc-operate-buttons">
                 <bk-button size="small" ext-cls="cc-operate-button" @click="handleMark(1, true)" theme="primary">{{$t('标记处理')}}</bk-button>
                 <bk-button size="small" ext-cls="cc-operate-button" @click="handleAuthor(2)" theme="primary">{{$t('分配')}}</bk-button>
-                <bk-button size="small" ext-cls="cc-operate-button" @click="handleCommit('commit', true)" theme="primary">{{$t('提单')}}</bk-button>
+                <!-- <bk-button size="small" ext-cls="cc-operate-button" @click="handleCommit('commit', true)" theme="primary">{{$t('提单')}}</bk-button> -->
                 <bk-button size="small" ext-cls="cc-operate-button" @click="handleIgnore('RevertIgnore', true)" v-if="!searchParams.status.length || searchParams.status.includes(4)" theme="primary">
                   {{$t('取消忽略')}}
                 </bk-button>
@@ -357,9 +357,9 @@
                         <p v-if="props.row.status & 4 && !props.row.ignoreCommentDefect" class="entry-link" @click.stop="handleRevertIgnoreAndMark(props.row.entityId)">
                           {{$t('取消忽略并标记处理')}}
                         </p>
-                        <p v-if="props.row.status & 4 && !props.row.ignoreCommentDefect" class="entry-link" @click.stop="handleRevertIgnoreAndCommit(props.row.entityId)">
+                        <!-- <p v-if="props.row.status & 4 && !props.row.ignoreCommentDefect" class="entry-link" @click.stop="handleRevertIgnoreAndCommit(props.row.entityId)">
                           {{$t('取消忽略并提单')}}
-                        </p>
+                        </p> -->
                         <p v-if="props.row.status & 4 && props.row.ignoreCommentDefect" class="disabled" :title="$t('注释忽略的问题不允许页面进行恢复操作')">
                           {{$t('取消忽略')}}
                         </p>
@@ -389,11 +389,11 @@
                         <p v-if="props.row.status & 4 && !props.row.ignoreCommentDefect" class="entry-link" @click.stop="handleChangeIgnoreType(props.row)">
                           {{$t('修改忽略类型')}}
                         </p>
-                        <p v-if="props.row.status === 1 && !(props.row.defectIssueInfoVO && props.row.defectIssueInfoVO.submitStatus && props.row.defectIssueInfoVO.submitStatus !== 4)"
+                        <!-- <p v-if="props.row.status === 1 && !(props.row.defectIssueInfoVO && props.row.defectIssueInfoVO.submitStatus && props.row.defectIssueInfoVO.submitStatus !== 4)"
                            class="entry-link"
                            @click.stop="handleCommit('commit', false, props.row.entityId)">
                           {{$t('提单')}}
-                        </p>
+                        </p> -->
                       </div>
                     </bk-popover>
                   </span>
@@ -472,11 +472,11 @@
                             {{$t('取消忽略并标记处理')}}
                           </bk-button>
                         </div>
-                        <div class="item">
+                        <!-- <div class="item">
                           <bk-button class="item-button" @click="handleRevertIgnoreAndCommit(currentLintFile.entityId)">
                             {{$t('取消忽略并提单')}}
                           </bk-button>
-                        </div>
+                        </div> -->
                       </div>
                       <div class="item">
                         <bk-button v-if="currentLintFile.status & 4 && currentLintFile.ignoreCommentDefect" class="item-button" disabled :title="$t('注释忽略的问题不允许页面进行恢复操作')">
@@ -502,13 +502,13 @@
                           {{$t('修改忽略类型')}}
                         </bk-button>
                       </div>
-                      <div class="item" v-if="currentLintFile.status === 1 && !(currentLintFile.defectIssueInfoVO && currentLintFile.defectIssueInfoVO.submitStatus && currentLintFile.defectIssueInfoVO.submitStatus !== 4)">
+                      <!-- <div class="item" v-if="currentLintFile.status === 1 && !(currentLintFile.defectIssueInfoVO && currentLintFile.defectIssueInfoVO.submitStatus && currentLintFile.defectIssueInfoVO.submitStatus !== 4)">
                         <bk-button
                           class="item-button"
                           @click="handleCommit('commit', false, currentLintFile.entityId)">
                           {{$t('提单')}}
                         </bk-button>
-                      </div>
+                      </div> -->
                     </div>
                     <div class="block">
                       <div class="item">

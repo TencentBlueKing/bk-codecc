@@ -35,7 +35,7 @@ memberSelectorList.forEach((item) => {
 let settings = fs.readFileSync('./config.js').toString()
 settings = settings.replace(
   '\'code\', \'checkerset\', \'report\', \'issue\', \'trigger\', \'ignore\', \'authority\', \'record\', \'manage\'',
-  '\'code\', \'checkerset\', \'issue\', \'trigger\', \'ignore\', \'record\', \'manage\'',
+  '\'code\', \'checkerset\', \'trigger\', \'ignore\', \'record\', \'manage\'',
 )
 fs.writeFileSync('./config.js', settings)
 

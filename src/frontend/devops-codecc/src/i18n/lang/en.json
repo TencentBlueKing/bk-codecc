@@ -376,6 +376,7 @@
 	"代码库路径": "Repository",
 	"版本号": "Revision",
 	"回到函数位置": "Locate Function",
+	"函数位置": "Locate Function",
 	"上一函数": "Prev",
 	"下一函数": "Next",
 	"上一问题": "Prev",

@@ -110,9 +110,9 @@
               <p v-if="props.row.status & 4 && !props.row.ignoreCommentDefect" class="entry-link" @click.stop="handleRevertIgnoreAndMark(props.row.entityId)">
                 {{$t('取消忽略并标记处理')}}
               </p>
-              <p v-if="props.row.status & 4 && !props.row.ignoreCommentDefect" class="entry-link" @click.stop="handleRevertIgnoreAndCommit(props.row.entityId)">
+              <!-- <p v-if="props.row.status & 4 && !props.row.ignoreCommentDefect" class="entry-link" @click.stop="handleRevertIgnoreAndCommit(props.row.entityId)">
                 {{$t('取消忽略并提单')}}
-              </p>
+              </p> -->
               <p v-else-if="prohibitIgnore" class="entry-link disabled" :title="$t('已设置禁止页面忽略，可在代码行末或上一行使用注释忽略，例如// NOCC:rule1(ignore reason)')">
                 {{$t('忽略问题')}}
               </p>
@@ -136,11 +136,11 @@
               <p v-if="props.row.status & 4 && !props.row.ignoreCommentDefect" class="entry-link" @click.stop="handleChangeIgnoreType(props.row, false)">
                 {{$t('修改忽略类型')}}
               </p>
-              <p v-if="props.row.status === 1 && !(props.row.defectIssueInfoVO && props.row.defectIssueInfoVO.submitStatus && props.row.defectIssueInfoVO.submitStatus !== 4)"
+              <!-- <p v-if="props.row.status === 1 && !(props.row.defectIssueInfoVO && props.row.defectIssueInfoVO.submitStatus && props.row.defectIssueInfoVO.submitStatus !== 4)"
                  class="entry-link"
                  @click.stop="handleCommit('commit', false, props.row.entityId)">
                 {{$t('提单')}}
-              </p>
+              </p> -->
             </div>
           </bk-popover>
         </span>

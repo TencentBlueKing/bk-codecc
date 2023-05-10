@@ -302,7 +302,7 @@
               <div class="cc-operate-buttons">
                 <bk-button size="small" ext-cls="cc-operate-button" @click="handleMark(1, true)" theme="primary">{{$t('标记处理')}}</bk-button>
                 <bk-button size="small" ext-cls="cc-operate-button" v-if="searchParams.clusterType === 'defect'" @click="handleAuthor(2)" theme="primary">{{$t('分配')}}</bk-button>
-                <bk-button size="small" ext-cls="cc-operate-button" @click="handleCommit('commit', true)" theme="primary">{{$t('提单')}}</bk-button>
+                <!-- <bk-button size="small" ext-cls="cc-operate-button" @click="handleCommit('commit', true)" theme="primary">{{$t('提单')}}</bk-button> -->
                 <bk-button size="small" ext-cls="cc-operate-button" @click="handleIgnore('RevertIgnore', true)" v-if="!searchParams.status.length || searchParams.status.includes(4)" theme="primary">
                   {{$t('取消忽略')}}
                 </bk-button>

@@ -71,11 +71,11 @@
                   {{$t('取消忽略并标记处理')}}
                 </bk-button>
               </div>
-              <div class="item">
+              <!-- <div class="item">
                 <bk-button class="item-button" @click="handleRevertIgnoreAndCommit(entityId)">
                   {{$t('取消忽略并提单')}}
                 </bk-button>
-              </div>
+              </div> -->
             </div>
             <div class="item">
               <bk-button v-if="currentFile.status & 4 && currentFile.ignoreCommentDefect" class="item-button" disabled :title="$t('注释忽略的问题不允许页面进行恢复操作')">
@@ -99,12 +99,12 @@
                 {{$t('修改忽略类型')}}
               </bk-button>
             </div>
-            <div v-if="currentFile.status === 1 && !(currentFile.defectIssueInfoVO && currentFile.defectIssueInfoVO.submitStatus && currentFile.defectIssueInfoVO.submitStatus !== 4)" class="item">
+            <!-- <div v-if="currentFile.status === 1 && !(currentFile.defectIssueInfoVO && currentFile.defectIssueInfoVO.submitStatus && currentFile.defectIssueInfoVO.submitStatus !== 4)" class="item">
               <bk-button
                 class="item-button"
                 @click="handleCommit('commit', false, entityId)">{{$t('提单')}}
               </bk-button>
-            </div>
+            </div> -->
           </div>
           <div class="block">
             <div class="item">
