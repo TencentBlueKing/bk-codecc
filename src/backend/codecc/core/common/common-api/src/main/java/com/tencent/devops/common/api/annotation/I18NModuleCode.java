@@ -30,4 +30,8 @@ public class I18NModuleCode {
     public static final String BASE_DATA_PARAM_CODE = "BASE_DATA_PARAM_CODE";
     public static final String BASE_DATA_PARAM_NAME = "BASE_DATA_PARAM_NAME";
     public static final String BASE_DATA_PARAM_EXTEND1 = "BASE_DATA_PARAM_EXTEND1";
+
+
+    // 忽略类型(系统内置)
+    public static final String IGNORE_TYPE_SYS_NAME = "IGNORE_TYPE_SYS_NAME";
 }

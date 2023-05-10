@@ -52,4 +52,7 @@ public class DefectQueryReqVO extends DefectQueryReqVOBase {
 
     @ApiModelProperty("维度")
     private List<String> dimensionList;
+
+    @ApiModelProperty("是否为回复忽略再标记")
+    private Boolean revertAndMark;
 }

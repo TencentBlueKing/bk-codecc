@@ -326,6 +326,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
             log.error("defect batch op, query obj deserialize fail, json: {}", queryDefectCondition);
             throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID);
         }
+        queryCondObj.setRevertAndMark(batchDefectProcessReqVO.getRevertAndMark());
         log.info("defect batch op, query obj: {}", queryCondObj);
         Set<String> statusAllows = new HashSet<>(getStatusCondition(queryCondObj));
         Set<String> retainStatus = CollectionUtils.isEmpty(queryCondObj.getStatus()) ? statusAllows

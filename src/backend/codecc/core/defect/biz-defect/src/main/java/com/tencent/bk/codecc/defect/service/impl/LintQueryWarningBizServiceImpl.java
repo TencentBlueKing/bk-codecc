@@ -1009,9 +1009,16 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             }
         }
 
-        return checkerTypeToKeyMap.entrySet().stream()
-                .map(kv -> new CheckerCustomVO(kv.getKey(), kv.getValue()))
-                .collect(Collectors.toList());
+        List<CheckerCustomVO> checkerCustomVOList = Lists.newArrayList();
+
+        for (Entry<String, List<String>> kv : checkerTypeToKeyMap.entrySet()) {
+            List<String> checkers = kv.getValue();
+            String checkerType = kv.getKey();
+            Collections.sort(checkers, Collator.getInstance(Locale.SIMPLIFIED_CHINESE));
+            checkerCustomVOList.add(new CheckerCustomVO(checkerType, checkers));
+        }
+
+        return checkerCustomVOList;
     }
 
     private void getCheckerDetailAndType(LintDefectVO lintDefectVO, String toolName, String pattern) {

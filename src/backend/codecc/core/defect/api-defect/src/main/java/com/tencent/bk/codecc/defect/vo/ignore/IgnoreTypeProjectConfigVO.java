@@ -1,6 +1,8 @@
 package com.tencent.bk.codecc.defect.vo.ignore;
 
 import com.tencent.devops.common.api.CommonVO;
+import com.tencent.devops.common.api.annotation.I18NFieldMarker;
+import com.tencent.devops.common.api.annotation.I18NModuleCode;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -12,6 +14,7 @@ public class IgnoreTypeProjectConfigVO extends CommonVO {
     /**
      * 名字
      */
+    @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.IGNORE_TYPE_SYS_NAME)
     @ApiModelProperty("name")
     private String name;
     /**

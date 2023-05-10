@@ -16,6 +16,7 @@ import com.tencent.bk.codecc.defect.service.BuildSnapshotService;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerCategory;
 import com.tencent.bk.codecc.task.api.ServiceBaseDataResource;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
+import com.tencent.bk.codecc.task.api.ServiceToolRestResource;
 import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigRequest;
 import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse;
 import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse.TaskBase;
@@ -31,18 +32,22 @@ import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.FOLLOW_STATUS;
 import com.tencent.devops.common.constant.ComConstants.Tool;
+import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import com.tencent.devops.common.constant.ComConstants.ToolType;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import com.tencent.devops.common.service.utils.SpringContextUtil;
 import com.tencent.devops.common.util.List2StrUtil;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +61,8 @@ import org.springframework.data.util.Pair;
 
 @Slf4j
 public class ParamUtils {
+
+    private static volatile Comparator<String> TOOL_ORDER_COMPARATOR_CACHE = null;
 
     /**
      * 工具许可项目白名单缓存(即只有指定的项目才能使用该工具，用于某些收费工具对特定项目使用)
@@ -143,12 +150,29 @@ public class ParamUtils {
             List<Long> taskIdList,
             String buildId
     ) {
-        return getTaskToolMapCore(Lists.newArrayList(), dimensionList, taskIdList, buildId, true, false)
-                .values()
-                .stream()
-                .flatMap(Collection::stream)
-                .distinct()
-                .collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(taskIdList)) {
+            return Lists.newArrayList();
+        }
+
+        if (taskIdList.size() == 1) {
+            return getTaskToolMapCore(Lists.newArrayList(), dimensionList, taskIdList, buildId, true, false)
+                    .values()
+                    .stream()
+                    .flatMap(Collection::stream)
+                    .distinct()
+                    .collect(Collectors.toList());
+        } else {
+            // 多任务需要汇总排序
+            Comparator<String> comparator = getToolOrderComparator();
+
+            return getTaskToolMapCore(Lists.newArrayList(), dimensionList, taskIdList, buildId, false, false)
+                    .values()
+                    .stream()
+                    .flatMap(Collection::stream)
+                    .distinct()
+                    .sorted(comparator)
+                    .collect(Collectors.toList());
+        }
     }
 
     /**
@@ -279,7 +303,7 @@ public class ParamUtils {
      * @param dimensionList
      * @param taskIdList
      * @param buildId
-     * @param needSorted 是否排序
+     * @param needSorted 是否排序，指每个task中自身的工具排序
      * @param checkToolRemoved 是否检测被删除工具
      * @return 工具列表
      */
@@ -376,6 +400,13 @@ public class ParamUtils {
         return false;
     }
 
+    /**
+     * 获取带工具信息的task
+     *
+     * @param taskIdList
+     * @param needSorted 是否排序，指每个task中自身的工具排序
+     * @return
+     */
     public static List<TaskBase> getTaskInfoWithToolConfig(
             List<Long> taskIdList,
             boolean needSorted
@@ -396,6 +427,7 @@ public class ParamUtils {
 
     /**
      * 过滤掉没有操作权限的任务
+     *
      * @param taskIdList
      * @param username
      * @return
@@ -425,6 +457,7 @@ public class ParamUtils {
 
     /**
      * 检查 流水线的告警操作权限权限
+     *
      * @param taskId
      * @param projectId
      * @param username
@@ -450,6 +483,7 @@ public class ParamUtils {
 
     /**
      * 通过聚合查询告警包含的任务列表
+     *
      * @param projectId
      * @param toolNameList
      * @param dimensionList
@@ -499,6 +533,7 @@ public class ParamUtils {
 
     /**
      * 通过聚合查询告警包含的任务列表
+     *
      * @param defectIds
      * @param toolNameList
      * @param dimensionList
@@ -528,6 +563,7 @@ public class ParamUtils {
 
     /**
      * 获取工具与任务的关系，即哪些任务配置了哪些工具
+     *
      * @param taskBases
      * @return
      */
@@ -538,30 +574,31 @@ public class ParamUtils {
         ToolMetaCacheService toolMetaCache = SpringContextUtil.Companion.getBean(ToolMetaCacheService.class);
         Map<Long, Set<String>> taskToDefectToolMap = new HashMap<>();
         Set<Long> hasCCNToolTasks = new HashSet<>();
-        taskBases.forEach(taskBase -> {
-            if (CollectionUtils.isNotEmpty(taskBase.getToolConfigInfoList())) {
-                Set<String> defectTools = new HashSet<>();
-                for (ToolConfigInfoVO toolConfigInfoVO : taskBase.getToolConfigInfoList()) {
-                    if (StringUtils.isBlank(toolConfigInfoVO.getToolName())) {
-                        continue;
-                    }
-                    String toolType = toolMetaCache.getToolBaseMetaCache(toolConfigInfoVO.getToolName())
-                            .getType();
-                    if (StringUtils.isBlank(toolType)) {
-                        continue;
-                    }
-                    if (ToolType.STANDARD.name().equals(toolType) || ToolType.SECURITY.name().equals(toolType)
-                            || ToolType.DEFECT.name().equals(toolType)) {
-                        defectTools.add(toolConfigInfoVO.getToolName());
-                    } else if (ToolType.CCN.name().equals(toolType)) {
-                        hasCCNToolTasks.add(taskBase.getTaskId());
-                    }
+        Map<Long, List<String>> taskToToolMap = filterByBuildId(taskBases, null, true);
+        for (Entry<Long, List<String>> taskToToolEntry : taskToToolMap.entrySet()) {
+            Long taskId = taskToToolEntry.getKey();
+            List<String> toolNames = taskToToolEntry.getValue();
+            Set<String> defectTools = new HashSet<>();
+            for (String toolName : toolNames) {
+                if (StringUtils.isEmpty(toolName)) {
+                    continue;
                 }
-                if (!defectTools.isEmpty()) {
-                    taskToDefectToolMap.put(taskBase.getTaskId(), defectTools);
+                ToolMetaBaseVO toolMetaBaseVO = toolMetaCache.getToolBaseMetaCache(toolName);
+                if (toolMetaBaseVO == null || StringUtils.isBlank(toolMetaBaseVO.getType())) {
+                    continue;
+                }
+                String toolType = toolMetaBaseVO.getType();
+                if (ToolType.STANDARD.name().equals(toolType) || ToolType.SECURITY.name().equals(toolType)
+                        || ToolType.DEFECT.name().equals(toolType)) {
+                    defectTools.add(toolName);
+                } else if (ToolType.CCN.name().equals(toolType)) {
+                    hasCCNToolTasks.add(taskId);
                 }
             }
-        });
+            if (!defectTools.isEmpty()) {
+                taskToDefectToolMap.put(taskId, defectTools);
+            }
+        }
         return Pair.of(taskToDefectToolMap, hasCCNToolTasks);
     }
 
@@ -608,5 +645,19 @@ public class ParamUtils {
         }
 
         return retMap;
+    }
+
+    private static Comparator<String> getToolOrderComparator() {
+        if (TOOL_ORDER_COMPARATOR_CACHE != null) {
+            return TOOL_ORDER_COMPARATOR_CACHE;
+        }
+
+        Client client = SpringContextUtil.Companion.getBean(Client.class);
+        String toolOrderStr = client.get(ServiceToolRestResource.class).findToolOrder().getData();
+        List<String> toolOrderList = Arrays.asList(toolOrderStr.split(ComConstants.STRING_SPLIT));
+        TOOL_ORDER_COMPARATOR_CACHE =
+                Comparator.comparing(x -> toolOrderList.contains(x) ? toolOrderList.indexOf(x) : Integer.MAX_VALUE);
+
+        return TOOL_ORDER_COMPARATOR_CACHE;
     }
 }

@@ -27,9 +27,12 @@ import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.web.RestResource;
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -149,6 +152,10 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
                 projectId,
                 taskIdList,
                 toolNameList
+        );
+
+        Collections.sort(checkerSets, (t1, t2) ->
+                Collator.getInstance(Locale.SIMPLIFIED_CHINESE).compare(t1.getCheckerSetName(), t2.getCheckerSetName())
         );
 
         return new Result<>(new QueryTaskCheckerSetsResponse(checkerSets));

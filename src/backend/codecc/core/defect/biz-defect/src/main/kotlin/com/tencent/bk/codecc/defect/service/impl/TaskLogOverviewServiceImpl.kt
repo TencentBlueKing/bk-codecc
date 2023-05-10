@@ -26,6 +26,7 @@ import com.tencent.devops.common.constant.RedisKeyConstants
 import com.tencent.devops.common.redis.lock.RedisLock
 import com.tencent.devops.common.service.BaseDataCacheService
 import com.tencent.devops.common.service.BizServiceFactory
+import com.tencent.devops.common.service.utils.I18NUtils
 import com.tencent.devops.common.service.utils.PageableUtils
 import com.tencent.devops.common.web.mq.EXCHANGE_CODECCJOB_TASKLOG_WEBSOCKET
 import org.apache.commons.beanutils.BeanUtils
@@ -306,14 +307,26 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
             }
             taskLogOverviewVO.taskLogVOList = taskLogVOList
             taskLogOverviewVO.repoInfoStrList = pickUpRepoInfo(it.taskLogEntityList)
+
             with(taskLogOverviewVO.repoInfoStrList.firstOrNull() ?: "") {
-                taskLogOverviewVO.version = try {
-                    substring(this.indexOf("版本号：") + 4, this.indexOf("，提交时间"))
-                } catch (e: Exception) {
-                    logger.error("getTaskLogOverviewList: fail to substring msg $this")
-                    ""
+                try {
+                    // 兼容硬编码
+                    val versionKeyList = I18NUtils.getAllLocaleMessage("ANALYZE_SCM_CODE_VERSION")
+                    val commitKeyList = I18NUtils.getAllLocaleMessage("ANALYZE_SCM_CODE_COMMIT_TIME")
+                    taskLogOverviewVO.version = ""
+                    versionKeyList.forEachIndexed { index, version ->
+                        if (this.indexOf(version) != -1) {
+                            val startIndex = this.indexOf(version) + version.length
+                            val endIndex = this.indexOf("，" + commitKeyList[index])
+                            taskLogOverviewVO.version = substring(startIndex, endIndex)
+                            return@with
+                        }
+                    }
+                } catch (t: Throwable) {
+                    logger.error("getTaskLogOverviewList: fail to substring msg: $this", t)
                 }
             }
+
             taskLogOverviewVO.elapseTime = if (taskLogOverviewVO.endTime == null || taskLogOverviewVO.endTime == 0L) {
                 0L
             } else {
@@ -535,10 +548,12 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
      */
     private fun pickUpRepoInfo(taskLogEntityList: MutableList<TaskLogEntity>?): List<String> {
         val repoInfoStr = mutableSetOf<String>()
+        val keyWordList = I18NUtils.getAllLocaleMessage("ANALYZE_SCM_CODE_REPOSITORY")
+
         taskLogEntityList?.forEach {
             val steps = it.stepArray
             val strList = steps.filter { step ->
-                !step.msg.isNullOrBlank() && step.msg.contains("代码库：")
+                !step.msg.isNullOrBlank() && keyWordList.any { keyWord -> step.msg.contains(keyWord) }
             }.map { step ->
                 step.msg
             }.toList()

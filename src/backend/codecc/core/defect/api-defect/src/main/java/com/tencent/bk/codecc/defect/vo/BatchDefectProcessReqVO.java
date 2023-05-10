@@ -82,6 +82,9 @@ public class BatchDefectProcessReqVO {
     @ApiModelProperty(value = "数据迁移是否成功", required = false)
     private Boolean dataMigrationSuccessful;
 
+    @ApiModelProperty("是否为回复忽略再标记")
+    private Boolean revertAndMark;
+
     public String getToolName() {
         if (getToolNameList() == null || getToolNameList().isEmpty()) {
             return null;

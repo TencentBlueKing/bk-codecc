@@ -5,6 +5,7 @@ import com.tencent.bk.codecc.defect.service.IIgnoreTypeService;
 import com.tencent.bk.codecc.defect.vo.ignore.IgnoreTypeDefectStatResponse;
 import com.tencent.bk.codecc.defect.vo.ignore.IgnoreTypeProjectConfigVO;
 import com.tencent.bk.codecc.defect.vo.ignore.IgnoreTypeSysVO;
+import com.tencent.devops.common.api.annotation.I18NResponse;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.web.RestResource;
@@ -38,6 +39,7 @@ public class UserIgnoreTypeRestResourceImpl implements UserIgnoreTypeRestResourc
     }
 
     @Override
+    @I18NResponse
     public Result<List<IgnoreTypeProjectConfigVO>> list(String projectId, String userName) {
         return new Result<>(iIgnoreTypeService.queryIgnoreTypeProjectList(projectId, userName));
     }

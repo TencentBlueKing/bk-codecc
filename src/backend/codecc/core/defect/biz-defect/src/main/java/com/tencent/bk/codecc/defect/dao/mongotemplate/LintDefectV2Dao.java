@@ -880,10 +880,7 @@ public class LintDefectV2Dao {
                 .last("status").as("status")
                 .count().as("defectCount");
 
-        AggregationOptions options = Aggregation.newAggregationOptions()
-                .maxTime(Duration.ofSeconds(1))
-                .allowDiskUse(true)
-                .build();
+        AggregationOptions options = Aggregation.newAggregationOptions().allowDiskUse(true).build();
         Aggregation agg = Aggregation.newAggregation(match, group).withOptions(options);
         long beginTime = System.currentTimeMillis();
         AggregationResults<LintDefectGroupStatisticVO> queryResult = mongoTemplate.aggregate(agg, "t_lint_defect_v2",
@@ -1226,7 +1223,7 @@ public class LintDefectV2Dao {
                 .and("ignore_reason_type").is(ignoreReasonType)
                 .and("status").bits().allSet(DefectStatus.IGNORE.value());
         Query query = Query.query(cri);
-        query.fields().include("entityId", "task_id", "status", "ignore_reason_type", "severity",
+        query.fields().include("entityId", "task_id", "status", "checker", "ignore_reason_type", "severity",
                 "revision", "branch", "sub_module", "line_num");
         return mongoTemplate.find(query, LintDefectV2Entity.class);
     }
@@ -1236,7 +1233,7 @@ public class LintDefectV2Dao {
                 .and("tool_name").is(toolName)
                 .and("status").bits().allSet(DefectStatus.IGNORE.value());
         Query query = Query.query(cri);
-        query.fields().include("entityId", "task_id", "status", "ignore_reason_type", "severity",
+        query.fields().include("entityId", "task_id", "status", "checker", "ignore_reason_type", "severity",
                 "revision", "branch", "sub_module", "line_num");
         return mongoTemplate.find(query, LintDefectV2Entity.class);
     }

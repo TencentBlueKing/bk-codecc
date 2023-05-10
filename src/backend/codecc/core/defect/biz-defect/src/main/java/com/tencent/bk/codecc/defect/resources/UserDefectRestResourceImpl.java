@@ -74,6 +74,7 @@ import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.BusinessType;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.constant.ComConstants.ToolType;
 import com.tencent.devops.common.constant.CommonMessageCode;
@@ -91,6 +92,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,6 +104,7 @@ import org.springframework.data.util.Pair;
 /**
  * 告警查询服务实现
  */
+@Slf4j
 @RestResource
 @Conditional(CommunityCondition.class)
 @AuthMethod(permission = {CodeCCAuthAction.DEFECT_VIEW})
@@ -327,6 +330,12 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
             throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{"bizType"});
         }
         List<BatchDefectProcessRspVO> rspVOS = new ArrayList<>();
+        // 如果是忽略并标记处理，需要将revertAndMark置为true。让标记处理可以先标记忽略的告警
+        if (bizType.contains(BusinessType.REVERT_IGNORE.value())
+                && bizType.contains(BusinessType.MARK_DEFECT.value())) {
+            log.info("batchDefectProcess with revert And mark");
+            batchDefectProcessReqVO.setRevertAndMark(true);
+        }
         String[] bizTypes = bizType.split("\\|");
         for (String type : bizTypes) {
             // 如果是标记处理，先看下是否需要恢复忽略
