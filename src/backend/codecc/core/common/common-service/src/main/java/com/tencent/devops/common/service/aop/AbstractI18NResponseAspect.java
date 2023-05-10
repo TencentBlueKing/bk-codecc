@@ -262,8 +262,6 @@ public abstract class AbstractI18NResponseAspect {
                     methodAccess.getIndex(getGetterMethodName(fieldMetaData.getResourceCodeField()));
             int translateFieldSetterIndex =
                     methodAccess.getIndex(getSetterMethodName(fieldMetaData.getWillTranslateField()));
-            int translateFieldGetterIndex =
-                    methodAccess.getIndex(getGetterMethodName(fieldMetaData.getWillTranslateField()));
 
             for (Object obj : objList) {
                 Object resourceCode = methodAccess.invoke(obj, resourceCodeGetterIndex);
@@ -275,21 +273,14 @@ public abstract class AbstractI18NResponseAspect {
                 Map<String, String> keyAndValueMap = fieldMetaData.getKeyAndValueMap();
                 String value = CollectionUtils.isEmpty(keyAndValueMap) ? null : keyAndValueMap.get(key);
 
-                if (fieldMetaData.isListType()) {
-                    List<String> stringList = ObjectUtils.isEmpty(value)
-                            ? Lists.newArrayList()
-                            : Lists.newArrayList(value.split(","));
-                    methodAccess.invoke(obj, translateFieldSetterIndex, stringList);
-                } else {
-                    if (value == null) {
-                        Object originVal = methodAccess.invoke(obj, translateFieldGetterIndex);
-                        if (originVal instanceof String) {
-                            value = "I18N_ERR_" + originVal;
-                        } else {
-                            value = "I18N_ERR";
-                        }
+                // 若翻译不为空，才进行替换；否则保持原值
+                if (!ObjectUtils.isEmpty(value)) {
+                    if (fieldMetaData.isListType()) {
+                        List<String> strList = Lists.newArrayList(value.split(","));
+                        methodAccess.invoke(obj, translateFieldSetterIndex, strList);
+                    } else {
+                        methodAccess.invoke(obj, translateFieldSetterIndex, value);
                     }
-                    methodAccess.invoke(obj, translateFieldSetterIndex, value);
                 }
             }
         }

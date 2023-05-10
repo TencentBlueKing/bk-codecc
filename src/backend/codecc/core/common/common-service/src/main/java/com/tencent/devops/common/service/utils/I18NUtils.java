@@ -11,10 +11,10 @@ import org.springframework.util.ObjectUtils;
 @Slf4j
 public class I18NUtils {
 
-    private static Locale ZH_CN = new Locale("zh", "CN");
-    private static Locale EN_US = new Locale("en", "US");
-
-
+    private static final Locale ZH_CN = new Locale("zh", "CN");
+    private static final Locale EN_US = new Locale("en", "US");
+    private static final String I18N_ERROR_MESSAGE = "[I18N_ERR]";
+    
     /**
      * 获取国际化信息
      *
@@ -42,9 +42,9 @@ public class I18NUtils {
 
             return resourceBundle.getString(resourceCode);
         } catch (Throwable t) {
-            log.error("i18n util get message error, resource code: {}, locale: {}", resourceCode, locale, t);
+            log.error("i18n get message error, resource code: {}, locale: {}", resourceCode, locale, t);
 
-            return "I18N_ERR";
+            return I18N_ERROR_MESSAGE;
         }
     }
 
@@ -61,8 +61,8 @@ public class I18NUtils {
         }
 
         String message = getMessage(resourceCode);
-        if (ObjectUtils.isEmpty(message)) {
-            return "";
+        if (ObjectUtils.isEmpty(message) || message.equals(I18N_ERROR_MESSAGE)) {
+            return I18N_ERROR_MESSAGE;
         }
 
         try {
@@ -70,7 +70,7 @@ public class I18NUtils {
         } catch (Throwable t) {
             log.error("i18n format message error, code: {}, params: {}", resourceCode, params, t);
 
-            return "I18N_ERR";
+            return I18N_ERROR_MESSAGE;
         }
     }
 

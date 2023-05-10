@@ -322,11 +322,15 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
                     CheckerPropsEntity checkerPropsEntity = new CheckerPropsEntity();
                     BeanUtils.copyProperties(checkerPropVO, checkerPropsEntity);
 
-                    // props以checkerDetail为准
-                    String key = checkerPropVO.getCheckerKey() + checkerPropVO.getToolName();
-                    CheckerDetailEntity checkerDetailEntity = checkerDetailMap.get(key);
-                    if (checkerDetailEntity != null) {
-                        checkerPropsEntity.setProps(checkerDetailEntity.getProps());
+                    // 若前端传入的props不为空，则进行简单校验
+                    if (StringUtils.isNotEmpty(checkerPropVO.getProps())) {
+                        String key = checkerPropVO.getCheckerKey() + checkerPropVO.getToolName();
+                        CheckerDetailEntity checkerDetailEntity = checkerDetailMap.get(key);
+
+                        // 前端传入props有值，但规则实际上无值，以DB为准
+                        if (checkerDetailEntity != null && StringUtils.isEmpty(checkerDetailEntity.getProps())) {
+                            checkerPropsEntity.setProps(checkerDetailEntity.getProps());
+                        }
                     }
 
                     checkerPropsEntities.add(checkerPropsEntity);

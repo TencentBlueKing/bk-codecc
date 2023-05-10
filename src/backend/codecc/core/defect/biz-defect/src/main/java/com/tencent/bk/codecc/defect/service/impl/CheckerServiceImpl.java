@@ -1198,8 +1198,17 @@ public class CheckerServiceImpl implements CheckerService
                         }
 
                         CheckerDetailVO checkerDetailVO = checkerDetailMap.get(checkerPropVO.getCheckerKey());
-                        if (checkerDetailVO != null
-                                && !Objects.equals(checkerDetailVO.getProps(), checkerPropVO.getProps())) {
+                        if (StringUtils.isEmpty(checkerPropVO.getProps())
+                                && checkerDetailVO != null && StringUtils.isNotEmpty(checkerDetailVO.getProps())) {
+                            checkerPropVO.setProps(checkerDetailVO.getProps());
+                        }
+
+                        // checkerSet内嵌的规则带了props
+                        boolean checkerSetHasProps = StringUtils.isNotEmpty(checkerPropVO.getProps());
+                        // 真实的规则并没有props
+                        boolean checkerDetailNoneProps =
+                                checkerDetailVO != null && StringUtils.isEmpty(checkerDetailVO.getProps());
+                        if (checkerDetailNoneProps && checkerSetHasProps) {
                             checkerPropVO.setProps(checkerDetailVO.getProps());
                         }
 
