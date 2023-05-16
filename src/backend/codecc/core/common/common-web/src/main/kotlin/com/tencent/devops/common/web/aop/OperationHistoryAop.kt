@@ -26,6 +26,7 @@
 
 package com.tencent.devops.common.web.aop
 
+import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_PROJECT_ID
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_TASK_ID
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_USER_ID
 import com.tencent.devops.common.constant.ComConstants
@@ -56,7 +57,6 @@ import com.tencent.devops.common.constant.ComConstants.FUNC_TASK_INFO
 import com.tencent.devops.common.constant.ComConstants.FUNC_TASK_SWITCH
 import com.tencent.devops.common.constant.ComConstants.FUNC_TOOL_SWITCH
 import com.tencent.devops.common.constant.ComConstants.FUNC_TRIGGER_ANALYSIS
-import com.tencent.devops.common.constant.ComConstants.IgnoreReasonType
 import com.tencent.devops.common.constant.ComConstants.OPEN_CHECKER
 import com.tencent.devops.common.web.aop.annotation.OperationHistory
 import com.tencent.devops.common.web.aop.model.OperationHistoryDTO
@@ -136,9 +136,9 @@ class OperationHistoryAop @Autowired constructor(
         if (annotation.funcId == FUNC_BATCH_DEFECT) {
             val objects = joinPoint.args
             val jsonObject = JSONObject.fromObject(objects[0])
-            dimension = jsonObject.getJSONArray("dimensionList").join(",")
+            dimension = jsonObject.getJSONArray("dimensionList").toArray().joinToString(",")
             if (toolName.isNullOrBlank()) {
-                toolName = jsonObject.getJSONArray("toolNameList").join(",")
+                toolName = jsonObject.getJSONArray("toolNameList").toArray().joinToString(",")
             }
 
             // 若是全选/按文件维度操作,需要保留查询条件
@@ -165,7 +165,8 @@ class OperationHistoryAop @Autowired constructor(
         val paramArray = getParamArray(joinPoint, funcId, userName)
         //获取当前时间
         val currentTime = System.currentTimeMillis()
-
+        // 获取项目的id
+        val projectId = request.getHeader(AUTH_HEADER_DEVOPS_PROJECT_ID) ?: request.getParameter("projectId")
         val operationHistoryDTO = OperationHistoryDTO(
             taskId = taskId,
             pipelineId = pipelineId,
@@ -178,7 +179,8 @@ class OperationHistoryAop @Autowired constructor(
             operMsg = operaMsg,
             toolName = toolName,
             dimension = dimension,
-            operator = userName
+            operator = userName,
+            projectId = projectId
         )
         logger.info(">>>>>>>>>>>>>>> operationHistoryDTO: $operationHistoryDTO")
         //发送消息，异步处理
@@ -289,29 +291,11 @@ class OperationHistoryAop @Autowired constructor(
                     // array 判空 转set
                     val defectEntityIdSet = jsonArray2Set(jsonArray = jsonObject.getJSONArray("defectKeySet"))
 
-                    val ignoreReasonType = when (jsonObject.getInt("ignoreReasonType")) {
-                        IgnoreReasonType.ERROR_DETECT.value() -> {
-                            "工具误报"
-                        }
-                        IgnoreReasonType.SPECIAL_PURPOSE.value() -> {
-                            "设计如此"
-                        }
-                        IgnoreReasonType.OTHER.value() -> {
-                            "其它"
-                        }
-                        else -> {
-                            "未忽略"
-                        }
-                    }
+                    val ignoreReasonType = jsonObject.getString("ignoreReasonType")
 
                     val ignoreReason = jsonObject.getString("ignoreReason")
-                    val ignoreReasonFull = if (ignoreReason.isNullOrBlank()) {
-                        ignoreReasonType
-                    } else {
-                        "${ignoreReasonType}-${ignoreReason}"
-                    }
 
-                    arrayOf(defectEntityIdSet.joinToString(","), ignoreReasonFull)
+                    arrayOf(defectEntityIdSet.joinToString(","), ignoreReasonType, ignoreReason)
                 }
                 FUNC_REVERT_IGNORE, FUNC_DEFECT_MARKED, FUNC_DEFECT_UNMARKED, FUNC_ISSUE_DEFECT -> {
                     val jsonObject = JSONObject.fromObject(objects[0])

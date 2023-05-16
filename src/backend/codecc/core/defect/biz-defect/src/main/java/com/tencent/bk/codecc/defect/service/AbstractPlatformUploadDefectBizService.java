@@ -46,17 +46,22 @@ import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.util.FileUtils;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import jodd.cli.Cli;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 
 /**
  * 告警上报抽象类
@@ -81,6 +86,11 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
     private IV3CheckerSetBizService iv3CheckerSetBizService;
     @Autowired
     private CheckerRepository checkerRepository;
+
+    @Autowired
+    protected RedisTemplate<String, String> redisTemplate;
+    @Autowired
+    private ReallocateDefectAuthorService reallocateDefectAuthorService;
 
     @Override
     public Result processBiz(UploadDefectVO uploadDefectVO)
@@ -126,13 +136,36 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
         }
 
         log.info("begin to save defect");
-        saveAndStatisticDefect(uploadDefectVO,
-                defectList,
-                taskDetailVO,
-                filterPathSet,
-                whitePaths,
-                transferAuthorList,
-                buildNum);
+        String redisKeyForAuthorReassign = String.format(
+                RedisKeyConstants.IS_REALLOCATE + ":%d:%s", taskId, toolName);
+        boolean isReallocate = false;
+        // 查询上报工具是否处理人重新分配
+        try {
+            isReallocate = reallocateDefectAuthorService.isReallocate(taskId, toolName);
+            if (isReallocate) {
+                // 如果上报工具配置了重新分配配置，则加入缓存，op后台在修改时判断
+                redisTemplate.opsForValue().setIfAbsent(
+                        redisKeyForAuthorReassign, "reallocating", 1, TimeUnit.HOURS);
+            }
+            saveAndStatisticDefect(uploadDefectVO,
+                    defectList,
+                    taskDetailVO,
+                    filterPathSet,
+                    whitePaths,
+                    transferAuthorList,
+                    buildNum,
+                    isReallocate);
+
+            // 更新工具是否重新分配状态
+            if (isReallocate) {
+                // 更新重新分配状态为已分配
+                reallocateDefectAuthorService.updateCurrentStatus(taskId, toolName);
+            }
+        } finally {
+            if (isReallocate) {
+                redisTemplate.delete(redisKeyForAuthorReassign);
+            }
+        }
 
         return new Result(CommonMessageCode.SUCCESS, "upload defect ok");
     }
@@ -155,7 +188,8 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
             Set<String> filterPathSet,
             Set<String> whitePaths,
             List<TransferAuthorEntity.TransferAuthorPair> transferAuthorList,
-            String buildNum);
+            String buildNum,
+            boolean isReallocate);
 
     /**
      * 获取打开规则映射

@@ -120,15 +120,16 @@ public class DefectDao {
         if (CollectionUtils.isNotEmpty(defectList)) {
             BulkOperations ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, CommonDefectEntity.class);
             defectList.forEach(defectEntity -> {
+                Update update = new Update();
+                update.set("status", defectEntity.getStatus());
+                update.set("exclude_time", defectEntity.getExcludeTime());
+                update.set("mask_path", defectEntity.getMaskPath());
+
                 Query query = new Query(
                         Criteria.where("task_id").is(taskId)
                                 .and("_id").is(new ObjectId(defectEntity.getEntityId()))
                 );
 
-                Update update = new Update();
-                update.set("status", defectEntity.getStatus());
-                update.set("exclude_time", defectEntity.getExcludeTime());
-                update.set("mask_path", defectEntity.getMaskPath());
                 ops.upsert(query, update);
             });
             ops.execute();

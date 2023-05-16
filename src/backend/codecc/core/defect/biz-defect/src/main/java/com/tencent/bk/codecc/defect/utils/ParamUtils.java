@@ -27,9 +27,11 @@ import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
+import com.tencent.devops.common.auth.api.pojo.external.PipelineAuthAction;
 import com.tencent.devops.common.auth.api.pojo.external.model.BkAuthExResourceActionModel;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
 import com.tencent.devops.common.constant.ComConstants.FOLLOW_STATUS;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
@@ -240,7 +242,7 @@ public class ParamUtils {
 
         if (StringUtils.isEmpty(projectId) || StringUtils.isEmpty(userId)) {
             log.warn("all task by project, args can not be null: {}, {}", projectId, userId);
-            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_NULL, new String[]{"project id or user id"});
+            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_NULL, new String[]{"projectId", "userId"});
         }
 
         try {
@@ -453,32 +455,6 @@ public class ParamUtils {
             }
         }
         return hasPermissionsTaskIds;
-    }
-
-    /**
-     * 检查 流水线的告警操作权限权限
-     *
-     * @param taskId
-     * @param projectId
-     * @param username
-     * @param authExPermissionApi
-     * @return
-     */
-    private static boolean checkPipelineDefectOpsPermissions(Long taskId, String projectId, String username,
-            AuthExPermissionApi authExPermissionApi) {
-        Set<String> actions = Sets.newHashSet(CodeCCAuthAction.DEFECT_MANAGE.getActionName());
-        List<BkAuthExResourceActionModel> result =
-                authExPermissionApi.validateTaskBatchPermission(username, String.valueOf(taskId),
-                        projectId, actions);
-        if (CollectionUtils.isEmpty(result)) {
-            return false;
-        }
-        for (BkAuthExResourceActionModel actionResult : result) {
-            if (actionResult.isPass() != null && Boolean.TRUE.equals(actionResult.isPass())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

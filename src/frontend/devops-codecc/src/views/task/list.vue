@@ -52,9 +52,9 @@
       </empty>
     </div>
     <div v-else-if="projectId && isEmpty && !isSearch" class="no-task" v-show="isEmpty">
-      <empty :title="$t('暂无任务')" :desc="$t('你可以通过新增按钮，来创建代码检查任务')">
+      <empty :title="visitable ? $t('暂无任务') : $t('无法显示任务')" :desc="visitable ? $t('你可以通过新增按钮，来创建代码检查任务') : ''">
         <template v-slot:action>
-          <bk-button size="large" theme="primary" @click="$router.push({ name: 'task-new' })">{{$t('新增任务')}}</bk-button>
+          <bk-button v-if="visitable" size="large" theme="primary" @click="$router.push({ name: 'task-new' })">{{$t('新增任务')}}</bk-button>
         </template>
       </empty>
     </div>
@@ -64,6 +64,12 @@
                @confirm="reAnalyse"
                :title="$t('重新检查')">
       {{this.$t('任务正在分析中，是否中断并重新分析？')}}
+    </bk-dialog>
+    <bk-dialog v-model="emptyDialogVisible"
+               :theme="'primary'"
+               :mask-close="false"
+               :ok-text="$t('我知道了')">
+      {{this.$t('当前项目由API创建，CodeCC任务数会十分庞大，暂不支持查看任务列表和问题列表。')}}
     </bk-dialog>
   </div>
 </template>
@@ -88,6 +94,7 @@
         retryTask: {},
         isShowDisused: false,
         dialogVisible: false,
+        emptyDialogVisible: false,
         isSearch: false,
         isFetched: false,
         orderType: 'CREATE_DATE',
@@ -114,6 +121,9 @@
       ...mapState([
         'toolMeta',
       ]),
+      ...mapState('project', {
+        visitable: 'visitable',
+      }),
       // ...mapGetters(['mainContentLoading']),
       isEmpty() {
         return !this.tasksList.length
@@ -157,6 +167,12 @@
     },
     methods: {
       async fetchPageData(type) {
+        // API创建的项目，不展示任务列表和问题列表
+        if (this.visitable === false) {
+          this.emptyDialogVisible = true
+          this.isFetched = true
+          return
+        }
         let params = Object.assign({}, this.searchInfo, this.pageInfo, { orderType: this.orderType })
         if (type === 'toggleTaskTop') {
           params = Object.assign(params, {
@@ -309,6 +325,7 @@
       },
 
       initWebSocket() {
+        if (this.visitable === false) return
         const subscribe = `/topic/analysisProgress/projectId/${this.projectId}`
         projectWebSocket.connect(this.projectId, subscribe, {
           success: (res) => {

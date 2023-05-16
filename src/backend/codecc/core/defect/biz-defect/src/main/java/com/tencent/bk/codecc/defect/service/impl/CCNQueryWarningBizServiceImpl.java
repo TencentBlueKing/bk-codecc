@@ -819,11 +819,8 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
 
         List<String> ids = defectEntityList.stream()
                 .map(CCNDefectVO::getId).collect(Collectors.toList());
-        pageNum = pageNum == null || pageNum < 0 ? 0 : pageNum;
-        pageSize = pageSize == null || pageSize <= 0 ? 100 : pageSize;
-        int start = pageNum * pageSize;
-        int end = Math.min(start + pageSize, ids.size());
-        return new ToolDefectPageVO(taskId, Tool.CCN.name(),
-                start >= ids.size() ? Collections.emptyList() : ids.subList(start, end), (long) ids.size());
+
+        return idListToToolDefectPageVO(
+                taskId, Tool.CCN.name(), ids, pageNum, pageSize, repVo.getDefectList().getTotalElements());
     }
 }

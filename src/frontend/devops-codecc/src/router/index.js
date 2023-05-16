@@ -101,11 +101,14 @@ router.beforeEach(async (to, from, next) => {
     console.error(e)
   }
 
+  if (to.params.projectId) {
+    store.commit('updateProjectId', to.params.projectId)
+  }
+  if (store.state.project.visitable === null) {
+    await store.dispatch('project/visitable')
+  }
   if (to.params.taskId) {
     store.commit('updateTaskId', to.params.taskId)
-    if (to.params.projectId) {
-      store.commit('updateProjectId', to.params.projectId)
-    }
     if (to.meta.needDetail && !store.state.task.detail.nameEn) {
       await getTaskDetail()
     }

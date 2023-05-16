@@ -70,4 +70,8 @@ public class CommitDefectVO {
 
     @ApiModelProperty("告警文件大小，用于MQ投递决策")
     private Long defectFileSize;
+
+    @ApiModelProperty("是否重新分配")
+    private boolean isReallocate;
+
 }

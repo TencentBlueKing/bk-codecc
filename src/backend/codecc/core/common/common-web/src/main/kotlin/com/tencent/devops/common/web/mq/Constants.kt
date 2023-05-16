@@ -364,10 +364,15 @@ const val EXCHANGE_DEFECT_MIGRATION_TRIGGER_BATCH = "exchange.defect.migration.t
 const val ROUTE_DEFECT_MIGRATION_TRIGGER_BATCH = "route.defect.migration.trigger.batch"
 const val QUEUE_DEFECT_MIGRATION_TRIGGER_BATCH = "queue.defect.migration.trigger.batch"
 
-const val EXCHANGE_DEFECT_MIGRATION_HISTORY = "exchange.defect.migration.history"
-const val ROUTE_DEFECT_MIGRATION_HISTORY = "route.defect.migration.history"
-const val QUEUE_DEFECT_MIGRATION_HISTORY = "queue.defect.migration.history"
+const val EXCHANGE_SYNC_USER_TASK_ORG_INFO = "exchange.sync.user.task.org.info"
+const val ROUTE_SYNC_USER_TASK_ORG_INFO = "route.sync.user.task.org.info"
+const val QUEUE_SYNC_USER_TASK_ORG_INFO = "queue.sync.user.task.org.info"
 
 const val EXCHANGE_DEFECT_CHANGE_LOG = "exchange.defect.change.log"
 const val ROUTE_DEFECT_CHANGE_LOG = "route.defect.change.log"
 const val QUEUE_DEFECT_CHANGE_LOG = "queue.defect.change.log"
+
+const val EXCHANGE_SCANSCHEDULE_TOOL_SCAN = "exchange.scanschedule.tool.scan"
+const val ROUTE_SCANSCHEDULE_TOOL_SCAN = "route.scanschedule.tool.scan"
+const val QUEUE_SCANSCHEDULE_TOOL_SCAN = "queue.scanschedule.tool.scan"
+

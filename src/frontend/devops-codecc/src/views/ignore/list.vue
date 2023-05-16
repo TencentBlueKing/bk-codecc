@@ -18,11 +18,11 @@
         class="ignore-table"
         :data="data">
         <bk-table-column :label="$t('忽略类型')" prop="name" show-overflow-tooltip></bk-table-column>
-        <bk-table-column :label="$t('任务')">
+        <!-- <bk-table-column :label="$t('任务')">
           <template slot-scope="{ row }">
             {{ row.taskCount !== null && row.taskCount !== undefined ? row.taskCount : '--' }}
           </template>
-        </bk-table-column>
+        </bk-table-column> -->
         <bk-table-column :label="$t('问题数量')">
           <template slot-scope="{ row }">
             <bk-button text @click="goToDefect('project-defect-list', row.ignoreTypeId)">{{ row.defect !== null && row.defect !== undefined ? row.defect : '--' }}</bk-button>

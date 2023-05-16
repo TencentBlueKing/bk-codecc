@@ -59,7 +59,8 @@ abstract class AbstractDefectCommitComponent<T>(
     abstract fun postHandleDefectList(
         outputDefectList: List<AggregateDefectOutputModelV2<T>>,
         buildEntity: BuildEntity?,
-        transferAuthorList: List<TransferAuthorEntity.TransferAuthorPair>?
+        transferAuthorList: List<TransferAuthorEntity.TransferAuthorPair>?,
+        isReallocate: Boolean?
     ): List<T>
 
     /**

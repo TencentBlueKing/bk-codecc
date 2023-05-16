@@ -29,4 +29,10 @@ public interface UserManageService {
      * @return org
      */
     DevopsProjectOrgVO getDevopsProjectOrg(String projectId);
+
+
+    /**
+     * 定时分页刷新用户统计表组织架构，及更新到任务详情表
+     */
+    void refreshUserAndTaskOrgInfo();
 }

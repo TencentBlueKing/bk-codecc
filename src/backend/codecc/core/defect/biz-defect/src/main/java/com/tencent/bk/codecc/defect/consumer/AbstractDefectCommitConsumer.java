@@ -27,6 +27,7 @@ import com.tencent.bk.codecc.defect.model.incremental.CodeRepoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoInfoEntity;
 import com.tencent.bk.codecc.defect.service.BuildService;
 import com.tencent.bk.codecc.defect.service.FilterPathService;
+import com.tencent.bk.codecc.defect.service.ReallocateDefectAuthorService;
 import com.tencent.bk.codecc.defect.service.file.ScmFileInfoService;
 import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
 import com.tencent.bk.codecc.defect.vo.CommitDefectVO;
@@ -39,6 +40,7 @@ import com.tencent.devops.common.auth.api.service.AuthTaskService;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.DefectConsumerType;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.web.aop.annotation.EndReport;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -47,6 +49,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -99,7 +102,8 @@ public abstract class AbstractDefectCommitConsumer extends AbstractDefectCommitO
     private CodeRepoInfoRepository codeRepoRepository;
     @Autowired
     private DefectConsumerRetryLimitComponent defectConsumerRetryLimitComponent;
-
+    @Autowired
+    private ReallocateDefectAuthorService reallocateDefectAuthorService;
 
     /**
      * 告警提交
@@ -111,6 +115,10 @@ public abstract class AbstractDefectCommitConsumer extends AbstractDefectCommitO
         long beginTime = System.currentTimeMillis();
         log.info("commit defect! {}", commitDefectVO);
 
+        boolean isReallocate = false;
+        // 处理人重新分配分配中缓存，以便在任务运行op修改操作提示
+        String redisKeyForAuthorReassign = String.format(
+                RedisKeyConstants.IS_REALLOCATE + ":%d:%s", commitDefectVO.getTaskId(), commitDefectVO.getToolName());
         try {
             // 若是首次出队，则发送开始提单的分析记录
             if (commitDefectVO.getRecommitTimes() == null) {
@@ -129,6 +137,14 @@ public abstract class AbstractDefectCommitConsumer extends AbstractDefectCommitO
             // 获取仓库信息
             Map<String, RepoSubModuleVO> codeRepoIdMap = getRepoInfo(commitDefectVO);
 
+            isReallocate = reallocateDefectAuthorService.isReallocate(commitDefectVO.getTaskId(),
+                    commitDefectVO.getToolName());
+
+            if (isReallocate) {
+                redisTemplate.opsForValue().setIfAbsent(
+                        redisKeyForAuthorReassign, "reallocating", 1, TimeUnit.HOURS);
+            }
+            commitDefectVO.setReallocate(isReallocate);
             // 解析工具上报的告警文件并入库
             boolean uploadSuccess = uploadDefects(commitDefectVO, fileChangeRecordsMap, codeRepoIdMap);
             if (uploadSuccess) {
@@ -140,8 +156,12 @@ public abstract class AbstractDefectCommitConsumer extends AbstractDefectCommitO
                         System.currentTimeMillis(),
                         commitDefectVO.getMessage()
                 );
+                // 更新工具是否重新分配状态
+                if (isReallocate) {
+                    reallocateDefectAuthorService.updateCurrentStatus(commitDefectVO.getTaskId(),
+                            commitDefectVO.getToolName());
+                }
             }
-
             log.info("end commitDefect {}, {}", uploadSuccess, System.currentTimeMillis() - beginTime);
         } catch (Throwable e) {
             e.printStackTrace();
@@ -149,6 +169,10 @@ public abstract class AbstractDefectCommitConsumer extends AbstractDefectCommitO
             // 发送提单失败的分析记录
             uploadTaskLog(commitDefectVO, ComConstants.StepFlag.FAIL.value(), 0, System.currentTimeMillis(),
                     e.getLocalizedMessage());
+        } finally {
+            if (isReallocate) {
+                redisTemplate.delete(redisKeyForAuthorReassign);
+            }
         }
     }
 

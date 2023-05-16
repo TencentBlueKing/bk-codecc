@@ -50,21 +50,21 @@
         </div>
       </template>
     </bk-table-column>
-    <bk-table-column :label="$t('级别')" prop="severity" sortable="custom" width="80">
+    <bk-table-column :label="$t('级别')" prop="severity" width="80">
       <template slot-scope="props">
         <span :class="`color-${{ 1: 'major', 2: 'minor', 4: 'info' }[props.row.severity]}`">{{defectSeverityMap[props.row.severity]}}</span>
       </template>
     </bk-table-column>
     <bk-table-column
       prop="lineUpdateTime"
-      sortable="custom"
       width="110"
+      :sortable="isProjectDefect ? false : 'custom'"
       :label="$t('提交日期')">
       <template slot-scope="props">
         <span>{{props.row.lineUpdateTime | formatDate('date')}}</span>
       </template>
     </bk-table-column>
-    <bk-table-column :label="$t('首次发现')" prop="createBuildNumber" sortable="custom" width="100">
+    <bk-table-column :sortable="isProjectDefect ? false : 'custom'" :label="$t('首次发现')" prop="createBuildNumber" width="100">
       <template slot-scope="props">
         <span>{{props.row.createBuildNumber ? '#' + props.row.createBuildNumber : '--'}}</span>
       </template>

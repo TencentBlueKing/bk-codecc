@@ -89,5 +89,10 @@ data class OperationHistoryDTO(
         /**
          * 操作员
          */
-        val operator: String
+        val operator: String,
+
+        /**
+         * 项目id
+         */
+        val projectId: String?
 )

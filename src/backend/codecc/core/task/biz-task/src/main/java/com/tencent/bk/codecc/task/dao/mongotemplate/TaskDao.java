@@ -33,6 +33,8 @@ import com.tencent.bk.codecc.task.constant.TaskConstants;
 import com.tencent.bk.codecc.task.model.TaskIdInfo;
 import com.tencent.bk.codecc.task.model.TaskIdToolInfoEntity;
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
+import com.tencent.bk.codecc.task.model.TaskOrgInfoEntity;
+import com.tencent.bk.codecc.task.model.UserLogInfoStatEntity;
 import com.tencent.bk.codecc.task.vo.FilterPathInputVO;
 import com.tencent.bk.codecc.task.vo.TaskUpdateDeptInfoVO;
 import com.tencent.devops.common.constant.ComConstants;
@@ -46,6 +48,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
@@ -723,5 +726,46 @@ public class TaskDao {
         }
 
         mongoTemplate.upsert(query, update, TaskInfoEntity.class);
+    }
+
+    /**
+     * 分页查询任务详情组织架构信息
+     *
+     * @return page list
+     */
+    public List<TaskOrgInfoEntity> findByPage(Pageable pageable) {
+        Query query = Query.query(Criteria.where("status").is(ComConstants.Status.ENABLE.value()));
+        query.fields().include("task_id", "task_owner", "created_by", "bg_id", "dept_id", "center_id", "group_id");
+        if (pageable != null) {
+            query.with(pageable);
+        }
+        return mongoTemplate.find(query, TaskOrgInfoEntity.class, "t_task_detail");
+    }
+
+    /**
+     * 批量更新任务详情表的组织架构信息
+     * @param needUpdateMap username, orgInfo
+     */
+    public void batchUpdateTaskOrgInfo(Map<Long, UserLogInfoStatEntity> needUpdateMap) {
+        if (MapUtils.isNotEmpty(needUpdateMap)) {
+            BulkOperations ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, TaskInfoEntity.class);
+            for (Map.Entry<Long, UserLogInfoStatEntity> entry : needUpdateMap.entrySet()) {
+
+                UserLogInfoStatEntity userInfoEntity = entry.getValue();
+                if (userInfoEntity == null || userInfoEntity.getBgId() == null) {
+                    continue;
+                }
+
+                Query query = Query.query(Criteria.where("task_id").is(entry.getKey()));
+
+                Update update = new Update();
+                update.set("bg_id", userInfoEntity.getBgId())
+                        .set("dept_id", userInfoEntity.getDeptId())
+                        .set("center_id", userInfoEntity.getCenterId())
+                        .set("group_id", userInfoEntity.getGroupId());
+                ops.updateOne(query, update);
+            }
+            ops.execute();
+        }
     }
 }

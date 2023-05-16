@@ -129,6 +129,7 @@ public class LintDefectV2Dao {
 
     /**
      * 根据条件查询告警列表 - 文件路径分页
+     *
      * @param taskToolMap
      * @param defectQueryReqVO
      * @param defectMongoIdSet
@@ -174,7 +175,6 @@ public class LintDefectV2Dao {
         }
         return mongoTemplate.find(query, LintDefectV2Entity.class);
     }
-
 
 
     /**
@@ -257,7 +257,7 @@ public class LintDefectV2Dao {
 
     @NotNull
     protected Query getQueryByCondition(
-            Map<Long,List<String>> taskToolMap,
+            Map<Long, List<String>> taskToolMap,
             DefectQueryReqVO defectQueryReqVO,
             Set<String> defectMongoIdSet,
             Set<String> pkgChecker,
@@ -596,17 +596,18 @@ public class LintDefectV2Dao {
             BulkOperations ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, LintDefectV2Entity.class);
             long currTime = System.currentTimeMillis();
             defectList.forEach(defectEntity -> {
-                Query query = new Query(
-                        Criteria.where("task_id").is(taskId)
-                                .and("_id").is(new ObjectId(defectEntity.getEntityId()))
-                );
-
                 Update update = new Update();
                 update.set("status", defectEntity.getStatus());
                 update.set("ignore_time", currTime);
                 update.set("ignore_reason_type", ignoreReasonType);
                 update.set("ignore_reason", ignoreReason);
                 update.set("ignore_author", ignoreAuthor);
+
+                Query query = new Query(
+                        Criteria.where("task_id").is(taskId)
+                                .and("_id").is(new ObjectId(defectEntity.getEntityId()))
+                );
+
                 ops.upsert(query, update);
             });
             ops.execute();
@@ -639,21 +640,35 @@ public class LintDefectV2Dao {
     }
 
     public void batchIgnoreDefect(long taskId, List<LintDefectV2Entity> defectList,
-            int ignoreReasonType, String ignoreReason) {
-        if (CollectionUtils.isNotEmpty(defectList)) {
-            BulkOperations ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, LintDefectV2Entity.class);
-            defectList.forEach(defectEntity -> {
-                Query query = new Query();
-                query.addCriteria(Criteria.where("_id").
-                        is(new ObjectId(defectEntity.getEntityId())).and("task_id").is(taskId));
-                Update update = new Update();
-                update.set("status", ComConstants.DefectStatus.NEW.value() | ComConstants.DefectStatus.IGNORE.value());
-                update.set("ignore_reason_type", ignoreReasonType);
-                update.set("ignore_reason", ignoreReason);
-                ops.upsert(query, update);
-            });
-            ops.execute();
+            int ignoreReasonType, String ignoreReason, String ignoreAuthor) {
+        if (CollectionUtils.isEmpty(defectList)) {
+            return;
         }
+        List<String> ids = defectList.stream().map(LintDefectV2Entity::getEntityId).collect(Collectors.toList());
+        Query query = Query.query(Criteria.where("task_id").is(taskId).and("_id").in(ids));
+        long curTime = System.currentTimeMillis();
+        Update update = new Update();
+        update.set("status", ComConstants.DefectStatus.NEW.value() | ComConstants.DefectStatus.IGNORE.value());
+        update.set("ignore_reason_type", ignoreReasonType);
+        update.set("ignore_reason", ignoreReason);
+        update.set("ignore_time", curTime);
+        update.set("ignore_author", ignoreAuthor);
+        mongoTemplate.updateMulti(query, update, LintDefectV2Entity.class);
+    }
+
+    public void batchRollbackIgnoreDefect(long taskId, List<LintDefectV2Entity> defectList) {
+        if (CollectionUtils.isEmpty(defectList)) {
+            return;
+        }
+        List<String> ids = defectList.stream().map(LintDefectV2Entity::getEntityId).collect(Collectors.toList());
+        Query query = Query.query(Criteria.where("task_id").is(taskId).and("_id").in(ids));
+        Update update = new Update();
+        update.set("status", ComConstants.DefectStatus.NEW.value());
+        update.unset("ignore_reason_type");
+        update.unset("ignore_reason");
+        update.unset("ignore_time");
+        update.unset("ignore_author");
+        mongoTemplate.updateMulti(query, update, LintDefectV2Entity.class);
     }
 
     public void batchMarkDefect(long taskId, List<LintDefectV2Entity> defectList, Integer markFlag) {
@@ -687,7 +702,7 @@ public class LintDefectV2Dao {
      */
     @Deprecated
     public Page<LintFileVO> findDefectFilePageByCondition(
-            Map<Long,List<String>> taskToolMap,
+            Map<Long, List<String>> taskToolMap,
             DefectQueryReqVO queryWarningReq,
             Set<String> defectIdSet,
             Set<String> pkgChecker,
@@ -950,7 +965,7 @@ public class LintDefectV2Dao {
      */
     @Deprecated
     public List<LintDefectGroupStatisticVO> statisticByDefectType(
-            Map<Long,List<String>> taskToolMap, DefectQueryReqVO queryWarningReq, Pair<Set<String>,
+            Map<Long, List<String>> taskToolMap, DefectQueryReqVO queryWarningReq, Pair<Set<String>,
             Set<String>> defectIdsPair, Set<String> pkgChecker,
             int defectType
     ) {
@@ -1105,6 +1120,7 @@ public class LintDefectV2Dao {
 
     /**
      * 统计忽略类型的告警数量
+     *
      * @param taskToolsMap
      * @param ignoreTypeIds
      * @return
@@ -1196,6 +1212,16 @@ public class LintDefectV2Dao {
         return mongoTemplate.find(query, LintDefectV2Entity.class);
     }
 
+    public List<LintDefectV2Entity> findIgnoreDefectByPageNoSkip(Long taskId, String toolName,
+            Integer ignoreType, Integer pageSize) {
+        Query query = Query.query(Criteria.where("task_id").is(taskId)
+                .and("tool_name").is(toolName)
+                .and("status").is(ComConstants.DefectStatus.NEW.value() | ComConstants.DefectStatus.IGNORE.value())
+                .and("ignore_reason_type").is(ignoreType));
+        query.limit(pageSize);
+        return mongoTemplate.find(query, LintDefectV2Entity.class);
+    }
+
     public List<LintDefectV2Entity> findIgnoreDefectByIgnoreType(Long taskId, String toolName, Integer ignoreType) {
         Criteria cri = new Criteria();
         cri.andOperator(Criteria.where("task_id").is(taskId).and("tool_name").is(toolName)
@@ -1209,6 +1235,7 @@ public class LintDefectV2Dao {
 
     /**
      * 查询存量告警
+     *
      * @param taskId
      * @param toolName
      * @param buildId

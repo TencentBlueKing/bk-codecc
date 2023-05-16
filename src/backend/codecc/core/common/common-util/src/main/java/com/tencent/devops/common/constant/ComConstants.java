@@ -580,6 +580,11 @@ public interface ComConstants {
     String DATA_MIGRATION_VIRTUAL_BUILD_ID = "DATA_MIGRATION_VIRTUAL_BUILD_ID";
 
     /**
+     * 查询的时候limit
+     */
+    int QUERY_LIMIT_ONE = 1;
+
+    /**
      * 业务类型
      */
     enum BusinessType {

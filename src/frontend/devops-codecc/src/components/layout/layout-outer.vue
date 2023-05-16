@@ -103,7 +103,7 @@
         } else if (name === 'ignore') {
           this.$router.push({ name: 'ignoreList' })
         } else if (name === 'defect') {
-          this.$router.push({ name: 'project-defect-list', query: { dimension: 'DEFECT' } })
+          this.$router.push({ name: 'project-defect-list', query: { author: this.$store.state.user.username } })
         }
       },
       handleRedPoint(name) {

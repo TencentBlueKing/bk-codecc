@@ -62,7 +62,8 @@ class CCNDefectCommitComponent constructor(
             val outputDefectList = clusterCCNCompareProcess.clusterMethod(inputDefectList, md5SameMap)
             logger.info("[ccn cluster process] cluster result, output group size: ${outputDefectList.size}")
             //6. 对于聚类结果进行后处理
-            val upsertDefectList = postHandleDefectList(outputDefectList, buildEntity, transferAuthorList)
+            val upsertDefectList = postHandleDefectList(
+                outputDefectList, buildEntity, transferAuthorList, commitDefectVO.isReallocate)
             logger.info("[ccn cluster process] post handle result, result defect size: ${upsertDefectList.size}")
             //7. 分批保存告警
             newCCNDefectTracingComponent.saveDefects(
@@ -190,7 +191,8 @@ class CCNDefectCommitComponent constructor(
     override fun postHandleDefectList(
         outputDefectList: List<AggregateDefectOutputModelV2<CCNDefectEntity>>,
         buildEntity: BuildEntity?,
-        transferAuthorList: List<TransferAuthorEntity.TransferAuthorPair>?
+        transferAuthorList: List<TransferAuthorEntity.TransferAuthorPair>?,
+        isReallocate: Boolean?
     ): List<CCNDefectEntity> {
         if (outputDefectList.isNullOrEmpty()) {
             logger.info("output defect list is empty! build id: ${buildEntity?.buildId}")
@@ -216,6 +218,10 @@ class CCNDefectCommitComponent constructor(
                         oldDefect.pinpointHashGroup = groupId
                         upsertDefectList.add(oldDefect)
                     }
+                    // 判断是否配置了处理人重新分配
+                    if (true == isReallocate) {
+                        transferAuthor(oldDefect, transferAuthorList)
+                    }
                 }
             } else {
                 /**
@@ -240,7 +246,7 @@ class CCNDefectCommitComponent constructor(
                     }
                     if (null != selectedOldDefect) {
                         //用新告警信息更新老告警信息
-                        updateOldDefectInfo(selectedOldDefect, newDefect, transferAuthorList, buildEntity)
+                        updateOldDefectInfo(selectedOldDefect, newDefect, transferAuthorList, buildEntity, isReallocate)
                         // 设置是否处理的状态
                         if (null != selectedOldDefect.mark
                                 && selectedOldDefect.mark.equals(ComConstants.MarkStatus.MARKED.value())
@@ -306,7 +312,6 @@ class CCNDefectCommitComponent constructor(
         return upsertDefectList
     }
 
-
     /**
      * 将告警设置为已修复
      *
@@ -331,7 +336,8 @@ class CCNDefectCommitComponent constructor(
     private fun updateOldDefectInfo(
         selectOldDefect: CCNDefectEntity, newDefect: CCNDefectEntity,
         transferAuthorList: List<TransferAuthorEntity.TransferAuthorPair>?,
-        buildEntity: BuildEntity?
+        buildEntity: BuildEntity?,
+        isReallocate: Boolean?
     ) {
         with(selectOldDefect) {
             ccn = newDefect.ccn
@@ -351,7 +357,7 @@ class CCNDefectCommitComponent constructor(
             revision = newDefect.revision
             branch = newDefect.branch
             subModule = newDefect.subModule
-            if (author.isNullOrBlank()) {
+            if (author.isNullOrBlank() || true == isReallocate) {
                 author = newDefect.author
                 //作者转换
                 transferAuthor(this, transferAuthorList)

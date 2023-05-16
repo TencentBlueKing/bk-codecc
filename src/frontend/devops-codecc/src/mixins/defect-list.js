@@ -147,15 +147,18 @@ export default {
       }
       const toolPattern = this.toolMap[toolName].pattern.toLocaleLowerCase()
       const params = { ...this.$route.params, toolId: toolName }
+      const { query } = this.$route
       if (value === 'defect') {
         this.$router.push({
           name: `defect-${toolPattern}-list`,
           params,
+          query,
         })
       } else {
         this.$router.push({
           name: `defect-${toolPattern}-charts`,
           params,
+          query,
         })
       }
     },
@@ -223,6 +226,7 @@ export default {
       this.$refs.filePathDropdown.hide()
     },
     fetchDimension() {
+      if (this.visitable === false) return
       this.$store.dispatch(
         'defect/getDimension',
         { taskIdList: this.taskIdList },
@@ -395,9 +399,9 @@ export default {
               })
 
               const goToTaskSetting = (id) => {
-                let prefix = `${location.protocol}//${location.host}`
+                let prefix = `${location.host}`
                 if (window.self !== window.top) {
-                  prefix = `${location.protocol}${window.DEVOPS_SITE_URL}/console`
+                  prefix = `${window.DEVOPS_SITE_URL}/console`
                 }
                 const route = this.$router.resolve({ name: 'task-settings-issue', params: { taskId: id } })
                 window.open(prefix + route.href, '_blank')
@@ -428,6 +432,7 @@ export default {
     },
     /** 获取工具列表 */
     fetchListTool() {
+      if (this.visitable === false) return
       const { name } = this.$route
       if (name === 'defect-ccn-list' || name === 'defect-dupc-list' || name === 'project-ccn-list') return
       const { searchParams: { buildId }, dimension, taskIdList } = this

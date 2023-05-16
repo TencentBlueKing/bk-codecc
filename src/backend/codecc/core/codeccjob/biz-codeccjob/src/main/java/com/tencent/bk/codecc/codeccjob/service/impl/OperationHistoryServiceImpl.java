@@ -36,18 +36,22 @@ import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.DefectDao;
 import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.codeccjob.service.OperationHistoryService;
 import com.tencent.bk.codecc.defect.api.ServiceDefectRestResource;
+import com.tencent.bk.codecc.defect.api.ServiceReportDefectRestResource;
+import com.tencent.bk.codecc.defect.api.UserIgnoreTypeRestResource;
 import com.tencent.bk.codecc.defect.model.OperationHistoryEntity;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.vo.ToolDefectPageVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
+import com.tencent.bk.codecc.defect.vo.ignore.IgnoreTypeProjectConfigVO;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.constant.CommonMessageCode;
 import com.tencent.devops.common.api.exception.CodeCCException;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
@@ -199,8 +203,10 @@ public class OperationHistoryServiceImpl implements OperationHistoryService {
 
                 // 告警操作，只对待修复告警操作，忽略操作是由于平台已处理 再去查询需要带上已忽略
                 Set<String> statusSet = Sets.newHashSet(String.valueOf(DefectStatus.NEW.value()),
-                        String.valueOf(DefectStatus.NEW.value() | DefectStatus.IGNORE.value()));
+                            String.valueOf(DefectStatus.NEW.value() | DefectStatus.IGNORE.value()));
+
                 queryCondObj.setStatus(statusSet);
+
                 log.info("query start~");
                 // 分开查询 先聚合查询所有工具，再按照工具查询50个ID与总数
                 List<String> toolList = getToolListByDefectQuery(taskId, queryCondObj);
@@ -208,12 +214,17 @@ public class OperationHistoryServiceImpl implements OperationHistoryService {
                     log.error("taskId:{} toolList is empty! abort.", taskId);
                     return paramArray;
                 }
+                queryCondObj.setProjectId(operaHisDTO.getProjectId());
+                queryCondObj.setUserId(operaHisDTO.getOperator());
                 // 逐个查询，仅查询50个与总数, 调用查询变多，但是大小可控
                 int pageNum = 0;
                 List<ToolDefectPageVO> hasDefectTools = new LinkedList<>();
                 for (String tool : toolList) {
                     DefectQueryReqVO toolReqVO = new DefectQueryReqVO();
                     BeanUtils.copyProperties(queryCondObj, toolReqVO);
+                    if (CollectionUtils.isEmpty(queryCondObj.getTaskIdList())) {
+                        toolReqVO.setTaskIdList(Collections.singletonList(operaHisDTO.getTaskId()));
+                    }
                     // 设置单个工具查询
                     toolReqVO.setToolNameList(Collections.singletonList(tool));
                     ToolDefectPageVO toolDefectIdList = client.get(ServiceDefectRestResource.class)
@@ -226,6 +237,7 @@ public class OperationHistoryServiceImpl implements OperationHistoryService {
                     }
                 }
                 log.info("query finish!");
+                log.info("hasDefectTools {}", hasDefectTools);
                 if (CollectionUtils.isEmpty(hasDefectTools)) {
                     log.error("taskId:{} hasDefectTools is empty! abort.", taskId);
                     return paramArray;
@@ -245,7 +257,22 @@ public class OperationHistoryServiceImpl implements OperationHistoryService {
 
             // 忽略告警有忽略理由
             if (ComConstants.DEFECT_IGNORE.equals(operaType)) {
-                paramArrResult = new String[]{defectIdInfo, paramArray[1]};
+                // 忽略告警分开传值 paramArray[1] 传递 ignoreReasonType  paramArray[2] 传递 ignoreReason
+                String ignoreReasonFull = "未忽略";
+                if (StringUtils.isNotBlank(paramArray[1])) {
+                    Result<IgnoreTypeProjectConfigVO> result = client.get(UserIgnoreTypeRestResource.class).detail(
+                            operaHisDTO.getProjectId(), operaHisDTO.getOperator(), Integer.parseInt(paramArray[1]));
+                    // 判断是data是否为空，如果为空就返回未忽略
+                    if (result.isOk() && result.getData() != null) {
+                        String ignoreReasonType = result.getData().getName();
+                        if (StringUtils.isNotBlank(paramArray[2])) {
+                            ignoreReasonFull = ignoreReasonType + "-" + paramArray[2];
+                        } else {
+                            ignoreReasonFull = ignoreReasonType;
+                        }
+                    }
+                }
+                paramArrResult = new String[]{defectIdInfo, ignoreReasonFull};
             } else if (ComConstants.ASSIGN_DEFECT.equals(operaType)) {
                 // 操作告警, 原处理人, 目标处理人
                 paramArrResult = new String[]{defectIdInfo, paramArray[1], paramArray[2]};
@@ -324,6 +351,7 @@ public class OperationHistoryServiceImpl implements OperationHistoryService {
             return "--";
         }
         boolean isBatch = false;
+        log.info("toolDefectIdMap {}", toolDefectIdMap);
         StringBuilder strBuilder = new StringBuilder();
         for (Map.Entry<String, List<String>> entry : toolDefectIdMap.entrySet()) {
             List<String> defectIdList = entry.getValue();
@@ -408,27 +436,30 @@ public class OperationHistoryServiceImpl implements OperationHistoryService {
             Set<String> defectIdSet, boolean isDataMigrationSuccessful
     ) {
         Map<String, List<String>> toolDefectIdMap;
-
+        // 兼容存在多dimension,eg: "SECURITY,STANDARD"
+        List<String> dimensionList = Arrays.asList(dimension.split(ComConstants.STRING_SPLIT));
+        log.info("split : {}", dimensionList);
         if (isDataMigrationSuccessful
-                || ComConstants.ToolType.STANDARD.name().equals(dimension)
-                || ComConstants.ToolType.SECURITY.name().equals(dimension)) {
+                || dimensionList.contains(ComConstants.ToolType.STANDARD.name())
+                || dimensionList.contains(ComConstants.ToolType.SECURITY.name())) {
             List<LintDefectV2Entity> lintDefectV2Entities =
                     lintDefectV2Dao.findByTaskAndEntityIdSet(taskId, defectIdSet);
             toolDefectIdMap = lintDefectV2Entities.stream().collect(Collectors
                     .groupingBy(LintDefectV2Entity::getToolName,
                             Collectors.mapping(LintDefectV2Entity::getId, Collectors.toList())));
 
-        } else if (ComConstants.ToolType.CCN.name().equals(dimension)) {
+        } else if (dimensionList.contains(ComConstants.ToolType.CCN.name())) {
             List<CCNDefectEntity> ccnDefectEntities = ccnDefectDao.findByTaskAndEntityIdSet(taskId, defectIdSet);
             List<String> idList =
                     ccnDefectEntities.stream().map(CCNDefectEntity::getId).collect(Collectors.toList());
             toolDefectIdMap = Maps.newHashMap();
             toolDefectIdMap.put(ComConstants.Tool.CCN.name(), idList);
-
-        } else if (ComConstants.ToolType.DEFECT.name().equals(dimension)) {
-            List<CommonDefectEntity> defectEntities = defectDao.findByTaskAndEntityIdSet(taskId, defectIdSet);
-            toolDefectIdMap = defectEntities.stream().collect(Collectors.groupingBy(CommonDefectEntity::getToolName,
-                    Collectors.mapping(CommonDefectEntity::getId, Collectors.toList())));
+        } else if (dimensionList.contains(ComConstants.ToolType.DEFECT.name())) {
+            List<LintDefectV2Entity> lintDefectV2Entities =
+                    lintDefectV2Dao.findByTaskAndEntityIdSet(taskId, defectIdSet);
+            toolDefectIdMap = lintDefectV2Entities.stream().collect(Collectors
+                    .groupingBy(LintDefectV2Entity::getToolName,
+                            Collectors.mapping(LintDefectV2Entity::getId, Collectors.toList())));
         } else {
             throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID,
                     "Not implemented tool dimension!" + dimension);

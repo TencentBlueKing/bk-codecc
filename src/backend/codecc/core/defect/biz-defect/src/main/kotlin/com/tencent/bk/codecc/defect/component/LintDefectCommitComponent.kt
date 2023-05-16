@@ -6,6 +6,7 @@ import com.tencent.bk.codecc.defect.component.abstract.AbstractDefectCommitCompo
 import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository
 import com.tencent.bk.codecc.defect.model.BuildEntity
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity
+import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectNewInputModel
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectOutputModelV2
@@ -86,7 +87,8 @@ class LintDefectCommitComponent @Autowired constructor(
             )
 
             //6. 对于聚类结果进行后处理
-            val upsertDefectList = postHandleDefectList(outputDefectList, buildEntity, transferAuthorList)
+            val upsertDefectList = postHandleDefectList(
+                outputDefectList, buildEntity, transferAuthorList, commitDefectVO.isReallocate)
             logger.info(
                 "[lint cluster process] post handle result, $commonlog, result defect size: ${upsertDefectList.size}"
             )
@@ -216,7 +218,8 @@ class LintDefectCommitComponent @Autowired constructor(
     override fun postHandleDefectList(
         outputDefectList: List<AggregateDefectOutputModelV2<LintDefectV2Entity>>,
         buildEntity: BuildEntity?,
-        transferAuthorList: List<TransferAuthorEntity.TransferAuthorPair>?
+        transferAuthorList: List<TransferAuthorEntity.TransferAuthorPair>?,
+        isReallocate: Boolean?
     ): List<LintDefectV2Entity> {
         if (outputDefectList.isNullOrEmpty()) {
             logger.info("output defect list is empty! build id: ${buildEntity?.buildId}")
@@ -241,6 +244,10 @@ class LintDefectCommitComponent @Autowired constructor(
                         fixDefect(oldDefect, buildEntity)
                         oldDefect.pinpointHashGroup = groupId
                         upsertDefectList.add(oldDefect)
+                    }
+                    // 判断是否配置了处理人重新分配
+                    if (true == isReallocate) {
+                        transferAuthor(oldDefect, transferAuthorList)
                     }
                 }
             } else {
@@ -268,7 +275,7 @@ class LintDefectCommitComponent @Autowired constructor(
                     }
                     if (null != selectedOldDefect) {
                         //用新告警信息更新老告警信息
-                        updateOldDefectInfo(selectedOldDefect, newDefect, transferAuthorList, buildEntity)
+                        updateOldDefectInfo(selectedOldDefect, newDefect, transferAuthorList, buildEntity, isReallocate)
                         // 设置是否处理的状态
                         if (null != selectedOldDefect.mark
                                 && selectedOldDefect.mark.equals(ComConstants.MarkStatus.MARKED.value())
@@ -309,7 +316,7 @@ class LintDefectCommitComponent @Autowired constructor(
                         if (null != selectedOldDefect.ignoreCommentDefect && selectedOldDefect.ignoreCommentDefect) {
                             ignoreDefect(
                                 selectedOldDefect,
-                                selectedOldDefect.author.first() ?: "",
+                                selectedOldDefect.author?.firstOrNull() ?: "",
                                 selectedOldDefect.ignoreCommentReason,
                                 buildEntity?.buildId
                             )
@@ -385,7 +392,8 @@ class LintDefectCommitComponent @Autowired constructor(
     fun updateOldDefectInfo(
         selectOldDefect: LintDefectV2Entity, newDefect: LintDefectV2Entity,
         transferAuthorList: List<TransferAuthorEntity.TransferAuthorPair>?,
-        buildEntity: BuildEntity?
+        buildEntity: BuildEntity?,
+        isReallocate: Boolean?
     ) {
         with(selectOldDefect) {
             checker = newDefect.checker
@@ -404,7 +412,7 @@ class LintDefectCommitComponent @Autowired constructor(
             langValue = newDefect.langValue
             language = newDefect.language
             fileMd5 = newDefect.fileMd5
-            if (author.isNullOrEmpty()) {
+            if (author.isNullOrEmpty() || isReallocate == true) {
                 author = newDefect.author
                 transferAuthor(this, transferAuthorList)
             }

@@ -61,6 +61,7 @@ import com.tencent.bk.codecc.defect.service.IQueryWarningBizService;
 import com.tencent.bk.codecc.defect.service.LintQueryWarningSpecialService;
 import com.tencent.bk.codecc.defect.service.TreeService;
 import com.tencent.bk.codecc.defect.utils.ParamUtils;
+import com.tencent.bk.codecc.defect.vo.CCNDefectVO;
 import com.tencent.bk.codecc.defect.vo.CheckerCustomVO;
 import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
 import com.tencent.bk.codecc.defect.vo.CodeCommentVO;
@@ -1047,7 +1048,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
 
     @Override
     public List<ToolDefectIdVO> queryDefectsByQueryCond(long taskId, DefectQueryReqVO request) {
-        log.info("queryDefectsByQueryCond: taskId: {}, reqVO: {}", taskId, request);
+        log.info("queryDefectsByQueryCond: taskId: {}, reqVO: {}", taskId, JsonUtil.INSTANCE.toJson(request));
 
         String buildId = request.getBuildId();
         List<String> dimensionList = ParamUtils.allDimensionIfEmptyForLint(request.getDimensionList());
@@ -1075,12 +1076,12 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                 toolNameList,
                 taskDetailVO
         );
-
         Map<String, Boolean> filedMap = new HashMap<>();
         filedMap.put("id", true);
         filedMap.put("tool_name", true);
 
         Pair<Set<String>, Set<String>> defectIdsPair = getDefectIdsPairByBuildId(taskToolMap, buildId);
+        log.info("pkgChecker {}, {}, {}", taskToolMap, pkgChecker, defectIdsPair);
         List<LintDefectV2Entity> defectEntityList = lintDefectV2Dao.findDefectByCondition(
                 taskToolMap,
                 request,
@@ -1326,6 +1327,26 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             }
         }
         return defectIdSet;
+    }
+
+    @Override
+    public ToolDefectPageVO queryDefectsByQueryCondWithPage(long taskId, DefectQueryReqVO reqVO, Integer pageNum,
+                                                            Integer pageSize) {
+        log.warn("queryDefectsByQueryCond is unimplemented: taskId: {} reqVO: {}, pageNum: {}, pageSize: {}",
+                taskId, reqVO, pageNum, pageSize);
+
+
+        LintDefectQueryRspVO repVo = (LintDefectQueryRspVO) processQueryWarningRequestCore(reqVO,
+                pageNum, pageSize, "fileName", Direction.ASC);
+
+        List<LintDefectVO> defectEntityList = repVo.getDefectList().getRecords();
+        log.info("toolDefectIdVOS {}", repVo);
+
+        List<String> ids = defectEntityList.stream().map(LintDefectVO::getId).collect(Collectors.toList());
+        log.info("ids {}", ids);
+        return idListToToolDefectPageVO(
+                taskId, reqVO.getToolNameList().stream().map(String::valueOf).collect(Collectors.joining(",")),
+                ids, pageNum, pageSize, repVo.getDefectList().getCount());
     }
 }
 

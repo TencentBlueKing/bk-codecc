@@ -369,5 +369,44 @@ public interface RedisKeyConstants {
 
     String CLEAN_DATA_TASK_LIST = "CLEAN_DATA_TASK_LIST";
 
+    /**
+     * 处理人重新分配的缓存key判断
+     */
+    String IS_REALLOCATE = "reallocate";
+    
+
+    String PREFIX_MIGRATE_HISTORY_DEFECT = "MIGRATE_HISTORY_DEFECT:";
+
+    /**
+     * 批量开关
+     */
+    String REDIS_KEY_BATCH_MIGRATE_DEFECT_ENABLE =
+            "LOCK_KEY:BATCH_MIGRATION_HISTORY_DEFECT_ENABLE";
+
+    /**
+     * 迁移开关
+     */
+    String REDIS_KEY_MIGRATE_DEFECT_ENABLE =
+            "LOCK_KEY:MIGRATION_HISTORY_DEFECT_ENABLE";
+
+    /**
+     * 迁移下发间隔
+     */
+    String REDIS_KEY_MIGRATE_DEFECT_INTERVAL =
+            "LOCK_KEY:MIGRATION_HISTORY_DEFECT_INTERVAL";
+
+    /**
+     * 回滚批量开关
+     */
+    String REDIS_KEY_BATCH_ROLLBACL_MIGRATE_DEFECT_ENABLE =
+            "LOCK_KEY:BATCH_ROLLBACK_MIGRATION_HISTORY_DEFECT_ENABLE";
+
+    /**
+     * 回滚开关
+     */
+    String REDIS_KEY_ROLLBACL_MIGRATE_DEFECT_ENABLE =
+            "LOCK_KEY:ROLLBACK_MIGRATION_HISTORY_DEFECT_ENABLE";
+
+
 
 }

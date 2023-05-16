@@ -743,4 +743,14 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
         }
         taskDefectVO.setAnalyzeDate(analyzeDateStr);
     }
+
+    protected ToolDefectPageVO idListToToolDefectPageVO(long taskId, String toolName, List<String> ids, Integer pageNum,
+                                                        Integer pageSize, long total) {
+        pageNum = pageNum == null || pageNum < 0 ? 0 : pageNum;
+        pageSize = pageSize == null || pageSize <= 0 ? 100 : pageSize;
+        int start = pageNum * pageSize;
+        int end = Math.min(start + pageSize, ids.size());
+        return new ToolDefectPageVO(taskId, toolName,
+                start >= ids.size() ? Collections.emptyList() : ids.subList(start, end), total);
+    }
 }

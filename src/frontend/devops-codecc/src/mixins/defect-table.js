@@ -104,9 +104,9 @@ export default {
       return !(row.status & 2)
     },
     handleTableSetReview() {
-      let prefix = `${location.protocol}//${location.host}`
+      let prefix = `${location.host}`
       if (window.self !== window.top) {
-        prefix = `${location.protocol}${window.DEVOPS_SITE_URL}/console`
+        prefix = `${window.DEVOPS_SITE_URL}/console`
       }
       const route = this.$router.resolve({
         name: 'ignoreList',

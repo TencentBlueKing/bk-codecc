@@ -9,12 +9,16 @@ export default {
   namespaced: true,
   state: {
     list: [],
+    visitable: null,
   },
   getters: {
   },
   mutations: {
     updateList(state, list) {
       state.list = list
+    },
+    updateVisitable(state, status) {
+      state.visitable = status
     },
   },
   actions: {
@@ -28,6 +32,17 @@ export default {
         const list = res.data || []
         commit('updateList', list)
         return list
+      })
+        .catch(e => e)
+    },
+    visitable({ commit, state, rootState }) {
+      if (!rootState.projectId) {
+        return
+      }
+      return http.get('/task/api/user/task/multiTaskVisitable').then((res) => {
+        const status = res.data
+        commit('updateVisitable', status)
+        return status
       })
         .catch(e => e)
     },

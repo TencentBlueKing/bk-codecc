@@ -68,6 +68,24 @@ public interface ServiceDefectDataResource {
             Integer ignoreType,
             @ApiParam(value = "忽略原因")
             @QueryParam("ignoreReason")
-            String ignoreReason
+            String ignoreReason,
+            @ApiParam(value = "用户")
+            @QueryParam("user")
+            String user
+    );
+
+    @ApiOperation("迁移数据")
+    @Path("/migrate/history/rollback")
+    @GET
+    Result<String> rollbackMigrateHistoryDefect(
+            @ApiParam(value = "任务ID")
+            @QueryParam("taskId")
+            Long taskId,
+            @ApiParam(value = "是否全部")
+            @QueryParam("all")
+            Boolean all,
+            @ApiParam(value = "忽略类型")
+            @QueryParam("ignoreType")
+            Integer ignoreType
     );
 }

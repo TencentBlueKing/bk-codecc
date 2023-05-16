@@ -206,3 +206,9 @@
 .reason-type-list >>>.bk-textarea-wrapper .bk-form-textarea.textarea-maxlength {
   margin-bottom: 0;
 }
+>>> .main-content-inner.main-content-list .search-form .bk-tag-selector {
+  z-index: 0;
+}
+.author-edit {
+  padding: 34px 18px 11px;
+}

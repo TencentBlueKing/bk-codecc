@@ -33,9 +33,9 @@
     methods: {
       handleTableChange(value) {
         if (value === 'defect') {
-          this.$router.push({ name: 'project-defect-list', query: { dimension: 'DEFECT' } })
+          this.$router.push({ name: 'project-defect-list', query: { author: this.$store.state.user.username } })
         } else if (value === 'ccn') {
-          this.$router.push({ name: 'project-ccn-list' })
+          this.$router.push({ name: 'project-ccn-list', query: { author: this.$store.state.user.username } })
         }
       },
     },

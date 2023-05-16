@@ -505,7 +505,7 @@ export function deepClone(obj) {
  * @param {*} separator
  * @returns str
  */
-export function array2Str(arr, separator = ',') {
+export function array2Str(arr, separator = ';') {
   if (!arr) return '--'
   if (typeof arr === 'string') return arr
   if (isArray(arr)) return arr.join(separator)

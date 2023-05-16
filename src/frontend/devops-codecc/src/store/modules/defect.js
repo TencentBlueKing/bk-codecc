@@ -85,7 +85,7 @@ export default {
         })
     },
     lintParams({ commit }, data) {
-      return http.get(`/defect/api/user/warn/checker/authors/toolName/${data.toolId}?buildId=${data.buildId}`).then((res) => {
+      return http.get(`/defect/api/user/warn/checker/authors/toolName/${data.toolId}?buildId=${data.buildId}&multiTaskQuery=${data.multiTaskQuery}`).then((res) => {
         const params = res.data || {}
         return params
       })

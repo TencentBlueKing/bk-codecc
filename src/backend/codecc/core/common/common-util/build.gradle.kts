@@ -30,5 +30,4 @@ dependencies {
     api(group = "org.apache.poi", name = "poi-ooxml", version = "3.17")
     api(group = "org.apache.commons", name = "commons-exec")
     api("com.github.ben-manes.caffeine:caffeine")
-
 }

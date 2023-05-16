@@ -80,6 +80,7 @@ import org.springframework.stereotype.Repository;
 @Slf4j
 @Repository
 public class CCNDefectDao {
+
     @Autowired
     private MongoTemplate mongoTemplate;
 
@@ -298,7 +299,7 @@ public class CCNDefectDao {
         return queryResult.getMappedResults();
     }
 
-    public List<CCNDefectEntity> findHistoryNewDefectByPageNoSkip(Long taskId, Long newDefectJudgeTime, Integer pageNum,
+    public List<CCNDefectEntity> findHistoryNewDefectByPageNoSkip(Long taskId, Long newDefectJudgeTime,
             Integer pageSize) {
         List<Criteria> criList = new ArrayList<>();
         criList.add(Criteria.where("task_id").is(taskId)
@@ -313,23 +314,47 @@ public class CCNDefectDao {
         return mongoTemplate.find(query, CCNDefectEntity.class);
     }
 
-    public void batchIgnoreDefect(long taskId, List<CCNDefectEntity> defectList,
-            int ignoreReasonType, String ignoreReason) {
-        if (CollectionUtils.isNotEmpty(defectList)) {
-            BulkOperations ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, CCNDefectEntity.class);
-            defectList.forEach(defectEntity -> {
-                Query query = new Query();
-                query.addCriteria(Criteria.where("_id")
-                        .is(new ObjectId(defectEntity.getEntityId())).and("task_id").is(taskId));
-                Update update = new Update();
-                update.set("status", ComConstants.DefectStatus.NEW.value() | ComConstants.DefectStatus.IGNORE.value());
-                update.set("ignore_reason_type", ignoreReasonType);
-                update.set("ignore_reason", ignoreReason);
-                ops.upsert(query, update);
-            });
-            ops.execute();
-        }
+    public List<CCNDefectEntity> findIgnoreDefectByPageNoSkip(Long taskId, Integer ignoreReasonType, Integer pageSize) {
+        Query query = Query.query(Criteria.where("task_id").is(taskId)
+                .and("status").is(ComConstants.DefectStatus.NEW.value() | ComConstants.DefectStatus.IGNORE.value())
+                .and("ignore_reason_type").is(ignoreReasonType));
+        query.limit(pageSize);
+        return mongoTemplate.find(query, CCNDefectEntity.class);
     }
+
+
+    public void batchIgnoreDefect(long taskId, List<CCNDefectEntity> defectList,
+            int ignoreReasonType, String ignoreReason, String ignoreAuthor) {
+        if (CollectionUtils.isEmpty(defectList)) {
+            return;
+        }
+        List<String> ids = defectList.stream().map(CCNDefectEntity::getEntityId).collect(Collectors.toList());
+        Query query = Query.query(Criteria.where("task_id").is(taskId).and("_id").in(ids));
+        long curTime = System.currentTimeMillis();
+        Update update = new Update();
+        update.set("status", ComConstants.DefectStatus.NEW.value() | ComConstants.DefectStatus.IGNORE.value());
+        update.set("ignore_reason_type", ignoreReasonType);
+        update.set("ignore_reason", ignoreReason);
+        update.set("ignore_time", curTime);
+        update.set("ignore_author", ignoreAuthor);
+        mongoTemplate.updateMulti(query, update, CCNDefectEntity.class);
+    }
+
+    public void batchRollbackIgnoreDefect(long taskId, List<CCNDefectEntity> defectList) {
+        if (CollectionUtils.isEmpty(defectList)) {
+            return;
+        }
+        List<String> ids = defectList.stream().map(CCNDefectEntity::getEntityId).collect(Collectors.toList());
+        Query query = Query.query(Criteria.where("task_id").is(taskId).and("_id").in(ids));
+        Update update = new Update();
+        update.set("status", ComConstants.DefectStatus.NEW.value());
+        update.unset("ignore_reason_type");
+        update.unset("ignore_reason");
+        update.unset("ignore_time");
+        update.unset("ignore_author");
+        mongoTemplate.updateMulti(query, update, CCNDefectEntity.class);
+    }
+
 
     /**
      * 计算指定忽略类型的圈复杂度总和
@@ -360,6 +385,7 @@ public class CCNDefectDao {
 
     /**
      * 根据 taskID buildId 与
+     *
      * @param taskId
      * @param ignoreBuildId
      * @param ignoreReasonType
@@ -443,6 +469,7 @@ public class CCNDefectDao {
 
     /**
      * 根据条件查询CCN告警（不分页）
+     *
      * @param taskIdList
      * @param author
      * @param status
@@ -459,7 +486,7 @@ public class CCNDefectDao {
     public List<CCNDefectEntity> findDefectByCondition(
             List<Long> taskIdList, String author, Set<Integer> status,
             Set<String> fileList, Set<Map.Entry<Integer, Integer>> ccnThresholds,
-            Set<String> defectIds,  String buildId, String startTimeStr, String endTimeStr,
+            Set<String> defectIds, String buildId, String startTimeStr, String endTimeStr,
             Set<Integer> ignoreReasonTypes, Map<String, Boolean> filedMap
     ) {
         boolean isSnapshotQuery = StringUtils.isNotEmpty(buildId);
@@ -482,6 +509,7 @@ public class CCNDefectDao {
 
     /**
      * 根据条件查询CCN告警（分页）
+     *
      * @param taskIdList
      * @param author
      * @param status
@@ -501,7 +529,7 @@ public class CCNDefectDao {
     public List<CCNDefectEntity> findDefectByConditionWithFilePathPage(
             List<Long> taskIdList, String author, Set<Integer> status,
             Set<String> fileList, Set<Map.Entry<Integer, Integer>> ccnThresholds,
-            Set<String> defectIds,  String buildId, String startTimeStr, String endTimeStr,
+            Set<String> defectIds, String buildId, String startTimeStr, String endTimeStr,
             Set<Integer> ignoreReasonTypes, String startFilePath, Long skip, Integer pageSize,
             Map<String, Boolean> filedMap
     ) {

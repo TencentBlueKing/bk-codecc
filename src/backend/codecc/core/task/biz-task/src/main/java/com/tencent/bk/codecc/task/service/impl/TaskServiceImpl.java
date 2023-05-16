@@ -411,7 +411,7 @@ public class TaskServiceImpl implements TaskService {
                     if (CollectionUtils.isNotEmpty(toolConfigInfoEntityList)) {
                         List<ToolConfigInfoVO> toolConfigInfoVOList = new ArrayList<>();
                         boolean isAllSuspended = true;
-                        Long minStartTime = Long.MAX_VALUE;
+                        Long minStartTime = Long.MIN_VALUE;
                         Boolean processFlag = false;
                         Integer totalFinishStep = 0;
                         Integer totalStep = 0;
@@ -464,7 +464,7 @@ public class TaskServiceImpl implements TaskService {
                                     toolConfigInfoVO.setStartTime(toolLastAnalysisResultVO.getStartTime());
                                 }
                             }
-                            minStartTime = Math.min(minStartTime, toolConfigInfoVO.getStartTime());
+                            minStartTime = Math.max(minStartTime, toolConfigInfoVO.getStartTime());
 
                             if (StringUtils.isNotEmpty(toolMetaBaseVO.getDisplayName())) {
                                 toolConfigInfoVO.setDisplayName(toolMetaBaseVO.getDisplayName());

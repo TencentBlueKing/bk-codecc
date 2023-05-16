@@ -245,6 +245,11 @@ public class CCNRedLineReportServiceImpl extends AbstractRedLineReportService<CC
                     maxCcn = ccn;
                 }
 
+                // 获取新圈复杂度最大值
+                if (ccn > newMaxCcn) {
+                    newMaxCcn = ccn;
+                }
+
                 // 求CXX指标
                 if (ccnThreshold <= 30 && ccn - 30 > 0) {
                     c30 += ccn - 30;

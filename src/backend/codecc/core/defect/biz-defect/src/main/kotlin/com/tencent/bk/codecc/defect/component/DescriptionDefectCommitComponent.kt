@@ -58,7 +58,8 @@ class DescriptionDefectCommitComponent(
     override fun postHandleDefectList(
         outputDefectList: List<AggregateDefectOutputModelV2<LintDefectV2Entity>>,
         buildEntity: BuildEntity?,
-        transferAuthorList: List<TransferAuthorEntity.TransferAuthorPair>?
+        transferAuthorList: List<TransferAuthorEntity.TransferAuthorPair>?,
+        isReallocate: Boolean?
     ): List<LintDefectV2Entity> {
         if (outputDefectList.isEmpty()) {
             logger.info("description output defect list is empty! build id: ${buildEntity?.buildId}")
@@ -86,7 +87,7 @@ class DescriptionDefectCommitComponent(
                         upsertDefectList.add(newDefect)
                         return@loop
                     }
-                    updateOldDefectInfo(newDefect, oldDefect.first(), transferAuthorList, buildEntity)
+                    updateOldDefectInfo(newDefect, oldDefect.first(), transferAuthorList, buildEntity, isReallocate)
                     if (oldDefect.first().status and ComConstants.DefectStatus.FIXED.value() > 0) {
                         reopenDefect(oldDefect.first())
                     }

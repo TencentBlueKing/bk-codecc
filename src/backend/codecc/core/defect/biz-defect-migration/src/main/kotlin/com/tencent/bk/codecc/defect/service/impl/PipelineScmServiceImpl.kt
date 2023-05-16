@@ -88,7 +88,7 @@ class PipelineScmServiceImpl @Autowired constructor(
 
         if (fileContentResult.isNotOk()) {
             logger.error("get file content fail!")
-            throw CodeCCException(CommonMessageCode.CODE_NORMAL_CONTENT_ERROR)
+            throw CodeCCException(CommonMessageCode.CODE_NORMAL_CONTENT_ERROR, "没权限或者代码文件不存在")
         }
         return fileContentResult.data
     }
@@ -256,7 +256,7 @@ class PipelineScmServiceImpl @Autowired constructor(
                 )
             if (result.isNotOk()) {
                 logger.error("get file content fail!")
-                throw CodeCCException(CommonMessageCode.CODE_NORMAL_CONTENT_ERROR)
+                throw CodeCCException(CommonMessageCode.CODE_NORMAL_CONTENT_ERROR, "没权限或者代码文件不存在")
             }
             result.data
         } catch (e: CodeCCException) {
@@ -273,7 +273,7 @@ class PipelineScmServiceImpl @Autowired constructor(
                 token,
                 e
             )
-            throw CodeCCException(CommonMessageCode.CODE_CONTENT_ERROR)
+            throw CodeCCException(CommonMessageCode.CODE_CONTENT_ERROR, "查看工蜂告警代码文件失败")
         } finally {
             DevopsProxy.projectIdThreadLocal.remove()
         }

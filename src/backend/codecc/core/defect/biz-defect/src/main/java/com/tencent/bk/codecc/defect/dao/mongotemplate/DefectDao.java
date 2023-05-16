@@ -109,17 +109,18 @@ public class DefectDao {
             BulkOperations ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, CommonDefectEntity.class);
             long currTime = System.currentTimeMillis();
             defectList.forEach(defectEntity -> {
-                Query query = new Query(
-                        Criteria.where("task_id").is(taskId)
-                                .and("_id").is(new ObjectId(defectEntity.getEntityId()))
-                );
-
                 Update update = new Update();
                 update.set("status", defectEntity.getStatus());
                 update.set("ignore_time", currTime);
                 update.set("ignore_reason_type", ignoreReasonType);
                 update.set("ignore_reason", ignoreReason);
                 update.set("ignore_author", ignoreAuthor);
+
+                Query query = new Query(
+                        Criteria.where("task_id").is(taskId)
+                                .and("_id").is(new ObjectId(defectEntity.getEntityId()))
+                );
+
                 ops.upsert(query, update);
             });
             ops.execute();
