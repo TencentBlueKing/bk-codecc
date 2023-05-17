@@ -332,8 +332,8 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
             } else {
                 taskLogOverviewVO.endTime - (taskLogOverviewVO.startTime ?: 0)
             }
-            taskLogOverviewVO.buildUser =
-                buildRepository.findFirstByBuildId(taskLogOverviewVO.buildId)?.buildUser ?: "获取失败"
+            taskLogOverviewVO.buildUser = buildRepository.findFirstByBuildId(taskLogOverviewVO.buildId)?.buildUser
+                ?: I18NUtils.getMessage("GET_BUILD_USER_FAIL")
             taskLogOverviewVOList.add(taskLogOverviewVO)
         }
         val totalCount = taskLogOverviewRepository.countByTaskId(taskId)
