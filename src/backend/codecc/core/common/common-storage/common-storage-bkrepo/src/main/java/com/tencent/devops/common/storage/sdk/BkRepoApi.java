@@ -73,7 +73,8 @@ public class BkRepoApi {
             headers.put("X-BKREPO-UPLOAD-ID", uploadId);
         }
         OkhttpUtils.INSTANCE.doHttpPut(url, "{}", headers);
-        return url + "?download=true";
+        return String.format("%s://%s/generic/%s/%s/%s", bkrepoSchema, bkrepoHost, project, repo, filepath)
+                + "?download=true";
     }
 
     /**
