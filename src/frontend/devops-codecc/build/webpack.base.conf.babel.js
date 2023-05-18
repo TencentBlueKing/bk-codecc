@@ -3,14 +3,14 @@
  * @author blueking
  */
 
-import webpack from 'webpack'
 import CopyWebpackPlugin from 'copy-webpack-plugin'
-import {VueLoaderPlugin} from 'vue-loader'
+import { VueLoaderPlugin } from 'vue-loader'
+import webpack from 'webpack'
 // import friendlyFormatter from 'eslint-friendly-formatter'
 import HardSourceWebpackPlugin from 'hard-source-webpack-plugin'
 
-import {resolve, assetsPath} from './util'
 import config from './config'
+import { assetsPath, resolve, resolveAssetsPublicPath } from './util'
 
 const isProd = process.env.NODE_ENV === 'production'
 
@@ -83,7 +83,8 @@ export default {
                 loader: 'url-loader',
                 options: {
                     limit: 10000,
-                    name: assetsPath('images/[name].[hash:7].[ext]')
+                    name: assetsPath('images/[name].[hash:7].[ext]'),
+                    publicPath: resolveAssetsPublicPath
                 }
             },
             {
@@ -92,7 +93,8 @@ export default {
                     loader: 'url-loader',
                     options: {
                         limit: 10000,
-                        name: assetsPath('media/[name].[hash:7].[ext]')
+                        name: assetsPath('media/[name].[hash:7].[ext]'),
+                        publicPath: resolveAssetsPublicPath
                     }
                 }
             },
@@ -102,7 +104,8 @@ export default {
                     loader: 'url-loader',
                     options: {
                         limit: 10000,
-                        name: assetsPath('fonts/[name].[hash:7].[ext]')
+                        name: assetsPath('fonts/[name].[hash:7].[ext]'),
+                        publicPath: resolveAssetsPublicPath
                     }
                 }
             }
