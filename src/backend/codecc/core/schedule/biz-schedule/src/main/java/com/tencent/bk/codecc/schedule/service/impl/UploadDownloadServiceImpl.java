@@ -205,6 +205,11 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
         FileIndexVO fileIndexVO = getFileIndex(fileBaseName, fileChunksMergeVO.getUploadType());
         String uploadFolder = fileIndexVO.getFileFolder();
 
+        if (!storageService.ifNeedLocalMerge(fileIndexVO.getUploadType())) {
+            finishChunkToStorage(fileIndexVO.getFileName());
+            return true;
+        }
+
         //文件上传路径更新为指定文件信息签名后的临时文件夹，用于后期合并
         String fileFolder = ChunkUploadUtil.md5(fileBaseName + fileChunksMergeVO.getBuildId());
         String chunkFileFolder = uploadFolder + File.separator + fileFolder;

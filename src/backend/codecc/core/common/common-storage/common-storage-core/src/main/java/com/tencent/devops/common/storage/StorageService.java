@@ -44,4 +44,6 @@ public interface StorageService {
      * @return
      */
     Boolean ifNeedAndCanDownload(String storageType,String urlOrPath);
+
+    boolean ifNeedLocalMerge(String storageType);
 }

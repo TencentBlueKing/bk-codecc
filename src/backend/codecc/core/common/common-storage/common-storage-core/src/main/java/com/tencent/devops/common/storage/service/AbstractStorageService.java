@@ -99,4 +99,10 @@ public abstract class AbstractStorageService implements StorageService {
     protected String getUploadFilePath(String subPath,String filename){
         return subPath + "/" + filename;
     }
+
+    @Override
+    public boolean ifNeedLocalMerge(String storageType) {
+        //NFS不需要下载
+        return storageType == null || storageType.equals(StorageType.NFS.code());
+    }
 }
