@@ -47,11 +47,10 @@ public abstract class AbstractStorageService implements StorageService {
             log.error(localFilePath + " file no exists, upload fail!.");
             throw new FileNotFoundException(localFilePath + " file no exists");
         }
-        String uploadFilePath = subPath + "/" + filename;
-        return chunkUpload(uploadFilePath, filename, file, chunkNo, uploadId);
+        return chunkUpload(subPath, filename, file, chunkNo, uploadId);
     }
 
-    public abstract Boolean chunkUpload(String uploadFilePath, String filename, File file,
+    public abstract Boolean chunkUpload(String subPath, String filename, File file,
                                        Integer chunkNo, String uploadId);
 
     @Override

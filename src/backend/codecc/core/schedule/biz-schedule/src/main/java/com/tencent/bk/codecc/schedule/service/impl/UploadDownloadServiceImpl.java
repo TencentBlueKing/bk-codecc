@@ -683,7 +683,8 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
                 index.setUploadId(uploadId);
                 fileIndexRepository.save(index);
             }
-            storageService.chunkUpload(file.getAbsolutePath(), index.getUploadType(), index.getFileName(),
+            String chunkFileName = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("/") + 1);
+            storageService.chunkUpload(file.getAbsolutePath(), index.getUploadType(), chunkFileName,
                     chunkNo, index.getUploadId());
         } catch (Exception e) {
             log.error("uploadToStorage filename:" + fileName + " storage:" +
