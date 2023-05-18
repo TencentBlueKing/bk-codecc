@@ -641,11 +641,11 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
             for (ToolConfigInfoVO toolConfigInfoVO : toolConfigInfoVOList) {
 
                 if (ComConstants.FOLLOW_STATUS.WITHDRAW.value() != toolConfigInfoVO.getFollowStatus()) {
+                    String toolName = toolConfigInfoVO.getToolName();
                     // 获取工具展示名称
-                    ToolMetaBaseVO toolMetaBaseVO =
-                            toolMetaCacheService.getToolBaseMetaCache(toolConfigInfoVO.getToolName());
+                    ToolMetaBaseVO toolMetaBaseVO = toolMetaCacheService.getToolBaseMetaCache(toolName);
                     //添加进度条
-                    if (toolConfigInfoVO.getToolName().equalsIgnoreCase(taskLogEntity.getToolName())) {
+                    if (toolName.equalsIgnoreCase(taskLogEntity.getToolName())) {
                         Integer curStep = taskLogEntity.getCurrStep();
                         int submitStepNum = getSubmitStepNum();
                         if (taskLogEntity.getCurrStep() == submitStepNum && taskLogEntity.getEndTime() != 0) {
@@ -683,8 +683,9 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
                     minStartTime = Math.min(minStartTime, toolConfigInfoVO.getStartTime());
 
                     if (!processFlag) {
-                        processFlag =
-                                taskDetailDisplayInfo(toolConfigInfoVO, taskDetailVO, toolMetaBaseVO.getDisplayName());
+                        Locale locale = AbstractI18NResponseAspect.getLocale();
+                        String toolDisplayName = toolMetaCacheService.getDisplayNameByLocale(toolName, locale);
+                        processFlag = taskDetailDisplayInfo(toolConfigInfoVO, taskDetailVO, toolDisplayName);
                     }
                 }
             }

@@ -38,6 +38,7 @@ import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -260,7 +261,7 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService
     }
 
     @Override
-    public List<String> getToolNameListByDimensionList(List<String> dimensionList) {
+    public String getDisplayNameByLocale(String toolName, Locale locale) {
         throw new UnsupportedOperationException("not supported yet");
     }
 

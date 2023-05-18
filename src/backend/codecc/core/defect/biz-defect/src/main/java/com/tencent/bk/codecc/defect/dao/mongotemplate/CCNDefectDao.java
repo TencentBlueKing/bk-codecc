@@ -568,8 +568,10 @@ public class CCNDefectDao {
             String startTimeStr, String endTimeStr,
             Set<Integer> ignoreReasonTypes
     ) {
+        Criteria magicEmptyCriteria = Criteria.where("task_id").is(-1L);
+
         if (isSnapshotQuery && CollectionUtils.isEmpty(defectIds)) {
-            return Criteria.where("task_id").is(-1L);
+            return magicEmptyCriteria;
         }
 
         List<Criteria> rootCriteriaList = new LinkedList<>();
@@ -587,7 +589,11 @@ public class CCNDefectDao {
         // 状态过滤
         if (CollectionUtils.isNotEmpty(status)) {
             Criteria statusCriteria = getStatusCriteria(status, isSnapshotQuery, ignoreReasonTypes);
-            rootCriteriaList.add(statusCriteria);
+            if (statusCriteria != null) {
+                rootCriteriaList.add(statusCriteria);
+            } else {
+                return magicEmptyCriteria;
+            }
         }
 
         // 快照
@@ -665,18 +671,29 @@ public class CCNDefectDao {
             }
         }
 
-        List<Criteria> rootCriteriaList = new ArrayList<>();
+        if (CollectionUtils.isEmpty(statusFilter)) {
+            return null;
+        }
+
+        LinkedList<Criteria> rootCriteriaList = Lists.newLinkedList();
 
         // 忽略类型处理
-        boolean hasIgnore = statusFilter.stream().anyMatch(x -> (x & DefectStatus.IGNORE.value()) > 0);
-        if (hasIgnore && CollectionUtils.isNotEmpty(ignoreReasonTypes)) {
-            int ignoreInDb = DefectStatus.IGNORE.value() | DefectStatus.NEW.value();
-            rootCriteriaList.add(
-                    Criteria.where("status").is(ignoreInDb)
-                            .and("ignore_reason_type").in(ignoreReasonTypes)
-            );
+        boolean hasIgnore = statusFilter.contains(DefectStatus.IGNORE.value());
+
+        if (hasIgnore) {
+            if (CollectionUtils.isNotEmpty(ignoreReasonTypes)) {
+                rootCriteriaList.add(
+                        Criteria.where("status").bits().allSet(DefectStatus.IGNORE.value())
+                                .and("ignore_reason_type").in(ignoreReasonTypes)
+                );
+            } else {
+                rootCriteriaList.add(
+                        Criteria.where("status").bits().allSet(DefectStatus.IGNORE.value())
+                );
+            }
+
             statusFilter.remove(DefectStatus.IGNORE.value());
-            statusFilter.remove(ignoreInDb);
+            statusFilter.remove(DefectStatus.IGNORE.value() | DefectStatus.NEW.value());
         }
 
         if (CollectionUtils.isNotEmpty(statusFilter)) {
@@ -687,9 +704,8 @@ public class CCNDefectDao {
             rootCriteriaList.add(Criteria.where("status").in(condStatusSet));
         }
 
-        return rootCriteriaList.size() > 1
-                ? new Criteria().orOperator(rootCriteriaList.toArray(new Criteria[]{}))
-                : rootCriteriaList.get(0);
+        return rootCriteriaList.size() == 1 ? rootCriteriaList.get(0)
+                : new Criteria().orOperator(rootCriteriaList.toArray(new Criteria[]{}));
     }
 
     /**

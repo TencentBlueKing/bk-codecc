@@ -30,7 +30,6 @@ import static com.tencent.devops.common.constant.ComConstants.MASK_STATUS;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.dto.IgnoreTypeStatModel;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
@@ -49,7 +48,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -65,7 +64,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -94,6 +92,9 @@ import org.springframework.stereotype.Repository;
 @Slf4j
 @Repository
 public class LintDefectV2Dao {
+
+    // 敏感规则，作用于数字字符串的大小比较
+    private static final Collation MONGO_COLLATION = Collation.of("en").numericOrderingEnabled();
 
     @Autowired
     private MongoTemplate mongoTemplate;
@@ -176,7 +177,6 @@ public class LintDefectV2Dao {
         return mongoTemplate.find(query, LintDefectV2Entity.class);
     }
 
-
     /**
      * 根据条件查询文件列表
      *
@@ -211,7 +211,7 @@ public class LintDefectV2Dao {
         }
 
         if ("createBuildNumber".equals(sortField)) {
-            query.collation(Collation.of("en"));
+            query.collation(MONGO_COLLATION);
         }
 
         // 严重程度要跟前端传入的排序类型相反
@@ -230,8 +230,7 @@ public class LintDefectV2Dao {
         // 如果按文件名排序，那么还要再按行号排序
         if ("fileName".equals(sortField)) {
             sortList.add(new Sort.Order(sortType, "line_num"));
-            // 忽略大小敏感，作用于排序
-            query.collation(Collation.of("en"));
+            query.collation(MONGO_COLLATION);
         }
 
         // 若是跨任务查询
@@ -543,25 +542,36 @@ public class LintDefectV2Dao {
             return null;
         }
 
-        List<Criteria> cris = new ArrayList<>();
+        LinkedList<Criteria> criteriaList = Lists.newLinkedList();
         // 如果查询已忽略告警，且已忽略类型不为空，需添加忽略类型查询
-        boolean hasIgnore =
-                statusFilter.stream().anyMatch(it -> (Integer.parseInt(it) & DefectStatus.IGNORE.value()) > 0);
+        boolean hasIgnore = statusFilter.contains(String.valueOf(DefectStatus.IGNORE.value()));
 
-        if (hasIgnore && CollectionUtils.isNotEmpty(ignoreReasonTypes)) {
-            cris.add(Criteria.where("status").is(DefectStatus.IGNORE.value() | DefectStatus.NEW.value())
-                    .and("ignore_reason_type").in(ignoreReasonTypes));
+        if (hasIgnore) {
+            if (CollectionUtils.isNotEmpty(ignoreReasonTypes)) {
+                criteriaList.addLast(
+                        Criteria.where("status").bits().allSet(DefectStatus.IGNORE.value())
+                                .and("ignore_reason_type").in(ignoreReasonTypes)
+                );
+            } else {
+                criteriaList.addLast(
+                        Criteria.where("status").bits().allSet(DefectStatus.IGNORE.value())
+                );
+            }
+
             statusFilter.remove(String.valueOf(DefectStatus.IGNORE.value()));
             statusFilter.remove(String.valueOf(DefectStatus.IGNORE.value() | DefectStatus.NEW.value()));
         }
 
-        Set<Integer> condStatusSet = statusFilter.stream()
-                .map(it -> Integer.parseInt(it) | DefectStatus.NEW.value())
-                .collect(Collectors.toSet());
-        cris.add(Criteria.where("status").in(condStatusSet));
+        if (CollectionUtils.isNotEmpty(statusFilter)) {
+            Set<Integer> condStatusSet = statusFilter.stream()
+                    .map(it -> Integer.parseInt(it) | DefectStatus.NEW.value())
+                    .collect(Collectors.toSet());
+            criteriaList.addFirst(Criteria.where("status").in(condStatusSet));
+        }
 
-        // 1 or ? > 1
-        return cris.size() == 1 ? cris.get(0) : new Criteria().orOperator(cris.toArray(new Criteria[]{}));
+        // x == 1 or x > 1
+        return criteriaList.size() == 1 ? criteriaList.get(0)
+                : new Criteria().orOperator(criteriaList.toArray(new Criteria[]{}));
     }
 
 
@@ -871,13 +881,7 @@ public class LintDefectV2Dao {
             Pair<Set<String>, Set<String>> defectIdsPair,
             Set<String> pkgChecker, String projectId, String userId
     ) {
-        // 只需要查状态为待修复，已修复，已忽略的告警
-        Set<String> needQueryStatusSet = Sets.newHashSet(
-                String.valueOf(DefectStatus.NEW.value()),
-                String.valueOf(DefectStatus.NEW.value() | DefectStatus.FIXED.value()),
-                String.valueOf(DefectStatus.NEW.value() | DefectStatus.IGNORE.value()));
-        needQueryStatusSet.addAll(MASK_STATUS);
-        queryWarningReq.setStatus(needQueryStatusSet);
+        queryWarningReq.setStatus(null);
 
         // 根据查询条件过滤
         Criteria criteria = getQueryCriteria(
@@ -1220,17 +1224,6 @@ public class LintDefectV2Dao {
                 .and("ignore_reason_type").is(ignoreType));
         query.limit(pageSize);
         return mongoTemplate.find(query, LintDefectV2Entity.class);
-    }
-
-    public List<LintDefectV2Entity> findIgnoreDefectByIgnoreType(Long taskId, String toolName, Integer ignoreType) {
-        Criteria cri = new Criteria();
-        cri.andOperator(Criteria.where("task_id").is(taskId).and("tool_name").is(toolName)
-                        .and("ignore_reason_type").is(ignoreType),
-                Criteria.where("status").bits()
-                        .allSet(DefectStatus.IGNORE.value()),
-                Criteria.where("status").bits()
-                        .allClear(DefectStatus.FIXED.value()));
-        return mongoTemplate.find(Query.query(cri), LintDefectV2Entity.class);
     }
 
     /**

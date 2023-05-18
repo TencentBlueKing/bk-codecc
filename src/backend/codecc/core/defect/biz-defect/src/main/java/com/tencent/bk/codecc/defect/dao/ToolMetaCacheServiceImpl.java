@@ -29,6 +29,7 @@ package com.tencent.bk.codecc.defect.dao;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
+import com.tencent.bk.codecc.task.api.ServiceToolMetaRestResource;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
@@ -38,6 +39,7 @@ import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -71,6 +73,12 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
      * 工具维度基础信息缓存
      */
     private Map<String, Set<ToolMetaBaseVO>> toolMetaBasicDimensionMap = Maps.newConcurrentMap();
+
+    /**
+     * 工具国际化展示名字缓存
+     * map结构: {local,{toolName,displayName}}
+     */
+    private Map<String, Map<String, String>> TOOL_DISPLAY_NAME_MAP = Maps.newConcurrentMap();
 
     /**
      * 加载工具缓存
@@ -252,17 +260,35 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
     }
 
     @Override
-    public List<String> getToolNameListByDimensionList(List<String> dimensionList) {
-        if (CollectionUtils.isEmpty(dimensionList)) {
-            return Lists.newArrayList();
-        }
+    public String getDisplayNameByLocale(String toolName, Locale locale) {
+        try {
+            String language = locale.getLanguage();
+            Map<String, String> displayNameMap = TOOL_DISPLAY_NAME_MAP.get(language);
+            if (MapUtils.isNotEmpty(displayNameMap)) {
+                return displayNameMap.get(toolName);
+            }
 
-        List<String> retList = Lists.newArrayList();
-        for (String dimension : dimensionList) {
-            retList.addAll(getToolDetailByDimension(dimension));
-        }
+            // client切面已注入language头
+            Result<List<ToolMetaBaseVO>> response = client.get(ServiceToolMetaRestResource.class).toolList(false);
+            if (response == null || response.isNotOk()) {
+                return "";
+            }
 
-        return retList;
+            List<ToolMetaBaseVO> toolMetaBaseVOList = response.getData();
+            if (CollectionUtils.isEmpty(toolMetaBaseVOList)) {
+                return "";
+            }
+
+            displayNameMap = toolMetaBaseVOList.stream()
+                    .collect(Collectors.toMap(x -> x.getName(), y -> y.getDisplayName(), (k1, k2) -> k1));
+            TOOL_DISPLAY_NAME_MAP.put(language, displayNameMap);
+
+            return displayNameMap.get(toolName);
+        } catch (Throwable t) {
+            log.error("getToolDisplayName fail, tool name: {}, local: {}", toolName, locale, t);
+
+            return "";
+        }
     }
 
     /**

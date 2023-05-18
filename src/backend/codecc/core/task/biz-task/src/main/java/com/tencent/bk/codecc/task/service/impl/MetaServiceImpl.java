@@ -109,10 +109,12 @@ public class MetaServiceImpl implements MetaService {
     @Override
     public List<ToolMetaBaseVO> toolList(Boolean isDetail) {
         // 1.查询工具列表
-        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
+        /*HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
                 .getRequest();
         String userId = request.getHeader(AUTH_HEADER_DEVOPS_USER_ID);
-        boolean isAdmin = bkAuthExPermissionApi.isAdminMember(userId);
+        boolean isAdmin = bkAuthExPermissionApi.isAdminMember(userId);*/
+        // 该变量已废弃，仅作mock
+        boolean isAdmin = true;
 
         Map<String, ToolMetaBaseVO> toolMap = toolMetaCache.getToolMetaListFromCache(isDetail, isAdmin);
         if (toolMap.size() == 0) {

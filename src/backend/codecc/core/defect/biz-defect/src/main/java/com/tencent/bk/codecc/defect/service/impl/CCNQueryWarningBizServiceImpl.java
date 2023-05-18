@@ -706,8 +706,10 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
                 .map(Integer::valueOf)
                 .collect(Collectors.toSet());
 
+        // 前端传入: 1/2/4/8
         if (intStatusSet.contains(DefectStatus.PATH_MASK.value())) {
             intStatusSet.add(DefectStatus.CHECKER_MASK.value());
+            intStatusSet.add(DefectStatus.CHECKER_MASK.value() | DefectStatus.PATH_MASK.value());
         }
 
         return intStatusSet;

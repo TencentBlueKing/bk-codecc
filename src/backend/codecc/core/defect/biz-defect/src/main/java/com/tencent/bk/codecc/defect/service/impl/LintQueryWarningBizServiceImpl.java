@@ -258,8 +258,10 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             condStatusList.add(String.valueOf(DefectStatus.NEW.value()));
         }
 
+        // 前端传入: 1/2/4/8
         if (condStatusList.contains(String.valueOf(DefectStatus.PATH_MASK.value()))) {
-            condStatusList.addAll(MASK_STATUS);
+            condStatusList.add(String.valueOf(DefectStatus.CHECKER_MASK.value()));
+            condStatusList.add(String.valueOf(DefectStatus.CHECKER_MASK.value() | DefectStatus.PATH_MASK.value()));
         }
 
         // 按文件聚类
@@ -944,13 +946,16 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         );
 
         groups.forEach(it -> {
-            if (it.getStatus() == DefectStatus.NEW.value()) {
+            int status = it.getStatus();
+
+            if (DefectStatus.NEW.value() == status) {
                 rspVO.setExistCount(rspVO.getExistCount() + it.getDefectCount());
-            } else if (it.getStatus() == (DefectStatus.NEW.value() | DefectStatus.FIXED.value())) {
+            } else if ((DefectStatus.FIXED.value() & status) > 0) {
                 rspVO.setFixCount(rspVO.getFixCount() + it.getDefectCount());
-            } else if (it.getStatus() == (DefectStatus.NEW.value() | DefectStatus.IGNORE.value())) {
+            } else if ((DefectStatus.IGNORE.value() & status) > 0) {
                 rspVO.setIgnoreCount(rspVO.getIgnoreCount() + it.getDefectCount());
-            } else {
+            } else if ((DefectStatus.PATH_MASK.value() & status) > 0
+                    || (DefectStatus.CHECKER_MASK.value() & status) > 0) {
                 rspVO.setMaskCount(rspVO.getMaskCount() + it.getDefectCount());
             }
         });

@@ -27,10 +27,12 @@
 package com.tencent.bk.codecc.task.api;
 
 import com.tencent.devops.common.api.RefreshDockerImageHashReqVO;
+import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -38,6 +40,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 /**
@@ -91,4 +94,13 @@ public interface ServiceToolMetaRestResource {
     @Path("/dockerImageHash")
     @POST
     Result<Boolean> refreshDockerImageHash(RefreshDockerImageHashReqVO refreshDockerImageHashReqVO);
+
+    @ApiOperation("查询工具列表")
+    @Path("/toolList")
+    @GET
+    Result<List<ToolMetaBaseVO>> toolList(
+            @ApiParam(value = "是否查询详细信息")
+            @QueryParam("isDetail")
+            Boolean isDetail
+    );
 }

@@ -2,11 +2,10 @@ package com.tencent.devops.common.service;
 
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
-import org.springframework.scheduling.annotation.Async;
+import java.util.Locale;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * 工具元数据接口
@@ -83,11 +82,13 @@ public interface ToolMetaCacheService
      */
     List<String> getToolDetailByDimension(String dimension);
 
+
     /**
-     * 根据维度列表获取工具列表
+     * 获取工具国际化展示名字
      *
-     * @param dimensionList
+     * @param toolName
+     * @param locale
      * @return
      */
-    List<String> getToolNameListByDimensionList(List<String> dimensionList);
+    String getDisplayNameByLocale(String toolName, Locale locale);
 }
