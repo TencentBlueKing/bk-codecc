@@ -60,7 +60,6 @@ import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.checkerset.DividedCheckerSetsVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.auth.api.service.AuthTaskService;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.CheckerConstants;
@@ -109,9 +108,6 @@ public class CheckerSetBizServiceImpl implements ICheckerSetBizService
 
     @Autowired
     private CheckerSetDao checkerSetDao;
-
-    @Autowired
-    private AuthExPermissionApi authExPermissionApi;
 
     @Autowired
     private AuthTaskService authTaskService;

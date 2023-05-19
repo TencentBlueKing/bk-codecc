@@ -60,7 +60,7 @@ public class BkRepoApi {
         if (StringUtils.hasLength(uploadId)) {
             headers.put("X-BKREPO-UPLOAD-ID", uploadId);
         }
-        OkhttpUtils.INSTANCE.doFileStreamPut(url, file, getAuthHeaders());
+        OkhttpUtils.INSTANCE.doFileStreamPut(url, file, headers);
         return true;
     }
 
@@ -70,8 +70,9 @@ public class BkRepoApi {
         if (StringUtils.hasLength(uploadId)) {
             headers.put("X-BKREPO-UPLOAD-ID", uploadId);
         }
-        OkhttpUtils.INSTANCE.doHttpPut(url, "{}", getAuthHeaders());
-        return url + "?download=true";
+        OkhttpUtils.INSTANCE.doHttpPut(url, "{}", headers);
+        return String.format("%s/generic/%s/%s/%s", bkrepoHost, project, repo, filepath)
+                + "?download=true";
     }
 
     /**

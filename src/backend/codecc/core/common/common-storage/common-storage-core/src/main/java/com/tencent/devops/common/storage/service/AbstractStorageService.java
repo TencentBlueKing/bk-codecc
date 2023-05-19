@@ -3,6 +3,8 @@ package com.tencent.devops.common.storage.service;
 import com.tencent.devops.common.storage.StorageService;
 import com.tencent.devops.common.storage.constant.StorageType;
 import com.tencent.devops.common.util.OkhttpUtils;
+import java.util.Arrays;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.StringUtils;
@@ -26,6 +28,10 @@ public abstract class AbstractStorageService implements StorageService {
     @Value("${storage.type:nfs}")
     private String storageType;
 
+    private static final List<String> localMerge = Arrays.asList(
+            StorageType.NFS.code()
+    );
+
     @Override
     public String upload(String localFilePath, String subPath, String filename) throws FileNotFoundException {
         File file = new File(Paths.get(localFilePath).toString());
@@ -48,11 +54,10 @@ public abstract class AbstractStorageService implements StorageService {
             log.error(localFilePath + " file no exists, upload fail!.");
             throw new FileNotFoundException(localFilePath + " file no exists");
         }
-        String uploadFilePath = subPath + "/" + filename;
-        return chunkUpload(uploadFilePath, filename, file, chunkNo, uploadId);
+        return chunkUpload(subPath, filename, file, chunkNo, uploadId);
     }
 
-    public abstract Boolean chunkUpload(String uploadFilePath, String filename, File file,
+    public abstract Boolean chunkUpload(String subPath, String filename, File file,
             Integer chunkNo, String uploadId);
 
     @Override
@@ -100,5 +105,12 @@ public abstract class AbstractStorageService implements StorageService {
 
     protected String getUploadFilePath(String subPath, String filename) {
         return subPath + "/" + filename;
+    }
+
+
+    @Override
+    public boolean ifNeedLocalMerge(String storageType) {
+        //NFS不需要下载
+        return storageType == null || localMerge.contains(storageType);
     }
 }

@@ -113,7 +113,7 @@ class V3AuthExPermissionApi(
         return true
     }
 
-    override fun authProjectRole(projectId: String, user: String, role: String): Boolean {
+    override fun authProjectRole(projectId: String, user: String, role: String?): Boolean {
         return true
     }
 }

@@ -80,11 +80,11 @@ class GithubAuthExPermissionApi(client: Client,
     }
 
     override fun authProjectMultiManager(projectId: String, user: String): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 
-    override fun authProjectRole(projectId: String, user: String, role: String): Boolean {
-        TODO("Not yet implemented")
+    override fun authProjectRole(projectId: String, user: String, role: String?): Boolean {
+        return false
     }
 
 

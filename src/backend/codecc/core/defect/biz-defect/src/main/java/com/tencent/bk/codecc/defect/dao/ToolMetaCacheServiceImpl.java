@@ -280,7 +280,7 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
             }
 
             displayNameMap = toolMetaBaseVOList.stream()
-                    .collect(Collectors.toMap(x -> x.getName(), y -> y.getDisplayName(), (k1, k2) -> k1));
+                    .collect(Collectors.toMap(ToolMetaBaseVO::getName, ToolMetaBaseVO::getDisplayName, (k1, k2) -> k1));
             TOOL_DISPLAY_NAME_MAP.put(language, displayNameMap);
 
             return displayNameMap.get(toolName);

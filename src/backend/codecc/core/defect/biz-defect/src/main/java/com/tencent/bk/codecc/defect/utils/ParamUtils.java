@@ -318,7 +318,7 @@ public class ParamUtils {
             boolean checkToolRemoved
     ) {
         if (CollectionUtils.isEmpty(taskIdList)) {
-            throw new IllegalArgumentException("task id list can not be empty");
+            return Maps.newHashMap();
         }
 
         // 业务校验：跨任务并不支持快照

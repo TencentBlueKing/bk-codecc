@@ -119,6 +119,9 @@ abstract class AbstractAuthExPermissionApi @Autowired constructor(
     }
 
 
+    override fun checkProjectIsRbacPermissionByCache(projectId: String, needRefresh: Boolean?): Boolean {
+        return false
+    }
 
     companion object {
         private val logger = LoggerFactory.getLogger(AbstractAuthExPermissionApi::class.java)

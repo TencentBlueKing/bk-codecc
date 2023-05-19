@@ -470,4 +470,16 @@ public interface UserTaskRestResource {
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId
     );
+    
+    @ApiOperation("提供前端查询项目是否迁移到RBAC")
+    @Path("/{projectId}/isRbacPermission")
+    @GET
+    Result<Boolean> isRbacPermission(
+            @ApiParam(value = "项目ID", required = true)
+            @PathParam("projectId")
+                    String projectId,
+            @ApiParam(value = "是否实时查询", required = false)
+            @QueryParam("needRefresh")
+                    Boolean needRefresh
+    );
 }

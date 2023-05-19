@@ -63,7 +63,7 @@ import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.Page;
-import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.service.AuthTaskService;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
@@ -125,9 +125,6 @@ public class CommonQueryWarningBizServiceImpl extends AbstractQueryWarningBizSer
 
     @Autowired
     private IgnoreCheckerRepository ignoreCheckerRepository;
-
-    @Autowired
-    private AuthExPermissionApi authExPermissionApi;
 
     @Autowired
     private AuthTaskService authTaskService;

@@ -101,9 +101,11 @@ interface AuthExPermissionApi {
     /**
      * 校验是否项目角色
      */
-    fun authProjectRole(projectId: String, user: String, role: String): Boolean
+    fun authProjectRole(projectId: String, user: String, role: String?): Boolean
 
 
     fun authDefectOpsPermissions(taskId: Long, projectId: String, username: String, createFrom: String,
                                  actions: List<CodeCCAuthAction>): Boolean
+
+    fun checkProjectIsRbacPermissionByCache(projectId: String, needRefresh: Boolean? = false): Boolean
 }

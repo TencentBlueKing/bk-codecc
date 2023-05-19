@@ -302,4 +302,9 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
     public Result<Boolean> multiTaskVisitable(String projectId) {
         return new Result<>(taskService.multiTaskVisitable(projectId));
     }
+
+    @Override
+    public Result<Boolean> isRbacPermission(String projectId, Boolean needRefresh) {
+        return new Result<>(false);
+    }
 }

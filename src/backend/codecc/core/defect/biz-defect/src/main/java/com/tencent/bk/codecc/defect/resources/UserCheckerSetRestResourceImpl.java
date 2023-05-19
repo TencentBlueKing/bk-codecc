@@ -25,6 +25,7 @@ import com.tencent.devops.common.api.checkerset.V3UpdateCheckerSetReqVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
+import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.web.RestResource;
 import java.text.Collator;
@@ -35,6 +36,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.tencent.devops.common.web.security.AuthMethod;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -196,6 +199,7 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
     }
 
     @Override
+    @AuthMethod(permission = {CodeCCAuthAction.ANALYZE})
     public Result<Boolean> setRelationships(String checkerSetId, String user,
             CheckerSetRelationshipVO checkerSetRelationshipVO) {
         checkerSetBizService.setRelationships(checkerSetId, user, checkerSetRelationshipVO);
