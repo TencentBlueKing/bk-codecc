@@ -1003,5 +1003,11 @@
 	"问题评论": "Comment a issue",
 	"评论问题成功": "Comment successfully",
 	"恢复问题成功。该问题将重新在待修复列表中显示。": "Restoration successful. The issue will be displayed again in the to-be-fixed list.",
-	"系统内置忽略配置不可删除": "The built-in ignore configuration in the system cannot be deleted"
+	"【存量问题】可在这里查看": "【Existing Issues】can be viewed here",
+	"系统内置忽略配置不可删除": "The built-in ignore configuration in the system cannot be deleted",
+	"针对特定忽略类型可": "Specific ignore types can be",
+	"设置提醒": "Set reminders",
+	"，以便定期review和修复。": ", so that you can review and fix them regularly.",
+	"知道了": "Got it",
+	"支持忽略无需处理或暂缓处理的问题。": "Support ignoring issues that do not require immediate or deferred attention."
 }

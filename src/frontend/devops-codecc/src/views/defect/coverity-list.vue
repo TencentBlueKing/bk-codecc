@@ -1102,7 +1102,8 @@
         }
         return (this.isSelectAll === 'Y' ? this.totalCount : this.selectedLen) > 1
           ? `${this.$t('忽略')}（
-          ${this.$t('共x个问题', {num: this.isSelectAll === 'Y' ? this.totalCount : this.selectedLen})}）` : this.$t('忽略')
+          ${this.$t('共x个问题', { num: this.isSelectAll === 'Y' ? this.totalCount : this.selectedLen })}）`
+          : this.$t('忽略')
       },
       dimensionStr() {
         const { dimension = '' } = this
