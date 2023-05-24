@@ -2,7 +2,6 @@ package com.tencent.devops.common.auth
 
 import com.tencent.devops.common.auth.api.external.RBACAuthPermissionApi
 import com.tencent.devops.common.auth.api.external.RBACAuthProperties
-import com.tencent.devops.common.auth.api.external.RBACAuthPropertiesData
 import com.tencent.devops.common.auth.api.external.RBACAuthRegisterApi
 import com.tencent.devops.common.client.Client
 import org.springframework.boot.autoconfigure.AutoConfigureOrder
@@ -21,10 +20,10 @@ class RBACAuthAutoConfiguration {
 
     @Bean
     fun rbacAuthPermissionApi(
-        authPropertiesData: RBACAuthPropertiesData,
+        rbacAuthProperties: RBACAuthProperties,
         redisTemplate: RedisTemplate<String, String>,
         client: Client
-    ) = RBACAuthPermissionApi(client, redisTemplate, authPropertiesData)
+    ) = RBACAuthPermissionApi(client, redisTemplate, rbacAuthProperties)
 
     @Bean
     fun rbacAuthRegisterApi(
@@ -35,10 +34,4 @@ class RBACAuthAutoConfiguration {
     @Bean
     fun rbacAuthProperties() = RBACAuthProperties()
 
-    @Bean
-    fun rbacAuthPropertiesDev(rbacAuthProperties: RBACAuthProperties) = RBACAuthPropertiesData(
-        rbacResourceType = rbacAuthProperties.rbacResourceType,
-        url = rbacAuthProperties.url,
-        token = rbacAuthProperties.token
-    )
 }
