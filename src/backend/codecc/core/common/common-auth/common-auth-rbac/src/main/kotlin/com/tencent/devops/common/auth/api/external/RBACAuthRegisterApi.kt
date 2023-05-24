@@ -43,7 +43,7 @@ import org.springframework.beans.factory.annotation.Autowired
 
 class RBACAuthRegisterApi @Autowired constructor(
     private val client: Client,
-    private val authPropertiesData: RBACAuthPropertiesData
+    private val rbacAuthProperties: RBACAuthProperties
 ) : AuthExRegisterApi {
 
     companion object {
@@ -55,7 +55,7 @@ class RBACAuthRegisterApi @Autowired constructor(
      * 查询非用户态Access Token
      */
     private fun getBackendAccessToken(): String {
-        return authPropertiesData.token ?: ""
+        return rbacAuthProperties.token ?: ""
     }
 
     /**
@@ -80,15 +80,17 @@ class RBACAuthRegisterApi @Autowired constructor(
         projectId: String
     ): Boolean {
         val result = registerResource(
-                projectId = projectId,
-                resourceCode = taskId,
-                resourceName = taskName,
-                resourceType = authPropertiesData.rbacResourceType!!,
-                creator = user
+            projectId = projectId,
+            resourceCode = taskId,
+            resourceName = taskName,
+            resourceType = rbacAuthProperties.rbacResourceType!!,
+            creator = user
         )
         if (result.isNotOk() || result.data == null || result.data == false) {
-            logger.error("register resource failed! taskId: $taskId, return code:${result.code}," +
-                " err message: ${result.message}")
+            logger.error(
+                "register resource failed! taskId: $taskId, return code:${result.code}," +
+                        " err message: ${result.message}"
+            )
             throw CodeCCException(CommonMessageCode.PERMISSION_DENIED, arrayOf(user))
         }
         return true
@@ -102,13 +104,15 @@ class RBACAuthRegisterApi @Autowired constructor(
         projectId: String
     ): Boolean {
         val result = deleteResource(
-                projectCode = projectId,
-                resourceCode = taskId,
-                resourceType = authPropertiesData.rbacResourceType!!
+            projectCode = projectId,
+            resourceCode = taskId,
+            resourceType = rbacAuthProperties.rbacResourceType!!
         )
         if (result.isNotOk() || result.data == null || result.data == false) {
-            logger.error("delete resource failed! taskId: $taskId, return code:${result.code}," +
-                " err message: ${result.message}")
+            logger.error(
+                "delete resource failed! taskId: $taskId, return code:${result.code}," +
+                        " err message: ${result.message}"
+            )
             throw UnauthorizedException("delete resource failed!")
         }
         return true
@@ -139,12 +143,14 @@ class RBACAuthRegisterApi @Autowired constructor(
      * 调用api删除资源
      */
     private fun deleteResource(
-            projectCode: String,
-            resourceCode: String,
-            resourceType: String
+        projectCode: String,
+        resourceCode: String,
+        resourceType: String
     ): Result<Boolean> {
-        val url = "https://${authPropertiesData
-            .url}$baseUrl/open/service/auth/permission/projects/$projectCode/delete/relation"
+        val url = "https://${
+            rbacAuthProperties
+                    .url
+        }$baseUrl/open/service/auth/permission/projects/$projectCode/delete/relation"
         val deleteRequest = RBACAuthResourceDeleteRequest(
             resourceCode = resourceCode,
             resourceType = resourceType
