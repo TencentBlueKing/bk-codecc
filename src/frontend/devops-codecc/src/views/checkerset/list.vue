@@ -301,10 +301,14 @@
           if (type === 'setDefault') {
             titleTxt = !checkerset.defaultCheckerSet ? this.$t('设置规则集为默认') : this.$t('取消规则集为默认')
             subTitleTxt = !checkerset.defaultCheckerSet
-              ? this.$t('设置【x】规则集为默认后，接入y语言任务时该规则集将会被自动选中。'
-                        , [checkerset.checkerSetName, this.getCodeLang(checkerset.codeLang)])
-              : this.$t('取消【x】规则集为默认后，接入y语言任务时该规则集将不会被自动选中。'
-                        , [checkerset.checkerSetName, this.getCodeLang(checkerset.codeLang)])
+              ? this.$t(
+                '设置【x】规则集为默认后，接入y语言任务时该规则集将会被自动选中。'
+                , [checkerset.checkerSetName, this.getCodeLang(checkerset.codeLang)],
+              )
+              : this.$t(
+                '取消【x】规则集为默认后，接入y语言任务时该规则集将不会被自动选中。'
+                , [checkerset.checkerSetName, this.getCodeLang(checkerset.codeLang)],
+              )
           } else {
             titleTxt = checkerset.scope === 2 ? this.$t('设为公开规则集') : this.$t('设为私密规则集')
             subTitleTxt = checkerset.scope === 2

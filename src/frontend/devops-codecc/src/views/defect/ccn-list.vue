@@ -1080,7 +1080,9 @@
       },
       statusTreeData() {
         const { existCount, fixCount, ignoreCount, maskCount } = this.statusFormData
-        const list = this.ignoreList.map(item => ({ id: `4-${item.ignoreTypeId}`, name: `已忽略-${item.name}` }))
+        const list = this.ignoreList.map(item => (
+          { id: `4-${item.ignoreTypeId}`, name: `${this.$t('已忽略')}-${item.name}` }
+        ))
         const statusList = [
           {
             id: 1,
