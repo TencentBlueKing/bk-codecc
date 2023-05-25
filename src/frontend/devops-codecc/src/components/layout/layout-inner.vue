@@ -5,7 +5,7 @@
       <section class="task-info">
         <!-- <span @click="$router.push({ name: 'task-list' })" class="codecc-icon icon-codecc curpt"></span> -->
         <span @click="handleToHomePage" class="curpt breadcrumb-txt codecc-cc cc-link">
-          <span class="codecc-cc-icon"></span>Code Check Center
+          <span class="codecc-cc-icon"></span>CodeCC
         </span>
         <i class="bk-icon icon-angle-right fs20"></i>
         <div class="bread-crumb-name" v-bk-clickoutside="toggleCrumbList">
