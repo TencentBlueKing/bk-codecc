@@ -179,10 +179,8 @@ class RBACAuthPermissionApi(
      * Available values : CIADMIN, MANAGER, DEVELOPER, MAINTAINER, TESTER, PM, QC, CI_MANAGER
      */
     override fun authProjectRole(projectId: String, user: String, role: String?): Boolean {
-        val url = "https://${
-            rbacAuthProperties
-                    .url
-        }$baseUrl/open/service/auth/projects/${projectId}/users/${user}/isProjectUsers"
+        val url = "${rbacAuthProperties.schemes}://${rbacAuthProperties.url}$baseUrl" +
+                "/open/service/auth/projects/${projectId}/users/${user}/isProjectUsers"
         val headers = getCommonHeaders(projectId)
         val params = mutableMapOf<String, String>()
         // 选填，判断是否有访问项目的权限，只要加入项目下 任意一个组，都会是项目的成员
@@ -288,10 +286,8 @@ class RBACAuthPermissionApi(
         projectCode: String,
         userId: String
     ): Result<Boolean> {
-        val url = "https://${
-            rbacAuthProperties
-                    .url
-        }$baseUrl/open/service/auth/projects/projectIds/${projectCode}/checkManager"
+        val url = "${rbacAuthProperties.schemes}://${rbacAuthProperties.url}$baseUrl" +
+                "/open/service/auth/projects/projectIds/${projectCode}/checkManager"
         val headers = getCommonHeaders(projectCode).toMutableMap()
         headers[AUTH_HEADER_DEVOPS_USER_ID] = userId
 
@@ -309,7 +305,8 @@ class RBACAuthPermissionApi(
         actions: List<String>,
         userId: String
     ): Result<Boolean> {
-        val url = "https://${rbacAuthProperties.url}$baseUrl/open/service/auth/permission/projects/${projectCode}" +
+        val url = "${rbacAuthProperties.schemes}://${rbacAuthProperties.url}$baseUrl" +
+                "/open/service/auth/permission/projects/${projectCode}" +
                 "/relation/validate/batch?resourceCode=${resourceCode}&resourceType=${resourceType}"
         val headers = getCommonHeaders(projectCode).toMutableMap()
         headers[AUTH_HEADER_DEVOPS_USER_ID] = userId
