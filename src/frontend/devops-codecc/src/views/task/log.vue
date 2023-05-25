@@ -121,7 +121,7 @@
                           v-if="item.flag === 1 && getToolStatus(item.currStep, item.toolName) === $t('成功')"
                           :title="getAnalyseMsg(item.stepArray) + getToolStatus(item.currStep, item.toolName)">
                       <i class="bk-icon card-tool-status icon-check-circle-shape"></i>
-                      {{getAnalyseMsg(item.stepArray)}}{{getToolStatus(item.currStep, item.toolName)}}
+                      {{getAnalyseMsg(item.stepArray)}} {{getToolStatus(item.currStep, item.toolName)}}
                     </span>
                     <span class="tool-col-status cc-ellipsis" v-else-if="item.flag === 2 || item.flag === 4"
                           :title="getToolStatus(item.currStep, item.toolName) + '-' + item.stepArray[item.stepArray.length - 1].msg">
