@@ -407,6 +407,7 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
         IgnoreTypeSysEntity sysEntity = ignoreTypeSysRepository.findFirstByIgnoreTypeId(ignoreTypeId);
         if (sysEntity != null) {
             IgnoreTypeProjectConfigVO projectConfigVO = new IgnoreTypeProjectConfigVO();
+            projectConfigVO.setEntityId(sysEntity.getEntityId());
             projectConfigVO.setProjectId(projectId);
             projectConfigVO.setIgnoreTypeId(sysEntity.getIgnoreTypeId());
             projectConfigVO.setName(sysEntity.getName());
