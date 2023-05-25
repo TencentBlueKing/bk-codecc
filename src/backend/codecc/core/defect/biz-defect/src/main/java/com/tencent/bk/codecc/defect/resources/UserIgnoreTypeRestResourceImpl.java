@@ -47,6 +47,7 @@ public class UserIgnoreTypeRestResourceImpl implements UserIgnoreTypeRestResourc
 
 
     @Override
+    @I18NResponse
     public Result<IgnoreTypeProjectConfigVO> detail(String projectId, String userName, Integer ignoreTypeId) {
         return new Result<>(iIgnoreTypeService.ignoreTypeProjectDetail(projectId, userName, ignoreTypeId));
     }
