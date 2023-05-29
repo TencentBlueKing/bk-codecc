@@ -358,7 +358,7 @@
       document.onkeydown = keyDown
       function keyDown(event) {
         const e = event || window.event
-        if (e.target.nodeName !== 'BODY') return
+        // if (e.target.nodeName !== 'BODY') return
         switch (e.code) {
           case 'Enter':
             if (e.target.getAttribute('class') !== 'bk-form-input') vm.handleRowClick()
