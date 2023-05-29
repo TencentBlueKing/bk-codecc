@@ -9,6 +9,7 @@ public class BuildI18NRestResourceImpl implements BuildI18NRestResource {
 
     @Override
     public Result<String> getLanguageTag(String userId) {
+        // todo:等开源版api-project版本号
         return new Result<>("en");
     }
 }

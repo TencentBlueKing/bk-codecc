@@ -8,7 +8,7 @@
       <span class="operation-title ml10">{{ title }}</span>
     </div>
     <div class="operation-content" v-bkloading="{ isLoading }">
-      <bk-form class="form-content" ref="form" :model="formData" :rules="rules" :label-width="formLabelWidth">
+      <bk-form class="form-content" ref="form" :model="formData" :rules="isSysIgnore ? null : rules" :label-width="formLabelWidth">
         <bk-form-item :label="$t('忽略类型名称')" required property="name" error-display-type="normal">
           <bk-input ref="nameInput" maxlength="50" v-model="formData.name" :disabled="isSysIgnore"></bk-input>
         </bk-form-item>
@@ -245,7 +245,7 @@
             curData.notify.everyWeek = false
           }
 
-          if (!notifyReceiverTypes.length || !notifyTypes.length) {
+          if (!notifyReceiverTypes || !notifyReceiverTypes.length || !notifyTypes.length) {
             curData.notify.notifyMonths = []
             curData.notify.notifyWeekOfMonths = []
             curData.notify.notifyDayOfWeeks = []

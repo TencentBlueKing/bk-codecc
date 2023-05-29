@@ -8,7 +8,7 @@
     <div class="main-content" v-bkloading="{ isLoading: loading, opacity: 0.3 }">
       <div class="info-header">
         <span>{{$t('更多规则集')}}<i class="bk-icon icon-refresh checkerset-fresh" :class="fetchingList ? 'spin-icon' : ''" @click="refresh" /></span>
-        <bk-select class="search-select" v-model="language" multiple style="width: 120px;" :placeholder="$t('请选择语言')">
+        <bk-select class="search-select" v-model="language" multiple style="width: 120px;" :placeholder="$t('选择语言')">
           <bk-option v-for="option in codeLangs"
                      :key="option.displayName"
                      :id="option.displayName"

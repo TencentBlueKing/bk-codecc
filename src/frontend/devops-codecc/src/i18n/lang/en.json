@@ -599,7 +599,7 @@
 	"点击规则集名称可查看其所包含的规则，并进行编辑": "Click the name of the checkerset to view and edit the rules it contains",
 	"基于": "Based On",
 	"暂无规则集编辑权限，可在新建/复制规则集后进行修改。": "No edit permission for checkerset, you can copy or add a new checkerset first",
-	"请选择语言": "Please select language",
+	"选择语言": "Select language",
 	"返回": "Back",
 	"没有查询到数据": "No data has been found",
 	"接入任务": "Access task",
@@ -1009,5 +1009,8 @@
 	"设置提醒": "Set reminders",
 	"，以便定期review和修复。": ", so that you can review and fix them regularly.",
 	"知道了": "Got it",
-	"支持忽略无需处理或暂缓处理的问题。": "Support ignoring issues that do not require immediate or deferred attention."
+	"支持忽略无需处理或暂缓处理的问题。": "Support ignoring issues that do not require immediate or deferred attention.",
+	"可使用中文、字母（不分大小写）、数字、下划线，长度不超过50个字符": "You can use Chinese, letters (case insensitive), numbers, and underscores, with a length of no more than 50 characters.",
+	"请填写完整的提醒日期": "Please fill in the complete reminder date",
+	"更新成功": "Update successfully"
 }

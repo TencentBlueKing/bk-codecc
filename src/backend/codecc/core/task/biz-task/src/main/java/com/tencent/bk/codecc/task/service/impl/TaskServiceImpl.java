@@ -170,6 +170,7 @@ import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.ToolMetaCacheService;
+import com.tencent.devops.common.service.aop.AbstractI18NResponseAspect;
 import com.tencent.devops.common.service.utils.GlobalMessageUtil;
 import com.tencent.devops.common.service.utils.PageableUtils;
 import com.tencent.devops.common.util.BeanUtils;
@@ -421,9 +422,9 @@ public class TaskServiceImpl implements TaskService {
                                 continue;
                             }
 
+                            String toolName = toolConfigInfoEntity.getToolName();
                             // 获取工具展示名称
-                            ToolMetaBaseVO toolMetaBaseVO =
-                                    toolMetaCache.getToolBaseMetaCache(toolConfigInfoEntity.getToolName());
+                            ToolMetaBaseVO toolMetaBaseVO = toolMetaCache.getToolBaseMetaCache(toolName);
 
                             if (toolConfigInfoEntity.getFollowStatus() != ComConstants.FOLLOW_STATUS.WITHDRAW.value()
                                     && !ComConstants.ToolIntegratedStatus.D.name().equals(
@@ -432,8 +433,13 @@ public class TaskServiceImpl implements TaskService {
                                 //更新工具显示状态
                                 //如果有失败的工具，则显示失败的状态
                                 if (!processFlag) {
-                                    processFlag = taskDetailDisplayInfo(toolConfigInfoEntity, taskDetailVO,
-                                            toolMetaBaseVO.getDisplayName());
+                                    Locale locale = AbstractI18NResponseAspect.getLocale();
+                                    String toolDisplayName = toolMetaCache.getDisplayNameByLocale(toolName, locale);
+                                    processFlag = taskDetailDisplayInfo(
+                                            toolConfigInfoEntity,
+                                            taskDetailVO,
+                                            toolDisplayName
+                                    );
                                 }
                                 //添加进度条
                                 totalFinishStep += toolConfigInfoEntity.getCurStep();

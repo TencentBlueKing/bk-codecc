@@ -21,7 +21,7 @@
                 <bk-select v-model="toolId" @selected="handleSelectTool" :clearable="false" searchable>
                   <bk-option-group
                     v-for="group in toolList"
-                    :name="group.name"
+                    :name="isEn ? group.key : group.name"
                     :key="group.key">
                     <bk-option v-for="option in group.toolList"
                                :key="option.toolName"
@@ -116,6 +116,7 @@
   import { format } from 'date-fns'
   // eslint-disable-next-line
     import { export_json_to_excel } from 'vendor/export2Excel'
+  import { language } from '../../i18n'
 
   export default {
     components: {
@@ -147,6 +148,9 @@
             return time.getTime() > Date.now()
           },
         }
+      },
+      isEn() {
+        return language === 'en'
       },
     },
     watch: {
