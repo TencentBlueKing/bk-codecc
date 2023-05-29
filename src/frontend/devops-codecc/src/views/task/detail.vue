@@ -31,18 +31,18 @@
           </bk-rate>
           <div slot="content">
             <p>{{ $t('质量星级：') }}<b>{{rdScore.rdIndicatorsScore ? (rdScore.rdIndicatorsScore / 20).toFixed(1) : 0}}</b>，
-              {{$t('综合评分：')}}<b>{{rdScore.rdIndicatorsScore | formatUndefNum('fixed', 2)}}分</b>{{$t('，详情如下：')}}</p>
+              {{$t('综合得分：')}}<b>{{rdScore.rdIndicatorsScore | formatUndefNum('fixed', 2)}}分</b>{{$t('，详情如下：')}}</p>
             <p>{{$t('【安全漏洞】严重问题数')}}{{rdScore.codeSecuritySeriousDefectCount | formatUndefNum}}，
               {{ $t('一般问题数') }}{{rdScore.codeSecurityNormalDefectCount | formatUndefNum}}，
-              {{$t('评分：')}}{{rdScore.codeSecurityScore | formatUndefNum('fixed', 2)}}；</p>
+              {{$t('得分：')}}{{rdScore.codeSecurityScore | formatUndefNum('fixed', 2)}}；</p>
             <p>{{$t('【代码规范】严重问题数密度')}}{{rdScore.averageSeriousStandardThousandDefect | formatUndefNum('fixed', 2)}}{{ $t('千行，') }}
               {{$t('一般问题数密度')}}{{rdScore.averageNormalStandardThousandDefect | formatUndefNum('fixed', 2)}}{{ $t('千行，') }}
-              {{$t('评分：')}}{{rdScore.codeStyleScore | formatUndefNum('fixed', 2)}}；</p>
+              {{$t('得分：')}}{{rdScore.codeStyleScore | formatUndefNum('fixed', 2)}}；</p>
             <p>{{$t('【圈复杂度】千行超标复杂度')}}{{averageThousandDefect | formatUndefNum('fixed', 2)}}，
-              {{$t('评分：')}}{{rdScore.codeCcnScore| formatUndefNum('fixed', 2)}}；</p>
+              {{$t('得分：')}}{{rdScore.codeCcnScore| formatUndefNum('fixed', 2)}}；</p>
             <p>{{$t('以上质量评价依照')}}{{$t('腾讯开源治理指标体系')}}
               {{$t('(其中文档质量暂按100分计算)，')}}
-              {{$t('评分仅供参考，最终评分请以')}} {{$t('技术图谱')}} {{$t('为准。')}}</p>
+              {{$t('得分仅供参考，最终得分请以')}} {{$t('技术图谱')}} {{$t('为准。')}}</p>
             <p>{{$t('技术图谱每日凌晨刷新一次分数。')}}</p>
           </div>
         </bk-popover>

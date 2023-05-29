@@ -1216,7 +1216,7 @@
             this.exportLoading = false
           })
       },
-      generateExcel(list = []) {
+      generateExcel(list = [], clusterType) {
         const { isProjectDefect } = this
         const exHeader = isProjectDefect ? [this.$t('任务')] : []
         const exVal = isProjectDefect ? ['taskNameCn'] : []
@@ -1264,7 +1264,7 @@
           'status',
           ...exVal,
         ]
-        const data = this.formatJson(filterVal, list)
+        const data = this.formatJson(filterVal, list, clusterType)
         // eslint-disable-next-line
         const prefix = isProjectDefect ? `${this.$route.params.projectId}` : `${this.taskDetail.nameCn}-${this.taskDetail.taskId}-${this.dimensionStr}-`
         const title = `${prefix}${this.$t('问题')}-${new Date().toISOString()}`

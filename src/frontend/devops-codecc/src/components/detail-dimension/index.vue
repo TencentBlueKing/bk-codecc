@@ -44,7 +44,7 @@
                 }"></i>
                 <div slot="content">
                   <p>{{ $t('【安全漏洞】严重问题数') }}{{rdScore.codeSecuritySeriousDefectCount | formatUndefNum}}，
-                    {{ $t('一般问题数') }}{{rdScore.codeSecurityNormalDefectCount | formatUndefNum}}，{{$t('评分：')}}<b>{{rdScore.codeSecurityScore | formatUndefNum('fixed', 2)}}</b></p>
+                    {{ $t('一般问题数') }}{{rdScore.codeSecurityNormalDefectCount | formatUndefNum}}，{{$t('得分：')}}<b>{{rdScore.codeSecurityScore | formatUndefNum('fixed', 2)}}</b></p>
                 </div>
               </bk-popover>
             </div>
@@ -86,7 +86,7 @@
                 <div slot="content">
                   <p>{{$t('【代码规范】严重问题数密度')}}{{rdScore.averageSeriousStandardThousandDefect | formatUndefNum('fixed', 2)}}{{ $t('千行，') }}
                     {{$t('一般问题数密度')}}{{rdScore.averageNormalStandardThousandDefect | formatUndefNum('fixed', 2)}}{{ $t('千行，') }}
-                    <b>{{rdScore.codeStyleScore | formatUndefNum('fixed', 2)}}</b></p>
+                    <b>{{$t('得分：')}}{{rdScore.codeStyleScore | formatUndefNum('fixed', 2)}}</b></p>
                 </div>
               </bk-popover>
             </div>
@@ -142,7 +142,7 @@
                 }"></i>
                 <div slot="content">
                   <p>{{$t('【圈复杂度】千行超标复杂度')}}{{item.baseClusterResultVO.averageThousandDefect | formatUndefNum('fixed', 2)}}，
-                    <b>{{$t('评分：')}}{{rdScore.codeCcnScore | formatUndefNum('fixed', 2)}}</b></p>
+                    <b>{{$t('得分：')}}{{rdScore.codeCcnScore | formatUndefNum('fixed', 2)}}</b></p>
                 </div>
               </bk-popover>
             </div>
