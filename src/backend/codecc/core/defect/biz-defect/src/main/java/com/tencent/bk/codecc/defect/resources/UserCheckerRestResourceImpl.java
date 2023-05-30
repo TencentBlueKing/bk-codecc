@@ -115,7 +115,7 @@ public class UserCheckerRestResourceImpl implements UserCheckerRestResource {
     }
 
     @Override
-    //@I18NResponse
+    @I18NResponse
     public Result<CheckerDetailVO> queryCheckerDetail(String toolName, String checkerKey) {
         return new Result<>(checkerService.queryCheckerDetail(toolName, checkerKey));
     }
