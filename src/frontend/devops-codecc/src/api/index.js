@@ -195,7 +195,7 @@ function handleReject(error, config) {
     const { status, data } = error.response
     const nextError = { message: error.message, response: error.response }
     if (status === 401) {
-      window.location.href = `${window.PAAS_SERVICE_URL}/?c_url=${window.location.href}`
+      window.location.href = `${window.PAAS_SERVICE_URL}/?c_url=${encodeURIComponent(window.location.href)}`
       // bus.$emit('show-login-modal')
     } else if (status === 403) {
       bus.$emit('show-permission-dialog')

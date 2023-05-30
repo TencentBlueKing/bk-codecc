@@ -54,7 +54,6 @@
           :key="index">
           <template slot="label">
             <span class="panel-name">{{panel.label}}</span>
-            <i v-if="panel.name === 'dimension' && !hasRedPointStore" class="red-point"></i>
           </template>
         </bk-tab-panel>
         <detail-tool v-if="active === 'tool'" :selected-type-data="toolDataList"></detail-tool>

@@ -135,7 +135,6 @@
             >
               <span>
                 {{item.name}}
-                <i v-if="item.id === 'task-settings' && !hasRedPointStore" class="red-point"></i>
               </span>
               <template v-slot:child>
                 <bk-navigation-menu-item

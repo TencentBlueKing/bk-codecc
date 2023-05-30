@@ -19,7 +19,7 @@
     name: 'app-auth',
     data() {
       return {
-        loginUrl: `${window.PAAS_SERVICE_URL}/?c_url=${window.location.href}`,
+        loginUrl: `${window.PAAS_SERVICE_URL}/?c_url=${encodeURIComponent(window.location.href)}`,
         isShow: false,
       }
     },

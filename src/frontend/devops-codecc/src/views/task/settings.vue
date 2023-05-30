@@ -8,7 +8,6 @@
         :key="index">
         <template slot="label">
           <span class="panel-name">{{panel.label}}</span>
-          <i v-if="panel.name === 'issue' && !hasRedPointStore" class="red-point"></i>
         </template>
         <router-view></router-view>
       </bk-tab-panel>

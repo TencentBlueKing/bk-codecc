@@ -804,7 +804,7 @@
 	"共找到": "Total found",
 	"已选中": "Selected",
 	"搜索文件夹如P2PLive": "Search folders, such as P2PLive, can be entered.*/P2PLive/.*",
-	"搜索某类文件如P2PLive下": "Search for a type of files, such as *.c Under P2PLive, You can enter .*/P2PLive/.*\\\\.c",
+	"搜索某类文件如P2PLive下": "Search for a type of files, such as *.c Under P2PLive, enter .*/P2PLive/.*\\\\.c",
 	"得分：": "Score:",
 	"【安全漏洞】严重问题数": "[Vulnerability] number of serious issues",
 	"一般问题数": "Number of normal issues",
