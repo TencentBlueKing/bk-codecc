@@ -129,6 +129,8 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
     private AuthExPermissionApi authExPermissionApi;
     @Value("${bkci.public.url:#{null}}")
     private String devopsHost;
+    @Value("${bkci.public.schemes:http}")
+    private String devopsSchemes;
     @Value("${codecc.public.url:#{null}}")
     private String codeccHost;
     private LoadingCache<String, List<IgnoreTypeSysEntity>> sysIgnoreTypeCache = CacheBuilder.newBuilder()
@@ -636,10 +638,12 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
         strBuilder.append("忽略类型：").append(detailVO.getIgnoreTypeName()).append("\n");
         strBuilder.append("忽略数量（共").append(detailVO.getTaskIgnoreSum()).append("个任务，含[")
                 .append(detailVO.getDefectIgnoreSum()).append("个问题](")
-                .append(String.format("http://%s/console/codecc/%s/defect/list", devopsHost, detailVO.getProjectId()))
+                .append(String.format("%s://%s/console/codecc/%s/defect/list", devopsSchemes, devopsHost,
+                        detailVO.getProjectId()))
                 .append("?").append(queryParam).append(")、[")
                 .append(detailVO.getCcnIgnoreSum()).append("个风险函数](")
-                .append(String.format("http://%s/console/codecc/%s/ccn/list", devopsHost, detailVO.getProjectId()))
+                .append(String.format("%s://%s/console/codecc/%s/ccn/list", devopsSchemes, devopsHost,
+                        detailVO.getProjectId()))
                 .append("?").append(queryParam).append(")）").append("\n");
 
         List<IgnoreStatDetail> ignoreTaskList = detailVO.getTaskList();
@@ -816,7 +820,7 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
     private String generateEmailRootUrl(String projectId) {
         return NotifyUtils.isGongfengScanProject(projectId) || NotifyUtils.isStream2_0(projectId)
                 ? String.format("http://%s/codecc/%s/", codeccHost, projectId)
-                : String.format("http://%s/console/codecc/%s/", devopsHost, projectId);
+                : String.format("%s://%s/console/codecc/%s/", devopsSchemes, devopsHost, projectId);
     }
 
     /**

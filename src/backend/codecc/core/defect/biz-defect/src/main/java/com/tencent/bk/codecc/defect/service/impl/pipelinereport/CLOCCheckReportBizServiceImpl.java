@@ -23,6 +23,9 @@ public class CLOCCheckReportBizServiceImpl implements ICheckReportBizService {
     @Value("${bkci.public.url:#{null}}")
     private String devopsHost;
 
+    @Value("${bkci.public.schemes:http}")
+    private String devopsSchemes;
+
     @Autowired
     private TaskLogService taskLogService;
 
@@ -99,13 +102,13 @@ public class CLOCCheckReportBizServiceImpl implements ICheckReportBizService {
         clocSnapShotEntity.setToolNameEn(toolName);
         if (StringUtils.isNotEmpty(projectId)) {
             String defectDetailUrl = String.format(
-                    "https://%s/console/codecc/%s/task/%s/defect/cloc/language",
-                    devopsHost, projectId, taskId
+                    "%s://%s/console/codecc/%s/task/%s/defect/cloc/language",
+                    devopsSchemes, devopsHost, projectId, taskId
             );
 
             String defectReportUrl = String.format(
-                    "https://%s/console/codecc/%s/task/%s/defect/cloc/language",
-                    devopsHost, projectId, taskId
+                    "%s://%s/console/codecc/%s/task/%s/defect/cloc/language",
+                    devopsSchemes, devopsHost, projectId, taskId
             );
 
             clocSnapShotEntity.setDefectDetailUrl(defectDetailUrl);

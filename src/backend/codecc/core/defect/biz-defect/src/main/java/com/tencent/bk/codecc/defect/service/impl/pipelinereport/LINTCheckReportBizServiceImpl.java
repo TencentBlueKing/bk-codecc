@@ -56,6 +56,9 @@ public class LINTCheckReportBizServiceImpl implements ICheckReportBizService
     @Value("${bkci.public.url:#{null}}")
     private String devopsHost;
 
+    @Value("${bkci.public.schemes:http}")
+    private String devopsSchemes;
+
     @Override
     public ToolSnapShotEntity getReport(long taskId, String projectId, String toolName, String buildId)
     {
@@ -99,13 +102,13 @@ public class LINTCheckReportBizServiceImpl implements ICheckReportBizService
         lintSnapShotEntity.setToolNameEn(toolName);
         if (StringUtils.isNotEmpty(projectId)) {
             String defectDetailUrl = String.format(
-                    "https://%s/console/codecc/%s/task/%d/defect/lint/%s/list?buildId=%s",
-                    devopsHost, projectId, taskId, toolName.toUpperCase(), buildId
+                    "%s://%s/console/codecc/%s/task/%d/defect/lint/%s/list?buildId=%s",
+                    devopsSchemes, devopsHost, projectId, taskId, toolName.toUpperCase(), buildId
             );
 
             String defectReportUrl = String.format(
-                    "https://%s/console/codecc/%s/task/%d/defect/lint/%s/charts",
-                    devopsHost, projectId, taskId, toolName.toUpperCase()
+                    "%s://%s/console/codecc/%s/task/%d/defect/lint/%s/charts",
+                    devopsSchemes, devopsHost, projectId, taskId, toolName.toUpperCase()
             );
 
             lintSnapShotEntity.setDefectDetailUrl(defectDetailUrl);
