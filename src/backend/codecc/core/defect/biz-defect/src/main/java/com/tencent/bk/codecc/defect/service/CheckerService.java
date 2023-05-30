@@ -139,6 +139,14 @@ public interface CheckerService {
      */
     CheckerDetailVO queryCheckerDetail(String toolName, String checkerKey);
 
+    /**
+     * 查询规则详情（国际化版本）
+     *
+     * @param toolName
+     * @param checkerKey
+     * @return
+     */
+    CheckerDetailVO queryCheckerDetailWithI18N(String toolName, String checkerKey);
 
     /**
      * 根据条件查询规则详情

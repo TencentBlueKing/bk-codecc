@@ -325,9 +325,9 @@
 	"圈复杂度为，超过圈复杂度规则的阈值xx，请进行函数功能拆分降低代码复杂度。": "CCN is {ccn}, The threshold of the current rule is {ccnThreshold}, so do function refining to reduce code complexity.",
 	"恭喜你已经切换至V2版本，立即触发一次新的分析吧!": "Switched to V2 version successfully, Let's trigger a new analysis now!",
 	"详情": "Detail",
-	"规则": "Checkers",
-	"处理人": "Handlers",
-	"相关作者": "Handlers",
+	"规则": "Checker",
+	"处理人": "Handler",
+	"相关作者": "Handler",
 	"路径": "Path",
 	"级别": "Impact",
 	"风险级别": "Impact",
@@ -375,7 +375,7 @@
 	"函数总行数": "Total Lines of Function",
 	"代码库路径": "Repository",
 	"版本号": "Revision",
-	"回到函数位置": "Locate Function",
+	"函数位置": "Locate Function",
 	"上一函数": "Prev",
 	"下一函数": "Next",
 	"上一问题": "Prev",
@@ -1015,5 +1015,7 @@
 	"更新成功": "Update successfully",
 	"当前项目由API创建，CodeCC任务数会十分庞大，暂不支持查看任务列表和问题列表。": "The current project is created by API, and the number of CodeCC tasks is expected to be very large. Therefore, viewing the task list and issue list is not supported at present.",
 	"无法显示任务": "Can't display tasks",
-	"问题列表加载中，请等待列表加载完再尝试导出。": "Loading problem list, please wait for the list to load completely before attempting to export."
+	"问题列表加载中，请等待列表加载完再尝试导出。": "Loading problem list, please wait for the list to load completely before attempting to export.",
+	"评论成功": "Comment successfully",
+	"标记为已处理成功": "Marked as processed successfully"
 }

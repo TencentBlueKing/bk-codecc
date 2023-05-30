@@ -56,6 +56,7 @@ public class I18NReflection {
         private String resourceCodeField;
         private String moduleCode;
         private boolean isListType;
+        // 资源编码set
         private Set<String> keySet;
         private Map<String, String> keyAndValueMap;
     }

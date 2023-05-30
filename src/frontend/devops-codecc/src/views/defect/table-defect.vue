@@ -122,7 +122,7 @@
                   <span class="entry-link ignore-item" @click.stop="handleIgnore('IgnoreDefect', false, props.row.entityId)">{{$t('忽略问题')}}</span>
                 </div>
                 <div class="guide-content" slot="content">
-                  <div style="line-height: 22px">
+                  <div :style="lineHeight">
                     {{ $t('支持忽略无需处理或暂缓处理的问题。') }}
                     {{ $t('针对特定忽略类型可') }}
                     <span theme="primary" class="set-tips" @click="handleTableSetReview">{{ $t('设置提醒') }}</span>
@@ -163,6 +163,7 @@
 <script>
   import defectTable from '@/mixins/defect-table'
   import { array2Str } from '@/common/util'
+  import { language } from '../../i18n'
 
   export default {
     mixins: [defectTable],
@@ -170,6 +171,14 @@
       return {
         array2Str,
       }
+    },
+    computed: {
+      isEn() {
+        return language === 'en'
+      },
+      lineHeight() {
+        return this.isEn ? 'line-height: 18px' : 'line-height: 22px'
+      },
     },
   }
 </script>

@@ -728,12 +728,12 @@
         theme="primary"
         :mask-close="false"
         header-position="left"
-        :title="$t('告警评论')"
+        :title="$t('评论')"
       >
         <div class="pd10 pr50">
           <bk-form :model="commentParams" :label-width="30" class="search-form">
             <bk-form-item property="comment" :required="true">
-              <bk-input placeholder="请输入你的评论内容" :type="'textarea'" :maxlength="200" v-model="commentParams.comment"></bk-input>
+              <bk-input :placeholder="$t('请输入你的评论内容')" :type="'textarea'" :maxlength="200" v-model="commentParams.comment"></bk-input>
             </bk-form-item>
           </bk-form>
         </div>

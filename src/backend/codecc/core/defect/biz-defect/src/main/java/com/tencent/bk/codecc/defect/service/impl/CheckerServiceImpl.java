@@ -506,6 +506,24 @@ public class CheckerServiceImpl implements CheckerService {
     }
 
     @Override
+    @I18NResponse
+    public CheckerDetailVO queryCheckerDetailWithI18N(String toolName, String checkerKey) {
+        if (StringUtils.isEmpty(toolName) || StringUtils.isEmpty(checkerKey)) {
+            return null;
+        }
+
+        CheckerDetailEntity checkerDetailEntity =
+                checkerRepository.findFirstByToolNameAndCheckerKey(toolName, checkerKey);
+        if (checkerDetailEntity == null) {
+            return null;
+        }
+        CheckerDetailVO checkerDetailVO = new CheckerDetailVO();
+        BeanUtils.copyProperties(checkerDetailEntity, checkerDetailVO);
+
+        return checkerDetailVO;
+    }
+
+    @Override
     public List<CheckerDetailVO> queryCheckerDetailList(CheckerListQueryReq checkerListQueryReq, String projectId,
             Integer pageNum, Integer pageSize, Sort.Direction sortType, CheckerListSortType sortField) {
         //处理规则集的选中问题

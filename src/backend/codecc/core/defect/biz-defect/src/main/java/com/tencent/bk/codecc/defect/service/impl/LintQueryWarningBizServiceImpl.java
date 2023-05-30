@@ -96,6 +96,7 @@ import com.tencent.devops.common.constant.ComConstants.BusinessType;
 import com.tencent.devops.common.constant.ComConstants.DefectStatus;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.BizServiceFactory;
+import com.tencent.devops.common.service.utils.I18NUtils;
 import com.tencent.devops.common.service.utils.PageableUtils;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.FileUtils;
@@ -1029,7 +1030,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
 
     private void getCheckerDetailAndType(LintDefectVO lintDefectVO, String toolName, String pattern) {
         String checker = lintDefectVO.getChecker();
-        CheckerDetailVO checkerDetailVO = multitoolCheckerService.queryCheckerDetail(toolName, checker);
+        CheckerDetailVO checkerDetailVO = multitoolCheckerService.queryCheckerDetailWithI18N(toolName, checker);
         String checkerDesc = "";
 
         if (ComConstants.ToolPattern.LINT.name().equals(pattern)) {
@@ -1037,8 +1038,8 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                 lintDefectVO.setCheckerType(checkerDetailVO.getCheckerType());
                 checkerDesc = checkerDetailVO.getCheckerDesc();
             } else {
-                lintDefectVO.setCheckerType("自定义");
-                checkerDesc = "该规则为自定义规则，暂无规则描述";
+                lintDefectVO.setCheckerType(I18NUtils.getMessage("CHECKER_TYPE_CUSTOM"));
+                checkerDesc = I18NUtils.getMessage("CHECKER_TYPE_DESC_CUSTOM");
             }
         } else {
             if (checkerDetailVO != null) {

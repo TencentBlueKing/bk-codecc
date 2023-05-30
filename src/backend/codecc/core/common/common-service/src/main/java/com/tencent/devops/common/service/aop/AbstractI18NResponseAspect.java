@@ -96,6 +96,14 @@ public abstract class AbstractI18NResponseAspect {
 
         List<?> returningList = repackReturning(isResultGeneric, isListGeneric, isPageGeneric, originReturning);
         extractResourceCode(i18nReflection, returningList);
+
+        // 校验提取的资源编码
+        if (i18nReflection.getFieldMetaDataList() == null
+                || i18nReflection.getFieldMetaDataList().stream()
+                .allMatch(x -> CollectionUtils.isEmpty(x.getKeySet()))) {
+            return originReturning;
+        }
+
         addInternationalization(i18nReflection, locale);
         renderReturning(i18nReflection, returningList);
 
