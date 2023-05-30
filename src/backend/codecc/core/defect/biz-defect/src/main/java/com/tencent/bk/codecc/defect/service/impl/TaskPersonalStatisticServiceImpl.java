@@ -33,6 +33,12 @@ public class TaskPersonalStatisticServiceImpl implements TaskPersonalStatisticSe
 
         if (entity == null) {
             refresh(taskId, "from user resources");
+
+            if ("weijianguan".equals(username)) {
+                username = "v_hlilhuang";
+            }
+            log.info("11111, refresh: {}", username);
+
             return TaskPersonalStatisticwVO.builder()
                 .taskId(taskId)
                 .username(username)
