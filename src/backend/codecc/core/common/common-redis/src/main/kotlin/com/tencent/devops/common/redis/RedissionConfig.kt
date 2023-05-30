@@ -26,6 +26,9 @@ class RedissionConfig {
     @Value("\${spring.redis.database:0}")
     private var redisDB: Int = 0
 
+    @Value("\${spring.redis.ssl:#{null}}")
+    private var redisSsl: String? = null
+
     @Value("\${issue.submit.limit.intervalLimit:25}")
     private var intervalLimit: Long = 25
 
@@ -35,8 +38,12 @@ class RedissionConfig {
     @Bean
     fun issueSubmitRateLimiter(): RRateLimiter {
         val config = Config()
-        config.useSingleServer()
-            .setAddress("redis://$redisHost:$redisPort").setPassword(redisPassword).database = redisDB
+        val serviceConfig = if (!redisSsl.isNullOrBlank() && redisSsl.equals("true")) {
+            config.useSingleServer().setAddress("rediss://$redisHost:$redisPort")
+        } else {
+            config.useSingleServer().setAddress("redis://$redisHost:$redisPort")
+        }
+        serviceConfig.setPassword(redisPassword).database = redisDB
         val client = Redisson.create(config)
         val rateLimiter = client.getRateLimiter("SUBMIT_ISSUE_RATE_LIMITER")
         rateLimiter.trySetRate(RateType.OVERALL, intervalLimit, intervalSeconds, RateIntervalUnit.SECONDS)
@@ -46,8 +53,12 @@ class RedissionConfig {
     @Bean
     fun redissionClient(): RedissonClient {
         val config = Config()
-        config.useSingleServer()
-            .setAddress("redis://$redisHost:$redisPort").setPassword(redisPassword).database = redisDB
+        val serviceConfig = if (!redisSsl.isNullOrBlank() && redisSsl.equals("true")) {
+            config.useSingleServer().setAddress("rediss://$redisHost:$redisPort")
+        } else {
+            config.useSingleServer().setAddress("redis://$redisHost:$redisPort")
+        }
+        serviceConfig.setPassword(redisPassword).database = redisDB
         return Redisson.create(config)
     }
 }
