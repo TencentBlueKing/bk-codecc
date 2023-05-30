@@ -115,6 +115,7 @@ public class DateTimeUtils {
         cal.set(Calendar.YEAR, year);
         cal.set(Calendar.WEEK_OF_YEAR, weekNum);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+        cal.setFirstDayOfWeek(Calendar.MONDAY);
         String weekDate = sdf.format(cal.getTime()).substring(5) + "/";
         cal.add(Calendar.DAY_OF_WEEK, 6);
         weekDate += sdf.format(cal.getTime()).substring(5);
@@ -672,6 +673,7 @@ public class DateTimeUtils {
                 }
                 startYear = endYear;
             }
+            startCal.setFirstDayOfWeek(Calendar.MONDAY);
             int weekNum = startCal.get(Calendar.WEEK_OF_YEAR);
             String weekNumStr = String.valueOf(weekNum);
             if (weekNum < 10) {

@@ -1813,7 +1813,8 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
         if (CheckerConstants.CheckerSetRelationshipType.PROJECT.name().equals(checkerSetRelationshipVO.getType())) {
 
             projectRelationshipEntity =
-                    checkerSetProjectRelationshipRepository.findFirstByCheckerSetIdAndProjectId(checkerSetId, projectId);
+                    checkerSetProjectRelationshipRepository.findFirstByCheckerSetIdAndProjectId(checkerSetId,
+                            projectId);
             if (projectRelationshipEntity != null) {
                 log.error("关联已存在！: {}, {}, {}", checkerSetId, projectId, taskId);
                 return;

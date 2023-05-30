@@ -60,6 +60,7 @@ open class ApigwDefectResourceV2Impl @Autowired constructor(
         logger.info("start to author transfer!! task id: $taskId, project id: $projectId")
         val batchDefectProcessReqVO = batchDefectProcessReqOldVO.toBatchDefectProcessReqVO()
         batchDefectProcessReqVO.bizType = ComConstants.BusinessType.ASSIGN_DEFECT.value()
+        batchDefectProcessReqVO.projectId = projectId
         return client.getWithoutRetry(ServiceDefectRestResource::class)
                 .batchDefectProcess(taskId, userId, batchDefectProcessReqVO)
     }

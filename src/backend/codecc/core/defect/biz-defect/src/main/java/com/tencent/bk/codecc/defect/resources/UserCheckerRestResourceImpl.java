@@ -120,15 +120,22 @@ public class UserCheckerRestResourceImpl implements UserCheckerRestResource {
     }
 
     @Override
-    @I18NResponse
-    public Result<List<CheckerDetailVO>> queryCheckerDetailList(CheckerListQueryReq checkerListQueryReq, String projectId, Integer pageNum,
-                                                                Integer pageSize, Sort.Direction sortType, CheckerListSortType sortField) {
-        return new Result<>(checkerService.queryCheckerDetailList(checkerListQueryReq, projectId, pageNum, pageSize, sortType, sortField));
+    public Result<List<CheckerDetailVO>> queryCheckerDetailList(
+            CheckerListQueryReq checkerListQueryReq,
+            String projectId,
+            Integer pageNum,
+            Integer pageSize,
+            Sort.Direction sortType,
+            CheckerListSortType sortField
+    ) {
+        return new Result<>(checkerService.queryCheckerDetailList(checkerListQueryReq, projectId, pageNum,
+                pageSize, sortType, sortField));
     }
 
 
     @Override
-    public Result<List<CheckerCommonCountVO>> queryCheckerCountList(CheckerListQueryReq checkerListQueryReq, String projectId) {
+    public Result<List<CheckerCommonCountVO>> queryCheckerCountList(CheckerListQueryReq checkerListQueryReq,
+                                                                    String projectId) {
         return new Result<>(checkerService.queryCheckerCountListNew(checkerListQueryReq, projectId));
     }
 
