@@ -23,40 +23,47 @@ public enum CheckerCategory {
     /**
      * 代码缺陷
      */
-    CODE_DEFECT("代码缺陷"),
+    CODE_DEFECT("代码缺陷", "Code Defects"),
 
     /**
      * 安全漏洞
      */
-    SECURITY_RISK("安全漏洞"),
+    SECURITY_RISK("安全漏洞", "Security Vulnerabilities"),
 
     /**
      * 代码规范
      */
-    CODE_FORMAT("代码规范"),
+    CODE_FORMAT("代码规范", "Code Style Issues"),
 
     /**
      * 圈复杂度
      */
-    COMPLEXITY("圈复杂度"),
+    COMPLEXITY("圈复杂度", "Cyclomatic Complexity"),
 
     /**
      * 重复率
      */
-    DUPLICATE("重复率"),
+    DUPLICATE("重复率", "Duplications"),
 
     /**
      * 通用
      */
-    CODE_STATISTIC("代码统计");
+    CODE_STATISTIC("代码统计", "Code Metrics");
 
     private String name;
 
-    CheckerCategory(String name) {
+    private String enName;
+
+    CheckerCategory(String name, String enName) {
         this.name = name;
+        this.enName = enName;
     }
 
     public String getName() {
         return this.name;
+    }
+
+    public String getEnName() {
+        return this.enName;
     }
 }

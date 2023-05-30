@@ -887,7 +887,7 @@ public class CheckerServiceImpl implements CheckerService {
                     CheckerCategory category = CheckerCategory.valueOf(entry.getKey());
                     return new CheckerCountListVO(
                             category.name(),
-                            isEN ? category.name() : category.getName(),
+                            isEN ? category.getEnName() : category.getName(),
                             entry.getValue()
                     );
                 })
