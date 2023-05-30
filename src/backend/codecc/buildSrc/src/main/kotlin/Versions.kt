@@ -50,7 +50,7 @@ object Versions {
     const val redissionVersion = "3.15.4"
     const val log4jVersion = "2.17.1"
     const val easyexcel = "2.2.7"
-    const val redisson = "3.15.4"
+    const val redisson = "3.17.3"
     const val ktlintVersion = "0.29.0"
     const val lucene = "8.11.0"
     const val fastjson = "1.2.83"
