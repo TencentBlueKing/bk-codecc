@@ -28,13 +28,16 @@ package com.tencent.devops.common.auth.api.external
 
 import com.google.common.collect.Sets
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction
+import com.tencent.devops.common.auth.api.pojo.external.PipelineAuthAction
 import com.tencent.devops.common.auth.api.service.AuthTaskService
+import com.tencent.devops.common.auth.api.util.AuthActionConvertUtils
 import com.tencent.devops.common.auth.api.util.AuthApiUtils
 import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.constant.RedisKeyConstants
 import com.tencent.devops.common.service.utils.SpringContextUtil
 import org.apache.commons.collections.CollectionUtils
+import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.redis.core.RedisTemplate
@@ -100,24 +103,47 @@ abstract class AbstractAuthExPermissionApi @Autowired constructor(
         return checkPipelineDefectOpsPermissions(taskId, projectId, username, actions)
     }
 
-    fun checkPipelineDefectOpsPermissions(taskId: Long, projectId: String, username: String,
-                                          actions: List<CodeCCAuthAction>): Boolean {
-        val actionsStr = actions.stream().map(CodeCCAuthAction::actionName).toList().toSet()
-        val result = validateTaskBatchPermission(
+    fun checkPipelineDefectOpsPermissions(
+        taskId: Long, projectId: String, username: String,
+        actions: List<CodeCCAuthAction>
+    ): Boolean {
+        // 判断来源是流水线还是CodeCC任务，如果是流水线校验流水线权限
+        val authTaskService = SpringContextUtil.getBean(AuthTaskService::class.java)
+        val createFromStr = authTaskService.getTaskCreateFrom(taskId)
+        if (StringUtils.isNotBlank(createFromStr)) {
+            return false
+        }
+        if (createFromStr == ComConstants.BsTaskCreateFrom.BS_PIPELINE.value()) {
+            val pipelineActions = AuthActionConvertUtils.covert(actions).map { it.actionName }.toSet()
+            val result = validatePipelineBatchPermission(
+                username, taskId.toString(),
+                projectId, pipelineActions
+            )
+            if (CollectionUtils.isEmpty(result)) {
+                return false
+            }
+            for (actionResult in result) {
+                if ((actionResult.isPass != null) && actionResult.isPass) {
+                    return true
+                }
+            }
+        } else if (createFromStr == ComConstants.BsTaskCreateFrom.BS_CODECC.value()) {
+            val actionsStr = actions.stream().map { it.actionName }.toList().toSet()
+            val result = validateTaskBatchPermission(
                 username, taskId.toString(),
                 projectId, actionsStr
             )
-        if (CollectionUtils.isEmpty(result)) {
-            return false
-        }
-        for (actionResult in result) {
-            if ((actionResult.isPass != null) && actionResult.isPass) {
-                return true
+            if (CollectionUtils.isEmpty(result)) {
+                return false
+            }
+            for (actionResult in result) {
+                if ((actionResult.isPass != null) && actionResult.isPass) {
+                    return true
+                }
             }
         }
         return false
     }
-
 
     override fun checkProjectIsRbacPermissionByCache(projectId: String, needRefresh: Boolean?): Boolean {
         return false

@@ -6,7 +6,7 @@ import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction
 import com.tencent.devops.common.auth.api.pojo.external.model.BkAuthExResourceActionModel
 import com.tencent.devops.common.auth.api.service.AuthTaskService
 import com.tencent.devops.common.auth.pojo.GithubAuthProperties
-import com.tencent.devops.common.auth.utils.AuthActionConvertUtils
+import com.tencent.devops.common.auth.api.util.AuthActionConvertUtils
 import com.tencent.devops.common.client.Client
 import org.springframework.data.redis.core.RedisTemplate
 

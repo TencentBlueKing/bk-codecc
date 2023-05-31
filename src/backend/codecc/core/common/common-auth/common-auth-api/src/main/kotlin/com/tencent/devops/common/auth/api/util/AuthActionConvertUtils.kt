@@ -1,4 +1,4 @@
-package com.tencent.devops.common.auth.utils
+package com.tencent.devops.common.auth.api.util
 
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction
 import com.tencent.devops.common.auth.api.pojo.external.PipelineAuthAction
@@ -19,39 +19,25 @@ class AuthActionConvertUtils {
             return pipelineActions.toList()
         }
 
-        fun covert(action: CodeCCAuthAction?): List<PipelineAuthAction> {
+        private fun covert(action: CodeCCAuthAction?): List<PipelineAuthAction> {
             if (action == null) {
                 return emptyList()
             }
             return when (action) {
                 CodeCCAuthAction.TASK_MANAGE ->
                     listOf<PipelineAuthAction>(
-                        PipelineAuthAction.DELETE,
-                        PipelineAuthAction.DOWNLOAD,
-                        PipelineAuthAction.EDIT,
-                        PipelineAuthAction.EXECUTE,
-                        PipelineAuthAction.LIST,
-                        PipelineAuthAction.SHARE,
-                        PipelineAuthAction.VIEW
+                        PipelineAuthAction.EDIT
                     )
                 CodeCCAuthAction.ANALYZE ->
                     listOf<PipelineAuthAction>(
-                        PipelineAuthAction.DOWNLOAD,
-                        PipelineAuthAction.EXECUTE,
-                        PipelineAuthAction.LIST,
-                        PipelineAuthAction.SHARE,
-                        PipelineAuthAction.VIEW
+                        PipelineAuthAction.EXECUTE
                     )
                 CodeCCAuthAction.DEFECT_MANAGE ->
                     listOf<PipelineAuthAction>(
-                        PipelineAuthAction.EXECUTE,
-                        PipelineAuthAction.LIST,
-                        PipelineAuthAction.SHARE,
-                        PipelineAuthAction.VIEW
+                        PipelineAuthAction.EXECUTE
                     )
                 else ->
                     listOf<PipelineAuthAction>(
-                        PipelineAuthAction.LIST,
                         PipelineAuthAction.VIEW
                     )
             }
