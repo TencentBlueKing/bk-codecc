@@ -120,6 +120,7 @@ import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigRequest;
 import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse;
 import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse.TaskBase;
 import com.tencent.bk.codecc.task.vo.TaskListReqVO;
+import com.tencent.bk.codecc.task.vo.TaskListStatus;
 import com.tencent.bk.codecc.task.vo.TaskListVO;
 import com.tencent.bk.codecc.task.vo.TaskMemberVO;
 import com.tencent.bk.codecc.task.vo.TaskOverviewVO;
@@ -526,49 +527,43 @@ public class TaskServiceImpl implements TaskService {
                     return taskDetailVO;
                 }).collect(Collectors.toList());
         //根据任务状态过滤
-        if (taskListReqVO != null && null != taskListReqVO.getTaskStatus()) {
+        if (CollectionUtils.isNotEmpty(taskListReqVO.getTaskStatusList())  || taskListReqVO.getTaskStatus()!=null) {
+            // 增加taskStatusList字段 兼容taskStatus字段
+            if (CollectionUtils.isEmpty(taskListReqVO.getTaskStatusList())) {
+                taskListReqVO.setTaskStatusList(Collections.singletonList(taskListReqVO.getTaskStatus()));
+            }
+            List<TaskListStatus> taskStatusList = taskListReqVO.getTaskStatusList();
+
             taskDetailVOS = taskDetailVOS.stream().filter(taskDetailVO -> {
-                Boolean selected = false;
-                switch (taskListReqVO.getTaskStatus()) {
-                    case SUCCESS:
-                        if (null != taskDetailVO.getDisplayStepStatus() && null != taskDetailVO.getDisplayStep()
-                                && taskDetailVO.getDisplayStepStatus() == ComConstants.StepStatus.SUCC.value()
-                                && taskDetailVO.getDisplayStep() >= ComConstants.Step4MutliTool.COMPLETE.value()) {
-                            selected = true;
-                        }
-                        break;
-                    case FAIL:
-                        if (null != taskDetailVO.getDisplayStepStatus()
-                                && taskDetailVO.getDisplayStepStatus() == ComConstants.StepStatus.FAIL.value()) {
-                            selected = true;
-                        }
-                        break;
-                    case WAITING:
-                        if (null == taskDetailVO.getDisplayStepStatus()
-                                || (null != taskDetailVO.getDisplayStepStatus()
-                                && taskDetailVO.getDisplayStepStatus() == ComConstants.StepStatus.SUCC.value()
-                                && (null == taskDetailVO.getDisplayStep()
-                                || taskDetailVO.getDisplayStep() == ComConstants.StepStatus.SUCC.value()))) {
-                            selected = true;
-                        }
-                        break;
-                    case ANALYSING:
-                        if (null != taskDetailVO.getDisplayStepStatus() && null != taskDetailVO.getDisplayStep()
-                                && taskDetailVO.getDisplayStepStatus() != ComConstants.StepStatus.FAIL.value()
-                                && taskDetailVO.getDisplayStep() > ComConstants.Step4MutliTool.READY.value()
-                                && taskDetailVO.getDisplayStep() < ComConstants.Step4MutliTool.COMPLETE.value()) {
-                            selected = true;
-                        }
-                        break;
-                    case DISABLED:
-                        if (ComConstants.Status.DISABLE.value() == taskDetailVO.getStatus()) {
-                            selected = true;
-                        }
-                        break;
-                    default:
-                        break;
+                if (taskStatusList.contains(TaskListStatus.SUCCESS)
+                        && null != taskDetailVO.getDisplayStepStatus() && null != taskDetailVO.getDisplayStep()
+                        && taskDetailVO.getDisplayStepStatus() == ComConstants.StepStatus.SUCC.value()
+                        && taskDetailVO.getDisplayStep() >= ComConstants.Step4MutliTool.COMPLETE.value()) {
+                    return true;
+                } else if (taskStatusList.contains(TaskListStatus.FAIL)
+                        && null != taskDetailVO.getDisplayStepStatus()
+                        && taskDetailVO.getDisplayStepStatus() == ComConstants.StepStatus.FAIL.value()) {
+                    return true;
+                } else if (taskStatusList.contains(TaskListStatus.WAITING)
+                        && (null == taskDetailVO.getDisplayStepStatus()
+                        || (null != taskDetailVO.getDisplayStepStatus()
+                        && taskDetailVO.getDisplayStepStatus() == ComConstants.StepStatus.SUCC.value()
+                        && (null == taskDetailVO.getDisplayStep()
+                        || taskDetailVO.getDisplayStep() == ComConstants.StepStatus.SUCC.value())))) {
+                    return true;
+                } else if (taskStatusList.contains(TaskListStatus.ANALYSING)
+                        && null != taskDetailVO.getDisplayStepStatus()
+                        && null != taskDetailVO.getDisplayStep()
+                        && taskDetailVO.getDisplayStepStatus() != ComConstants.StepStatus.FAIL.value()
+                        && taskDetailVO.getDisplayStep() > ComConstants.Step4MutliTool.READY.value()
+                        && taskDetailVO.getDisplayStep() < ComConstants.Step4MutliTool.COMPLETE.value()) {
+                    return true;
+                } else if (taskStatusList.contains(TaskListStatus.DISABLED)
+                        && ComConstants.Status.DISABLE.value() == taskDetailVO.getStatus()) {
+                    return true;
+                } else {
+                    return false;
                 }
-                return selected;
             }).collect(Collectors.toList());
         }
 
