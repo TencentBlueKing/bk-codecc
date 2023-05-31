@@ -42,6 +42,6 @@ object AuthActionUtil {
      * 获取流水线新版操作id
      */
     fun getPipelineAction(pipelineAuthActionName: String): String {
-        return pipelineActionMapping[pipelineAuthActionName] ?: ""
+        return pipelineActionMapping[pipelineAuthActionName] ?: pipelineAuthActionName
     }
 }

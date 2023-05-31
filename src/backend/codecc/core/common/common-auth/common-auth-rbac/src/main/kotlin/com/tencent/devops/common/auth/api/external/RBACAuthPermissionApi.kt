@@ -11,6 +11,7 @@ import com.tencent.devops.common.api.pojo.Result
 import com.tencent.devops.common.auth.api.AuthPermission
 import com.tencent.devops.common.auth.api.pojo.external.model.BkAuthExResourceActionModel
 import com.tencent.devops.common.auth.api.service.AuthTaskService
+import com.tencent.devops.common.auth.utils.AuthActionUtil
 import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.codecc.util.JsonUtil
 import com.tencent.devops.common.service.utils.SpringContextUtil
@@ -73,9 +74,14 @@ class RBACAuthPermissionApi(
         projectId: String,
         actions: Set<String>
     ): Set<String> {
+        val newActions = mutableSetOf<String>()
+        actions.forEach {
+            val rbacAction = AuthActionUtil.getRbacAction(it)
+            newActions.addAll(rbacAction)
+        }
         return queryUserResourceByPermission(
             projectCode = projectId,
-            action = actions.first(),
+            action = newActions.first(),
             resourceType = rbacAuthProperties.rbacResourceType!!,
             userId = user
         ).toSet()
@@ -106,12 +112,12 @@ class RBACAuthPermissionApi(
     ): List<BkAuthExResourceActionModel> {
         val authTaskService = SpringContextUtil.getBean(AuthTaskService::class.java)
         val pipelineId = authTaskService.getTaskPipelineId(taskId.toLong())
-
+        val newActions = actions.map { AuthActionUtil.getPipelineAction(it) }
         val result = validateBatch(
             projectCode = projectId,
             resourceCode = pipelineId,
             resourceType = rbacAuthProperties.pipeLineResourceType!!,
-            actions = actions.toList(),
+            actions = newActions.toList(),
             userId = user
         )
 
@@ -130,19 +136,17 @@ class RBACAuthPermissionApi(
         projectId: String,
         actions: Set<String>
     ): List<BkAuthExResourceActionModel> {
-//        val result = validateUserResourcePermission(
-//            userId = user,
-//            token = getBackendAccessToken(),
-//            action = actions.first(),
-//            projectCode = projectId,
-//            resourceCode = rbacAuthProperties.rbacResourceType!!
-//        )
-//        return listOf(BkAuthExResourceActionModel(isPass = result))
+        val newActions = mutableSetOf<String>()
+        actions.forEach {
+            val rbacAction = AuthActionUtil.getRbacAction(it)
+            newActions.addAll(rbacAction)
+        }
+
         val result = validateBatch(
             projectCode = projectId,
             resourceCode = taskId,
             resourceType = rbacAuthProperties.rbacResourceType!!,
-            actions = actions.toList(),
+            actions = newActions.toList(),
             userId = user
         )
 
