@@ -1735,7 +1735,7 @@
         this.tableLoading = true
         this.$store.dispatch('defect/batchEdit', data).then((res) => {
           if (res.code === '0') {
-            let message = markFlag ? this.$t('标记为已处理成功。') : this.$t('取消标记成功')
+            let message = markFlag ? this.$t('标记为已处理成功') : this.$t('取消标记成功')
             if (batchFlag) {
               this.fetchList()
               if (markFlag) {

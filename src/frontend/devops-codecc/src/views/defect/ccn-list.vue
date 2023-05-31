@@ -375,7 +375,7 @@
                             <span class="entry-link ignore-item" @click.stop="handleIgnore('IgnoreDefect', false, props.row.entityId)">{{$t('忽略函数')}}</span>
                           </div>
                           <div class="guide-content" slot="content">
-                            <div style="line-height: 22px">
+                            <div :style="lineHeight">
                               {{ $t('支持忽略无需处理或暂缓处理的问题。') }}
                               {{ $t('针对特定忽略类型可') }}
                               <span theme="primary" class="set-tips" @click="handleTableSetReview">{{ $t('设置提醒') }}</span>
@@ -1162,6 +1162,9 @@
       isEn() {
         return language === 'en'
       },
+      lineHeight() {
+        return this.isEn ? 'line-height: 18px' : 'line-height: 22px'
+      },
     },
     watch: {
       // 监听查询参数变化，则获取列表
@@ -1523,7 +1526,7 @@
         this.tableLoading = true
         this.$store.dispatch('defect/batchEdit', data).then((res) => {
           if (res.code === '0') {
-            let message = markFlag ? this.$t('标记为已处理成功。') : this.$t('取消标记成功')
+            let message = markFlag ? this.$t('标记为已处理成功') : this.$t('取消标记成功')
             if (batchFlag) {
               this.init()
               if (markFlag) {

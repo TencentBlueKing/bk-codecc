@@ -1793,7 +1793,7 @@
             this.$bkMessage({
               theme: 'success',
               message: markFlag
-                ? this.$t('标记为已处理成功。') : this.$t('取消标记成功'),
+                ? this.$t('标记为已处理成功') : this.$t('取消标记成功'),
             })
             if (batchFlag) {
               this.init()
