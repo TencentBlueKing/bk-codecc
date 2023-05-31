@@ -296,7 +296,7 @@ public class LintDefectV2Dao {
 
         // 以author进行分组
         GroupOperation group = Aggregation.group("task_id", "tool_name", "author")
-                .last("author").as("authorName")
+                .last("author").as("authorObj")
                 .count().as("defectCount");
         Aggregation agg = Aggregation.newAggregation(match, group)
                 .withOptions(Aggregation.newAggregationOptions().allowDiskUse(true).build());
