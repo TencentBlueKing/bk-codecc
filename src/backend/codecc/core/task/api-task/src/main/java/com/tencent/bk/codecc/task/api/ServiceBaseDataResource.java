@@ -66,6 +66,15 @@ public interface ServiceBaseDataResource
             @PathParam(value = "paramCode")
                     String paramCode);
 
+    @ApiOperation("获取规则集信息")
+    @Path("/paramType/{paramType}/paramCodesList")
+    @POST
+    Result<List<BaseDataVO>> getInfoByTypeAndCodeList(
+            @ApiParam(value = "参数类型", required = true)
+            @PathParam(value = "paramType")
+                    String paramType,
+            @ApiParam(value = "参数代码", required = true)
+                    List<String> paramCodeList);
 
     @ApiOperation("根据蓝盾项目ID批量查询仓库地址")
     @Path("/repoUrl")

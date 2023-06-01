@@ -1,32 +1,40 @@
 package com.tencent.bk.codecc.scanschedule.service.impl;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharStreams;
+import com.tencent.bk.codecc.defect.api.ServiceCheckerSetRestResource;
 import com.tencent.bk.codecc.scanschedule.constants.ScanScheduleConstants;
 import com.tencent.bk.codecc.scanschedule.dao.mdb.SimpleDefectRepository;
 import com.tencent.bk.codecc.scanschedule.dao.mdb.ScanRecordRepository;
 import com.tencent.bk.codecc.scanschedule.dao.mdb.ToolRecordRepository;
+import com.tencent.bk.codecc.scanschedule.handler.BinaryToolHandler;
+import com.tencent.bk.codecc.scanschedule.handler.InputFileHandler;
 import com.tencent.bk.codecc.scanschedule.handler.OutputFileHandler;
 import com.tencent.bk.codecc.scanschedule.model.SimpleDefectEntity;
 import com.tencent.bk.codecc.scanschedule.model.ScanRecordEntity;
 import com.tencent.bk.codecc.scanschedule.model.ToolRecordEntity;
 import com.tencent.bk.codecc.scanschedule.pojo.input.InputVO;
-import com.tencent.bk.codecc.scanschedule.pojo.input.OpenCheckers;
 import com.tencent.bk.codecc.scanschedule.pojo.record.ScanRecord;
 import com.tencent.bk.codecc.scanschedule.pojo.record.ToolRecord;
 import com.tencent.bk.codecc.scanschedule.service.ToolScanService;
 import com.tencent.bk.codecc.scanschedule.vo.ContentVO;
+import com.tencent.bk.codecc.scanschedule.vo.SimpleCheckerSetVO;
 import com.tencent.bk.codecc.scanschedule.vo.SimpleDefectVO;
+import com.tencent.bk.codecc.task.api.ServiceToolMetaRestResource;
 import com.tencent.bk.sdk.iam.util.JsonUtil;
+import com.tencent.devops.common.api.ToolMetaDetailVO;
+import com.tencent.devops.common.api.checkerset.CheckerSetVO;
+import com.tencent.devops.common.api.exception.CodeCCException;
+import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.CompressionUtils;
 import com.tencent.devops.common.util.FileUtils;
 import kotlin.Pair;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -40,6 +48,8 @@ import java.util.stream.Collectors;
 public class ToolScanServiceImpl implements ToolScanService {
 
     @Autowired
+    private Client client;
+    @Autowired
     private ScanRecordRepository scanRecordRepository;
     @Autowired
     private SimpleDefectRepository defectRecordRepository;
@@ -47,6 +57,10 @@ public class ToolScanServiceImpl implements ToolScanService {
     private ToolRecordRepository toolRecordRepository;
     @Autowired
     private OutputFileHandler outputFileHandler;
+    @Autowired
+    private InputFileHandler inputFileHandler;
+    @Autowired
+    private BinaryToolHandler binaryToolHandler;
     @Value("${codecc.file.data.path:/data/bkee/codecc/nfs}")
     private String codeccFileDataPath = "";
 
@@ -55,6 +69,9 @@ public class ToolScanServiceImpl implements ToolScanService {
         ScanRecord scanRecord = new ScanRecord();
         //生成本次扫描唯一标识
         String scanId = "s-" + UUID.randomUUID().toString().replace("-", "");
+        log.info("start record: scanId {}, appCode {}, userId {}, checkerSets {}, content {}",
+                scanId, appCode, contentVO.getUserId(),
+                contentVO.getCheckerSets(), contentVO.getContent());
         scanRecord.setScanId(scanId);
         scanRecord.setStartTime(new Date().getTime());
         scanRecord.setAppCode(appCode);
@@ -66,17 +83,18 @@ public class ToolScanServiceImpl implements ToolScanService {
 
     @Override
     public ScanRecord scan(ScanRecord scanRecord) {
-        List<String> toolList = Lists.newArrayList();
-        toolList.add(ScanScheduleConstants.TOOL_NAME);
-        String projectPath = String.format(codeccFileDataPath + "/workspace/%s", scanRecord.getUserName());
-        String scanFile = projectPath + File.separator + ScanScheduleConstants.SCAN_FILE_NAME;
         List<SimpleDefectVO> defectRecordList = Lists.newArrayList();
         List<ToolRecord> toolRecordList = Lists.newArrayList();
-        if (FileUtils.saveContentToFile(scanFile, scanRecord.getContent())) {
-            for (String tool : toolList) {
-                ToolRecord toolRecord = createToolRecord(scanRecord.getScanId(), tool,
-                        ScanScheduleConstants.TOOL_VERSION);
-                Pair<ToolRecord, List<SimpleDefectVO>> toolResult = toolScan(scanRecord.getUserName(), toolRecord, projectPath, scanFile);
+        String projectPath = String.format("%s/workspace/%s", codeccFileDataPath, scanRecord.getUserName());
+        for (ToolRecord toolRecord: scanRecord.getToolRecordList()) {
+            String inputPath = String.format("%s/.codecc/%s", projectPath, toolRecord.getToolName() + "_input.json");
+            String outputPath = String.format("%s/.codecc/%s", projectPath, toolRecord.getToolName() + "_output.json");
+            if (Paths.get(outputPath).toFile().exists()) {
+                Paths.get(outputPath).toFile().delete();
+            }
+            if (Paths.get(inputPath).toFile().isFile()) {
+                Pair<ToolRecord, List<SimpleDefectVO>> toolResult = toolScan(scanRecord.getUserName(),
+                        toolRecord, inputPath, outputPath);
                 toolRecordList.add(toolResult.component1());
                 defectRecordList.addAll(toolResult.component2());
             }
@@ -104,63 +122,13 @@ public class ToolScanServiceImpl implements ToolScanService {
         return scanRecord;
     }
 
-    private ToolRecord createToolRecord(String scanId, String tool, String toolVersion) {
-        ToolRecord toolRecord = new ToolRecord();
-        toolRecord.setScanId(scanId);
-        toolRecord.setToolName(tool);
-        toolRecord.setToolVersion(toolVersion);
-        toolRecord.setStartTime(new Date().getTime());
-        return toolRecord;
-    }
-
     private Pair<ToolRecord, List<SimpleDefectVO>> toolScan(String userId, ToolRecord toolRecord,
-                                                            String projectPath, String scanFile) {
-
-        String inputPath = String.format("%s/.codecc/%s", projectPath, toolRecord.getToolName() + "_input.json");
-        log.info("{}: 生成或更新Input.json文件 {}", toolRecord.getToolName(), inputPath);
-        InputVO inputVo = null;
-        try (InputStreamReader inputStreamReader = new InputStreamReader(
-                this.getClass().getResourceAsStream("/" + toolRecord.getToolName() + "_input.json"),
-                "UTF-8")
-        ) {
-            String data = new String(CharStreams.toString(inputStreamReader).getBytes(),
-                    StandardCharsets.UTF_8);
-            inputVo = JsonUtil.fromJson(data, InputVO.class);
-            inputVo.setScanPath(Paths.get(scanFile).getParent().toString());
-            inputVo.setIncrementalFiles(Lists.newArrayList(scanFile));
-            FileUtils.saveContentToFile(inputPath, JsonUtil.toJson(inputVo));
-        } catch (IOException e) {
-            String failMsg = "generate input json file failed:";
-            log.info(failMsg, e);
-            toolRecord.setStatus(1);
-            toolRecord.setFailMsg(failMsg);
-            return new Pair<>(toolRecord, Lists.newArrayList());
-        }
-
-        String outputPath = String.format("%s/.codecc/%s", projectPath, toolRecord.getToolName() + "_output.json");
-        if (Paths.get(outputPath).toFile().exists()) {
-            Paths.get(outputPath).toFile().delete();
-        }
-
-        List<String> cmdList = Lists.newArrayList();
-        cmdList.add("/bin/bash");
-        cmdList.add("-c");
-        cmdList.add(String.format("./CodeSecurityScan --input=%s --output=%s", inputPath, outputPath));
-        String[] env = {"PATH=" + System.getenv("PATH")};
-        String toolPath = String.format(codeccFileDataPath + "/tools/%s/%s/tool", toolRecord.getToolName(),
-                toolRecord.getToolVersion());
-        log.info("{}: 扫描生成Output.json文件 {}", toolRecord.getToolName(), outputPath);
-        log.info("运行路径：{}", toolPath);
-        log.info("运行命令：{}", String.join(" ", cmdList));
-        log.info("运行环境变量: {}", String.join(" ", env));
+                                                            String inputFile, String outputFile) {
         try {
-            log.info("运行开始: {}", toolRecord.getToolName());
-            outputFileHandler.execCommand(toolPath, cmdList, env);
-            log.info("运行结束: {}", toolRecord.getToolName());
+            binaryToolHandler.execCommand(inputFile, outputFile);
         } catch (Exception e) {
-            String failMsg = String.format("Run %s %s binary failed, workspace is %s, command is %s",
-                    toolRecord.getToolName(), toolRecord.getToolVersion(),
-                    toolPath, String.join(" ", cmdList));
+            String failMsg = String.format("scanId %s Run %s %s binary failed",
+                    toolRecord.getScanId(), toolRecord.getToolName(), toolRecord.getToolVersion());
             log.info(failMsg, e);
             toolRecord.setStatus(1);
             toolRecord.setFailMsg(failMsg);
@@ -168,9 +136,8 @@ public class ToolScanServiceImpl implements ToolScanService {
         }
 
         //获取告警列表
-        List<SimpleDefectVO> defectList = Lists.newArrayList();
-        List<SimpleDefectVO> singleToolDefectList = outputFileHandler
-                .getDefect(userId, toolRecord, outputPath, inputVo.getOpenCheckers());
+        List<SimpleDefectVO> defectList = new ArrayList<>();
+        List<SimpleDefectVO> singleToolDefectList = outputFileHandler.getDefect(userId, toolRecord, outputFile);
         defectList.addAll(singleToolDefectList);
 
         toolRecord.setDefectCount(defectList.size());
@@ -220,6 +187,77 @@ public class ToolScanServiceImpl implements ToolScanService {
                 .collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(simpleDefectEntityList)) {
             defectRecordRepository.saveAll(simpleDefectEntityList);
+        }
+    }
+
+    /**
+     * 根据规则集名称获取规则集列表信息
+     * @param scanRecord
+     * @return
+     */
+    public List<CheckerSetVO> queryCheckerDetailForSet(ScanRecord scanRecord) {
+        List<CheckerSetVO> checkerSetVOList;
+        List<SimpleCheckerSetVO> checkerSets = new ArrayList<>();
+        if (Objects.nonNull(scanRecord.getCheckerSets())) {
+            checkerSets = scanRecord.getCheckerSets();
+        }
+        String latestTag = "latest";
+        if (checkerSets.isEmpty()) {
+            SimpleCheckerSetVO defaultCheckerSet = new SimpleCheckerSetVO();
+            defaultCheckerSet.setCheckerSet(ScanScheduleConstants.SCAN_SCHEDULE_DEFAULT_CHECKER_SET);
+            defaultCheckerSet.setCheckerSetVersion(latestTag);
+            checkerSets.add(defaultCheckerSet);
+        }
+
+        Result<List<CheckerSetVO>> result = client.get(ServiceCheckerSetRestResource.class)
+                .getCheckerSetsForContent(
+                        checkerSets.stream().map(SimpleCheckerSetVO::getCheckerSet).collect(Collectors.toList()));
+
+        if (result.isNotOk() || CollectionUtils.isEmpty(result.getData())) {
+            String ms = String.format("select checker set %s data is null", checkerSets);
+            log.error(ms);
+            throw new CodeCCException(ms);
+        }
+
+        checkerSetVOList = result.getData();
+
+        return checkerSetVOList;
+    }
+
+    public List<ToolMetaDetailVO> queryToolDetailForSet(List<CheckerSetVO> checkerSetVOList) {
+        List<ToolMetaDetailVO> toolMetaDetailVOList = new ArrayList<>();
+        Set<String> toolNameList = new HashSet<>();
+        for (CheckerSetVO checkerSetVO: checkerSetVOList) {
+            toolNameList.addAll(checkerSetVO.getToolList());
+        }
+        Result<List<ToolMetaDetailVO>> result = client.get(ServiceToolMetaRestResource.class)
+                .queryToolMetaDataByToolName(toolNameList.stream().collect(Collectors.toList()));
+        if (result.isNotOk() || CollectionUtils.isEmpty(result.getData())) {
+            String ms = String.format("select tool meta %s data is null", toolNameList);
+            log.error(ms);
+            throw new CodeCCException(ms);
+        }
+        toolMetaDetailVOList = result.getData();
+
+        return toolMetaDetailVOList;
+    }
+
+    @Override
+    public ScanRecord initScan(ScanRecord scanRecord) {
+        //获取规则集列表
+        List<CheckerSetVO> checkerSetVOList = queryCheckerDetailForSet(scanRecord);
+        //获取工具列表
+        List<ToolMetaDetailVO> toolMetaDetailVOList = queryToolDetailForSet(checkerSetVOList);
+
+        //保存文本内容，下载工具, 生成Input文件
+        try {
+            return inputFileHandler.createContentAndInputFile(scanRecord, toolMetaDetailVOList, checkerSetVOList);
+        } catch (Exception e) {
+            String failMsg = String.format("scanId %s init scan failed:", scanRecord.getScanId());
+            log.error(failMsg, e);
+            scanRecord.setStatus(1);
+            scanRecord.setFailMsg(failMsg);
+            return scanRecord;
         }
     }
 }

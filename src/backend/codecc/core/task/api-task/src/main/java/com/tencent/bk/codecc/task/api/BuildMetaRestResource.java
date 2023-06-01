@@ -26,6 +26,7 @@
 
 package com.tencent.bk.codecc.task.api;
 
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TOOL_IMAGE_TAG;
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
 
 import com.tencent.bk.codecc.task.vo.MetadataVO;
@@ -83,6 +84,9 @@ public interface BuildMetaRestResource {
             @ApiParam(value = "用户名", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userName,
+            @ApiParam(value = "工具镜像版本", required = false)
+            @HeaderParam(AUTH_HEADER_DEVOPS_TOOL_IMAGE_TAG)
+            String toolImageTag,
             @ApiParam(value = "工具名称")
             @PathParam("toolName")
             String toolName,

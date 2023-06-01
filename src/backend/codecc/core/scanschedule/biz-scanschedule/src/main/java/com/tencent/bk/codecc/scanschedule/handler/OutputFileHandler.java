@@ -14,7 +14,6 @@ package com.tencent.bk.codecc.scanschedule.handler;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.scanschedule.pojo.input.OpenCheckers;
 import com.tencent.bk.codecc.scanschedule.pojo.output.OutputVO;
 import com.tencent.bk.codecc.scanschedule.pojo.record.ToolRecord;
 import com.tencent.bk.codecc.scanschedule.vo.SimpleDefectVO;
@@ -48,11 +47,10 @@ public class OutputFileHandler {
      * @param userId
      * @param toolRecord
      * @param outputPath
-     * @param openCheckersList
      * @return
      */
     public List<SimpleDefectVO> getDefect(String userId, ToolRecord toolRecord,
-                                          String outputPath, List<OpenCheckers> openCheckersList) {
+                                          String outputPath) {
         try {
             List<SimpleDefectVO> defectList = Lists.newArrayList();
             File outputFile = new File(outputPath);
@@ -66,11 +64,6 @@ public class OutputFileHandler {
                             defect.setAuthor(userId);
                             defect.setToolName(toolRecord.getToolName());
                             defect.setCreateTime(new Date().getTime());
-                            for (OpenCheckers checkers: openCheckersList) {
-                                if (checkers.getCheckerName().equals(defect.getChecker())) {
-                                    defect.setSeverity(checkers.getSeverity());
-                                }
-                            }
                             return defect;
                         })
                         .collect(Collectors.toList());

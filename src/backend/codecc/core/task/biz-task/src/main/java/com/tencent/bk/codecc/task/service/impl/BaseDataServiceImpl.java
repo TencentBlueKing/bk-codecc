@@ -110,6 +110,19 @@ public class BaseDataServiceImpl implements BaseDataService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<BaseDataVO> findBaseDataInfoByTypeAndCodeList(String paramType, List<String> paramCodeList) {
+        List<BaseDataEntity> baseDataEntityList = baseDataRepository.findByParamCodeInAndParamType(paramCodeList,
+                paramType);
+        return null == baseDataEntityList ? new ArrayList<>() : baseDataEntityList.stream()
+                .map(baseDataEntity -> {
+                    BaseDataVO baseDataVO = new BaseDataVO();
+                    BeanUtils.copyProperties(baseDataEntity, baseDataVO);
+                    return baseDataVO;
+                })
+                .collect(Collectors.toList());
+    }
+
     /**
      * 根据参数类型查询参数列表
      *

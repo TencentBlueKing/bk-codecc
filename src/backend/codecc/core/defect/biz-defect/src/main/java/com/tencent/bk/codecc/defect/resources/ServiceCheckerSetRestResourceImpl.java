@@ -79,4 +79,9 @@ public class ServiceCheckerSetRestResourceImpl implements ServiceCheckerSetRestR
             return new Result<>(checkerSetBizService.getCheckerSetsOfProject(queryCheckerSetReq));
         }
     }
+
+    @Override
+    public Result<List<CheckerSetVO>> getCheckerSetsForContent(List<String> checkerSetIdList) {
+        return new Result<>(checkerSetBizService.queryCheckerDetailForContent(checkerSetIdList));
+    }
 }

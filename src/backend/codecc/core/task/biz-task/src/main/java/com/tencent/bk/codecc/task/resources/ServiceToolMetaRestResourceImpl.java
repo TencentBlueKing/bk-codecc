@@ -92,4 +92,9 @@ public class ServiceToolMetaRestResourceImpl implements ServiceToolMetaRestResou
     public Result<List<ToolMetaBaseVO>> toolList(Boolean isDetail) {
         return new Result<>(metaService.toolList(isDetail));
     }
+
+    @Override
+    public Result<List<ToolMetaDetailVO>> queryToolMetaDataByToolName(List<String> toolNameList) {
+        return new Result<>(toolMetaService.getToolsByToolName(toolNameList));
+    }
 }

@@ -17,5 +17,4 @@ class ApigwToolScanResourceV2Impl @Autowired constructor(
     override fun scan(appCode: String?, scanContentVO: ContentVO?): Result<ScanResultVO> {
         return client.getWithoutRetry(ServiceScanResource::class).scan(appCode, scanContentVO)
     }
-
 }

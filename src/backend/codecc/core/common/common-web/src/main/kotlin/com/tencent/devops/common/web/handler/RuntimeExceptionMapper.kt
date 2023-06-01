@@ -50,10 +50,9 @@ class RuntimeExceptionMapper : ExceptionMapper<RuntimeException> {
 
     override fun toResponse(exception: RuntimeException): Response {
         logger.error("Failed with runtime exception", exception)
-        exception.printStackTrace()
         val status = Response.Status.INTERNAL_SERVER_ERROR
         val message = if (SpringContextUtil.getBean(Profile::class.java).isDev()) {
-            exception.message
+            exception.message ?: exception.toString()
         } else {
             I18NUtils.getMessage(CommonMessageCode.UNKNOWN_ERROR)
         }

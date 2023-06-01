@@ -12,5 +12,7 @@ public interface ToolScanService {
 
     ScanRecord scan(ScanRecord scanRecord);
 
+    ScanRecord initScan(ScanRecord scanRecord);
+
     void saveScanRecord(ScanRecord scanRecord);
 }

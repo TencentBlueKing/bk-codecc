@@ -69,11 +69,12 @@ public class BuildMetaRestResourceImpl implements BuildMetaRestResource
     @Override
     public Result<String> updateToolIntegratedToStatus(
             String username,
+            String toolImageTag,
             String toolName,
             ToolIntegratedStatus fromStatus,
             ToolIntegratedStatus toStatus
     ) {
-        return new Result<>(toolMetaService.updateToolMetaToStatus(toolName, fromStatus, toStatus, username));
+        return new Result<>(toolMetaService.updateToolMetaToStatus(toolName, toolImageTag, fromStatus, toStatus, username));
     }
 
     @Override

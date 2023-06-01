@@ -54,6 +54,15 @@ public interface BaseDataService {
     List<BaseDataVO> findBaseDataInfoByTypeAndCode(String paramType, String paramCode);
 
     /**
+     * 根据参数类型和参数代码查询信息
+     *
+     * @param paramType
+     * @param paramCodeList
+     * @return
+     */
+    List<BaseDataVO> findBaseDataInfoByTypeAndCodeList(String paramType, List<String> paramCodeList);
+
+    /**
      * 根据参数类型查询参数列表
      *
      * @param paramType

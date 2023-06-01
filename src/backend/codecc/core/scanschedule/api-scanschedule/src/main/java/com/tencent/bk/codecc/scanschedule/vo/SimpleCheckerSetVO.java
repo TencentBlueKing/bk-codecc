@@ -13,5 +13,5 @@ public class SimpleCheckerSetVO {
     /**
      * 规则集版本号
      */
-    private int checkerSetVersion;
+    private String checkerSetVersion;
 }

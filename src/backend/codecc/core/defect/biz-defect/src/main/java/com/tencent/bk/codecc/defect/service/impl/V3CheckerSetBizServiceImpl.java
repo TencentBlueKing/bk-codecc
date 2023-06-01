@@ -3749,9 +3749,48 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
 
         List<BaseDataVO> baseDataList = result.getData();
 
+        return queryCheckerFromBaseData(baseDataList);
+    }
+
+    @Override
+    public List<CheckerSetVO> queryCheckerDetailForContent(List<String> checkerSetIdList) {
+        Result<List<BaseDataVO>> result = client.get(ServiceBaseDataResource.class)
+                .getInfoByTypeAndCodeList(ComConstants.PRECI_CHECKER_SET, checkerSetIdList);
+
+        if (result.isNotOk() || CollectionUtils.isEmpty(result.getData())) {
+            String ms = String.format("select checker set %s data is null", checkerSetIdList);
+            log.error(ms);
+            throw new CodeCCException(ms);
+        }
+
+        List<BaseDataVO> baseDataList = result.getData();
+
+        return queryCheckerFromBaseData(baseDataList);
+    }
+
+    /**
+     * 根据checkerSetId获取规则集名称
+     *
+     * @param checkerSetId
+     * @return string
+     */
+    @Override
+    public String queryCheckerSetNameByCheckerSetId(String checkerSetId) {
+        log.info("queryCheckerSetNameByCheckerSetId, checkerSetId: [{}]", checkerSetId);
+        CheckerSetEntity checkerSetEntity = checkerSetDao.queryCheckerSetNameByCheckerSetId(checkerSetId);
+        if (null != checkerSetEntity) {
+            return checkerSetEntity.getCheckerSetName();
+        } else {
+            return null;
+        }
+    }
+
+    private List<CheckerSetVO> queryCheckerFromBaseData(List<BaseDataVO> baseDataList) {
+
         // param_value -> 版本, param_code -> 规则id
         // param_value为latest的, 获取当前规则集的最新版本
         String latestTag = "latest";
+        List<CheckerSetVO> checkerSetVOList = new ArrayList<>();
         Set<String> latestCheckerIdSet = baseDataList.stream().filter(x -> latestTag.equals(x.getParamValue()))
                 .map(BaseDataVO::getParamCode).collect(Collectors.toSet());
         Map<String, Integer> checkerIdMaxVersionMap = checkerSetDao.queryCheckerMaxVersion(latestCheckerIdSet);
@@ -3774,7 +3813,6 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
                 .collect(Collectors.toMap(BaseDataVO::getParamCode, Function.identity(), (k1, k2) -> k2));
 
         List<CheckerSetEntity> checkerList = checkerSetDao.queryCheckerDetailForPreCI(checkerIdMaxVersionMap);
-        List<CheckerSetVO> checkerSetVOList = new ArrayList<>();
 
         checkerList.forEach(it -> {
             CheckerSetVO checkerSetVo = new CheckerSetVO();
@@ -3793,22 +3831,5 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
         });
 
         return checkerSetVOList;
-    }
-
-    /**
-     * 根据checkerSetId获取规则集名称
-     *
-     * @param checkerSetId
-     * @return string
-     */
-    @Override
-    public String queryCheckerSetNameByCheckerSetId(String checkerSetId) {
-        log.info("queryCheckerSetNameByCheckerSetId, checkerSetId: [{}]", checkerSetId);
-        CheckerSetEntity checkerSetEntity = checkerSetDao.queryCheckerSetNameByCheckerSetId(checkerSetId);
-        if (null != checkerSetEntity) {
-            return checkerSetEntity.getCheckerSetName();
-        } else {
-            return null;
-        }
     }
 }

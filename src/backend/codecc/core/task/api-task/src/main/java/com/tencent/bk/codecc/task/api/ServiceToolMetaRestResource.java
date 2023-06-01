@@ -103,4 +103,12 @@ public interface ServiceToolMetaRestResource {
             @QueryParam("isDetail")
             Boolean isDetail
     );
+
+    @ApiOperation("通过工具名称查询工具元数据")
+    @Path("/listTools")
+    @POST
+    Result<List<ToolMetaDetailVO>> queryToolMetaDataByToolName(
+            @ApiParam(value = "工具名称列表", required = true)
+            List<String> toolNameList
+    );
 }

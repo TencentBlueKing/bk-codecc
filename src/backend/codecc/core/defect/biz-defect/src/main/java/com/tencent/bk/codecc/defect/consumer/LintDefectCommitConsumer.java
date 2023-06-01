@@ -864,6 +864,21 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
             defectEntity.setAuthor(Lists.newArrayList(taskDetailVO.getCreatedBy()));
         }
 
+        // scm_blame可能出现作者为null的情况
+        if (CollectionUtils.isEmpty(defectEntity.getAuthor())) {
+            defectEntity.setAuthor(Lists.newArrayList("unassigned"));
+        } else {
+            List<String> finalAuthorList = defectEntity.getAuthor().stream()
+                    .filter(StringUtils::isNotEmpty)
+                    .collect(Collectors.toList());
+
+            if (CollectionUtils.isEmpty(finalAuthorList)) {
+                defectEntity.setAuthor(Lists.newArrayList("unassigned"));
+            } else {
+                defectEntity.setAuthor(finalAuthorList);
+            }
+        }
+
         if (StringUtils.isEmpty(defectEntity.getSubModule())) {
             defectEntity.setSubModule("");
         }

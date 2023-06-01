@@ -114,6 +114,6 @@ public class ScanRecordEntity extends CommonEntity {
          * 规则集版本号
          */
         @Field("checker_set_version")
-        private int checkerSetVersion;
+        private String checkerSetVersion;
     }
 }

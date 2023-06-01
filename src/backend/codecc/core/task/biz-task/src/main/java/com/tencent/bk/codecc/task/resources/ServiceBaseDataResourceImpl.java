@@ -74,6 +74,12 @@ public class ServiceBaseDataResourceImpl implements ServiceBaseDataResource
     }
 
     @Override
+    public Result<List<BaseDataVO>> getInfoByTypeAndCodeList(String paramType, List<String> paramCodeList)
+    {
+        return new Result<>(baseDataService.findBaseDataInfoByTypeAndCodeList(paramType, paramCodeList));
+    }
+
+    @Override
     public Result<Map<String, RepoInfoVO>> getRepoUrlByProjects(Set<String> bkProjectIds) {
         return new Result<>(pipelineService.getRepoUrlByBkProjects(bkProjectIds));
     }

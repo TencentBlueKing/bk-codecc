@@ -20,7 +20,10 @@ import com.tencent.bk.codecc.scanschedule.vo.ContentVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.web.RestResource;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.stream.Collectors;
 
 /**
  * 工具扫描接口，支持代码片段扫描
@@ -38,8 +41,16 @@ public class ServiceScanResourceImpl implements ServiceScanResource {
     public Result<ScanResultVO> scan(String appCode, ContentVO contentVO) {
         //初始化扫描记录
         ScanRecord scanRecord = toolScanService.generateScanRecord(appCode, contentVO);
-        //触发扫描
-        scanRecord = toolScanService.scan(scanRecord);
+        //初始化
+        scanRecord = toolScanService.initScan(scanRecord);
+        if (scanRecord.getStatus() != 1
+                && CollectionUtils.isNotEmpty(scanRecord.getToolRecordList())
+                && scanRecord.getToolRecordList()
+                .stream().filter(it -> it.getStatus() == 1)
+                .collect(Collectors.toList()).isEmpty()) {
+            //触发扫描
+            scanRecord = toolScanService.scan(scanRecord);
+        }
         //保存扫描记录
         toolScanService.saveScanRecord(scanRecord);
         //返回结果

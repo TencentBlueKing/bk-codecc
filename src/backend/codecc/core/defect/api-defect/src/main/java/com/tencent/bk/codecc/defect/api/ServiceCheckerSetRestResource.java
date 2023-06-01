@@ -155,4 +155,12 @@ public interface ServiceCheckerSetRestResource
     Result<List<CheckerSetVO>> queryCheckerSetsForOpenScan(
             @ApiParam(value = "规则集列表", required = true)
                     Set<CheckerSetVO> checkerSetList);
+
+    @ApiOperation("查询规则列表通过指定规则集")
+    @Path("/listForContent")
+    @POST
+    Result<List<CheckerSetVO>> getCheckerSetsForContent(
+            @ApiParam(value = "规则集列表", required = true)
+            List<String> checkerSetIdList
+    );
 }

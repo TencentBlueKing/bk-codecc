@@ -2,8 +2,7 @@ package com.tencent.bk.codecc.scanschedule.pojo.input;
 
 import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.scanschedule.utils.EnvUtils;
-import com.tencent.devops.common.api.pojo.OS;
-import com.tencent.devops.common.util.FileUtils;
+import com.tencent.devops.common.api.enums.OSType;
 import lombok.Data;
 
 import java.util.List;
@@ -19,7 +18,7 @@ public class InputVO {
     private List<String> whitePathList = Lists.newArrayList(); //白名单
     private List<ToolOptions> toolOptions = Lists.newArrayList(); //工具子选项
     private String buildScript = ""; //编译内容
-    private String scanType = "full"; //扫描类型
+    private String scanType = "increment"; //扫描类型
     private List<String> skipPaths = Lists.newArrayList(); //黑名单
     private List<String> incrementalFiles = Lists.newArrayList(); //增量文件列表
     private List<OpenCheckers> openCheckers; //规则列表
@@ -42,15 +41,15 @@ public class InputVO {
 
     public void setIncrementalFiles(List<String> incrementalFiles) {
         this.incrementalFiles = incrementalFiles.stream()
-                .map(it -> isSpaceExistInPath(it)).collect(Collectors.toList());
+                .map(it -> verifyFilePath(it)).collect(Collectors.toList());
     }
 
     public void setScanPath(String scanPath) {
-        this.scanPath = isSpaceExistInPath(scanPath);
+        this.scanPath = verifyFilePath(scanPath);
     }
 
-    private String isSpaceExistInPath(String path) {
-        if (path.contains(" ") && !OS.WINDOWS.equals(EnvUtils.getOS())) {
+    private String verifyFilePath(String path) {
+        if (path.contains(" ") && !OSType.WINDOWS.equals(EnvUtils.getOS())) {
             return path.replace(" ", "\\ ");
         }
         return path;

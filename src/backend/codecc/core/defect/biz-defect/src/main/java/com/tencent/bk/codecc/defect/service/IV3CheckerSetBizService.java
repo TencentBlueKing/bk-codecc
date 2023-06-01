@@ -293,6 +293,13 @@ public interface IV3CheckerSetBizService
     List<CheckerSetVO> queryCheckerDetailForPreCI();
 
     /**
+     * 查询规则列表通过指定规则集
+     * @param checkerSetIdList
+     * @return
+     */
+    List<CheckerSetVO> queryCheckerDetailForContent(List<String> checkerSetIdList);
+
+    /**
      * 根据规则集ID查询规则集名称
      *
      * @return string

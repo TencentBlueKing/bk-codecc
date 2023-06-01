@@ -70,6 +70,7 @@ public interface ToolMetaService {
 
     String updateToolMetaToStatus(
             String toolName,
+            String toolImageTag,
             ToolIntegratedStatus fromStatus,
             ToolIntegratedStatus toStatus,
             String username
@@ -94,4 +95,12 @@ public interface ToolMetaService {
     Boolean updateOpenSourceToolVersionInfo(ToolVersionExtVO reqVO, String userName);
 
     List<ToolMetaDetailVO> getToolsByPattern(String pattern);
+
+    /**
+     * 根据工具名称列表获取工具详情
+     * @param toolNameList
+     * @return
+     */
+    List<ToolMetaDetailVO> getToolsByToolName(List<String> toolNameList);
+
 }

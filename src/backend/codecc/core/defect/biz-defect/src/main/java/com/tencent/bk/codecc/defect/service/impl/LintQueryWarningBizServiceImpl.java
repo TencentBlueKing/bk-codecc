@@ -27,8 +27,6 @@
 
 package com.tencent.bk.codecc.defect.service.impl;
 
-import static com.tencent.devops.common.constant.ComConstants.MASK_STATUS;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -61,7 +59,6 @@ import com.tencent.bk.codecc.defect.service.IQueryWarningBizService;
 import com.tencent.bk.codecc.defect.service.LintQueryWarningSpecialService;
 import com.tencent.bk.codecc.defect.service.TreeService;
 import com.tencent.bk.codecc.defect.utils.ParamUtils;
-import com.tencent.bk.codecc.defect.vo.CCNDefectVO;
 import com.tencent.bk.codecc.defect.vo.CheckerCustomVO;
 import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
 import com.tencent.bk.codecc.defect.vo.CodeCommentVO;
@@ -114,6 +111,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -713,12 +711,12 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                 .collect(Collectors.toList());
 
         Set<String> pkgChecker = getCheckers(checkerSetId, null, null, toolNameList, dimensionList);
-        Set<String> authors = Sets.newHashSet();
+        Set<String> finalAuthors = Sets.newHashSet();
         Set<String> checkerList = Sets.newHashSet();
         Set<String> defectPaths = Sets.newTreeSet();
 
         if (isMultiTaskQuery) {
-            authors.addAll(taskPersonalStatisticDao.getLintAuthorSet(taskToolMap.keySet()));
+            finalAuthors.addAll(taskPersonalStatisticDao.getLintAuthorSet(taskToolMap.keySet()));
             checkerList.addAll(pkgChecker);
         } else {
             // 快照查补偿处理
@@ -737,24 +735,28 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             }
 
             Entry<Long, List<String>> kv = taskToolMap.entrySet().stream().findFirst().get();
+            Long taskIdForSingleQuery = kv.getKey();
+            List<String> toolNameListForSingleQuery = kv.getValue();
+
             // 根据状态过滤后获取规则，处理人、文件路径
             List<LintFileVO> aggInfoList = lintDefectV2Dao.getCheckerAndAuthorAndPath(
-                    kv.getKey(),
-                    kv.getValue(),
+                    taskIdForSingleQuery,
+                    toolNameListForSingleQuery,
                     statusSet,
                     pkgChecker
             );
-            log.info("get file info size is: {}, tool name: {}", aggInfoList.size(), toolNameList);
+            log.info("get file info size is: {}, tool name: {}", aggInfoList.size(), toolNameListForSingleQuery);
 
             for (LintFileVO fileInfo : aggInfoList) {
                 // 设置作者
                 if (CollectionUtils.isNotEmpty(fileInfo.getAuthorList())) {
-                    Set<String> authorSet = fileInfo.getAuthorList().stream()
+                    List<String> authorSet = fileInfo.getAuthorList().stream()
                             .filter(CollectionUtils::isNotEmpty)
                             .flatMap(Collection::stream)
-                            .collect(Collectors.toSet());
+                            .filter(StringUtils::isNotEmpty)
+                            .collect(Collectors.toList());
 
-                    authors.addAll(authorSet);
+                    finalAuthors.addAll(authorSet);
                 }
 
                 // 设置规则
@@ -781,8 +783,10 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             response.setFilePathTree(treeNode);
         }
 
-        List<String> sortedAuthors = Lists.newArrayList(authors);
-        Collections.sort(sortedAuthors, Collator.getInstance(Locale.SIMPLIFIED_CHINESE));
+        List<String> sortedAuthors = finalAuthors.stream()
+                .filter(StringUtils::isNotEmpty)
+                .sorted(Collator.getInstance(Locale.SIMPLIFIED_CHINESE))
+                .collect(Collectors.toList());
         response.setAuthorList(sortedAuthors);
         response.setCheckerList(handleCheckerList(toolNameList, checkerList, checkerSetId));
 

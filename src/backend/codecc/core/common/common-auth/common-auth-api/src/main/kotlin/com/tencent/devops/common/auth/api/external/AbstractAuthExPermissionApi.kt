@@ -110,7 +110,7 @@ abstract class AbstractAuthExPermissionApi @Autowired constructor(
         // 判断来源是流水线还是CodeCC任务，如果是流水线校验流水线权限
         val authTaskService = SpringContextUtil.getBean(AuthTaskService::class.java)
         val createFromStr = authTaskService.getTaskCreateFrom(taskId)
-        if (StringUtils.isNotBlank(createFromStr)) {
+        if (StringUtils.isBlank(createFromStr)) {
             return false
         }
         if (createFromStr == ComConstants.BsTaskCreateFrom.BS_PIPELINE.value()) {

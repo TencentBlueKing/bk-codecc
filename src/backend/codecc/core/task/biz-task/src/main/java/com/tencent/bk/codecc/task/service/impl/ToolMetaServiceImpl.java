@@ -616,6 +616,7 @@ public class ToolMetaServiceImpl implements ToolMetaService {
     @Override
     public String updateToolMetaToStatus(
             String toolName,
+            String toolImageTag,
             ToolIntegratedStatus fromStatus,
             ToolIntegratedStatus toStatus,
             String username
@@ -630,7 +631,7 @@ public class ToolMetaServiceImpl implements ToolMetaService {
             throw new CodeCCException(CommonMessageCode.INVALID_TOOL_NAME, new String[]{toolName}, null);
         }
 
-        return changeToolStatus(toolEntity, fromStatus, toStatus, username);
+        return changeToolStatus(toolEntity, toolImageTag, fromStatus, toStatus, username);
     }
 
     @Override
@@ -667,10 +668,11 @@ public class ToolMetaServiceImpl implements ToolMetaService {
     }
 
     private String changeToolStatus(ToolMetaEntity toolEntity,
+                                    String toolImageTag,
                                     ToolIntegratedStatus fromStatus,
                                     ToolIntegratedStatus toStatus,
                                     String username) {
-        log.info("change tool status: {}, {}, {}", toolEntity.getName(), fromStatus, toStatus);
+        log.info("change tool status: {}, update {} {} to {}", toolEntity.getName(), toolImageTag, fromStatus, toStatus);
 
 
         List<ToolVersionEntity> toolVersions =
@@ -711,6 +713,10 @@ public class ToolMetaServiceImpl implements ToolMetaService {
         toEntity.setVersionType(toStatus.name());
         toEntity.setUpdatedBy(username);
         toEntity.setUpdatedDate(System.currentTimeMillis());
+        //如果传递的工具镜像版本不为空，这保存该版本号
+        if (!StringUtils.isEmpty(toolImageTag)) {
+            toEntity.setDockerImageVersion(toolImageTag);
+        }
         toolVersionsMap.put(toStatus.name(), toEntity);
 
         // update toolEntity
@@ -757,6 +763,40 @@ public class ToolMetaServiceImpl implements ToolMetaService {
             });
 
             toolMetaDetailVOList.add(toolMetaDetailVO);
+        });
+
+        return toolMetaDetailVOList;
+    }
+
+    @Override
+    public List<ToolMetaDetailVO> getToolsByToolName(List<String> toolNameList) {
+        Map<String, ToolMetaBaseVO> toolMetaDetailVOMap =
+                toolMetaCacheService.getToolMetaListFromCache(Boolean.TRUE, Boolean.TRUE);
+
+        //设置P-正式发布版本
+        String toolV = ToolIntegratedStatus.P.name();
+        String finalToolV = toolV;
+        List<ToolMetaDetailVO> toolMetaDetailVOList = new ArrayList<>(toolMetaDetailVOMap.size());
+        toolMetaDetailVOMap.forEach((toolName, tool) -> {
+            if (toolNameList.contains(toolName)) {
+                ToolMetaDetailVO toolMetaDetailVO = (ToolMetaDetailVO) tool;
+                toolMetaDetailVO.setGraphicDetails(null);
+                toolMetaDetailVO.setLogo(null);
+                //获取正式版本的镜像信息填充toolMetaDetailVO
+                toolMetaDetailVO.getToolVersions().forEach(toolversion -> {
+                    if (finalToolV.equals(toolversion.getVersionType())) {
+                        //保存镜像信息
+                        toolMetaDetailVO.setDockerTriggerShell(toolversion.getDockerTriggerShell());
+                        toolMetaDetailVO.setDockerImageURL(toolversion.getDockerImageURL());
+                        toolMetaDetailVO.setDockerImageVersion(toolversion.getDockerImageVersion());
+                        toolMetaDetailVO.setToolImageRevision(toolversion.getDockerImageHash());
+                        toolMetaDetailVO.setDockerImageVersionType(finalToolV);
+                        //保存二进制信息
+                        toolMetaDetailVO.setBinary(toolversion.getBinary());
+                    }
+                });
+                toolMetaDetailVOList.add(toolMetaDetailVO);
+            }
         });
 
         return toolMetaDetailVOList;

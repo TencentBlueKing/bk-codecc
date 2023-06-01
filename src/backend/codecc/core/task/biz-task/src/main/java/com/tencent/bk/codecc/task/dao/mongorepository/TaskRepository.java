@@ -310,7 +310,7 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String>
      */
     @Query(fields = "{'task_id' : 1, 'task_owner' : 1, 'status' : 1, 'create_from' : 1, 'pipeline_id' : 1, "
             + "'tool_names' : 1, 'tops_user' : 1, 'name_en' : 1, 'name_cn' : 1, 'disable_time' : 1, 'create_date' : 1, "
-            + "'gongfeng_project_id': 1}")
+            + "'gongfeng_project_id': 1, 'project_id' : 1}")
     Set<TaskInfoEntity> findByProjectIdAndCreateFromIn(String projectId, Set<String> createFroms);
 
 
