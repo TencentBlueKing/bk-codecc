@@ -9,7 +9,7 @@ import { VueLoaderPlugin } from 'vue-loader'
 import friendlyFormatter from 'eslint-friendly-formatter'
 import HardSourceWebpackPlugin from 'hard-source-webpack-plugin'
 
-import { resolve, assetsPath } from './util'
+import { resolve, assetsPath, resolveAssetsPublicPath } from './util'
 import config from './config'
 
 const isProd = process.env.NODE_ENV === 'production'
@@ -85,6 +85,7 @@ export default {
         options: {
           limit: 10000,
           name: assetsPath('images/[name].[hash:7].[ext]'),
+          publicPath: resolveAssetsPublicPath,
         },
       },
       {
@@ -94,6 +95,7 @@ export default {
           options: {
             limit: 10000,
             name: assetsPath('media/[name].[hash:7].[ext]'),
+            publicPath: resolveAssetsPublicPath,
           },
         },
       },
@@ -104,6 +106,7 @@ export default {
           options: {
             limit: 10000,
             name: assetsPath('fonts/[name].[hash:7].[ext]'),
+            publicPath: resolveAssetsPublicPath,
           },
         },
       },

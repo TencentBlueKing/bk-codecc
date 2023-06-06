@@ -15,6 +15,11 @@ export function assetsPath(_path) {
   return path.posix.join(assetsSubDirectory, _path)
 }
 
+export function resolveAssetsPublicPath(url, resourcePath) {
+  // TODO: 向上取两级目录， 取与css文件相对地址
+  return `../../${url}`
+}
+
 export function getIP() {
   const ifaces = os.networkInterfaces()
   const defultAddress = '127.0.0.1'

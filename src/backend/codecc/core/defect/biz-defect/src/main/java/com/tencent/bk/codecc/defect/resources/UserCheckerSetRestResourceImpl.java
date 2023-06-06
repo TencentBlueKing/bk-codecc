@@ -165,6 +165,7 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
     }
 
     @Override
+    @I18NResponse
     public Result<Page<CheckerSetVO>> getCheckerSetsPageable(CheckerSetListQueryReq queryCheckerSetReq) {
         if (queryCheckerSetReq.getTaskId() != null) {
             return new Result<>(checkerSetBizService.getCheckerSetsOfTaskPage(queryCheckerSetReq));

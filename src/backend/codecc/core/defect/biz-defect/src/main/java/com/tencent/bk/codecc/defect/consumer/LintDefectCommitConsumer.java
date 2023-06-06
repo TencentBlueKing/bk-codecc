@@ -870,6 +870,7 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
         } else {
             List<String> finalAuthorList = defectEntity.getAuthor().stream()
                     .filter(StringUtils::isNotEmpty)
+                    .distinct()
                     .collect(Collectors.toList());
 
             if (CollectionUtils.isEmpty(finalAuthorList)) {
