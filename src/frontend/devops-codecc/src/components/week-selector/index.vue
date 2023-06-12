@@ -75,7 +75,7 @@
     .settings-trigger-week {
       margin-right: 8px;
       display: inline-block;
-      width: 32px;
+      width: 40px;
       height: 32px;
       border-radius: 2px;
       border: 1px solid $itemBorderColor;

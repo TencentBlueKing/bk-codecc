@@ -386,7 +386,7 @@ ${this.taskDetail.pipelineId}/edit#${this.taskDetail.atomCode}`, '_blank')
       .settings-trigger-week {
         margin-right: 8px;
         display: inline-block;
-        width: 35px;
+        width: 40px;
         height: 32px;
         border-radius: 2px;
         border: 1px solid $itemBorderColor;

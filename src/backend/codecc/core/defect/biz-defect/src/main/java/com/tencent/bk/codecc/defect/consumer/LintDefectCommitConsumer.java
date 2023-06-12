@@ -864,7 +864,7 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
             defectEntity.setAuthor(Lists.newArrayList(taskDetailVO.getCreatedBy()));
         }
 
-        // scm_blame可能出现作者为null的情况
+        // scm_blame能匹配出具体行，但作者字段可能为null
         if (CollectionUtils.isEmpty(defectEntity.getAuthor())) {
             defectEntity.setAuthor(Lists.newArrayList("unassigned"));
         } else {

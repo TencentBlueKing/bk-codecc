@@ -299,7 +299,7 @@
       main {
         display: flex;
         align-items: center;
-        padding-right: 24px;
+        padding-right: 12px;
         border-right: 1px solid #eff1f1;
         hgroup {
           width: 190px;
@@ -383,7 +383,7 @@
       align-items: center;
       justify-content: center;
       margin-left: 12px;
-      width: 72px;
+      width: 94px;
       height: 26px;
       border-radius: 12px;
       border: 1px solid $borderColor;

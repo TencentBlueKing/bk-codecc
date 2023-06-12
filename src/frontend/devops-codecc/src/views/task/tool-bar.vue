@@ -81,7 +81,7 @@
         ],
         codelibList: [],
         orderList: [
-          { id: 'SIMPLIFIED_PINYIN', name: `${this.$t('按名称')} A-Z` },
+          { id: 'SIMPLIFIED_PINYIN', name: `${this.$t('按名称')} a-Z` },
           { id: 'CREATE_DATE', name: this.$t('按创建时间') },
           { id: 'LAST_EXECUTE_DATE', name: this.$t('按最近执行时间') },
         ],
@@ -157,6 +157,7 @@
      margin-left: 33%;
      label {
        margin-right: 16px;
+       margin-left: 0;
        font-size: 12px;
      }
    }
