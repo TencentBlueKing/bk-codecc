@@ -11,6 +11,7 @@ public class I18NModuleCode {
     // 工具
     public static final String TOOL_DISPLAY_NAME = "TOOL_DISPLAY_NAME";
     public static final String TOOL_DESCRIPTION = "TOOL_DESCRIPTION";
+    public static final String TOOL_TYPE = "TOOL_TYPE";
 
 
     // 规则集

@@ -73,6 +73,7 @@ public class ToolMetaBaseVO extends CommonVO {
      * 发现缺陷和安全漏洞、规范代码、复杂度、重复代码
      */
     @ApiModelProperty(value = "工具类型", required = true)
+    @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.TOOL_TYPE)
     private String type;
 
     /**
