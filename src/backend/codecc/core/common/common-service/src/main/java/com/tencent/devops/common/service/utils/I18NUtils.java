@@ -22,7 +22,7 @@ public class I18NUtils {
      * @return
      */
     public static String getMessage(String resourceCode) {
-        return getMessage(resourceCode, null);
+        return getMessageCore(resourceCode, null, null);
     }
 
     /**
@@ -33,19 +33,7 @@ public class I18NUtils {
      * @return
      */
     public static String getMessage(String resourceCode, Locale locale) {
-        try {
-            if (locale == null) {
-                locale = AbstractI18NResponseAspect.getLocale();
-            }
-
-            ResourceBundle resourceBundle = ResourceBundle.getBundle("i18n/message", locale);
-
-            return resourceBundle.getString(resourceCode);
-        } catch (Throwable t) {
-            log.error("i18n get message error, resource code: {}, locale: {}", resourceCode, locale, t);
-
-            return I18N_ERROR_MESSAGE;
-        }
+        return getMessageCore(resourceCode, null, locale);
     }
 
     /**
@@ -56,22 +44,7 @@ public class I18NUtils {
      * @return
      */
     public static String getMessageWithParams(String resourceCode, String[] params) {
-        if (params == null) {
-            params = new String[0];
-        }
-
-        String message = getMessage(resourceCode);
-        if (ObjectUtils.isEmpty(message) || message.equals(I18N_ERROR_MESSAGE)) {
-            return I18N_ERROR_MESSAGE;
-        }
-
-        try {
-            return MessageFormat.format(message, params);
-        } catch (Throwable t) {
-            log.error("i18n format message error, code: {}, params: {}", resourceCode, params, t);
-
-            return I18N_ERROR_MESSAGE;
-        }
+        return getMessageCore(resourceCode, params, null);
     }
 
     /**
@@ -85,7 +58,7 @@ public class I18NUtils {
     public static String getMessageWithParams(String resourceCode, String[] params, String defaultMessage) {
         String message = getMessageWithParams(resourceCode, params);
 
-        if (I18N_ERROR_MESSAGE.equals(message)) {
+        if (I18N_ERROR_MESSAGE.equals(message) || ObjectUtils.isEmpty(message)) {
             return defaultMessage;
         }
 
@@ -97,5 +70,30 @@ public class I18NUtils {
             add(getMessage(resourceCode, ZH_CN));
             add(getMessage(resourceCode, EN_US));
         }};
+    }
+
+    private static String getMessageCore(String resourceCode, String[] params, Locale locale) {
+        if (ObjectUtils.isEmpty(resourceCode)) {
+            return "";
+        }
+
+        try {
+            if (locale == null) {
+                locale = AbstractI18NResponseAspect.getLocale();
+            }
+
+            ResourceBundle resourceBundle = ResourceBundle.getBundle("i18n/message", locale);
+
+            if (!ObjectUtils.isEmpty(params)) {
+                return MessageFormat.format(resourceBundle.getString(resourceCode), params);
+            }
+
+            return resourceBundle.getString(resourceCode);
+        } catch (Throwable t) {
+            log.error("i18n get message error, resource code: {}, params: {}, locale: {}",
+                    resourceCode, params, locale, t);
+
+            return I18N_ERROR_MESSAGE;
+        }
     }
 }

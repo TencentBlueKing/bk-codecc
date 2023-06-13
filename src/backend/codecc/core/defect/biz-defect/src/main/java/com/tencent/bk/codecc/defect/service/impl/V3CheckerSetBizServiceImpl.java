@@ -53,8 +53,6 @@ import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
-import com.tencent.devops.common.auth.api.pojo.external.PipelineAuthAction;
-import com.tencent.devops.common.auth.api.pojo.external.model.BkAuthExResourceActionModel;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.CheckerConstants;
@@ -66,7 +64,6 @@ import com.tencent.devops.common.service.BaseDataCacheService;
 import com.tencent.devops.common.service.aop.AbstractI18NResponseAspect;
 import com.tencent.devops.common.service.utils.I18NUtils;
 import com.tencent.devops.common.service.utils.PageableUtils;
-import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.service.utils.SpringContextUtil;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.List2StrUtil;
@@ -109,8 +106,6 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import org.springframework.util.ObjectUtils;
 
-import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.KEY_CREATE_FROM;
-import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.PREFIX_TASK_INFO;
 import static com.tencent.devops.common.constant.ComConstants.ONCE_CHECKER_SET_KEY;
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_TASK_CHECKER_CONFIG;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_IGNORE_CHECKER;
@@ -925,7 +920,7 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
     public Map<String, List<CheckerSetVO>> getAvailableCheckerSetsOfProject(String projectId) {
         Map<String, List<CheckerSetVO>> resultCheckerSetMap = new LinkedHashMap<>();
         for (CheckerSetSource checkerSetSource : CheckerSetSource.values()) {
-            resultCheckerSetMap.put(checkerSetSource.getName(), new ArrayList<>());
+            resultCheckerSetMap.put(checkerSetSource.getNameCn(), new ArrayList<>());
         }
 
         // 根据项目ID查询非旧插件规则集
@@ -1014,7 +1009,7 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
                     if (CheckerSetSource.DEFAULT.name().equals(checkerSetEntity.getCheckerSetSource())
                             || CheckerSetSource.RECOMMEND.name().equals(checkerSetEntity.getCheckerSetSource())) {
                         resultCheckerSetMap.compute(
-                                CheckerSetSource.valueOf(checkerSetEntity.getCheckerSetSource()).getName(), (k, v) -> {
+                                CheckerSetSource.valueOf(checkerSetEntity.getCheckerSetSource()).getNameCn(), (k, v) -> {
                                     if (null == v) {
                                         return new ArrayList<>();
                                     } else {
@@ -1028,7 +1023,7 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
                                 }
                         );
                     } else {
-                        resultCheckerSetMap.compute(CheckerSetSource.SELF_DEFINED.getName(), (k, v) -> {
+                        resultCheckerSetMap.compute(CheckerSetSource.SELF_DEFINED.getNameCn(), (k, v) -> {
                             if (null == v) {
                                 return new ArrayList<>();
                             } else {
@@ -2217,7 +2212,7 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
         // 校验规则集是否存在
         List<CheckerSetEntity> checkerSetEntities = checkerSetRepository.findByCheckerSetId(checkerSetId);
         if (CollectionUtils.isEmpty(checkerSetEntities)) {
-            String errMsg = "规则集不存在";
+            String errMsg = I18NUtils.getMessage("CHECKER_SET_NOT_EXIST");
             log.error(errMsg);
             throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg}, null);
         }
@@ -2227,7 +2222,7 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
                 || CheckerSetSource.RECOMMEND.name().equals(firstCheckerSetEntity.getCheckerSetSource())) {
             if (checkerSetManagementReqVO.getUninstallCheckerSet() != null
                     && checkerSetManagementReqVO.getUninstallCheckerSet()) {
-                String errMsg = "官方推荐和官方优选规则集不能进行此项操作";
+                String errMsg = I18NUtils.getMessage("CHECKER_SET_RECOMMEND_NOT_ALLOW_DELETE");
                 log.error(errMsg);
                 throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg}, null);
             }
@@ -2253,9 +2248,9 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
                     user, checkerSetManagementReqVO.getDiscardFromTask(), tasks);
         }
         if (!havePermission && !firstCheckerSetEntity.getCreator().equals(user)) {
-            String errMsg = "当前用户不是项目管理员或者规则集创建者，无权进行此操作！";
+            String errMsg = I18NUtils.getMessage("CHECKER_SET_USER_UNAUTHORIZED_NOT_ALLOW_DELETE");
             log.error(errMsg);
-            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{"当前用户" + user}, null);
+            throw new CodeCCException("", errMsg);
         }
 
         // 查询任务关联规则集记录
@@ -2281,27 +2276,27 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
         if (checkerSetManagementReqVO.getDeleteCheckerSet() != null
                 && checkerSetManagementReqVO.getDeleteCheckerSet()) {
             if (!checkerSetEntities.get(0).getProjectId().equals(checkerSetManagementReqVO.getProjectId())) {
-                String errMsg = "不允许删除非本项目的规则集";
+                String errMsg = I18NUtils.getMessage("CHECKER_SET_NOT_BELONG_PROJECT_NOT_ALLOW_DELETE");
                 log.error(errMsg);
-                throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg}, null);
+                throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg});
             }
             if (CollectionUtils.isNotEmpty(selectCheckerSetEntities)) {
-                String errMsg = "该项目下还有任务使用此规则集，不允许删除或卸载";
+                String errMsg = I18NUtils.getMessage("CHECKER_SET_IN_USE_NOT_ALLOW_DELETE");
                 log.error(errMsg);
-                throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg}, null);
+                throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg});
             }
         }
         if (checkerSetManagementReqVO.getUninstallCheckerSet() != null
                 && checkerSetManagementReqVO.getUninstallCheckerSet()) {
             if (checkerSetEntities.get(0).getProjectId().equals(checkerSetManagementReqVO.getProjectId())) {
-                String errMsg = "不允许卸载本项目的规则集";
+                String errMsg = I18NUtils.getMessage("CHECKER_SET_CURRENT_PROJECT_NOT_ALLOW_DELETE");
                 log.error(errMsg);
-                throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg}, null);
+                throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg});
             }
             if (CollectionUtils.isNotEmpty(selectCheckerSetEntities)) {
-                String errMsg = "该项目下还有任务使用此规则集，不允许删除或卸载";
+                String errMsg = I18NUtils.getMessage("CHECKER_SET_IN_USE_NOT_ALLOW_DELETE");
                 log.error(errMsg);
-                throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg}, null);
+                throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg});
             }
         }
 
@@ -2464,9 +2459,9 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
                 List<CheckerSetTaskRelationshipEntity> currentTaskRelationships =
                         checkerSetTaskRelationshipRepository.findByTaskId(taskId);
                 if (currentTaskRelationships.size() == 1) {
-                    String errMsg = "任务必须至少使用一个规则集！";
+                    String errMsg = I18NUtils.getMessage("CHECKER_SET_AT_LEAST_ONE_FOR_TASK_NOT_ALLOW_DELETE");
                     log.error(errMsg);
-                    throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg}, null);
+                    throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg});
                 }
                 checkerSetTaskRelationshipRepository.delete(taskRelationshipEntity);
             }
@@ -2954,7 +2949,7 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
                     CheckerSetSource checkerSetSource = CheckerSetSource.valueOf(entry.getKey());
                     return new CheckerCountListVO(
                             checkerSetSource.name(),
-                            isEN ? checkerSetSource.name() : checkerSetSource.getName(),
+                            isEN ? checkerSetSource.getNameEn() : checkerSetSource.getNameCn(),
                             entry.getValue()
                     );
                 })
@@ -3715,7 +3710,7 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
         checkerSetParams.setCheckerSetSource(Lists.newArrayList());
         for (CheckerSetSource checkerSetSource : CheckerSetSource.values()) {
             CheckerSetCategoryVO categoryVO = new CheckerSetCategoryVO();
-            categoryVO.setCnName(checkerSetSource.getName());
+            categoryVO.setCnName(checkerSetSource.getNameCn());
             categoryVO.setEnName(checkerSetSource.name());
             checkerSetParams.getCheckerSetSource().add(categoryVO);
         }
