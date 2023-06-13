@@ -84,7 +84,7 @@ public class I18NUtils {
 
             ResourceBundle resourceBundle = ResourceBundle.getBundle("i18n/message", locale);
 
-            if (!ObjectUtils.isEmpty(params)) {
+            if (params != null) {
                 return MessageFormat.format(resourceBundle.getString(resourceCode), params);
             }
 

@@ -477,7 +477,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             fileInfo.setFileMd5(md5);
             fileInfo.setMinLineNum(lintDefectDetailVO.getLineNum());
             fileInfo.setMaxLineNum(lintDefectDetailVO.getLineNum());
-            fileInfo.setContents(EMPTY_FILE_CONTENT_TIPS);
+            fileInfo.setContents(I18NUtils.getMessage("EMPTY_FILE_CONTENT_TIPS"));
             lintDefectDetailVO.getFileInfoMap().put(md5, fileInfo);
         } else {
             // 递归解析defectInstance，获取所有的相关文件
@@ -583,7 +583,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                     }
                 }
                 if (StringUtils.isEmpty(content)) {
-                    content = EMPTY_FILE_CONTENT_TIPS;
+                    content = I18NUtils.getMessage("EMPTY_FILE_CONTENT_TIPS");
                 }
                 fileInfoVO.setContents(content);
             });

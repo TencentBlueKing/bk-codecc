@@ -74,6 +74,7 @@ import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.ToolPattern;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import com.tencent.devops.common.service.utils.I18NUtils;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.DateTimeUtils;
 import com.tencent.devops.common.util.GitUtil;
@@ -113,8 +114,6 @@ import org.springframework.data.util.Pair;
  */
 @Slf4j
 public abstract class AbstractQueryWarningBizService implements IQueryWarningBizService {
-
-    protected static String EMPTY_FILE_CONTENT_TIPS = "无法获取代码片段。请确保你对代码库拥有权限，且该文件未从代码库中删除。";
     protected static String EMPTY_CONTENT_TOOL_TIPS = "此工具不支持代码片段查看";
     private static Logger logger = LoggerFactory.getLogger(AbstractQueryWarningBizService.class);
     @Autowired
@@ -171,7 +170,7 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
             CommonDefectDetailQueryRspVO defectQueryRspVO
     ) {
         if (StringUtils.isBlank(fileContent)) {
-            return EMPTY_FILE_CONTENT_TIPS;
+            return I18NUtils.getMessage("EMPTY_FILE_CONTENT_TIPS");
         }
 
         String[] lines = fileContent.split("\n");
