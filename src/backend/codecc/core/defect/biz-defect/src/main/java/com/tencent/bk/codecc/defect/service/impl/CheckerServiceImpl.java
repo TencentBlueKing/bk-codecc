@@ -172,6 +172,23 @@ public class CheckerServiceImpl implements CheckerService {
         return queryAllChecker(Lists.newArrayList(toolName), null, false);
     }
 
+    @I18NResponse
+    @Override
+    public List<CheckerDetailVO> queryAllCheckerWithI18N(
+            List<String> toolNameSet,
+            String checkerSet,
+            boolean returnOnlyMapCheckerKeyAndType
+    ) {
+        Map<String, CheckerDetailVO> map = queryAllChecker(toolNameSet, checkerSet,
+                returnOnlyMapCheckerKeyAndType);
+
+        if (MapUtils.isEmpty(map)) {
+            return Lists.newArrayList();
+        }
+
+        return Lists.newArrayList(map.values());
+    }
+
     /**
      * 根据指定条件查询规则
      *
@@ -209,6 +226,8 @@ public class CheckerServiceImpl implements CheckerService {
         return checkerDetailList.stream()
                 .collect(Collectors.toMap(CheckerDetailVO::getCheckerKey, Function.identity(), (k, v) -> v));
     }
+
+
 
     @Override
     public List<CheckerDetailVO> queryAllChecker(long taskId, String toolName, String paramJson, long codeLang) {

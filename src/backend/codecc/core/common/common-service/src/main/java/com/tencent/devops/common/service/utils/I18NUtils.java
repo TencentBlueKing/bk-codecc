@@ -14,7 +14,7 @@ public class I18NUtils {
     private static final Locale ZH_CN = new Locale("zh", "CN");
     private static final Locale EN_US = new Locale("en", "US");
     private static final String I18N_ERROR_MESSAGE = "[I18N_ERR]";
-    
+
     /**
      * 获取国际化信息
      *
@@ -72,6 +72,24 @@ public class I18NUtils {
 
             return I18N_ERROR_MESSAGE;
         }
+    }
+
+    /**
+     * 获取国际化信息
+     *
+     * @param resourceCode
+     * @param params
+     * @param defaultMessage
+     * @return
+     */
+    public static String getMessageWithParams(String resourceCode, String[] params, String defaultMessage) {
+        String message = getMessageWithParams(resourceCode, params);
+
+        if (I18N_ERROR_MESSAGE.equals(message)) {
+            return defaultMessage;
+        }
+
+        return message;
     }
 
     public static ArrayList<String> getAllLocaleMessage(String resourceCode) {

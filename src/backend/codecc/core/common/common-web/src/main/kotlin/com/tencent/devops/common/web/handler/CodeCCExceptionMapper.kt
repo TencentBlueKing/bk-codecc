@@ -48,22 +48,15 @@ class CodeCCExceptionMapper : ExceptionMapper<CodeCCException> {
                     "params: ${exception.params?.toList()}", exception
         )
         val status = Response.Status.OK
-        val i18nErrMsg = I18NUtils.getMessageWithParams(exception.errorCode, exception.params)
+        val i18nErrMsg = I18NUtils.getMessageWithParams(exception.errorCode, exception.params, "")
 
-        /*
-         * 优先级如下：
-         * 1、抛异常处的自定义消息
-         * 2、异常错误码自身含义
-         * 3、前两者均无时，提示异常类默认message
-         */
         return Response.status(status)
                 .type(MediaType.APPLICATION_JSON_TYPE)
                 .entity(
                     Result<Void>(
                         status = status.statusCode,
                         code = exception.errorCode,
-                        message = if (!exception.message.isNullOrBlank()) exception.message
-                        else if (!i18nErrMsg.isNullOrBlank()) i18nErrMsg
+                        message = if (!i18nErrMsg.isNullOrBlank()) i18nErrMsg
                         else exception.defaultMessage
                     )
                 )

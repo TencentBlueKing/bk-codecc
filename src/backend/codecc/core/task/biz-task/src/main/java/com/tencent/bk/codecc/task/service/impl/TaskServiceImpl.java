@@ -1453,7 +1453,7 @@ public class TaskServiceImpl implements TaskService {
         long taskId = taskEntity.getTaskId();
         if (BsTaskCreateFrom.GONGFENG_SCAN.value().equalsIgnoreCase(taskEntity.getCreateFrom())) {
             log.info("gongfeng project not allowed to disable");
-            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{userName}, null);
+            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{userName});
         }
 
         //判断是否有权限
@@ -1463,7 +1463,7 @@ public class TaskServiceImpl implements TaskService {
         Boolean taskOwnerPermission = CollectionUtils.isEmpty(taskOwnerList) || !taskOwnerList.contains(userName);
         if (checkPermission && taskMemberPermission && taskOwnerPermission) {
             log.error("current user has no permission to the task");
-            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{userName}, new Exception());
+            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{userName});
         }
 
         if (StringUtils.isNotBlank(taskEntity.getDisableTime())) {

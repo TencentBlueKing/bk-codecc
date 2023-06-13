@@ -990,9 +990,12 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         if (CollectionUtils.isEmpty(checkerList)) {
             return new ArrayList<>();
         }
+
         // 获取工具对应的所有警告类型 [初始化新增时一定要检查规则名称是否重复]
         Map<String, CheckerDetailVO> checkerDetailVOMap =
-                multitoolCheckerService.queryAllChecker(toolNameSet, checkerSet, true);
+                multitoolCheckerService.queryAllCheckerWithI18N(toolNameSet, checkerSet, true)
+                        .stream()
+                        .collect(Collectors.toMap(CheckerDetailVO::getCheckerKey, Function.identity(), (k, v) -> v));
 
         if (MapUtils.isEmpty(checkerDetailVOMap)) {
             return Lists.newArrayList();
@@ -1005,11 +1008,12 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
 
         // 一种规则类型有多个告警规则: <checkerType, List<checkerKey>>
         Map<String, List<String>> checkerTypeToKeyMap = Maps.newHashMapWithExpectedSize(checkerList.size());
+        String checkerTypeCustom = I18NUtils.getMessage("CHECKER_TYPE_CUSTOM");
 
         for (String checker : checkerList) {
             CheckerDetailVO checkerDetailVO = checkerDetailVOMap.get(checker);
             String checkerType = (checkerDetailVO != null && StringUtils.isNotBlank(checkerDetailVO.getCheckerType()))
-                    ? checkerDetailVO.getCheckerType() : "自定义";
+                    ? checkerDetailVO.getCheckerType() : checkerTypeCustom;
 
             List<String> checkerKeyList = checkerTypeToKeyMap.get(checkerType);
             if (CollectionUtils.isEmpty(checkerKeyList)) {

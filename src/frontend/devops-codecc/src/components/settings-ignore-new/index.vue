@@ -340,7 +340,7 @@
           margin-top: 15px;
           background-color: $bgColor;
           width: 531px;
-          height: 75px;
+          height: 85px;
           border-radius: 2px;
           border: 1px solid #a3c5fd;
           font-size: 12px;
@@ -348,9 +348,9 @@
           padding-top: 8px;
           .input-info-left {
             float: left;
-            line-height: 74px;
+            line-height: 84px;
             width: 36px;
-            height: 74px;
+            height: 84px;
             margin-top: -8px;
             background-color: #a3c5fd;
             margin-right: 17px;

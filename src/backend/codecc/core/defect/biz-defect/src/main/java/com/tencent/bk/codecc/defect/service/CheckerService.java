@@ -63,6 +63,21 @@ public interface CheckerService {
      * 多工具查询单个工具的所有规则信息详情
      *
      * @param toolNameSet
+     * @param checkerSet
+     * @param returnOnlyMapCheckerKeyAndType false返回的vo是全字段，true返回的vo只包含checkerKey和checkerType
+     * @return
+     */
+    List<CheckerDetailVO> queryAllCheckerWithI18N(
+            List<String> toolNameSet,
+            String checkerSet,
+            boolean returnOnlyMapCheckerKeyAndType
+    );
+
+    /**
+     * 多工具查询单个工具的所有规则信息详情
+     *
+     * @param toolNameSet
+     * @param checkerSet
      * @param returnOnlyMapCheckerKeyAndType false返回的vo是全字段，true返回的vo只包含checkerKey和checkerType
      * @return
      */
