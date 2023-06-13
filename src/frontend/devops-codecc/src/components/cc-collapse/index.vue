@@ -100,8 +100,8 @@
         const checkerMap = {
           checkerLanguage: this.$t('适用语言'),
           checkerCategory: this.$t('类别'),
-          toolName: this.$t('工具'),
-          tag: this.$t('标签'),
+          toolName: this.$t('plural.tool'),
+          tag: this.$t('plural.tag'),
           severity: this.$t('严重级别'),
           editable: this.$t('参数策略'),
           checkerRecommend: this.$t('来源'),
@@ -110,7 +110,7 @@
         const checkerSetMap = {
           checkerSetLanguage: this.$t('适用语言'),
           checkerSetCategory: this.$t('类别'),
-          toolName: this.$t('工具'),
+          toolName: this.$t('plural.tool'),
           checkerSetSource: this.$t('来源'),
         }
         return this.isCkeckerSet ? checkerSetMap[name] : checkerMap[name]

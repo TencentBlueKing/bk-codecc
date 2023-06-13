@@ -85,7 +85,7 @@ export default {
         options: {
           limit: 10000,
           name: assetsPath('images/[name].[hash:7].[ext]'),
-          publicPath: resolveAssetsPublicPath,
+          // publicPath: resolveAssetsPublicPath,
         },
       },
       {

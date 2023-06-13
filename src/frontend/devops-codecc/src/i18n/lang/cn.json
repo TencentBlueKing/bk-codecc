@@ -79,5 +79,7 @@
 	"使用中 (x)": "使用中 ({0})",
 	"规则配置已保存至V{0}版本": "规则配置已保存至V{0}版本",
 	"是否保存规则配置，并创建新的规则集版本V{0}？": "是否保存规则配置，并创建新的规则集版本V{0}？",
-	"Coverity/Klocwork将通过调用编译脚本来编译您的代码，以追踪深层次的缺陷": "# Coverity/Klocwork将通过调用编译脚本来编译您的代码，以追踪深层次的缺陷\n# 请使用依赖的构建工具如maven/cmake等写一个编译脚本build.sh\n# 确保build.sh能够编译代码\n# cd path/to/build.sh\n# sh build.sh\n"
+	"Coverity/Klocwork将通过调用编译脚本来编译您的代码，以追踪深层次的缺陷": "# Coverity/Klocwork将通过调用编译脚本来编译您的代码，以追踪深层次的缺陷\n# 请使用依赖的构建工具如maven/cmake等写一个编译脚本build.sh\n# 确保build.sh能够编译代码\n# cd path/to/build.sh\n# sh build.sh\n",
+	"plural.tool": "工具",
+	"plural.tag": "标签"
 }
