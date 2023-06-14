@@ -2928,11 +2928,15 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
         //按照类别枚举排序
         List<CheckerSetCategory> categoryOrder = Arrays.asList(CheckerSetCategory.values());
         boolean isEN = "en".equalsIgnoreCase(AbstractI18NResponseAspect.getLocale().toString());
+        Map<String, String> enCategoryMap = Stream.of(CheckerSetCategory.values()).collect(
+                Collectors.toMap(CheckerSetCategory::name,
+                        x -> I18NUtils.getMessage(x.getI18nResourceCode(), I18NUtils.EN_US), (k1, k2) -> k1)
+        );
         List<CheckerCountListVO> checkerSetCateCountVOList = checkerSetCateMap.entrySet().stream().map(entry -> {
                     CheckerSetCategory category = CheckerSetCategory.valueOf(entry.getKey());
                     return new CheckerCountListVO(
                             category.name(),
-                            isEN ? category.name() : category.getName(),
+                            isEN ? enCategoryMap.get(category.name()) : category.getName(),
                             entry.getValue()
                     );
                 })

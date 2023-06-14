@@ -19,7 +19,7 @@ public class ServiceI18NRestResourceImpl implements ServiceI18NRestResource {
 
     @Override
     public Result<I18NMessageResponse> getI18NMessage(I18NMessageRequest request) {
-        log.info("getI18NMessage req: {}", JsonUtil.INSTANCE.toJson(request));
+        // log.info("getI18NMessage req: {}", JsonUtil.INSTANCE.toJson(request));
         return new Result<>(i18nService.queryByCondition(request));
     }
 }
