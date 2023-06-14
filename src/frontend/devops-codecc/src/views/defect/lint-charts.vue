@@ -21,7 +21,7 @@
                 <bk-select v-model="toolId" @selected="handleSelectTool" :clearable="false" searchable>
                   <bk-option-group
                     v-for="group in toolList"
-                    :name="isEn ? group.key : group.name"
+                    :name="group.name"
                     :key="group.key">
                     <bk-option v-for="option in group.toolList"
                                :key="option.toolName"

@@ -55,7 +55,7 @@
           </bk-col>
         </bk-row>
         <bk-row class="card-txt">
-          <bk-col><i class="codecc-icon icon-risky-function"></i>{{$t('风险函数')}}</bk-col>
+          <bk-col><i class="codecc-icon icon-risky-function"></i>{{$t('overview.风险函数')}}</bk-col>
           <bk-col><i class="codecc-icon icon-trend"></i>{{$t('风险函数趋势')}}</bk-col>
           <bk-col><i class="codecc-icon icon-pie"></i>{{$t('平均圈复杂度')}}</bk-col>
           <bk-col><i class="codecc-icon icon-trend"></i>{{$t('圈复杂度趋势')}}</bk-col>
@@ -82,7 +82,7 @@
           </bk-col>
         </bk-row>
         <bk-row class="card-txt">
-          <bk-col><i class="codecc-icon icon-risky-file"></i>{{$t('重复文件')}}</bk-col>
+          <bk-col><i class="codecc-icon icon-risky-file"></i>{{$t('overview.重复文件')}}</bk-col>
           <bk-col><i class="codecc-icon icon-trend"></i>{{$t('重复文件趋势')}}</bk-col>
           <bk-col><i class="codecc-icon icon-pie"></i>{{$t('平均重复率')}}</bk-col>
           <bk-col><i class="codecc-icon icon-trend"></i>{{$t('重复率趋势')}}</bk-col>
@@ -200,7 +200,7 @@
         const obj = {}
         this.toolMeta.TOOL_TYPE.forEach((item) => {
           if (item.name === '代码安全') item.name = '安全漏洞'
-          obj[item.key] = language === 'en' ? item.key : item.name
+          obj[item.key] = item.name
         })
         return obj
       },

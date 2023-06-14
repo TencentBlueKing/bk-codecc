@@ -160,7 +160,7 @@
             </bk-table-column>
             <bk-table-column :label="$t('重复块数')" prop="blockNum"></bk-table-column>
             <bk-table-column :label="$t('重复行数')" prop="dupLines" sortable="custom" label-class-name="col-sort-label" class-name="col-sort"></bk-table-column>
-            <bk-table-column :label="$t('函数总行数')" prop="totalLines"></bk-table-column>
+            <bk-table-column :label="$t('总行数')" prop="totalLines"></bk-table-column>
             <bk-table-column :label="$t('重复率')" prop="dupRate" sortable="custom">
               <template slot-scope="props">
                 <span>{{props.row.dupRate}}</span>
@@ -670,7 +670,7 @@
                          this.$t('路径'),
                          this.$t('重复块数'),
                          this.$t('重复行数'),
-                         this.$t('函数总行数'),
+                         this.$t('总行数'),
                          this.$t('重复率'),
                          this.$t('相关作者'),
                          this.$t('风险'),

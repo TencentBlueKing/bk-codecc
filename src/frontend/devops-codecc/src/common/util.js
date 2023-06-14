@@ -414,7 +414,7 @@ export function getToolStatus(num, tool) {
 
 // 分析日志状态值对应
 export function getLogFlag(num) {
-  const logFlag = ['', i18n.t('成功'), i18n.t('失败'), i18n.t('进行中'), i18n.t('中断')]
+  const logFlag = ['', i18n.t('small.成功'), i18n.t('small.失败'), i18n.t('small.进行中'), i18n.t('small.中断')]
   return logFlag[num]
 }
 

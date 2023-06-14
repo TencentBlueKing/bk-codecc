@@ -184,12 +184,12 @@ export default {
         const params = { toolName: from }
         this.$store.dispatch('checkerset/config', params).then((res) => {
           if (res.code === '0') {
-            if (res.data.success) {
+            if (res.data === true) {
               this.$store.dispatch('task/detail').then((res) => {
                 this.init(true)
               })
             } else {
-              this.$bkMessage({ theme: 'error', message: res.data.tips || this.$t('规则集安装失败') })
+              this.$bkMessage({ theme: 'error', message: this.$t('规则集安装失败') })
             }
           } else {
             this.$bkMessage({ theme: 'error', message: res.message || this.$t('规则集安装失败') })

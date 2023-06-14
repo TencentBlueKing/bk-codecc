@@ -1331,9 +1331,13 @@ public class TaskServiceImpl implements TaskService {
         taskEntity.setDisableReason("");
         taskEntity.setStatus(TaskConstants.TaskStatus.ENABLE.value());
 
-        //在权限中心重新注册任务
-        authExRegisterApi.registerCodeCCTask(userName, String.valueOf(taskId), taskEntity.getNameEn(),
-                taskEntity.getProjectId());
+        try {
+            //在权限中心重新注册任务
+            authExRegisterApi.registerCodeCCTask(userName, String.valueOf(taskId), taskEntity.getNameEn(),
+                    taskEntity.getProjectId());
+        } catch (Exception e) {
+            log.error("registerCodeCCTask cause error.", e);
+        }
 
         //恢复日报
         if (null != taskEntity.getNotifyCustomInfo()
