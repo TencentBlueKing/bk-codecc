@@ -147,7 +147,7 @@ class RBACAuthRegisterApi @Autowired constructor(
         resourceCode: String,
         resourceType: String
     ): Result<Boolean> {
-        val url = "https://${
+        val url = "${rbacAuthProperties.schemes}://${
             rbacAuthProperties
                     .url
         }$baseUrl/open/service/auth/permission/projects/$projectCode/delete/relation"
