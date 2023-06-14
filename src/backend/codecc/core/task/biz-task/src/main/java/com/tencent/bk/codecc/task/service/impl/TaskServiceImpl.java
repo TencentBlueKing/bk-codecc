@@ -1514,6 +1514,8 @@ public class TaskServiceImpl implements TaskService {
             } catch (UnauthorizedException e) {
                 log.error("delete iam resource fail! error message: {}", e.getMessage());
                 throw new CodeCCException(TaskMessageCode.CLOSE_TASK_FAIL);
+            } catch (Exception e) {
+                log.error("delete iam resource fail! error message: {}", e.getMessage());
             }
         }
 
