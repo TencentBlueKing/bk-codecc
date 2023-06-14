@@ -30,7 +30,10 @@ import com.tencent.devops.common.api.annotation.I18NFieldMarker;
 import com.tencent.devops.common.api.annotation.I18NModuleCode;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 元数据信息
@@ -40,6 +43,9 @@ import lombok.Data;
  */
 @Data
 @ApiModel("元数据信息")
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class MetadataVO {
     private String entityId;
 

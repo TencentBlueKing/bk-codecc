@@ -174,13 +174,12 @@ public class CheckerServiceImpl implements CheckerService {
 
     @I18NResponse
     @Override
-    public List<CheckerDetailVO> queryAllCheckerWithI18N(
+    public List<CheckerDetailVO> queryAllCheckerI18NWrapper(
             List<String> toolNameSet,
             String checkerSet,
             boolean returnOnlyMapCheckerKeyAndType
     ) {
-        Map<String, CheckerDetailVO> map = queryAllChecker(toolNameSet, checkerSet,
-                returnOnlyMapCheckerKeyAndType);
+        Map<String, CheckerDetailVO> map = queryAllChecker(toolNameSet, checkerSet, returnOnlyMapCheckerKeyAndType);
 
         if (MapUtils.isEmpty(map)) {
             return Lists.newArrayList();

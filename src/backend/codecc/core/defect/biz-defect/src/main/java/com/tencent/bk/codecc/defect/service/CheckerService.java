@@ -67,7 +67,7 @@ public interface CheckerService {
      * @param returnOnlyMapCheckerKeyAndType false返回的vo是全字段，true返回的vo只包含checkerKey和checkerType
      * @return
      */
-    List<CheckerDetailVO> queryAllCheckerWithI18N(
+    List<CheckerDetailVO> queryAllCheckerI18NWrapper(
             List<String> toolNameSet,
             String checkerSet,
             boolean returnOnlyMapCheckerKeyAndType

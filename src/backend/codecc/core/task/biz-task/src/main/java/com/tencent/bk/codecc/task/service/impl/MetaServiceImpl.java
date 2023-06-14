@@ -26,6 +26,10 @@
 
 package com.tencent.bk.codecc.task.service.impl;
 
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TASK_ID;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.tencent.bk.codecc.task.constant.TaskConstants;
 import com.tencent.bk.codecc.task.dao.CommonDao;
 import com.tencent.bk.codecc.task.dao.mongorepository.BaseDataRepository;
@@ -36,30 +40,21 @@ import com.tencent.bk.codecc.task.model.OpenSourceCheckerSet;
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
 import com.tencent.bk.codecc.task.model.ToolMetaEntity;
 import com.tencent.bk.codecc.task.service.MetaService;
-import com.tencent.bk.codecc.task.vo.OpenScanAndEpcToolNameMapVO;
 import com.tencent.bk.codecc.task.vo.MetadataVO;
+import com.tencent.bk.codecc.task.vo.OpenScanAndEpcToolNameMapVO;
 import com.tencent.bk.codecc.task.vo.OpenScanAndPreProdCheckerSetMapVO;
 import com.tencent.bk.codecc.task.vo.checkerset.OpenSourceCheckerSetVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
+import com.tencent.devops.common.api.annotation.I18NResponse;
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.service.ToolMetaCacheService;
-import com.tencent.devops.common.util.CompressionUtils;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
+import com.tencent.devops.common.service.utils.SpringContextUtil;
 import com.tencent.devops.common.util.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-
-import javax.servlet.http.HttpServletRequest;
+import com.tencent.devops.common.util.CompressionUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,9 +64,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TASK_ID;
-import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
+import javax.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
  * 工具元数据业务逻辑处理类
@@ -233,7 +235,7 @@ public class MetaServiceImpl implements MetaService {
         String[] metadataTypeArr = metadataType.split(";");
 
         List<String> metadataTypes = Arrays.asList(metadataTypeArr);
-        Map<String, List<MetadataVO>> metadataMap = new HashMap<>(metadataTypeArr.length);
+        Map<String, List<MetadataVO>> metadataMap = Maps.newHashMapWithExpectedSize(metadataTypeArr.length);
 
         // t_base_data表与MetadataVO的映射关系，如循环里面的赋值关系。另外，元数据在前端的展示顺序映射到param_extend3
         List<BaseDataEntity> baseDataList = baseDataRepository.findByParamTypeInOrderByParamExtend3(metadataTypes);
@@ -241,7 +243,16 @@ public class MetaServiceImpl implements MetaService {
         // 按照数字而不是字符串顺序排序
         baseDataList.sort(Comparator.comparingInt(o -> NumberUtils.toInt(o.getParamExtend3())));
 
+        // toolType国际化
+        String toolTypeFlag = "TOOL_TYPE";
+        List<BaseDataEntity> toolTypeList=Lists.newArrayList();
+
         for (BaseDataEntity baseDataEntity : baseDataList) {
+            if (toolTypeFlag.equals(baseDataEntity.getParamType())) {
+                toolTypeList.add(baseDataEntity);
+                continue;
+            }
+
             MetadataVO metadataVO = new MetadataVO();
             metadataVO.setKey(baseDataEntity.getParamCode());
             metadataVO.setName(baseDataEntity.getParamName());
@@ -261,6 +272,12 @@ public class MetaServiceImpl implements MetaService {
             metadataList.add(metadataVO);
         }
 
+        if (!CollectionUtils.isEmpty(toolTypeList)) {
+            List<MetadataVO> metadataVOS =
+                    SpringContextUtil.Companion.getBean(MetaService.class).convertToI18N(toolTypeList);
+            metadataMap.put(toolTypeFlag, metadataVOS);
+        }
+
         if (metadataMap.containsKey(ComConstants.METADATA_TYPE_LANG)
                 && CollectionUtils.isNotEmpty(metadataMap.get(ComConstants.METADATA_TYPE_LANG))) {
             //获取排序
@@ -273,6 +290,34 @@ public class MetaServiceImpl implements MetaService {
         }
 
         return metadataMap;
+    }
+
+    @I18NResponse
+    @Override
+    public List<MetadataVO> convertToI18N(List<BaseDataEntity> baseDataEntityList) {
+        if (CollectionUtils.isEmpty(baseDataEntityList)) {
+            return Lists.newArrayList();
+        }
+
+        List<MetadataVO> retList = Lists.newArrayListWithExpectedSize(baseDataEntityList.size());
+
+        for (BaseDataEntity baseDataEntity : baseDataEntityList) {
+            MetadataVO metadataVO = MetadataVO.builder()
+                    .key(baseDataEntity.getParamCode())
+                    .name(baseDataEntity.getParamName())
+                    .fullName(baseDataEntity.getParamExtend1())
+                    .status(baseDataEntity.getParamStatus())
+                    .aliasNames(baseDataEntity.getParamExtend2())
+                    .creator(baseDataEntity.getCreatedBy())
+                    .createTime(baseDataEntity.getCreatedDate())
+                    .langFullKey(baseDataEntity.getLangFullKey())
+                    .langType(baseDataEntity.getLangType())
+                    .build();
+
+            retList.add(metadataVO);
+        }
+
+        return retList;
     }
 
     /**

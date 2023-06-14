@@ -59,9 +59,7 @@ public class UserMetaRestResourceImpl implements UserMetaRestResource
     private PipelineService pipelineService;
 
     @Override
-    @I18NResponse
-    public Result<List<ToolMetaBaseVO>> toolList(Boolean isDetail)
-    {
+    public Result<List<ToolMetaBaseVO>> toolList(Boolean isDetail) {
         return new Result<>(metaService.toolList(isDetail));
     }
 

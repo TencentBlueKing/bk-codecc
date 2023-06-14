@@ -50,7 +50,6 @@ import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.file.ScmFileInfoSnapshotEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
-import com.tencent.bk.codecc.defect.model.issue.DefectIssueInfoEntity;
 import com.tencent.bk.codecc.defect.service.AbstractQueryWarningBizService;
 import com.tencent.bk.codecc.defect.service.CheckerService;
 import com.tencent.bk.codecc.defect.service.CommonDefectMigrationService;
@@ -94,7 +93,6 @@ import com.tencent.devops.common.constant.ComConstants.DefectStatus;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.BizServiceFactory;
 import com.tencent.devops.common.service.utils.I18NUtils;
-import com.tencent.devops.common.service.utils.PageableUtils;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.FileUtils;
 import com.tencent.devops.common.util.GsonUtils;
@@ -111,7 +109,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -121,7 +118,6 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
@@ -993,7 +989,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
 
         // 获取工具对应的所有警告类型 [初始化新增时一定要检查规则名称是否重复]
         Map<String, CheckerDetailVO> checkerDetailVOMap =
-                multitoolCheckerService.queryAllCheckerWithI18N(toolNameSet, checkerSet, true)
+                multitoolCheckerService.queryAllCheckerI18NWrapper(toolNameSet, checkerSet, true)
                         .stream()
                         .collect(Collectors.toMap(CheckerDetailVO::getCheckerKey, Function.identity(), (k, v) -> v));
 
