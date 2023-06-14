@@ -194,7 +194,7 @@
           </bk-col>
           <bk-col class="history">
             <div class="number" @click="handleToPage('dupc')">{{item.baseClusterResultVO.totalCount | formatUndefNum}}</div>
-            <div class="name">{{$t('重复文件')}}</div>
+            <div class="name">{{$t('overview.重复文件')}}</div>
           </bk-col>
           <bk-col class="new">
             <div class="number" @click="handleToPage('dupc')">

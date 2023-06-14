@@ -154,7 +154,7 @@
    .task-filter-switcher {
      display: flex;
      align-items: center;
-     margin-left: 33%;
+     margin-left: auto;
      label {
        margin-right: 16px;
        margin-left: 0;

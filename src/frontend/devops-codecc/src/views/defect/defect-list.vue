@@ -97,7 +97,7 @@
                   </bk-form-item>
                 </div>
                 <div class="cc-col" v-show="allRenderColumnMap.checker">
-                  <bk-form-item :label="$t('规则')">
+                  <bk-form-item :label="$t('single.规则')">
                     <bk-select v-model="searchParams.checker" searchable :loading="selectLoading.otherParamsLoading">
                       <bk-option-group
                         v-for="group in searchFormData.checkerList"
