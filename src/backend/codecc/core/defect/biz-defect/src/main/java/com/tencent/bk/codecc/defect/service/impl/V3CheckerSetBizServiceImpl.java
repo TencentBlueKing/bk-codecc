@@ -1418,6 +1418,7 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
                 if (CollectionUtils.isNotEmpty(checkerSetEntity.getCatagories())) {
                     checkerSetVO.setCatagories(Lists.newArrayList());
                     for (CheckerSetCatagoryEntity category : checkerSetEntity.getCatagories()) {
+                        // 历史原因，DB存在的必有中文名，所以用作KEY定位
                         String resourceCode = categoryMap.get(category.getCnName());
 
                         if (!ObjectUtils.isEmpty(resourceCode)) {
@@ -3581,19 +3582,37 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
     }
 
     private List<CheckerSetCatagoryEntity> getCatagoryEntities(List<String> catatories) {
+        // 国际化之后，put的报文可能是中文或英文，都需要做映射
         List<CheckerSetCatagoryEntity> catagoryEntities = Lists.newArrayList();
         if (CollectionUtils.isNotEmpty(catatories)) {
+
+            List<String> i18nResourceCodeList = Stream.of(CheckerSetCategory.values())
+                    .map(CheckerSetCategory::getI18nResourceCode)
+                    .collect(Collectors.toList());
+
             Map<String, String> catagoryNameMap = Maps.newHashMap();
-            for (CheckerSetCategory checkerSetCategory : CheckerSetCategory.values()) {
-                catagoryNameMap.put(checkerSetCategory.name(), checkerSetCategory.getName());
+            for (String resourceCode : i18nResourceCodeList) {
+                String enName = I18NUtils.getMessage(resourceCode, I18NUtils.EN_US);
+                String cnName = I18NUtils.getMessage(resourceCode, I18NUtils.ZH_CN);
+                catagoryNameMap.put(enName, cnName);
+                catagoryNameMap.put(cnName, enName);
             }
-            for (String categoryEnName : catatories) {
+
+            boolean isEN = "en".equalsIgnoreCase(AbstractI18NResponseAspect.getLocale().toString());
+
+            for (String categoryName : catatories) {
                 CheckerSetCatagoryEntity catagoryEntity = new CheckerSetCatagoryEntity();
-                catagoryEntity.setEnName(categoryEnName);
-                catagoryEntity.setCnName(catagoryNameMap.get(categoryEnName));
+                if (isEN) {
+                    catagoryEntity.setEnName(categoryName);
+                    catagoryEntity.setCnName(catagoryNameMap.get(categoryName));
+                } else {
+                    catagoryEntity.setCnName(categoryName);
+                    catagoryEntity.setEnName(catagoryNameMap.get(categoryName));
+                }
                 catagoryEntities.add(catagoryEntity);
             }
         }
+
         return catagoryEntities;
     }
 

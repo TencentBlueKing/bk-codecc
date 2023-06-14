@@ -2,7 +2,8 @@ package com.tencent.devops.common.service.utils;
 
 import com.tencent.devops.common.service.aop.AbstractI18NResponseAspect;
 import java.text.MessageFormat;
-import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import lombok.extern.slf4j.Slf4j;
@@ -11,8 +12,8 @@ import org.springframework.util.ObjectUtils;
 @Slf4j
 public class I18NUtils {
 
-    private static final Locale ZH_CN = new Locale("zh", "CN");
-    private static final Locale EN_US = new Locale("en", "US");
+    public static final Locale ZH_CN = new Locale("zh", "CN");
+    public static final Locale EN_US = new Locale("en", "US");
     private static final String I18N_ERROR_MESSAGE = "[I18N_ERR]";
 
     /**
@@ -65,8 +66,8 @@ public class I18NUtils {
         return message;
     }
 
-    public static ArrayList<String> getAllLocaleMessage(String resourceCode) {
-        return new ArrayList<String>() {{
+    public static List<String> getAllLocaleMessage(String resourceCode) {
+        return new LinkedList<String>() {{
             add(getMessage(resourceCode, ZH_CN));
             add(getMessage(resourceCode, EN_US));
         }};
