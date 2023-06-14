@@ -303,6 +303,7 @@ public class MetaServiceImpl implements MetaService {
 
         for (BaseDataEntity baseDataEntity : baseDataEntityList) {
             MetadataVO metadataVO = MetadataVO.builder()
+                    .entityId(baseDataEntity.getEntityId())
                     .key(baseDataEntity.getParamCode())
                     .name(baseDataEntity.getParamName())
                     .fullName(baseDataEntity.getParamExtend1())
