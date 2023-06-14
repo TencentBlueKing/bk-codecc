@@ -58,6 +58,7 @@ public class UserMetaRestResourceImpl implements UserMetaRestResource
     @Autowired
     private PipelineService pipelineService;
 
+    @I18NResponse
     @Override
     public Result<List<ToolMetaBaseVO>> toolList(Boolean isDetail) {
         return new Result<>(metaService.toolList(isDetail));
