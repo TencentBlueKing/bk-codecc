@@ -3613,7 +3613,7 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
                 continue;
             }
 
-            retList.add(new CheckerSetCatagoryEntity(model.getEnName(), model.getCnName()));
+            retList.add(new CheckerSetCatagoryEntity(model.getEnumName(), model.getCnName()));
         }
 
         return retList;
