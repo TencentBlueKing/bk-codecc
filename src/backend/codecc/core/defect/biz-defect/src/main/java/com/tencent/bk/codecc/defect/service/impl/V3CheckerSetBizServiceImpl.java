@@ -3608,11 +3608,12 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
         List<CheckerSetCatagoryEntity> retList = Lists.newArrayList();
         for (String categoryName : catatories) {
             CheckerSetCategoryModel model = catagoryNameMap.get(categoryName);
-            if (model != null) {
-                retList.add(
-                        new CheckerSetCatagoryEntity(model.getEnName(), model.getCnName())
-                );
+            if (model == null) {
+                log.info("checker set category name invalid: {}", categoryName);
+                continue;
             }
+
+            retList.add(new CheckerSetCatagoryEntity(model.getEnName(), model.getCnName()));
         }
 
         return retList;
