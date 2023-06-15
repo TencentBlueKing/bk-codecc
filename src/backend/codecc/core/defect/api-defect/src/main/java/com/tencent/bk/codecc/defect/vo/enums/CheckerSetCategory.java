@@ -37,6 +37,11 @@ public enum CheckerSetCategory {
         this.i18nResourceCode = i18nResourceCode;
     }
 
+    /**
+     * 原存在的中文名，后新增字段i18nResourceCode作中英表达
+     *
+     * @return
+     */
     public String getName() {
         return this.name;
     }

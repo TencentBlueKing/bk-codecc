@@ -1,5 +1,9 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
+import static com.tencent.devops.common.constant.ComConstants.ONCE_CHECKER_SET_KEY;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_TASK_CHECKER_CONFIG;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_IGNORE_CHECKER;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -15,6 +19,7 @@ import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetCatagoryEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetProjectRelationshipEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetTaskRelationshipEntity;
+import com.tencent.bk.codecc.defect.pojo.CheckerSetCategoryModel;
 import com.tencent.bk.codecc.defect.service.IV3CheckerSetBizService;
 import com.tencent.bk.codecc.defect.service.ToolBuildInfoService;
 import com.tencent.bk.codecc.defect.utils.ParamUtils;
@@ -68,6 +73,22 @@ import com.tencent.devops.common.service.utils.SpringContextUtil;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.List2StrUtil;
 import com.tencent.devops.common.util.ThreadPoolUtil;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -87,28 +108,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import org.springframework.util.ObjectUtils;
-
-import static com.tencent.devops.common.constant.ComConstants.ONCE_CHECKER_SET_KEY;
-import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_TASK_CHECKER_CONFIG;
-import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_IGNORE_CHECKER;
 
 /**
  * V3规则集服务实现类
@@ -3586,38 +3586,36 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
     }
 
     private List<CheckerSetCatagoryEntity> getCatagoryEntities(List<String> catatories) {
-        // 国际化之后，put的报文可能是中文或英文，都需要做映射
-        List<CheckerSetCatagoryEntity> catagoryEntities = Lists.newArrayList();
-        if (CollectionUtils.isNotEmpty(catatories)) {
+        if (CollectionUtils.isEmpty(catatories)) {
+            return Lists.newArrayList();
+        }
 
-            List<String> i18nResourceCodeList = Stream.of(CheckerSetCategory.values())
-                    .map(CheckerSetCategory::getI18nResourceCode)
-                    .collect(Collectors.toList());
+        /*
+         * 1、国际化之后，修改规则集时put上来的报文可能是中文或英文，都需要做映射
+         * 2、历史原因，Entity中enName统一存枚举的name()，以便其他逻辑做统计
+         */
+        Map<String, CheckerSetCategoryModel> catagoryNameMap = Maps.newHashMap();
+        for (CheckerSetCategory enumObj : CheckerSetCategory.values()) {
+            String enumName = enumObj.name();
+            String resourceCode = enumObj.getI18nResourceCode();
+            String enName = I18NUtils.getMessage(resourceCode, I18NUtils.EN_US);
+            String cnName = I18NUtils.getMessage(resourceCode, I18NUtils.ZH_CN);
+            CheckerSetCategoryModel checkerSetCategoryModel = new CheckerSetCategoryModel(enName, cnName, enumName);
+            catagoryNameMap.put(enName, checkerSetCategoryModel);
+            catagoryNameMap.put(cnName, checkerSetCategoryModel);
+        }
 
-            Map<String, String> catagoryNameMap = Maps.newHashMap();
-            for (String resourceCode : i18nResourceCodeList) {
-                String enName = I18NUtils.getMessage(resourceCode, I18NUtils.EN_US);
-                String cnName = I18NUtils.getMessage(resourceCode, I18NUtils.ZH_CN);
-                catagoryNameMap.put(enName, cnName);
-                catagoryNameMap.put(cnName, enName);
-            }
-
-            boolean isEN = "en".equalsIgnoreCase(AbstractI18NResponseAspect.getLocale().toString());
-
-            for (String categoryName : catatories) {
-                CheckerSetCatagoryEntity catagoryEntity = new CheckerSetCatagoryEntity();
-                if (isEN) {
-                    catagoryEntity.setEnName(categoryName);
-                    catagoryEntity.setCnName(catagoryNameMap.get(categoryName));
-                } else {
-                    catagoryEntity.setCnName(categoryName);
-                    catagoryEntity.setEnName(catagoryNameMap.get(categoryName));
-                }
-                catagoryEntities.add(catagoryEntity);
+        List<CheckerSetCatagoryEntity> retList = Lists.newArrayList();
+        for (String categoryName : catatories) {
+            CheckerSetCategoryModel model = catagoryNameMap.get(categoryName);
+            if (model != null) {
+                retList.add(
+                        new CheckerSetCatagoryEntity(model.getEnName(), model.getCnName())
+                );
             }
         }
 
-        return catagoryEntities;
+        return retList;
     }
 
     @Override
