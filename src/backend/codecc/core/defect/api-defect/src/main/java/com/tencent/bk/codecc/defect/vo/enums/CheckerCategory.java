@@ -38,12 +38,12 @@ public enum CheckerCategory {
     /**
      * 圈复杂度
      */
-    COMPLEXITY("圈复杂度", "Cyclomatic Complexity"),
+    COMPLEXITY("圈复杂度", "CCN"),
 
     /**
      * 重复率
      */
-    DUPLICATE("重复率", "Duplications"),
+    DUPLICATE("重复率", "Duplication Rate"),
 
     /**
      * 通用
