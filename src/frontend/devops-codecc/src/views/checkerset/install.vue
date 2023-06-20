@@ -278,7 +278,7 @@
         }
         this.$store.dispatch('checkerset/install', params).then((res) => {
           if (res.code === '0') {
-            this.$bkMessage({ theme: 'success', message: '安装成功' })
+            this.$bkMessage({ theme: 'success', message: this.$t('安装成功') })
             this.refreshList()
             this.resetInsatllStatus(checkerSet.checkerSetId)
           }

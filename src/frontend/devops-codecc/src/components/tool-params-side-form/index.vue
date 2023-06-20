@@ -21,7 +21,7 @@
               :tool="toolParam.toolName">
             </tool-params-form>
             <bk-form-item v-if="toolParam.toolName !== 'CCN' && toolParam.toolName !== 'DUPC'"
-                          :label="$t('规则集')"
+                          :label="$t('single.规则集')"
                           :property="toolParam.tool"
                           :rules="formRules.ruleSet">
               <bk-select v-model="toolParam.checkerSetId">

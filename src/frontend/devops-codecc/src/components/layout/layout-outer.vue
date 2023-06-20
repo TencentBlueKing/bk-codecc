@@ -54,7 +54,7 @@
         panels: [
           { name: 'task', label: this.$t('任务') },
           { name: 'defect', label: this.$t('问题') },
-          { name: 'checkerset', label: this.$t('规则集') },
+          { name: 'checkerset', label: this.$t('multi.规则集') },
           { name: 'checker', label: this.$t('规则') },
           { name: 'ignore', label: this.$t('忽略配置') },
         ],

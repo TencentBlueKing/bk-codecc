@@ -54,7 +54,7 @@
         <template v-if="taskDetail.createFrom !== 'gongfeng_scan'">
           <div class="settings-header">
             <b class="settings-header-title">{{$t('扫描方式')}}</b>
-            <span class="fs12 ml5">{{$t('支持除Coverity、Klocwork、Gometalinter、重复率之外所有工具')}}</span>
+            <span class="fs12 ml5">{{$t('支持除Gometalinter、重复率之外所有工具')}}</span>
           </div>
           <div class="settings-body">
             <bk-form-item :label-width="110">
@@ -120,7 +120,7 @@
         <div class="settings-header">
           <b class="settings-header-title">{{$t('禁止页面忽略问题')}}</b>
           <span class="fs12 pl10">
-            {{$t('禁止直接从页面忽略问题，可在代码行末或上一行使用注释忽略，例如// NOCC:rule1(ignore reason)。目前Coverity、Klocwork、Pinpoint暂不支持该功能。')}}
+            {{$t('禁止直接从页面忽略问题，可在代码行末或上一行使用注释忽略，例如// NOCC:rule1(ignore reason)。')}}
           </span>
         </div>
         <div class="settings-body">

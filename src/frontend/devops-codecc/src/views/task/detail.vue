@@ -98,7 +98,7 @@
         </div>
       </section>
       <section class="detail-content">
-        <p class="detail-header">{{$t('规则集')}}</p>
+        <p class="detail-header">{{$t('single.规则集')}}</p>
         <div class="checkerset" v-for="(value, key) in checkersetMap" :key="key">
           <dt class="checkerset-lang cc-ellipsis" :title="key">{{key}}</dt>
           <bk-popover class="msg-popover">

@@ -61,7 +61,7 @@
                   </bk-form-item>
                 </div>
                 <div class="cc-col">
-                  <bk-form-item :label="$t('规则集')">
+                  <bk-form-item :label="$t('single.规则集')">
                     <bk-select v-model="searchParams.checkerSet" searchable>
                       <bk-option
                         v-for="checkerSet in searchFormData.checkerSetList"
@@ -800,7 +800,7 @@
       this.getDefaultOption = () => ([
         { id: 'dimension', name: this.$t('维度'), isChecked: true },
         { id: 'toolName', name: this.$t('工具'), isChecked: true },
-        { id: 'checkerSet', name: this.$t('规则集'), isChecked: true },
+        { id: 'checkerSet', name: this.$t('single.规则集'), isChecked: true },
         { id: 'buildId', name: this.$t('快照'), isChecked: true },
       ])
 

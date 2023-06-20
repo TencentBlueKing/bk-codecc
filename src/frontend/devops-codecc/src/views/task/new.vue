@@ -18,7 +18,7 @@
                   <bk-checkbox v-for="lang in toolMeta.LANG" :key="lang.key" :value="parseInt(lang.key, 10)" class="item fs12">{{lang.fullName}}</bk-checkbox>
                 </bk-checkbox-group>
               </bk-form-item>
-              <bk-form-item :label="$t('规则集')" style="height: 50px;" v-if="Object.keys(checkersetMap).length">
+              <bk-form-item :label="$t('multi.规则集')" style="height: 50px;" v-if="Object.keys(checkersetMap).length">
                 <span class="select-tool cc-ellipsis" :title="toolCnList.join('、')" v-if="toolCnList.length">{{$t('涉及工具')}} {{toolCnList.join('、')}}</span>
               </bk-form-item>
               <checkerset-select
