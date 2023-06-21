@@ -2388,7 +2388,7 @@
       white-space: nowrap;
     }
     >>>.bk-date-picker {
-      width: 300px;
+      width: 298px;
     }
     .cc-radio {
       display: block;
