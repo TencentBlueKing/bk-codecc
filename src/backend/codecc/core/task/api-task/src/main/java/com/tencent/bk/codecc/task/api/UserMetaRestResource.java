@@ -76,7 +76,8 @@ public interface UserMetaRestResource
     Result<Map<String, List<MetadataVO>>> metadatas(
             @ApiParam(value = "元数据类型", required = true)
             @QueryParam("metadataType")
-                    String metadataType);
+            String metadataType
+    );
 
     @ApiOperation("查询编译工具")
     @Path("/buildEnv")
