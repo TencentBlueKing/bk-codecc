@@ -57,6 +57,9 @@ export default {
 
       elemList.push(list.totalAuthor)
       this[authorTypeMap[authorType].data] = elemList
+      if (elemList.length === 1 && !elemList[0].authorName) {
+        this[authorTypeMap[authorType].data] = []
+      }
 
       const option = {
         title: {

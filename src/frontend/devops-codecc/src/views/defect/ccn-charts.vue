@@ -121,6 +121,7 @@
         authorsChart: undefined,
         trendChart: undefined,
         overTrendChart: undefined,
+        toolId: 'CCN',
       }
     },
     computed: {
@@ -361,6 +362,10 @@
         this.resolveHref('defect-ccn-list', query)
       },
       downloadExcel() {
+        if (!this.authorsData || !this.authorsData.length) {
+          this.$bkMessage({ theme: 'warn', message: this.$t('数据为空') })
+          return
+        }
         const excelData1 = this.getExcelData(
           [this.$t('问题处理人'),
            this.$t('总数'),
