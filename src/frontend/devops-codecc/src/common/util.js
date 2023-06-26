@@ -407,7 +407,7 @@ export function toggleClass(elem, cls) {
 export function getToolStatus(num, tool) {
   const arr1 = [i18n.t('等待分析'), i18n.t('构建'), i18n.t('进入等候队列'),
     i18n.t('分析中，analyze'), i18n.t('分析中，commit'), i18n.t('生成问题'), i18n.t('成功')]
-  const arr2 = ['', i18n.t('启动扫描'), i18n.t('拉取代码'), i18n.t('扫描分析'), i18n.t('生成问题'), i18n.t('small.成功')]
+  const arr2 = ['', i18n.t('启动扫描'), i18n.t('拉取代码'), i18n.t('扫描分析'), i18n.t('生成问题'), i18n.t('成功')]
   const toolStatus = (tool === 'COVERITY' || tool === 'KLOCWORK') ? arr1 : arr2
   return toolStatus[num]
 }

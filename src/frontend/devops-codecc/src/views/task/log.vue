@@ -118,8 +118,8 @@
                        'going': item.flag === 3
                      }">
                     <span class="tool-col-status cc-ellipsis"
-                          v-if="item.flag === 1 && getToolStatus(item.currStep, item.toolName) === $t('small.成功')"
-                          :title="getAnalyseMsg(item.stepArray) + getToolStatus(item.currStep, item.toolName)">
+                          v-if="item.flag === 1 && getToolStatus(item.currStep, item.toolName) === $t('成功')"
+                          :title="getAnalyseMsg(item.stepArray) + ' ' + getToolStatus(item.currStep, item.toolName)">
                       <i class="bk-icon card-tool-status icon-check-circle-shape"></i>
                       {{getAnalyseMsg(item.stepArray)}} {{getToolStatus(item.currStep, item.toolName)}}
                     </span>

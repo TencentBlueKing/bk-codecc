@@ -178,10 +178,10 @@
       {{this.$t('任务正在分析中，是否中断并重新分析？')}}
     </bk-dialog>
     <div class="dn">
-      <div id="analyse-tips">
+      <div id="analysis-tips">
         <div class="pb10">{{$t('点击文字可查看分析详情和记录')}}</div>
-        <div style="text-align: right;">
-          <bk-button theme="primary" size="small" @click="confirm">{{$t('我知道了')}}</bk-button>
+        <div class="guide-btn">
+          <span class="btn-item" @click="confirm">{{ $t('我知道了') }}</span>
         </div>
       </div>
     </div>
@@ -419,10 +419,10 @@
           allowHtml: true,
           width: 280,
           delay: 300,
-          theme: 'light',
+          theme: 'analysis-tips light',
           trigger: 'click',
           showOnInit: true,
-          content: '#analyse-tips',
+          content: '#analysis-tips',
         }
       }
       this.init()
@@ -620,6 +620,25 @@
 
 <style>
     @import "../../assets/bk_icon_font/style.css";
+    .tippy-popper .tippy-tooltip.analysis-tips-theme.light-theme {
+      padding: 10px;
+      width: 280px !important;
+      height: 67px;
+      background-color: #3b91fb;
+      color: #fff;
+      .guide-btn {
+        position: absolute;
+        right: 18px;
+        bottom: 15px;
+      }
+      .btn-item {
+        background-color: #fff;
+        color: #3b91fb;
+        padding: 2px 5px;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+    }
 </style>
 
 <style lang="postcss" scoped>

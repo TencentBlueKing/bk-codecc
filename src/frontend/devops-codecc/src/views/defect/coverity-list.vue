@@ -236,7 +236,7 @@
                               <div>{{ $t('对特定忽略类型可设置提醒，以便定期review和修复。') }}</div>
                               <div class="guide-btn">
                                 <span class="btn-item mr5" @click="handleSetReview">{{ $t('设置提醒') }}</span>
-                                <span class="btn-item" @click="handleGuideNextStep">{{ $t('知道了') }}</span>
+                                <span class="btn-item" @click="handleGuideNextStep">{{ $t('我知道了') }}</span>
                               </div>
                             </div>
                           </bk-popover>
@@ -410,7 +410,7 @@
                             <div>{{ $t('针对特定忽略类型可设置提醒，以便定期review和修复。') }}</div>
                             <div class="guide-btn">
                               <span class="btn-item mr5" @click="handleTableSetReview">{{ $t('设置提醒') }}</span>
-                              <span class="btn-item" @click="handleTableGuideNextStep">{{ $t('知道了') }}</span>
+                              <span class="btn-item" @click="handleTableGuideNextStep">{{ $t('我知道了') }}</span>
                             </div>
                           </div>
                         </bk-popover>

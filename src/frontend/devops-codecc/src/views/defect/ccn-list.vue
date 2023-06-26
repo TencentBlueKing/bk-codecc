@@ -194,7 +194,7 @@
                                 {{ $t('，以便定期review和修复。') }}
                               </div>
                               <div class="guide-btn">
-                                <span class="btn-item" @click="handleGuideNextStep">{{ $t('知道了') }}</span>
+                                <span class="btn-item" @click="handleGuideNextStep">{{ $t('我知道了') }}</span>
                               </div>
                             </div>
                           </bk-popover>
@@ -382,7 +382,7 @@
                               {{ $t('，以便定期review和修复。') }}
                             </div>
                             <div class="guide-btn">
-                              <span class="btn-item" @click="handleTableGuideNextStep">{{ $t('知道了') }}</span>
+                              <span class="btn-item" @click="handleTableGuideNextStep">{{ $t('我知道了') }}</span>
                             </div>
                           </div>
                         </bk-popover>

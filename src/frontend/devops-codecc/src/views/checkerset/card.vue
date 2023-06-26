@@ -1,6 +1,6 @@
 <template>
   <div class="checkerset-card" :class="{ 'enable': isEnable || isFlash, 'disable': from === 'task' && !isEnable }">
-    <span :title="$t('默认规则集将会在创建任务时被自动开启')" class="codecc-icon icon-default-mark default-mark" v-if="checkerset.defaultCheckerSet"></span>
+    <span :title="$t('默认规则集将会在创建任务时被自动开启')" class="codecc-icon icon-default-eng default-mark" v-if="checkerset.defaultCheckerSet"></span>
     <section class="ruleset-info">
       <p class="ruleset-name">
         <a class="name-content" :title="checkerset.checkerSetName" @click="handleManage(checkerset, 'edit')">
@@ -411,7 +411,7 @@
       .default-mark {
         position: absolute;
         top: 0;
-        left: 0;
+        left: -1px;
         font-size: 16px;
         color: #7572dc;
         z-index: 1;

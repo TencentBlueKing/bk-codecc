@@ -254,3 +254,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-tapd:before {
 	content: "\e1d5";
 }
+.icon-suanfamoxing:before {
+	content: "\e1d6";
+}
+.icon-default-eng:before {
+	content: "\e1d7";
+}
