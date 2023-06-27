@@ -188,6 +188,7 @@ open class PipelineServiceImpl @Autowired constructor(
             )
         } else {
             // 若buildFlag不为空，则说明是新版插件，具备区分重试边界能力: non-redis
+            // 但不保障：插件流程控制的"失败时自动重试"
             val needRedisLock = snapShotEntity.buildFlag == null
             val allowNotify = if (needRedisLock) {
                 // 主要是防止插件扫描失败后用户进行重试，会突破isAllToolsComplete(..)的逻辑，造成资源无意义重复损耗
