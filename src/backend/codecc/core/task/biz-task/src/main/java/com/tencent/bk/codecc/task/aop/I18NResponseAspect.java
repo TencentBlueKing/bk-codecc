@@ -31,7 +31,8 @@ public class I18NResponseAspect extends AbstractI18NResponseAspect {
             return;
         }
 
-        List<I18NMessageEntity> i18nMessageList = getI18NMessage(i18nReflection, locale.getLanguage());
+        // db存储的国际化信息不分地区信息
+        List<I18NMessageEntity> i18nMessageList = getI18NMessage(i18nReflection, locale);
         if (CollectionUtils.isEmpty(i18nMessageList)) {
             return;
         }
@@ -51,10 +52,10 @@ public class I18NResponseAspect extends AbstractI18NResponseAspect {
         }
     }
 
-    private List<I18NMessageEntity> getI18NMessage(I18NReflection i18nReflection, String localeString) {
+    private List<I18NMessageEntity> getI18NMessage(I18NReflection i18nReflection, Locale locale) {
         try {
             List<I18NQueryModel> queryModelList = i18nReflection.getFieldMetaDataList().stream()
-                    .map(x -> new I18NQueryModel(x.getModuleCode(), x.getKeySet(), localeString))
+                    .map(x -> new I18NQueryModel(x.getModuleCode(), x.getKeySet(), locale.toString()))
                     .collect(Collectors.toList());
 
             return i18nMessageDao.query(queryModelList);

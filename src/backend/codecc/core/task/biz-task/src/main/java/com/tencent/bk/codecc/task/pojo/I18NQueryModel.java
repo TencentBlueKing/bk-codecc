@@ -14,5 +14,5 @@ public class I18NQueryModel {
 
     private Set<String> keySet;
 
-    private String locale;
+    private String localeString;
 }

@@ -12,8 +12,8 @@ import org.springframework.util.ObjectUtils;
 @Slf4j
 public class I18NUtils {
 
-    public static final Locale ZH_CN = new Locale("zh", "CN");
-    public static final Locale EN_US = new Locale("en", "US");
+    public static final Locale ZH_CN = Locale.SIMPLIFIED_CHINESE;
+    public static final Locale EN = Locale.ENGLISH;
     private static final String I18N_ERROR_MESSAGE = "[I18N_ERR]";
 
     /**
@@ -69,7 +69,7 @@ public class I18NUtils {
     public static List<String> getAllLocaleMessage(String resourceCode) {
         return new LinkedList<String>() {{
             add(getMessage(resourceCode, ZH_CN));
-            add(getMessage(resourceCode, EN_US));
+            add(getMessage(resourceCode, EN));
         }};
     }
 

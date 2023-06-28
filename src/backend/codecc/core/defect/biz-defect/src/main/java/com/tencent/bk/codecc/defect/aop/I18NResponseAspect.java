@@ -32,7 +32,7 @@ public class I18NResponseAspect extends AbstractI18NResponseAspect {
             return;
         }
 
-        List<I18NMessageResponse.BaseVO> i18nMessageList = getI18NMessage(i18nReflection, locale.getLanguage());
+        List<I18NMessageResponse.BaseVO> i18nMessageList = getI18NMessage(i18nReflection, locale);
         if (CollectionUtils.isEmpty(i18nMessageList)) {
             return;
         }
@@ -58,7 +58,7 @@ public class I18NResponseAspect extends AbstractI18NResponseAspect {
         }
     }
 
-    private List<I18NMessageResponse.BaseVO> getI18NMessage(I18NReflection i18nReflection, String localeString) {
+    private List<I18NMessageResponse.BaseVO> getI18NMessage(I18NReflection i18nReflection, Locale locale) {
         try {
             I18NMessageRequest request = new I18NMessageRequest();
             for (FieldMetaData fieldMetaData : i18nReflection.getFieldMetaDataList()) {
@@ -66,7 +66,7 @@ public class I18NResponseAspect extends AbstractI18NResponseAspect {
                         new I18NMessageRequest.BaseVO(
                                 fieldMetaData.getModuleCode(),
                                 fieldMetaData.getKeySet(),
-                                localeString
+                                locale.toString()
                         )
                 );
             }

@@ -32,7 +32,7 @@ public class I18NMessageDao {
         List<Criteria> orCriteriaList = Lists.newArrayList();
         for (I18NQueryModel queryModel : queryModelList) {
             if (CollectionUtils.isEmpty(queryModel.getKeySet())
-                    || StringUtils.isEmpty(queryModel.getLocale())
+                    || StringUtils.isEmpty(queryModel.getLocaleString())
                     || StringUtils.isEmpty(queryModel.getModuleCode())) {
                 continue;
             }
@@ -40,7 +40,7 @@ public class I18NMessageDao {
             orCriteriaList.add(
                     Criteria.where("module_code").is(queryModel.getModuleCode())
                             .and("key").in(queryModel.getKeySet())
-                            .and("locale").is(queryModel.getLocale())
+                            .and("locale").is(queryModel.getLocaleString())
             );
         }
 

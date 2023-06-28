@@ -10,6 +10,7 @@ import com.google.common.collect.Sets;
 import com.tencent.devops.common.api.annotation.I18NFieldMarker;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.service.aop.I18NReflection.FieldMetaData;
+import com.tencent.devops.common.service.utils.I18NUtils;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,7 +39,6 @@ public abstract class AbstractI18NResponseAspect {
      */
     private static final Cache<Class<?>, I18NReflection> CACHE_CONTAINER =
             Caffeine.newBuilder().maximumSize(100).build();
-    private static final Locale DEFAULT_LOCALE = new Locale("en", "US");
 
     // NOCC:MissingJavadocMethod(设计如此:)
     @Pointcut("@annotation(com.tencent.devops.common.api.annotation.I18NResponse)")
@@ -130,7 +130,7 @@ public abstract class AbstractI18NResponseAspect {
 
         if (requestAttributes == null) {
             log.info("servlet request is null, return default locale");
-            return DEFAULT_LOCALE;
+            return I18NUtils.EN;
         }
 
         String cookieVal = "";
@@ -148,18 +148,18 @@ public abstract class AbstractI18NResponseAspect {
             return Locale.forLanguageTag(cookieVal);
         }
 
-        // header:accept-language:zh-cn => java:zh_CN
+        // (http:accept-language:zh-cn) => (java:zh_CN)
         String acceptLanguageHeader = requestAttributes.getRequest().getHeader("accept-language");
         if (ObjectUtils.isEmpty(acceptLanguageHeader)) {
             log.info("accept language header is null, return default locale");
-            return DEFAULT_LOCALE;
+            return I18NUtils.EN;
         } else {
             Locale locale = LocaleContextHolder.getLocale();
             log.info("get locale from accept language: {}", locale);
 
             // 中英均不是，则返回默认
             if (!"en".equalsIgnoreCase(locale.getLanguage()) && !"zh".equalsIgnoreCase(locale.getLanguage())) {
-                return DEFAULT_LOCALE;
+                return I18NUtils.EN;
             }
 
             return locale;

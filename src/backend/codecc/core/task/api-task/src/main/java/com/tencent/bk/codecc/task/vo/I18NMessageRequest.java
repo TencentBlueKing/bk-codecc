@@ -19,6 +19,6 @@ public class I18NMessageRequest extends ArrayList<BaseVO> {
 
         private Set<String> keySet;
 
-        private String locale;
+        private String localeString;
     }
 }

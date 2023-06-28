@@ -2930,7 +2930,7 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
         boolean isEN = "en".equalsIgnoreCase(AbstractI18NResponseAspect.getLocale().toString());
         Map<String, String> enCategoryMap = Stream.of(CheckerSetCategory.values()).collect(
                 Collectors.toMap(CheckerSetCategory::name,
-                        x -> I18NUtils.getMessage(x.getI18nResourceCode(), I18NUtils.EN_US), (k1, k2) -> k1)
+                        x -> I18NUtils.getMessage(x.getI18nResourceCode(), I18NUtils.EN), (k1, k2) -> k1)
         );
         List<CheckerCountListVO> checkerSetCateCountVOList = checkerSetCateMap.entrySet().stream().map(entry -> {
                     CheckerSetCategory category = CheckerSetCategory.valueOf(entry.getKey());
@@ -3598,7 +3598,7 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
         for (CheckerSetCategory enumObj : CheckerSetCategory.values()) {
             String enumName = enumObj.name();
             String resourceCode = enumObj.getI18nResourceCode();
-            String enName = I18NUtils.getMessage(resourceCode, I18NUtils.EN_US);
+            String enName = I18NUtils.getMessage(resourceCode, I18NUtils.EN);
             String cnName = I18NUtils.getMessage(resourceCode, I18NUtils.ZH_CN);
             CheckerSetCategoryModel checkerSetCategoryModel = new CheckerSetCategoryModel(enName, cnName, enumName);
             catagoryNameMap.put(enName, checkerSetCategoryModel);
