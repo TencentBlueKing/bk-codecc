@@ -176,7 +176,7 @@
         this.ymlContent = `source:
     # ${this.$t('文件或目录使用绝对路径，绝对路径按代码库根目录计算，以/开头。')}
     # ${this.$t('提供产品代码库中编写的测试代码存放目录或文件名格式，以便代码检查时进行排除处理')}
-    # ${this.$t('不要使用.*/等正则表达式屏蔽掉所有代码，会使得代码存在风险，还会导致Coverity扫不到任何代码而失败')}
+    # ${this.$t('不要使用.*/等正则表达式屏蔽掉所有代码，会使得代码存在风险，还会导致工具扫不到任何代码而失败')}
     test_source:
         #${this.$t('用于匹配文件; 匹配方式为正则表达式，例如')}[".*/java/test/.*", ".*/test.java"]
         filepath_regex: ${this.formate(res.testSourceFilterPath)}

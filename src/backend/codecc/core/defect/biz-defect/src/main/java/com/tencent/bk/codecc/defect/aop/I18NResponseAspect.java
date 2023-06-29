@@ -60,13 +60,18 @@ public class I18NResponseAspect extends AbstractI18NResponseAspect {
 
     private List<I18NMessageResponse.BaseVO> getI18NMessage(I18NReflection i18nReflection, Locale locale) {
         try {
+            // 英文不区分地区信息
+            String localString = Locale.ENGLISH.getLanguage().equals(locale.getLanguage())
+                    ? locale.getLanguage()
+                    : locale.toString();
             I18NMessageRequest request = new I18NMessageRequest();
+
             for (FieldMetaData fieldMetaData : i18nReflection.getFieldMetaDataList()) {
                 request.add(
                         new I18NMessageRequest.BaseVO(
                                 fieldMetaData.getModuleCode(),
                                 fieldMetaData.getKeySet(),
-                                locale.toString()
+                                localString
                         )
                 );
             }

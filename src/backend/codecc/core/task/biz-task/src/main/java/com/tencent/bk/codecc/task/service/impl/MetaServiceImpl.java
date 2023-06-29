@@ -245,7 +245,7 @@ public class MetaServiceImpl implements MetaService {
 
         // toolType国际化
         String toolTypeFlag = "TOOL_TYPE";
-        List<BaseDataEntity> toolTypeList=Lists.newArrayList();
+        List<BaseDataEntity> toolTypeList = Lists.newArrayList();
 
         for (BaseDataEntity baseDataEntity : baseDataList) {
             if (toolTypeFlag.equals(baseDataEntity.getParamType())) {

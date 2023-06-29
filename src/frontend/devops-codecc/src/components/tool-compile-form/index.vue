@@ -145,7 +145,7 @@
         },
         scriptData: {
           projectBuildType: 'SHELL',
-          projectBuildCommand: this.$t('Coverity/Klocwork将通过调用编译脚本来编译您的代码，以追踪深层次的缺陷'),
+          projectBuildCommand: this.$t('工具将通过调用编译脚本来编译您的代码，以追踪深层次的缺陷'),
         },
         bulidEnvList: [
           {
@@ -184,7 +184,7 @@
             this.compile.compileEnv = this.codeMessage.osType || 'LINUX'
             this.scriptData.projectBuildType = this.codeMessage.projectBuildType || 'SHELL'
             this.scriptData.projectBuildCommand = this.codeMessage.projectBuildCommand
-              || this.$t('Coverity/Klocwork将通过调用编译脚本来编译您的代码，以追踪深层次的缺陷')
+              || this.$t('工具将通过调用编译脚本来编译您的代码，以追踪深层次的缺陷')
           }
         },
         deep: true,
