@@ -23,9 +23,8 @@ class RBACAuthAutoConfiguration {
     fun rbacAuthPermissionApi(
         rbacAuthProperties: RBACAuthProperties,
         redisTemplate: RedisTemplate<String, String>,
-        authTaskService: AuthTaskService,
         client: Client
-    ) = RBACAuthPermissionApi(client, redisTemplate, rbacAuthProperties, authTaskService)
+    ) = RBACAuthPermissionApi(client, redisTemplate, rbacAuthProperties)
 
     @Bean
     fun rbacAuthRegisterApi(
