@@ -15,13 +15,9 @@ package com.tencent.bk.codecc.schedule.model;
 import com.tencent.codecc.common.db.CommonEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-
-import java.util.Set;
 
 /**
  * 文件路由的实体类
@@ -72,6 +68,7 @@ public class FileIndexEntity extends CommonEntity
      */
     @Field("upload_id")
     private String uploadId;
+
 //    /**
 //     * 0-初始，1-上传成功
 //     */

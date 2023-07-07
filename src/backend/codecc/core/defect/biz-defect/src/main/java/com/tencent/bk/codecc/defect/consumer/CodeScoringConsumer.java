@@ -11,7 +11,7 @@ import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.devops.common.api.OpenSourceCheckerSetVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.CodeLang;
@@ -43,26 +43,24 @@ public class CodeScoringConsumer implements IConsumer<CommitDefectVO> {
 
     @Override
     public void consumer(CommitDefectVO commitDefectVO) {
-        Result<TaskDetailVO> result = client.get(ServiceTaskRestResource.class)
-                .getTaskInfoById(commitDefectVO.getTaskId());
-        if (result.isNotOk() || result.getData() == null) {
-            log.error("scoring fail to get project id {} {}",
-                    commitDefectVO.getTaskId(),
-                    commitDefectVO.getBuildId());
-            throw new CodeCCException("scoring fail to get project id");
-        }
-
         try {
-            TaskDetailVO taskDetailVO = result.getData();
+            long taskId = commitDefectVO.getTaskId();
+            String buildId = commitDefectVO.getBuildId();
+            Result<TaskDetailVO> response =
+                    client.get(ServiceTaskRestResource.class).getTaskInfoById(commitDefectVO.getTaskId());
+
+            if (response.isNotOk() || response.getData() == null) {
+                log.error("fail to get task info: {} {}", taskId, buildId);
+                return;
+            }
+
+            TaskDetailVO taskDetailVO = response.getData();
             AbstractCodeScoringService codeScoringService =
                     applicationContext.getBean(getScoringServiceName(taskDetailVO),
                             AbstractCodeScoringService.class);
-            codeScoringService.scoring(taskDetailVO,
-                    commitDefectVO.getBuildId(),
-                    commitDefectVO.getToolName(),
-                    "Normal");
+            codeScoringService.scoring(taskDetailVO, buildId, commitDefectVO.getToolName());
         } catch (Throwable e) {
-            log.info("", e);
+            log.info("CodeScoringConsumer error, mq obj: {}", commitDefectVO, e);
         }
     }
 

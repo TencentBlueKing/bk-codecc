@@ -27,7 +27,7 @@ object FuzzyCompare {
     ): Int {
         //校验参数，如果不符合规范的直接返回0相似度
         if ((null != fuzzyHashInfoModel1.valid && !fuzzyHashInfoModel1.valid) ||
-            (null != fuzzyHashInfoModel2.valid && !fuzzyHashInfoModel2.valid)
+                (null != fuzzyHashInfoModel2.valid && !fuzzyHashInfoModel2.valid)
         ) {
             logger.info("one of the input param is false!")
             return 0
@@ -37,8 +37,8 @@ object FuzzyCompare {
 
         //如果分片长度不对，则直接返回0
         if (blockSize1 != blockSize2 && (blockSize1 * 2L.toULong() != blockSize2
-                    || blockSize1 > ULong.MAX_VALUE / 2L.toULong()) &&
-            (blockSize1 / 2L.toULong() != blockSize2 || blockSize1 or 1L.toULong() == 1L.toULong())
+                        || blockSize1 > ULong.MAX_VALUE / 2L.toULong()) &&
+                (blockSize1 / 2L.toULong() != blockSize2 || blockSize1 or 1L.toULong() == 1L.toULong())
         ) {
             return 0
         }

@@ -32,12 +32,11 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
 import com.tencent.bk.codecc.defect.vo.QueryTaskLogVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogOverviewVO;
 import com.tencent.bk.codecc.task.vo.QueryLogRepVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
-import java.util.List;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import org.springframework.data.domain.PageImpl;
@@ -106,13 +105,15 @@ public interface UserTaskLogRestResource
                     String queryKeywords,
             @ApiParam(value = "对应elementId")
             @QueryParam("tag")
-                    String tag
+                    String tag,
+            @ApiParam("单流水线对应多任务标识")
+            @QueryParam("multiPipelineMark")
+                    String multiPipelineMark
     );
 
     @ApiOperation("获取更多日志")
     @GET
     @Path("/analysis/logs/{projectId}/{pipelineId}/{buildId}/more")
-    // NOCC:ParameterNumber(设计如此:)
     Result<QueryLogRepVO> getMoreLogs(
             @ApiParam(value = "用户ID")
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
@@ -143,7 +144,10 @@ public interface UserTaskLogRestResource
                     String tag,
             @ApiParam(value = "执行次数")
             @QueryParam("executeCount")
-                    Integer executeCount
+                    Integer executeCount,
+            @ApiParam("单流水线对应多任务标识")
+            @QueryParam("multiPipelineMark")
+                    String multiPipelineMark
     );
 
 
@@ -169,14 +173,16 @@ public interface UserTaskLogRestResource
                     String tag,
             @ApiParam(value = "执行次数")
             @QueryParam("executeCount")
-                    Integer executeCount
+                    Integer executeCount,
+            @ApiParam("单流水线对应多任务标识")
+            @QueryParam("multiPipelineMark")
+                    String multiPipelineMark
     );
 
 
     @ApiOperation("获取某行后的日志")
     @GET
     @Path("/analysis/logs/{projectId}/{pipelineId}/{buildId}/after")
-    // NOCC:ParameterNumber(设计如此:)
     Result<QueryLogRepVO> getAfterLogs(
             @ApiParam(value = "用户ID")
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
@@ -201,7 +207,10 @@ public interface UserTaskLogRestResource
                     String tag,
             @ApiParam(value = "执行次数")
             @QueryParam("executeCount")
-                    Integer executeCount
+                    Integer executeCount,
+            @ApiParam("单流水线对应多任务标识")
+            @QueryParam("multiPipelineMark")
+                    String multiPipelineMark
     );
 
 

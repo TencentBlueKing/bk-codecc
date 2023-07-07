@@ -1,0 +1,17 @@
+{{- if .Values.configmap.enabled -}}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ include "common.names.fullname" . }}-codeccjob
+  labels: {{- include "codecc.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: codeccjob
+    {{- if .Values.commonLabels }}
+      {{- include "common.tplvalues.render" (dict "value" .Values.commonLabels "context" $) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" (dict "value" .Values.commonAnnotations "context" $) | nindent 4 }}
+  {{- end }}
+data:
+  application.yml: |-
+    {{- include "application-codeccjob.yaml" . | nindent 4 -}}
+{{- end }}

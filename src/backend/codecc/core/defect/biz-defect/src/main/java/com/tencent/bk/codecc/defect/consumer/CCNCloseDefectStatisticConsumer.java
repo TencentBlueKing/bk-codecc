@@ -14,8 +14,8 @@ package com.tencent.bk.codecc.defect.consumer;
 
 import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository;
-import com.tencent.bk.codecc.defect.model.CCNDefectEntity;
-import com.tencent.bk.codecc.defect.model.CCNStatisticEntity;
+import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CCNStatisticEntity;
 import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.constant.ComConstants;
@@ -46,6 +46,14 @@ public class CCNCloseDefectStatisticConsumer implements IConsumer<CCNStatisticEn
 
     @Override
     public void consumer(CCNStatisticEntity ccnStatisticEntity) {
+        try {
+            businessCore(ccnStatisticEntity);
+        } catch (Throwable t) {
+            log.error("CCNCloseDefectStatisticConsumer error, mq obj: {}", ccnStatisticEntity, t);
+        }
+    }
+
+    private void businessCore(CCNStatisticEntity ccnStatisticEntity) {
         Long taskId = ccnStatisticEntity.getTaskId();
 
         Map<String, String> riskConfigMap = thirdPartySystemCaller.getRiskFactorConfig(ComConstants.Tool.CCN.name());

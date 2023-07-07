@@ -17,6 +17,7 @@ import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoFromAnalyzeLogRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoStatDailyRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.mongotemplate.CodeRepoStatDailyDao;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.CodeRepoStatisticDao;
 import com.tencent.bk.codecc.defect.model.CodeRepoFromAnalyzeLogEntity;
 import com.tencent.bk.codecc.defect.model.CodeRepoStatDailyEntity;
@@ -32,6 +33,7 @@ import com.tencent.devops.common.service.utils.PageableUtils;
 import com.tencent.devops.common.util.DateTimeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,12 +70,14 @@ public class CodeRepoServiceImpl implements CodeRepoService {
     @Autowired
     private CodeRepoStatisticDao codeRepoStatisticDao;
     @Autowired
+    private CodeRepoStatDailyDao codeRepoStatDailyDao;
+    @Autowired
     private Client client;
 
     @Override
     public Set<CodeRepoVO> getCodeRepoInfoByTaskId(Long taskId, String buildId) {
         CodeRepoFromAnalyzeLogEntity codeRepoFromAnalyzeLogEntity;
-        codeRepoFromAnalyzeLogEntity = codeRepoFromAnalyzeLogRepository.findCodeRepoFromAnalyzeLogEntityFirstByTaskId(taskId);
+        codeRepoFromAnalyzeLogEntity = codeRepoFromAnalyzeLogRepository.findFirstByTaskId(taskId);
         if (null == codeRepoFromAnalyzeLogEntity) {
             return new HashSet<>();
         }
@@ -196,7 +200,7 @@ public class CodeRepoServiceImpl implements CodeRepoService {
     }
 
     /**
-     * 初始化新增代码库/代码分支数数据
+     * 定时任务及初始化 代码库/代码分支数数据
      *
      * @param reqVO 请求体
      * @return boolean
@@ -211,27 +215,28 @@ public class CodeRepoServiceImpl implements CodeRepoService {
             createFromList.add("user");
             createFromList.add("gongfeng_scan");
         }
-        createFromList.forEach(createFrom -> {
-            // 获取初始化天数 默认查询30天
-            List<String> dates;
-            if (reqVO.getInitDay() != null && reqVO.getInitDay() != 0) {
-                dates = DateTimeUtils.getBeforeDaily(reqVO.getInitDay());
-            } else {
-                dates = DateTimeUtils.getBeforeDaily(DAY_THIRTY);
-            }
-            // 因为定时任务 避免数据重复 不需要初始化当天时间
-            dates.remove(dates.size() - 1);
-            log.info("initCodeRepoStatTrend, dates:[{}-{}]", dates.get(0), dates.get(dates.size() - 1));
 
+        // 获取初始化天数 默认查询30天
+        List<String> dates;
+        if (reqVO.getInitDay() != null && reqVO.getInitDay() != 0) {
+            dates = DateTimeUtils.getBeforeDaily(reqVO.getInitDay());
+        } else {
+            dates = DateTimeUtils.getBeforeDaily(DAY_THIRTY);
+        }
+        // 因为定时任务 避免数据重复 不需要初始化当天时间
+        dates.remove(dates.size() - 1);
+        log.info("initCodeRepoStatTrend, dates:[{}-{}]", dates.get(0), dates.get(dates.size() - 1));
+
+        for (String createFrom : createFromList) {
             boolean isFirstDay = true;
-            int yesterdayUrlCount = 0;
-            int yesterdayBranchCount = 0;
+            long yesterdayUrlCount = 0;
+            long yesterdayBranchCount = 0;
             List<CodeRepoStatDailyEntity> codeRepoStatDailyEntityList = new ArrayList<>();
             for (String date : dates) {
                 long endTime = DateTimeUtils.getTimeStampEnd(date);
                 // 获取代码仓库/分支数量
-                int urlCount = codeRepoStatisticDao.getUrlCountByEndTimeAndCreateFrom(endTime, createFrom);
-                int branchCount = codeRepoStatisticDao.getBranchCountByEndTimeAndCreateFrom(endTime, createFrom);
+                long urlCount = codeRepoStatisticDao.getUrlCountByEndTimeAndCreateFrom(endTime, createFrom);
+                long branchCount = codeRepoStatisticDao.getBranchCount(endTime, createFrom);
 
                 CodeRepoStatDailyEntity codeRepoStatDailyEntity = new CodeRepoStatDailyEntity();
                 // 统计日期
@@ -242,6 +247,19 @@ public class CodeRepoServiceImpl implements CodeRepoService {
                 codeRepoStatDailyEntity.setCodeRepoCount(urlCount);
                 // 累计分支数
                 codeRepoStatDailyEntity.setBranchCount(branchCount);
+
+                // 定时任务进入此判断
+                if (yesterdayUrlCount == 0) {
+                    String yesterdayDate = DateTimeUtils.getDayBeforeByStringDate(date);
+                    log.info("initCodeRepoStatTrend, yesterdayDate:[{}]", yesterdayDate);
+                    CodeRepoStatDailyEntity codeRepoStatDailyModel =
+                            codeRepoStatDailyDao.getUrlCountByYesterdayDate(yesterdayDate, createFrom);
+                    if (codeRepoStatDailyModel != null) {
+                        yesterdayUrlCount = codeRepoStatDailyModel.getCodeRepoCount();
+                        yesterdayBranchCount = codeRepoStatDailyModel.getBranchCount();
+                    }
+                    isFirstDay = false;
+                }
                 // 新增代码仓库数
                 if (!isFirstDay) {
                     // 新增代码仓库数
@@ -258,7 +276,96 @@ public class CodeRepoServiceImpl implements CodeRepoService {
             log.info("initCodeRepoStatistic, codeRepoStatDailyEntityList.size:[{}]",
                     codeRepoStatDailyEntityList.size());
             codeRepoStatDailyRepository.saveAll(codeRepoStatDailyEntityList);
-        });
+        }
         return true;
     }
+
+    /**
+     * 修复代码库分支总表数据
+     */
+    @Override
+    public Boolean codeRepoStatisticFixed(DeptTaskDefectReqVO reqVO) {
+        log.info("codeRepoStatisticFixed reqVO: {}", reqVO);
+
+        // 根据来源获取taskId集合
+        List<Long> taskIdList =
+                client.get(ServiceTaskRestResource.class).queryTaskIdByCreateFrom(reqVO.getCreateFrom()).getData();
+        if (CollectionUtils.isEmpty(taskIdList)) {
+            log.warn("dataFrom task id list is empty: {}", reqVO.getCreateFrom());
+            return false;
+        }
+
+        long timeStampStart = DateTimeUtils.getTimeStampStart(reqVO.getStartDate());
+        long timeStampEnd = DateTimeUtils.getTimeStampEnd(reqVO.getEndDate());
+
+        List<CodeRepoFromAnalyzeLogEntity> codeRepoFromAnalyzeLogEntities =
+                codeRepoStatisticDao.findByTaskId(taskIdList, timeStampStart, timeStampEnd);
+        log.info("codeRepoFromAnalyzeLogEntities size: {}", codeRepoFromAnalyzeLogEntities.size());
+
+        Map<String, Set<CodeRepoFromAnalyzeLogEntity.CodeRepo>> urlMap = Maps.newHashMap();
+        Map<String, Map<String, Set<Long>>> urlTaskIdMap = Maps.newHashMap();
+
+        for (CodeRepoFromAnalyzeLogEntity entity : codeRepoFromAnalyzeLogEntities) {
+
+            Set<CodeRepoFromAnalyzeLogEntity.CodeRepo> codeRepoSet = entity.getCodeRepoList();
+            if (codeRepoSet == null) {
+                continue;
+            }
+            for (CodeRepoFromAnalyzeLogEntity.CodeRepo codeRepo : codeRepoSet) {
+                if (codeRepo == null || StringUtils.isEmpty(codeRepo.getUrl())
+                        || StringUtils.isEmpty(codeRepo.getBranch())) {
+                    continue;
+                }
+                Set<CodeRepoFromAnalyzeLogEntity.CodeRepo> codeRepos =
+                        urlMap.computeIfAbsent(codeRepo.getUrl(), v -> Sets.newHashSet());
+                codeRepos.add(codeRepo);
+
+                Map<String, Set<Long>> branchTaskIdMap =
+                        urlTaskIdMap.computeIfAbsent(codeRepo.getUrl(), k -> Maps.newHashMap());
+                Set<Long> taskIdSet = branchTaskIdMap.computeIfAbsent(codeRepo.getBranch(), k -> Sets.newHashSet());
+                taskIdSet.add(entity.getTaskId());
+            }
+        }
+
+        String dataFromStr = ComConstants.DefectStatType.USER.value();
+        if (reqVO.getCreateFrom() != null
+                && reqVO.getCreateFrom().iterator().next().equals(ComConstants.DefectStatType.GONGFENG_SCAN.value())) {
+            dataFromStr = ComConstants.DefectStatType.GONGFENG_SCAN.value();
+        }
+
+        List<CodeRepoStatisticEntity> codeRepoStatisticEntityList = Lists.newArrayList();
+        for (Map.Entry<String, Set<CodeRepoFromAnalyzeLogEntity.CodeRepo>> entry : urlMap.entrySet()) {
+            Set<CodeRepoFromAnalyzeLogEntity.CodeRepo> codeRepos = entry.getValue();
+
+            Map<String, Set<Long>> branchTaskIdMap = urlTaskIdMap.get(entry.getKey());
+            for (CodeRepoFromAnalyzeLogEntity.CodeRepo codeRepo : codeRepos) {
+
+                // 如果已存在则忽略
+                long count = codeRepoStatisticRepository
+                        .countByDataFromAndUrlAndBranch(dataFromStr, entry.getKey(), codeRepo.getBranch());
+                if (count > 0) {
+                    continue;
+                }
+
+                CodeRepoStatisticEntity codeRepoStatisticEntity = new CodeRepoStatisticEntity();
+                Long createDate = codeRepo.getCreateDate();
+                codeRepoStatisticEntity.setUrl(entry.getKey());
+                codeRepoStatisticEntity.setBranch(codeRepo.getBranch());
+                codeRepoStatisticEntity.setDataFrom(dataFromStr);
+                codeRepoStatisticEntity.setUrlFirstScan(createDate);
+                codeRepoStatisticEntity.setBranchFirstScan(createDate);
+                codeRepoStatisticEntity.setBranchLastScan(createDate);
+                codeRepoStatisticEntity
+                        .setTaskIdSet(branchTaskIdMap.getOrDefault(codeRepo.getBranch(), Sets.newHashSet()));
+
+                codeRepoStatisticEntityList.add(codeRepoStatisticEntity);
+            }
+        }
+
+        log.info("codeRepoStatisticFixed new add count: {}", codeRepoStatisticEntityList.size());
+        codeRepoStatisticRepository.saveAll(codeRepoStatisticEntityList);
+        log.info("codeRepoStatisticFixed finish");
+        return true;
+    }
+
 }

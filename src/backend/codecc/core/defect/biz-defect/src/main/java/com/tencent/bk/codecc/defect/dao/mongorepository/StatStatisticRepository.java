@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.dao.mongorepository;
 
-import com.tencent.bk.codecc.defect.model.StatStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.StatStatisticEntity;
 import java.util.List;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;

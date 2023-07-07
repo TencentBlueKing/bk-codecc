@@ -13,33 +13,26 @@
 package com.tencent.bk.codecc.defect.component;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
-import com.tencent.bk.codecc.defect.model.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity;
+import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
+import com.tencent.bk.codecc.defect.model.defect.code.gen.LintDefectV2EntityTracking;
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectInputModel;
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectOutputModel;
+import com.tencent.bk.codecc.defect.service.impl.LintFilterPathBizServiceImpl;
 import com.tencent.bk.codecc.defect.vo.CommitDefectVO;
+import com.tencent.bk.codecc.task.vo.FilterPathInputVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.codecc.util.JsonUtil;
-import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.DefectStatus;
-import com.tencent.devops.common.util.PathUtils;
-import java.util.HashSet;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.bson.types.ObjectId;
-import org.springframework.amqp.rabbit.AsyncRabbitTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.util.Pair;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.AsyncResult;
-import org.springframework.stereotype.Component;
-
+import com.tencent.devops.common.util.IterableUtils;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,6 +41,17 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.bson.types.ObjectId;
+import org.springframework.amqp.rabbit.AsyncRabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.util.Pair;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.AsyncResult;
+import org.springframework.stereotype.Component;
 
 /**
  * 新的告警跟踪组件
@@ -62,6 +66,12 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
     private LintDefectV2Repository lintDefectV2Repository;
     @Autowired
     private DefectIdGenerator defectIdGenerator;
+    @Autowired
+    private LintFilterPathBizServiceImpl lintFilterPathBizService;
+    @Autowired
+    private LintDefectV2Dao lintDefectV2Dao;
+    @Autowired
+    private MongoTemplate mongoTemplate;
 
     /**
      * 告警跟踪
@@ -113,7 +123,8 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
                         lintDefectEntity.getChecker(),
                         lintDefectEntity.getPinpointHash(),
                         lintDefectEntity.getFilePath(),
-                        lintDefectEntity.getRelPath())
+                        lintDefectEntity.getRelPath(),
+                        null)
         ).collect(Collectors.toList());
 
         //3. 做聚类，通过MQ分发到各台服务器上去做聚类，避免聚类都集中到一台服务器上导致服务器资源不足
@@ -146,13 +157,13 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
      * @return
      */
     @Deprecated
-    private List<LintDefectV2Entity> updateOriginalDefectStatus(List<LintDefectV2Entity> originalDefectList,
-                                                                List<LintDefectV2Entity> currentDefectList,
-                                                                Set<String> pathList,
-                                                                Set<String> filterPaths,
-                                                                BuildEntity buildEntity,
-                                                                List<TransferAuthorEntity.TransferAuthorPair> transferAuthorList)
-    {
+    private List<LintDefectV2Entity> updateOriginalDefectStatus(
+            List<LintDefectV2Entity> originalDefectList,
+            List<LintDefectV2Entity> currentDefectList,
+            Set<String> whitePaths,
+            Set<String> filterPaths,
+            BuildEntity buildEntity,
+            List<TransferAuthorEntity.TransferAuthorPair> transferAuthorList) {
         Map<String, LintDefectV2Entity> currentFileMd5Map = currentDefectList.stream()
                 .collect(Collectors.toMap(defect -> String.format("%s_%s_%s", defect.getFileMd5(),
                         defect.getLineNum(), defect.getChecker()), Function.identity(), (k, v) -> v));
@@ -185,7 +196,10 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
                 } else if (defect.getStatus() == DefectStatus.NEW.value()) {
                     fixDefect(defect, buildEntity);
                     upsertDefectList.add(defect);
-                } else if (checkMaskByPath(defect, filterPaths, pathList, System.currentTimeMillis())) {
+                } else if (lintFilterPathBizService.processBiz(
+                                new FilterPathInputVO<>(
+                                        whitePaths, filterPaths, defect, System.currentTimeMillis()))
+                        .getData()) {
                     updateOldDefectInfo(defect, newDefect, transferAuthorList);
                     upsertDefectList.add(defect);
                 }
@@ -206,47 +220,93 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
     protected void saveDefectFile(long taskId,
                                   String toolName,
                                   Set<String> filterPathSet,
-                                  Set<String> pathList,
+                                  Set<String> whitePaths,
                                   BuildEntity buildEntity,
                                   List<LintDefectV2Entity> upsertDefectList) {
+        // NOCC:VariableDeclarationUsageDistance(设计如此:)
         long beginTime = System.currentTimeMillis();
-        log.info("begin saveDefectFile: taskId:{}, toolName:{}, buildId:{}", taskId, toolName,
-                buildEntity.getBuildId());
+        String buildId = null;
+        if (null != buildEntity) {
+            buildId = buildEntity.getBuildId();
+        }
+        log.info("begin saveDefectFile: taskId:{}, toolName:{}, buildId:{}", taskId, toolName, buildId);
+
+        long replaceCount = 0;
+        long insertCount = 0;
+        long trackingCount = 0;
 
         if (CollectionUtils.isNotEmpty(upsertDefectList)) {
+            // 批量插入
+            List<LintDefectV2Entity> insertList = Lists.newArrayList();
+            // repository.save()的replaceOne，防止有遗漏，后续可拿掉
+            List<LintDefectV2Entity> replaceList = Lists.newArrayList();
+            // 实体跟踪，批量按需update
+            LintDefectV2EntityTracking.ListContainer trackingList = new LintDefectV2EntityTracking.ListContainer();
+
             List<LintDefectV2Entity> needGenerateDefectIdList = new ArrayList<>();
             long curTime = System.currentTimeMillis();
-            upsertDefectList.forEach(defect ->
-            {
+            upsertDefectList.forEach(defect -> {
                 defect.setTaskId(taskId);
                 defect.setToolName(toolName);
                 defect.setUpdatedDate(curTime);
-                checkMaskByPath(defect, filterPathSet, pathList, curTime);
+                lintFilterPathBizService.processBiz(
+                        new FilterPathInputVO<>(whitePaths, filterPathSet, defect, curTime));
 
                 if (StringUtils.isEmpty(defect.getId())) {
                     needGenerateDefectIdList.add(defect);
                 }
+
+                if (StringUtils.isEmpty(defect.getEntityId())) {
+                    insertList.add(defect);
+                } else {
+                    if (defect instanceof LintDefectV2EntityTracking) {
+                        trackingList.add((LintDefectV2EntityTracking) defect);
+                    } else {
+                        replaceList.add(defect);
+                    }
+                }
             });
+
+            replaceCount = replaceList.size();
+            insertCount = insertList.size();
+            trackingCount = trackingList.size();
 
             // 初始化告警ID
             if (CollectionUtils.isNotEmpty(needGenerateDefectIdList)) {
                 int increment = needGenerateDefectIdList.size();
                 Long currMaxId = defectIdGenerator.generateDefectId(taskId, toolName, increment);
                 AtomicLong currMinIdAtom = new AtomicLong(currMaxId - increment + 1);
-                needGenerateDefectIdList.forEach(defect -> defect.setId(String.valueOf(currMinIdAtom.getAndIncrement())));
+                needGenerateDefectIdList.forEach(defect ->
+                        defect.setId(String.valueOf(currMinIdAtom.getAndIncrement())));
             }
 
             log.info("save defect trace result: taskId:{}, toolName:{}, buildId:{}, defectCount:{}", taskId, toolName,
-                    buildEntity.getBuildId(), upsertDefectList.size());
-            lintDefectV2Repository.saveAll(upsertDefectList);
+                    buildId, upsertDefectList.size());
+
+            // 分批持久化
+            int batchSize = 3_0000;
+
+            if (CollectionUtils.isNotEmpty(insertList)) {
+                lintDefectV2Dao.doBatchInsert(insertList, batchSize);
+            }
+
+            if (CollectionUtils.isNotEmpty(trackingList)) {
+                trackingList.saveChanges(mongoTemplate, batchSize);
+            }
+
+            if (CollectionUtils.isNotEmpty((replaceList))) {
+                lintDefectV2Repository.saveAll(replaceList);
+            }
         }
-        log.info("end saveDefectFile, cost:{}, taskId:{}, toolName:{}, buildId:{}",
-                System.currentTimeMillis() - beginTime, taskId, toolName, buildEntity.getBuildId());
+
+        log.info("end saveDefectFile, cost:{}, taskId:{}, toolName:{}, buildId:{}, replace count: {}, insert count: {},"
+                        + " tracking update count: {}",
+                System.currentTimeMillis() - beginTime, taskId, toolName, buildId, replaceCount, insertCount,
+                trackingCount);
     }
 
     /**
      * 读取聚类输出文件，并转换告警状态
-     *
      * @see LintDefectCommitComponent#postHandleDefectList(List, BuildEntity, List)
      * @param originalDefectList
      * @param currentDefectList
@@ -274,7 +334,7 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
                     // 检查聚类output文件是否存在
                     checkOutputFileExists(outputFile);
 
-                    String outputDefects = ScmJsonComponent.readFileContent(outputFile);
+                    String outputDefects = ScmJsonComponent.readFileContent(outputFile, true);
                     if (StringUtils.isEmpty(outputDefects)) {
                         log.info("empty output defects! output file : {}", outputFile);
                         return upsertDefectList;
@@ -308,12 +368,11 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
                                 .filter(defect -> StringUtils.isNotEmpty(defect.getFileMd5())
                                         && StringUtils.isNotBlank(defect.getChecker()))
                                 .collect(Collectors.toMap(defect -> String.format("%s_%s_%s", defect.getFileMd5(),
-                                        defect.getLineNum(), defect.getChecker()),
+                                                defect.getLineNum(), defect.getChecker()),
                                         Function.identity(), (k, v) -> v));
                         log.info("current file md5 map size: {}", currentFileMd5Map.size());
 
-                        clusteredDefectList.forEach(defectList ->
-                        {
+                        clusteredDefectList.forEach(defectList -> {
                             //将聚类输出分为新告警和历史告警
                             Map<Boolean, List<LintDefectV2Entity>> partitionedDefects = defectList.stream()
                                     .collect(Collectors.groupingBy(LintDefectV2Entity::getNewDefect));
@@ -330,8 +389,7 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
                              *   2.2 老告警是其他状态，则不变更直接上报
                              */
                             if (CollectionUtils.isEmpty(newDefectList)) {
-                                oldDefectList.forEach(oldDefect ->
-                                {
+                                oldDefectList.forEach(oldDefect -> {
                                     String fileMD5 = String.format("%s_%s_%s", oldDefect.getFileMd5(),
                                             oldDefect.getLineNum(), oldDefect.getChecker());
                                     LintDefectV2Entity newDefect = currentFileMd5Map.get(fileMD5);
@@ -380,7 +438,7 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
                                                 & DefectStatus.FIXED.value()) > 0) {
                                             reopenDefect(selectedOldDefect);
                                         }
-                                        if (StringUtils.isEmpty(selectedOldDefect.getAuthor())) {
+                                        if (CollectionUtils.isEmpty(selectedOldDefect.getAuthor())) {
                                             selectedOldDefect.setAuthor(newDefect.getAuthor());
                                         }
                                     } else {
@@ -401,8 +459,7 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
                                         && oldDefectList.size() > newDefectList.size()) {
                                     List<LintDefectV2Entity> closeOldDefectList =
                                             oldDefectList.subList(newDefectList.size(), oldDefectList.size());
-                                    closeOldDefectList.forEach(defect ->
-                                    {
+                                    closeOldDefectList.forEach(defect -> {
                                         if (defect.getStatus() == DefectStatus.NEW.value()) {
                                             fixDefect(defect, buildEntity);
                                             upsertDefectList.add(defect);
@@ -449,52 +506,15 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
         selectedOldDefect.setSubModule(newDefect.getSubModule());
         selectedOldDefect.setFileUpdateTime(newDefect.getFileUpdateTime());
         selectedOldDefect.setFileMd5(newDefect.getFileMd5());
-        if (StringUtils.isEmpty(selectedOldDefect.getAuthor())) {
+        if (CollectionUtils.isEmpty(selectedOldDefect.getAuthor())) {
             selectedOldDefect.setAuthor(newDefect.getAuthor());
-
             // 作者转换
             transferAuthor(selectedOldDefect, transferAuthorList);
         }
     }
 
     /**
-     * 入库前检测屏蔽路径
-     *
-     * @param lintDefectV2Entity
-     * @param filterPaths
-     * @param curTime
-     */
-    private boolean checkMaskByPath(LintDefectV2Entity lintDefectV2Entity,
-                                    Set<String> filterPaths,
-                                    Set<String> pathList,
-                                    long curTime) {
-        String relPath = lintDefectV2Entity.getRelPath();
-        String filePath = lintDefectV2Entity.getFilePath();
-
-        // 如果告警不是已经屏蔽，则在入库前检测一遍屏蔽路径
-        if ((lintDefectV2Entity.getStatus() & ComConstants.TaskFileStatus.PATH_MASK.value()) == 0
-                && (lintDefectV2Entity.getStatus() & DefectStatus.FIXED.value()) == 0
-                && (PathUtils.checkIfMaskByPath(StringUtils.isNotEmpty(relPath) ? relPath : filePath, filterPaths)
-                || (CollectionUtils.isNotEmpty(pathList)
-                && !PathUtils.checkIfMaskByPath(filePath, pathList)))) {
-            lintDefectV2Entity.setStatus(lintDefectV2Entity.getStatus() | ComConstants.TaskFileStatus.PATH_MASK.value());
-            lintDefectV2Entity.setExcludeTime(curTime);
-            return true;
-        }
-        // 如果已经是被路径屏蔽的，但是实质没有被路径屏蔽，则要把屏蔽状态去掉
-        else if ((CollectionUtils.isEmpty(pathList)
-                || PathUtils.checkIfMaskByPath(filePath, pathList))
-                && !PathUtils.checkIfMaskByPath(StringUtils.isNotEmpty(relPath) ? relPath : filePath, filterPaths)
-                && (lintDefectV2Entity.getStatus() & ComConstants.TaskFileStatus.PATH_MASK.value()) > 0) {
-            lintDefectV2Entity.setStatus(lintDefectV2Entity.getStatus() - ComConstants.TaskFileStatus.PATH_MASK.value());
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * 告警去重后，得到并集的告警清单
-     *
      * @see LintDefectCommitComponent#preHandleDefectList(String, String, String, List, List, Map)
      * @param streamName
      * @param toolName
@@ -513,8 +533,7 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
         Map<String, String> fileMd5Map = getFIleMd5Map(streamName, toolName, buildId);
 
         Map<String, String> relPathMap = new HashMap<>();
-        currentDefectList.forEach(defect ->
-        {
+        currentDefectList.forEach(defect -> {
             if (StringUtils.isNotEmpty(defect.getRelPath())) {
                 relPathMap.put(defect.getRelPath(), defect.getFilePath());
             }
@@ -569,13 +588,15 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
         return finalDefectList;
     }
 
-    private void transferAuthor(LintDefectV2Entity selectedOldDefect,
-                                List<TransferAuthorEntity.TransferAuthorPair> transferAuthorList) {
+    private void transferAuthor(
+            LintDefectV2Entity selectedOldDefect,
+            List<TransferAuthorEntity.TransferAuthorPair> transferAuthorList
+    ) {
         if (CollectionUtils.isNotEmpty(transferAuthorList)) {
+            String author = IterableUtils.getFirst(selectedOldDefect.getAuthor(), "");
             for (TransferAuthorEntity.TransferAuthorPair trasferAuthorPair : transferAuthorList) {
-                String author = selectedOldDefect.getAuthor();
                 if (StringUtils.isNotEmpty(author) && author.equalsIgnoreCase(trasferAuthorPair.getSourceAuthor())) {
-                    selectedOldDefect.setAuthor(trasferAuthorPair.getTargetAuthor());
+                    selectedOldDefect.setAuthor(Lists.newArrayList(trasferAuthorPair.getTargetAuthor()));
                 }
             }
         }

@@ -1,32 +1,40 @@
 package com.tencent.bk.codecc.defect.common;
 
-import com.tencent.bk.codecc.defect.model.CLOCDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.CLOCDefectEntity;
+import com.tencent.bk.codecc.defect.service.EfficientCommentService;
 import com.tencent.bk.codecc.defect.vo.CLOCTreeNodeVO;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
+import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
 /**
  * CLOC文件树
+ *
  * @author liwei
- * */
+ */
 @Slf4j
 @Component
 public class CLOCTree {
     private Boolean expand;
     private Boolean eliminate = true;
 
+    @Autowired
+    private EfficientCommentService efficientCommentService;
+
     /**
      * 递归添加子节点，刷新代码行数
-     * @param index 文件结构层数
+     *
+     * @param index  文件结构层数
      * @param parent 当前生成节点的父节点
-     * @param paths 当前告警文件的路径结构数组
-     * @param step 当前遍历的告警文件
-     * */
+     * @param paths  当前告警文件的路径结构数组
+     * @param step   当前遍历的告警文件
+     */
     private void addChild(int index, String[] paths, CLOCTreeNodeVO parent, CLOCDefectEntity step) {
         boolean isNewNode = true;
         if (parent.getClocChildren() != null) {
@@ -67,14 +75,14 @@ public class CLOCTree {
      * 默认消除子节点为1的父节点
      *
      * @param clocDefectEntityList 告警文件实体
-     * @param eliminate 是否消除子节点为1的父节点，默认删除
-     * @param expand 是否展开树，默认不展开
-     * @param streamName 流名称，用户命名根结点
-     * */
+     * @param eliminate            是否消除子节点为1的父节点，默认删除
+     * @param expand               是否展开树，默认不展开
+     * @param streamName           流名称，用户命名根结点
+     */
     public CLOCTreeNodeVO buildTree(List<CLOCDefectEntity> clocDefectEntityList,
-            String streamName,
-            boolean expand,
-            boolean eliminate) {
+                                    String streamName,
+                                    boolean expand,
+                                    boolean eliminate) {
         this.expand = expand;
         this.eliminate = eliminate;
         return buildTree(clocDefectEntityList, streamName);
@@ -85,8 +93,8 @@ public class CLOCTree {
      * 默认消除子节点为1的父节点
      *
      * @param clocDefectEntityList 告警文件实体
-     * @param streamName 流名称，用户命名根结点
-     * */
+     * @param streamName           流名称，用户命名根结点
+     */
     public CLOCTreeNodeVO buildTree(List<CLOCDefectEntity> clocDefectEntityList, String streamName) {
         CLOCTreeNodeVO root = new CLOCTreeNodeVO(getRandom(), streamName, expand);
         if (CollectionUtils.isEmpty(clocDefectEntityList)) {
@@ -94,10 +102,9 @@ public class CLOCTree {
             return root;
         }
 
-        int index = 0;
         for (CLOCDefectEntity clocDefectEntity : clocDefectEntityList) {
+            int index = 0;
             String[] paths = clocDefectEntity.getFileName().split("/");
-
             if (paths[0].length() == 0) {
                 if (paths.length <= 1) {
                     continue;
@@ -125,7 +132,7 @@ public class CLOCTree {
 
     /**
      * 生成随机树节点ID
-     * */
+     */
     private String getRandom() {
         return String.format("%s%s", System.currentTimeMillis(), new Random().nextInt());
     }
@@ -133,25 +140,54 @@ public class CLOCTree {
     /**
      * 刷新树节点代码行数
      *
-     * @param step 当前遍历的告警文件实体类
+     * @param step  当前遍历的告警文件实体类
      * @param child 当前刷新节点
-     * */
+     */
     private void refreshLines(CLOCTreeNodeVO child, CLOCDefectEntity step) {
         long blank = step.getBlank();
         long code = step.getCode();
         long comment = step.getComment();
+        //总行数
         long total = blank + code + comment;
+        //有效注释行
+        Long efficientComment = null;
+        if (efficientCommentService.checkIfShowEffectiveComment(step.getLanguage())) {
+            efficientComment = step.getEfficientComment() == null ? 0 : step.getEfficientComment();
+            //用于计算有效注释率-排除部分语言的行数
+            child.addTotalForEfficient(total);
+        }
         child.addBlank(blank);
         child.addCode(code);
         child.addComment(comment);
+        child.addEfficientComment(efficientComment);
         child.addTotal(total);
+        //设置注释率
+        child.setCommentRate(getCommentRate(child.getCommentLines(), child.getTotalLines(), false));
+        //设置有效注释率
+        child.setEfficientCommentRate(getCommentRate(child.getEfficientCommentLines(),
+                child.getTotalLinesForEfficient(), true));
+    }
+
+    private Double getCommentRate(Long comment, Long totalLine, Boolean efficient) {
+        if (totalLine == 0) {
+            return null;
+        }
+        if (comment != null && (totalLine == 0 || comment == 0)) {
+            return 0d;
+        } else if (comment != null) {
+            return new BigDecimal(comment)
+                    .divide(new BigDecimal(totalLine), 4, BigDecimal.ROUND_HALF_UP).doubleValue();
+        } else if (!efficient) {
+            return 0d;
+        }
+        return null;
     }
 
     /**
      * 当eliminate为true时消除子节点数为1的父节点
      *
      * @param root 根结点
-     * */
+     */
     private CLOCTreeNodeVO eliminateDepth(CLOCTreeNodeVO root) {
         while (root.getClocChildren() != null && root.getClocChildren().size() == 1) {
             root = root.getClocChildren().get(0);
@@ -163,7 +199,7 @@ public class CLOCTree {
      * 根据文件名对同一层节点排序
      *
      * @param root 根结点
-     * */
+     */
     public void sortTree(CLOCTreeNodeVO root) {
         List<CLOCTreeNodeVO> childs = root.getClocChildren();
         if (org.apache.commons.collections.CollectionUtils.isNotEmpty(childs)) {

@@ -12,9 +12,10 @@
 
 package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
+import com.google.common.collect.Lists;
 import com.mongodb.client.result.UpdateResult;
 import com.tencent.bk.codecc.defect.dto.CodeLineModel;
-import com.tencent.bk.codecc.defect.model.CLOCDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.CLOCDefectEntity;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import java.util.Arrays;
 import org.apache.commons.collections.CollectionUtils;
@@ -84,18 +85,23 @@ public class CLOCDefectDao
      * @param fileNames 文件全路径
      * */
     public void batchDisableClocInfoByFileName(Long taskId, String toolName, List<String> fileNames) {
-        Query query = new Query();
-        if (Tool.SCC.name().equals(toolName)) {
-            query.addCriteria(Criteria.where("task_id").is(taskId).and("tool_name").is(toolName)
-                    .and("file_name").in(fileNames));
-        } else {
-            query.addCriteria(Criteria.where("task_id").is(taskId)
-                    .and("tool_name").in(Arrays.asList(toolName, null))
-                    .and("file_name").in(fileNames));
+
+        List<List<String>> filePartition = Lists.partition(fileNames, 100000);
+
+        for (List<String> stringList : filePartition) {
+            Query query = new Query();
+            if (Tool.SCC.name().equals(toolName)) {
+                query.addCriteria(Criteria.where("task_id").is(taskId).and("tool_name").is(toolName)
+                        .and("file_name").in(stringList));
+            } else {
+                query.addCriteria(Criteria.where("task_id").is(taskId)
+                        .and("tool_name").in(Arrays.asList(toolName, null))
+                        .and("file_name").in(stringList));
+            }
+            Update update = new Update();
+            update.set("status", "DISABLED");
+            mongoTemplate.updateMulti(query, update, CLOCDefectEntity.class);
         }
-        Update update = new Update();
-        update.set("status", "DISABLED");
-        mongoTemplate.updateMulti(query, update, CLOCDefectEntity.class);
     }
 
     /**
@@ -147,10 +153,10 @@ public class CLOCDefectDao
         MatchOperation match;
         if (Tool.SCC.name().equals(toolName)) {
             match = Aggregation.match(Criteria.where("task_id").is(taskId)
-                    .and("tool_name").is(toolName));
+                    .and("tool_name").is(toolName).and("status").ne("DISABLED"));
         } else {
             match = Aggregation.match(Criteria.where("task_id").is(taskId)
-                    .and("tool_name").in(Arrays.asList(toolName, null)));
+                    .and("tool_name").in(Arrays.asList(toolName, null)).and("status").ne("DISABLED"));
         }
         //以toolName进行分组，并且取第一个的endTime字段
         GroupOperation group = Aggregation.group("language")
@@ -163,6 +169,7 @@ public class CLOCDefectDao
                 .andExpression("codeLine").as("codeLine")
                 .andExpression("commentLine").as("commentLine")
                 .andExpression("efficientCommentLine").as("efficientCommentLine");
+        
         //聚合配置
         Aggregation agg = Aggregation.newAggregation(match, group, project);
 

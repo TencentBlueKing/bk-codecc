@@ -3,6 +3,7 @@ package com.tencent.bk.codecc.defect.component
 import com.tencent.devops.common.constant.ComConstants
 import org.springframework.stereotype.Component
 
+@Deprecated("屏蔽路径通过系统路径屏蔽")
 @Component
 class GongfengFilterPathComponent {
 

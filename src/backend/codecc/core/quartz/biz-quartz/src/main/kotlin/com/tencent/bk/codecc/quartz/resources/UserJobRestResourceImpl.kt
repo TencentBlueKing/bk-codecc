@@ -7,7 +7,7 @@ import com.tencent.bk.codecc.quartz.pojo.NodeInfoVO
 import com.tencent.bk.codecc.quartz.pojo.ShardInfoVO
 import com.tencent.bk.codecc.quartz.pojo.ShardingResultVO
 import com.tencent.bk.codecc.quartz.service.JobManageService
-import com.tencent.devops.common.api.pojo.Result
+import com.tencent.devops.common.api.pojo.codecc.Result
 import com.tencent.devops.common.web.RestResource
 import org.springframework.beans.factory.annotation.Autowired
 
@@ -82,5 +82,9 @@ class UserJobRestResourceImpl @Autowired constructor(
             )
             Result(shardingResultVO)
         }
+    }
+
+    override fun getJobList(className: String): Result<List<JobInfoVO>> {
+        return Result(jobManageService.findJobListByClassName(className))
     }
 }

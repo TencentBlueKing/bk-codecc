@@ -27,7 +27,7 @@
 package com.tencent.bk.codecc.task.api;
 
 import com.tencent.devops.common.api.ToolMetaDetailVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -68,6 +68,21 @@ public interface BuildToolMetaRestResource
     Result<List<ToolMetaDetailVO>> queryToolMetaDataList(
             @ApiParam(value = "项目ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
-                    String projectId
+                    String projectId,
+            @ApiParam(value = "任务id", required = true)
+            @QueryParam("taskId")
+                Long taskId
+    );
+
+    @ApiOperation("工具元数据查询")
+    @Path("/")
+    @GET
+    Result<ToolMetaDetailVO> queryToolMetaData(
+            @ApiParam(value = "项目ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+                    String projectId,
+            @ApiParam(value = "工具名称", required = true)
+            @QueryParam("toolName")
+                    String toolName
     );
 }

@@ -27,8 +27,6 @@
 package com.tencent.bk.codecc.defect.dao.mongorepository;
 
 import com.tencent.bk.codecc.defect.model.TaskLogEntity;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -42,8 +40,7 @@ import java.util.Set;
  * @date 2019/5/5
  */
 @Repository
-public interface TaskLogRepository extends MongoRepository<TaskLogEntity, String>
-{
+public interface TaskLogRepository extends MongoRepository<TaskLogEntity, String> {
 
     /**
      * 通过任务id和工具名查询分析记录信息

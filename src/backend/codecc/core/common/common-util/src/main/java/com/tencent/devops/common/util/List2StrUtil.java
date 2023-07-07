@@ -6,6 +6,7 @@ import org.apache.commons.lang.StringUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -49,16 +50,15 @@ public class List2StrUtil
      * @param source
      * @return
      */
-    public static List<String> fromString(String source, String spliter)
-    {
+    public static List<String> fromString(String source, String splitter) {
         List<String> resultList = new ArrayList<>();
-        if (StringUtils.isNotEmpty(source))
-        {
-            for (String owner : source.split(spliter))
-            {
+
+        if (StringUtils.isNotEmpty(source)) {
+            for (String owner : source.split(splitter)) {
                 resultList.add(owner);
             }
         }
+
         return resultList;
     }
 
@@ -114,5 +114,33 @@ public class List2StrUtil
             }
         }
         return result;
+    }
+
+    /**
+     * 获取两个集合的交集
+     *
+     * @param largerArryList 较大的集合
+     * @param smallerArryList 较小的集合
+     * @param <T> 泛型
+     * @return list
+     */
+    public static <T> List<T> intersectionList(List<T> largerArryList, List<T> smallerArryList) {
+
+        List<T> resultList;
+
+        // 比较大的集合使用linkedlist
+        LinkedList<T> largerList = new LinkedList<T>(largerArryList);
+
+        // 比较小的集合使用hashset
+        HashSet<T> smallerList = new HashSet<T>(smallerArryList);
+
+        // 采用Iterator迭代器进行数据的操作
+        Iterator<T> iter = largerList.iterator();
+        while (iter.hasNext()) {
+            if (!smallerList.contains(iter.next())) {
+                iter.remove();
+            }
+        }
+        return new ArrayList<>(largerList);
     }
 }

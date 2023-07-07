@@ -1,7 +1,13 @@
 package com.tencent.bk.codecc.defect.service.impl
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.*
+import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository
+import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository
+import com.tencent.bk.codecc.defect.dao.mongorepository.CommonStatisticRepository
+import com.tencent.bk.codecc.defect.dao.mongorepository.DUPCStatisticRepository
+import com.tencent.bk.codecc.defect.dao.mongorepository.DefectClusterStatisticRepository
+import com.tencent.bk.codecc.defect.dao.mongorepository.LintStatisticRepository
 import com.tencent.bk.codecc.defect.model.DefectClusterStatisticEntity
+import com.tencent.bk.codecc.defect.model.statistic.StatisticEntity
 import com.tencent.devops.common.api.clusterresult.BaseClusterResultVO
 import com.tencent.devops.common.api.clusterresult.DefectClusterResultVO
 import com.tencent.devops.common.constant.ComConstants
@@ -13,34 +19,77 @@ import org.springframework.stereotype.Service
 
 @Service("DEFECT")
 class DefectClusterDefectServiceImpl @Autowired constructor(
-        lintStatisticRepository: LintStatisticRepository,
-        commonStatisticRepository: CommonStatisticRepository,
-        dupcStatisticRepository: DUPCStatisticRepository,
-        ccnStatisticRepository: CCNStatisticRepository,
-        clocStatisticRepository: CLOCStatisticRepository,
-        private val toolMetaCacheService: ToolMetaCacheService,
-        private val defectClusterStatisticRepository: DefectClusterStatisticRepository
-): AbstractClusterDefectService(
-        lintStatisticRepository,
-        commonStatisticRepository,
-        dupcStatisticRepository,
-        ccnStatisticRepository,
-        clocStatisticRepository
+    lintStatisticRepository: LintStatisticRepository,
+    commonStatisticRepository: CommonStatisticRepository,
+    dupcStatisticRepository: DUPCStatisticRepository,
+    ccnStatisticRepository: CCNStatisticRepository,
+    clocStatisticRepository: CLOCStatisticRepository,
+    private val toolMetaCacheService: ToolMetaCacheService,
+    private val defectClusterStatisticRepository: DefectClusterStatisticRepository
+) : AbstractClusterDefectService(
+    lintStatisticRepository,
+    commonStatisticRepository,
+    dupcStatisticRepository,
+    ccnStatisticRepository,
+    clocStatisticRepository
 ) {
-    override fun cluster(taskId: Long, buildId: String, toolList: List<String>) {
+
+    override fun cluster(
+        taskId: Long,
+        buildId: String,
+        toolList: List<String>,
+        isMigrationSuccessful: Boolean,
+        toolNameToDimensionStatisticMap: Map<String, StatisticEntity>
+    ) {
+        if (!isMigrationSuccessful) {
+            cluster(taskId, buildId, toolList)
+            return
+        }
+
+        var totalCount = 0
+        var newCount = 0
+        var fixCount = 0
+        var maskCount = 0
+        toolList.forEach { toolName ->
+            val dimensionStatistic = toolNameToDimensionStatisticMap[toolName]?.dimensionStatistic
+            if (dimensionStatistic != null) {
+                totalCount += dimensionStatistic.defectTotalCount
+                newCount += dimensionStatistic.defectNewCount
+                fixCount += dimensionStatistic.defectFixCount
+                maskCount += dimensionStatistic.defectMaskCount
+            }
+        }
+
+        val defectClusterStatisticEntity = DefectClusterStatisticEntity(
+            taskId,
+            buildId,
+            toolList,
+            System.currentTimeMillis(),
+            totalCount,
+            newCount,
+            fixCount,
+            maskCount
+        )
+
+        defectClusterStatisticRepository.save(defectClusterStatisticEntity)
+    }
+
+    private fun cluster(taskId: Long, buildId: String, toolList: List<String>) {
         logger.info("Standard cluster $taskId $buildId ${toolList.size}")
         var totalCount = 0
         var newCount = 0
         var fixCount = 0
         var maskCount = 0
         // 获取当前分类下所有工具的告警数据
-        toolList.forEach{
+        toolList.forEach {
             val toolDetail = toolMetaCacheService.getToolBaseMetaCache(it)
             val clusterResultVO = getStatistic(
-                    taskId = taskId,
-                    buildId = buildId,
-                    toolName = it,
-                    pattern = toolDetail.pattern)
+                taskId = taskId,
+                buildId = buildId,
+                toolName = it,
+                pattern = toolDetail.pattern
+            )
+
             totalCount += (clusterResultVO.totalCount ?: 0)
             newCount += (clusterResultVO.newCount ?: 0)
             fixCount += (clusterResultVO.fixCount ?: 0)
@@ -48,14 +97,14 @@ class DefectClusterDefectServiceImpl @Autowired constructor(
         }
 
         val defectClusterStatisticEntity = DefectClusterStatisticEntity(
-                taskId,
-                buildId,
-                toolList,
-                System.currentTimeMillis(),
-                totalCount,
-                newCount,
-                fixCount,
-                maskCount
+            taskId,
+            buildId,
+            toolList,
+            System.currentTimeMillis(),
+            totalCount,
+            newCount,
+            fixCount,
+            maskCount
         )
 
         defectClusterStatisticRepository.save(defectClusterStatisticEntity)
@@ -65,8 +114,8 @@ class DefectClusterDefectServiceImpl @Autowired constructor(
         val defectClusterResultVO = DefectClusterResultVO()
         defectClusterResultVO.type = ComConstants.ToolType.DEFECT.name
         val defectClusterStatisticEntity =
-                defectClusterStatisticRepository.findFirstByTaskIdAndBuildId(taskId, buildId)
-                        ?: return defectClusterResultVO
+            defectClusterStatisticRepository.findFirstByTaskIdAndBuildId(taskId, buildId)
+                ?: return defectClusterResultVO
         BeanUtils.copyProperties(defectClusterResultVO, defectClusterStatisticEntity)
         defectClusterResultVO.type = ComConstants.ToolType.DEFECT.name
         defectClusterResultVO.toolList = defectClusterStatisticEntity.toolList

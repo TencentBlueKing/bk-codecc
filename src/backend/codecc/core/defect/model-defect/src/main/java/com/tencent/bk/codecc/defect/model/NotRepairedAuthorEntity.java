@@ -56,4 +56,20 @@ public class NotRepairedAuthorEntity
     @Field("total_count")
     @JsonProperty("total_count")
     private int totalCount;
+
+    public void incSeriousCount() {
+        seriousCount++;
+    }
+
+    public void incNormalCount() {
+        normalCount++;
+    }
+
+    public void incPromptCount() {
+        promptCount++;
+    }
+
+    public void incTotalCount() {
+        totalCount++;
+    }
 }

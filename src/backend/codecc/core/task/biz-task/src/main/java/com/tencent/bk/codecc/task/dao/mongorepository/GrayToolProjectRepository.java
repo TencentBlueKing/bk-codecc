@@ -28,6 +28,7 @@ package com.tencent.bk.codecc.task.dao.mongorepository;
 
 import com.tencent.bk.codecc.task.model.GrayToolProjectEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -63,4 +64,13 @@ public interface GrayToolProjectRepository extends MongoRepository<GrayToolProje
      * @return
      */
     List<GrayToolProjectEntity> findByProjectIdIn(Set<String> projectIdSet);
+
+    /**
+     * 根据项目ID查询当前项目的更新人
+     *
+     * @param projectId 项目ID
+     * @return string
+     */
+    @Query(fields = "{'updated_by': 1}")
+    GrayToolProjectEntity findFirstUpdatedByProjectId(String projectId);
 }

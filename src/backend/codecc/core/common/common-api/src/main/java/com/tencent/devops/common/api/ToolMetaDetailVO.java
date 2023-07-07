@@ -10,12 +10,16 @@
  *
  * Terms of the MIT License:
  * ---------------------------------------------------
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+ * Permission is hereby granted, free of charge,
+ * to any person obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy,
+ * modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
  * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -44,8 +48,7 @@ import java.util.Map;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ApiModel("工具完整信息对象")
-public class ToolMetaDetailVO extends ToolMetaBaseVO
-{
+public class ToolMetaDetailVO extends ToolMetaBaseVO {
     @ApiModelProperty(value = "工具简介，一句话介绍语", required = true)
     private String briefIntroduction;
 
@@ -108,14 +111,57 @@ public class ToolMetaDetailVO extends ToolMetaBaseVO
 
     @ApiModelProperty(value = "用户自定义关注的工具信息")
     private CustomToolInfo customToolInfo;
-    
+
+    @ApiModelProperty(value = "工具在插件端处理工具输出告警的任务链")
+    private List<String> processList;
+
+    @ApiModelProperty(value = "工具二进制相关信息")
+    private Binary binary;
+
     @Data
-    public static class ToolOption
-    {
+    public static class Binary {
+
+        @ApiModelProperty(value = "win二进制的下载路径")
+        private String winUrl;
+
+        @ApiModelProperty(value = "linux二进制的下载路径")
+        private String linuxUrl;
+
+        @ApiModelProperty(value = "mac二进制的下载路径")
+        private String macUrl;
+
+        @ApiModelProperty(value = "win环境下命令行")
+        private String winCommand;
+
+        @ApiModelProperty(value = "linux环境下命令行")
+        private String linuxCommand;
+
+        @ApiModelProperty(value = "mac环境下命令行")
+        private String macCommand;
+
+        @ApiModelProperty(value = "二进制依赖环境")
+        private List<ToolEnv> toolEnvs;
+
+        @ApiModelProperty(value = "二进制工具版本")
+        private String binaryVersion;
+    }
+
+    @Data
+    public static class ToolEnv {
+        @ApiModelProperty(value = "依赖的环境命令")
+        private String dependBin;
+
+        @ApiModelProperty(value = "依赖的环境命令版本")
+        private String dependVersion;
+    }
+
+    @Data
+    public static class ToolOption {
         @ApiModelProperty(value = "参数名", required = true)
         private String varName;
 
-        @ApiModelProperty(value = "参数类型，可选值：NUMBER,STRING,BOOLEAN,RADIO,CHECKBOX，分别表示：数字，字符串，布尔值，单选框，复选框", required = true)
+        @ApiModelProperty(value = "参数类型，可选值：NUMBER,STRING,BOOLEAN,RADIO,CHECKBOX，"
+                + "分别表示：数字，字符串，布尔值，单选框，复选框", required = true)
         private String varType;
 
         @ApiModelProperty(value = "参数展示名，不填展示varName")
@@ -135,8 +181,7 @@ public class ToolMetaDetailVO extends ToolMetaBaseVO
     }
 
     @Data
-    public static class VarOption
-    {
+    public static class VarOption {
         private String name;
         private String id;
     }

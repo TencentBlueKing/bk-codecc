@@ -2,11 +2,10 @@ package com.tencent.devops.common.service;
 
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
-import org.springframework.scheduling.annotation.Async;
+import java.util.Locale;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * 工具元数据接口
@@ -23,6 +22,14 @@ public interface ToolMetaCacheService
      * @return
      */
     String getToolPattern(String toolName);
+
+    /**
+     * 查询工具执行聚类逻辑的类型
+     *
+     * @param toolName
+     * @return
+     */
+    String getClusterType(String toolName);
 
     /**
      * 加载工具缓存
@@ -74,4 +81,14 @@ public interface ToolMetaCacheService
      * @return
      */
     List<String> getToolDetailByDimension(String dimension);
+
+
+    /**
+     * 获取工具国际化展示名字
+     *
+     * @param toolName
+     * @param locale
+     * @return
+     */
+    String getDisplayNameByLocale(String toolName, Locale locale);
 }

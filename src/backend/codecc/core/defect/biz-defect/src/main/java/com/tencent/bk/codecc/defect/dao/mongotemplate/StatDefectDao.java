@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
-import com.tencent.bk.codecc.defect.model.StatDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.StatDefectEntity;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.collections.CollectionUtils;

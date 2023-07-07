@@ -71,6 +71,7 @@ open class JobMessageListenerConfig {
         container.setQueueNames(externalJobMsgQueue.name)
         container.setConcurrentConsumers(5)
         container.setMaxConcurrentConsumers(10)
+        container.setPrefetchCount(1)
         container.setAmqpAdmin(rabbitAdmin)
         container.setStartConsumerMinInterval(10000)
         container.setConsecutiveActiveTrigger(5)
@@ -88,8 +89,7 @@ open class JobMessageListenerConfig {
     }
 
     @Bean
-    open fun internalJobMsgQueue() = Queue("$QUEUE_INTERNAL_JOB${IPUtils.getInnerIP()
-        .replace(".", "")}$localPort")
+    open fun internalJobMsgQueue() = Queue("$QUEUE_INTERNAL_JOB${IPUtils.getInnerIP().replace(".", "")}$localPort")
 
     @Bean
     open fun internalJobQueueBind(
@@ -112,6 +112,7 @@ open class JobMessageListenerConfig {
         container.setQueueNames(internalJobMsgQueue.name)
         container.setConcurrentConsumers(5)
         container.setMaxConcurrentConsumers(10)
+        container.setPrefetchCount(1)
         container.setAmqpAdmin(rabbitAdmin)
         container.setStartConsumerMinInterval(10000)
         container.setConsecutiveActiveTrigger(5)
@@ -130,9 +131,7 @@ open class JobMessageListenerConfig {
     }
 
     @Bean
-    open fun deleteJobMsgQueue() =
-        Queue("$QUEUE_GONGFENG_DELETE_ALL_JOB${IPUtils.getInnerIP()
-            .replace(".", "")}$localPort")
+    open fun deleteJobMsgQueue() = Queue("$QUEUE_GONGFENG_DELETE_ALL_JOB${IPUtils.getInnerIP().replace(".", "")}$localPort")
 
     @Bean
     open fun deleteJobQueueBind(
@@ -155,6 +154,7 @@ open class JobMessageListenerConfig {
         container.setQueueNames(deleteJobMsgQueue.name)
         container.setConcurrentConsumers(2)
         container.setMaxConcurrentConsumers(5)
+        container.setPrefetchCount(1)
         container.setAmqpAdmin(rabbitAdmin)
         container.setStartConsumerMinInterval(10000)
         container.setConsecutiveActiveTrigger(5)
@@ -173,8 +173,7 @@ open class JobMessageListenerConfig {
     }
 
     @Bean
-    open fun initJobMsgQueue() = Queue("$QUEUE_GONGFENG_INIT_ALL_JOB${IPUtils.getInnerIP()
-        .replace(".", "")}$localPort")
+    open fun initJobMsgQueue() = Queue("$QUEUE_GONGFENG_INIT_ALL_JOB${IPUtils.getInnerIP().replace(".", "")}$localPort")
 
     @Bean
     open fun initJobQueueBind(
@@ -200,6 +199,7 @@ open class JobMessageListenerConfig {
         container.setAmqpAdmin(rabbitAdmin)
         container.setStartConsumerMinInterval(10000)
         container.setConsecutiveActiveTrigger(5)
+        container.setPrefetchCount(1)
         val adapter = MessageListenerAdapter(jobChangeListener, jobChangeListener::initJobMsg.name)
         adapter.setMessageConverter(messageConverter)
         container.setMessageListener(adapter)

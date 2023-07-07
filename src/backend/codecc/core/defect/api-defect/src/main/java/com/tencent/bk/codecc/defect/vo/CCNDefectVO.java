@@ -41,8 +41,11 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ApiModel("圈复杂度缺陷视图")
-public class CCNDefectVO extends CommonVO
-{
+public class CCNDefectVO extends CommonVO {
+
+    @ApiModelProperty("告警ID")
+    private String id;
+
     /**
      * 签名，用于唯一认证
      */
@@ -172,6 +175,9 @@ public class CCNDefectVO extends CommonVO
     @ApiModelProperty(value = "告警被标记为已修改的时间")
     private Long markTime;
 
+    @ApiModelProperty(value = "标记了，但是再次扫描没有修复")
+    private Boolean markButNoFixed;
+
     /**
      * 文件相对路径
      */
@@ -238,4 +244,13 @@ public class CCNDefectVO extends CommonVO
      */
     @ApiModelProperty(value = "告警评论")
     private CodeCommentVO codeComment;
+
+    /**
+     * 是否注释忽略
+     */
+    @ApiModelProperty("是否注释忽略")
+    private Boolean ignoreCommentDefect;
+
+    @ApiModelProperty("所属任务名称")
+    private String taskNameCn;
 }

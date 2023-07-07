@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.service.impl.pipelinereport;
 
 import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository;
-import com.tencent.bk.codecc.defect.model.CLOCStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
 import com.tencent.bk.codecc.defect.model.pipelinereport.ClocSnapShotEntity;
 import com.tencent.bk.codecc.defect.model.pipelinereport.ToolSnapShotEntity;
 import com.tencent.bk.codecc.defect.service.ICheckReportBizService;
@@ -22,6 +22,9 @@ import java.util.List;
 public class CLOCCheckReportBizServiceImpl implements ICheckReportBizService {
     @Value("${bkci.public.url:#{null}}")
     private String devopsHost;
+
+    @Value("${bkci.public.schemes:http}")
+    private String devopsSchemes;
 
     @Autowired
     private TaskLogService taskLogService;
@@ -97,13 +100,18 @@ public class CLOCCheckReportBizServiceImpl implements ICheckReportBizService {
             String toolName, String projectId) {
         clocSnapShotEntity.setToolNameCn(toolMetaCacheService.getToolDisplayName(toolName));
         clocSnapShotEntity.setToolNameEn(toolName);
-        if (StringUtils.isNotEmpty(projectId))
-        {
-            String defectDetailUrl = String.format("%s/console/codecc/%s/task/%s/defect/cloc/language",
-                    devopsHost, projectId, taskId);
+        if (StringUtils.isNotEmpty(projectId)) {
+            String defectDetailUrl = String.format(
+                    "%s://%s/console/codecc/%s/task/%s/defect/cloc/language",
+                    devopsSchemes, devopsHost, projectId, taskId
+            );
+
+            String defectReportUrl = String.format(
+                    "%s://%s/console/codecc/%s/task/%s/defect/cloc/language",
+                    devopsSchemes, devopsHost, projectId, taskId
+            );
+
             clocSnapShotEntity.setDefectDetailUrl(defectDetailUrl);
-            String defectReportUrl = String.format("%s/console/codecc/%s/task/%s/defect/cloc/language",
-                    devopsHost, projectId, taskId);
             clocSnapShotEntity.setDefectReportUrl(defectReportUrl);
         }
     }

@@ -1,5 +1,6 @@
 package com.tencent.bk.codecc.defect.service.file;
 
+import com.tencent.bk.codecc.defect.vo.customtool.RepoSubModuleVO;
 import com.tencent.bk.codecc.defect.vo.customtool.ScmBlameVO;
 import com.tencent.bk.codecc.defect.vo.file.ScmFileMd5Info;
 
@@ -21,4 +22,6 @@ public interface ScmFileInfoService {
         String streamName,
         String toolName,
         String buildId);
+
+    Map<String, RepoSubModuleVO> loadRepoInfoMap(String streamName, String toolName, String buildId);
 }

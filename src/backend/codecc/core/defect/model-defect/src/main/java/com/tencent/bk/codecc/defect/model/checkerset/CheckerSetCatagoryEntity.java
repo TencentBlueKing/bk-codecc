@@ -1,6 +1,8 @@
 package com.tencent.bk.codecc.defect.model.checkerset;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 /**
@@ -10,6 +12,8 @@ import org.springframework.data.mongodb.core.mapping.Field;
  * @date 2020/1/7
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class CheckerSetCatagoryEntity
 {
     /**

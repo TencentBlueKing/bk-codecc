@@ -33,6 +33,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -50,6 +51,11 @@ import java.util.List;
 public class TaskListVO extends CommonVO
 {
 
+    public TaskListVO(List<TaskDetailVO> enableTasks, List<TaskDetailVO> disableTasks) {
+        this.enableTasks = enableTasks;
+        this.disableTasks = disableTasks;
+    }
+
     /**
      * 启用的任务清单
      */
@@ -63,4 +69,6 @@ public class TaskListVO extends CommonVO
     @ApiModelProperty(value = "停用的任务清单", required = true)
     private List<TaskDetailVO> disableTasks;
 
+    @ApiModelProperty(value = "任务清单", required = true)
+    private Page<TaskDetailVO> pageTasks;
 }

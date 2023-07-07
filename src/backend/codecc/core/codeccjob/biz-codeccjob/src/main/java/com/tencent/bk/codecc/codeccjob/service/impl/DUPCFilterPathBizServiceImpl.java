@@ -12,21 +12,23 @@
 
 package com.tencent.bk.codecc.codeccjob.service.impl;
 
-import com.tencent.bk.codecc.defect.model.DUPCDefectEntity;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.DUPCDefectRepository;
+import com.google.common.collect.Sets;
+import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.DUPCDefectDao;
 import com.tencent.bk.codecc.codeccjob.service.AbstractFilterPathBizService;
+import com.tencent.bk.codecc.defect.model.defect.DUPCDefectEntity;
 import com.tencent.bk.codecc.task.vo.FilterPathInputVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
-import com.tencent.devops.common.util.PathUtils;
+
+import java.util.ArrayList;
+import java.util.Set;
+
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * dupc类工具的路径屏蔽
@@ -36,44 +38,60 @@ import java.util.stream.Collectors;
  */
 @Service("DUPCFilterPathBizService")
 @Slf4j
-public class DUPCFilterPathBizServiceImpl extends AbstractFilterPathBizService
-{
+public class DUPCFilterPathBizServiceImpl extends AbstractFilterPathBizService {
     @Autowired
-    private DUPCDefectRepository dupcDefectRepository;
+    private DUPCDefectDao dupcDefectDao;
 
     @Override
-    public Result processBiz(FilterPathInputVO filterPathInputVO)
-    {
+    public Result processBiz(FilterPathInputVO filterPathInputVO) {
+
         // DUPC除屏蔽路径
-        List<DUPCDefectEntity> dupcFileInfoList = dupcDefectRepository.findByTaskId(filterPathInputVO.getTaskId());
-        if (CollectionUtils.isNotEmpty(dupcFileInfoList))
-        {
-            long currTime = System.currentTimeMillis();
-            List<DUPCDefectEntity> needUpdateDefectList = dupcFileInfoList.stream()
-                    .filter(defectEntity ->
-                    {
-                        String path = defectEntity.getUrl();
-                        if (StringUtils.isEmpty(path))
-                        {
-                            path = defectEntity.getRelPath();
+        Set<Integer> excludeStatusSet = Sets.newHashSet(ComConstants.DefectStatus.FIXED.value(),
+                ComConstants.DefectStatus.NEW.value() | ComConstants.DefectStatus.FIXED.value());
+        String lastId = null;
+        int size;
+        do {
+            List<DUPCDefectEntity> dupcFileInfoList = dupcDefectDao.findDefectsByFilePath(filterPathInputVO.getTaskId(),
+                    excludeStatusSet, filterPathInputVO.getFilterPaths(), PAGE_SIZE, lastId);
+            size = dupcFileInfoList.size();
+            if (size > 0) {
+                StringBuilder builder = new StringBuilder();
+                filterPathInputVO.getFilterPaths().forEach(builder::append);
+                List<DUPCDefectEntity> needUpdateDefectList = new ArrayList<>();
+                long currTime = System.currentTimeMillis();
+                dupcFileInfoList.forEach(defect -> {
+                    int status = defect.getStatus();
+                    if (filterPathInputVO.getAddFile()) {
+                        status = status | ComConstants.DefectStatus.PATH_MASK.value();
+                        defect.setMaskPath(builder.toString());
+                        if (defect.getExcludeTime() == null || defect.getExcludeTime() == 0) {
+                            defect.setExcludeTime(currTime);
                         }
-                        if (StringUtils.isEmpty(path)){
-                            path = defectEntity.getFilePath();
+                    } else {
+                        if ((status & ComConstants.DefectStatus.PATH_MASK.value()) > 0) {
+                            status = status - ComConstants.DefectStatus.PATH_MASK.value();
+                            if (status < ComConstants.DefectStatus.PATH_MASK.value()) {
+                                defect.setMaskPath(null);
+                                defect.setExcludeTime(0L);
+                            }
                         }
-                        if (StringUtils.isEmpty(path))
-                        {
-                            return false;
-                        }
-                        return PathUtils.checkIfMaskByPath(path, filterPathInputVO.getFilterPaths());
-                    })
-                    .collect(Collectors.toList());
-            needUpdateDefectList.forEach(defectEntity ->
-            {
-                defectEntity.setStatus(getUpdateStatus(filterPathInputVO, defectEntity.getStatus()));
-                defectEntity.setExcludeTime(currTime);
-            });
-            dupcDefectRepository.saveAll(needUpdateDefectList);
-        }
+                    }
+
+                    if (defect.getStatus() != status) {
+                        defect.setStatus(status);
+                        needUpdateDefectList.add(defect);
+                    }
+                });
+
+                dupcDefectDao.batchUpdateDefectStatusExcludeBit(filterPathInputVO.getTaskId(), needUpdateDefectList);
+
+                doAfterFilterPathDone(filterPathInputVO.getTaskId(), filterPathInputVO.getToolName(),
+                        needUpdateDefectList);
+
+                lastId = dupcFileInfoList.get(size - 1).getEntityId();
+            }
+        } while (size == PAGE_SIZE);
+
         return new Result(CommonMessageCode.SUCCESS);
     }
 }

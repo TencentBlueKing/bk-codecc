@@ -4,18 +4,21 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 @Data
 @Document(collection = "t_metrics")
 @AllArgsConstructor
 @NoArgsConstructor
 @CompoundIndexes(
-    @CompoundIndex(name = "taskid_buildid_idx", def = "{'task_id':1, 'build':1}", background = true)
+    @CompoundIndex(name = "taskid_buildid_idx_1", def = "{'task_id':1, 'build_id':1}", background = true)
 )
+@Sharded(shardKey = "task_id")
 public class MetricsEntity {
     public MetricsEntity(Long taskId, String buildId, double codeStyleScore, double codeSecurityScore, double codeMeasureScore, double rdIndicatorsScore) {
         this.taskId = taskId;
@@ -93,4 +96,7 @@ public class MetricsEntity {
 
     @Field("code_security_serious_defect_count")
     private int codeSecuritySeriousDefectCount;
+
+    @Transient
+    private Long time;
 }

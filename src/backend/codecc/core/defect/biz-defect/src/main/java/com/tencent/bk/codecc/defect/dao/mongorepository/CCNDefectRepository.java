@@ -26,14 +26,13 @@
 
 package com.tencent.bk.codecc.defect.dao.mongorepository;
 
-import com.tencent.bk.codecc.defect.model.CCNDefectEntity;
-import com.tencent.bk.codecc.defect.model.LintFileEntity;
+import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
+import java.util.List;
+import java.util.Set;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
-import java.util.Set;
 
 /**
  * 圈复杂度文件查询持久代码
@@ -42,8 +41,7 @@ import java.util.Set;
  * @date 2019/5/28
  */
 @Repository
-public interface CCNDefectRepository extends MongoRepository<CCNDefectEntity, String>
-{
+public interface CCNDefectRepository extends MongoRepository<CCNDefectEntity, String> {
 
     /**
      * 通过主键id寻找圈复杂度信息
@@ -53,6 +51,15 @@ public interface CCNDefectRepository extends MongoRepository<CCNDefectEntity, St
      */
     CCNDefectEntity findFirstByEntityId(String entityId);
 
+    /**
+     * 根据告警ID分页列表查询CCN告警信息
+     *
+     * @param entityIds
+     * @param pageable
+     * @return
+     */
+    @Query(fields = "{'url':0}", value = "{'_id': {'$in': ?0}}")
+    List<CCNDefectEntity> findByEntityIdIn(Set<String> entityIds, Pageable pageable);
 
     /**
      * 通过任务id，工具名和状态查询告警信息
@@ -62,6 +69,8 @@ public interface CCNDefectRepository extends MongoRepository<CCNDefectEntity, St
      * @return
      */
     List<CCNDefectEntity> findByTaskIdAndStatus(long taskId, int status);
+
+    List<CCNDefectEntity> findByTaskIdInAndStatus(List<Long> taskId, int status);
 
     /**
      * 通过任务id，工具、文件路径
@@ -91,7 +100,17 @@ public interface CCNDefectRepository extends MongoRepository<CCNDefectEntity, St
 
 
     /**
+     * 根据告警ID列表查询
+     *
+     * @param entityIds
+     * @return
+     */
+    List<CCNDefectEntity> findByTaskIdAndEntityIdIn(Long taskId, Set<String> entityIds);
+
+
+    /**
      * 删除原数据
+     *
      * @param taskId
      */
     void deleteByTaskIdIsAndPinpointHashIsNull(Long taskId);
@@ -116,4 +135,16 @@ public interface CCNDefectRepository extends MongoRepository<CCNDefectEntity, St
 
     @Query(fields = "{'ccn':1, 'status':1}", value = "{'task_id': ?0, 'status': {'$gt':1}}")
     List<CCNDefectEntity> findCloseDefectByTaskId(Long taskId);
+
+    /**
+     * 查询告警自增ID是空的数据
+     *
+     * @param taskId
+     * @return
+     */
+    List<CCNDefectEntity> findByTaskIdAndIdIsNull(long taskId);
+
+
+    List<CCNDefectEntity> findByEntityIdInAndStatusIn(Set<String> idSet, Set<Integer> statusSet);
+
 }

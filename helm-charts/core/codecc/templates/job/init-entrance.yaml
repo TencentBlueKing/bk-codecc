@@ -3,13 +3,13 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ include "common.names.fullname" . }}-init-entrance
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
+  labels: {{- include "codecc.labels.standard" . | nindent 4 }}
     app.kubernetes.io/component: init-entrance
     {{- if .Values.commonLabels }}
       {{- include "common.tplvalues.render" (dict "value" .Values.commonLabels "context" $) | nindent 4 }}
     {{- end }}
   annotations:
-    "helm.sh/hook": post-install
+    "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
     {{- if .Values.commonAnnotations }}
@@ -18,7 +18,7 @@ metadata:
 spec:
   template:
     metadata:
-      labels: {{- include "common.labels.standard" . | nindent 8 }}
+      labels: {{- include "codecc.labels.standard" . | nindent 8 }}
         app.kubernetes.io/component: init-entrance
     spec:
       containers:

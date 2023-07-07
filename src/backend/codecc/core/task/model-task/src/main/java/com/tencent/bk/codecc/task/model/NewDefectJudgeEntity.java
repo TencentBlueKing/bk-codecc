@@ -10,8 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
  * @date 2019/12/3
  */
 @Data
-public class NewDefectJudgeEntity
-{
+public class NewDefectJudgeEntity {
     /**
      * 判定方式1：按日期；2：按构建
      */

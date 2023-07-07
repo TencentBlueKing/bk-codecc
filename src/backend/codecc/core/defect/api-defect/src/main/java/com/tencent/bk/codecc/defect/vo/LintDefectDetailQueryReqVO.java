@@ -78,7 +78,4 @@ public class LintDefectDetailQueryReqVO extends CommonDefectDetailQueryReqVO
 
     @ApiModelProperty(value = "告警类型:新增(1),历史(2)", allowableValues = "{1,2}")
     private Set<String> defectType;
-
-    @ApiModelProperty(value = "构建ID")
-    private String buildId;
 }

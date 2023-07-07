@@ -26,10 +26,16 @@
 
 package com.tencent.bk.codecc.defect.service;
 
+import com.tencent.bk.codecc.defect.model.defect.DefectEntity;
+import com.tencent.bk.codecc.defect.model.redline.RedLineExtraParams;
 import com.tencent.bk.codecc.defect.vo.redline.PipelineRedLineCallbackVO;
+import com.tencent.bk.codecc.defect.vo.redline.RedLineVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 
+import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
+import com.tencent.devops.common.api.ToolMetaBaseVO;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 上报质量红线服务
@@ -37,8 +43,8 @@ import java.util.List;
  * @version V1.0
  * @date 2019/7/4
  */
-public interface RedLineReportService
-{
+public interface RedLineReportService<T extends DefectEntity> {
+
     /**
      * 保存质量红线数据
      *
@@ -46,14 +52,30 @@ public interface RedLineReportService
      * @param toolName
      * @param buildId
      */
-    void saveRedLineData(TaskDetailVO taskDetailVO, String toolName, String buildId);
+    void saveRedLineData(TaskDetailVO taskDetailVO, String toolName, String buildId, List<T> newDefectList);
 
     /**
-     * 获取流水线质量红线数据
+     * 保存质量红线数据
      *
      * @param taskDetailVO
+     * @param toolName
      * @param buildId
-     * @return
      */
-    PipelineRedLineCallbackVO getPipelineCallback(TaskDetailVO taskDetailVO, String buildId);
+    void saveRedLineData(TaskDetailVO taskDetailVO, String toolName, String buildId, List<T> newDefectList,
+                         RedLineExtraParams<T> extraParams);
+
+    /**
+     * 获取相应工具的红线指标数据
+     *
+     * @param taskDetailVO
+     * @param toolInfo
+     * @param toolConfig
+     * @param metadataModel
+     * @param metadataCallback
+     * @param effectiveTools
+     */
+    void getAnalysisResult(TaskDetailVO taskDetailVO, ToolMetaBaseVO toolInfo,
+            ToolConfigInfoVO toolConfig, Map<String, RedLineVO> metadataModel,
+            PipelineRedLineCallbackVO metadataCallback, List<String> effectiveTools, String buildId,
+            List<T> newDefectList, RedLineExtraParams<T> extraParams);
 }

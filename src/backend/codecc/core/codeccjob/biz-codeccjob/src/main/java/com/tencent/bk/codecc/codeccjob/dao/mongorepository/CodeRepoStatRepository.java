@@ -32,7 +32,7 @@ public interface CodeRepoStatRepository extends MongoRepository<CodeRepoStatisti
      * @param url      代码库地址
      * @return entity
      */
-    CodeRepoStatisticEntity findOneByDataFromAndUrl(String dataFrom, String url);
+    CodeRepoStatisticEntity findFirstByDataFromAndUrl(String dataFrom, String url);
 
     /**
      * 获取指定唯一的代码仓库统计信息

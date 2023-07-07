@@ -29,10 +29,11 @@ package com.tencent.bk.codecc.task.api;
 import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
 import com.tencent.bk.codecc.task.vo.GrayToolReportVO;
 import com.tencent.bk.codecc.task.vo.TriggerGrayToolVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -41,6 +42,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Set;
@@ -60,23 +62,20 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
 @Consumes(MediaType.APPLICATION_JSON)
 public interface BuildGrayToolProjectRestResource {
     @ApiOperation("灰度项目数据更新")
-    @Path("/pool/toolName/{toolName}")
+    @Path("/pool/toolName/{toolName}/stage/{stage}")
     @POST
     Result<Boolean> createGrayTaskPool(
-        @ApiParam(value = "工具名", required = true)
-        @PathParam("toolName")
-            String toolName,
-        @ApiParam(value = "工具名", required = true)
-        @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-            String user);
+            @ApiParam(value = "工具名", required = true) @PathParam("toolName") String toolName,
+            @ApiParam(value = "阶段", required = true) @PathParam("stage") String stage,
+            @ApiParam(value = "当前用户", required = true) @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String user);
 
     @ApiOperation("触发灰度池项目")
-    @Path("/pool/trigger/toolName/{toolName}")
-    @POST
+    @Path("/pool/trigger/toolName/{toolName}/taskNum")
+    @GET
     Result<TriggerGrayToolVO> triggerGrayTaskPool(
-            @ApiParam(value = "工具名", required = true)
-            @PathParam("toolName")
-            String toolName);
+            @ApiParam(value = "工具名", required = true) @PathParam("toolName") String toolName,
+            @ApiParam(value = "执行任务数", required = false) @QueryParam("taskNum") String taskNum
+    );
 
     @ApiOperation("查询灰度报告")
     @Path("/report/toolName/{toolName}/codeccBuildId/{codeccBuildId}")

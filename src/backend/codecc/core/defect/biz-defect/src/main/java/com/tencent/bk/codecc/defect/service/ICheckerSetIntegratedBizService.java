@@ -28,16 +28,20 @@ package com.tencent.bk.codecc.defect.service;
 
 import com.tencent.devops.common.constant.ComConstants;
 
+import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import java.util.Set;
 
 public interface ICheckerSetIntegratedBizService {
 
-    String updateToStatus(String toolName,
-                          String buildId,
-                          ComConstants.ToolIntegratedStatus status,
-                          String user,
-                          Set<String> checkerSetIds,
-                          Set<String> changeCheckerIds);
+    String updateToStatus(
+            String toolName,
+            String buildId,
+            ToolIntegratedStatus fromStatus,
+            ToolIntegratedStatus toStatus,
+            String user,
+            Set<String> checkerSetIds,
+            Set<String> changeCheckerIds
+    );
 
     String revertStatus(String toolName,
                         ComConstants.ToolIntegratedStatus status,

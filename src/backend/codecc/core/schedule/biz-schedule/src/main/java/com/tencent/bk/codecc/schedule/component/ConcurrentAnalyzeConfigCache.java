@@ -18,7 +18,7 @@ import com.google.common.cache.LoadingCache;
 import com.tencent.bk.codecc.task.api.ServiceBaseDataResource;
 import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import lombok.extern.slf4j.Slf4j;

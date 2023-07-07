@@ -15,7 +15,7 @@ package com.tencent.bk.codecc.schedule.resources;
 import com.tencent.bk.codecc.schedule.api.ServiceScheduleRestResource;
 import com.tencent.bk.codecc.schedule.service.ScheduleService;
 import com.tencent.bk.codecc.schedule.vo.FreeVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.web.RestResource;
 import org.springframework.beans.factory.annotation.Autowired;
 

@@ -27,7 +27,7 @@
 package com.tencent.bk.codecc.defect.service.impl.pipelinereport;
 
 import com.tencent.bk.codecc.defect.dao.mongorepository.DUPCStatisticRepository;
-import com.tencent.bk.codecc.defect.model.DUPCStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.DUPCStatisticEntity;
 import com.tencent.bk.codecc.defect.model.pipelinereport.DUPCSnapShotEntity;
 import com.tencent.bk.codecc.defect.model.pipelinereport.ToolSnapShotEntity;
 import com.tencent.bk.codecc.defect.service.ICheckReportBizService;
@@ -57,6 +57,9 @@ public class DUPCCheckReportBizServiceImpl implements ICheckReportBizService
     @Value("${bkci.public.url:#{null}}")
     private String devopsHost;
 
+    @Value("${bkci.public.schemes:http}")
+    private String devopsSchemes;
+
     @Override
     public ToolSnapShotEntity getReport(long taskId, String projectId, String toolName, String buildId)
     {
@@ -85,13 +88,18 @@ public class DUPCCheckReportBizServiceImpl implements ICheckReportBizService
         //获取工具信息
         dupcSnapShotEntity.setToolNameCn(toolMetaCacheService.getToolDisplayName(toolName));
         dupcSnapShotEntity.setToolNameEn(toolName);
-        if (StringUtils.isNotEmpty(projectId))
-        {
-            String defectDetailUrl = String.format("%s/console/codecc/%s/task/%d/defect/dupc/list",
-                    devopsHost, projectId, taskId);
+        if (StringUtils.isNotEmpty(projectId)) {
+            String defectDetailUrl = String.format(
+                    "%s://%s/console/codecc/%s/task/%d/defect/dupc/list",
+                    devopsSchemes, devopsHost, projectId, taskId
+            );
+
+            String defectReportUrl = String.format(
+                    "%s://%s/console/codecc/%s/task/%d/defect/dupc/charts",
+                    devopsSchemes, devopsHost, projectId, taskId
+            );
+
             dupcSnapShotEntity.setDefectDetailUrl(defectDetailUrl);
-            String defectReportUrl = String.format("%s/console/codecc/%s/task/%d/defect/dupc/charts",
-                    devopsHost, projectId, taskId);
             dupcSnapShotEntity.setDefectReportUrl(defectReportUrl);
         }
     }

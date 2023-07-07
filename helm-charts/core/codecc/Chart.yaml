@@ -1,9 +1,9 @@
 apiVersion: v2
-name: codecc
+name: bk-codecc
 description: A Helm chart for CodeCC
 type: application
-version: 1.1.50
-appVersion: 1.1.50
+version: 1.1.40
+appVersion: 1.1.40
 home: "https://github.com/Tencent/bk-ci"
 
 dependencies:

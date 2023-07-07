@@ -34,8 +34,7 @@ import com.tencent.devops.common.web.aop.model.OperationHistoryDTO;
  * @version V1.0
  * @date 2019/6/17
  */
-public interface OperationHistoryService
-{
+public interface OperationHistoryService {
     /**
      * 保存操作记录信息
      *

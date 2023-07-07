@@ -6,6 +6,7 @@ import io.swagger.annotations.ApiModel;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 代码仓库信息视图
@@ -48,6 +49,11 @@ public class UploadRepositoriesVO extends CommonVO
     private List<String> deleteFiles;
 
     /**
+     * 根路径列表
+     */
+    private Set<String> rootPaths;
+
+    /**
      * 本次启动的工具列表
      */
     private List<String> triggerToolNames;
@@ -56,4 +62,9 @@ public class UploadRepositoriesVO extends CommonVO
      * 扫描目录白名单
      */
     private List<String> repoWhiteList;
+
+    /**
+     * 拉取仓库子路径
+     */
+    private List<String> repoRelativePathList;
 }

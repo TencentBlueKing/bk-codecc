@@ -26,7 +26,7 @@
 
 package com.tencent.devops.common.web.handler
 
-import com.tencent.devops.common.api.pojo.Result
+import com.tencent.devops.common.api.pojo.codecc.Result
 import com.tencent.devops.common.constant.CommonMessageCode
 import org.slf4j.LoggerFactory
 import javax.validation.ConstraintViolationException

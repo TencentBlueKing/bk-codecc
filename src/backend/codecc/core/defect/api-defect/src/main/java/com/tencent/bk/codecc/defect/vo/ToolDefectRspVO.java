@@ -107,9 +107,6 @@ public class ToolDefectRspVO
     @ApiModelProperty("缺陷列表")
     private Page<CCNDefectVO> ccnDefectList;
 
-    @ApiModelProperty("新老告警判定时间")
-    private Long newDefectJudgeTime;
-
     @ApiModelProperty("重复率缺陷列表")
     private Page<DUPCDefectVO> dupcDefectList;
 

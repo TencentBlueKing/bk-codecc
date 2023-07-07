@@ -2,11 +2,11 @@ package com.tencent.devops.common.auth.api
 
 import com.tencent.devops.auth.api.service.ServicePermissionAuthResource
 import com.tencent.devops.common.auth.api.external.AbstractAuthExPermissionApi
-import com.tencent.devops.common.auth.api.external.AuthTaskService
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction
 import com.tencent.devops.common.auth.api.pojo.external.model.BkAuthExResourceActionModel
+import com.tencent.devops.common.auth.api.service.AuthTaskService
 import com.tencent.devops.common.auth.pojo.GithubAuthProperties
-import com.tencent.devops.common.auth.utils.AuthActionConvertUtils
+import com.tencent.devops.common.auth.api.util.AuthActionConvertUtils
 import com.tencent.devops.common.client.Client
 import org.springframework.data.redis.core.RedisTemplate
 
@@ -51,6 +51,10 @@ class GithubAuthExPermissionApi(client: Client,
         }
     }
 
+    override fun queryPipelineUserListForAction(taskId: String, projectId: String, actions: Set<String>): List<String> {
+        return emptyList()
+    }
+
     override fun queryTaskUserListForAction(taskId: String, projectId: String, actions: Set<String>): List<String> {
         return authTaskService.queryTaskUserListForAction(taskId, projectId, actions)
     }
@@ -71,16 +75,16 @@ class GithubAuthExPermissionApi(client: Client,
         return listOf(BkAuthExResourceActionModel(isPass = true))
     }
 
-    override fun validateGongfengPermission(user: String, taskId: String, projectId: String, actions: List<CodeCCAuthAction>): Boolean {
-        return true
-    }
-
     override fun authProjectManager(projectId: String, user: String): Boolean {
         return false
     }
 
+    override fun authProjectMultiManager(projectId: String, user: String): Boolean {
+        return false
+    }
+
     override fun authProjectRole(projectId: String, user: String, role: String?): Boolean {
-        return true
+        return false
     }
 
 

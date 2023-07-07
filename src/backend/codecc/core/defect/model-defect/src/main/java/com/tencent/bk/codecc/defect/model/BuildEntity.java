@@ -40,8 +40,8 @@ import org.springframework.data.mongodb.core.mapping.Field;
  */
 @Data
 @Document(collection = "t_build")
-public class BuildEntity
-{
+public class BuildEntity {
+
     @Id
     private String entityId;
 

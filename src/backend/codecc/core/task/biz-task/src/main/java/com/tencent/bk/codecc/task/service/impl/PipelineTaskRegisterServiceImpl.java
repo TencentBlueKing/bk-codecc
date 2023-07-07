@@ -10,12 +10,14 @@
  *
  * Terms of the MIT License:
  * ---------------------------------------------------
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use, copy,
+ * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+ * persons to whom the Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial
+ * portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
  * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -33,37 +35,49 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.api.ServiceCheckerSetRestResource;
 import com.tencent.bk.codecc.defect.api.ServiceToolBuildInfoResource;
+import com.tencent.bk.codecc.task.component.BaseDataCommonCache;
 import com.tencent.bk.codecc.task.constant.TaskConstants;
+import com.tencent.bk.codecc.task.constant.TaskMessageCode;
 import com.tencent.bk.codecc.task.dao.mongorepository.BaseDataRepository;
+import com.tencent.bk.codecc.task.dao.mongotemplate.TaskDao;
 import com.tencent.bk.codecc.task.model.BaseDataEntity;
 import com.tencent.bk.codecc.task.model.CustomProjEntity;
+import com.tencent.bk.codecc.task.model.OpenSourceCheckerSet;
+import com.tencent.bk.codecc.task.model.SpecialCheckerSetConfig;
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
 import com.tencent.bk.codecc.task.service.AbstractTaskRegisterService;
+import com.tencent.bk.codecc.task.utils.CommonKafkaClient;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.TaskIdVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.exception.StreamException;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.CheckerSetType;
 import com.tencent.devops.common.constant.ComConstants.OpenSourceCheckerSetType;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.constant.CommonMessageCode;
-import com.tencent.devops.common.util.JsonUtil;
+import com.tencent.devops.common.service.prometheus.BkTimed;
+import com.tencent.devops.common.codecc.util.JsonUtil;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -83,54 +97,88 @@ import org.springframework.stereotype.Service;
  */
 @Service("pipelineTaskRegisterService")
 @Slf4j
-public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
-{
+public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService {
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
     @Autowired
+    private CommonKafkaClient commonKafkaClient;
+
+    @Autowired
     private BaseDataRepository baseDataRepository;
 
-    @Override
-    public TaskIdVO registerTask(TaskDetailVO taskDetailVO, String userName)
-    {
-        setCreateFrom(taskDetailVO);
-        taskDetailVO.setNameCn(handleCnName(taskDetailVO.getPipelineName()));
+    @Autowired
+    private BaseDataCommonCache baseDataCommonCache;
 
+    @Autowired
+    private TaskDao taskDao;
+
+
+    @BkTimed(value = "register_task")
+    @Override
+    public TaskIdVO registerTask(TaskDetailVO taskDetailVO, String userName) {
+        if (StringUtils.isBlank(taskDetailVO.getMultiPipelineMark())) {
+            taskDetailVO.setMultiPipelineMark(null);
+        }
+        setCreateFrom(taskDetailVO);
+        String nameCn = handleCnName(taskDetailVO.getPipelineName());
+        if (StringUtils.isNotBlank(taskDetailVO.getMultiPipelineMark())) {
+            nameCn = String.format("%s(%s)", nameCn, taskDetailVO.getMultiPipelineMark());
+        }
+        taskDetailVO.setNameCn(nameCn);
         TaskInfoEntity taskInfoEntity;
-        if (taskDetailVO.getTaskId() > 0L)
-        {
+        if (taskDetailVO.getTaskId() > 0L) {
             taskInfoEntity = taskRepository.findFirstByTaskId(taskDetailVO.getTaskId());
-        }
-        else if (StringUtils.isNotEmpty(taskDetailVO.getPipelineId()))
-        {
-            taskInfoEntity = taskRepository.findFirstByPipelineId(taskDetailVO.getPipelineId());
-        }
-        else
-        {
+        } else if (StringUtils.isNotEmpty(taskDetailVO.getPipelineId())) {
+            //先判断，如果超过50条流水线，则报错
+            Long pipelineNum = taskRepository.countByPipelineId(taskDetailVO.getPipelineId());
+            Integer defaultPipelineTaskLimit = baseDataCommonCache.getDefaultPipelineTaskLimit();
+            if (pipelineNum >= defaultPipelineTaskLimit) {
+                //判断是否单独设置了阙值
+                BaseDataEntity entity = baseDataRepository.findFirstByParamTypeAndParamCode(
+                        ComConstants.KEY_PIPELINE_TASK_LIMIT, taskDetailVO.getPipelineId());
+                Integer pipelineTaskLimit = entity == null || StringUtils.isEmpty(entity.getParamValue()) ? null :
+                        Integer.parseInt(entity.getParamValue());
+                if (pipelineTaskLimit == null || pipelineNum > pipelineTaskLimit) {
+                    Integer limit = pipelineTaskLimit != null ? pipelineTaskLimit : defaultPipelineTaskLimit;
+                    log.info("pipeline : {} task number : {}  is larger than {}", taskDetailVO.getPipelineId(),
+                            pipelineNum, limit);
+                    throw new CodeCCException(TaskMessageCode.PIPELINE_TASK_REACH_LIMIT,
+                            new String[]{String.valueOf(limit)},
+                            String.format("该流水线的代码分析任务数达到上限: %d，"
+                                    + "请删除不必要的任务，或者联系DevOps-helper处理。", limit), null);
+                }
+            }
+            /*
+             * 添加一条流水线对应多个代码扫描任务的逻辑
+             */
+            taskInfoEntity = taskRepository.findFirstByPipelineIdAndMultiPipelineMark(taskDetailVO.getPipelineId(),
+                    taskDetailVO.getMultiPipelineMark());
+        } else {
             // 工蜂创建任务时，是没有传pipelineId的，而且工蜂的任务的流名称是根据projectId和pipelineName生成的
-            String nameEn = getTaskStreamName(taskDetailVO.getProjectId(), taskDetailVO.getNameCn(), taskDetailVO.getCreateFrom());
+            String nameEn = getTaskStreamName(taskDetailVO.getProjectId(),
+                    taskDetailVO.getNameCn(), taskDetailVO.getCreateFrom());
             taskDetailVO.setNameEn(nameEn);
             taskInfoEntity = taskRepository.findFirstByNameEn(nameEn);
         }
 
         //已注册且是工蜂来源
-        if (taskInfoEntity != null && null != taskInfoEntity.getGongfengFlag())
-        {
-            if(taskInfoEntity.getGongfengFlag())
-            {
+        if (taskInfoEntity != null && null != taskInfoEntity.getGongfengFlag()) {
+            if (taskInfoEntity.getGongfengFlag()) {
                 log.info("the task from Gongfeng has been registered");
-                if(StringUtils.isBlank(taskDetailVO.getDevopsTools()))
-                {
+                if (StringUtils.isBlank(taskDetailVO.getDevopsTools())) {
                     try {
-                        taskDetailVO.setDevopsTools(JsonUtil.INSTANCE.getObjectMapper().writeValueAsString(new ArrayList<String>(){{add("CLOC");}}));
+                        taskDetailVO.setDevopsTools(JsonUtil.INSTANCE.getObjectMapper()
+                                .writeValueAsString(new ArrayList<String>() {{
+                            add("SCC");
+                        }
+                                }));
                     } catch (JsonProcessingException e) {
                         e.printStackTrace();
                         log.error("serialize task tool list fail! task id: {}", taskDetailVO.getTaskId(), e);
                     }
                 }
-                if(null != taskDetailVO.getGongfengFlag() && !taskDetailVO.getGongfengFlag())
-                {
+                if (null != taskDetailVO.getGongfengFlag() && !taskDetailVO.getGongfengFlag()) {
                     taskInfoEntity.setGongfengFlag(false);
                     // 更新任务信息
                     updateTaskInfo(taskDetailVO, taskInfoEntity, userName);
@@ -139,26 +187,22 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
                     upsertTools(taskDetailVO, taskInfoEntity, userName);
                 }
             }
-        }
-        //已注册
-        else if (taskInfoEntity != null)
-        {
+        } else if (taskInfoEntity != null) {
+            //已注册
             log.info("the task has been registered");
 
             updateTaskInfo(taskDetailVO, taskInfoEntity, userName);
 
             // 添加或者更新工具配置
             upsertTools(taskDetailVO, taskInfoEntity, userName);
-        }
-        //来自工蜂且未注册
-        else if (taskDetailVO.getGongfengFlag() != null)
-        {
+        } else if (taskDetailVO.getGongfengFlag() != null) {
+            //来自工蜂且未注册
             log.info("begin to create task from Gongfeng");
-            String nameEn = getTaskStreamName(taskDetailVO.getProjectId(), taskDetailVO.getNameCn(), taskDetailVO.getCreateFrom());
+            String nameEn = getTaskStreamName(taskDetailVO.getProjectId(),
+                    taskDetailVO.getNameCn(), taskDetailVO.getCreateFrom());
             taskDetailVO.setNameEn(nameEn);
             taskInfoEntity = createTask(taskDetailVO, userName);
-            if(null != taskDetailVO.getCustomProjInfo())
-            {
+            if (null != taskDetailVO.getCustomProjInfo()) {
                 CustomProjEntity customProjEntity = new CustomProjEntity();
                 BeanUtils.copyProperties(taskDetailVO.getCustomProjInfo(), customProjEntity);
                 taskInfoEntity.setCustomProjInfo(customProjEntity);
@@ -168,26 +212,36 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
 
             //添加或者更新工具配置
             upsertTools(taskDetailVO, taskInfoEntity, userName);
-        }
-        //来自个性化触发且未注册
-        else if (taskInfoEntity == null)
-        {
+        } else {
+            //来自个性化触发且未注册
             log.info("begin to create task");
-            if (StringUtils.isNotEmpty(taskDetailVO.getDevopsCodeLang()))
-            {
-                taskDetailVO.setCodeLang(pipelineService.convertDevopsCodeLangToCodeCC(taskDetailVO.getDevopsCodeLang()));
+            if (StringUtils.isNotEmpty(taskDetailVO.getDevopsCodeLang())) {
+                taskDetailVO.setCodeLang(
+                        pipelineService.convertDevopsCodeLangToCodeCC(taskDetailVO.getDevopsCodeLang()));
             }
-            String nameEn = getTaskStreamName(taskDetailVO.getProjectId(), taskDetailVO.getPipelineId(), taskDetailVO.getCreateFrom());
+            String finalPipelineId = taskDetailVO.getPipelineId();
+            if (StringUtils.isNotBlank(taskDetailVO.getMultiPipelineMark())) {
+                finalPipelineId = String.format("%s_%s", finalPipelineId, taskDetailVO.getMultiPipelineMark());
+            }
+            String nameEn = getTaskStreamName(taskDetailVO.getProjectId(), finalPipelineId,
+                    taskDetailVO.getCreateFrom());
             taskDetailVO.setNameEn(nameEn);
             taskInfoEntity = createTask(taskDetailVO, userName);
+            //发送数据到数据平台
+            commonKafkaClient.pushTaskDetailToKafka(taskInfoEntity);
 
             //添加或者更新工具配置
             upsertTools(taskDetailVO, taskInfoEntity, userName);
+
+            // 为任务添加流水线构建完成回调
+            checkAndAddPipelineFinishCallBack(taskInfoEntity.getProjectId(), taskInfoEntity.getPipelineId(), userName);
+
+            //发送数据到数据平台
+//            sendTaskDetail(taskInfoEntity);
         }
-        else
-        {
-            log.error("Project status exception! bs_pipeline_id={}", taskDetailVO.getPipelineId());
-            throw new CodeCCException(CommonMessageCode.RECORD_NOT_EXITS, new String[]{"项目信息"}, null);
+        // 前面存在已注册的的逻辑，先判断是否已有bg信息
+        if (taskInfoEntity.getBgId() <= 0) {
+            refreshOrgInfo(taskInfoEntity.getTaskId());
         }
 
         log.info("register task from pipeline successfully! task: {}", taskInfoEntity);
@@ -195,15 +249,15 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
     }
 
     @Override
-    public Boolean updateTask(TaskDetailVO taskDetailVO, String userName)
-    {
+    public Boolean updateTask(TaskDetailVO taskDetailVO, String userName) {
         long taskId = taskDetailVO.getTaskId();
         TaskInfoEntity taskInfoEntity = taskRepository.findFirstByTaskId(taskId);
-        if (StringUtils.isEmpty(taskInfoEntity.getProjectId()) ||
-                !ComConstants.BsTaskCreateFrom.BS_PIPELINE.value().equalsIgnoreCase(taskInfoEntity.getCreateFrom()))
-        {
+        if (StringUtils.isEmpty(taskInfoEntity.getProjectId())
+                || !ComConstants.BsTaskCreateFrom.BS_PIPELINE.value()
+                .equalsIgnoreCase(taskInfoEntity.getCreateFrom())) {
             log.error("task not from pipeline should be updated, task id: {}", taskId);
-            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{String.valueOf(taskId)}, null);
+            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID,
+                    new String[]{String.valueOf(taskId)}, null);
         }
 
         //更新任务信息
@@ -224,25 +278,20 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
      * @param taskInfoEntity
      * @param userName
      */
-    private void updateTaskInfo(TaskDetailVO taskDetailVO, TaskInfoEntity taskInfoEntity, String userName)
-    {
+    private void updateTaskInfo(TaskDetailVO taskDetailVO, TaskInfoEntity taskInfoEntity, String userName) {
         taskInfoEntity.setStatus(TaskConstants.TaskStatus.ENABLE.value());
         taskInfoEntity.setDisableTime("");
 
-        try
-        {
+        try {
             taskInfoEntity.setCodeLang(pipelineService.convertDevopsCodeLangToCodeCC(taskDetailVO.getDevopsCodeLang()));
             taskDetailVO.setCodeLang(taskInfoEntity.getCodeLang());
-        }
-        catch (StreamException e)
-        {
+        } catch (StreamException e) {
             log.error("deserialize devops code lang fail! code lang info: {}", taskDetailVO);
             throw new CodeCCException(UTIL_EXECUTE_FAIL);
         }
 
         // 支持新老插件切换
-        if (StringUtils.isEmpty(taskInfoEntity.getAtomCode()) && StringUtils.isNotEmpty(taskDetailVO.getAtomCode()))
-        {
+        if (StringUtils.isEmpty(taskInfoEntity.getAtomCode()) && StringUtils.isNotEmpty(taskDetailVO.getAtomCode())) {
             taskDetailVO.setOldAtomCodeChangeToNew(true);
         }
         taskInfoEntity.setAtomCode(taskDetailVO.getAtomCode());
@@ -255,12 +304,16 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
         taskInfoEntity.setCompilePlat(taskDetailVO.getCompilePlat());
         taskInfoEntity.setOsType(taskDetailVO.getOsType());
         taskInfoEntity.setProjectBuildType(taskDetailVO.getProjectBuildType());
-        taskInfoEntity.setProjectBuildCommand(taskDetailVO.getProjectBuildCommand());
+        // 判断脚本是否更改，先不更新
+        // taskInfoEntity.setProjectBuildCommand(taskDetailVO.getProjectBuildCommand());
         taskInfoEntity.setUpdatedBy(userName);
         taskInfoEntity.setUpdatedDate(System.currentTimeMillis());
+        taskInfoEntity.setAutoLang(taskDetailVO.getAutoLang());
+        taskInfoEntity.setCheckerSetType(taskDetailVO.getCheckerSetType() == null ? CheckerSetType.NORMAL.value()
+                : taskDetailVO.getCheckerSetType().value());
+        taskInfoEntity.setCheckerSetEnvType(taskDetailVO.getCheckerSetEnvType());
         //流水线id也要更新
-        if (StringUtils.isNotBlank(taskDetailVO.getPipelineId()))
-        {
+        if (StringUtils.isNotBlank(taskDetailVO.getPipelineId())) {
             taskInfoEntity.setPipelineId(taskDetailVO.getPipelineId());
         }
         taskRepository.save(taskInfoEntity);
@@ -268,28 +321,25 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
 
     /**
      * 为工蜂做工具注册
+     *
      * @param taskDetailVO
      * @param taskInfoEntity
      * @param userName
      */
-    private void upsertToolsForGongfeng(TaskDetailVO taskDetailVO, TaskInfoEntity taskInfoEntity, String userName)
-    {
+    private void upsertToolsForGongfeng(TaskDetailVO taskDetailVO, TaskInfoEntity taskInfoEntity, String userName) {
         // 初始化工具列表
         Set<String> reqToolSet = new HashSet<>();
         String devopsTools = taskDetailVO.getDevopsTools();
         JSONArray newToolJsonArray = new JSONArray(devopsTools);
-        for (int i = 0; i < newToolJsonArray.length(); i++)
-        {
-            if (StringUtils.isNotEmpty(newToolJsonArray.getString(i)))
-            {
+        for (int i = 0; i < newToolJsonArray.length(); i++) {
+            if (StringUtils.isNotEmpty(newToolJsonArray.getString(i))) {
                 reqToolSet.add(newToolJsonArray.getString(i));
             }
         }
         log.info("req tools: {}, {}", reqToolSet.size(), reqToolSet.toString());
 
         List<ToolConfigInfoVO> toolList = new ArrayList<>();
-        reqToolSet.forEach(toolName ->
-        {
+        reqToolSet.forEach(toolName -> {
             ToolConfigInfoVO toolConfigInfoVO = instBatchToolInfoModel(taskDetailVO, toolName);
             toolList.add(toolConfigInfoVO);
         });
@@ -300,10 +350,10 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
         upsert(taskDetailVO, taskInfoEntity, userName, forceFullScanTools);
 
         // 设置强制全量扫描标志
-        if (CollectionUtils.isNotEmpty(forceFullScanTools))
-        {
+        if (CollectionUtils.isNotEmpty(forceFullScanTools)) {
             log.info("set force full scan, taskId:{}, toolNames:{}", taskDetailVO.getTaskId(), forceFullScanTools);
-            client.get(ServiceToolBuildInfoResource.class).setForceFullScan(taskDetailVO.getTaskId(), forceFullScanTools);
+            client.get(ServiceToolBuildInfoResource.class)
+                    .setForceFullScan(taskDetailVO.getTaskId(), forceFullScanTools);
         }
     }
 
@@ -315,29 +365,12 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
      * @param taskInfoEntity
      * @param userName
      */
-    private void upsertTools(TaskDetailVO taskDetailVO, TaskInfoEntity taskInfoEntity, String userName)
-    {
-        boolean isOpenSource = configCheckerSetByType(taskDetailVO);
-        /*if (taskDetailVO.getLanguages() != null && !taskDetailVO.getLanguages().isEmpty()) {
-            // 构造代码行扫描规则
-            CheckerSetVO clocCheckerSet = new CheckerSetVO();
-            clocCheckerSet.setCheckerSetId("standard_cloc");
-            clocCheckerSet.setToolList(Collections.singleton(Tool.CLOC.name()));
-            clocCheckerSet.setVersion(Integer.MAX_VALUE);
-            clocCheckerSet.setCodeLang(1073741824L);
-            List<CheckerSetVO> checkerSetList = setOpenScanCheckerSetsAccordingToLanguage(taskDetailVO.getLanguages());
-            checkerSetList.add(clocCheckerSet);
-            log.info("set open scan checker set: {} {}", taskDetailVO.getLanguages(), checkerSetList);
-            taskDetailVO.setCheckerSetList(checkerSetList);
-            isOpenSource = true;
-        }*/
+    private void upsertTools(TaskDetailVO taskDetailVO, TaskInfoEntity taskInfoEntity, String userName) {
+        configCheckerSetByType(taskDetailVO);
         // 如果不带有插件code，表示是旧插件接入，需要适配兼容旧插件
-        if (StringUtils.isEmpty(taskDetailVO.getAtomCode()))
-        {
+        if (StringUtils.isEmpty(taskDetailVO.getAtomCode())) {
             adaptV1AtomCodeCC(taskDetailVO);
-        }
-        else
-        {
+        } else {
             adaptV3AtomCodeCC(taskDetailVO);
         }
 
@@ -349,51 +382,48 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
 
         // 更新关联的规则集
         client.get(ServiceCheckerSetRestResource.class).batchRelateTaskAndCheckerSet(userName,
-            taskInfoEntity.getProjectId(),
-            taskId,
-            taskDetailVO.getCheckerSetList(),
-            isOpenSource);
+                taskInfoEntity.getProjectId(),
+                taskId,
+                taskDetailVO.getCheckerSetList(),
+                Optional.ofNullable(taskDetailVO.getCreateFrom()).orElse("")
+                        .equals(ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value()));
 
         // 设置强制全量扫描标志
-        if (CollectionUtils.isNotEmpty(forceFullScanTools))
-        {
+        if (CollectionUtils.isNotEmpty(forceFullScanTools)) {
             log.info("set force full scan, taskId:{}, toolNames:{}", taskDetailVO.getTaskId(), forceFullScanTools);
-            client.get(ServiceToolBuildInfoResource.class).setForceFullScan(taskDetailVO.getTaskId(), forceFullScanTools);
+            client.get(ServiceToolBuildInfoResource.class)
+                    .setForceFullScan(taskDetailVO.getTaskId(), forceFullScanTools);
         }
     }
 
-    private void adaptV1AtomCodeCC(TaskDetailVO taskDetailVO)
-    {
+    private void adaptV1AtomCodeCC(TaskDetailVO taskDetailVO) {
         // 初始化工具列表
         Set<String> reqToolSet = new HashSet<>();
         String devopsTools = taskDetailVO.getDevopsTools();
         JSONArray newToolJsonArray = new JSONArray(devopsTools);
-        for (int i = 0; i < newToolJsonArray.length(); i++)
-        {
-            if (StringUtils.isNotEmpty(newToolJsonArray.getString(i)))
-            {
+        for (int i = 0; i < newToolJsonArray.length(); i++) {
+            if (StringUtils.isNotEmpty(newToolJsonArray.getString(i))) {
                 reqToolSet.add(newToolJsonArray.getString(i));
             }
         }
         log.info("req tools: {}, {}", reqToolSet.size(), reqToolSet.toString());
 
         List<ToolConfigInfoVO> toolList = new ArrayList<>();
-        reqToolSet.forEach(toolName ->
-        {
-            ToolConfigInfoVO toolConfigInfoVO = instBatchToolInfoModel(taskDetailVO, toolName);
-            toolList.add(toolConfigInfoVO);
+        reqToolSet.forEach(toolName -> {
+            if (!Tool.CLOC.name().equalsIgnoreCase(toolName)) {
+                ToolConfigInfoVO toolConfigInfoVO = instBatchToolInfoModel(taskDetailVO, toolName);
+                toolList.add(toolConfigInfoVO);
+            }
         });
         taskDetailVO.setToolConfigInfoList(toolList);
 
         // 初始化规则集列表
         Set<String> hasCheckerSetTools = new HashSet<>();
         List<CheckerSetVO> checkerSetList = new ArrayList<>();
-        if (CollectionUtils.isNotEmpty(taskDetailVO.getToolCheckerSets()))
-        {
+        if (CollectionUtils.isNotEmpty(taskDetailVO.getToolCheckerSets())) {
             checkerSetList = taskDetailVO.getToolCheckerSets().stream()
                     .filter(toolCheckerSetVO -> reqToolSet.contains(toolCheckerSetVO.getToolName()))
-                    .map(toolCheckerSetVO ->
-                    {
+                    .map(toolCheckerSetVO -> {
                         CheckerSetVO checkerSetVO = new CheckerSetVO();
                         checkerSetVO.setCheckerSetId(toolCheckerSetVO.getCheckerSetId());
                         checkerSetVO.setToolList(Sets.newHashSet(toolCheckerSetVO.getToolName()));
@@ -403,32 +433,28 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
         }
 
         // 没有选择规则集的，且任务工具关联的规则集为空，则自动选择默认规则集，默认规则集的ID为：codecc_default_rules_toolNmae(小写)
-        if (hasCheckerSetTools.size() < reqToolSet.size())
-        {
-            Result<List<CheckerSetVO>> result = client.get(ServiceCheckerSetRestResource.class).getCheckerSets(taskDetailVO.getTaskId());
-            if (result.isNotOk() || result.getData() == null)
-            {
+        if (hasCheckerSetTools.size() < reqToolSet.size()) {
+            Result<List<CheckerSetVO>> result = client.get(ServiceCheckerSetRestResource.class)
+                    .getCheckerSets(taskDetailVO.getTaskId());
+            if (result.isNotOk() || result.getData() == null) {
                 log.error("query checker sets fail, result: {}", result);
                 throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
             }
             List<CheckerSetVO> existCheckerSetList = result.getData();
             Map<String, CheckerSetVO> toolCheckerSetMap = existCheckerSetList.stream()
-                    .collect(Collectors.toMap(checkerSetVO -> checkerSetVO.getToolList().iterator().next(), Function.identity(), (k, v) -> v));
-            for (ToolConfigInfoVO toolConfigInfoVO : toolList)
-            {
+                    .collect(Collectors.toMap(checkerSetVO -> checkerSetVO.getToolList().iterator().next(),
+                            Function.identity(), (k, v) -> v));
+            for (ToolConfigInfoVO toolConfigInfoVO : toolList) {
                 String toolName = toolConfigInfoVO.getToolName();
                 if (!hasCheckerSetTools.contains(toolName) && !toolName.equals(Tool.CCN.name())
-                        && !toolName.equals(Tool.DUPC.name()) && !toolName.equals(Tool.CLOC.name()))
-                {
+                        && !toolName.equals(Tool.DUPC.name()) && !toolName.equals(Tool.CLOC.name())
+                        && !toolName.equals(Tool.SCC.name())) {
                     CheckerSetVO checkerSetVO = new CheckerSetVO();
                     String checkerSetId = null;
                     // 根据工具信息获取默认规则集
-                    if (toolCheckerSetMap.get(toolName) == null)
-                    {
+                    if (toolCheckerSetMap.get(toolName) == null) {
                         checkerSetId = getDefaultCheckerSetId(toolConfigInfoVO);
-                    }
-                    else
-                    {
+                    } else {
                         checkerSetId = toolCheckerSetMap.get(toolName).getCheckerSetId();
                     }
                     checkerSetVO.setCheckerSetId(checkerSetId);
@@ -447,36 +473,25 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
      *
      * @param taskDetailVO
      */
-    private void setCreateFrom(TaskDetailVO taskDetailVO)
-    {
-        if (taskDetailVO.getGongfengFlag() != null && taskDetailVO.getGongfengFlag())
-        {
+    private void setCreateFrom(TaskDetailVO taskDetailVO) {
+        if (taskDetailVO.getGongfengFlag() != null && taskDetailVO.getGongfengFlag()) {
             taskDetailVO.setCreateFrom(ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value());
-        }
-        else
-        {
+        } else {
             taskDetailVO.setCreateFrom(ComConstants.BsTaskCreateFrom.BS_PIPELINE.value());
         }
     }
 
-    private String getDefaultCheckerSetId(ToolConfigInfoVO toolConfigInfoVO)
-    {
+    private String getDefaultCheckerSetId(ToolConfigInfoVO toolConfigInfoVO) {
         String checkerSetId;
-        if (Tool.PHPCS.name().equals(toolConfigInfoVO.getToolName()))
-        {
+        if (Tool.PHPCS.name().equals(toolConfigInfoVO.getToolName())) {
             checkerSetId = getCheckerSetId4PHPCS(toolConfigInfoVO);
-        }
-        else if (Tool.ESLINT.name().equals(toolConfigInfoVO.getToolName()))
-        {
+        } else if (Tool.ESLINT.name().equals(toolConfigInfoVO.getToolName())) {
             checkerSetId = getCheckerSetId4ESLINT(toolConfigInfoVO);
-        }
-        else
-        {
+        } else {
             checkerSetId = defaultCheckerSetMap.get(toolConfigInfoVO.getToolName());
         }
 
-        if (StringUtils.isEmpty(checkerSetId))
-        {
+        if (StringUtils.isEmpty(checkerSetId)) {
             checkerSetId = "codecc_default_rules_" + toolConfigInfoVO.getToolName().toLowerCase();
         }
 
@@ -484,56 +499,43 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
         return checkerSetId;
     }
 
-    private String getCheckerSetId4ESLINT(ToolConfigInfoVO tool)
-    {
-        String eslint_rc = null;
+    private String getCheckerSetId4ESLINT(ToolConfigInfoVO tool) {
+        String eslintRc = null;
         String paramJson = tool.getParamJson();
-        if (StringUtils.isNotEmpty(paramJson))
-        {
-            try
-            {
-                eslint_rc = new JSONObject(paramJson).getString(ComConstants.PARAM_ESLINT_RC);
-            }
-            catch (Exception e)
-            {
+        if (StringUtils.isNotEmpty(paramJson)) {
+            try {
+                eslintRc = new JSONObject(paramJson).getString(ComConstants.PARAM_ESLINT_RC);
+            } catch (Exception e) {
                 log.error("get eslint_rc error: {}", tool.getTaskId());
             }
         }
 
-        if (StringUtils.isEmpty(eslint_rc))
-        {
-            eslint_rc = ComConstants.EslintFrameworkType.standard.name();
+        if (StringUtils.isEmpty(eslintRc)) {
+            eslintRc = ComConstants.EslintFrameworkType.standard.name();
         }
-        String checkerSetId = defaultCheckerSetMap.get(eslint_rc);
-        return checkerSetId;
+        return defaultCheckerSetMap.get(eslintRc);
     }
 
-    private String getCheckerSetId4PHPCS(ToolConfigInfoVO tool)
-    {
-        String phpcs_standard = null;
+    private String getCheckerSetId4PHPCS(ToolConfigInfoVO tool) {
+        String phpcsStandard = null;
         String paramJson = tool.getParamJson();
-        if (StringUtils.isNotEmpty(paramJson))
-        {
-            try
-            {
-                phpcs_standard = new JSONObject(paramJson).getString(ComConstants.KEY_PHPCS_STANDARD);
-            }
-            catch (Exception e)
-            {
+        if (StringUtils.isNotEmpty(paramJson)) {
+            try {
+                phpcsStandard = new JSONObject(paramJson).getString(ComConstants.KEY_PHPCS_STANDARD);
+            } catch (Exception e) {
                 log.error("get phpcs_standard error: {}", tool.getTaskId());
             }
         }
 
-        if (StringUtils.isEmpty(phpcs_standard))
-        {
-            phpcs_standard = ComConstants.PHPCSStandardCode.PSR2.name();
+        if (StringUtils.isEmpty(phpcsStandard)) {
+            phpcsStandard = ComConstants.PHPCSStandardCode.PSR2.name();
         }
-        String checkerSetId = defaultCheckerSetMap.get(phpcs_standard);
-        return checkerSetId;
+        return defaultCheckerSetMap.get(phpcsStandard);
     }
 
     private List<CheckerSetVO> setOpenScanCheckerSetsAccordingToLanguage(
-            List<String> languages
+            List<String> languages,
+            String checkerSetEnvType
     ) {
         Set<OpenSourceCheckerSetType> finalOpensourceCheckerSetType =
                 Collections.singleton(OpenSourceCheckerSetType.FULL);
@@ -544,12 +546,39 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
             languages.forEach(it -> {
                 BaseDataEntity selectedBaseData = metaLangList.stream().filter(metaLang -> {
                     List<String> langArray = JsonUtil.INSTANCE.to(metaLang.getParamExtend2(),
-                            new TypeReference<List<String>>() {});
+                            new TypeReference<List<String>>() {
+                            });
                     return langArray.contains(it);
                 }).findAny().orElse(null);
                 // 如果有选中的语言，并且规则集配置不为空的话，则配置相应的规则集
-                if (null != selectedBaseData && !selectedBaseData.getOpenSourceCheckerSets().isEmpty()) {
-                    selectedBaseData.getOpenSourceCheckerSets().forEach(checkerSet -> {
+
+                // 判断是否要用预发布的版本
+                List<OpenSourceCheckerSet> selectedCheckerSet = new ArrayList<>();
+
+                if (selectedBaseData != null) {
+                    SpecialCheckerSetConfig config = new SpecialCheckerSetConfig();
+
+                    if (StringUtils.isNotBlank(selectedBaseData.getParamExtend6())) {
+                        config = JsonUtil.INSTANCE.to(selectedBaseData.getParamExtend6(),
+                                new TypeReference<SpecialCheckerSetConfig>() {
+                                });
+                        selectedCheckerSet = config.getOpenSourceCheckerSets();
+                    }
+
+                    if (CollectionUtils.isEmpty(selectedCheckerSet)) {
+                        selectedCheckerSet = selectedBaseData.getOpenSourceCheckerSets();
+                    }
+
+                    if (!StringUtils.isBlank(checkerSetEnvType)) {
+                        if (checkerSetEnvType.equals(ComConstants.CheckerSetEnvType.PRE_PROD.getKey())
+                                && CollectionUtils.isNotEmpty(config.getPreProdOpenSourceCheckerSets())) {
+                            selectedCheckerSet = config.getPreProdOpenSourceCheckerSets();
+                        }
+                    }
+                }
+
+                if (!selectedCheckerSet.isEmpty()) {
+                    selectedCheckerSet.forEach(checkerSet -> {
                         if (StringUtils.isNotBlank(checkerSet.getCheckerSetType())
                                 && !finalOpensourceCheckerSetType.contains(OpenSourceCheckerSetType
                                 .valueOf(checkerSet.getCheckerSetType()))) {
@@ -567,16 +596,40 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
                         checkerSetVOList.add(formatCheckerSet);
                     });
                 }
+
                 // 如果包含有codecc不支持的语言，则配置啄木鸟-其他规则集
                 if (null == selectedBaseData) {
                     if (!otherLanguageCheckerSet[0]) {
                         BaseDataEntity otherBaseData = metaLangList.stream().filter(metaLang -> {
-                                String langArray = JsonUtil.INSTANCE.to(metaLang.getParamExtend2());
-                                return langArray.contains("OTHERS");
+                            List<String> langArray = JsonUtil.INSTANCE.to(metaLang.getParamExtend2());
+                            return langArray.contains("OTHERS");
                         }).findAny().orElse(null);
 
-                        if (null != otherBaseData && !otherBaseData.getOpenSourceCheckerSets().isEmpty()) {
-                            otherBaseData.getOpenSourceCheckerSets().forEach(checkerSet -> {
+                        // 判断是否要用预发布的版本
+                        List<OpenSourceCheckerSet> otherSelectedCheckerSet = new ArrayList<>();
+
+                        SpecialCheckerSetConfig otherConfig = new SpecialCheckerSetConfig();
+                        if (otherBaseData != null) {
+                            if (StringUtils.isNotBlank(otherBaseData.getParamExtend6())) {
+                                otherConfig = JsonUtil.INSTANCE.to(otherBaseData.getParamExtend6(),
+                                        new TypeReference<SpecialCheckerSetConfig>() {
+                                        });
+                                otherSelectedCheckerSet = otherConfig.getOpenSourceCheckerSets();
+                            }
+
+                            if (CollectionUtils.isEmpty(otherSelectedCheckerSet)) {
+                                otherSelectedCheckerSet = otherBaseData.getOpenSourceCheckerSets();
+                            }
+                            if (!StringUtils.isBlank(checkerSetEnvType)) {
+                                if (checkerSetEnvType.equals(ComConstants.CheckerSetEnvType.PRE_PROD.getKey())
+                                        && CollectionUtils.isNotEmpty(otherConfig.getPreProdOpenSourceCheckerSets())) {
+                                    otherSelectedCheckerSet = otherConfig.getPreProdOpenSourceCheckerSets();
+                                }
+                            }
+                        }
+
+                        if (!otherSelectedCheckerSet.isEmpty()) {
+                            otherSelectedCheckerSet.forEach(checkerSet -> {
                                 CheckerSetVO formatCheckerSet = new CheckerSetVO();
                                 formatCheckerSet.setCheckerSetId(checkerSet.getCheckerSetId());
                                 formatCheckerSet.setToolList(checkerSet.getToolList());
@@ -597,21 +650,52 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
         return checkerSetVOList;
     }
 
-    private List<CheckerSetVO> setEpcScanCheckerSetsAccordingToLanguage(
-            List<String> languages
+    private List<CheckerSetVO> setCommunityOpenScanCheckerSetsAccordingToLanguage(
+            List<String> languages,
+            String checkerSetEnvType
     ) {
+        Set<OpenSourceCheckerSetType> finalOpensourceCheckerSetType =
+                Collections.singleton(OpenSourceCheckerSetType.FULL);
         List<BaseDataEntity> metaLangList = baseDataRepository.findAllByParamType(ComConstants.KEY_CODE_LANG);
         List<CheckerSetVO> checkerSetVOList = new ArrayList<>();
         if (!languages.isEmpty()) {
             languages.forEach(it -> {
                 BaseDataEntity selectedBaseData = metaLangList.stream().filter(metaLang -> {
                     List<String> langArray = JsonUtil.INSTANCE.to(metaLang.getParamExtend2(),
-                            new TypeReference<List<String>>() {});
+                            new TypeReference<List<String>>() {
+                            });
                     return langArray.contains(it);
                 }).findAny().orElse(null);
                 // 如果有选中的语言，并且规则集配置不为空的话，则配置相应的规则集
-                if (null != selectedBaseData && !selectedBaseData.getEpcCheckerSets().isEmpty()) {
-                    selectedBaseData.getEpcCheckerSets().forEach(checkerSet -> {
+
+                // 判断是否要用预发布的版本
+                List<OpenSourceCheckerSet> selectedCheckerSet = new ArrayList<>();
+
+                if (selectedBaseData != null) {
+                    SpecialCheckerSetConfig config = new SpecialCheckerSetConfig();
+
+                    if (StringUtils.isNotBlank(selectedBaseData.getParamExtend6())) {
+                        config = JsonUtil.INSTANCE.to(selectedBaseData.getParamExtend6(),
+                                new TypeReference<SpecialCheckerSetConfig>() {
+                                });
+                        selectedCheckerSet = config.getProdCommunityOpenScan();
+                    }
+
+                    if (!StringUtils.isBlank(checkerSetEnvType)) {
+                        if (checkerSetEnvType.equals(ComConstants.CheckerSetEnvType.PRE_PROD.getKey())
+                                && CollectionUtils.isNotEmpty(config.getPreProdCommunityOpenScan())) {
+                            selectedCheckerSet = config.getPreProdCommunityOpenScan();
+                        }
+                    }
+                }
+
+                if (!selectedCheckerSet.isEmpty()) {
+                    selectedCheckerSet.forEach(checkerSet -> {
+                        if (StringUtils.isNotBlank(checkerSet.getCheckerSetType())
+                                && !finalOpensourceCheckerSetType.contains(OpenSourceCheckerSetType
+                                .valueOf(checkerSet.getCheckerSetType()))) {
+                            return;
+                        }
                         CheckerSetVO formatCheckerSet = new CheckerSetVO();
                         formatCheckerSet.setCheckerSetId(checkerSet.getCheckerSetId());
                         formatCheckerSet.setToolList(checkerSet.getToolList());
@@ -623,6 +707,107 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
                         }
                         checkerSetVOList.add(formatCheckerSet);
                     });
+                }
+
+                // 如果包含有codecc不支持的语言，则配置啄木鸟-其他规则集
+                if (null == selectedBaseData) {
+                    BaseDataEntity otherBaseData = metaLangList.stream().filter(metaLang -> {
+                        List<String> langArray = JsonUtil.INSTANCE.to(metaLang.getParamExtend2());
+                        return langArray.contains("OTHERS");
+                    }).findAny().orElse(null);
+
+                    // 判断是否要用预发布的版本
+                    List<OpenSourceCheckerSet> otherSelectedCheckerSet = new ArrayList<>();
+
+                    SpecialCheckerSetConfig otherConfig = new SpecialCheckerSetConfig();
+                    if (otherBaseData != null) {
+                        if (StringUtils.isNotBlank(otherBaseData.getParamExtend6())) {
+                            otherConfig = JsonUtil.INSTANCE.to(otherBaseData.getParamExtend6(),
+                                    new TypeReference<SpecialCheckerSetConfig>() {
+                                    });
+                            otherSelectedCheckerSet = otherConfig.getOpenSourceCheckerSets();
+                        }
+
+                        if (!StringUtils.isBlank(checkerSetEnvType)) {
+                            if (checkerSetEnvType.equals(ComConstants.CheckerSetEnvType.PRE_PROD.getKey())
+                                    && CollectionUtils.isNotEmpty(otherConfig.getPreProdOpenSourceCheckerSets())) {
+                                otherSelectedCheckerSet = otherConfig.getPreProdOpenSourceCheckerSets();
+                            }
+                        }
+                    }
+
+                    if (!otherSelectedCheckerSet.isEmpty()) {
+                        otherSelectedCheckerSet.forEach(checkerSet -> {
+                            CheckerSetVO formatCheckerSet = new CheckerSetVO();
+                            formatCheckerSet.setCheckerSetId(checkerSet.getCheckerSetId());
+                            formatCheckerSet.setToolList(checkerSet.getToolList());
+                            //如果有配置版本，则固定用版本，如果没有配置版本，则用最新版本
+                            if (null != checkerSet.getVersion()) {
+                                formatCheckerSet.setVersion(checkerSet.getVersion());
+                            } else {
+                                formatCheckerSet.setVersion(Integer.MAX_VALUE);
+                            }
+                            checkerSetVOList.add(formatCheckerSet);
+                        });
+                    }
+                }
+            });
+        }
+        return checkerSetVOList;
+    }
+
+    private List<CheckerSetVO> setEpcScanCheckerSetsAccordingToLanguage(
+            List<String> languages,
+            String checkerSetEnvType
+    ) {
+        List<BaseDataEntity> metaLangList = baseDataRepository.findAllByParamType(ComConstants.KEY_CODE_LANG);
+        List<CheckerSetVO> checkerSetVOList = new ArrayList<>();
+        if (!languages.isEmpty()) {
+            languages.forEach(it -> {
+                BaseDataEntity selectedBaseData = metaLangList.stream().filter(metaLang -> {
+                    List<String> langArray = JsonUtil.INSTANCE.to(metaLang.getParamExtend2(),
+                            new TypeReference<List<String>>() {
+                            });
+                    return langArray.contains(it);
+                }).findAny().orElse(null);
+                // 如果有选中的语言，并且规则集配置不为空的话，则配置相应的规则集
+                if (null != selectedBaseData) {
+                    List<OpenSourceCheckerSet> epcCheckerSet = new ArrayList<>();
+
+                    SpecialCheckerSetConfig config = new SpecialCheckerSetConfig();
+                    if (StringUtils.isNotBlank(selectedBaseData.getParamExtend6())) {
+                        config = JsonUtil.INSTANCE.to(selectedBaseData.getParamExtend6(),
+                                new TypeReference<SpecialCheckerSetConfig>() {
+                                });
+                        epcCheckerSet = config.getEpcCheckerSets();
+                    }
+
+                    if (CollectionUtils.isEmpty(epcCheckerSet)) {
+                        epcCheckerSet = selectedBaseData.getEpcCheckerSets();
+                    }
+
+                    // 判断是否是预发布
+                    if (!StringUtils.isBlank(checkerSetEnvType)) {
+                        if (checkerSetEnvType.equals(ComConstants.CheckerSetEnvType.PRE_PROD.getKey())
+                                && CollectionUtils.isNotEmpty(config.getPreProdEpcCheckerSets())) {
+                            epcCheckerSet = config.getPreProdEpcCheckerSets();
+                        }
+                    }
+
+                    if (CollectionUtils.isNotEmpty(epcCheckerSet)) {
+                        epcCheckerSet.forEach(checkerSet -> {
+                            CheckerSetVO formatCheckerSet = new CheckerSetVO();
+                            formatCheckerSet.setCheckerSetId(checkerSet.getCheckerSetId());
+                            formatCheckerSet.setToolList(checkerSet.getToolList());
+                            //如果有配置版本，则固定用版本，如果没有配置版本，则用最新版本
+                            if (null != checkerSet.getVersion()) {
+                                formatCheckerSet.setVersion(checkerSet.getVersion());
+                            } else {
+                                formatCheckerSet.setVersion(Integer.MAX_VALUE);
+                            }
+                            checkerSetVOList.add(formatCheckerSet);
+                        });
+                    }
                 }
             });
         }
@@ -639,17 +824,18 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
 
     private boolean configOldAtomCheckerSet(TaskDetailVO taskDetailVO) {
         if (taskDetailVO.getLanguages() != null) {
-            List<CheckerSetVO> checkerSetList = setOpenScanCheckerSetsAccordingToLanguage(taskDetailVO.getLanguages());
+            List<CheckerSetVO> checkerSetList = setOpenScanCheckerSetsAccordingToLanguage(
+                    taskDetailVO.getLanguages(), taskDetailVO.getCheckerSetEnvType());
             log.info("set old open scan checker set: {} {} {} {}",
                     taskDetailVO.getTaskId(),
                     taskDetailVO.getNameEn(),
                     taskDetailVO.getLanguages(),
                     checkerSetList);
             taskDetailVO.setCheckerSetList(checkerSetList);
-            addClocCheckerSet(taskDetailVO);
+            addSccCheckerSet(taskDetailVO);
             return true;
         } else {
-            addClocCheckerSet(taskDetailVO);
+            addSccCheckerSet(taskDetailVO);
             return false;
         }
     }
@@ -663,9 +849,14 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
                 taskDetailVO.getLanguages(),
                 taskDetailVO.getCheckerSetType());
         if (taskDetailVO.getCheckerSetType() == CheckerSetType.OPEN_SCAN) {
-            checkerSetList = setOpenScanCheckerSetsAccordingToLanguage(languages);
+            checkerSetList = setOpenScanCheckerSetsAccordingToLanguage(
+                    languages, taskDetailVO.getCheckerSetEnvType());
+        } else if (taskDetailVO.getCheckerSetType() == CheckerSetType.COMMUNITY_OPEN_SCAN) {
+            checkerSetList = setCommunityOpenScanCheckerSetsAccordingToLanguage(
+                    languages, taskDetailVO.getCheckerSetEnvType());
         } else if (taskDetailVO.getCheckerSetType() == CheckerSetType.EPC_SCAN) {
-            checkerSetList = setEpcScanCheckerSetsAccordingToLanguage(languages);
+            checkerSetList = setEpcScanCheckerSetsAccordingToLanguage(
+                    languages, taskDetailVO.getCheckerSetEnvType());
         } else {
             return false;
         }
@@ -675,26 +866,25 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
                 taskDetailVO.getLanguages(),
                 checkerSetList);
         taskDetailVO.setCheckerSetList(checkerSetList);
-        addClocCheckerSet(taskDetailVO);
+        addSccCheckerSet(taskDetailVO);
         return true;
     }
 
-    private void addClocCheckerSet(TaskDetailVO taskDetailVO) {
-        CheckerSetVO clocCheckerSet = new CheckerSetVO();
-        clocCheckerSet.setCheckerSetId("standard_cloc");
-        clocCheckerSet.setToolList(Collections.singleton(Tool.CLOC.name()));
-        clocCheckerSet.setVersion(Integer.MAX_VALUE);
-        clocCheckerSet.setCodeLang(1073741824L);
+    private void addSccCheckerSet(TaskDetailVO taskDetailVO) {
+        CheckerSetVO sccCheckerSet = new CheckerSetVO();
+        sccCheckerSet.setCheckerSetId("standard_scc");
+        sccCheckerSet.setToolList(Collections.singleton(Tool.SCC.name()));
+        sccCheckerSet.setVersion(Integer.MAX_VALUE);
+        sccCheckerSet.setCodeLang(1073741824L);
         if (taskDetailVO.getCheckerSetList() == null) {
             taskDetailVO.setCheckerSetList(new ArrayList<>());
         }
-        taskDetailVO.getCheckerSetList().add(clocCheckerSet);
+        taskDetailVO.getCheckerSetList().add(sccCheckerSet);
     }
 
     private static final Map<String, String> defaultCheckerSetMap = createDefaultCheckerSetMap();
 
-    private static Map<String, String> createDefaultCheckerSetMap()
-    {
+    private static Map<String, String> createDefaultCheckerSetMap() {
         Map<String, String> folderMap = new HashMap<>();
         folderMap.put(Tool.COVERITY.name(), "codecc_default_rules_" + Tool.COVERITY.name().toLowerCase());
         folderMap.put(Tool.KLOCWORK.name(), "codecc_default_rules_" + Tool.KLOCWORK.name().toLowerCase());
@@ -719,8 +909,11 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
         folderMap.put(ComConstants.EslintFrameworkType.standard.name(), "codecc_default_standard_rules");
         folderMap.put(Tool.SENSITIVE.name(), "codecc_default_rules_" + Tool.SENSITIVE.name().toLowerCase());
         folderMap.put(Tool.HORUSPY.name(), "codecc_v2_default_" + Tool.HORUSPY.name().toLowerCase());
-        folderMap.put(Tool.WOODPECKER_SENSITIVE.name(), "codecc_v2_default_" + Tool.WOODPECKER_SENSITIVE.name().toLowerCase());
+        folderMap.put(Tool.WOODPECKER_SENSITIVE.name(),
+                "codecc_v2_default_" + Tool.WOODPECKER_SENSITIVE.name().toLowerCase());
         folderMap.put(Tool.RIPS.name(), "codecc_v2_default_" + Tool.RIPS.name().toLowerCase());
         return folderMap;
     }
+
+
 }

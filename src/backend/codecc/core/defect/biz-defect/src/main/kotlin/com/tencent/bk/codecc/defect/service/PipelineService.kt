@@ -34,15 +34,6 @@ import com.tencent.bk.codecc.task.vo.TaskDetailVO
 interface PipelineService {
 
     /**
-     * 获取构建信息
-     *
-     * @date 2019/6/27
-     * @version V4.0
-     */
-    fun getBuildIdInfo(buildId: String): BuildEntity?
-
-
-    /**
      * 分析完成回调蓝盾
      */
     fun handleDevopsCallBack(tasklog: TaskLogEntity, taskStep: TaskLogEntity.TaskUnit, toolName: String, taskDetailVO: TaskDetailVO)

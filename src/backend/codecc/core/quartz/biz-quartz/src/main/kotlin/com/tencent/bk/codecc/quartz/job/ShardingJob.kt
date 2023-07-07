@@ -5,7 +5,7 @@ import com.tencent.bk.codecc.quartz.jmx.JobStatisticMBean
 import com.tencent.bk.codecc.quartz.pojo.QuartzJobContext
 import com.tencent.bk.codecc.quartz.service.impl.ShardingRouterServiceImpl
 import com.tencent.devops.common.service.utils.SpringContextUtil
-import com.tencent.devops.common.util.JsonUtil
+import com.tencent.devops.common.codecc.util.JsonUtil
 import org.quartz.Job
 import org.quartz.JobExecutionContext
 import org.slf4j.LoggerFactory

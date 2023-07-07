@@ -26,7 +26,7 @@ object PageUtils {
             Sort.Direction.ASC
         }
         val pageSort = Sort.by(sortTypeNotNull, sortFieldNotNull)
-        return PageRequest.of(
+        return  PageRequest.of(
             pageNumNotNull,
             pageSizeNotNull,
             pageSort
@@ -99,7 +99,7 @@ object PageUtils {
             Sort.Direction.ASC
         }
         val pageSort = Sort.by(sortTypeNotNull, sortFieldNotNull)
-        return PageRequest.of(pageNumNotNull, pageSizeNotNull, pageSort
+        return  PageRequest.of(pageNumNotNull, pageSizeNotNull, pageSort
         )
     }
 

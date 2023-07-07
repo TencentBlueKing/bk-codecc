@@ -41,4 +41,11 @@ public class CheckerSetTaskRelationshipEntity extends CommonEntity
     @Field("project_id")
     @Indexed
     private String projectId;
+
+    /**
+     * 项目ID
+     */
+    @Field("version")
+    @Indexed
+    private Integer version;
 }

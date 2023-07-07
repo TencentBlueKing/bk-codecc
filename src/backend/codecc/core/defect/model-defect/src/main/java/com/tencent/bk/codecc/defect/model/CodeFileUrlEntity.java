@@ -9,7 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package com.tencent.bk.codecc.defect.model;
 
 import com.tencent.codecc.common.db.CommonEntity;
@@ -19,20 +19,22 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 /**
  * 代码仓库url
- * 
- * @date 2019/10/25
+ *
  * @version V1.0
+ * @date 2019/10/25
  */
 @Data
 @Document(collection = "t_code_file_url")
 @CompoundIndexes({
         @CompoundIndex(name = "taskid_tool_idx", def = "{'task_id': 1, 'file_path': 1}")
 })
-public class CodeFileUrlEntity extends CommonEntity
-{
+@Sharded(shardKey = "task_id")
+public class CodeFileUrlEntity extends CommonEntity {
+
     /**
      * 任务ID
      */

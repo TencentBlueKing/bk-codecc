@@ -73,6 +73,19 @@ class SpringContextUtil : ApplicationContextAware {
         }
 
         /**
+         * 取指定类的指定名称的类的实例对象
+         * @param clazz 类名
+         * @param beanName 实例对象名称
+         * @param <T> Bean
+         * @return 实例
+         * @throws BeansException 异常
+         */
+        @Throws(BeansException::class)
+        fun <T> getBeansOfType(clazz: Class<T>): Map<String, T> {
+            return applicationContext!!.getBeansOfType(clazz)
+        }
+
+        /**
          * 获取对象列表
          * @param clazz 注解类名
          * @param <T: Annotation> 注解

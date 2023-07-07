@@ -26,7 +26,11 @@
 
 package com.tencent.devops.common.web
 
-import com.tencent.devops.common.util.JsonUtil
+import com.tencent.devops.common.codecc.util.JsonUtil
+import com.tencent.devops.common.web.filter.BuildIdHeaderCacheEnterFilter
+import com.tencent.devops.common.web.filter.BuildIdHeaderCacheExitFilter
+import com.tencent.devops.common.web.filter.TraceIdRequestFilter
+import com.tencent.devops.common.web.filter.TraceIdResponseFilter
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
@@ -51,7 +55,7 @@ import org.springframework.core.env.Environment
 @EnableConfigurationProperties(SwaggerProperties::class)
 class WebAutoConfiguration @Autowired constructor(private val profile: com.tencent.devops.common.service.Profile) {
 
-    companion object{
+    companion object {
         private val logger = LoggerFactory.getLogger(WebAutoConfiguration::class.java)
     }
 
@@ -71,6 +75,17 @@ class WebAutoConfiguration @Autowired constructor(private val profile: com.tence
     fun versionInfoResource() = VersionInfoResource()
 
     @Bean
-    fun jmxAutoConfiguration(@Autowired environment : Environment) = JmxAutoConfiguration(environment)
+    fun jmxAutoConfiguration(@Autowired environment: Environment) = JmxAutoConfiguration(environment)
 
+    @Bean(name = ["traceIdResponseFilter"])
+    fun traceIdResponseFilter() = TraceIdResponseFilter()
+
+    @Bean(name = ["traceIdRequestFilter"])
+    fun traceIdRequestFilter() = TraceIdRequestFilter()
+
+    @Bean(name = ["buildIdHeaderCacheExitFilter"])
+    fun buildIdHeaderCacheExitFilter() = BuildIdHeaderCacheExitFilter()
+
+    @Bean(name = ["buildIdHeaderCacheEnterFilter"])
+    fun buildIdHeaderCacheEnterFilter() = BuildIdHeaderCacheEnterFilter()
 }

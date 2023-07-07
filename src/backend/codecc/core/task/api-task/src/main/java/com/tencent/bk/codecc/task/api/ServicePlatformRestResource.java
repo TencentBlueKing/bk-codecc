@@ -27,7 +27,7 @@
 package com.tencent.bk.codecc.task.api;
 
 import com.tencent.bk.codecc.task.vo.PlatformVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -46,8 +46,7 @@ import java.util.List;
 @Path("/service/paltform")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public interface ServicePlatformRestResource
-{
+public interface ServicePlatformRestResource {
     @ApiOperation("获取所有的platform")
     @Path("/list/toolName/{toolName}")
     @GET

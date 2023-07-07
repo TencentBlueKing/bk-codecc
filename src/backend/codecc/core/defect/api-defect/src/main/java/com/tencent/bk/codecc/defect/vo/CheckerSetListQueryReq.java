@@ -9,28 +9,26 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetCategory;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetSource;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
-import org.springframework.data.domain.Pageable;
-
 import java.util.Set;
+import lombok.Data;
 
 /**
  * 查询规则集清单首页实体类
- * 
- * @date 2020/1/7
+ *
  * @version V1.0
+ * @date 2020/1/7
  */
 @Data
 @ApiModel("查询规则集清单首页实体类")
-public class CheckerSetListQueryReq 
-{
+public class CheckerSetListQueryReq {
+
     @ApiModelProperty("项目id")
     private String projectId;
 

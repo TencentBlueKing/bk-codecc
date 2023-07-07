@@ -10,12 +10,13 @@
  *
  * Terms of the MIT License:
  * ---------------------------------------------------
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+ *  Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
  * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -30,9 +31,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.devops.common.api.CodeRepoVO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.Data;
+
 import java.util.List;
 import java.util.Map;
-import lombok.Data;
 
 /**
  * 告警配置详情视图
@@ -42,8 +44,7 @@ import lombok.Data;
  */
 @Data
 @ApiModel("告警配置详情视图")
-public class AnalyzeConfigInfoVO
-{
+public class AnalyzeConfigInfoVO {
     @ApiModelProperty("任务id")
     @JsonProperty("task_id")
     private long taskId;
@@ -124,6 +125,9 @@ public class AnalyzeConfigInfoVO
     @ApiModelProperty(value = "本次扫描的代码仓库列表")
     private List<CodeRepoVO> codeRepos;
 
+    @ApiModelProperty(value = "本次扫描拉取的代码仓库子路径")
+    private List<String> repoRelativePathList;
+
     @ApiModelProperty(value = "任务语言")
     private Long language;
 
@@ -132,6 +136,9 @@ public class AnalyzeConfigInfoVO
 
     @ApiModelProperty(value = "任务管理员")
     private List<String> admins;
+
+    @ApiModelProperty(value = "基础构建Id")
+    private String baseBuildId;
 
     @ApiModelProperty(value = "上一次执行时间")
     private Long lastExecuteTime;
@@ -162,6 +169,12 @@ public class AnalyzeConfigInfoVO
     private List<String> repoWhiteList;
 
     private String atomCode;
+    /**
+     * 用于 WOODPECKER_COMMITSCAN 工具增量扫描
+     */
+    private Long commitSince;
+    //版本
+    private Integer version;
 
     // ==============================用于调用getBuildInfo时传递参数，无其他作用 end===================================
     @Data

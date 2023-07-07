@@ -34,6 +34,7 @@ import com.tencent.bk.codecc.defect.consumer.ClusterDefectConsumer;
 import com.tencent.bk.codecc.defect.consumer.CodeScoringConsumer;
 import com.tencent.bk.codecc.defect.consumer.CommonCloseDefectStatisticConsumer;
 import com.tencent.bk.codecc.defect.consumer.LintCloseDefectStatisticConsumer;
+import com.tencent.bk.codecc.defect.consumer.TriggerCommitHandlerConsumer;
 import com.tencent.devops.common.service.IConsumer;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -45,7 +46,6 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
@@ -55,16 +55,19 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_CLOSE_DEFECT
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_CLOSE_DEFECT_STATISTIC_LINT;
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_DEFECT_COMMIT_CLUSTER;
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_DEFECT_COMMIT_METRICS;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_TRIGGER_COMMIT_HANDLER;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_CLOSE_DEFECT_STATISTIC;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_CLOSE_DEFECT_STATISTIC_CCN;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_CLOSE_DEFECT_STATISTIC_LINT;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_DEFECT_COMMIT_CLUSTER;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_DEFECT_COMMIT_METRICS;
+import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_TRIGGER_COMMIT_HANDLER;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CLOSE_DEFECT_STATISTIC;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CLOSE_DEFECT_STATISTIC_CCN;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CLOSE_DEFECT_STATISTIC_LINT;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DEFECT_COMMIT_CLUSTER;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DEFECT_COMMIT_METRICS;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_TRIGGER_COMMIT_HANDLER;
 
 /**
  * 普通非告警上报的非开源项目消息队列配置
@@ -75,8 +78,38 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DEFECT_COMMIT_M
 @Configuration
 @Slf4j
 @Conditional(AsyncReportCondition.class)
-public class RabbitMQConfig
-{
+public class RabbitMQConfig {
+
+    @Bean
+    public Queue commitHandlerCommitQueue() {
+        return new Queue(QUEUE_TRIGGER_COMMIT_HANDLER);
+    }
+
+    @Bean
+    public DirectExchange commitHandlerDirectExchange() {
+        DirectExchange directExchange = new DirectExchange(EXCHANGE_TRIGGER_COMMIT_HANDLER);
+        directExchange.setDelayed(true);
+        return directExchange;
+    }
+
+    @Bean
+    public Binding commitHandlerQueueBind(Queue commitHandlerCommitQueue,
+                                          DirectExchange commitHandlerDirectExchange) {
+        return BindingBuilder.bind(commitHandlerCommitQueue)
+                .to(commitHandlerDirectExchange)
+                .with(ROUTE_TRIGGER_COMMIT_HANDLER);
+    }
+
+    @Bean
+    public SimpleMessageListenerContainer commitHandlerMessageListenerContainer(
+            ConnectionFactory connectionFactory,
+            TriggerCommitHandlerConsumer triggerCommitHandlerConsumer,
+            Jackson2JsonMessageConverter jackson2JsonMessageConverter) {
+        return getSimpleMessageListenerContainer(QUEUE_TRIGGER_COMMIT_HANDLER,
+                triggerCommitHandlerConsumer, 8, 8,
+                connectionFactory, jackson2JsonMessageConverter);
+    }
+
     @Bean
     public Queue metricsCommitQueue() {
         return new Queue(QUEUE_DEFECT_COMMIT_METRICS);
@@ -240,6 +273,7 @@ public class RabbitMQConfig
         container.setConcurrentConsumers(concurrentConsumers);
         container.setMaxConcurrentConsumers(maxConcurrentConsumers);
         container.setStartConsumerMinInterval(10000);
+        container.setPrefetchCount(1);
         MessageListenerAdapter adapter = new MessageListenerAdapter(consumer, "consumer");
         adapter.setMessageConverter(jackson2JsonMessageConverter);
         container.setMessageListener(adapter);

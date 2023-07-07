@@ -26,39 +26,9 @@
 
 package com.tencent.devops.common.web.mq
 
-const val QUEUE_PIPELINE_BUILD = "queue.pipeline.build"
-const val QUEUE_PIPELINE_BUILD_NEED_END = "queue.pipeline.build.need.end"
-const val EXCHANGE_PIPELINE_BUILD = "exchange.pipeline.build"
-const val ROUTE_PIPELINE_BUILD = "route.pipeline.build"
-const val ROUTE_PIPELINE_BUILD_NEED_END = "route.pipeline.build.need.end"
-
-const val ROUTE_PIPELINE_FINISH = "route.pipeline.finish"
-const val QUEUE_PIPELINE_FINISH = "queue.pipeline.finish"
-const val EXCHANGE_PIPELINE_FINISH = "exchange.pipeline.finish"
-
 const val ROUTE_NOTIFY_MESSAGE = "route.notify.message"
 const val QUEUE_NOTIFY_MESSAGE = "queue.notify.message"
 const val EXCHANGE_NOTIFY_MESSAGE = "exchange.notify.message"
-
-const val ROUTE_PAASCC_PROJECT_CREATE = "route.paascc.project.create"
-const val QUEUE_PAASCC_PROJECT_CREATE = "queue.paascc.project.create"
-const val EXCHANGE_PAASCC_PROJECT_CREATE = "exchange.paascc.project.create"
-
-const val ROUTE_PAASCC_PROJECT_UPDATE = "route.paascc.project.update"
-const val QUEUE_PAASCC_PROJECT_UPDATE = "queue.paascc.project.update"
-const val EXCHANGE_PAASCC_PROJECT_UPDATE = "exchange.paascc.project.update"
-
-const val EXCHANGE_PAASCC_PROJECT_UPDATE_LOGO = "exchange.paascc.project.update.logo"
-const val ROUTE_PAASCC_PROJECT_UPDATE_LOGO = "route.paascc.project.update.logo"
-const val QUEUE_PAASCC_PROJECT_UPDATE_LOGO = "queue.paascc.project.update.logo"
-
-const val ROUTE_GIT_COMMIT_CHECK = "route.git.commit.check"
-const val EXCHANGE_GIT_COMMIT_CHECK = "exchange.git.commit.check"
-const val QUEUE_GIT_COMMIT_CHECK = "queue.git.commit.check"
-
-const val ROUTE_GITHUB_PR = "route.github.pr"
-const val EXCHANGE_GITHUB_PR = "exchange.github.pr"
-const val QUEUE_GITHUB_PR = "queue.github.pr"
 
 const val EXCHANGE_TASK_FILTER_PATH = "exchange.task.filter.path"
 const val ROUTE_ADD_TASK_FILTER_PATH = "route.add.task.filter.path"
@@ -96,20 +66,6 @@ const val QUEUE_GONGFENG_DELETE_ALL_JOB = "queue.gongfeng.delete.all.job."
 const val EXCHANGE_GONGFENG_INIT_ALL_JOB = "exchange.gongfeng.init.all.job"
 const val QUEUE_GONGFENG_INIT_ALL_JOB = "queue.gongfeng.init.all.job."
 
-const val EXCHANGE_GONGFENG_CODECC_SCAN = "exchange.gongfeng.codecc.scan"
-const val ROUTE_GONGFENG_CODECC_SCAN = "route.gongfeng.codecc.scan"
-const val QUEUE_GONGFENG_CODECC_SCAN = "queue.gongfeng.codecc.scan"
-
-const val ROUTE_GONGFENG_TRIGGER_PIPELINE = "route.gongfeng.trigger.pipeline"
-const val QUEUE_GONGFENG_TRIGGER_PIPELINE = "queue.gongfeng.trigger.pipeline"
-
-const val ROUTE_GONGFENG_ACTIVE_PROJECT = "route.gongfeng.active.project"
-const val QUEUE_GONGFENG_ACTIVE_PROJECT = "queue.gongfeng.active.project"
-
-const val ROUTE_GONGFENG_RETRY_TRIGGER = "route.gongfeng.retry.trigger"
-const val QUEUE_GONGFENG_RETRY_TRIGGER = "queue.gongfeng.retry.trigger"
-const val EXCHANGE_GONGFENG_RETRY_TRIGGER = "exchange.gongfeng.retry.trigger"
-
 const val PREFIX_EXCHANGE_DEFECT_COMMIT = "exchange.defect.commit."
 const val PREFIX_ROUTE_DEFECT_COMMIT = "route.defect.commit."
 const val PREFIX_QUEUE_DEFECT_COMMIT = "queue.defect.commit."
@@ -118,61 +74,9 @@ const val PREFIX_EXCHANGE_OPENSOURCE_DEFECT_COMMIT = "exchange.opensource.defect
 const val PREFIX_ROUTE_OPENSOURCE_DEFECT_COMMIT = "route.opensource.defect.commit."
 const val PREFIX_QUEUE_OPENSOURCE_DEFECT_COMMIT = "queue.opensource.defect.commit."
 
-const val EXCHANGE_DEFECT_COMMIT_COVERITY = "exchange.defect.commit.coverity"
-const val ROUTE_DEFECT_COMMIT_COVERITY = "route.defect.commit.coverity"
-const val QUEUE_DEFECT_COMMIT_COVERITY = "queue.defect.commit.coverity"
-
-const val EXCHANGE_OPENSOURCE_DEFECT_COMMIT_COVERITY = "exchange.opensource.defect.commit.coverity"
-const val ROUTE_OPENSOURCE_DEFECT_COMMIT_COVERITY = "route.opensource.defect.commit.coverity"
-const val QUEUE_OPENSOURCE_DEFECT_COMMIT_COVERITY = "queue.opensource.defect.commit.coverity"
-
 const val EXCHANGE_DEFECT_COMMIT_KLOCWORK = "exchange.defect.commit.klocwork"
 const val ROUTE_DEFECT_COMMIT_KLOCWORK = "route.defect.commit.klocwork"
 const val QUEUE_DEFECT_COMMIT_KLOCWORK = "queue.defect.commit.klocwork"
-
-const val EXCHANGE_DEFECT_COMMIT_LINT = "exchange.defect.commit.lint"
-const val ROUTE_DEFECT_COMMIT_LINT = "route.defect.commit.lint"
-const val QUEUE_DEFECT_COMMIT_LINT = "queue.defect.commit.lint"
-
-const val EXCHANGE_OPENSOURCE_DEFECT_COMMIT_LINT = "exchange.opensource.defect.commit.lint"
-const val ROUTE_OPENSOURCE_DEFECT_COMMIT_LINT = "route.opensource.defect.commit.lint"
-const val QUEUE_OPENSOURCE_DEFECT_COMMIT_LINT = "queue.opensource.defect.commit.lint"
-
-const val EXCHANGE_DEFECT_COMMIT_CCN = "exchange.defect.commit.ccn"
-const val ROUTE_DEFECT_COMMIT_CCN = "route.defect.commit.ccn"
-const val QUEUE_DEFECT_COMMIT_CCN = "queue.defect.commit.ccn"
-
-const val EXCHANGE_OPENSOURCE_DEFECT_COMMIT_CCN = "exchange.opensource.defect.commit.ccn"
-const val ROUTE_OPENSOURCE_DEFECT_COMMIT_CCN = "route.opensource.defect.commit.ccn"
-const val QUEUE_OPENSOURCE_DEFECT_COMMIT_CCN = "queue.opensource.defect.commit.ccn"
-
-const val EXCHANGE_DEFECT_COMMIT_DUPC = "exchange.defect.commit.dupc"
-const val ROUTE_DEFECT_COMMIT_DUPC = "route.defect.commit.dupc"
-const val QUEUE_DEFECT_COMMIT_DUPC = "queue.defect.commit.dupc"
-
-const val EXCHANGE_OPENSOURCE_DEFECT_COMMIT_DUPC = "exchange.opensource.defect.commit.dupc"
-const val ROUTE_OPENSOURCE_DEFECT_COMMIT_DUPC = "route.opensource.defect.commit.dupc"
-const val QUEUE_OPENSOURCE_DEFECT_COMMIT_DUPC = "queue.opensource.defect.commit.dupc"
-
-const val EXCHANGE_DEFECT_COMMIT_CLOC = "exchange.defect.commit.cloc"
-const val ROUTE_DEFECT_COMMIT_CLOC = "route.defect.commit.cloc"
-const val QUEUE_DEFECT_COMMIT_CLOC = "queue.defect.commit.cloc"
-
-const val EXCHANGE_OPENSOURCE_DEFECT_COMMIT_CLOC = "exchange.opensource.defect.commit.cloc"
-const val ROUTE_OPENSOURCE_DEFECT_COMMIT_CLOC = "route.opensource.defect.commit.cloc"
-const val QUEUE_OPENSOURCE_DEFECT_COMMIT_CLOC = "queue.opensource.defect.commit.cloc"
-
-const val EXCHANGE_DEFECT_COMMIT_PINPOINT = "exchange.defect.commit.pinpoint"
-const val ROUTE_DEFECT_COMMIT_PINPOINT = "route.defect.commit.pinpoint"
-const val QUEUE_DEFECT_COMMIT_PINPOINT = "queue.defect.commit.pinpoint"
-
-const val EXCHANGE_OPENSOURCE_DEFECT_COMMIT_PINPOINT = "exchange.opensource.defect.commit.pinpoint"
-const val ROUTE_OPENSOURCE_DEFECT_COMMIT_PINPOINT = "route.opensource.defect.commit.pinpoint"
-const val QUEUE_OPENSOURCE_DEFECT_COMMIT_PINPOINT = "queue.opensource.defect.commit.pinpoint"
-
-const val EXCHANGE_OPENSOURCE_DEFECT_COMMIT_STAT = "exchange.opensource.defect.commit.stat"
-const val ROUTE_OPENSOURCE_DEFECT_COMMIT_STAT = "route.opensource.defect.commit.stat"
-const val QUEUE_OPENSOURCE_DEFECT_COMMIT_STAT = "queue.opensource.defect.commit.stat"
 
 const val EXCHANGE_DEFECT_COMMIT_LINT_NEW = "exchange.defect.commit.lint.new"
 const val ROUTE_DEFECT_COMMIT_LINT_NEW = "route.defect.commit.lint.new"
@@ -230,38 +134,6 @@ const val EXCHANGE_DEFECT_COMMIT_STAT_LARGE = "exchange.defect.commit.stat.large
 const val ROUTE_DEFECT_COMMIT_STAT_LARGE = "route.defect.commit.stat.large"
 const val QUEUE_DEFECT_COMMIT_STAT_LARGE = "queue.defect.commit.stat.large"
 
-const val EXCHANGE_DEFECT_COMMIT_LINT_OPENSOURCE = "exchange.defect.commit.lint.opensource"
-const val ROUTE_DEFECT_COMMIT_LINT_OPENSOURCE = "route.defect.commit.lint.opensource"
-const val QUEUE_DEFECT_COMMIT_LINT_OPENSOURCE = "queue.defect.commit.lint.opensource"
-
-const val EXCHANGE_DEFECT_COMMIT_CCN_OPENSOURCE = "exchange.defect.commit.ccn.opensource"
-const val ROUTE_DEFECT_COMMIT_CCN_OPENSOURCE = "route.defect.commit.ccn.opensource"
-const val QUEUE_DEFECT_COMMIT_CCN_OPENSOURCE = "queue.defect.commit.ccn.opensource"
-
-const val EXCHANGE_DEFECT_COMMIT_DUPC_OPENSOURCE = "exchange.defect.commit.dupc.opensource"
-const val ROUTE_DEFECT_COMMIT_DUPC_OPENSOURCE = "route.defect.commit.dupc.opensource"
-const val QUEUE_DEFECT_COMMIT_DUPC_OPENSOURCE = "queue.defect.commit.dupc.opensource"
-
-const val EXCHANGE_DEFECT_COMMIT_CLOC_OPENSOURCE = "exchange.defect.commit.cloc.opensource"
-const val ROUTE_DEFECT_COMMIT_CLOC_OPENSOURCE = "route.defect.commit.cloc.opensource"
-const val QUEUE_DEFECT_COMMIT_CLOC_OPENSOURCE = "queue.defect.commit.cloc.opensource"
-
-const val EXCHANGE_DEFECT_COMMIT_PINPOINT_OPENSOURCE = "exchange.defect.commit.pinpoint.opensource"
-const val ROUTE_DEFECT_COMMIT_PINPOINT_OPENSOURCE = "route.defect.commit.pinpoint.opensource"
-const val QUEUE_DEFECT_COMMIT_PINPOINT_OPENSOURCE = "queue.defect.commit.pinpoint.opensource"
-
-const val EXCHANGE_DEFECT_COMMIT_STAT_OPENSOURCE = "exchange.defect.commit.stat.opensource"
-const val ROUTE_DEFECT_COMMIT_STAT_OPENSOURCE = "route.defect.commit.stat.opensource"
-const val QUEUE_DEFECT_COMMIT_STAT_OPENSOURCE = "queue.defect.commit.stat.opensource"
-
-const val EXCHANGE_DEFECT_COMMIT_METRICS_OPENSOURCE = "exchange.defect.commit.metrics.opensource"
-const val ROUTE_DEFECT_COMMIT_METRICS_OPENSOURCE = "route.defect.commit.metrics.opensource"
-const val QUEUE_DEFECT_COMMIT_METRICS_OPENSOURCE = "queue.defect.commit.metrics.opensource"
-
-const val EXCHANGE_DEFECT_COMMIT_CLUSTER_OPENSOURCE = "exchange.defect.commit.cluster.opensource"
-const val ROUTE_DEFECT_COMMIT_CLUSTER_OPENSOURCE = "route.defect.commit.cluster.opensource"
-const val QUEUE_DEFECT_COMMIT_CLUSTER_OPENSOURCE = "queue.defect.commit.cluster.opensource"
-
 const val EXCHANGE_DEFECT_COMMIT_SUPER_LARGE = "exchange.defect.commit.super.large"
 const val ROUTE_DEFECT_COMMIT_SUPER_LARGE = "route.defect.commit.super.large"
 const val QUEUE_DEFECT_COMMIT_SUPER_LARGE = "queue.defect.commit.super.large"
@@ -290,47 +162,23 @@ const val QUEUE_REGISTER_KW_PROJECT = "queue.register.kw.project"
 const val ROUTE_CODECC_RTX_NOTIFY = "route.codecc.rtx.notify"
 const val QUEUE_CODECC_RTX_NOTIFY = "queue.codecc.rtx.notify"
 
+const val ROUTE_CODECC_RTX_NOTIFY_SEND = "route.codecc.rtx.notify.send"
+const val QUEUE_CODECC_RTX_NOTIFY_SEND = "queue.codecc.rtx.notify.send"
+
 const val ROUTE_CODECC_BKPLUGINEMAIL_NOTIFY = "route.codecc.bkpluginemail.notify"
 const val QUEUE_CODECC_BKPLUGINEMAIL_NOTIFY = "queue.codecc.bkpluginemail.notify"
 
 const val ROUTE_CODECC_BKPLUGINWECHAT_NOTIFY = "route.codecc.bkpluginwechat.notify"
 const val QUEUE_CODECC_BKPLUGINWECHAT_NOTIFY = "queue.codecc.bkpluginwechat.notify"
 
+const val EXCHANGE_IGNORE_EMAIL_SEND = "exchange.ignore.email.send"
+const val ROUTE_IGNORE_EMAIL_SEND = "route.ignore.email.send"
+const val QUEUE_IGNORE_EMAIL_SEND = "queue.ignore.email.send"
 
 const val EXCHANGE_KAFKA_DATA_PLATFORM = "exchange.kafka.data.platform"
-const val ROUTE_KAFKA_DATA_TASK_DETAIL = "route.kafka.data.task.detail"
-const val QUEUE_KAFKA_DATA_TASK_DETAIL = "queue.kafka.data.task.detail"
-
-const val ROUTE_KAFKA_DATA_GONGFENG_PROJECT = "route.kafka.data.gongfeng.project"
-const val QUEUE_KAFKA_DATA_GONGFENG_PROJECT = "queue.kafka.data.gongfeng.project"
-
-const val ROUTE_KAFKA_DATA_COMMON_STATISTIC = "route.kafka.data.common.statistic"
-const val QUEUE_KAFKA_DATA_COMMON_STATISTIC = "queue.kafka.data.common.statistic"
-
-const val ROUTE_KAFKA_DATA_LINT_STATISTIC = "route.kafka.data.lint.statistic"
-const val QUEUE_KAFKA_DATA_LINT_STATISTIC = "queue.kafka.data.lint.statistic"
-
-const val ROUTE_KAFKA_DATA_CCN_STATISTIC = "route.kafka.data.ccn.statistic"
-const val QUEUE_KAFKA_DATA_CCN_STATISTIC = "queue.kafka.data.ccn.statistic"
-
-const val ROUTE_KAFKA_DATA_DUPC_STATISTIC = "route.kafka.data.dupc.statistic"
-const val QUEUE_KAFKA_DATA_DUPC_STATISTIC = "queue.kafka.data.dupc.statistic"
-
-const val ROUTE_KAFKA_DATA_ACTIVE_PROJECT = "route.kafka.data.active.project"
-const val QUEUE_KAFKA_DATA_ACTIVE_PROJECT = "queue.kafka.data.active.project"
-
-const val ROUTE_KAFKA_DATA_CLOC_DEFECT = "route.kafka.data.cloc.defect"
-const val QUEUE_KAFKA_DATA_CLOC_DEFECT = "queue.kafka.data.cloc.defect"
-
-
-const val EXCHANGE_TASKLOG_DEFECT_WEBSOCKET = "exchange.tasklog.defect.websocket"
-const val ROUTE_TASKLOG_DEFECT_WEBSOCKET = "route.tasklog.defect.websocket"
-const val QUEUE_TASKLOG_DEFECT_WEBSOCKET = "queue.tasklog.defect.websocket."
-
 
 const val ROUTE_KAFKA_DATA_TRIGGER_TASK = "route.kafka.data.trigger.task"
 const val QUEUE_KAFKA_DATA_TRIGGER_TASK = "queue.kafka.data.trigger.task"
-
 
 const val EXCHANGE_EXPIRED_TASK_STATUS = "exchange.expired.task.status"
 const val ROUTE_EXPIRED_TASK_STATUS = "route.expired.task.status"
@@ -339,14 +187,6 @@ const val QUEUE_EXPIRED_TASK_STATUS = "queue.expired.task.status"
 const val EXCHANGE_REFRESH_CHECKERSET_USAGE = "exchange.refresh.checkerset.usage"
 const val ROUTE_REFRESH_CHECKERSET_USAGE = "route.refresh.checkerset.usage"
 const val QUEUE_REFRESH_CHECKERSET_USAGE = "queue.refresh.checkerset.usage"
-
-const val EXCHANGE_GONGFENG_STAT_SYNC = "exchange.gongfeng.stat.sync"
-const val ROUTE_GONGFENG_STAT_SYNC = "route.gongfeng.stat.sync"
-const val QUEUE_GONGFENG_STAT_SYNC = "queue.gongfeng.stat.sync"
-
-const val EXCHANGE_GONGFENG_STAT_SYNC_NEW = "exchange.gongfeng.stat.sync.new"
-const val ROUTE_GONGFENG_STAT_SYNC_NEW = "route.gongfeng.stat.sync.new"
-const val QUEUE_GONGFENG_STAT_SYNC_NEW = "queue.gongfeng.stat.sync.new"
 
 const val EXCHANGE_REFRESH_TOOLMETA_CACHE = "exchange.refresh.toolmeta.cache"
 const val QUEUE_REFRESH_TOOLMETA_CACHE = "queue.refresh.toolmeta.cache"
@@ -408,38 +248,6 @@ const val EXCHANGE_FAST_INCREMENT_KLOCWORK = "exchange.fast.increment.klocwork"
 const val ROUTE_FAST_INCREMENT_KLOCWORK = "route.fast.increment.klocwork"
 const val QUEUE_FAST_INCREMENT_KLOCWORK = "queue.fast.increment.klocwork"
 
-const val EXCHANGE_FAST_INCREMENT_LINT_OPENSOURCE = "exchange.fast.increment.lint.opensource"
-const val ROUTE_FAST_INCREMENT_LINT_OPENSOURCE = "route.fast.increment.lint.opensource"
-const val QUEUE_FAST_INCREMENT_LINT_OPENSOURCE = "queue.fast.increment.lint.opensource"
-
-const val EXCHANGE_FAST_INCREMENT_CCN_OPENSOURCE = "exchange.fast.increment.ccn.opensource"
-const val ROUTE_FAST_INCREMENT_CCN_OPENSOURCE = "route.fast.increment.ccn.opensource"
-const val QUEUE_FAST_INCREMENT_CCN_OPENSOURCE = "queue.fast.increment.ccn.opensource"
-
-const val EXCHANGE_FAST_INCREMENT_DUPC_OPENSOURCE = "exchange.fast.increment.dupc.opensource"
-const val ROUTE_FAST_INCREMENT_DUPC_OPENSOURCE = "route.fast.increment.dupc.opensource"
-const val QUEUE_FAST_INCREMENT_DUPC_OPENSOURCE = "queue.fast.increment.dupc.opensource"
-
-const val EXCHANGE_FAST_INCREMENT_CLOC_OPENSOURCE = "exchange.fast.increment.cloc.opensource"
-const val ROUTE_FAST_INCREMENT_CLOC_OPENSOURCE = "route.fast.increment.cloc.opensource"
-const val QUEUE_FAST_INCREMENT_CLOC_OPENSOURCE = "queue.fast.increment.cloc.opensource"
-
-const val EXCHANGE_FAST_INCREMENT_STAT_OPENSOURCE = "exchange.fast.increment.stat.opensource"
-const val ROUTE_FAST_INCREMENT_STAT_OPENSOURCE = "route.fast.increment.stat.opensource"
-const val QUEUE_FAST_INCREMENT_STAT_OPENSOURCE = "queue.fast.increment.stat.opensource"
-
-const val EXCHANGE_FAST_INCREMENT_PINPOINT_OPENSOURCE = "exchange.fast.increment.pinpoint.opensource"
-const val ROUTE_FAST_INCREMENT_PINPOINT_OPENSOURCE = "route.fast.increment.pinpoint.opensource"
-const val QUEUE_FAST_INCREMENT_PINPOINT_OPENSOURCE = "queue.fast.increment.pinpoint.opensource"
-
-const val EXCHANGE_FAST_INCREMENT_COVERITY_OPENSOURCE = "exchange.fast.increment.coverity.opensource"
-const val ROUTE_FAST_INCREMENT_COVERITY_OPENSOURCE = "route.fast.increment.coverity.opensource"
-const val QUEUE_FAST_INCREMENT_COVERITY_OPENSOURCE = "queue.fast.increment.coverity.opensource"
-
-const val EXCHANGE_FAST_INCREMENT_KLOCWORK_OPENSOURCE = "exchange.fast.increment.klocwork.opensource"
-const val ROUTE_FAST_INCREMENT_KLOCWORK_OPENSOURCE = "route.fast.increment.klocwork.opensource"
-const val QUEUE_FAST_INCREMENT_KLOCWORK_OPENSOURCE = "queue.fast.increment.klocwork.opensource"
-
 const val EXCHANGE_TOOL_REFRESH_FOLLOWSTATUS = "exchange.tool.refresh.followstatus"
 const val ROUTE_TOOL_REFRESH_FOLLOWSTATUS = "route.tool.refresh.followstatus"
 const val QUEUE_TOOL_REFRESH_FOLLOWSTATUS = "queue.tool.refresh.followstatus"
@@ -449,15 +257,6 @@ const val ROUTE_SCORING_OPENSOURCE = "route.scoring.opensource"
 const val QUEUE_SCORING_OPENSOURCE = "queue.scoring.opensource"
 
 const val EXCHANGE_ATOM_MONITOR_DATA_REPORT_FANOUT = "e.engine.atom.monitor.data.report.fanout"
-const val QUEUE_CODECC_OPENSOURCE_FAIL_DATA_REPORT = "queue.codecc.opensource.fail.data.report"
-
-const val EXCHANGE_COV_DEFECT_DETAIL_SYNC = "exchange.cov.defect.detail.sync"
-const val ROUTE_COV_DEFECT_DETAIL_SYNC = "route.cov.defect.detail.sync"
-const val QUEUE_COV_DEFECT_DETAIL_SYNC = "queue.cov.defect.detail.sync"
-
-const val EXCHANGE_COV_DEFECT_DETAIL_SYNC_OPENSOURCE = "exchange.cov.defect.detail.sync.opensource"
-const val ROUTE_COV_DEFECT_DETAIL_SYNC_OPENSOURCE = "route.cov.defect.detail.sync.opensource"
-const val QUEUE_COV_DEFECT_DETAIL_SYNC_OPENSOURCE = "queue.cov.defect.detail.sync.opensource"
 
 const val EXCHANGE_CLOSE_DEFECT_STATISTIC = "exchange.close.defect.statistic"
 const val ROUTE_CLOSE_DEFECT_STATISTIC = "route.close.defect.statistic"
@@ -499,12 +298,81 @@ const val EXCHANGE_TASK_PERSONAL = "exchange.task.personal"
 const val ROUTE_TASK_PERSONAL = "route.task.personal"
 const val QUEUE_TASK_PERSONAL = "queue.task.personal"
 
-const val EXCHANGE_GRAY_TASK_POOL = "exchange.gray.task.pool"
-const val ROUTE_GRAY_TASK_POOL_CREATE = "route.gray.task.pool.create"
-const val QUEUE_GRAY_TASK_POOL_CREATE = "queue.gray.task.pool.create"
-const val ROUTE_GRAY_TASK_POOL_TRIGGER = "route.gray.task.pool.trigger"
-const val QUEUE_GRAY_TASK_POOL_TRIGGER = "queue.gray.task.pool.trigger"
-
 const val EXCHANGE_CODE_REPO_STAT = "exchange.code.repo.stat"
 const val ROUTE_CODE_REPO_STAT = "route.code.repo.stat"
 const val QUEUE_CODE_REPO_STAT = "queue.code.repo.stat"
+
+const val EXCHANGE_TRIGGER_COMMIT_HANDLER = "exchange.trigger.commit.handler"
+const val ROUTE_TRIGGER_COMMIT_HANDLER = "route.trigger.commit.handler"
+const val QUEUE_TRIGGER_COMMIT_HANDLER = "queue.trigger.commit.handler"
+
+const val EXCHANGE_LINE_CHART_STAT = "exchange.line.chart.stat"
+const val ROUTE_LINE_CHART_STAT = "route.line.chart.stat"
+const val QUEUE_LINE_CHART_STAT = "queue.line.chart.stat"
+
+const val EXCHANGE_PRECI_USER_STAT = "exchange.preci.user.stat"
+const val ROUTE_PRECI_USER_STAT = "route.preci.user.stat"
+const val QUEUE_PRECI_USER_STAT = "queue.preci.user.stat"
+
+const val EXCHANGE_SMOKE_CHECK = "exchange.smoke.check"
+const val ROUTE_SMOKE_CHECK = "route.smoke.check"
+const val QUEUE_SMOKE_CHECK = "queue.smoke.check"
+
+const val EXCHANGE_SMOKE_TRIGGER_ANALYZE = "exchange.smoke.trigger.analyze"
+const val ROUTE_SMOKE_TRIGGER_ANALYZE = "route.smoke.trigger.analyze"
+const val QUEUE_SMOKE_TRIGGER_ANALYZE = "queue.smoke.trigger.analyze"
+
+const val EXCHANGE_COVERITY_INST_UPDATE = "exchange.coverity.inst.update"
+const val QUEUE_COVERITY_INST_UPDATE = "queue.coverity.inst.update"
+
+const val EXCHANGE_KLOCWORK_INST_UPDATE = "exchange.klocwork.inst.update"
+const val QUEUE_KLOCWORK_INST_UPDATE = "queue.klocwork.inst.update"
+
+const val EXCHANGE_SCAN_FINISH = "exchange.scan.finish"
+const val ROUTE_SCAN_FINISH = "route.scan.finish"
+const val QUEUE_SCAN_FINISH_FOR_SYNC_DATA = "queue.scan.finish.sync.data"
+const val QUEUE_SCAN_FINISH_FOR_SCAN_SLA = "queue.scan.finish.scan_sla"
+
+const val EXCHANGE_CODECCJOB_TASKLOG_WEBSOCKET = "exchange.codeccjob.tasklog.websocket"
+const val QUEUE_CODECCJOB_TASKLO_WEBSOCKET = "queue.codeccjob.tasklog.websocket."
+
+const val EXCHANGE_CLEAN_MONGO_DATA = "exchange.clean.mongo.data"
+const val QUEUE_CLEAN_MONGO_DATA = "queue.clean.mongo.data"
+
+const val EXCHANGE_IGNORE_TYPE_NOTIFY = "exchange.ignore.type.notify"
+const val ROUTE_IGNORE_TYPE_NOTIFY = "route.ignore.type.notify"
+const val QUEUE_IGNORE_TYPE_NOTIFY = "queue.ignore.type.notify"
+
+const val EXCHANGE_PIPELINE_BUILD_END_CALLBACK = "exchange.pipeline.build.end.callback"
+const val ROUTE_PIPELINE_BUILD_END_CALLBACK = "route.pipeline.build.end.callback"
+const val QUEUE_PIPELINE_BUILD_END_CALLBACK = "queue.pipeline.build.end.callback"
+
+const val EXCHANGE_BK_METRICS_DAILY_FANOUT = "e.metrics.statistic.codecc.daily"
+const val EXCHANGE_BK_METRICS_DAULY_TRIGGER = "exchange.metrics.statistic.trigger"
+const val QUEUE_BK_METRICS_DAILY_TRIGGER = "queue.metrics.statistic.trigger"
+const val ROUTE_BK_METRICS_DAILY_TRIGGER = "route.metrics.statistic.trigger"
+
+const val EXCHANGE_DEFECT_MIGRATION_COMMON = "exchange.defect.migration.common"
+const val ROUTE_DEFECT_MIGRATION_COMMON = "route.defect.migration.common"
+const val QUEUE_DEFECT_MIGRATION_COMMON = "queue.defect.migration.common"
+
+const val EXCHANGE_DEFECT_MIGRATION_COMMON_OPENSOURCE = "exchange.defect.migration.common.opensource"
+const val ROUTE_DEFECT_MIGRATION_COMMON_OPENSOURCE = "route.defect.migration.common.opensource"
+const val QUEUE_DEFECT_MIGRATION_COMMON_OPENSOURCE = "queue.defect.migration.common.opensource"
+
+const val EXCHANGE_DEFECT_MIGRATION_TRIGGER_BATCH = "exchange.defect.migration.trigger.batch"
+const val ROUTE_DEFECT_MIGRATION_TRIGGER_BATCH = "route.defect.migration.trigger.batch"
+const val QUEUE_DEFECT_MIGRATION_TRIGGER_BATCH = "queue.defect.migration.trigger.batch"
+
+const val EXCHANGE_SYNC_USER_TASK_ORG_INFO = "exchange.sync.user.task.org.info"
+const val ROUTE_SYNC_USER_TASK_ORG_INFO = "route.sync.user.task.org.info"
+const val QUEUE_SYNC_USER_TASK_ORG_INFO = "queue.sync.user.task.org.info"
+
+const val EXCHANGE_DEFECT_CHANGE_LOG = "exchange.defect.change.log"
+const val ROUTE_DEFECT_CHANGE_LOG = "route.defect.change.log"
+const val QUEUE_DEFECT_CHANGE_LOG = "queue.defect.change.log"
+
+const val EXCHANGE_SCANSCHEDULE_TOOL_SCAN = "exchange.scanschedule.tool.scan"
+const val ROUTE_SCANSCHEDULE_TOOL_SCAN = "route.scanschedule.tool.scan"
+const val QUEUE_SCANSCHEDULE_TOOL_SCAN = "queue.scanschedule.tool.scan"
+

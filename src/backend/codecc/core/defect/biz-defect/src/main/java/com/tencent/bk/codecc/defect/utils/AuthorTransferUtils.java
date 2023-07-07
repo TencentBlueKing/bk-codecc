@@ -13,7 +13,7 @@
 package com.tencent.bk.codecc.defect.utils;
 
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity;
-import com.tencent.devops.common.util.JsonUtil;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;

@@ -26,8 +26,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class FileIndexVO extends CommonVO
-{
+public class FileIndexVO extends CommonVO {
     /**
      * 文件名，不包含路径
      */
@@ -49,7 +48,7 @@ public class FileIndexVO extends CommonVO
     private String storeType;
 
     /**
-     *
+     * 下载地址
      */
     private String downloadUrl;
 

@@ -29,21 +29,54 @@
 
 package com.tencent.bk.codecc.task.service.impl;
 
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
+import static com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
+import static com.tencent.devops.common.constant.ComConstants.CLEAN_TASK_STATUS;
+import static com.tencent.devops.common.constant.ComConstants.CLEAN_TASK_WHITE_LIST;
+import static com.tencent.devops.common.constant.ComConstants.DISABLE_ACTION;
+import static com.tencent.devops.common.constant.ComConstants.ENABLE_ACTION;
+import static com.tencent.devops.common.constant.ComConstants.FOLLOW_STATUS;
+import static com.tencent.devops.common.constant.ComConstants.FUNC_CODE_REPOSITORY;
+import static com.tencent.devops.common.constant.ComConstants.FUNC_SCAN_SCHEDULE;
+import static com.tencent.devops.common.constant.ComConstants.FUNC_TASK_INFO;
+import static com.tencent.devops.common.constant.ComConstants.FUNC_TASK_SWITCH;
+import static com.tencent.devops.common.constant.ComConstants.FUNC_TRIGGER_ANALYSIS;
+import static com.tencent.devops.common.constant.ComConstants.MODIFY_INFO;
+import static com.tencent.devops.common.constant.ComConstants.Status;
+import static com.tencent.devops.common.constant.ComConstants.Step4MutliTool;
+import static com.tencent.devops.common.constant.ComConstants.StepStatus;
+import static com.tencent.devops.common.constant.ComConstants.TOOL_LICENSE_WHITE_LIST;
+import static com.tencent.devops.common.constant.ComConstants.TRIGGER_ANALYSIS;
+import static com.tencent.devops.common.constant.ComConstants.Tool;
+import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_TOOL_PARAMS_LABEL_NAME;
+import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_TOOL_PARAMS_TIPS;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_EXPIRED_TASK_STATUS;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_EXTERNAL_JOB;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_SCORING_OPENSOURCE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_EXPIRED_TASK_STATUS;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_SCORING_OPENSOURCE;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.tencent.bk.codecc.defect.api.ServiceCheckerRestResource;
 import com.tencent.bk.codecc.defect.api.ServiceCheckerSetRestResource;
 import com.tencent.bk.codecc.defect.api.ServiceClusterStatisticRestReource;
 import com.tencent.bk.codecc.defect.api.ServiceMetricsRestResource;
+import com.tencent.bk.codecc.defect.api.ServiceReportDefectRestResource;
 import com.tencent.bk.codecc.defect.api.ServiceTaskLogOverviewResource;
 import com.tencent.bk.codecc.defect.api.ServiceTaskLogRestResource;
 import com.tencent.bk.codecc.defect.api.ServiceToolBuildInfoResource;
 import com.tencent.bk.codecc.defect.dto.ScanTaskTriggerDTO;
 import com.tencent.bk.codecc.defect.vo.MetricsVO;
+import com.tencent.bk.codecc.defect.vo.QueryTaskCheckerDimensionRequest;
 import com.tencent.bk.codecc.defect.vo.TaskLogOverviewVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.common.AuthorTransferVO;
@@ -53,51 +86,48 @@ import com.tencent.bk.codecc.task.constant.TaskConstants;
 import com.tencent.bk.codecc.task.constant.TaskMessageCode;
 import com.tencent.bk.codecc.task.dao.CommonDao;
 import com.tencent.bk.codecc.task.dao.mongorepository.BaseDataRepository;
-import com.tencent.bk.codecc.task.dao.mongorepository.CustomProjRepository;
-import com.tencent.bk.codecc.task.dao.mongorepository.GongfengPublicProjRepository;
 import com.tencent.bk.codecc.task.dao.mongorepository.TaskRepository;
 import com.tencent.bk.codecc.task.dao.mongorepository.TaskStatisticRepository;
-import com.tencent.bk.codecc.task.dao.mongorepository.ToolMetaRepository;
+import com.tencent.bk.codecc.task.dao.mongorepository.ToolConfigRepository;
 import com.tencent.bk.codecc.task.dao.mongorepository.ToolRepository;
 import com.tencent.bk.codecc.task.dao.mongotemplate.TaskDao;
+import com.tencent.bk.codecc.task.dao.mongotemplate.ToolDao;
 import com.tencent.bk.codecc.task.enums.TaskSortType;
 import com.tencent.bk.codecc.task.model.BaseDataEntity;
-import com.tencent.bk.codecc.task.model.CustomProjEntity;
 import com.tencent.bk.codecc.task.model.DisableTaskEntity;
-import com.tencent.bk.codecc.task.model.GongfengPublicProjEntity;
-import com.tencent.bk.codecc.task.model.NewDefectJudgeEntity;
 import com.tencent.bk.codecc.task.model.NotifyCustomEntity;
+import com.tencent.bk.codecc.task.model.TaskIdInfo;
+import com.tencent.bk.codecc.task.model.TaskIdToolInfoEntity;
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
 import com.tencent.bk.codecc.task.model.TaskStatisticEntity;
 import com.tencent.bk.codecc.task.model.ToolConfigInfoEntity;
-import com.tencent.bk.codecc.task.model.ToolMetaEntity;
-import com.tencent.bk.codecc.task.pojo.GongfengPublicProjModel;
-import com.tencent.bk.codecc.task.pojo.TofOrganizationInfo;
-import com.tencent.bk.codecc.task.pojo.TofStaffInfo;
+import com.tencent.bk.codecc.task.service.BaseDataService;
 import com.tencent.bk.codecc.task.service.EmailNotifyService;
 import com.tencent.bk.codecc.task.service.IAuthorTransferBizService;
 import com.tencent.bk.codecc.task.service.PipelineService;
 import com.tencent.bk.codecc.task.service.TaskService;
 import com.tencent.bk.codecc.task.service.ToolService;
-import com.tencent.bk.codecc.task.service.UserManageService;
-import com.tencent.bk.codecc.task.tof.TofClientApi;
 import com.tencent.bk.codecc.task.vo.BatchRegisterVO;
 import com.tencent.bk.codecc.task.vo.CodeLibraryInfoVO;
-import com.tencent.bk.codecc.task.vo.DevopsProjectOrgVO;
 import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.bk.codecc.task.vo.NotifyCustomVO;
 import com.tencent.bk.codecc.task.vo.RepoInfoVO;
+import com.tencent.bk.codecc.task.vo.RuntimeUpdateMetaVO;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
 import com.tencent.bk.codecc.task.vo.TaskCodeLibraryVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
+import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigRequest;
+import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse;
+import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse.TaskBase;
 import com.tencent.bk.codecc.task.vo.TaskListReqVO;
+import com.tencent.bk.codecc.task.vo.TaskListStatus;
 import com.tencent.bk.codecc.task.vo.TaskListVO;
 import com.tencent.bk.codecc.task.vo.TaskMemberVO;
 import com.tencent.bk.codecc.task.vo.TaskOverviewVO;
 import com.tencent.bk.codecc.task.vo.TaskOverviewVO.LastAnalysis;
-import com.tencent.bk.codecc.task.vo.TaskOverviewVO.LastCluster;
 import com.tencent.bk.codecc.task.vo.TaskOwnerAndMemberVO;
 import com.tencent.bk.codecc.task.vo.TaskStatusVO;
+import com.tencent.bk.codecc.task.vo.TaskUpdateDeptInfoVO;
 import com.tencent.bk.codecc.task.vo.TaskUpdateVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigBaseVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
@@ -106,13 +136,14 @@ import com.tencent.bk.codecc.task.vo.checkerset.ToolCheckerSetVO;
 import com.tencent.bk.codecc.task.vo.pipeline.PipelineTaskVO;
 import com.tencent.bk.codecc.task.vo.pipeline.PipelineToolParamVO;
 import com.tencent.bk.codecc.task.vo.pipeline.PipelineToolVO;
-import com.tencent.bk.codecc.task.vo.scanconfiguration.NewDefectJudgeVO;
 import com.tencent.bk.codecc.task.vo.scanconfiguration.ScanConfigurationVO;
 import com.tencent.bk.codecc.task.vo.scanconfiguration.TimeAnalysisConfigVO;
 import com.tencent.bk.codecc.task.vo.tianyi.QueryMyTasksReqVO;
 import com.tencent.bk.codecc.task.vo.tianyi.TaskInfoVO;
+import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.devops.common.api.GetLastAnalysisResultsVO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
+import com.tencent.devops.common.api.StatisticTaskCodeLineToolVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.analysisresult.ToolLastAnalysisResultVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
@@ -127,28 +158,49 @@ import com.tencent.devops.common.api.exception.StreamException;
 import com.tencent.devops.common.api.exception.UnauthorizedException;
 import com.tencent.devops.common.api.pojo.GlobalMessage;
 import com.tencent.devops.common.api.pojo.Page;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.auth.api.external.AuthExRegisterApi;
-import com.tencent.devops.common.auth.api.external.AuthTaskService;
 import com.tencent.devops.common.auth.api.pojo.external.AuthRole;
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
 import com.tencent.devops.common.auth.api.pojo.external.PipelineAuthAction;
+import com.tencent.devops.common.auth.api.service.AuthTaskService;
 import com.tencent.devops.common.auth.api.util.PermissionUtil;
 import com.tencent.devops.common.client.Client;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
-import com.tencent.devops.common.constant.ComConstants.ScanStatus;
-import com.tencent.devops.common.constant.ComConstants.ToolType;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.ToolMetaCacheService;
+import com.tencent.devops.common.service.aop.AbstractI18NResponseAspect;
 import com.tencent.devops.common.service.utils.GlobalMessageUtil;
 import com.tencent.devops.common.service.utils.PageableUtils;
+import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.DateTimeUtils;
-import com.tencent.devops.common.util.JsonUtil;
 import com.tencent.devops.common.util.List2StrUtil;
 import com.tencent.devops.common.util.ListSortUtil;
-import com.tencent.devops.common.util.OkhttpUtils;
 import com.tencent.devops.common.web.aop.annotation.OperationHistory;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.text.Collator;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.json.JSONObject;
 import org.apache.commons.collections.CollectionUtils;
@@ -159,64 +211,14 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.text.Collator;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
-import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TASK_ID;
-import static com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
-import static com.tencent.devops.common.constant.ComConstants.DISABLE_ACTION;
-import static com.tencent.devops.common.constant.ComConstants.ENABLE_ACTION;
-import static com.tencent.devops.common.constant.ComConstants.FOLLOW_STATUS;
-import static com.tencent.devops.common.constant.ComConstants.FUNC_CODE_REPOSITORY;
-import static com.tencent.devops.common.constant.ComConstants.FUNC_SCAN_SCHEDULE;
-import static com.tencent.devops.common.constant.ComConstants.FUNC_TASK_INFO;
-import static com.tencent.devops.common.constant.ComConstants.FUNC_TASK_SWITCH;
-import static com.tencent.devops.common.constant.ComConstants.FUNC_TRIGGER_ANALYSIS;
-import static com.tencent.devops.common.constant.ComConstants.MODIFY_INFO;
-import static com.tencent.devops.common.constant.ComConstants.Status;
-import static com.tencent.devops.common.constant.ComConstants.Step4MutliTool;
-import static com.tencent.devops.common.constant.ComConstants.StepStatus;
-import static com.tencent.devops.common.constant.ComConstants.TRIGGER_ANALYSIS;
-import static com.tencent.devops.common.constant.ComConstants.Tool;
-import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_TOOL_PARAMS_LABEL_NAME;
-import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_TOOL_PARAMS_TIPS;
-import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_EXPIRED_TASK_STATUS;
-import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_EXTERNAL_JOB;
-import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_SCORING_OPENSOURCE;
-import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_EXPIRED_TASK_STATUS;
-import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_SCORING_OPENSOURCE;
 
 /**
  * 任务服务实现类
@@ -227,6 +229,7 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_SCORING_OPENSOU
 @Service
 @Slf4j
 public class TaskServiceImpl implements TaskService {
+
     @Autowired
     private AuthExPermissionApi authExPermissionApi;
 
@@ -241,9 +244,6 @@ public class TaskServiceImpl implements TaskService {
 
     @Autowired
     private ToolRepository toolRepository;
-
-    @Autowired
-    private GongfengPublicProjRepository gongfengPublicProjRepository;
 
     @Autowired
     private ToolMetaCacheService toolMetaCache;
@@ -274,38 +274,21 @@ public class TaskServiceImpl implements TaskService {
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
-
-    @Autowired
-    private UserManageService userManageService;
-
-    @Autowired
-    private TofClientApi tofClientApi;
-
-    @Autowired
-    private ToolMetaRepository toolMetaRepository;
-
-    @Autowired
-    private TaskService taskService;
-
-    //    @Autowired
-    //    private GongfengTriggerService gongfengTriggerService;
+    private ToolDao toolDao;
     @Autowired
     private BaseDataRepository baseDataRepository;
 
     @Autowired
-    private CustomProjRepository customProjRepository;
+    private AuthTaskService authTaskService;
 
     @Autowired
     private TaskStatisticRepository taskStatisticRepository;
 
     @Autowired
-    private AuthTaskService authTaskService;
+    private BaseDataService baseDataService;
 
-    @Value("${git.path:#{null}}")
-    private String gitCodePath;
-
-    @Value("${codecc.privatetoken:#{null}}")
-    private String gitPrivateToken = null;
+    @Autowired
+    private ToolConfigRepository toolConfigRepository;
 
     private LoadingCache<String, BaseDataEntity> toolTypeBaseDataCache = CacheBuilder.newBuilder()
             .refreshAfterWrite(2, TimeUnit.HOURS)
@@ -315,58 +298,88 @@ public class TaskServiceImpl implements TaskService {
                     if (StringUtils.isBlank(toolName)) {
                         return null;
                     }
+                    String toolType = toolMetaCache.getToolBaseMetaCache(toolName).getType();
+                    return baseDataRepository.findFirstByParamTypeAndParamCode("TOOL_TYPE", toolType);
+                }
+            });
 
-                    ToolMetaEntity toolMeta = toolMetaRepository.findFirstByName(toolName);
-                    String toolType = toolMeta.getType();
-                    return baseDataRepository.findFirstByParamCode(toolType);
+    /**
+     * 工具许可项目白名单缓存(即只有指定的项目才能使用该工具，用于某些收费工具对特定项目使用)
+     */
+    private LoadingCache<String, Set<String>> toolLicenseWhiteListCache = CacheBuilder.newBuilder()
+            .refreshAfterWrite(5, TimeUnit.MINUTES)
+            .build(new CacheLoader<String, Set<String>>() {
+                @Override
+                public Set<String> load(String toolName) {
+                    Set<String> projectIdSet = Sets.newHashSet();
+                    if (StringUtils.isNotEmpty(toolName)) {
+                        BaseDataEntity baseData =
+                                baseDataRepository.findFirstByParamTypeAndParamCode(TOOL_LICENSE_WHITE_LIST, toolName);
+                        if (baseData != null && StringUtils.isNotEmpty(baseData.getParamValue())) {
+                            String toolSetStr = baseData.getParamValue();
+                            projectIdSet.addAll(List2StrUtil.fromString(toolSetStr, ComConstants.STRING_SPLIT));
+                        }
+                    }
+                    return projectIdSet;
+                }
+            });
+
+    private LoadingCache<String, BaseDataEntity> toolDimensionBaseDataCache = CacheBuilder.newBuilder()
+            .refreshAfterWrite(2, TimeUnit.HOURS)
+            .build(new CacheLoader<String, BaseDataEntity>() {
+                @Override
+                public BaseDataEntity load(String dimension) {
+                    if (StringUtils.isBlank(dimension)) {
+                        return null;
+                    }
+                    return baseDataRepository.findFirstByParamTypeAndParamCode("TOOL_TYPE", dimension);
                 }
             });
 
     @Override
     public TaskListVO getTaskList(String projectId, String user, TaskSortType taskSortType,
-                                  TaskListReqVO taskListReqVO) {
+            TaskListReqVO taskListReqVO) {
 
-        Set<TaskInfoEntity> resultTasks = getQualifiedTaskList(projectId, user, null,
+        List<TaskInfoEntity> resultTasks = getQualifiedTaskList(projectId, user, null,
                 null != taskListReqVO ? taskListReqVO.getTaskSource() : null);
 
         final String toolIdsOrder = commonDao.getToolOrder();
 
-        List<TaskDetailVO> taskDetailVOList = resultTasks.stream().
-                filter(taskInfoEntity ->
-                        StringUtils.isNotEmpty(taskInfoEntity.getToolNames()) &&
+        List<TaskDetailVO> taskDetailVOList = resultTasks.stream().filter(taskInfoEntity ->
+                        StringUtils.isNotEmpty(taskInfoEntity.getToolNames())
                                 //流水线停用任务不展示
-                                !(taskInfoEntity.getStatus().equals(TaskConstants.TaskStatus.DISABLE.value()) &&
-                                        BsTaskCreateFrom.BS_PIPELINE.value().equalsIgnoreCase(taskInfoEntity.getCreateFrom()))).
-                map(taskInfoEntity ->
-                {
+                                && !(taskInfoEntity.getStatus().equals(TaskConstants.TaskStatus.DISABLE.value())
+                                && ComConstants.BsTaskCreateFrom.BS_PIPELINE.value()
+                                .equalsIgnoreCase(taskInfoEntity.getCreateFrom())))
+                .map(taskInfoEntity -> {
                     TaskDetailVO taskDetailVO = new TaskDetailVO();
                     taskDetailVO.setTaskId(taskInfoEntity.getTaskId());
                     taskDetailVO.setToolNames(taskInfoEntity.getToolNames());
                     return taskDetailVO;
-                }).
-                collect(Collectors.toList());
+                }).collect(Collectors.toList());
 
         Result<Map<String, List<ToolLastAnalysisResultVO>>> taskAndTaskLogResult =
                 client.get(ServiceTaskLogRestResource.class)
                         .getBatchTaskLatestTaskLog(taskDetailVOList);
         Map<String, List<ToolLastAnalysisResultVO>> taskAndTaskLogMap;
-        if (taskAndTaskLogResult.isOk() &&
-                MapUtils.isNotEmpty(taskAndTaskLogResult.getData())) {
+        if (taskAndTaskLogResult.isOk() && MapUtils.isNotEmpty(taskAndTaskLogResult.getData())) {
             taskAndTaskLogMap = taskAndTaskLogResult.getData();
         } else {
             log.error("get batch task log fail or task log is empty!");
             taskAndTaskLogMap = new HashMap<>();
         }
 
+        // 查询用户有权限的流水线
+        Set<String> pipelines = authExPermissionApi.queryPipelineListForUser(user, projectId,
+                Sets.newHashSet(PipelineAuthAction.EXECUTE.getActionName()));
 
         //对工具清单进行处理
-        List<TaskDetailVO> taskDetailVOS = resultTasks.stream().
-                filter(taskInfoEntity ->
+        List<TaskDetailVO> taskDetailVOS = resultTasks.stream().filter(taskInfoEntity ->
                         //流水线停用任务不展示
-                        !(taskInfoEntity.getStatus().equals(TaskConstants.TaskStatus.DISABLE.value()) &&
-                                BsTaskCreateFrom.BS_PIPELINE.value().equalsIgnoreCase(taskInfoEntity.getCreateFrom()))).
-                map(taskInfoEntity ->
-                {
+                        !(taskInfoEntity.getStatus().equals(TaskConstants.TaskStatus.DISABLE.value())
+                                && ComConstants.BsTaskCreateFrom.BS_PIPELINE.value()
+                                .equalsIgnoreCase(taskInfoEntity.getCreateFrom())))
+                .map(taskInfoEntity -> {
                     TaskDetailVO taskDetailVO = new TaskDetailVO();
                     BeanUtils.copyProperties(taskInfoEntity, taskDetailVO, "toolConfigInfoList");
                     //设置置顶标识
@@ -376,7 +389,7 @@ public class TaskServiceImpl implements TaskService {
                     } else {
                         taskDetailVO.setTopFlag(-1);
                     }
-                    List<ToolConfigInfoEntity> toolConfigInfoEntityList = taskInfoEntity.getToolConfigInfoList();
+
                     //获取分析完成时间
                     List<ToolLastAnalysisResultVO> taskLogGroupVOs = new ArrayList<>();
                     String toolNames = taskInfoEntity.getToolNames();
@@ -389,36 +402,45 @@ public class TaskServiceImpl implements TaskService {
                         }
                     }
 
+                    taskDetailVO.setHasNoPermission(false);
+                    if (ComConstants.BsTaskCreateFrom.BS_PIPELINE.value()
+                            .equalsIgnoreCase(taskDetailVO.getCreateFrom())) {
+                        if (CollectionUtils.isEmpty(pipelines) || !pipelines.contains(taskDetailVO.getPipelineId())) {
+                            taskDetailVO.setHasNoPermission(true);
+                        }
+                    }
+                    List<ToolConfigInfoEntity> toolConfigInfoEntityList = taskInfoEntity.getToolConfigInfoList();
                     if (CollectionUtils.isNotEmpty(toolConfigInfoEntityList)) {
                         List<ToolConfigInfoVO> toolConfigInfoVOList = new ArrayList<>();
                         boolean isAllSuspended = true;
-                        Long minStartTime = Long.MAX_VALUE;
+                        Long minStartTime = Long.MIN_VALUE;
                         Boolean processFlag = false;
                         Integer totalFinishStep = 0;
                         Integer totalStep = 0;
                         for (ToolConfigInfoEntity toolConfigInfoEntity : toolConfigInfoEntityList) {
-
-                            if (null == toolConfigInfoEntity || StringUtils.isEmpty(toolConfigInfoEntity.getToolName())) {
+                            if (null == toolConfigInfoEntity
+                                    || StringUtils.isEmpty(toolConfigInfoEntity.getToolName())) {
                                 continue;
                             }
 
+                            String toolName = toolConfigInfoEntity.getToolName();
                             // 获取工具展示名称
-                            //                            String displayName = toolMetaCache.getToolDisplayName
-                            //                            (toolConfigInfoEntity.getToolName());
+                            ToolMetaBaseVO toolMetaBaseVO = toolMetaCache.getToolBaseMetaCache(toolName);
 
-                            // 获取工具展示名称
-                            ToolMetaBaseVO toolMetaBaseVO =
-                                    toolMetaCache.getToolBaseMetaCache(toolConfigInfoEntity.getToolName());
-
-
-                            if (toolConfigInfoEntity.getFollowStatus() !=
-                                    FOLLOW_STATUS.WITHDRAW.value()) {
+                            if (toolConfigInfoEntity.getFollowStatus() != ComConstants.FOLLOW_STATUS.WITHDRAW.value()
+                                    && !ComConstants.ToolIntegratedStatus.D.name().equals(
+                                    toolMetaBaseVO.getStatus())) {
 
                                 //更新工具显示状态
                                 //如果有失败的工具，则显示失败的状态
                                 if (!processFlag) {
-                                    processFlag = taskDetailDisplayInfo(toolConfigInfoEntity, taskDetailVO,
-                                            toolMetaBaseVO.getDisplayName());
+                                    Locale locale = AbstractI18NResponseAspect.getLocale();
+                                    String toolDisplayName = toolMetaCache.getDisplayNameByLocale(toolName, locale);
+                                    processFlag = taskDetailDisplayInfo(
+                                            toolConfigInfoEntity,
+                                            taskDetailVO,
+                                            toolDisplayName
+                                    );
                                 }
                                 //添加进度条
                                 totalFinishStep += toolConfigInfoEntity.getCurStep();
@@ -436,29 +458,26 @@ public class TaskServiceImpl implements TaskService {
                                         totalStep += 6;
                                         break;
                                 }
-
                             }
-
 
                             ToolConfigInfoVO toolConfigInfoVO = new ToolConfigInfoVO();
                             BeanUtils.copyProperties(toolConfigInfoEntity, toolConfigInfoVO);
 
                             //设置分析完成时间
                             for (ToolLastAnalysisResultVO toolLastAnalysisResultVO : taskLogGroupVOs) {
-                                if (toolLastAnalysisResultVO.getToolName().equalsIgnoreCase(toolConfigInfoVO.getToolName())) {
+                                if (toolLastAnalysisResultVO.getToolName()
+                                        .equalsIgnoreCase(toolConfigInfoVO.getToolName())) {
                                     toolConfigInfoVO.setEndTime(toolLastAnalysisResultVO.getEndTime());
                                     toolConfigInfoVO.setStartTime(toolLastAnalysisResultVO.getStartTime());
                                 }
                             }
-                            minStartTime = Math.min(minStartTime, toolConfigInfoVO.getStartTime());
-
+                            minStartTime = Math.max(minStartTime, toolConfigInfoVO.getStartTime());
 
                             if (StringUtils.isNotEmpty(toolMetaBaseVO.getDisplayName())) {
                                 toolConfigInfoVO.setDisplayName(toolMetaBaseVO.getDisplayName());
                             }
 
-                            if (toolConfigInfoVO.getFollowStatus() !=
-                                    FOLLOW_STATUS.WITHDRAW.value()) {
+                            if (toolConfigInfoVO.getFollowStatus() != ComConstants.FOLLOW_STATUS.WITHDRAW.value()) {
                                 isAllSuspended = false;
                             }
                             if (toolConfigInfoEntity.getCheckerSet() != null) {
@@ -472,7 +491,7 @@ public class TaskServiceImpl implements TaskService {
                             log.info("all tool is suspended! task id: {}", taskInfoEntity.getTaskId());
                             if (CollectionUtils.isNotEmpty(toolConfigInfoVOList)) {
                                 toolConfigInfoVOList.get(0)
-                                        .setFollowStatus(FOLLOW_STATUS.EXPERIENCE.value());
+                                        .setFollowStatus(ComConstants.FOLLOW_STATUS.EXPERIENCE.value());
                             }
                         }
                         if (totalStep == 0) {
@@ -484,7 +503,7 @@ public class TaskServiceImpl implements TaskService {
                             taskDetailVO.setDisplayProgress(totalFinishStep * 100 / totalStep);
                         }
                         if (null == taskDetailVO.getDisplayStepStatus()) {
-                            taskDetailVO.setDisplayStepStatus(StepStatus.SUCC.value());
+                            taskDetailVO.setDisplayStepStatus(ComConstants.StepStatus.SUCC.value());
                         }
                         if (minStartTime < Long.MAX_VALUE) {
                             taskDetailVO.setMinStartTime(minStartTime);
@@ -506,107 +525,137 @@ public class TaskServiceImpl implements TaskService {
                             toolConfigInfoVOs));
                     taskDetailVO.setToolConfigInfoList(toolConfigInfoVOs);
                     return taskDetailVO;
-                }).
-                collect(Collectors.toList());
+                }).collect(Collectors.toList());
         //根据任务状态过滤
-        if (null != taskListReqVO.getTaskStatus()) {
+        if (CollectionUtils.isNotEmpty(taskListReqVO.getTaskStatusList())  || taskListReqVO.getTaskStatus()!=null) {
+            // 增加taskStatusList字段 兼容taskStatus字段
+            if (CollectionUtils.isEmpty(taskListReqVO.getTaskStatusList())) {
+                taskListReqVO.setTaskStatusList(Collections.singletonList(taskListReqVO.getTaskStatus()));
+            }
+            List<TaskListStatus> taskStatusList = taskListReqVO.getTaskStatusList();
+
             taskDetailVOS = taskDetailVOS.stream().filter(taskDetailVO -> {
-                Boolean selected = false;
-                switch (taskListReqVO.getTaskStatus()) {
-                    case SUCCESS:
-                        if (null != taskDetailVO.getDisplayStepStatus() && null != taskDetailVO.getDisplayStep() &&
-                                taskDetailVO.getDisplayStepStatus() == StepStatus.SUCC.value() &&
-                                taskDetailVO.getDisplayStep() >= Step4MutliTool.COMPLETE.value()) {
-                            selected = true;
-                        }
-                        break;
-                    case FAIL:
-                        if (null != taskDetailVO.getDisplayStepStatus() &&
-                                taskDetailVO.getDisplayStepStatus() == StepStatus.FAIL.value()) {
-                            selected = true;
-                        }
-                        break;
-                    case WAITING:
-                        if (null == taskDetailVO.getDisplayStepStatus() ||
-                                (null != taskDetailVO.getDisplayStepStatus() &&
-                                        taskDetailVO.getDisplayStepStatus() == StepStatus.SUCC.value() &&
-                                        (null == taskDetailVO.getDisplayStep() ||
-                                                taskDetailVO.getDisplayStep() == StepStatus.SUCC.value()))) {
-                            selected = true;
-                        }
-                        break;
-                    case ANALYSING:
-                        if (null != taskDetailVO.getDisplayStepStatus() && null != taskDetailVO.getDisplayStep() &&
-                                taskDetailVO.getDisplayStepStatus() != StepStatus.FAIL.value() &&
-                                taskDetailVO.getDisplayStep() > Step4MutliTool.READY.value() &&
-                                taskDetailVO.getDisplayStep() < Step4MutliTool.COMPLETE.value()) {
-                            selected = true;
-                        }
-                        break;
-                    case DISABLED:
-                        if (Status.DISABLE.value() == taskDetailVO.getStatus()) {
-                            selected = true;
-                        }
-                        break;
-                    default:
-                        break;
+                if (taskStatusList.contains(TaskListStatus.SUCCESS)
+                        && null != taskDetailVO.getDisplayStepStatus() && null != taskDetailVO.getDisplayStep()
+                        && taskDetailVO.getDisplayStepStatus() == ComConstants.StepStatus.SUCC.value()
+                        && taskDetailVO.getDisplayStep() >= ComConstants.Step4MutliTool.COMPLETE.value()) {
+                    return true;
+                } else if (taskStatusList.contains(TaskListStatus.FAIL)
+                        && null != taskDetailVO.getDisplayStepStatus()
+                        && taskDetailVO.getDisplayStepStatus() == ComConstants.StepStatus.FAIL.value()) {
+                    return true;
+                } else if (taskStatusList.contains(TaskListStatus.WAITING)
+                        && (null == taskDetailVO.getDisplayStepStatus()
+                        || (null != taskDetailVO.getDisplayStepStatus()
+                        && taskDetailVO.getDisplayStepStatus() == ComConstants.StepStatus.SUCC.value()
+                        && (null == taskDetailVO.getDisplayStep()
+                        || taskDetailVO.getDisplayStep() == ComConstants.StepStatus.SUCC.value())))) {
+                    return true;
+                } else if (taskStatusList.contains(TaskListStatus.ANALYSING)
+                        && null != taskDetailVO.getDisplayStepStatus()
+                        && null != taskDetailVO.getDisplayStep()
+                        && taskDetailVO.getDisplayStepStatus() != ComConstants.StepStatus.FAIL.value()
+                        && taskDetailVO.getDisplayStep() > ComConstants.Step4MutliTool.READY.value()
+                        && taskDetailVO.getDisplayStep() < ComConstants.Step4MutliTool.COMPLETE.value()) {
+                    return true;
+                } else if (taskStatusList.contains(TaskListStatus.DISABLED)
+                        && ComConstants.Status.DISABLE.value() == taskDetailVO.getStatus()) {
+                    return true;
+                } else {
+                    return false;
                 }
-                return selected;
             }).collect(Collectors.toList());
         }
 
-        taskDetailVOS.forEach(taskDetailVO -> taskDetailVO.setCodeLibraryInfo(
-                getRepoInfo(taskDetailVO.getTaskId())));
-        return sortByDate(taskDetailVOS, taskSortType);
+        if (taskListReqVO.getPageable() == null || !taskListReqVO.getPageable()) {
+            taskDetailVOS.stream()
+                    .forEach(taskDetailVO -> taskDetailVO.setCodeLibraryInfo(getRepoInfo(taskDetailVO.getTaskId())));
+        }
+
+        return sortByDate(taskListReqVO, taskDetailVOS, taskSortType);
     }
 
 
     @Override
     public TaskListVO getTaskBaseList(String projectId, String user) {
-        Set<TaskInfoEntity> resultSet = getQualifiedTaskList(projectId, user, null, null);
-        if (CollectionUtils.isNotEmpty(resultSet)) {
-            List<TaskDetailVO> taskBaseVOList = resultSet.stream().map(taskInfoEntity ->
-            {
-                TaskDetailVO taskDetailVO = new TaskDetailVO();
-                taskDetailVO.setTaskId(taskInfoEntity.getTaskId());
-                taskDetailVO.setEntityId(taskInfoEntity.getEntityId());
-                taskDetailVO.setNameCn(taskInfoEntity.getNameCn());
-                taskDetailVO.setNameEn(taskInfoEntity.getNameEn());
-                taskDetailVO.setStatus(taskInfoEntity.getStatus());
-                taskDetailVO.setToolNames(taskInfoEntity.getToolNames());
-                taskDetailVO.setCreatedDate(taskInfoEntity.getCreatedDate());
-                taskDetailVO.setDisableTime(taskInfoEntity.getDisableTime());
-                //设置置顶标识
-                taskDetailVO.setTopFlag(-1);
-                if (CollectionUtils.isNotEmpty(taskInfoEntity.getTopUser())) {
-                    if (taskInfoEntity.getTopUser().contains(user)) {
-                        taskDetailVO.setTopFlag(1);
-                    }
-                }
-                return taskDetailVO;
-            }).
-                    collect(Collectors.toList());
-            List<TaskDetailVO> enableTaskList = taskBaseVOList.stream()
-                    .filter(taskDetailVO ->
-                            !TaskConstants.TaskStatus.DISABLE.value().equals(taskDetailVO.getStatus()))
-                    .sorted((o1, o2) -> o2.getTopFlag() - o1.getTopFlag() == 0
-                            ? o2.getCreatedDate().compareTo(o1.getCreatedDate()) : o2.getTopFlag() - o1.getTopFlag())
-                    .collect(Collectors.toList());
-            List<TaskDetailVO> disableTaskList = taskBaseVOList.stream()
-                    .filter(taskDetailVO ->
-                            TaskConstants.TaskStatus.DISABLE.value().equals(taskDetailVO.getStatus()))
-                    .sorted((o1, o2) -> o2.getTopFlag() - o1.getTopFlag() == 0 ?
-                            (StringUtils.isEmpty(o2.getDisableTime()) ? Long.valueOf(0) :
-                                    Long.valueOf(o2.getDisableTime()))
-                                    .compareTo(StringUtils.isEmpty(o1.getDisableTime()) ? Long.valueOf(0) :
-                                            Long.valueOf(o1.getDisableTime())) :
-                            o2.getTopFlag() - o1.getTopFlag())
-                    .collect(Collectors.toList());
-            return new TaskListVO(enableTaskList, disableTaskList);
-
-
+        List<TaskInfoEntity> taskList = getQualifiedTaskListForTaskBase(projectId, user);
+        if (CollectionUtils.isEmpty(taskList)) {
+            return null;
         }
-        return null;
+
+        List<TaskDetailVO> taskBaseVOList = taskList.stream().map(taskInfoEntity -> {
+            TaskDetailVO taskDetailVO = new TaskDetailVO();
+            taskDetailVO.setTaskId(taskInfoEntity.getTaskId());
+            taskDetailVO.setEntityId(taskInfoEntity.getEntityId());
+            taskDetailVO.setNameCn(taskInfoEntity.getNameCn());
+            taskDetailVO.setNameEn(taskInfoEntity.getNameEn());
+            taskDetailVO.setStatus(taskInfoEntity.getStatus());
+            taskDetailVO.setToolNames(taskInfoEntity.getToolNames());
+            taskDetailVO.setCreatedDate(taskInfoEntity.getCreatedDate());
+            taskDetailVO.setDisableTime(taskInfoEntity.getDisableTime());
+            //设置置顶标识
+            taskDetailVO.setTopFlag(-1);
+            if (CollectionUtils.isNotEmpty(taskInfoEntity.getTopUser())) {
+                if (taskInfoEntity.getTopUser().contains(user)) {
+                    taskDetailVO.setTopFlag(1);
+                }
+            }
+            return taskDetailVO;
+        }).collect(Collectors.toList());
+
+        List<TaskDetailVO> enableTaskList = taskBaseVOList.stream()
+                .filter(taskDetailVO -> !TaskConstants.TaskStatus.DISABLE.value().equals(taskDetailVO.getStatus()))
+                .sorted((o1, o2) -> o2.getTopFlag() - o1.getTopFlag() == 0
+                        ? o2.getCreatedDate().compareTo(o1.getCreatedDate()) : o2.getTopFlag() - o1.getTopFlag())
+                .collect(Collectors.toList());
+
+        List<TaskDetailVO> disableTaskList = taskBaseVOList.stream()
+                .filter(taskDetailVO -> TaskConstants.TaskStatus.DISABLE.value().equals(taskDetailVO.getStatus()))
+                .sorted((o1, o2) -> o2.getTopFlag() - o1.getTopFlag() == 0
+                        ? (StringUtils.isEmpty(o2.getDisableTime()) ? Long.valueOf(0) :
+                        Long.valueOf(o2.getDisableTime()))
+                        .compareTo(StringUtils.isEmpty(o1.getDisableTime()) ? Long.valueOf(0) :
+                                Long.valueOf(o1.getDisableTime())) :
+                        o2.getTopFlag() - o1.getTopFlag())
+                .collect(Collectors.toList());
+
+        return new TaskListVO(enableTaskList, disableTaskList);
+    }
+
+    private List<TaskInfoEntity> getQualifiedTaskListForTaskBase(String projectId, String user) {
+        Set<String> createFromSet = Sets.newHashSet(
+                ComConstants.BsTaskCreateFrom.BS_PIPELINE.value(),
+                ComConstants.BsTaskCreateFrom.BS_CODECC.value()
+        );
+
+        List<TaskInfoEntity> taskInfoEntityList =
+                taskRepository.findSpecialFieldByProjectIdAndCreateFromIn(projectId, createFromSet);
+
+        // 查询用户有权限的CodeCC任务
+        Set<String> tasks = authExPermissionApi.queryTaskListForUser(user, projectId,
+                Sets.newHashSet(CodeCCAuthAction.REPORT_VIEW.getActionName()));
+
+        // 查询用户有权限的流水线
+        Set<String> pipelines = authExPermissionApi.queryPipelineListForUser(user, projectId,
+                Sets.newHashSet(PipelineAuthAction.VIEW.getActionName()));
+
+        List<String> adminMembers = authExPermissionApi.getAdminMembers();
+
+        //查询任务清单速度优化
+        List<TaskInfoEntity> retList = taskInfoEntityList.stream().filter(taskInfoEntity ->
+                ((CollectionUtils.isNotEmpty(taskInfoEntity.getTaskOwner())
+                        && taskInfoEntity.getTaskOwner().contains(user)
+                        && taskInfoEntity.getStatus().equals(TaskConstants.TaskStatus.DISABLE.value())
+                        && !(ComConstants.BsTaskCreateFrom.BS_PIPELINE.value()
+                        .equalsIgnoreCase(taskInfoEntity.getCreateFrom())))
+                        || (CollectionUtils.isNotEmpty(tasks)
+                        && tasks.contains(String.valueOf(taskInfoEntity.getTaskId())))
+                        || (CollectionUtils.isNotEmpty(pipelines) && pipelines.contains(taskInfoEntity.getPipelineId()))
+                        //系统管理员有权限查询任务清单
+                        || adminMembers.contains(user))
+        ).collect(Collectors.toList());
+
+        return retList;
     }
 
 
@@ -617,18 +666,53 @@ public class TaskServiceImpl implements TaskService {
      * @param user
      * @return
      */
-    private Set<TaskInfoEntity> getQualifiedTaskList(String projectId, String user,
-                                                     Integer taskStatus, String taskSource) {
-        log.info("begin to get task list! project:{}, user:{}, taskStatus:{}, taskSource:{}",
-                projectId, user, taskStatus, taskSource);
+    protected List<TaskInfoEntity> getQualifiedTaskList(
+            String projectId,
+            String user,
+            Integer taskStatus,
+            String taskSource
+    ) {
+        // 将原getQualifiedTaskList逻辑，分拆为getQualifiedTaskListCore和getQualifiedTaskList进行复用
+        Set<String> createFromSet = StringUtils.isNotEmpty(taskSource)
+                ? Sets.newHashSet(taskSource)
+                : Sets.newHashSet(BsTaskCreateFrom.BS_PIPELINE.value(), BsTaskCreateFrom.BS_CODECC.value());
 
-        Set<String> createFromSet;
-        if (StringUtils.isNotEmpty(taskSource)) {
-            createFromSet = Sets.newHashSet(taskSource);
-        } else {
-            createFromSet = Sets.newHashSet(BsTaskCreateFrom.BS_PIPELINE.value(), BsTaskCreateFrom.BS_CODECC.value());
+        if (projectId.startsWith(ComConstants.GONGFENG_PROJECT_ID_PREFIX)) {
+            createFromSet.add(BsTaskCreateFrom.GONGFENG_SCAN.value());
         }
+
         Set<TaskInfoEntity> taskInfoEntities = taskRepository.findByProjectIdAndCreateFromIn(projectId, createFromSet);
+
+        if (CollectionUtils.isNotEmpty(taskInfoEntities)) {
+            List<ToolConfigInfoEntity> toolConfigInfoEntityList = toolConfigRepository.findByTaskIdIn(
+                    taskInfoEntities.stream().map(TaskInfoEntity::getTaskId).collect(Collectors.toList())
+            );
+            Map<Long, List<ToolConfigInfoEntity>> toolConfigMap = toolConfigInfoEntityList.stream()
+                    .collect(Collectors.groupingBy(ToolConfigInfoEntity::getTaskId));
+
+            for (TaskInfoEntity taskInfoEntity : taskInfoEntities) {
+                taskInfoEntity.setToolConfigInfoList(toolConfigMap.get(taskInfoEntity.getTaskId()));
+            }
+        }
+
+        if (taskStatus != null) {
+            taskInfoEntities = taskInfoEntities.stream()
+                    .filter(x -> x.getStatus().equals(taskStatus))
+                    .collect(Collectors.toSet());
+        }
+
+        return getQualifiedTaskListCore(projectId, user, taskInfoEntities);
+    }
+
+    private List<TaskInfoEntity> getQualifiedTaskListCore(
+            String projectId,
+            String user,
+            Collection<TaskInfoEntity> taskInfoEntities
+    ) {
+        if (CollectionUtils.isEmpty(taskInfoEntities)) {
+            return Lists.newArrayList();
+        }
+
         // 查询用户有权限的CodeCC任务
         Set<String> tasks = authExPermissionApi.queryTaskListForUser(user, projectId,
                 Sets.newHashSet(CodeCCAuthAction.REPORT_VIEW.getActionName()));
@@ -637,33 +721,37 @@ public class TaskServiceImpl implements TaskService {
         Set<String> pipelines = authExPermissionApi.queryPipelineListForUser(user, projectId,
                 Sets.newHashSet(PipelineAuthAction.VIEW.getActionName()));
 
-        //查询任务清单速度优化
-        Set<TaskInfoEntity> resultTasks = taskInfoEntities.stream().filter(taskInfoEntity ->
-                ((CollectionUtils.isNotEmpty(taskInfoEntity.getTaskOwner())
-                        && taskInfoEntity.getTaskOwner().contains(user)
-                        && taskInfoEntity.getStatus().equals(TaskConstants.TaskStatus.DISABLE.value())
-                        && !(BsTaskCreateFrom.BS_PIPELINE.value().equalsIgnoreCase(taskInfoEntity.getCreateFrom())))
-                        || (CollectionUtils.isNotEmpty(tasks)
-                            && tasks.contains(String.valueOf(taskInfoEntity.getTaskId())))
-                        || (CollectionUtils.isNotEmpty(pipelines) && pipelines.contains(taskInfoEntity.getPipelineId()))
-                        //加上任务灰度池的查询场景，系统管理员有权限查询灰度池项目的任务清单
-                        || (taskInfoEntity.getProjectId().startsWith(ComConstants.GRAY_PROJECT_PREFIX)
-                        && authExPermissionApi.isAdminMember(user)))
-                        //如果有过滤条件，要加过滤
-                        && (taskInfoEntity.getStatus().equals(taskStatus) || null == taskStatus)
-        ).collect(Collectors.toSet());
+        Set<String> adminMemberSet = Sets.newHashSet(authExPermissionApi.getAdminMembers());
 
-        log.info("task mongorepository finish, project:{}, user:{}, taskStatus:{}, taskSource:{}, list length: {}",
-                projectId, user, taskStatus, taskSource, resultTasks.size());
+        // 查询任务清单速度优化
+        List<TaskInfoEntity> resultTasks = taskInfoEntities.stream().filter(taskInfoEntity -> {
+            return ((CollectionUtils.isNotEmpty(taskInfoEntity.getTaskOwner())
+                    && taskInfoEntity.getTaskOwner().contains(user)
+                    && taskInfoEntity.getStatus().equals(TaskConstants.TaskStatus.DISABLE.value())
+                    && !(ComConstants.BsTaskCreateFrom.BS_PIPELINE.value()
+                    .equalsIgnoreCase(taskInfoEntity.getCreateFrom())))
+                    || (CollectionUtils.isNotEmpty(tasks)
+                    && tasks.contains(String.valueOf(taskInfoEntity.getTaskId())))
+                    || (CollectionUtils.isNotEmpty(pipelines) && pipelines.contains(taskInfoEntity.getPipelineId()))
+                    // 系统管理员有权限查询任务清单
+                    || adminMemberSet.contains(user)
+                    || (!ComConstants.BsTaskCreateFrom.BS_PIPELINE.value()
+                    .equalsIgnoreCase(taskInfoEntity.getCreateFrom())
+                    && !ComConstants.BsTaskCreateFrom.BS_CODECC.value()
+                    .equalsIgnoreCase(taskInfoEntity.getCreateFrom())));
+            // 如果有过滤条件，要加过滤
+            // && (taskInfoEntity.getStatus().equals(taskStatus) || null == taskStatus);
+        }).collect(Collectors.toList());
+
         return resultTasks;
     }
-
 
     @Override
     public TaskBaseVO getTaskInfo() {
         HttpServletRequest request =
                 ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        String taskId = request.getHeader(AUTH_HEADER_DEVOPS_TASK_ID);
+        String taskId = request.getHeader("X-DEVOPS-TASK-ID");
+        // NOCC:VariableDeclarationUsageDistance(设计如此:)
         String projectId = request.getHeader(AUTH_HEADER_DEVOPS_PROJECT_ID);
         log.info("getTaskInfo: {}", taskId);
         if (!StringUtils.isNumeric(taskId)) {
@@ -677,15 +765,8 @@ public class TaskServiceImpl implements TaskService {
             throw new CodeCCException(CommonMessageCode.RECORD_NOT_EXITS, new String[]{taskId}, null);
         }
 
-        TaskBaseVO taskBaseVO = new TaskBaseVO();
+        TaskDetailVO taskBaseVO = new TaskDetailVO();
         BeanUtils.copyProperties(taskEntity, taskBaseVO);
-
-        // 加入新告警判定配置
-        if (taskEntity.getNewDefectJudge() != null) {
-            NewDefectJudgeVO newDefectJudge = new NewDefectJudgeVO();
-            BeanUtils.copyProperties(taskEntity.getNewDefectJudge(), newDefectJudge);
-            taskBaseVO.setNewDefectJudge(newDefectJudge);
-        }
 
         //添加个性化报告信息
         NotifyCustomVO notifyCustomVO = new NotifyCustomVO();
@@ -711,8 +792,25 @@ public class TaskServiceImpl implements TaskService {
 
         //如果是灰度项目，则需要显示为api创建
         if (taskEntity.getProjectId().startsWith(ComConstants.GRAY_PROJECT_PREFIX)) {
-            taskBaseVO.setCreateFrom(BsTaskCreateFrom.API_TRIGGER.value());
+            taskBaseVO.setCreateFrom(ComConstants.BsTaskCreateFrom.API_TRIGGER.value());
         }
+
+        String userId = request.getHeader(AUTH_HEADER_DEVOPS_USER_ID);
+        //判断是否可执行
+        if (ComConstants.BsTaskCreateFrom.BS_PIPELINE.value().equalsIgnoreCase(taskEntity.getCreateFrom())
+                && StringUtils.isNotEmpty(userId) && authExPermissionApi.isAdminMember(userId)) {
+            // 查询用户有权限的流水线
+            Set<String> pipelines = authExPermissionApi.queryPipelineListForUser(userId, projectId,
+                    Sets.newHashSet(PipelineAuthAction.EXECUTE.getActionName()));
+            taskBaseVO.setHasNoPermission(!pipelines.contains(taskEntity.getPipelineId()));
+        } else {
+            taskBaseVO.setHasNoPermission(false);
+        }
+
+        taskBaseVO.setCheckerSetType(ComConstants.CheckerSetType.forValue(taskEntity.getCheckerSetType()));
+        // 数据迁移标识
+        taskBaseVO.setDataMigrationSuccessful(true);
+
         return taskBaseVO;
     }
 
@@ -735,14 +833,15 @@ public class TaskServiceImpl implements TaskService {
             return taskDetailVO;
         } catch (IOException e) {
             String message = "string conversion TaskDetailVO error";
-            log.error(message);
+            log.error(message, e);
             throw new StreamException(message);
         }
     }
 
     @Override
     public TaskDetailVO getTaskInfoWithoutToolsByTaskId(Long taskId) {
-        TaskInfoEntity taskEntity = taskRepository.findTaskInfoWithoutToolsFirstByTaskId(taskId);
+        List<TaskInfoEntity> taskEntities = taskRepository.findTaskInfoWithoutToolsByTaskId(taskId);
+        TaskInfoEntity taskEntity = CollectionUtils.isEmpty(taskEntities) ? null : taskEntities.get(0);
         if (taskEntity == null) {
             log.error("can not find task by taskId: {}", taskId);
             throw new CodeCCException(CommonMessageCode.RECORD_NOT_EXITS, new String[]{String.valueOf(taskId)}, null);
@@ -751,12 +850,7 @@ public class TaskServiceImpl implements TaskService {
         TaskDetailVO taskDetailVO = new TaskDetailVO();
         BeanUtils.copyProperties(taskEntity, taskDetailVO);
 
-        if (taskEntity.getNewDefectJudge() != null) {
-            NewDefectJudgeVO newDefectJudgeVO = new NewDefectJudgeVO();
-            BeanUtils.copyProperties(taskEntity.getNewDefectJudge(), newDefectJudgeVO);
-            taskDetailVO.setNewDefectJudge(newDefectJudgeVO);
-        }
-
+        taskDetailVO.setCheckerSetType(ComConstants.CheckerSetType.forValue(taskEntity.getCheckerSetType()));
         return taskDetailVO;
     }
 
@@ -779,12 +873,13 @@ public class TaskServiceImpl implements TaskService {
             taskDetailVO.setToolSet(toolSet);
 
             for (ToolConfigInfoEntity toolEntity : toolEntityList) {
-                if (TaskConstants.FOLLOW_STATUS.WITHDRAW.value() != toolEntity.getFollowStatus()) {
+                if (TaskConstants.FOLLOW_STATUS.WITHDRAW.value() != toolEntity.getFollowStatus()
+                        && !Tool.CLOC.name().equalsIgnoreCase(toolEntity.getToolName())
+                        && !checkToolRemoved(toolEntity.getToolName(), taskEntity)) {
                     toolSet.add(toolEntity.getToolName());
                 }
             }
         }
-
 
         taskDetailVO.setToolConfigInfoList(toolEntityList.stream().map(toolConfigInfoEntity -> {
             ToolConfigInfoVO toolConfigInfoVO = new ToolConfigInfoVO();
@@ -799,12 +894,7 @@ public class TaskServiceImpl implements TaskService {
             taskDetailVO.setNotifyCustomInfo(notifyCustomVO);
         }
 
-        // 加入新、历史告警判定
-        if (taskEntity.getNewDefectJudge() != null) {
-            NewDefectJudgeVO newDefectJudgeVO = new NewDefectJudgeVO();
-            BeanUtils.copyProperties(taskEntity.getNewDefectJudge(), newDefectJudgeVO);
-            taskDetailVO.setNewDefectJudge(newDefectJudgeVO);
-        }
+        taskDetailVO.setCheckerSetType(ComConstants.CheckerSetType.forValue(taskEntity.getCheckerSetType()));
 
         // 是否回写工蜂
         if (taskEntity.getMrCommentEnable() != null) {
@@ -815,8 +905,8 @@ public class TaskServiceImpl implements TaskService {
     }
 
 
-    private Boolean taskDetailDisplayInfo(ToolConfigInfoEntity toolConfigInfoEntity, TaskDetailVO taskDetailVO,
-                                          String displayName) {
+    protected Boolean taskDetailDisplayInfo(ToolConfigInfoEntity toolConfigInfoEntity, TaskDetailVO taskDetailVO,
+            String displayName) {
         Integer displayStepStatus = 0;
         //检测到有任务运行中（非成功状态）
         Boolean processFlag = false;
@@ -829,30 +919,30 @@ public class TaskServiceImpl implements TaskService {
             taskDetailVO.setDisplayStep(toolConfigInfoEntity.getCurStep());
             taskDetailVO.setDisplayName(displayName);
             processFlag = true;
-        }
-        //如果没找到失败的工具，有分析中的工具，则显示分析中
-        else if (toolConfigInfoEntity.getStepStatus() == StepStatus.SUCC.value() &&
-                toolConfigInfoEntity.getCurStep() < Step4MutliTool.COMPLETE.value() &&
-                toolConfigInfoEntity.getCurStep() > Step4MutliTool.READY.value() &&
-                displayStepStatus != StepStatus.FAIL.value()) {
+
+            //如果没找到失败的工具，有分析中的工具，则显示分析中
+        } else if (toolConfigInfoEntity.getStepStatus() == StepStatus.SUCC.value()
+                && toolConfigInfoEntity.getCurStep() < Step4MutliTool.COMPLETE.value()
+                && toolConfigInfoEntity.getCurStep() > Step4MutliTool.READY.value()
+                && displayStepStatus != StepStatus.FAIL.value()) {
             taskDetailVO.setDisplayToolName(toolConfigInfoEntity.getToolName());
             taskDetailVO.setDisplayStep(toolConfigInfoEntity.getCurStep());
             taskDetailVO.setDisplayName(displayName);
             processFlag = true;
-        }
-        //如果没找到失败的工具，有准备的工具，则显示准备
-        else if (toolConfigInfoEntity.getStepStatus() == StepStatus.SUCC.value() &&
-                toolConfigInfoEntity.getCurStep() == Step4MutliTool.READY.value() &&
-                displayStepStatus != StepStatus.FAIL.value()) {
+
+            //如果没找到失败的工具，有准备的工具，则显示准备
+        } else if (toolConfigInfoEntity.getStepStatus() == StepStatus.SUCC.value()
+                && toolConfigInfoEntity.getCurStep() == Step4MutliTool.READY.value()
+                && displayStepStatus != StepStatus.FAIL.value()) {
             taskDetailVO.setDisplayToolName(toolConfigInfoEntity.getToolName());
             taskDetailVO.setDisplayStep(toolConfigInfoEntity.getCurStep());
             taskDetailVO.setDisplayName(displayName);
             processFlag = true;
-        }
-        //如果还没找到其他状态，则显示成功
-        else if (toolConfigInfoEntity.getStepStatus() == StepStatus.SUCC.value() &&
-                toolConfigInfoEntity.getCurStep() >= Step4MutliTool.COMPLETE.value() &&
-                StringUtils.isBlank(taskDetailVO.getDisplayToolName())) {
+
+            //如果还没找到其他状态，则显示成功
+        } else if (toolConfigInfoEntity.getStepStatus() == StepStatus.SUCC.value()
+                && toolConfigInfoEntity.getCurStep() >= Step4MutliTool.COMPLETE.value()
+                && StringUtils.isBlank(taskDetailVO.getDisplayToolName())) {
             taskDetailVO.setDisplayToolName(toolConfigInfoEntity.getToolName());
             taskDetailVO.setDisplayStep(toolConfigInfoEntity.getCurStep());
             taskDetailVO.setDisplayName(displayName);
@@ -918,24 +1008,23 @@ public class TaskServiceImpl implements TaskService {
         return true;
     }
 
-    /**
-     * 修改任务基本信息 - 内部服务间调用
-     *
-     * @param taskUpdateVO
-     * @param userName
-     * @return
-     */
     @Override
-    public Boolean updateTaskByServer(TaskUpdateVO taskUpdateVO, String userName) {
-        return taskDao.updateTask(taskUpdateVO.getTaskId(), taskUpdateVO.getCodeLang(), taskUpdateVO.getNameCn(),
-                taskUpdateVO.getTaskOwner(),
-                taskUpdateVO.getTaskMember(), taskUpdateVO.getDisableTime(), taskUpdateVO.getStatus(),
-                userName);
+    public Boolean updateTaskRepoOwner(Long taskId, List<String> repoOwners, String userName) {
+        return taskDao.updateRepoOwner(taskId, repoOwners, userName);
     }
 
     @Override
+    public Boolean updateRuntimeInfo(Long taskId, RuntimeUpdateMetaVO runtimeUpdateMetaVO, String userName) {
+        taskDao.updatePipelineTaskInfo(taskId, runtimeUpdateMetaVO.getPipelineTaskId(),
+                runtimeUpdateMetaVO.getPipelineTaskName(), userName, runtimeUpdateMetaVO.getTimeout());
+        return true;
+    }
+
+
+    @Override
     public TaskOverviewVO getTaskOverview(Long taskId, String buildNum) {
-        TaskInfoEntity taskEntity = taskRepository.findToolListFirstByTaskId(taskId);
+        List<TaskInfoEntity> taskEntities = taskRepository.findToolListByTaskId(taskId);
+        TaskInfoEntity taskEntity = CollectionUtils.isEmpty(taskEntities) ? null : taskEntities.get(0);
         if (taskEntity == null) {
             log.error("can not find task by taskId: {}", taskId);
             throw new CodeCCException(CommonMessageCode.RECORD_NOT_EXITS, new String[]{String.valueOf(taskId)}, null);
@@ -943,8 +1032,8 @@ public class TaskServiceImpl implements TaskService {
 
         TaskOverviewVO taskOverviewVO = new TaskOverviewVO();
         taskOverviewVO.setTaskId(taskId);
-        List<LastAnalysis> toolLastAnalysisList = new ArrayList<>();
-        Map<String, LastAnalysis> toolLastAnalysisMap = new HashMap<>();
+        List<TaskOverviewVO.LastAnalysis> toolLastAnalysisList = new ArrayList<>();
+        Map<String, TaskOverviewVO.LastAnalysis> toolLastAnalysisMap = new HashMap<>();
 
         List<ToolLastAnalysisResultVO> lastAnalysisResultVOs;
 
@@ -978,9 +1067,9 @@ public class TaskServiceImpl implements TaskService {
                     }
 
                     int stepStatus = resultVO.getFlag() == ComConstants.StepFlag.FAIL.value()
-                            ? StepStatus.FAIL.value() : StepStatus.SUCC.value();
+                            ? ComConstants.StepStatus.FAIL.value() : ComConstants.StepStatus.SUCC.value();
 
-                    LastAnalysis lastAnalysis = new LastAnalysis();
+                    TaskOverviewVO.LastAnalysis lastAnalysis = new TaskOverviewVO.LastAnalysis();
                     String toolName = resultVO.getToolName();
                     lastAnalysis.setToolName(toolName);
                     lastAnalysis.setCurStep(curStep);
@@ -1012,7 +1101,7 @@ public class TaskServiceImpl implements TaskService {
                 }
                 int followStatus = tool.getFollowStatus();
                 if (followStatus != TaskConstants.FOLLOW_STATUS.WITHDRAW.value()) {
-                    LastAnalysis lastAnalysis = new LastAnalysis();
+                    TaskOverviewVO.LastAnalysis lastAnalysis = new TaskOverviewVO.LastAnalysis();
                     String toolName = tool.getToolName();
                     lastAnalysis.setToolName(toolName);
                     lastAnalysis.setCurStep(tool.getCurStep());
@@ -1040,7 +1129,7 @@ public class TaskServiceImpl implements TaskService {
         if (CollectionUtils.isNotEmpty(lastAnalysisResultVOs)) {
             String buildId = "";
             for (ToolLastAnalysisResultVO toolLastAnalysisResultVO : lastAnalysisResultVOs) {
-                LastAnalysis lastAnalysis =
+                TaskOverviewVO.LastAnalysis lastAnalysis =
                         toolLastAnalysisMap.get(toolLastAnalysisResultVO.getToolName());
                 lastAnalysis.setLastAnalysisResult(toolLastAnalysisResultVO.getLastAnalysisResultVO());
                 long elapseTime = toolLastAnalysisResultVO.getElapseTime();
@@ -1073,8 +1162,10 @@ public class TaskServiceImpl implements TaskService {
         toolLastAnalysisList = toolLastAnalysisList.stream()
                 .filter(lastAnalysis ->
                         !lastAnalysis.getToolName().equals(Tool.GITHUBSTATISTIC.name())
-                                && !lastAnalysis.getToolName().equals(Tool.SCC.name()))
-                .sorted(Comparator.comparingInt(o -> toolOrderList.indexOf(o.getToolName())))
+                                && !lastAnalysis.getToolName().equals(Tool.SCC.name())
+                                && !checkToolRemoved(lastAnalysis.getToolName(), taskEntity))
+                .sorted(Comparator.comparingInt(o -> toolOrderList.contains(o.getToolName())
+                        ? toolOrderList.indexOf(o.getToolName()) : Integer.MAX_VALUE))
                 .collect(Collectors.toList());
 
         taskOverviewVO.setTaskId(taskId);
@@ -1090,7 +1181,8 @@ public class TaskServiceImpl implements TaskService {
             return getTaskOverview(taskId, buildNum);
         }
 
-        TaskInfoEntity taskEntity = taskRepository.findToolListFirstByTaskId(taskId);
+        List<TaskInfoEntity> taskEntities = taskRepository.findToolListByTaskId(taskId);
+        TaskInfoEntity taskEntity = CollectionUtils.isEmpty(taskEntities) ? null : taskEntities.get(0);
         if (taskEntity == null) {
             log.error("can not find task by taskId: {}", taskId);
             throw new CodeCCException(CommonMessageCode.RECORD_NOT_EXITS, new String[]{String.valueOf(taskId)}, null);
@@ -1098,44 +1190,45 @@ public class TaskServiceImpl implements TaskService {
         List<ToolConfigInfoEntity> toolConfigInfoList = taskEntity.getToolConfigInfoList();
         Map<String, List<String>> toolMap = toolConfigInfoList.stream()
                 .filter(it -> it.getFollowStatus() != TaskConstants.FOLLOW_STATUS.WITHDRAW.value()
-                        && !it.getToolName().equals(Tool.IP_CHECK.name()))
+                        && !checkToolRemoved(it.getToolName(), taskEntity))
                 .map(ToolConfigInfoEntity::getToolName)
                 .collect(Collectors.groupingBy(it -> toolMetaCache.getToolBaseMetaCache(it).getType()));
 
         TaskOverviewVO taskOverviewVO = new TaskOverviewVO();
-        Map<String, LastCluster> lastClusterResultMap = new LinkedHashMap<>(5);
-        lastClusterResultMap.put(ToolType.DEFECT.name(),
-                new LastCluster(new DefectClusterResultVO(
-                        ToolType.DEFECT.name(), toolMap.getOrDefault(
-                        ToolType.DEFECT.name(), Collections.emptyList()).size(),
-                        toolMap.getOrDefault(ToolType.DEFECT.name(), Collections.emptyList()))));
+        Map<String, TaskOverviewVO.LastCluster> lastClusterResultMap = Maps.newLinkedHashMapWithExpectedSize(5);
+        lastClusterResultMap.put(ComConstants.ToolType.DEFECT.name(),
+                new TaskOverviewVO.LastCluster(new DefectClusterResultVO(
+                        ComConstants.ToolType.DEFECT.name(), toolMap.getOrDefault(
+                        ComConstants.ToolType.DEFECT.name(), Collections.emptyList()).size(),
+                        toolMap.getOrDefault(ComConstants.ToolType.DEFECT.name(), Collections.emptyList()))));
 
-        lastClusterResultMap.put(ToolType.SECURITY.name(),
-                new LastCluster(new SecurityClusterResultVO(
-                        ToolType.SECURITY.name(), toolMap.getOrDefault(
-                        ToolType.SECURITY.name(), Collections.emptyList()).size(),
-                        toolMap.getOrDefault(ToolType.SECURITY.name(), Collections.emptyList()))));
+        lastClusterResultMap.put(ComConstants.ToolType.SECURITY.name(),
+                new TaskOverviewVO.LastCluster(new SecurityClusterResultVO(
+                        ComConstants.ToolType.SECURITY.name(), toolMap.getOrDefault(
+                        ComConstants.ToolType.SECURITY.name(), Collections.emptyList()).size(),
+                        toolMap.getOrDefault(ComConstants.ToolType.SECURITY.name(), Collections.emptyList()))));
 
-        lastClusterResultMap.put(ToolType.STANDARD.name(),
-                new LastCluster(new StandardClusterResultVO(
-                        ToolType.STANDARD.name(), toolMap.getOrDefault(
-                        ToolType.STANDARD.name(), Collections.emptyList()).size(),
-                        toolMap.getOrDefault(ToolType.STANDARD.name(), Collections.emptyList()))));
+        lastClusterResultMap.put(ComConstants.ToolType.STANDARD.name(),
+                new TaskOverviewVO.LastCluster(new StandardClusterResultVO(
+                        ComConstants.ToolType.STANDARD.name(), toolMap.getOrDefault(
+                        ComConstants.ToolType.STANDARD.name(), Collections.emptyList()).size(),
+                        toolMap.getOrDefault(ComConstants.ToolType.STANDARD.name(), Collections.emptyList()))));
 
-        lastClusterResultMap.put(ToolType.CCN.name(),
-                new LastCluster(new CcnClusterResultVO(
-                        ToolType.CCN.name(), toolMap.getOrDefault(
-                        ToolType.CCN.name(), Collections.emptyList()).size(),
-                        toolMap.getOrDefault(ToolType.CCN.name(), Collections.emptyList()))));
+        lastClusterResultMap.put(ComConstants.ToolType.CCN.name(),
+                new TaskOverviewVO.LastCluster(new CcnClusterResultVO(
+                        ComConstants.ToolType.CCN.name(), toolMap.getOrDefault(
+                        ComConstants.ToolType.CCN.name(), Collections.emptyList()).size(),
+                        toolMap.getOrDefault(ComConstants.ToolType.CCN.name(), Collections.emptyList()))));
 
-        lastClusterResultMap.put(ToolType.DUPC.name(),
-                new LastCluster(new DupcClusterResultVO(
-                        ToolType.DUPC.name(), toolMap.getOrDefault(
-                        ToolType.DUPC.name(), Collections.emptyList()).size(),
-                        toolMap.getOrDefault(ToolType.DUPC.name(), Collections.emptyList()))));
+        lastClusterResultMap.put(ComConstants.ToolType.DUPC.name(),
+                new TaskOverviewVO.LastCluster(new DupcClusterResultVO(
+                        ComConstants.ToolType.DUPC.name(), toolMap.getOrDefault(
+                        ComConstants.ToolType.DUPC.name(), Collections.emptyList()).size(),
+                        toolMap.getOrDefault(ComConstants.ToolType.DUPC.name(), Collections.emptyList()))));
 
         Result<TaskLogOverviewVO> result = client.get(ServiceTaskLogOverviewResource.class)
-                .getTaskLogOverview(taskId, null, ScanStatus.SUCCESS.getCode());
+                .getTaskLogOverview(taskId, null, ComConstants.ScanStatus.SUCCESS.getCode());
+
         if (result.isOk() && result.getData() != null) {
             TaskLogOverviewVO taskLogOverviewVO = result.getData();
             String buildId = taskLogOverviewVO.getBuildId();
@@ -1143,16 +1236,15 @@ public class TaskServiceImpl implements TaskService {
             // 获取维度统计信息
             Result<List<BaseClusterResultVO>> clusterResult =
                     client.get(ServiceClusterStatisticRestReource.class).getClusterStatistic(taskId, buildId);
+
             if (clusterResult.isOk() && clusterResult.getData() != null) {
                 List<BaseClusterResultVO> clusterVOList = clusterResult.getData();
                 log.info("task overview Test {}", clusterVOList);
                 clusterVOList.forEach(baseClusterResultVO -> {
-                    baseClusterResultVO.setToolList(
-                            toolMap.getOrDefault(baseClusterResultVO.getType(), Collections.emptyList()));
-                    baseClusterResultVO.setToolNum(
-                            toolMap.getOrDefault(baseClusterResultVO.getType(), Collections.emptyList()).size());
+                    baseClusterResultVO.setToolList(baseClusterResultVO.getToolList());
+                    baseClusterResultVO.setToolNum(baseClusterResultVO.getToolNum());
                     lastClusterResultMap.put(baseClusterResultVO.getType(),
-                            new LastCluster(baseClusterResultVO));
+                            new TaskOverviewVO.LastCluster(baseClusterResultVO));
                 });
             }
 
@@ -1182,19 +1274,15 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @OperationHistory(funcId = FUNC_TASK_SWITCH, operType = ENABLE_ACTION)
     public Boolean startTask(Long taskId, String userName) {
-        if (authExPermissionApi.isAdminMember(userName)) {
-            return doStartTask(taskId, userName, false);
-        } else {
-            return doStartTask(taskId, userName, true);
-        }
+        return doStartTask(taskId, userName, true);
     }
 
 
     /**
      * 开启任务
      *
-     * @param taskId          任务ID
-     * @param userName        操作人
+     * @param taskId 任务ID
+     * @param userName 操作人
      * @param checkPermission 是否检查权限
      * @return boolean
      */
@@ -1243,9 +1331,13 @@ public class TaskServiceImpl implements TaskService {
         taskEntity.setDisableReason("");
         taskEntity.setStatus(TaskConstants.TaskStatus.ENABLE.value());
 
-        //在权限中心重新注册任务
-        authExRegisterApi.registerCodeCCTask(userName, String.valueOf(taskId), taskEntity.getNameEn(),
-                taskEntity.getProjectId());
+        try {
+            //在权限中心重新注册任务
+            authExRegisterApi.registerCodeCCTask(userName, String.valueOf(taskId), taskEntity.getNameEn(),
+                    taskEntity.getProjectId());
+        } catch (Exception e) {
+            log.error("registerCodeCCTask cause error.", e);
+        }
 
         //恢复日报
         if (null != taskEntity.getNotifyCustomInfo()
@@ -1276,12 +1368,7 @@ public class TaskServiceImpl implements TaskService {
             log.error("taskInfo not exists! task id is: {}", taskId);
             throw new CodeCCException(CommonMessageCode.RECORD_NOT_EXITS, new String[]{String.valueOf(taskId)}, null);
         }
-
-        if (authExPermissionApi.isAdminMember(userName)) {
-            return doStopTask(taskEntity, disabledReason, userName, false);
-        } else {
-            return doStopTask(taskEntity, disabledReason, userName, true);
-        }
+        return doStopTask(taskEntity, disabledReason, userName, true);
     }
 
     /**
@@ -1295,21 +1382,48 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @OperationHistory(funcId = FUNC_TASK_SWITCH, operType = DISABLE_ACTION)
     public Boolean stopTask(String pipelineId, String disabledReason, String userName) {
-        TaskInfoEntity taskEntity = taskRepository.findFirstByPipelineId(pipelineId);
-        if (Objects.isNull(taskEntity)) {
+        List<TaskInfoEntity> taskEntityList = taskRepository.findAllByPipelineId(pipelineId);
+        if (CollectionUtils.isEmpty(taskEntityList)) {
             log.error("taskInfo not exists! pipeline id is: {}", pipelineId);
             throw new CodeCCException(CommonMessageCode.RECORD_NOT_EXITS, new String[]{String.valueOf(pipelineId)},
                     null);
         }
-        return doStopTask(taskEntity, disabledReason, userName, false);
+        AtomicReference<Boolean> result = new AtomicReference<>(true);
+        taskEntityList.forEach(taskInfoEntity -> {
+            try {
+                doStopTask(taskInfoEntity, disabledReason, userName, false);
+            } catch (Exception e) {
+                log.info("stop task fail! task id: {}", taskInfoEntity.getTaskId());
+                result.set(false);
+            }
+        });
+        return result.get();
+    }
+
+
+    @Override
+    @OperationHistory(funcId = FUNC_TASK_SWITCH, operType = DISABLE_ACTION)
+    public Boolean stopSinglePipelineTask(String pipelineId, String multiPipelineMark, String disabledReason,
+            String userName) {
+        String queryMark = multiPipelineMark;
+        if (StringUtils.isBlank(multiPipelineMark)) {
+            queryMark = null;
+        }
+        TaskInfoEntity taskInfoEntity = taskRepository.findFirstByPipelineIdAndMultiPipelineMark(pipelineId, queryMark);
+        if (Objects.isNull(taskInfoEntity)) {
+            log.error("taskInfo not exists! pipeline id is: {}", pipelineId);
+            throw new CodeCCException(CommonMessageCode.RECORD_NOT_EXITS, new String[]{String.valueOf(pipelineId)},
+                    null);
+        }
+        return doStopTask(taskInfoEntity, disabledReason, userName, false);
     }
 
     /**
      * 管理员在OP停用任务
      *
-     * @param taskId         任务ID
+     * @param taskId 任务ID
      * @param disabledReason 停用理由
-     * @param userName       操作人
+     * @param userName 操作人
      * @return boolean
      */
     @Override
@@ -1326,7 +1440,7 @@ public class TaskServiceImpl implements TaskService {
     /**
      * 管理员在OP开启任务
      *
-     * @param taskId   任务ID
+     * @param taskId 任务ID
      * @param userName 操作人
      * @return boolean
      */
@@ -1337,13 +1451,13 @@ public class TaskServiceImpl implements TaskService {
 
 
     private Boolean doStopTask(TaskInfoEntity taskEntity,
-                               String disabledReason,
-                               String userName,
-                               boolean checkPermission) {
+            String disabledReason,
+            String userName,
+            boolean checkPermission) {
         long taskId = taskEntity.getTaskId();
         if (BsTaskCreateFrom.GONGFENG_SCAN.value().equalsIgnoreCase(taskEntity.getCreateFrom())) {
             log.info("gongfeng project not allowed to disable");
-            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{userName}, null);
+            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{userName});
         }
 
         //判断是否有权限
@@ -1353,7 +1467,7 @@ public class TaskServiceImpl implements TaskService {
         Boolean taskOwnerPermission = CollectionUtils.isEmpty(taskOwnerList) || !taskOwnerList.contains(userName);
         if (checkPermission && taskMemberPermission && taskOwnerPermission) {
             log.error("current user has no permission to the task");
-            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{userName}, new Exception());
+            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{userName});
         }
 
         if (StringUtils.isNotBlank(taskEntity.getDisableTime())) {
@@ -1404,6 +1518,8 @@ public class TaskServiceImpl implements TaskService {
             } catch (UnauthorizedException e) {
                 log.error("delete iam resource fail! error message: {}", e.getMessage());
                 throw new CodeCCException(TaskMessageCode.CLOSE_TASK_FAIL);
+            } catch (Exception e) {
+                log.error("delete iam resource fail! error message: {}", e.getMessage());
             }
         }
 
@@ -1417,7 +1533,8 @@ public class TaskServiceImpl implements TaskService {
         taskEntity.setStatus(TaskConstants.TaskStatus.DISABLE.value());
 
         //停止日报
-        if (null != taskEntity.getNotifyCustomInfo() && StringUtils.isNotBlank(taskEntity.getNotifyCustomInfo().getReportJobName())) {
+        if (null != taskEntity.getNotifyCustomInfo()
+                && StringUtils.isNotBlank(taskEntity.getNotifyCustomInfo().getReportJobName())) {
             JobExternalDto jobExternalDto = new JobExternalDto(
                     taskEntity.getNotifyCustomInfo().getReportJobName(),
                     "",
@@ -1478,11 +1595,6 @@ public class TaskServiceImpl implements TaskService {
                     List<Map<String, Object>> arrays = JsonUtil.INSTANCE.to(params);
                     for (Map<String, Object> array : arrays) {
                         ToolConfigParamJsonVO toolConfig = JsonUtil.INSTANCE.mapTo(array, ToolConfigParamJsonVO.class);
-                        String toolChooseValue = Objects.isNull(chooseJson)
-                                ? toolConfig.getVarDefault()
-                                : StringUtils.isBlank((String) chooseJson.get(toolConfig.getVarName()))
-                                        ? toolConfig.getVarDefault() : (String) chooseJson.get(toolConfig.getVarName());
-
 
                         // 工具参数标签[ labelName ]国际化
                         GlobalMessage labelGlobalMessage = labelNameMessage.get(String.format("%s:%s", toolName,
@@ -1499,6 +1611,11 @@ public class TaskServiceImpl implements TaskService {
                             String globalTips = globalMessageUtil.getMessageByLocale(tipGlobalMessage);
                             toolConfig.setVarTips(globalTips);
                         }
+
+                        String toolChooseValue = Objects.isNull(chooseJson)
+                                ? toolConfig.getVarDefault()
+                                : StringUtils.isBlank((String) chooseJson.get(toolConfig.getVarName()))
+                                        ? toolConfig.getVarDefault() : (String) chooseJson.get(toolConfig.getVarName());
 
                         toolConfig.setTaskId(taskId);
                         toolConfig.setToolName(toolMetaBaseVO.getName());
@@ -1552,6 +1669,14 @@ public class TaskServiceImpl implements TaskService {
                 repoIdUpdated = true;
             }
         }
+        // 项目编译脚本是否修改
+        boolean compileCommandUpdated = false;
+        if (taskDetailVO.getProjectBuildCommand() != null) {
+            if (!taskDetailVO.getProjectBuildCommand().equals(taskEntity.getProjectBuildCommand())) {
+                log.info("code analyze task: {} compileCommand changed.", taskDetailVO.getTaskId());
+                compileCommandUpdated = true;
+            }
+        }
         taskEntity.setRepoHashId(taskDetailVO.getRepoHashId());
         taskEntity.setBranch(taskDetailVO.getBranch());
         taskEntity.setScmType(taskDetailVO.getScmType());
@@ -1578,7 +1703,7 @@ public class TaskServiceImpl implements TaskService {
         pipelineService.updateCodeLibrary(userName, registerVO, taskEntity);
 
         // 设置强制全量扫描标志
-        if (repoIdUpdated) {
+        if (repoIdUpdated || compileCommandUpdated) {
             setForceFullScan(taskEntity);
         }
 
@@ -1612,7 +1737,7 @@ public class TaskServiceImpl implements TaskService {
 
         TaskMemberVO taskMemberVO = new TaskMemberVO();
         String taskCreateFrom = authTaskService.getTaskCreateFrom(taskId);
-        if (BsTaskCreateFrom.BS_CODECC.value().equals(taskCreateFrom)) {
+        if (ComConstants.BsTaskCreateFrom.BS_CODECC.value().equals(taskCreateFrom)) {
             // 获取各角色对应用户列表
             List<String> taskMembers = authExPermissionApi.queryTaskUserListForAction(String.valueOf(taskId), projectId,
                     PermissionUtil.INSTANCE.getCodeCCPermissionsFromActions(AuthRole.TASK_MEMBER.getCodeccActions()));
@@ -1643,15 +1768,29 @@ public class TaskServiceImpl implements TaskService {
             return false;
         }
 
+        //遍历查找工具清单中是否有cloc工具，如果有的话，需要下线cloc工具
+        List<ToolConfigInfoEntity> clocToolConfigInfoList = toolConfigInfoEntityList.stream()
+                .filter(toolConfigInfoEntity -> Tool.CLOC.name().equalsIgnoreCase(toolConfigInfoEntity.getToolName())
+                        && toolConfigInfoEntity.getFollowStatus() != FOLLOW_STATUS.WITHDRAW.value())
+                .peek(toolConfigInfoEntity -> {
+                    toolConfigInfoEntity.setFollowStatus(FOLLOW_STATUS.WITHDRAW.value());
+                    toolConfigInfoEntity.setUpdatedBy(userName);
+                    toolConfigInfoEntity.setUpdatedDate(System.currentTimeMillis());
+                }).collect(Collectors.toList());
+        //更新变更的工具列表
+        if (CollectionUtils.isNotEmpty(clocToolConfigInfoList)) {
+            toolRepository.saveAll(clocToolConfigInfoList);
+        }
+
         List<ToolConfigInfoEntity> clocList = toolConfigInfoEntityList.stream().filter(it ->
-                Tool.CLOC.name().equals(it.getToolName())
+                Tool.SCC.name().equals(it.getToolName())
         ).collect(Collectors.toList());
 
         if (clocList.isEmpty()) {
             ToolConfigInfoEntity clocToolConfig = new ToolConfigInfoEntity();
             long time = System.currentTimeMillis();
             clocToolConfig.setTaskId(taskInfoEntity.getTaskId());
-            clocToolConfig.setToolName(Tool.CLOC.name());
+            clocToolConfig.setToolName(Tool.SCC.name());
             clocToolConfig.setCreatedBy(userName);
             clocToolConfig.setCreatedDate(time);
             clocToolConfig.setUpdatedBy(userName);
@@ -1664,6 +1803,11 @@ public class TaskServiceImpl implements TaskService {
             List<ToolConfigInfoEntity> tools = toolRepository.saveAll(toolConfigInfoEntityList);
             taskInfoEntity.setToolConfigInfoList(tools);
             taskRepository.save(taskInfoEntity);
+            List<String> forceFullScanTools = new ArrayList<String>() {{
+                add(Tool.SCC.name());
+            }};
+            client.get(ServiceToolBuildInfoResource.class)
+                    .setForceFullScan(taskInfoEntity.getTaskId(), forceFullScanTools);
         } else if (clocList.get(0).getFollowStatus() == FOLLOW_STATUS.WITHDRAW.value()) {
             ToolConfigInfoEntity tool = clocList.get(0);
             tool.setFollowStatus(FOLLOW_STATUS.ACCESSED.value());
@@ -1671,9 +1815,9 @@ public class TaskServiceImpl implements TaskService {
         }
 
         Set<String> toolSet = toolConfigInfoEntityList.stream().filter(toolConfigInfoEntity ->
-                FOLLOW_STATUS.WITHDRAW.value() != toolConfigInfoEntity.getFollowStatus()
-        ).map(ToolConfigInfoEntity::getToolName
-        ).collect(Collectors.toSet());
+                        FOLLOW_STATUS.WITHDRAW.value() != toolConfigInfoEntity.getFollowStatus()
+                                && !checkToolRemoved(toolConfigInfoEntity.getToolName(), taskInfoEntity))
+                .map(ToolConfigInfoEntity::getToolName).collect(Collectors.toSet());
 
         if (CollectionUtils.isNotEmpty(toolSet)) {
             // 支持并发后不再停用正在运行的流水线
@@ -1699,10 +1843,9 @@ public class TaskServiceImpl implements TaskService {
 
             log.info("start pipeline and send delay message");
             rabbitTemplate.convertAndSend(EXCHANGE_EXPIRED_TASK_STATUS, ROUTE_EXPIRED_TASK_STATUS,
-                    new ScanTaskTriggerDTO(taskId, buildId), message ->
-                    {
+                    new ScanTaskTriggerDTO(taskId, buildId), message -> {
                         //todo 配置在配置文件里
-                        message.getMessageProperties().setDelay(15 * 60 * 60 * 1000);
+                        message.getMessageProperties().setDelay(900 * 60 * 1000);
                         return message;
                     });
         }
@@ -1710,12 +1853,11 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public Boolean sendStartTaskSignal(Long taskId, String buildId) {
+    public Boolean sendStartTaskSignal(Long taskId, String buildId, Integer timeout) {
         //todo 后续和流水线对齐
         rabbitTemplate.convertAndSend(EXCHANGE_EXPIRED_TASK_STATUS, ROUTE_EXPIRED_TASK_STATUS,
-                new ScanTaskTriggerDTO(taskId, buildId), message ->
-                {
-                    message.getMessageProperties().setDelay(24 * 60 * 60 * 1000);
+                new ScanTaskTriggerDTO(taskId, buildId), message -> {
+                    message.getMessageProperties().setDelay(timeout != null ? timeout * 1000 : 24 * 60 * 60 * 1000);
                     return message;
                 });
         return true;
@@ -1730,24 +1872,58 @@ public class TaskServiceImpl implements TaskService {
      * @return
      */
     @Override
-    public PipelineTaskVO getTaskInfoByPipelineId(String pipelineId, String user) {
-        TaskInfoEntity taskInfoEntity = taskRepository.findFirstByPipelineId(pipelineId);
+    public PipelineTaskVO getTaskInfoByPipelineId(String pipelineId, String multiPipelineMark, String user) {
+        String finalMultiPipelineMark = multiPipelineMark;
+        if (StringUtils.isBlank(finalMultiPipelineMark)) {
+            finalMultiPipelineMark = null;
+        }
+        TaskInfoEntity taskInfoEntity = taskRepository.findFirstByPipelineIdAndMultiPipelineMark(pipelineId,
+                finalMultiPipelineMark);
         if (taskInfoEntity == null) {
             log.error("can not find task by pipeline id: {}", pipelineId);
             throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{"pipeline id"}, null);
         }
+
+        return convertTaskInfoEntityToVo(taskInfoEntity);
+    }
+
+    @Override
+    public List<PipelineTaskVO> getTaskInfoByPipelineId(String pipelineId, String user) {
+        List<TaskInfoEntity> taskInfoEntities = taskRepository.findAllByPipelineId(pipelineId);
+        if (CollectionUtils.isEmpty(taskInfoEntities)) {
+            return Collections.emptyList();
+        }
+        List<PipelineTaskVO> pipelineTaskVOS = new ArrayList<>();
+        taskInfoEntities.forEach(entry -> {
+            pipelineTaskVOS.add(convertTaskInfoEntityToVo(entry));
+        });
+        return pipelineTaskVOS;
+    }
+
+    @Override
+    public List<Long> getTaskIdsByPipelineId(String pipelineId, String user) {
+        List<TaskInfoEntity> taskInfoEntities = taskRepository.findAllByPipelineId(pipelineId);
+        if (CollectionUtils.isEmpty(taskInfoEntities)) {
+            return Collections.emptyList();
+        }
+        return taskInfoEntities.stream().map(TaskInfoEntity::getTaskId).collect(Collectors.toList());
+    }
+
+    private PipelineTaskVO convertTaskInfoEntityToVo(TaskInfoEntity taskInfoEntity) {
         PipelineTaskVO taskDetailVO = new PipelineTaskVO();
         taskDetailVO.setProjectId(taskInfoEntity.getProjectId());
         taskDetailVO.setTaskId(taskInfoEntity.getTaskId());
         taskDetailVO.setTools(Lists.newArrayList());
         taskDetailVO.setEnName(taskInfoEntity.getNameEn());
         taskDetailVO.setCnName(taskInfoEntity.getNameCn());
+        taskDetailVO.setAutoLang(taskInfoEntity.getAutoLang());
 
-        List<String> openTools = Lists.newArrayList();
         if (CollectionUtils.isNotEmpty(taskInfoEntity.getToolConfigInfoList())) {
             for (ToolConfigInfoEntity toolConfigInfoEntity : taskInfoEntity.getToolConfigInfoList()) {
-                if (TaskConstants.FOLLOW_STATUS.WITHDRAW.value() != toolConfigInfoEntity.getFollowStatus()) {
-                    openTools.add(toolConfigInfoEntity.getToolName());
+                // modified by neildwu 2021-04-20 ，存量项目去除cloc工具
+                if (TaskConstants.FOLLOW_STATUS.WITHDRAW.value() != toolConfigInfoEntity.getFollowStatus()
+                        && !ComConstants.Tool.CLOC.name().equalsIgnoreCase(toolConfigInfoEntity.getToolName())
+                        && !checkToolRemoved(toolConfigInfoEntity.getToolName(), taskInfoEntity)) {
                     PipelineToolVO pipelineToolVO = new PipelineToolVO();
                     pipelineToolVO.setToolName(toolConfigInfoEntity.getToolName());
                     if (toolConfigInfoEntity.getCheckerSet() != null) {
@@ -1762,41 +1938,55 @@ public class TaskServiceImpl implements TaskService {
                 }
             }
         }
-
-        //        if (StringUtils.isNotEmpty(user) && CollectionUtils.isNotEmpty(openTools))
-        //        {
-        //            Map<String, DividedCheckerSetsVO> checkerSetsMap = Maps.newHashMap();
-        //            if (StringUtils.isNotEmpty(user))
-        //            {
-        //                Result<UserCheckerSetsVO> checkerSetsResult = client.get(ServiceCheckerRestResource.class)
-        //                .getCheckerSets(taskInfoEntity.getTaskId(),
-        //                        new GetCheckerSetsReqVO(openTools), user, taskInfoEntity.getProjectId());
-        //                if (checkerSetsResult.isNotOk() || null == checkerSetsResult.getData() || CollectionUtils
-        //                .isEmpty(checkerSetsResult.getData().getCheckerSets()))
-        //                {
-        //                    log.error("get checker sets fail! pipeline id: {}, task id: {}, user: {}", pipelineId,
-        //                    taskInfoEntity.getTaskId(), user);
-        //                    throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
-        //                }
-        //                for (DividedCheckerSetsVO checkerSets : checkerSetsResult.getData().getCheckerSets())
-        //                {
-        //                    checkerSetsMap.put(checkerSets.getToolName(), checkerSets);
-        //                }
-        //            }
-        //            for (PipelineToolVO pipelineToolVO : taskDetailVO.getTools())
-        //            {
-        //                if (checkerSetsMap.get(pipelineToolVO.getToolName()) != null)
-        //                {
-        //                    pipelineToolVO.setToolCheckerSets(checkerSetsMap.get(pipelineToolVO.getToolName()));
-        //                }
-        //            }
-        //        }
-
         // 加入语言的显示名称
-        List<String> codeLanguages = pipelineService.localConvertDevopsCodeLang(taskInfoEntity.getCodeLang());
+        List<String> codeLanguages = taskInfoEntity.getCodeLang() != null
+                ? pipelineService.localConvertDevopsCodeLang(taskInfoEntity.getCodeLang()) : Collections.emptyList();
         taskDetailVO.setCodeLanguages(codeLanguages);
-
         return taskDetailVO;
+    }
+
+    /**
+     * 检查工具是否已经下架
+     *
+     * @param toolName
+     * @param taskInfoEntity
+     * @return true:已下架，false:未下架
+     */
+    @Override
+    public boolean checkToolRemoved(String toolName, TaskInfoEntity taskInfoEntity) {
+        // 指定项目不限制，可以执行coverity
+        try {
+            Set<String> projectIdSet = toolLicenseWhiteListCache.get(toolName);
+            if (CollectionUtils.isNotEmpty(projectIdSet) && projectIdSet.contains(taskInfoEntity.getProjectId())) {
+                return false;
+            }
+        } catch (ExecutionException e) {
+            log.warn("get tool license white list exception: {}, {}, {}",
+                    toolName, taskInfoEntity.getProjectId(), taskInfoEntity.getTaskId());
+        }
+
+        ToolMetaBaseVO toolMetaBase = toolMetaCache.getToolBaseMetaCache(toolName);
+        if (ComConstants.ToolIntegratedStatus.D.name().equals(toolMetaBase.getStatus())) {
+            log.info("tool was removed: {}, {}", toolName, taskInfoEntity.getTaskId());
+            return true;
+        }
+
+        return false;
+    }
+
+
+    @Override
+    public Long getTaskIdByPipelineInfo(String pipelineId, String multiPipelineMark) {
+        String finalMultiPipelineMark = multiPipelineMark;
+        if (StringUtils.isBlank(finalMultiPipelineMark)) {
+            finalMultiPipelineMark = null;
+        }
+        TaskInfoEntity taskInfoEntity = taskRepository.findFirstByPipelineIdAndMultiPipelineMark(pipelineId,
+                finalMultiPipelineMark);
+        if (null == taskInfoEntity) {
+            return null;
+        }
+        return taskInfoEntity.getTaskId();
     }
 
     @Override
@@ -1823,18 +2013,12 @@ public class TaskServiceImpl implements TaskService {
         return taskRepository.findFirstByTaskId(taskId);
     }
 
-    @Override
-    public Boolean saveTaskInfo(TaskInfoEntity taskInfoEntity) {
-        taskRepository.save(taskInfoEntity);
-        return true;
-    }
 
     @Override
     public List<TaskBaseVO> getTasksByBgId(Integer bgId) {
         List<TaskInfoEntity> taskInfoEntityList = taskRepository.findByBgId(bgId);
         if (CollectionUtils.isNotEmpty(taskInfoEntityList)) {
-            return taskInfoEntityList.stream().map(taskInfoEntity ->
-            {
+            return taskInfoEntityList.stream().map(taskInfoEntity -> {
                 TaskBaseVO taskBaseVO = new TaskBaseVO();
                 BeanUtils.copyProperties(taskInfoEntity, taskBaseVO,
                         "taskOwner", "executeDate", "enableToolList", "disableToolList");
@@ -1849,8 +2033,7 @@ public class TaskServiceImpl implements TaskService {
     public List<TaskBaseVO> getTasksByIds(List<Long> taskIds) {
         List<TaskInfoEntity> taskInfoEntityList = taskRepository.findByTaskIdIn(taskIds);
         if (CollectionUtils.isNotEmpty(taskInfoEntityList)) {
-            return taskInfoEntityList.stream().map(taskInfoEntity ->
-            {
+            return taskInfoEntityList.stream().map(taskInfoEntity -> {
                 TaskBaseVO taskBaseVO = new TaskBaseVO();
                 BeanUtils.copyProperties(taskInfoEntity, taskBaseVO,
                         "taskOwner", "executeDate", "enableToolList", "disableToolList");
@@ -1899,7 +2082,8 @@ public class TaskServiceImpl implements TaskService {
     public Boolean updateScanConfiguration(Long taskId, String user, ScanConfigurationVO scanConfigurationVO) {
         // 更新定时分析配置
         TaskInfoEntity taskInfoEntity = taskRepository.findFirstByTaskId(taskId);
-        if (scanConfigurationVO.getTimeAnalysisConfig() != null && BsTaskCreateFrom.BS_CODECC.value().equals(taskInfoEntity.getCreateFrom())) {
+        if (scanConfigurationVO.getTimeAnalysisConfig() != null
+                && BsTaskCreateFrom.BS_CODECC.value().equals(taskInfoEntity.getCreateFrom())) {
             TimeAnalysisConfigVO timeAnalysisConfigVO = scanConfigurationVO.getTimeAnalysisConfig();
             if (timeAnalysisConfigVO != null) {
                 // 调用Kotlin方法时需要去掉null
@@ -1915,25 +2099,32 @@ public class TaskServiceImpl implements TaskService {
             }
         }
 
+        // 需要设置强制全量，避免走快速增量的逻辑的情况
+        // 1、扫描方式由快速全量或差异扫描变成全量
+        // 2、从差异扫描变成快速全量
+        // 3、编译型工具有修改编译脚本
         // 更新扫描方式
         if (scanConfigurationVO.getScanType() != null) {
-            // 如果扫描方式由增量变成全量，需要设置强制全量，避免走快速增量的逻辑
-            if (taskInfoEntity.getScanType() == ComConstants.ScanType.INCREMENTAL.code
+            if ((taskInfoEntity.getScanType() == ComConstants.ScanType.INCREMENTAL.code
+                    || taskInfoEntity.getScanType() == ComConstants.ScanType.BRANCH_DIFF_MODE.code)
                     && scanConfigurationVO.getScanType() == ComConstants.ScanType.FULL.code) {
+                log.info("task: {}, scanType from increment/diff change to full.", taskId);
+                setForceFullScan(taskInfoEntity);
+            } else if (taskInfoEntity.getScanType() == ComConstants.ScanType.BRANCH_DIFF_MODE.code
+                    && scanConfigurationVO.getScanType() == ComConstants.ScanType.INCREMENTAL.code) {
+                log.info("task: {}, scanType from diff change to increment.", taskId);
                 setForceFullScan(taskInfoEntity);
             }
             taskInfoEntity.setScanType(scanConfigurationVO.getScanType());
         }
 
-        // 更新新告警判定配置
-        NewDefectJudgeVO defectJudge = scanConfigurationVO.getNewDefectJudge();
-        if (defectJudge != null) {
-            NewDefectJudgeEntity newDefectJudgeEntity = new NewDefectJudgeEntity();
-            BeanUtils.copyProperties(defectJudge, newDefectJudgeEntity);
-            if (StringUtils.isNotEmpty(defectJudge.getFromDate())) {
-                newDefectJudgeEntity.setFromDateTime(DateTimeUtils.convertStringDateToLongTime(defectJudge.getFromDate(), DateTimeUtils.yyyyMMddFormat));
+        // 更新项目编译脚本
+        if (scanConfigurationVO.getCompileCommand() != null) {
+            if (!scanConfigurationVO.getCompileCommand().equals(taskInfoEntity.getProjectBuildCommand())) {
+                log.info("task: {}, compileCommand changed.", taskId);
+                setForceFullScan(taskInfoEntity);
             }
-            taskInfoEntity.setNewDefectJudge(newDefectJudgeEntity);
+            taskInfoEntity.setProjectBuildCommand(scanConfigurationVO.getCompileCommand());
         }
 
         // 更新告警作者转换配置
@@ -1944,13 +2135,19 @@ public class TaskServiceImpl implements TaskService {
             taskInfoEntity.setMrCommentEnable(scanConfigurationVO.getMrCommentEnable());
         }
 
+        //更新是否允许页面忽略告警配置
+        Boolean prohibitIgnore = scanConfigurationVO.getProhibitIgnore();
+        if (null != prohibitIgnore) {
+            taskInfoEntity.setProhibitIgnore(prohibitIgnore);
+        }
+
         taskRepository.save(taskInfoEntity);
         return true;
     }
 
     @Override
     public Boolean authorTransferForApi(Long taskId, List<ScanConfigurationVO.TransferAuthorPair> transferAuthorPairs,
-                                        String userId) {
+            String userId) {
         log.info("api author transfer function, user id: {}, task id: {}", userId, taskId);
         TaskInfoEntity taskInfoEntity = taskRepository.findFirstByTaskId(taskId);
         ScanConfigurationVO scanConfigurationVO = new ScanConfigurationVO();
@@ -1967,8 +2164,7 @@ public class TaskServiceImpl implements TaskService {
         List<ScanConfigurationVO.TransferAuthorPair> transferAuthorList = scanConfigurationVO.getTransferAuthorList();
         if (CollectionUtils.isNotEmpty(transferAuthorList)) {
             List<AuthorTransferVO.TransferAuthorPair> newTransferAuthorList = transferAuthorList.stream()
-                    .map(authorPair ->
-                    {
+                    .map(authorPair -> {
                         AuthorTransferVO.TransferAuthorPair transferAuthorPair =
                                 new AuthorTransferVO.TransferAuthorPair();
                         transferAuthorPair.setSourceAuthor(authorPair.getSourceAuthor());
@@ -2000,8 +2196,7 @@ public class TaskServiceImpl implements TaskService {
             Map<String, String> paramMap = updateToolConfigList.stream().collect(Collectors.toMap(
                     ToolConfigParamJsonVO::getVarName, ToolConfigParamJsonVO::getChooseValue
             ));
-            toolConfigList.forEach(toolConfigInfoEntity ->
-            {
+            toolConfigList.forEach(toolConfigInfoEntity -> {
                 ToolMetaBaseVO toolMetaBaseVO = toolMetaCache.getToolBaseMetaCache(toolConfigInfoEntity.getToolName());
                 String toolParamJson = toolMetaBaseVO.getParams();
                 if (StringUtils.isEmpty(toolParamJson)) {
@@ -2044,8 +2239,7 @@ public class TaskServiceImpl implements TaskService {
             // 排除下架的工具
             toolConfigInfoList.stream()
                     .filter(config -> config.getFollowStatus() != FOLLOW_STATUS.WITHDRAW.value())
-                    .forEach(config ->
-                    {
+                    .forEach(config -> {
                         String paramJson = config.getParamJson();
                         JSONObject params = new JSONObject();
                         if (StringUtils.isNotBlank(paramJson) && !ComConstants.STRING_NULL_ARRAY.equals(paramJson)) {
@@ -2071,6 +2265,24 @@ public class TaskServiceImpl implements TaskService {
         return taskUpdateVO.getCodeLang() > 0;
     }
 
+    /**
+     * 检查参数并赋默认值
+     *
+     * @param reqVO req
+     */
+    private void checkParam(QueryMyTasksReqVO reqVO) {
+        if (reqVO.getPageNum() == null) {
+            reqVO.setPageNum(1);
+        }
+
+        if (reqVO.getPageSize() == null) {
+            reqVO.setPageSize(10);
+        }
+
+        if (reqVO.getSortField() == null) {
+            reqVO.setSortField("taskId");
+        }
+    }
 
     /**
      * 给工具分类及排序
@@ -2125,8 +2337,8 @@ public class TaskServiceImpl implements TaskService {
      * @return
      */
     private String resetToolOrderByType(String toolNames, final String toolIdsOrder,
-                                        List<ToolConfigInfoVO> unsortedToolList,
-                                        List<ToolConfigInfoVO> sortedToolList) {
+            List<ToolConfigInfoVO> unsortedToolList,
+            List<ToolConfigInfoVO> sortedToolList) {
         if (StringUtils.isEmpty(toolNames)) {
             return null;
         }
@@ -2141,11 +2353,10 @@ public class TaskServiceImpl implements TaskService {
             String toolId = it.next();
             if (originToolList.contains(toolId)) {
                 sb.append(toolId).append(",");
-                List<ToolConfigInfoVO> filteredList = unsortedToolList.stream().
-                        filter(toolConfigInfoVO ->
+                List<ToolConfigInfoVO> filteredList = unsortedToolList.stream()
+                        .filter(toolConfigInfoVO ->
                                 toolId.equalsIgnoreCase(toolConfigInfoVO.getToolName())
-                        ).
-                        collect(Collectors.toList());
+                        ).collect(Collectors.toList());
 
                 sortedToolList.addAll(CollectionUtils.isNotEmpty(filteredList) ? filteredList : Collections.EMPTY_LIST);
             }
@@ -2158,15 +2369,28 @@ public class TaskServiceImpl implements TaskService {
     }
 
 
-    private TaskListVO sortByDate(List<TaskDetailVO> taskDetailVOS, TaskSortType taskSortType) {
-        TaskListVO taskList = new TaskListVO(Collections.emptyList(), Collections.emptyList());
+    protected TaskListVO sortByDate(
+            TaskListReqVO taskListReqVO, List<TaskDetailVO> taskDetailVOS, TaskSortType taskSortType) {
+        log.info("sortByDate taskListReqVO: [{}]", taskListReqVO);
+        if (taskListReqVO.getShowDisabledTask() != null) {
+            if (!taskListReqVO.getShowDisabledTask()) {
+                // 删除集合中停用的任务
+                taskDetailVOS.removeIf(taskDetailVO -> (taskDetailVO.getStatus() != null
+                        && taskDetailVO.getStatus().equals(TaskConstants.TaskStatus.DISABLE.value())));
+            }
+        }
+        TaskListVO taskList = new TaskListVO();
         List<TaskDetailVO> enableProjs = new ArrayList<>();
         List<TaskDetailVO> disableProjs = new ArrayList<>();
         for (TaskDetailVO taskDetailVO : taskDetailVOS) {
-            if (!TaskConstants.TaskStatus.DISABLE.value().equals(taskDetailVO.getStatus())) {
+            if (taskListReqVO.getPageable() != null && taskListReqVO.getPageable()) {
                 enableProjs.add(taskDetailVO);
             } else {
-                disableProjs.add(taskDetailVO);
+                if (!TaskConstants.TaskStatus.DISABLE.value().equals(taskDetailVO.getStatus())) {
+                    enableProjs.add(taskDetailVO);
+                } else {
+                    disableProjs.add(taskDetailVO);
+                }
             }
         }
         if (CollectionUtils.isNotEmpty(taskDetailVOS)) {
@@ -2175,38 +2399,63 @@ public class TaskServiceImpl implements TaskService {
             //启用的项目按创建时间倒排,如果有置顶就放在最前面
             switch (taskSortType) {
                 case CREATE_DATE:
-                    enableProjs.sort((o1, o2) ->
-                            o2.getTopFlag() - o1.getTopFlag() == 0 ?
-                                    o2.getCreatedDate().compareTo(o1.getCreatedDate()) :
-                                    o2.getTopFlag() - o1.getTopFlag()
+                    enableProjs.sort((o1, o2) -> o2.getTopFlag() - o1.getTopFlag() == 0
+                            ? o2.getCreatedDate().compareTo(o1.getCreatedDate()) :
+                            o2.getTopFlag() - o1.getTopFlag()
                     );
                     break;
                 case LAST_EXECUTE_DATE:
                     enableProjs.sort((o1, o2) ->
-                            o2.getTopFlag() - o1.getTopFlag() == 0 ?
-                                    o2.getMinStartTime().compareTo(o1.getMinStartTime()) :
+                            o2.getTopFlag() - o1.getTopFlag() == 0
+                                    ? o2.getMinStartTime().compareTo(o1.getMinStartTime()) :
                                     o2.getTopFlag() - o1.getTopFlag()
                     );
                     break;
                 case SIMPLIFIED_PINYIN:
                     enableProjs.sort((o1, o2) ->
-                            o2.getTopFlag() - o1.getTopFlag() == 0 ?
-                                    Collator.getInstance(Locale.TRADITIONAL_CHINESE).compare(StringUtils.isNotBlank(o1.getNameCn()) ? o1.getNameCn() : o1.getNameEn(),
+                            o2.getTopFlag() - o1.getTopFlag() == 0 ? Collator.getInstance(Locale.SIMPLIFIED_CHINESE)
+                                    .compare(StringUtils.isNotBlank(o1.getNameCn()) ? o1.getNameCn() : o1.getNameEn(),
                                             StringUtils.isNotBlank(o2.getNameCn()) ? o2.getNameCn() : o2.getNameEn()) :
                                     o2.getTopFlag() - o1.getTopFlag()
                     );
                     break;
                 default:
                     enableProjs.sort((o1, o2) ->
-                            o2.getTopFlag() - o1.getTopFlag() == 0 ?
-                                    o2.getCreatedDate().compareTo(o1.getCreatedDate()) :
+                            o2.getTopFlag() - o1.getTopFlag() == 0
+                                    ? o2.getCreatedDate().compareTo(o1.getCreatedDate()) :
                                     o2.getTopFlag() - o1.getTopFlag()
                     );
                     break;
             }
+        }
 
-
-            //重建projectList
+        if (taskListReqVO.getPageable() != null && taskListReqVO.getPageable()) {
+            int startIndex = (taskListReqVO.getPage() - 1) * taskListReqVO.getPageSize();
+            List<TaskDetailVO> pageProjs = enableProjs.stream()
+                    .skip(startIndex)
+                    .limit(taskListReqVO.getPageSize())
+                    .collect(Collectors.toList());
+            Result<List<MetricsVO>> result = client.get(ServiceMetricsRestResource.class)
+                    .getMetrics(pageProjs.stream().map(TaskDetailVO::getTaskId).collect(Collectors.toList()));
+            if (result.isOk() && result.getData() != null) {
+                Map<Long, MetricsVO> metricsMap = result.getData()
+                        .stream()
+                        .collect(Collectors.toMap(MetricsVO::getTaskId, a -> a, (t1, t2) -> t1));
+                pageProjs.forEach(taskDetailVO -> {
+                    MetricsVO metricsVO;
+                    if ((metricsVO = metricsMap.get(taskDetailVO.getTaskId())) != null) {
+                        taskDetailVO.setTotalStyleDefectCount(metricsVO.getTotalStyleDefectCount());
+                        taskDetailVO.setTotalDefectCount(metricsVO.getTotalDefectCount());
+                        taskDetailVO.setTotalSecurityDefectCount(metricsVO.getTotalSecurityDefectCount());
+                        taskDetailVO.setRdIndicatorsScore(metricsVO.getRdIndicatorsScore());
+                        taskDetailVO.setOpenScan(metricsVO.isOpenScan());
+                    }
+                });
+            }
+            Pageable pageable = PageRequest.of(taskListReqVO.getPage() - 1, taskListReqVO.getPageSize());
+            taskList.setPageTasks(
+                    new PageImpl<>(pageProjs, pageable, enableProjs.size()));
+        } else {
             taskList.setEnableTasks(enableProjs);
             taskList.setDisableTasks(disableProjs);
         }
@@ -2277,8 +2526,7 @@ public class TaskServiceImpl implements TaskService {
         List<TaskInfoEntity> taskInfoEntityList =
                 taskDao.queryTaskInfoEntityList(taskStatus, bgId, deptIds, queryTaskIds, createFrom, null);
         if (CollectionUtils.isNotEmpty(taskInfoEntityList)) {
-            taskInfoEntityList.forEach(entity ->
-            {
+            taskInfoEntityList.forEach(entity -> {
                 TaskDetailVO taskDetailVO = new TaskDetailVO();
                 BeanUtils.copyProperties(entity, taskDetailVO);
                 tasks.add(taskDetailVO);
@@ -2296,9 +2544,9 @@ public class TaskServiceImpl implements TaskService {
     /**
      * 根据isExcludeTaskIds来判断参数taskIdsReq 的处理方式，来获取任务ID列表
      *
-     * @param toolName         工具名称
+     * @param toolName 工具名称
      * @param isExcludeTaskIds true: 排除taskIdsReq false: 从taskIdsReq排除
-     * @param taskIdsReq       参数(任务ID列表)
+     * @param taskIdsReq 参数(任务ID列表)
      * @return task id list
      */
     @NotNull
@@ -2384,31 +2632,38 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public void updateReportInfo(Long taskId, NotifyCustomVO notifyCustomVO) {
+    public void updateReportInfo(Long taskId, NotifyCustomVO reqVO) {
         TaskInfoEntity taskInfoEntity = taskRepository.findFirstByTaskId(taskId);
         NotifyCustomEntity previousNofityEntity = taskInfoEntity.getNotifyCustomInfo();
         log.info("update report info from build, task id: {}, before: {}", taskId, previousNofityEntity);
 
         OperationType operationType;
-        if (null != previousNofityEntity &&
-                CollectionUtils.isNotEmpty(previousNofityEntity.getReportDate()) &&
-                null != previousNofityEntity.getReportTime() &&
-                CollectionUtils.isNotEmpty(previousNofityEntity.getReportTools())) {
+        String existsJobName = "";
+        if (null != previousNofityEntity && StringUtils.isNotEmpty(previousNofityEntity.getReportJobName())) {
             operationType = OperationType.RESCHEDULE;
+            existsJobName = previousNofityEntity.getReportJobName();
         } else {
             operationType = OperationType.ADD;
         }
 
         NotifyCustomEntity notifyCustomEntity = new NotifyCustomEntity();
-        BeanUtils.copyProperties(notifyCustomVO, notifyCustomEntity);
+        BeanUtils.copyProperties(reqVO, notifyCustomEntity);
+        // reqVO没有传递jobName
+        notifyCustomEntity.setReportJobName(existsJobName);
+
         //如果定时任务信息不为空，则与定时调度平台通信
-        if (CollectionUtils.isNotEmpty(notifyCustomVO.getReportDate()) &&
-                null != notifyCustomVO.getReportTime() &&
-                CollectionUtils.isNotEmpty(notifyCustomVO.getReportTools())) {
-            String jobName = emailNotifyService.addEmailScheduleTask(taskId, notifyCustomVO.getReportDate(),
-                    notifyCustomVO.getReportTime(), operationType, null == previousNofityEntity ? null :
-                            previousNofityEntity.getReportJobName());
-            notifyCustomEntity.setReportJobName(jobName);
+        if (CollectionUtils.isNotEmpty(notifyCustomEntity.getReportDate())
+                && null != notifyCustomEntity.getReportTime()
+                && CollectionUtils.isNotEmpty(notifyCustomEntity.getReportTools())) {
+            // 新增任务会返回新的jobName；否则返回existsJobName
+            String finalJobName = emailNotifyService.addEmailScheduleTask(
+                    taskId,
+                    notifyCustomEntity.getReportDate(),
+                    notifyCustomEntity.getReportTime(),
+                    operationType,
+                    existsJobName
+            );
+            notifyCustomEntity.setReportJobName(finalJobName);
         }
 
         log.info("update report info from build, task id: {}, after: {}", taskId, notifyCustomEntity);
@@ -2426,15 +2681,15 @@ public class TaskServiceImpl implements TaskService {
         //如果是置顶操作
         if (topFlag) {
             if (CollectionUtils.isEmpty(topUser)) {
-                taskInfoEntity.setTopUser(new HashSet<String>() {{
-                    add(user);
-                }});
+                taskInfoEntity.setTopUser(new HashSet<String>() {
+                    {
+                        add(user);
+                    }
+                });
             } else {
                 topUser.add(user);
             }
-        }
-        //如果是取消置顶操作
-        else {
+        } else { //如果是取消置顶操作
             if (CollectionUtils.isEmpty(topUser)) {
                 log.error("top user list is empty! task id: {}", taskId);
                 return false;
@@ -2447,16 +2702,13 @@ public class TaskServiceImpl implements TaskService {
         return true;
     }
 
-    @Override
-    public TaskInfoEntity getTaskByGongfengId(Integer gongfengProjectId) {
-        return taskRepository.findFirstByGongfengProjectId(gongfengProjectId);
-    }
 
     @Override
     public List<TaskDetailVO> getTaskInfoList(QueryTaskListReqVO taskListReqVO) {
         List<TaskInfoEntity> taskInfoEntityList =
                 taskDao.queryTaskInfoEntityList(taskListReqVO.getStatus(), taskListReqVO.getBgId(),
-                        taskListReqVO.getDeptIds(), taskListReqVO.getTaskIds(), taskListReqVO.getCreateFrom(), taskListReqVO.getUserId());
+                        taskListReqVO.getDeptIds(), taskListReqVO.getTaskIds(),
+                        taskListReqVO.getCreateFrom(), taskListReqVO.getUserId());
 
         return entities2TaskDetailVoList(taskInfoEntityList);
     }
@@ -2483,8 +2735,7 @@ public class TaskServiceImpl implements TaskService {
     private List<TaskDetailVO> entities2TaskDetailVoList(List<TaskInfoEntity> taskInfoEntityList) {
         List<TaskDetailVO> taskInfoList = Lists.newArrayList();
         if (CollectionUtils.isNotEmpty(taskInfoEntityList)) {
-            taskInfoList = taskInfoEntityList.stream().map(taskInfoEntity ->
-            {
+            taskInfoList = taskInfoEntityList.stream().map(taskInfoEntity -> {
                 TaskDetailVO taskDetailVO = new TaskDetailVO();
                 BeanUtils.copyProperties(taskInfoEntity, taskDetailVO);
                 return taskDetailVO;
@@ -2512,26 +2763,6 @@ public class TaskServiceImpl implements TaskService {
         return task.getToolConfigInfoList() == null;
     }
 
-
-    /**
-     * 检查参数并赋默认值
-     *
-     * @param reqVO req
-     */
-    private void checkParam(QueryMyTasksReqVO reqVO) {
-        if (reqVO.getPageNum() == null) {
-            reqVO.setPageNum(1);
-        }
-
-        if (reqVO.getPageSize() == null) {
-            reqVO.setPageSize(10);
-        }
-
-        if (reqVO.getSortField() == null) {
-            reqVO.setSortField("taskId");
-        }
-    }
-
     private void setEmptyAnalyze(TaskInfoEntity taskEntity, TaskOverviewVO taskOverviewVO) {
         List<LastAnalysis> lastAnalyses = new ArrayList<>();
         if (taskEntity.getToolConfigInfoList() != null) {
@@ -2547,7 +2778,7 @@ public class TaskServiceImpl implements TaskService {
 
     @NotNull
     private Page<TaskInfoVO> sortAndPage(int pageNum, int pageSize, String sortType, String sortField,
-                                         List<TaskInfoVO> tasks) {
+            List<TaskInfoVO> tasks) {
         if (!Sort.Direction.ASC.name().equalsIgnoreCase(sortType)) {
             sortType = Sort.Direction.DESC.name();
         }
@@ -2583,78 +2814,31 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public Boolean refreshTaskOrgInfo(Long taskId) {
-        boolean result = false;
-        TaskInfoEntity taskInfoEntity = taskRepository.findFirstByTaskId(taskId);
-        if (taskInfoEntity == null) {
-            log.error("refreshTaskOrgInfo infoEntity is not found: {}", taskId);
-            return false;
-        }
-
-        DevopsProjectOrgVO devopsProjectOrg = userManageService.getDevopsProjectOrg(taskInfoEntity.getProjectId());
-        if (devopsProjectOrg == null) {
-            devopsProjectOrg = new DevopsProjectOrgVO();
-        }
-        Integer bgId = devopsProjectOrg.getBgId();
-        if (bgId == null || bgId <= 0) {
-            TofStaffInfo staffInfo =
-                    tofClientApi.getStaffInfoByUserName(taskInfoEntity.getTaskOwner().get(0)).getData();
-            if (staffInfo == null) {
-                log.error("getStaffInfoByUserName is null: {}", taskId);
-                return false;
-            }
-            TofOrganizationInfo orgInfo = tofClientApi.getOrganizationInfoByGroupId(staffInfo.getGroupId());
-            if (orgInfo == null) {
-                log.error("getOrganizationInfoByGroupId is null: {}", taskId);
-                return false;
-            }
-            devopsProjectOrg.setBgId(orgInfo.getBgId());
-            devopsProjectOrg.setDeptId(orgInfo.getDeptId());
-            devopsProjectOrg.setCenterId(orgInfo.getCenterId());
-        }
-
-        taskInfoEntity.setBgId(devopsProjectOrg.getBgId());
-        taskInfoEntity.setDeptId(devopsProjectOrg.getDeptId());
-        taskInfoEntity.setCenterId(devopsProjectOrg.getCenterId());
-        result = taskDao.updateOrgInfo(taskInfoEntity);
-
-        return result;
+        return true;
     }
 
     @Override
-    public void updateTaskOwnerAndMember(TaskOwnerAndMemberVO taskOwnerAndMemberVO, Long taskId) {
+    public void updateTaskOwnerAndMember(TaskOwnerAndMemberVO vo, Long taskId) {
         TaskInfoEntity taskInfoEntity = taskRepository.findFirstByTaskId(taskId);
         if (null == taskInfoEntity) {
             return;
         }
-        taskInfoEntity.setTaskMember(taskOwnerAndMemberVO.getTaskMember());
-        taskInfoEntity.setTaskOwner(taskOwnerAndMemberVO.getTaskOwner());
+
+        if (vo.getTaskOwner() == null) {
+            vo.setTaskOwner(Lists.newArrayList());
+        } else {
+            vo.getTaskOwner().removeIf(StringUtils::isEmpty);
+        }
+
+        if (vo.getTaskMember() == null) {
+            vo.setTaskMember(Lists.newArrayList());
+        } else {
+            vo.getTaskMember().removeIf(StringUtils::isEmpty);
+        }
+
+        taskInfoEntity.setTaskMember(vo.getTaskMember());
+        taskInfoEntity.setTaskOwner(vo.getTaskOwner());
         taskRepository.save(taskInfoEntity);
-    }
-
-    @Override
-    public List<Long> getBkPluginTaskIds() {
-        Map<String, Object> params = new HashMap<>();
-        params.put("status", Status.ENABLE.value());
-        params.put("project_id", "CUSTOMPROJ_TEG_CUSTOMIZED");
-
-        Map<String, Object> nParams = new HashMap<>();
-        nParams.put("gongfeng_project_id", null);
-        List<TaskInfoEntity> openSourceTaskList = taskDao.queryTaskInfoByCustomParam(params, nParams);
-
-        log.info("bk plugin tasks {}", openSourceTaskList.size());
-
-        Map<Integer, List<TaskInfoEntity>> proMap = openSourceTaskList.stream()
-                .collect(Collectors.groupingBy(TaskInfoEntity::getGongfengProjectId));
-        List<GongfengPublicProjEntity> projEntityList = gongfengPublicProjRepository.findByIdIn(proMap.keySet());
-        List<Long> taskIds = Lists.newArrayList();
-        projEntityList.stream()
-                .filter(gongfengPublicProjEntity -> StringUtils.isNotBlank(gongfengPublicProjEntity.getHttpUrlToRepo())
-                        && gongfengPublicProjEntity.getHttpUrlToRepo().contains("/bkdevops-plugins/"))
-                .forEach(gongfengPublicProjEntity -> taskIds.add(proMap.get(gongfengPublicProjEntity.getId())
-                        .get(0).getTaskId()));
-
-        log.info("bk plugin gongfeng tasks {}", taskIds.size());
-        return taskIds;
     }
 
     @Override
@@ -2664,127 +2848,11 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public List<MetadataVO> listTaskToolDimension(Long taskId) {
-        TaskInfoEntity taskInfo = taskRepository.findFirstByTaskId(taskId);
-        Map<String, MetadataVO> resultMap = new HashMap<>();
-        taskInfo.getToolConfigInfoList().forEach(it -> {
-            try {
-                BaseDataEntity toolTypeBaseData = toolTypeBaseDataCache.get(it.getToolName());
-                if (toolTypeBaseData != null) {
-                    MetadataVO metadataVO = new MetadataVO();
-                    metadataVO.setKey(toolTypeBaseData.getParamCode());
-                    metadataVO.setName(toolTypeBaseData.getParamName());
-                    metadataVO.setFullName(toolTypeBaseData.getParamExtend1());
-                    resultMap.put(toolTypeBaseData.getParamCode(), metadataVO);
-                }
-            } catch (ExecutionException e) {
-                throw new CodeCCException("list task tool dimension for task fail: " + taskId + ", " + e.getMessage());
-            }
-        });
-
-        return new ArrayList<>(resultMap.values());
-    }
-
-    @Override
-    public TaskDetailVO getTaskInfoByAliasName(String aliasName) {
-        // 为了防止同名插件删除后又创建，aliasName并不准确，使用repoId数字ID查询
-        GongfengPublicProjModel gongfengModel;
-        try {
-            aliasName = URLDecoder.decode(aliasName, "UTF-8");
-            gongfengModel = getGongfengProjectInfo(aliasName);
-        } catch (UnsupportedEncodingException e) {
-            log.error("", e);
-            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{"代码库别名转码失败"});
-        }
-
-        if (gongfengModel == null) {
-            log.error("repo is not exists: {}", aliasName);
-            return null;
-        }
-        return getTaskInfoByGongfengId(gongfengModel.getId(), gongfengModel);
-    }
-
-    @Override
-    public TaskDetailVO getTaskInfoByGongfengId(int id, GongfengPublicProjModel gongfengPublicProjModel) {
-        GongfengPublicProjModel gongfengModel = gongfengPublicProjModel;
-        if (gongfengModel == null) {
-            try {
-                gongfengModel = getGongfengProjectInfo(String.valueOf(id));
-            } catch (UnsupportedEncodingException e) {
-                log.error("", e);
-                throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{"代码库信息获取失败"});
-            }
-        }
-
-        if (gongfengModel == null || gongfengModel.getVisibilityLevel() == null) {
-            log.error("repo is not exists: {}", id);
-            return null;
-        }
-
-        //修改task获取逻辑
-        TaskInfoEntity taskInfoEntity = taskRepository.findFirstByGongfengProjectIdAndStatusAndProjectIdRegex(
-                gongfengModel.getId(), TaskConstants.TaskStatus.ENABLE.value(), "^(CODE_)");
-        if (null == taskInfoEntity || taskInfoEntity.getTaskId() == 0L) {
-            CustomProjEntity customProjEntity = customProjRepository.findFirstByGongfengProjectIdAndCustomProjSource(
-                    gongfengModel.getId(), "TEG_CUSTOMIZED");
-            if (null != customProjEntity && StringUtils.isNotBlank(customProjEntity.getPipelineId())) {
-                taskInfoEntity = taskRepository.findFirstByPipelineId(customProjEntity.getPipelineId());
-            }
-            if (null == taskInfoEntity || taskInfoEntity.getTaskId() == 0L || !TaskConstants.TaskStatus.ENABLE.value()
-                    .equals(taskInfoEntity.getStatus())) {
-                customProjEntity = customProjRepository
-                        .findFirstByGongfengProjectIdAndCustomProjSource(
-                                gongfengModel.getId(), "bkdevops-plugins");
-                if (null != customProjEntity && StringUtils.isNotBlank(customProjEntity.getPipelineId())) {
-                    taskInfoEntity = taskRepository.findFirstByPipelineId(customProjEntity.getPipelineId());
-                }
-            }
-        }
-
-        if (taskInfoEntity == null) {
-            log.info("get task by alias, task is null");
-            return null;
-        }
-
-        TaskDetailVO taskDetailVO = new TaskDetailVO();
-        BeanUtils.copyProperties(taskInfoEntity, taskDetailVO);
-        if (taskInfoEntity.getToolConfigInfoList() != null) {
-            List<ToolConfigInfoVO> toolConfigInfoVOList =
-                    new ArrayList<>(taskInfoEntity.getToolConfigInfoList().size());
-            taskInfoEntity.getToolConfigInfoList().stream()
-                    .filter(toolConfigInfoEntity ->
-                            toolConfigInfoEntity.getFollowStatus() != FOLLOW_STATUS.WITHDRAW.value())
-                    .forEach(toolConfigInfoEntity -> {
-                        ToolConfigInfoVO toolConfigInfoVO = new ToolConfigInfoVO();
-                        BeanUtils.copyProperties(toolConfigInfoEntity, toolConfigInfoVO);
-                        toolConfigInfoVOList.add(toolConfigInfoVO);
-                    });
-            taskDetailVO.setToolConfigInfoList(toolConfigInfoVOList);
-        }
-        return taskDetailVO;
-    }
-
-    /**
-     * 通过repoId获取代码库详细信息
-     */
-    private GongfengPublicProjModel getGongfengProjectInfo(String repoId) throws UnsupportedEncodingException {
-        String url = gitCodePath + "/api/v3/projects/" + URLEncoder.encode(repoId, "UTF-8");
-
-        //从工蜂拉取信息，并按分页下发
-        String result = OkhttpUtils.INSTANCE.doGet(url, Collections.singletonMap("PRIVATE-TOKEN", gitPrivateToken));
-        if (StringUtils.isBlank(result)) {
-            log.info("null returned from api");
-            return null;
-        }
-        return JsonUtil.INSTANCE.to(result, GongfengPublicProjModel.class);
-    }
-
-    @Override
     public List<Long> queryTaskIdByCreateFrom(List<String> taskCreateFrom) {
-        List<TaskInfoEntity> taskInfoEntityList =
-                taskRepository.findByStatusAndCreateFromIn(Status.ENABLE.value(), taskCreateFrom);
-        return taskInfoEntityList.stream().map(TaskInfoEntity::getTaskId).collect(Collectors.toList());
+        List<TaskIdInfo> taskInfoEntityList = taskDao.findTaskIdList(Status.ENABLE.value(), taskCreateFrom);
+        return taskInfoEntityList.stream().map(TaskIdInfo::getTaskId).collect(Collectors.toList());
     }
+
 
     /**
      * 获取开源或非开源的有效任务ID
@@ -2794,14 +2862,21 @@ public class TaskServiceImpl implements TaskService {
      */
     @Override
     public List<Long> queryTaskIdByType(@NotNull ComConstants.DefectStatType defectStatType) {
+        List<String> createFrom = getCreateFrom(defectStatType);
+        return queryTaskIdByCreateFrom(createFrom);
+    }
+
+    @NotNull
+    protected List<String> getCreateFrom(@NotNull ComConstants.DefectStatType defectStatType) {
         List<String> createFrom;
         if (ComConstants.DefectStatType.GONGFENG_SCAN.value().equals(defectStatType.value())) {
-            createFrom = Lists.newArrayList(BsTaskCreateFrom.GONGFENG_SCAN.value());
+            createFrom = Lists.newArrayList(ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value());
         } else {
-            createFrom = Lists.newArrayList(BsTaskCreateFrom.BS_CODECC.value(), BsTaskCreateFrom.BS_PIPELINE.value());
+            createFrom = Lists.newArrayList(ComConstants.BsTaskCreateFrom.BS_CODECC.value(),
+                    ComConstants.BsTaskCreateFrom.BS_PIPELINE.value());
 
         }
-        return queryTaskIdByCreateFrom(createFrom);
+        return createFrom;
     }
 
     /**
@@ -2834,8 +2909,8 @@ public class TaskServiceImpl implements TaskService {
      * 获取任务数量
      *
      * @param taskCountData 容器
-     * @param date          时间(string)
-     * @param createFrom    来源
+     * @param date 时间(string)
+     * @param createFrom 来源
      */
     private void getTaskCount(@NotNull List<TaskStatisticEntity> taskCountData, String date, String createFrom) {
         // 获取结束时间
@@ -2849,9 +2924,9 @@ public class TaskServiceImpl implements TaskService {
 
         List<Long> taskIdList;
         if (createFrom.equals(ComConstants.DefectStatType.GONGFENG_SCAN.value())) {
-            taskIdList = taskService.queryTaskIdByCreateFrom(Collections.singletonList(createFrom));
+            taskIdList = queryTaskIdByCreateFrom(Collections.singletonList(createFrom));
         } else {
-            taskIdList = taskService.queryTaskIdByCreateFrom(
+            taskIdList = queryTaskIdByCreateFrom(
                     Lists.newArrayList(BsTaskCreateFrom.BS_CODECC.value(), BsTaskCreateFrom.BS_PIPELINE.value()));
         }
         // 获取分析次数 封装请求体
@@ -2887,38 +2962,8 @@ public class TaskServiceImpl implements TaskService {
      *
      * @param taskDetailVO
      */
-    private void setTaskCreateInfo(TaskDetailVO taskDetailVO) {
+    protected void setTaskCreateInfo(TaskDetailVO taskDetailVO) {
         if (taskDetailVO.getCreateFrom().equals(BsTaskCreateFrom.GONGFENG_SCAN.value())) {
-            // 如果是 OTEAM 项目的话，设置为和定时触发一样的开源治理项目
-            if (taskDetailVO.getProjectId().equals("CUSTOMPROJ_TEG_CUSTOMIZED")) {
-                taskDetailVO.setTaskType(BsTaskCreateFrom.TIMING_SCAN.value());
-                taskDetailVO.setCreateSource(taskDetailVO.getCreatedBy());
-                return;
-            }
-            CustomProjEntity customProjEntity;
-            if (taskDetailVO.getPipelineId() != null) {
-                customProjEntity = customProjRepository.findFirstByPipelineId(taskDetailVO.getPipelineId());
-            } else {
-                customProjEntity = customProjRepository.findFirstByTaskId(taskDetailVO.getTaskId());
-            }
-
-            // 如果不是 OTEAM 项目并且是私有API触发项目，则设置为API触发项目
-            if (customProjEntity != null) {
-                taskDetailVO.setTaskType(BsTaskCreateFrom.API_TRIGGER.value());
-                taskDetailVO.setCreateSource(taskDetailVO.getCreatedBy());
-                if (StringUtils.isNotBlank(customProjEntity.getAppCode())) {
-                    taskDetailVO.setCreateSource(customProjEntity.getAppCode());
-                }
-                return;
-            }
-
-            // 如果是开源项目，则设置为定时触发的开源治理项目
-            taskDetailVO.setTaskType(BsTaskCreateFrom.TIMING_SCAN.value());
-            boolean isPublicProj =
-                    gongfengPublicProjRepository.existsById(taskDetailVO.getGongfengProjectId());
-            if (!isPublicProj) {
-                log.error("invalid gongfeng scan task: {}", taskDetailVO.getTaskId());
-            }
             return;
         }
 
@@ -2933,6 +2978,22 @@ public class TaskServiceImpl implements TaskService {
         // 设置为非工蜂项目
         taskDetailVO.setTaskType(taskDetailVO.getCreateFrom());
         taskDetailVO.setCreateSource(taskDetailVO.getCreatedBy());
+    }
+
+    /**
+     * 根据任务类型设置任务类型和创建来源
+     * 需要 BS_PIPELINE / BS_CODECC / GONGFENG_SCAN
+     * 对于工蜂扫描任务需要区分 API 任务和 定时扫描任务，API触发任务给出相应的 apCode
+     *
+     * @param taskDetailVOList
+     */
+    protected void setTaskCreateInfo(List<TaskDetailVO> taskDetailVOList) {
+        if (CollectionUtils.isEmpty(taskDetailVOList)) {
+            return;
+        }
+        for (TaskDetailVO taskDetailVO : taskDetailVOList) {
+            taskDetailVO.setTaskType(taskDetailVO.getCreateFrom());
+        }
     }
 
     /**
@@ -2994,6 +3055,22 @@ public class TaskServiceImpl implements TaskService {
         return false;
     }
 
+    /**
+     * 按任务id获取项目id map
+     */
+    @Override
+    public Map<Long, String> getProjectIdMapByTaskId(@NotNull QueryTaskListReqVO taskListReqVO) {
+        List<TaskInfoEntity> taskInfoEntityList =
+                taskDao.queryTaskInfoEntityList(taskListReqVO.getStatus(), taskListReqVO.getBgId(),
+                        taskListReqVO.getDeptIds(), taskListReqVO.getTaskIds(), taskListReqVO.getCreateFrom(), null);
+
+        if (taskInfoEntityList == null) {
+            taskInfoEntityList = Lists.newArrayList();
+        }
+        return taskInfoEntityList.stream()
+                .collect(Collectors.toMap(TaskInfoEntity::getTaskId, TaskInfoEntity::getProjectId));
+    }
+
     private boolean isListEqualsExpectOrder(List<?> l1, List<?> l2) {
         if (l1 == null || l2 == null) {
             return l1 == l2;
@@ -3008,33 +3085,8 @@ public class TaskServiceImpl implements TaskService {
      * @param taskCodeLibraryVO
      * @param taskInfoEntity
      */
-    private void setGongfengRepoInfo(TaskCodeLibraryVO taskCodeLibraryVO,
-                                     TaskInfoEntity taskInfoEntity) {
-
-        CustomProjEntity customProjEntity =
-                customProjRepository.findFirstByPipelineId(taskInfoEntity.getPipelineId());
-        if (customProjEntity != null) {
-            log.info("gongfeng task create from API: {}", taskInfoEntity.getTaskId());
-            // APi创建处理逻辑
-            taskCodeLibraryVO.setCodeInfo(
-                    Collections.singletonList(
-                            new CodeLibraryInfoVO(customProjEntity.getUrl(),
-                                    pickupAliasNameFromUrl(customProjEntity.getUrl()),
-                                    customProjEntity.getBranch())));
-        } else {
-            log.info("gongfeng task create from open source: {}", taskInfoEntity.getTaskId());
-            GongfengPublicProjEntity publicProjEntity
-                    = gongfengPublicProjRepository.findFirstById(taskInfoEntity.getGongfengProjectId());
-
-            // 如果存在于开源表中，是定时触发任务，否则代表任务不合法
-            if (publicProjEntity != null) {
-                taskCodeLibraryVO.setCodeInfo(Collections.singletonList(
-                        new CodeLibraryInfoVO(
-                                publicProjEntity.getHttpsUrlToRepo(),
-                                pickupAliasNameFromUrl(publicProjEntity.getHttpsUrlToRepo()),
-                                publicProjEntity.getDefaultBranch())));
-            }
-        }
+    protected void setGongfengRepoInfo(TaskCodeLibraryVO taskCodeLibraryVO,
+            TaskInfoEntity taskInfoEntity) {
     }
 
     /**
@@ -3077,69 +3129,423 @@ public class TaskServiceImpl implements TaskService {
      *
      * @param url
      */
-    private String pickupAliasNameFromUrl(String url) {
+    protected String pickupAliasNameFromUrl(String url) {
         return url.replaceFirst("(.*)://[^/]+/", "")
                 .replaceFirst("\\.[a-zA-Z]*(/)?", "");
     }
 
-    private TaskInfoEntity getTaskFromPublic(int id, boolean isFindCustom) {
-        log.info("execute opensource trigger pipeline by repoId $id");
-        GongfengPublicProjEntity proj = gongfengPublicProjRepository.findFirstById(id);
-        if (proj == null) {
-            if (!isFindCustom) {
-                return getTaskFromCustom(id, true);
-            } else {
-                throw new CodeCCException("2300020");
-            }
-        }
-
-        TaskInfoEntity taskInfoEntity = taskRepository.findFirstByGongfengProjectIdAndStatusAndProjectIdRegex(
-                proj.getId(),
-                TaskConstants.TaskStatus.ENABLE.value(),
-                "^(CODE_)"
-        );
-
-        if (taskInfoEntity == null && !isFindCustom) {
-            return getTaskFromCustom(id, true);
+    /**
+     * 编辑任务信息
+     *
+     * @param reqVO 请求体
+     * @return bool
+     */
+    @Override
+    public Boolean editTaskDetail(TaskUpdateDeptInfoVO reqVO) {
+        log.info("editTaskDetail req: {}", reqVO);
+        if (reqVO != null) {
+            // 调用dao编辑 bg 部门 中心 管理员
+            taskDao.editTaskDetail(reqVO);
+            return true;
         } else {
-            return taskInfoEntity;
+            return false;
         }
     }
 
-    private TaskInfoEntity getTaskFromCustom(int id, boolean isFindPublic) {
-        log.info("get custom task to trigger pipeline by repoId $id");
-        CustomProjEntity proj = customProjRepository.findFirstByGongfengProjectIdAndCustomProjSource(
-                id,
-                "bkdevops-plugins"
-        );
-
-        if (proj == null) {
-            proj = customProjRepository.findFirstByGongfengProjectIdAndCustomProjSource(
-                    id,
-                    "codecc"
-            );
+    /**
+     * 获取工具已下架对应的任务id集合
+     *
+     * @param toolSet 工具集合
+     * @return map
+     */
+    @Override
+    public Map<String, Set<Long>> queryTaskIdByWithdrawTool(Set<String> toolSet) {
+        HashMap<String, Set<Long>> toolTaskIdSet = Maps.newHashMap();
+        if (CollectionUtils.isEmpty(toolSet)) {
+            return toolTaskIdSet;
         }
 
-        if (proj == null) {
-            log.error("task has been not created: repoId: $id");
-            if (!isFindPublic) {
-                return getTaskFromPublic(id, true);
-            } else {
-                throw new CodeCCException("2300020");
+        List<Integer> followStatusList = Lists.newArrayList(FOLLOW_STATUS.WITHDRAW.value());
+        List<TaskIdToolInfoEntity> toolInfoEntityList = toolDao.findTaskIdByTool(toolSet, followStatusList);
+
+        return toolInfoEntityList.stream().collect(Collectors
+                .groupingBy(TaskIdToolInfoEntity::getToolName,
+                        Collectors.mapping(TaskIdToolInfoEntity::getTaskId, Collectors.toSet())));
+    }
+
+    @Override
+    public long countTaskSize() {
+        List<BaseDataVO> baseDataVOList = baseDataService.findBaseDataInfoByType(CLEAN_TASK_STATUS);
+        List<Integer> statusList = null;
+        if (baseDataVOList != null && !baseDataVOList.isEmpty()) {
+            String status = baseDataVOList.get(0).getParamValue();
+            statusList = Arrays.stream(status.split(","))
+                    .map(Integer::parseInt)
+                    .collect(Collectors.toList());
+        }
+        if (statusList == null || statusList.size() == 2) {
+            return taskRepository.count();
+        } else {
+            return taskRepository.countByStatus(statusList.get(0));
+        }
+    }
+
+    @Override
+    public List<TaskDetailVO> getTaskIdByPage(int page, int pageSize) {
+        List<BaseDataVO> baseDataVOList = baseDataService.findBaseDataInfoByType(CLEAN_TASK_STATUS);
+        List<Integer> statusList = Arrays.asList(0, 1);
+        if (baseDataVOList != null && !baseDataVOList.isEmpty()) {
+            String status = baseDataVOList.get(0).getParamValue();
+            statusList = Arrays.stream(status.split(","))
+                    .map(Integer::parseInt)
+                    .collect(Collectors.toList());
+        }
+        List<TaskInfoEntity> taskIdEntityList = taskDao.findTaskIdByPage(page, pageSize, statusList);
+        List<TaskDetailVO> taskDetailVOList = new ArrayList<>();
+        taskIdEntityList.forEach(it -> {
+            TaskDetailVO taskDetailVO = new TaskDetailVO();
+            BeanUtils.copyProperties(it, taskDetailVO);
+            taskDetailVOList.add(taskDetailVO);
+        });
+        setTaskCreateInfo(taskDetailVOList);
+        List<BaseDataEntity> taskIdWhiteList = baseDataRepository.findByParamCodeInAndParamType(
+                taskDetailVOList.stream()
+                        .map(it -> String.valueOf(it.getTaskId()))
+                        .collect(Collectors.toList()), CLEAN_TASK_WHITE_LIST
+        );
+
+        if (taskIdWhiteList != null && !taskIdWhiteList.isEmpty()) {
+            ImmutableMap<Object, BaseDataEntity> taskIdWhiteMap = Maps.uniqueIndex(
+                    taskIdWhiteList, BaseDataEntity::getParamCode
+            );
+
+            taskDetailVOList.forEach(it -> {
+                BaseDataEntity baseDataEntity = taskIdWhiteMap.get(String.valueOf(it.getTaskId()));
+                if (baseDataEntity != null) {
+                    it.setTaskType(CLEAN_TASK_WHITE_LIST);
+                    it.setCleanIndex(Integer.parseInt(baseDataEntity.getParamValue()));
+                }
+            });
+        }
+
+        return taskDetailVOList;
+    }
+
+    /**
+     * 定时任务统计任务数、代码行、工具数
+     *
+     * @param reqVO 请求体
+     */
+    @Override
+    public void statisticTaskCodeLineTool(StatisticTaskCodeLineToolVO reqVO) {
+
+    }
+
+    /**
+     * 按项目id获取任务列表
+     */
+    @Override
+    public List<TaskBaseVO> queryTaskListByProjectId(String projectId) {
+        List<TaskInfoEntity> taskEntityList =
+                taskRepository.findByProjectIdAndStatus(projectId, ComConstants.Status.ENABLE.value());
+
+        List<String> toolIDArr = getToolOrders();
+
+        List<TaskBaseVO> taskBaseVOList = Lists.newArrayList();
+        for (TaskInfoEntity entity : taskEntityList) {
+            List<ToolConfigInfoEntity> toolConfigInfoList = entity.getToolConfigInfoList();
+            if (CollectionUtils.isEmpty(toolConfigInfoList)) {
+                continue;
+            }
+
+            TaskBaseVO taskBaseVO = new TaskBaseVO();
+            BeanUtils.copyProperties(entity, taskBaseVO);
+
+            List<ToolConfigBaseVO> enableToolList = Lists.newArrayList();
+            for (ToolConfigInfoEntity toolEntity : toolConfigInfoList) {
+                String toolName = toolEntity.getToolName();
+                if (!toolIDArr.contains(toolName)
+                        || TaskConstants.FOLLOW_STATUS.WITHDRAW.value() == toolEntity.getFollowStatus()) {
+                    continue;
+                }
+
+                ToolConfigBaseVO toolConfigBaseVO = new ToolConfigBaseVO();
+                BeanUtils.copyProperties(toolEntity, toolConfigBaseVO);
+                ToolMetaBaseVO toolMetaBaseVO = toolMetaCache.getToolBaseMetaCache(toolName);
+                toolConfigBaseVO.setToolDisplayName(toolMetaBaseVO.getDisplayName());
+                toolConfigBaseVO.setToolPattern(toolMetaBaseVO.getPattern());
+                toolConfigBaseVO.setToolType(toolMetaBaseVO.getType());
+                enableToolList.add(toolConfigBaseVO);
+            }
+
+            taskBaseVO.setEnableToolList(enableToolList);
+            taskBaseVOList.add(taskBaseVO);
+        }
+
+        for (TaskBaseVO taskBaseVO : taskBaseVOList) {
+            TaskCodeLibraryVO repoInfo = getRepoInfo(taskBaseVO.getTaskId());
+            taskBaseVO.setCodeLibraryInfo(repoInfo);
+        }
+
+        return taskBaseVOList;
+    }
+
+    /**
+     * 分页获取有效任务的项目id
+     *
+     * @param createFrom 来源
+     * @param pageNum 页码
+     * @param pageSize 每页条数
+     * @return list
+     */
+    @Override
+    public List<String> queryProjectIdPage(Set<String> createFrom, Integer pageNum, Integer pageSize) {
+        log.info("project id query param: createFrom: {}, pageNum:{}, pageSize:{}", createFrom, pageNum, pageSize);
+
+        Pageable pageable = PageableUtils.getPageable(pageNum, pageSize);
+        return taskDao.findProjectIdPage(createFrom, pageable);
+    }
+
+    /**
+     * 按项目id分页获取有效任务id
+     *
+     * @param projectId 项目id
+     * @param pageNum 页码
+     * @param pageSize 每页条数
+     * @return list
+     */
+    @Override
+    public List<Long> queryTaskIdPageByProjectId(String projectId, Integer pageNum, Integer pageSize) {
+        log.info("task id query param: projectId: {}, pageNum:{}, pageSize:{}", projectId, pageNum, pageSize);
+
+        Pageable pageable = PageableUtils.getPageable(pageNum, pageSize);
+        return taskDao.findTaskIdPageByProjectId(projectId, pageable);
+    }
+
+    @Override
+    public TaskInfoWithSortedToolConfigResponse getTaskInfoWithSortedToolConfig(
+            TaskInfoWithSortedToolConfigRequest request
+    ) {
+        if (CollectionUtils.isEmpty(request.getTaskIdList())) {
+            return new TaskInfoWithSortedToolConfigResponse(Lists.newArrayList());
+        }
+
+        List<TaskInfoEntity> taskInfoEntityList = taskRepository.findNoneDBRefByTaskIdIn(request.getTaskIdList());
+        if (CollectionUtils.isEmpty(taskInfoEntityList)) {
+            return new TaskInfoWithSortedToolConfigResponse(Lists.newArrayList());
+        }
+
+        List<Long> taskIdList = taskInfoEntityList.stream().map(TaskInfoEntity::getTaskId).collect(Collectors.toList());
+        List<ToolConfigInfoEntity> toolConfigList = toolConfigRepository.findByTaskIdIn(taskIdList);
+        if (CollectionUtils.isNotEmpty(toolConfigList)) {
+            Map<Long, List<ToolConfigInfoEntity>> toolConfigMap =
+                    toolConfigList.stream().collect(Collectors.groupingBy(ToolConfigInfoEntity::getTaskId));
+
+            for (TaskInfoEntity taskInfoEntity : taskInfoEntityList) {
+                long curTaskId = taskInfoEntity.getTaskId();
+                taskInfoEntity.setToolConfigInfoList(toolConfigMap.get(curTaskId));
             }
         }
 
-        TaskInfoEntity taskInfoEntity = taskRepository.findFirstByTaskIdAndStatus(
-                proj.getTaskId(),
-                TaskConstants.TaskStatus.ENABLE.value()
-        );
+        if (Boolean.TRUE.equals(request.getNeedSorted())) {
+            String toolIdsOrder = commonDao.getToolOrder();
+            List<String> toolOrderList = Arrays.asList(toolIdsOrder.split(ComConstants.STRING_SPLIT));
+            Comparator<ToolConfigInfoEntity> comparator = Comparator.comparing(toolConfig ->
+                    toolOrderList.contains(toolConfig.getToolName())
+                            ? toolOrderList.indexOf(toolConfig.getToolName())
+                            : Integer.MAX_VALUE
+            );
 
-        if (taskInfoEntity == null && !isFindPublic) {
-            return getTaskFromPublic(id, true);
-        } else {
-            return taskInfoEntity;
+            for (TaskInfoEntity taskInfoEntity : taskInfoEntityList) {
+                if (CollectionUtils.isEmpty(taskInfoEntity.getToolConfigInfoList())) {
+                    continue;
+                }
+
+                taskInfoEntity.setToolConfigInfoList(
+                        taskInfoEntity.getToolConfigInfoList().stream()
+                                .filter(Objects::nonNull)
+                                .sorted(comparator)
+                                .collect(Collectors.toList())
+                );
+            }
         }
 
+        List<TaskBase> retVOList = taskInfoEntityList.stream().map(taskInfoEntity -> {
+            TaskBase taskVO = new TaskBase();
+            BeanUtils.copyProperties(taskInfoEntity, taskVO);
+            taskVO.setToolConfigInfoList(Lists.newArrayList());
+
+            if (CollectionUtils.isNotEmpty(taskInfoEntity.getToolConfigInfoList())) {
+                taskInfoEntity.getToolConfigInfoList().forEach(source -> {
+                    ToolConfigInfoVO toolConfigInfoVO = new ToolConfigInfoVO();
+                    BeanUtils.copyProperties(source, toolConfigInfoVO);
+                    taskVO.getToolConfigInfoList().add(toolConfigInfoVO);
+                });
+            }
+
+            return taskVO;
+        }).collect(Collectors.toList());
+
+        return new TaskInfoWithSortedToolConfigResponse(retVOList);
+    }
+
+    @Override
+    public List<TaskBaseVO> getTaskIdAndCreateFromWithPage(long lastTaskId, Integer limit) {
+        // 页大小最大5k
+        if (limit == null || limit <= 0L || limit > 5000) {
+            limit = 5000;
+        }
+
+        List<TaskInfoEntity> taskInfoList = taskDao.findTaskIdAndCreateFromByLastTaskIdWithPage(lastTaskId, limit);
+        List<TaskBaseVO> retList = Lists.newArrayList();
+
+        for (TaskInfoEntity taskInfo : taskInfoList) {
+            TaskBaseVO taskBaseVO = new TaskBaseVO();
+            org.springframework.beans.BeanUtils.copyProperties(taskInfo, taskBaseVO);
+            retList.add(taskBaseVO);
+        }
+
+        return retList;
+    }
+
+    @Override
+    public List<TaskBaseVO> listTaskBase(String userId, String projectId) {
+        if (StringUtils.isEmpty(projectId) || StringUtils.isEmpty(userId)) {
+            log.warn("list task by project, args can not be null: {}, {}", projectId, userId);
+            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_NULL, new String[]{"projectId", "userId"});
+        }
+
+        List<TaskInfoEntity> taskInfoEntityList = queryTaskByProjectIdWithPermissionCore(projectId, userId);
+        Collator collator = Collator.getInstance(Locale.SIMPLIFIED_CHINESE);
+
+        return taskInfoEntityList.stream()
+                .map(x -> {
+                    TaskBaseVO vo = new TaskBaseVO();
+                    vo.setTaskId(x.getTaskId());
+                    vo.setNameCn(x.getNameCn());
+                    return vo;
+                })
+                .sorted((x1, y2) -> collator.compare(x1.getNameCn(), y2.getNameCn()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Long> queryTaskIdByProjectIdWithPermission(String projectId, String userId) {
+        return queryTaskByProjectIdWithPermissionCore(projectId, userId).stream()
+                .map(TaskInfoEntity::getTaskId)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 根据项目获取当前用户有权限的任务列表
+     *
+     * @param projectId
+     * @param userId
+     * @return
+     */
+    protected List<TaskInfoEntity> queryTaskByProjectIdWithPermissionCore(String projectId, String userId) {
+        List<String> createFromList = Lists.newArrayList(
+                BsTaskCreateFrom.BS_PIPELINE.value(),
+                BsTaskCreateFrom.BS_CODECC.value()
+        );
+
+        if (projectId.startsWith(ComConstants.GONGFENG_PROJECT_ID_PREFIX)) {
+            createFromList.add(BsTaskCreateFrom.GONGFENG_SCAN.value());
+        }
+
+        List<TaskInfoEntity> taskList = taskRepository.findByProjectIdAndCreateFromInAndStatus(
+                projectId,
+                createFromList,
+                Status.ENABLE.value()
+        );
+
+        return getQualifiedTaskListCore(projectId, userId, taskList);
+    }
+
+    @Override
+    public Map<Long, String> listTaskNameCn(List<Long> taskIdList) {
+        if (CollectionUtils.isEmpty(taskIdList)) {
+            return Maps.newHashMap();
+        }
+
+        return taskRepository.findNoneDBRefByTaskIdIn(taskIdList).stream()
+                .collect(Collectors.toMap(TaskInfoEntity::getTaskId, TaskInfoEntity::getNameCn, (x, y) -> x));
+    }
+
+    @Override
+    public boolean multiTaskVisitable(String projectId) {
+        if (projectId.startsWith(ComConstants.GRAY_PROJECT_PREFIX)) {
+            return false;
+        }
+
+        if (projectId.startsWith(ComConstants.CUSTOMPROJ_ID_PREFIX)) {
+            List<String> createFromList = Lists.newArrayList(
+                    BsTaskCreateFrom.BS_CODECC.value(),
+                    BsTaskCreateFrom.BS_PIPELINE.value()
+            );
+
+            List<TaskInfoEntity> notGongfengList = taskRepository.findPageableByProjectIdAndCreateFromAndStatus(
+                    projectId, createFromList, Status.ENABLE.value(),
+                    PageRequest.of(0, 1)
+            );
+
+            return CollectionUtils.isNotEmpty(notGongfengList);
+        }
+
+        return true;
+    }
+
+    @Override
+    public List<MetadataVO> listTaskToolDimension(List<Long> taskIdList, String projectId) {
+        List<TaskInfoEntity> taskInfoEntityList;
+
+        if (CollectionUtils.isEmpty(taskIdList)) {
+            taskInfoEntityList = taskRepository.findByProjectIdAndStatus(projectId, Status.ENABLE.value());
+            taskIdList = taskInfoEntityList.stream().map(TaskInfoEntity::getTaskId).collect(Collectors.toList());
+        } else {
+            taskInfoEntityList = taskRepository.findByTaskIdIn(taskIdList);
+        }
+
+        List<ToolConfigInfoEntity> emptyToolConfigList = Lists.newArrayList();
+        List<String> toolNameList = taskInfoEntityList.stream()
+                .flatMap(
+                        x -> x.getToolConfigInfoList() != null
+                                ? x.getToolConfigInfoList().stream()
+                                : emptyToolConfigList.stream()
+                )
+                .filter(y -> y != null && y.getFollowStatus() != FOLLOW_STATUS.WITHDRAW.value())
+                .map(ToolConfigInfoEntity::getToolName)
+                .collect(Collectors.toList());
+
+        if (CollectionUtils.isEmpty(toolNameList)) {
+            return Lists.newArrayList();
+        }
+
+        Map<String, MetadataVO> resultMap = Maps.newHashMap();
+        List<String> dimensionList = client.get(ServiceCheckerRestResource.class)
+                .queryDimensionByToolChecker(
+                        new QueryTaskCheckerDimensionRequest(taskIdList, toolNameList, projectId)
+                ).getData();
+
+        if (CollectionUtils.isNotEmpty(dimensionList)) {
+            for (String dimension : dimensionList) {
+                try {
+                    BaseDataEntity baseDataEntity = toolDimensionBaseDataCache.get(dimension);
+                    if (baseDataEntity != null) {
+                        MetadataVO metadataVO = new MetadataVO();
+                        metadataVO.setEntityId(baseDataEntity.getEntityId());
+                        metadataVO.setKey(baseDataEntity.getParamCode());
+                        metadataVO.setName(baseDataEntity.getParamName());
+                        metadataVO.setFullName(baseDataEntity.getParamExtend1());
+                        resultMap.put(baseDataEntity.getParamCode(), metadataVO);
+                    }
+                } catch (ExecutionException ignore) { // NOCC:EmptyCatchBlock(设计如此:)
+
+                }
+            }
+        }
+
+        return Lists.newArrayList(resultMap.values());
     }
 
 }

@@ -1,5 +1,10 @@
 package com.tencent.bk.codecc.task.schedule
 
+import com.tencent.devops.common.auth.api.pojo.external.KEY_BACKEND_ACCESS_TOKEN
+import com.tencent.devops.common.redis.lock.RedisLock
+import com.tencent.devops.common.util.OkhttpUtils
+import org.apache.commons.lang.StringUtils
+import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -30,6 +35,7 @@ class AccessTokenRefreshJob @Autowired constructor(
     // 3.添加定时任务
     @Scheduled(fixedRate = 1000 * 60 * 5)
     fun initAccessToken() {
-        // TODO("not implemented")
+
     }
+
 }

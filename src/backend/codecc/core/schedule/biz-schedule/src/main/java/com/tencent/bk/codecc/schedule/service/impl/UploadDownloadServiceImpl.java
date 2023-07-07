@@ -26,25 +26,12 @@ import com.tencent.bk.codecc.schedule.vo.FileIndexVO;
 import com.tencent.bk.codecc.schedule.vo.FileInfoModel;
 import com.tencent.bk.codecc.schedule.vo.GetFileSizeVO;
 import com.tencent.bk.codecc.schedule.vo.UploadVO;
-import com.tencent.devops.common.storage.StorageService;
-import com.tencent.devops.common.storage.constant.StorageType;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.constant.CommonMessageCode;
-import com.tencent.devops.common.util.MD5Utils;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
+import com.tencent.devops.common.storage.StorageService;
+import com.tencent.devops.common.storage.constant.StorageType;
 import com.tencent.devops.common.util.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
+import com.tencent.devops.common.util.MD5Utils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -64,6 +51,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 /**
  * 文件上传业务逻辑服务实现
@@ -74,9 +73,10 @@ import java.util.concurrent.locks.Lock;
 @Service
 @Slf4j
 public class UploadDownloadServiceImpl implements UploadDownloadService {
+
+    private static final Map<String, String> FOLDER_MAP = createMap();
     @Autowired
     private FileInfoCache fileInfoCache;
-
     @Autowired
     private FileIndexRepository fileIndexRepository;
 
@@ -85,8 +85,6 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
 
     @Value("${codecc.file.data.path:/data/bkce/codecc/nfs}")
     private String codeccFileDataPath = "";
-
-    private static final Map<String, String> FOLDER_MAP = createMap();
 
     private static Map<String, String> createMap() {
         Map<String, String> folderMap = new HashMap<>();
@@ -98,7 +96,15 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
                         + "/nfs5/result_upload;"
                         + "/nfs6/result_upload;"
                         + "/nfs7/result_upload;"
-                        + "/nfs8/result_upload");
+                        + "/nfs8/result_upload;"
+                        + "/nfs9/result_upload;"
+                        + "/nfs10/result_upload;"
+                        + "/nfs11/result_upload;"
+                        + "/nfs12/result_upload;"
+                        + "/nfs13/result_upload;"
+                        + "/nfs14/result_upload;"
+                        + "/nfs15/result_upload;"
+                        + "/nfs16/result_upload");
         folderMap.put(ScheduleConstants.UploadType.FAIL_RESULT.name(),
                 "/nfs1/fail_result_upload;"
                         + "/nfs2/fail_result_upload;"
@@ -107,7 +113,15 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
                         + "/nfs5/fail_result_upload;"
                         + "/nfs6/fail_result_upload;"
                         + "/nfs7/fail_result_upload;"
-                        + "/nfs8/fail_result_upload");
+                        + "/nfs8/fail_result_upload;"
+                        + "/nfs9/fail_result_upload;"
+                        + "/nfs10/fail_result_upload;"
+                        + "/nfs11/fail_result_upload;"
+                        + "/nfs12/fail_result_upload;"
+                        + "/nfs13/fail_result_upload;"
+                        + "/nfs14/fail_result_upload;"
+                        + "/nfs15/fail_result_upload;"
+                        + "/nfs16/fail_result_upload");
         folderMap.put(ScheduleConstants.UploadType.SCM_JSON.name(),
                 "/nfs1/scm;"
                         + "/nfs2/scm;"
@@ -116,7 +130,15 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
                         + "/nfs5/scm;"
                         + "/nfs6/scm;"
                         + "/nfs7/scm;"
-                        + "/nfs8/scm");
+                        + "/nfs8/scm;"
+                        + "/nfs9/scm;"
+                        + "/nfs10/scm;"
+                        + "/nfs11/scm;"
+                        + "/nfs12/scm;"
+                        + "/nfs13/scm;"
+                        + "/nfs14/scm;"
+                        + "/nfs15/scm;"
+                        + "/nfs16/scm");
         folderMap.put(ScheduleConstants.DownloadType.TOOL_CLIENT.name(),
                 "/download/tool_client_download");
         folderMap.put(ScheduleConstants.DownloadType.BUILD_SCRIPT.name(),
@@ -133,7 +155,15 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
                         + "/nfs5/aggregate;"
                         + "/nfs6/aggregate;"
                         + "/nfs7/aggregate;"
-                        + "/nfs8/aggregate");
+                        + "/nfs8/aggregate;"
+                        + "/nfs9/aggregate;"
+                        + "/nfs10/aggregate;"
+                        + "/nfs11/aggregate;"
+                        + "/nfs12/aggregate;"
+                        + "/nfs13/aggregate;"
+                        + "/nfs14/aggregate;"
+                        + "/nfs15/aggregate;"
+                        + "/nfs16/aggregate");
         folderMap.put(ScheduleConstants.DownloadType.GATHER.name(), "/download/gather");
         folderMap.put(ScheduleConstants.DownloadType.OP_EXCEL.name(), "/download/op_excel");
         return folderMap;
@@ -177,7 +207,7 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
             if (uploadVO.getChunks() == null || uploadVO.getChunks() <= 0) {
                 //上传至文件存储
                 uploadToStorage(uploadVO.getFileName());
-            }else {
+            } else {
                 uploadChunkToStorage(uploadVO.getFileName(), uploadVO.getChunk(), outFile);
             }
         } catch (IOException e) {
@@ -309,7 +339,7 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
             downloadFolder = codeccFileDataPath + FOLDER_MAP.get(downloadVO.getDownloadType());
         }
         //如果需要的话，下载文件
-        downloadFromStorage(Paths.get(downloadFolder, fileName).toString(),fileName);
+        downloadFromStorage(Paths.get(downloadFolder).toString(), fileName);
         //判断文件是否存在
         File target = new File(downloadFolder, fileName);
         if (!target.exists()) {
@@ -416,17 +446,13 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
 
         FileIndexEntity fileIndexEntity = fileIndexRepository.findFirstByFileName(fileName);
 
-        if (fileIndexEntity == null
-                || fileIndexEntity.getFileFolder().contains("fail_result_upload")) {
+        if (fileIndexEntity == null) {
             //获取文件夹
             String fileFolder = getFileFolder(fileName, type);
 
             ChunkUploadUtil.createFileFolder(fileFolder);
 
-            // 兼容废弃cfs作为文件存储，这里需要把原来缓存的cfs文件路径刷新成新的文件路径
-            if (fileIndexEntity == null) {
-                fileIndexEntity = new FileIndexEntity();
-            }
+            fileIndexEntity = new FileIndexEntity();
             fileIndexEntity.setFileName(fileName);
             fileIndexEntity.setFileFolder(fileFolder);
             fileIndexEntity.setUploadType(type);
@@ -442,7 +468,7 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
         return fileIndexVO;
     }
 
-    private String getFileFolder(String fileName, String type){
+    private String getFileFolder(String fileName, String type) {
         String uploadFolders = FOLDER_MAP.get(type);
         if (StringUtils.isEmpty(uploadFolders)) {
             log.error("indexed file {} fail, type [{}] invalid", fileName, type);
@@ -490,7 +516,7 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
             downloadFolder = codeccFileDataPath + FOLDER_MAP.get(downloadType);
         }
         //如果需要的话，下载文件
-        downloadFromStorage(Paths.get(downloadFolder, fileName).toString(),fileName);
+        downloadFromStorage(Paths.get(downloadFolder, fileName).toString(), fileName);
         //判断文件是否存在
         File target = new File(downloadFolder, fileName);
         if (!target.exists()) {
@@ -502,6 +528,7 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
             log.error("{}不是一个文件", target.getAbsolutePath());
             throw new CodeCCException(DispatchMessageCode.NOT_A_FILE, new String[]{fileName}, null);
         }
+
         StreamingOutput fileStream = output ->
         {
             log.info("downloading: {}", target.getAbsoluteFile());
@@ -525,7 +552,7 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
     @Override
     public FileIndexVO updateFileIndex(FileIndexVO fileInfoVo) {
         FileIndexEntity fileIndexEntity = fileIndexRepository.findFirstByFileName(fileInfoVo.getFileName());
-        if(fileIndexEntity == null){
+        if (fileIndexEntity == null) {
             fileIndexEntity = new FileIndexEntity();
             fileIndexEntity.setFileName(fileInfoVo.getFileName());
             fileIndexEntity.setFileFolder(getFileFolder(fileInfoVo.getFileName(), fileInfoVo.getUploadType()));
@@ -651,9 +678,10 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
     /**
      * 将文件上传到文件存储引擎
      * NFS挂载本机目录不需要上传
+     *
      * @param fileName
      */
-    private void uploadToStorage(String fileName){
+    private void uploadToStorage(String fileName) {
         FileIndexEntity index = fileIndexRepository.findFirstByFileName(fileName);
         if (index == null || storageService.getStorageType().equals(StorageType.NFS.code())) {
             return;
@@ -665,23 +693,24 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
             index.setDownloadUrl(url);
             fileIndexRepository.save(index);
         } catch (Exception e) {
-            log.error("uploadToStorage filename:" + fileName + " storage:" +
-                    storageService.getStorageType() + " fail!", e);
+            log.error("uploadToStorage filename:" + fileName + " storage:"
+                    + storageService.getStorageType() + " fail!", e);
         }
     }
 
     /**
      * 将分片文件上传到文件存储引擎
      * NFS挂载本机目录不需要上传
+     *
      * @param fileName
      */
-    private void uploadChunkToStorage(String fileName,Integer chunkNo, File file) {
+    private void uploadChunkToStorage(String fileName, Integer chunkNo, File file) {
         FileIndexEntity index = fileIndexRepository.findFirstByFileName(fileName);
         if (index == null || storageService.getStorageType().equals(StorageType.NFS.code())) {
             return;
         }
         try {
-            if(chunkNo == 1){
+            if (chunkNo == 1) {
                 //初次上传，初始化
                 String uploadId = storageService.startChunk(index.getUploadType(), index.getFileName());
                 index.setStoreType(storageService.getStorageType());
@@ -692,13 +721,14 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
             storageService.chunkUpload(file.getAbsolutePath(), index.getUploadType(), chunkFileName,
                     chunkNo, index.getUploadId());
         } catch (Exception e) {
-            log.error("uploadToStorage filename:" + fileName + " storage:" +
-                    storageService.getStorageType() + " fail!", e);
+            log.error("uploadToStorage filename:" + fileName + " storage:"
+                    + storageService.getStorageType() + " fail!", e);
         }
     }
 
     /**
      * 完成分配上传
+     *
      * @param fileName
      */
     private void finishChunkToStorage(String fileName) {
@@ -711,28 +741,29 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
             index.setDownloadUrl(url);
             fileIndexRepository.save(index);
         } catch (Exception e) {
-            log.error("finishChunkToStorage filename:" + fileName + " storage:" +
-                    storageService.getStorageType() + " fail!", e);
+            log.error("finishChunkToStorage filename:" + fileName + " storage:"
+                    + storageService.getStorageType() + " fail!", e);
         }
     }
 
     /**
      * 将文件上传到文件存储引擎
      * NFS挂载本机目录不需要上传
+     *
      * @param fileName
      */
     private void downloadFromStorage(String downloadFolder, String fileName) {
         FileIndexEntity index = fileIndexRepository.findFirstByFileName(fileName);
         Path localFilePath = Paths.get(downloadFolder, fileName);
-        if(Files.exists(localFilePath) || index == null || index.getStoreType() == null
-                || index.getStoreType().equals(StorageType.NFS.code())){
+        if (Files.exists(localFilePath) || index == null || index.getStoreType() == null
+                || index.getStoreType().equals(StorageType.NFS.code())) {
             return;
         }
         try {
-            storageService.download(localFilePath.toString(), index.getStoreType(), index.getFileName());
+            storageService.download(localFilePath.toString(), index.getStoreType(), index.getDownloadUrl());
         } catch (Exception e) {
-            log.error("downloadFromToStorage filename:" + fileName + " storage:" +
-                    storageService.getStorageType() + " fail!", e);
+            log.error("downloadFromToStorage filename:" + fileName + " storage:"
+                    + storageService.getStorageType() + " fail!", e);
         }
     }
 

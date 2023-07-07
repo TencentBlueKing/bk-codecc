@@ -27,8 +27,10 @@
 package com.tencent.devops.common.web.handler
 
 import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
-import com.tencent.devops.common.api.pojo.Result
+import com.tencent.devops.common.api.pojo.codecc.Result
+import com.tencent.devops.common.constant.CommonMessageCode
 import com.tencent.devops.common.service.Profile
+import com.tencent.devops.common.service.utils.I18NUtils
 import com.tencent.devops.common.service.utils.SpringContextUtil
 import org.slf4j.LoggerFactory
 import javax.ws.rs.core.MediaType
@@ -48,8 +50,18 @@ class MissingKotlinParameterExceptionMapper : ExceptionMapper<MissingKotlinParam
         val message = if (SpringContextUtil.getBean(Profile::class.java).isDebug()) {
             exception.message
         } else {
-            "请求体内容参数错误，请联系人工客服"
+            I18NUtils.getMessage(CommonMessageCode.REQUEST_BODY_PARAM_ERROR)
         }
-        return Response.status(status).type(MediaType.APPLICATION_JSON_TYPE).entity(Result<Void>(status.statusCode, message)).build()
+
+        return Response.status(status)
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .entity(
+                    Result<Void>(
+                        status = status.statusCode,
+                        errCode = CommonMessageCode.REQUEST_BODY_PARAM_ERROR,
+                        message = message
+                    )
+                )
+                .build()
     }
 }

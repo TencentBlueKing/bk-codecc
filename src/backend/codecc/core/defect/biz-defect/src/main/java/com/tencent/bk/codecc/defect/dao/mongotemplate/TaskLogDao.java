@@ -26,30 +26,33 @@
 
 package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
+import com.google.common.collect.Lists;
+import com.mongodb.BasicDBObject;
 import com.tencent.bk.codecc.defect.model.TaskLogEntity;
 import com.tencent.bk.codecc.defect.model.TaskLogGroupEntity;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-
-import com.tencent.bk.codecc.defect.model.TaskLogOverviewEntity;
 import com.tencent.devops.common.constant.ComConstants;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import java.util.stream.Collectors;
+import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
 import org.springframework.data.mongodb.core.aggregation.LimitOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.SortOperation;
+import org.springframework.data.mongodb.core.query.BasicQuery;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 分析记录复杂查询持久代码
@@ -86,8 +89,8 @@ public class TaskLogDao
                 .first("start_time").as("startTime")
                 .first("build_num").as("buildNum")
                 .first("build_id").as("buildId");
-        Aggregation agg = Aggregation.newAggregation(match, sort, group);
-
+        AggregationOptions options = new AggregationOptions.Builder().allowDiskUse(true).build();
+        Aggregation agg = Aggregation.newAggregation(match, sort, group).withOptions(options);
         AggregationResults<TaskLogGroupEntity> queryResult = mongoTemplate.aggregate(agg, "t_task_log", TaskLogGroupEntity.class);
         return queryResult.getMappedResults();
     }
@@ -115,9 +118,12 @@ public class TaskLogDao
                         .first("trigger_from").as("trigger_from")
                         .first("version_time").as("version_time")
                         .first("step_array").as("step_array");
-        Aggregation aggregation = Aggregation.newAggregation(matchOperation, sortOperation, groupOperation);
+        AggregationOptions options = new AggregationOptions.Builder().allowDiskUse(true).build();
+        Aggregation aggregation = Aggregation.newAggregation(matchOperation, sortOperation, groupOperation).withOptions(options);
 
-        AggregationResults<TaskLogEntity> queryResult = mongoTemplate.aggregate(aggregation, "t_task_log", TaskLogEntity.class);
+        AggregationResults<TaskLogEntity> queryResult =
+                mongoTemplate.aggregate(aggregation, "t_task_log", TaskLogEntity.class);
+
         return queryResult.getMappedResults();
     }
 
@@ -142,7 +148,8 @@ public class TaskLogDao
                 .first("start_time").as("start_time")
                 .first("end_time").as("end_time")
                 .first("build_num").as("build_num");
-        Aggregation aggregation = Aggregation.newAggregation(match, sort, group);
+        AggregationOptions options = new AggregationOptions.Builder().allowDiskUse(true).build();
+        Aggregation aggregation = Aggregation.newAggregation(match, sort, group).withOptions(options);
 
         AggregationResults<TaskLogEntity> queryResult =
                 mongoTemplate.aggregate(aggregation, "t_task_log", TaskLogEntity.class);
@@ -166,7 +173,8 @@ public class TaskLogDao
         // 根据任务ID排序
         SortOperation sort = Aggregation.sort(Sort.Direction.DESC, "task_id");
 
-        Aggregation aggregation = Aggregation.newAggregation(match, sort);
+        AggregationOptions options = new AggregationOptions.Builder().allowDiskUse(true).build();
+        Aggregation aggregation = Aggregation.newAggregation(match, sort).withOptions(options);
 
         AggregationResults<TaskLogEntity> queryResult =
                 mongoTemplate.aggregate(aggregation, "t_task_log", TaskLogEntity.class);
@@ -196,5 +204,96 @@ public class TaskLogDao
                 .map(TaskLogEntity::getBuildId)
                 .collect(Collectors.toList());
         return mongoTemplate.find(new Query(Criteria.where("build_id").in(buildIds)), TaskLogEntity.class);
+    }
+
+    /**
+     * 查询分析成功的任务和工具信息
+     *
+     * @param taskIds  任务id集合
+     * @param toolName 工具名
+     * @return
+     */
+    public List<TaskLogEntity> queryAccessedTask(Collection<Long> taskIds, String toolName) {
+        Criteria criteria = new Criteria();
+        List<Criteria> criteriaList = Lists.newArrayList();
+
+        if (StringUtils.isNotEmpty(toolName)) {
+            criteriaList.add(Criteria.where("task_id").in(taskIds).and("tool_name").is(toolName));
+        }
+
+        // KLOCWORK、COVERITY、PINPOINT 以curr_step=5判定执行成功
+        if (toolName.equals(ComConstants.ToolPattern.KLOCWORK.name())
+                || toolName.equals(ComConstants.ToolPattern.COVERITY.name())
+                || toolName.equals(ComConstants.ToolPattern.PINPOINT.name())) {
+            criteriaList.add(Criteria.where("curr_step").is(ComConstants.Step4Cov.DEFECT_SYNS.value())
+                    .and("flag").is(ComConstants.StepFlag.SUCC.value())
+            );
+        } else {
+            criteriaList.add(Criteria.where("curr_step").is(ComConstants.Step4MutliTool.COMMIT.value())
+                    .and("flag").is(ComConstants.StepFlag.SUCC.value())
+            );
+        }
+
+        if (CollectionUtils.isNotEmpty(criteriaList)) {
+            criteria.andOperator(criteriaList.toArray(new Criteria[0]));
+        }
+        MatchOperation match = Aggregation.match(criteria);
+
+        // 以任务ID和构件号进行分组
+        GroupOperation group = Aggregation.group("task_id", "tool_name")
+                .first("task_id").as("task_id")
+                .first("tool_name").as("tool_name");
+
+        AggregationOptions options = new AggregationOptions.Builder().allowDiskUse(true).build();
+        Aggregation agg = Aggregation.newAggregation(match, group).withOptions(options);
+
+        AggregationResults<TaskLogEntity> queryResult = mongoTemplate.aggregate(agg, "t_task_log", TaskLogEntity.class);
+        return queryResult.getMappedResults();
+    }
+
+
+    /**
+     * 通过任务id、工具名、构建id查询
+     *
+     * @param taskIdList  任务id集合
+     * @param toolName    工具名
+     * @param buildIdList 构建id集合
+     * @return list
+     */
+    public List<TaskLogEntity> findByTaskIdInAndToolNameAndBuildIdIn(Collection<Long> taskIdList, String toolName,
+            List<String> buildIdList) {
+
+        Document fieldsObj = new Document();
+        fieldsObj.put("task_id", true);
+        fieldsObj.put("start_time", true);
+        fieldsObj.put("end_time", true);
+        Query query = new BasicQuery(new Document(), fieldsObj);
+
+        if (CollectionUtils.isNotEmpty(taskIdList)) {
+            query.addCriteria(Criteria.where("task_id").in(taskIdList));
+        }
+
+        if (StringUtils.isNotEmpty(toolName)) {
+            query.addCriteria(Criteria.where("tool_name").is(toolName));
+        }
+        // 构建ID
+        if (CollectionUtils.isNotEmpty(buildIdList)) {
+            query.addCriteria(Criteria.where("build_id").in(buildIdList));
+        }
+
+        return mongoTemplate.find(query, TaskLogEntity.class, "t_task_log");
+    }
+
+    /**
+     * 根据任务ID和工具名称查询最新一次成功的构建记录
+     * @param taskId
+     * @param toolName
+     * @return
+     */
+    public TaskLogEntity findLastTaskLogByTaskIdAndToolName(Long taskId, String toolName) {
+        Query query = Query.query(Criteria.where("task_id").is(taskId)
+                .and("tool_name").is(toolName).and("flag").is(ComConstants.StepFlag.SUCC.value()));
+        query.with(Sort.by(new Sort.Order(Sort.Direction.DESC, "start_time"))).limit(1);
+        return mongoTemplate.findOne(query, TaskLogEntity.class);
     }
 }

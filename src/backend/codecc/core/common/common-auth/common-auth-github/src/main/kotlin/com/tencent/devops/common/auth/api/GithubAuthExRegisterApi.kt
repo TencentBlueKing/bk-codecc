@@ -4,8 +4,8 @@ import com.alibaba.fastjson.JSONObject
 import com.tencent.devops.auth.api.service.ServicePermissionAuthResource
 import com.tencent.devops.auth.pojo.dto.GrantInstanceDTO
 import com.tencent.devops.common.auth.api.external.AuthExRegisterApi
-import com.tencent.devops.common.auth.api.external.AuthTaskService
 import com.tencent.devops.common.auth.api.pojo.external.PipelineAuthAction
+import com.tencent.devops.common.auth.api.service.AuthTaskService
 import com.tencent.devops.common.auth.pojo.GithubAuthProperties
 import com.tencent.devops.common.client.Client
 import org.slf4j.LoggerFactory

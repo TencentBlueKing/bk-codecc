@@ -15,9 +15,8 @@ package com.tencent.bk.codecc.defect.vo;
 import com.tencent.devops.common.api.CommonVO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
-
 import java.util.Set;
+import lombok.Data;
 
 /**
  * 告警基础信息VO
@@ -27,69 +26,54 @@ import java.util.Set;
  */
 @Data
 @ApiModel("告警基础信息视图")
-public class DefectBaseVO extends CommonVO
-{
+public class DefectBaseVO extends CommonVO {
+
+    @ApiModelProperty(value = "告警描述", required = true)
+    protected String message;
+    /**
+     * 规则类型，对应Coverity Platform中的Category(类别)
+     */
+    @ApiModelProperty(value = "规则类型", required = true)
+    protected String displayCategory;
+    /**
+     * 类型子类，对应Coverity Platform中的Type(类型)
+     */
+    @ApiModelProperty(value = "类型子类", required = true)
+    protected String displayType;
+    @ApiModelProperty(value = "告警行号", required = true)
+    protected int lineNum;
     @ApiModelProperty(value = "告警的唯一标志", required = true)
     private String id;
-
     @ApiModelProperty(value = "哈希Id", required = true)
     private String hashId;
-
     @ApiModelProperty(value = "任务ID", required = true)
     private long taskId;
-
     @ApiModelProperty(value = "流名称", required = true)
     private String streamName;
-
     @ApiModelProperty(value = "工具名", required = true)
     private String toolName;
-
     @ApiModelProperty(value = "规则名称", required = true)
-    private String checkerName;
-
+    private String checker;
     @ApiModelProperty(value = "规则中文名称", required = true)
     private String checkerNameCn;
-
     @ApiModelProperty(value = "描述", required = true)
     private String description;
-
     /**
      * 用户给告警标志的状态,这个状态采用自定义的状态，而不使用klocwork的状态
      * 1:待处理(默认)，4:已忽略，8:路径屏蔽，16:规则屏蔽，32:标志位已修改
      */
     @ApiModelProperty(value = "状态", required = true)
     private int status;
-
     @ApiModelProperty(value = "告警所在文件", required = true)
-    private String filePathname;
-
+    private String filePath;
     @ApiModelProperty(value = "文件MD5")
-    private String fileMD5;
-
+    private String fileMd5;
     @ApiModelProperty(value = "文件名", required = true)
     private String fileName;
-
-    /**
-     * 规则类型，对应Coverity Platform中的Category(类别)
-     */
-    @ApiModelProperty(value = "规则类型", required = true)
-    protected String displayCategory;
-
-    /**
-     * 类型子类，对应Coverity Platform中的Type(类型)
-     */
-    @ApiModelProperty(value = "类型子类", required = true)
-    protected String displayType;
-
     @ApiModelProperty(value = "告警处理人", required = true)
     private Set<String> authorList;
-
     @ApiModelProperty(value = "告警严重程度", required = true)
     private int severity;
-
-    @ApiModelProperty(value = "告警行号", required = true)
-    protected int lineNumber;
-
     @ApiModelProperty(value = "忽略告警原因类型")
     private int ignoreReasonType;
 
@@ -101,6 +85,9 @@ public class DefectBaseVO extends CommonVO
 
     @ApiModelProperty(value = "告警创建时间")
     private long createTime;
+
+    @ApiModelProperty(value = "代码行提交时间")
+    private long lineUpdateTime;
 
     @ApiModelProperty(value = "告警修复时间")
     private long fixedTime;
@@ -119,6 +106,9 @@ public class DefectBaseVO extends CommonVO
 
     @ApiModelProperty(value = "告警被标记为已修改的时间")
     private Long markTime;
+
+    @ApiModelProperty(value = "标记了，但是再次扫描没有修复")
+    private Boolean markButNoFixed;
 
     @ApiModelProperty(value = "被处理的时间，包括closed,excluded,ignore")
     private String offTime;

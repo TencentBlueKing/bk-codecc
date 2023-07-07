@@ -56,7 +56,7 @@ public interface ToolMetaRepository extends MongoRepository<ToolMetaEntity, Stri
      * @param toolName
      * @return
      */
-    ToolMetaEntity findByName(String toolName);
+    ToolMetaEntity findFirstByName(String toolName);
 
     /**
      * 根据调试流名称进行查询
@@ -80,5 +80,21 @@ public interface ToolMetaRepository extends MongoRepository<ToolMetaEntity, Stri
      * @param name
      * @return
      */
-    ToolMetaEntity findFirstByName(String name);
+    @Query(fields = "{'name':1, 'lang':1}", value = "{'name' : ?0}")
+    ToolMetaEntity findFirstLangByName(String name);
+
+    /**
+     * 按照Pattern查询工具列表
+     * @param pattern
+     * @return
+     */
+    List<ToolMetaEntity> findByPattern(String pattern);
+
+    /**
+     * 按照名字查询工具元数据
+     * @param name
+     * @return
+     */
+    @Query(fields = "{'name':1, 'lang':1}", value = "{'name' : ?0}")
+    List<ToolMetaEntity> findLangByName(String name);
 }

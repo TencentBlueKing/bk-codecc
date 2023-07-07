@@ -16,9 +16,9 @@
 const NODE_ENV = JSON.stringify(process.env.NODE_ENV)
 
 export default {
-    'process.env': {
-        'NODE_ENV': NODE_ENV
-    },
-    staticUrl: `/static`,
-    NODE_ENV: NODE_ENV
+  'process.env': {
+    NODE_ENV,
+  },
+  staticUrl: '/static',
+  NODE_ENV,
 }

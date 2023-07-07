@@ -27,8 +27,10 @@
 package com.tencent.bk.codecc.task.dao.mongorepository;
 
 import com.tencent.bk.codecc.task.model.BaseDataEntity;
+import com.tencent.devops.common.api.BaseDataVO;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -40,8 +42,7 @@ import java.util.List;
  * @date 2019/4/24
  */
 @Repository
-public interface BaseDataRepository extends MongoRepository<BaseDataEntity, ObjectId>
-{
+public interface BaseDataRepository extends MongoRepository<BaseDataEntity, ObjectId> {
     /**
      * 根据基础数据类型查询对应基础数据信息
      *
@@ -65,6 +66,8 @@ public interface BaseDataRepository extends MongoRepository<BaseDataEntity, Obje
      * @return
      */
     BaseDataEntity findFirstByParamCode(String paramCode);
+
+    List<BaseDataEntity> findByParamCodeInAndParamType(List<String> paramCodeList, String paramType);
 
     /**
      * 根据参数类型查询信息
@@ -117,4 +120,44 @@ public interface BaseDataRepository extends MongoRepository<BaseDataEntity, Obje
      * @return
      */
     BaseDataEntity findFirstByParamTypeAndParamCodeAndParamName(String paramType, String paramCode, String paramName);
+
+    /**
+     * 根据参数类型，参数代码和参数值查询信息
+     *
+     * @param preciCheckerSet
+     * @param paramCode
+     * @param paramValue
+     * @return
+     */
+    BaseDataEntity findFirstByParamTypeAndParamCodeAndParamValue(String preciCheckerSet, String paramCode,
+                                                                 String paramValue);
+
+    /**
+     * 根据参数类型，参数代码和参数值删除信息
+     *
+     * @param paramType
+     * @paramparamValue
+     * @return
+     */
+
+    BaseDataEntity findFirstByParamTypeAndParamValue(String paramType, String paramValue);
+
+    /**
+     * 根据参数类型查询參数值
+     * @param paramType 参数类型
+     * @return entity
+     */
+    @Query(fields = "{'param_value': 1}")
+    List<BaseDataEntity> findParamValueByParamType(String paramType);
+
+    /**
+     * 根据实体id和参数类型获取指定实体对象
+     *
+     * @param entityId  实体id
+     * @param paramType 参数类型
+     * @return
+     */
+    BaseDataEntity findFirstByEntityIdAndParamType(String entityId, String paramType);
+
+    void deleteByParamTypeAndParamName(String paramType, String paramName);
 }

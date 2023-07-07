@@ -17,8 +17,11 @@ import com.tencent.bk.codecc.defect.model.CodeCommentEntity;
 import com.tencent.bk.codecc.defect.model.SingleCommentEntity;
 import com.tencent.bk.codecc.defect.service.IDefectOperateBizService;
 import com.tencent.bk.codecc.defect.vo.SingleCommentVO;
+import com.tencent.bk.codecc.task.api.UserTaskRestResource;
+import com.tencent.devops.common.api.RtxNotifyVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
+import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import lombok.extern.slf4j.Slf4j;
@@ -26,10 +29,15 @@ import org.apache.commons.collections.CollectionUtils;
 import org.bson.types.ObjectId;
 import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 告警操作服务抽象类
@@ -45,16 +53,23 @@ public abstract class AbstractDefectOperateBizService implements IDefectOperateB
     @Autowired
     protected AuthExPermissionApi authExPermissionApi;
 
+    @Autowired
+    private Client client;
+
+    @Value("${codecc.public.url}")
+    private String codeccGateWay;
 
     @Override
     public void updateCodeComment(String commentId, String userName, SingleCommentVO singleCommentVO) {
-        log.info("start to add code comment, comment id: {}", commentId);
+        log.info("start to update code comment, comment id: {}", commentId);
         Optional<CodeCommentEntity> optional = codeCommentRepository.findById(commentId);
-        if(!optional.isPresent()){
+        if (!optional.isPresent()) {
             return;
         }
+
         CodeCommentEntity codeCommentEntity = optional.get();
         List<SingleCommentEntity> commentEntityList = codeCommentEntity.getCommentList();
+
         if (CollectionUtils.isNotEmpty(commentEntityList)) {
             SingleCommentEntity singleCommentEntity = commentEntityList.stream().filter(commentEntity ->
                     commentEntity.getSingleCommentId().equalsIgnoreCase(singleCommentVO.getSingleCommentId())
@@ -118,5 +133,40 @@ public abstract class AbstractDefectOperateBizService implements IDefectOperateB
             }});
         }
         codeCommentRepository.save(codeCommentEntity);
+    }
+
+    /**
+     * 组装评论内容,发送评论给被@到的人
+     */
+    public void codeCommentSendRtx(String comment, String checker, String projectId, String taskId, String toolName,
+            String defectId, String userName, String nameCn, String fileName) {
+        log.info("code comment send rtx, tool name: {} file name: {} name cn:{}  project id: {} task id: {}", toolName,
+                fileName, nameCn, projectId, taskId);
+        // 企业微信通知评论中@到的人
+        // 正则表达式: 获取评论中@到的用户名
+        Pattern pattern = Pattern.compile("(?<=[@])\\w+");
+        Matcher matcher = pattern.matcher(comment);
+        if (matcher.find()) {
+            // 企业微信通知对象
+            Set<String> receivers = new HashSet<>();
+            receivers.add(matcher.group());
+
+            // 发送内容
+            String substance =
+                    String.format("规则：%s\n查看详情：http://%s/codecc/%s/task/%s/defect/lint/%s/list?entityId=%s", checker,
+                            codeccGateWay, projectId, taskId, toolName, defectId);
+
+            String title = String.format("%s在 %s 的%s中@了你：%s", userName, nameCn, fileName, comment);
+
+            RtxNotifyVO rtxNotifyVO = new RtxNotifyVO();
+            rtxNotifyVO.setReceivers(receivers);
+            rtxNotifyVO.setTitle(title);
+            rtxNotifyVO.setSubstance(substance);
+            log.info("rtxNotifyVO:[{}]", rtxNotifyVO);
+
+            client.get(UserTaskRestResource.class).codeCommentSendRtx(rtxNotifyVO);
+        } else {
+            log.error("format mismatch!");
+        }
     }
 }

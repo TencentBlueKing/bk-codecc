@@ -1,8 +1,6 @@
 package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
 import com.tencent.bk.codecc.defect.model.BuildDefectEntity;
-import com.tencent.bk.codecc.defect.model.CCNDefectEntity;
-import com.tencent.bk.codecc.defect.model.CheckerConfigEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +12,6 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * 描述

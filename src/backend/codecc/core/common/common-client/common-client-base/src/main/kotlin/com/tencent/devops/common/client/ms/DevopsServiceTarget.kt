@@ -10,13 +10,12 @@
  *
  * Terms of the MIT License:
  * ---------------------------------------------------
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
- * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
+ * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of
- * the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
  * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -27,29 +26,14 @@
 
 package com.tencent.devops.common.client.ms
 
-import feign.Request
-import feign.RequestTemplate
-import feign.Target
-
 class DevopsServiceTarget<T> constructor(
-        private val serviceName: String,
-        private val type: Class<T>,
-        private val rootPath: String
-) : Target<T> {
-
-
-    override fun apply(input: RequestTemplate?): Request {
-        if (input!!.url().indexOf("http") != 0) {
-            input.insert(0, url())
-        }
-        return input.request()
-    }
+    private val serviceName: String,
+    private val type: Class<T>,
+    private val rootPath: String
+) : ThirdServiceTarget<T>(serviceName, type, rootPath) {
 
     override fun url(): String {
-        return "$rootPath/ms/$serviceName/api"
+        return "http://$rootPath/ms/$serviceName/api"
     }
 
-    override fun type() = type
-
-    override fun name() = serviceName
 }

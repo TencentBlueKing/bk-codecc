@@ -29,11 +29,15 @@ package com.tencent.bk.codecc.defect.api;
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
 
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
-import com.tencent.bk.codecc.defect.vo.MetricsVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.bk.codecc.defect.vo.ToolDefectIdVO;
+import com.tencent.bk.codecc.defect.vo.ToolDefectPageVO;
+import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import java.util.List;
+import java.util.Map;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -42,6 +46,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 /**
@@ -54,34 +59,22 @@ import javax.ws.rs.core.MediaType;
 @Path("/service/defect")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public interface ServiceDefectRestResource
-{
+public interface ServiceDefectRestResource {
+
     @ApiOperation("告警批量处理")
     @Path("/batch/task/{taskId}")
     @POST
     Result<Boolean> batchDefectProcess(
             @ApiParam(value = "任务ID", required = true)
             @PathParam("taskId")
-                    long taskId,
+            long taskId,
             @ApiParam(value = "用户名", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String userName,
+            String userName,
             @ApiParam(value = "批量告警处理请求信息", required = true)
             @Valid
-                    BatchDefectProcessReqVO batchDefectProcessReqVO
+            BatchDefectProcessReqVO batchDefectProcessReqVO
     );
-
-    @ApiOperation("获取度量信息")
-    @Path("/repo/measurement")
-    @GET
-    Result<MetricsVO> getMetrics(
-            @ApiParam(value = "代码库别名", required = true)
-            @HeaderParam("repoId")
-                    String repoId,
-            @ApiParam(value = "构建号")
-            @HeaderParam("buildId")
-                    String buildId
-        );
 
     @ApiOperation("按时间获取最后一条告警")
     @Path("/task/{taskId}/tool/{toolName}/lastest")
@@ -89,9 +82,55 @@ public interface ServiceDefectRestResource
     Result<Long> lastestStatDefect(
             @ApiParam(value = "任务ID", required = true)
             @PathParam("taskId")
-                    long taskId,
+            long taskId,
             @ApiParam(value = "工具名称", required = true)
             @PathParam("toolName")
-                    String toolName
+            String toolName
+    );
+
+
+    @ApiOperation("按任务ID获取最新分析状态")
+    @Path("/analyze/status")
+    @POST
+    Result<Map<Long, String>> getLatestAnalyzeStatus(
+            @ApiParam(value = "任务ID集合", required = true) List<Long> taskIds);
+
+
+    @ApiOperation("通过筛选条件查询告警id")
+    @Path("/task/{taskId}/queryDefectId")
+    @POST
+    Result<List<ToolDefectIdVO>> queryDefectIdByCondition(
+            @ApiParam(value = "任务ID", required = true)
+            @PathParam("taskId")
+            long taskId,
+            @ApiParam(value = "告警查询条件", required = true)
+            @Valid
+            DefectQueryReqVO reqVO
+    );
+
+    @ApiOperation("通过筛选条件聚合工具列表")
+    @Path("/task/{taskId}/queryDefectIdPage")
+    @POST
+    Result<ToolDefectPageVO> queryDefectIdPageByCondition(
+            @ApiParam(value = "任务ID", required = true)
+            @PathParam("taskId")
+            long taskId,
+            @ApiParam(value = "告警查询条件", required = true)
+            @Valid
+            DefectQueryReqVO reqVO,
+            @QueryParam("pageNum")
+            int pageNum,
+            @QueryParam("pageSize")
+            int pageSize
+
+    );
+
+    @ApiOperation("数据是否迁移成功")
+    @Path("/commonToLintMigrationSuccessful/{taskId}")
+    @GET
+    Result<Boolean> commonToLintMigrationSuccessful(
+            @ApiParam(value = "任务ID", required = true)
+            @PathParam("taskId")
+            long taskId
     );
 }

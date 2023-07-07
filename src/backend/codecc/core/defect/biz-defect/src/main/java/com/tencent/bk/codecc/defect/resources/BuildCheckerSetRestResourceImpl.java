@@ -6,13 +6,13 @@ import com.tencent.bk.codecc.defect.service.IV3CheckerSetBizService;
 import com.tencent.bk.codecc.defect.vo.integrated.ToolCheckerSetToStatusVo;
 import com.tencent.devops.common.api.checkerset.CheckerSetRelationshipVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import com.tencent.devops.common.web.RestResource;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import java.util.List;
 import java.util.Set;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @RestResource
 public class BuildCheckerSetRestResourceImpl implements BuildCheckerSetRestResource {
@@ -38,18 +38,25 @@ public class BuildCheckerSetRestResourceImpl implements BuildCheckerSetRestResou
     }
 
     @Override
-    public Result<String> updateToolCheckerSetToStatus(String user,
-                                                       String buildId,
-                                                       String toolName,
-                                                       ComConstants.ToolIntegratedStatus status,
-                                                       ToolCheckerSetToStatusVo toolCheckerSetToStatusVo) {
-        return new Result<>(checkerSetIntegratedBizService.updateToStatus(
-            toolName,
-            buildId,
-            status,
-            user,
-            toolCheckerSetToStatusVo.getCheckerSetIds(),
-            toolCheckerSetToStatusVo.getCheckerIds()));
+    public Result<String> updateToolCheckerSetToStatus(
+            String user,
+            String buildId,
+            String toolName,
+            ToolIntegratedStatus fromStatus,
+            ToolIntegratedStatus toStatus,
+            ToolCheckerSetToStatusVo toolCheckerSetToStatusVo
+    ) {
+        return new Result<>(
+                checkerSetIntegratedBizService.updateToStatus(
+                        toolName,
+                        buildId,
+                        fromStatus,
+                        toStatus,
+                        user,
+                        toolCheckerSetToStatusVo.getCheckerSetIds(),
+                        toolCheckerSetToStatusVo.getCheckerIds()
+                )
+        );
     }
 
     @Override
@@ -59,4 +66,5 @@ public class BuildCheckerSetRestResourceImpl implements BuildCheckerSetRestResou
                                                      Set<String> checkerSetIds) {
         return new Result<>(checkerSetIntegratedBizService.revertStatus(toolName, status, user, checkerSetIds));
     }
+
 }

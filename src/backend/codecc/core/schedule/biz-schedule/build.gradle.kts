@@ -1,4 +1,5 @@
 dependencies {
+    api(project(":core:common:common-service"))
     api(project(":core:common:common-util"))
     api(project(":core:common:common-client"))
     api(project(":core:common:common-storage"))

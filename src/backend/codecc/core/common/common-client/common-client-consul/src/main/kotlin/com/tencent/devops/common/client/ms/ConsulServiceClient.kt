@@ -4,7 +4,7 @@ import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.client.ClientErrorDecoder
 import com.tencent.devops.common.client.pojo.AllProperties
 import com.tencent.devops.common.service.utils.SpringContextUtil
-import com.tencent.devops.common.util.JsonUtil
+import com.tencent.devops.common.codecc.util.JsonUtil
 import feign.Feign
 import feign.Request
 import feign.RequestInterceptor
@@ -27,7 +27,6 @@ class ConsulServiceClient constructor(
     @Value("\${codecc.quartz.tag:\${spring.cloud.consul.discovery.tags}}")
     private val tag: String? = null
 
-
     /**
      * 正常情况下创建feign对象
      */
@@ -41,8 +40,26 @@ class ConsulServiceClient constructor(
             .options(Request.Options(10000, 30000))// 10秒连接 30秒收数据
             .requestInterceptor(SpringContextUtil.getBean(RequestInterceptor::class.java,
                 "normalRequestInterceptor")) // 获取为feign定义的拦截器
-            .target(ConsulServiceTarget(findServiceName(clz),
-                    clz.java, discoveryClient, tag))
+            .target(ConsulServiceTarget(findServiceName(clz), clz.java, discoveryClient, tag))
+    }
+
+    override fun <T : Any> getWithSpecialTag(clz: Class<T>, specialTag: String): T {
+        return Feign.builder()
+            .client(feignClient)
+            .errorDecoder(clientErrorDecoder)
+            .encoder(jacksonEncoder)
+            .decoder(jacksonDecoder)
+            .contract(jaxRsContract)
+            .options(Request.Options(10000, 30000))// 10秒连接 30秒收数据
+            .requestInterceptor(
+                SpringContextUtil.getBean(
+                    RequestInterceptor::class.java,
+                    "normalRequestInterceptor"
+                )
+            ) // 获取为feign定义的拦截器
+            .target(
+                ConsulServiceTarget(findServiceName(clz.kotlin), clz, discoveryClient, specialTag)
+            )
     }
 
 
@@ -57,8 +74,7 @@ class ConsulServiceClient constructor(
             .decoder(jacksonDecoder)
             .contract(jaxRsContract)
             .options(Request.Options(10000, 30000))// 10秒连接 30秒收数据
-            .target(ConsulServiceTarget(findServiceName(clz.kotlin),
-                clz, discoveryClient, tag))
+            .target(ConsulServiceTarget(findServiceName(clz.kotlin), clz,discoveryClient, tag,""))
     }
 
 
@@ -81,7 +97,14 @@ class ConsulServiceClient constructor(
                     throw e
                 }
             })
-            .target(ConsulServiceTarget(findServiceName(clz),
-                clz.java, discoveryClient, tag))
+            .target(ConsulServiceTarget(findServiceName(clz), clz.java, discoveryClient, tag))
+    }
+
+    override fun <T : Any> getWithoutRetry(clz: Class<T>): T {
+        return getWithoutRetry(clz.kotlin)
+    }
+
+    override fun getServiceNodeNum(serviceName: String): Int {
+        return discoveryClient.getInstances(serviceName).size
     }
 }

@@ -39,8 +39,8 @@ import lombok.Data;
  */
 @Data
 @ApiModel("告警上报入参的抽象类")
-public class UploadDefectVO
-{
+public class UploadDefectVO {
+
     @ApiModelProperty(value = "流名称", required = true)
     @JsonProperty("stream_name")
     private String streamName;
@@ -106,4 +106,7 @@ public class UploadDefectVO
     @ApiModelProperty("总行数")
     @JsonProperty("total_line_count")
     private Long totalLineCount;
+
+    @ApiModelProperty("数据迁移是否成功")
+    private Boolean migrationSuccessful;
 }

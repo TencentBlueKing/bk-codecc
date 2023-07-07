@@ -43,8 +43,8 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ApiModel("lint类告警详情查询返回视图")
-public class LintDefectDetailQueryRspVO extends CommonDefectDetailQueryRspVO
-{
-    @ApiModelProperty("告警列表")
-    private List<LintDefectVO> lintDefectList;
+public class LintDefectDetailQueryRspVO extends CommonDefectDetailQueryRspVO {
+
+    @ApiModelProperty("告警详情")
+    private LintDefectDetailVO lintDefectDetailVO;
 }

@@ -26,7 +26,9 @@
 
 package com.tencent.bk.codecc.defect.service;
 
+import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.vo.CheckerCommonCountVO;
+import com.tencent.bk.codecc.defect.vo.CheckerDetailListQueryReqVO;
 import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
 import com.tencent.bk.codecc.defect.vo.CheckerListQueryReq;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerListSortType;
@@ -45,8 +47,9 @@ import java.util.Set;
  * @version V1.0
  * @date 2019/4/26
  */
-public interface CheckerService
-{
+public interface CheckerService {
+
+    List<CheckerDetailVO> getCheckerDetailVOList(List<CheckerDetailEntity> checkerDetailEntityList);
 
     /**
      * 多工具查询单个工具的所有规则信息详情
@@ -60,9 +63,29 @@ public interface CheckerService
      * 多工具查询单个工具的所有规则信息详情
      *
      * @param toolNameSet
+     * @param checkerSet
+     * @param returnOnlyMapCheckerKeyAndType false返回的vo是全字段，true返回的vo只包含checkerKey和checkerType
      * @return
      */
-    Map<String, CheckerDetailVO> queryAllChecker(List<String> toolNameSet, String checkerSet);
+    List<CheckerDetailVO> queryAllCheckerI18NWrapper(
+            List<String> toolNameSet,
+            String checkerSet,
+            boolean returnOnlyMapCheckerKeyAndType
+    );
+
+    /**
+     * 多工具查询单个工具的所有规则信息详情
+     *
+     * @param toolNameSet
+     * @param checkerSet
+     * @param returnOnlyMapCheckerKeyAndType false返回的vo是全字段，true返回的vo只包含checkerKey和checkerType
+     * @return
+     */
+    Map<String, CheckerDetailVO> queryAllChecker(
+            List<String> toolNameSet,
+            String checkerSet,
+            boolean returnOnlyMapCheckerKeyAndType
+    );
 
     /**
      * 查询打开的规则
@@ -131,6 +154,14 @@ public interface CheckerService
      */
     CheckerDetailVO queryCheckerDetail(String toolName, String checkerKey);
 
+    /**
+     * 查询规则详情（国际化版本）
+     *
+     * @param toolName
+     * @param checkerKey
+     * @return
+     */
+    CheckerDetailVO queryCheckerDetailWithI18N(String toolName, String checkerKey);
 
     /**
      * 根据条件查询规则详情
@@ -140,6 +171,8 @@ public interface CheckerService
      */
     List<CheckerDetailVO> queryCheckerDetailList(CheckerListQueryReq checkerListQueryReq, String projectId, Integer pageNum,
                                                  Integer pageSize, Sort.Direction sortType, CheckerListSortType sortField);
+
+    List<CheckerDetailVO> queryCheckerDetailList(CheckerDetailListQueryReqVO checkerListQueryReq);
 
     /**
      * 查询规则相应数量集
@@ -179,4 +212,15 @@ public interface CheckerService
      * @return
      */
     boolean updateCheckerByCheckerKey(CheckerDetailVO checkerDetailVO);
+
+
+    /**
+     * 查询任务关联规则所对应的维度信息
+     *
+     * @param taskIdList
+     * @param projectId
+     * @param toolNameList
+     * @return
+     */
+    List<String> queryTaskCheckerDimension(List<Long> taskIdList, String projectId, List<String> toolNameList);
 }

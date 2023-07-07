@@ -27,6 +27,8 @@
 package com.tencent.bk.codecc.task.dao.mongotemplate;
 
 import com.google.common.collect.Lists;
+import com.mongodb.BasicDBObject;
+import com.tencent.bk.codecc.task.model.TaskIdToolInfoEntity;
 import com.tencent.bk.codecc.task.model.ToolCheckerSetEntity;
 import com.tencent.bk.codecc.task.model.ToolConfigInfoEntity;
 import com.tencent.bk.codecc.task.model.ToolCountScriptEntity;
@@ -34,6 +36,7 @@ import com.tencent.bk.codecc.task.vo.ToolConfigBaseVO;
 import com.tencent.devops.common.constant.ComConstants;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -42,14 +45,16 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.query.BasicQuery;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -59,13 +64,11 @@ import java.util.stream.Collectors;
  * @date 2019/4/26
  */
 @Repository
-public class ToolDao
-{
+public class ToolDao {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    public void updateToolStepStatusByTaskIdAndToolName(ToolConfigBaseVO toolConfigBaseVO)
-    {
+    public void updateToolStepStatusByTaskIdAndToolName(ToolConfigBaseVO toolConfigBaseVO) {
         Query query = new Query();
         query.addCriteria(Criteria.where("task_id").is(toolConfigBaseVO.getTaskId())).
                 addCriteria(Criteria.where("tool_name").is(toolConfigBaseVO.getToolName()));
@@ -78,8 +81,7 @@ public class ToolDao
         mongoTemplate.updateMulti(query, update, ToolConfigInfoEntity.class);
     }
 
-    public void updateParamJson(ToolConfigInfoEntity toolConfigInfoEntity, String userName)
-    {
+    public void updateParamJson(ToolConfigInfoEntity toolConfigInfoEntity, String userName) {
         Query query = new Query();
         query.addCriteria(Criteria.where("task_id").is(toolConfigInfoEntity.getTaskId())).
                 addCriteria(Criteria.where("tool_name").is(toolConfigInfoEntity.getToolName()));
@@ -90,8 +92,7 @@ public class ToolDao
         mongoTemplate.updateMulti(query, update, ToolConfigInfoEntity.class);
     }
 
-    public void clearCheckerSet(long taskId, List<String> toolNames)
-    {
+    public void clearCheckerSet(long taskId, List<String> toolNames) {
         Query query = new Query();
         query.addCriteria(Criteria.where("task_id").is(taskId)).
                 addCriteria(Criteria.where("tool_name").in(toolNames));
@@ -100,13 +101,10 @@ public class ToolDao
         mongoTemplate.updateMulti(query, update, ToolConfigInfoEntity.class);
     }
 
-    public void setCheckerSet(long taskId, List<ToolCheckerSetEntity> toolCheckerSets)
-    {
-        if (CollectionUtils.isNotEmpty(toolCheckerSets))
-        {
+    public void setCheckerSet(long taskId, List<ToolCheckerSetEntity> toolCheckerSets) {
+        if (CollectionUtils.isNotEmpty(toolCheckerSets)) {
             BulkOperations ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, ToolConfigInfoEntity.class);
-            for (ToolCheckerSetEntity toolCheckerSetVO : toolCheckerSets)
-            {
+            for (ToolCheckerSetEntity toolCheckerSetVO : toolCheckerSets) {
                 Query query = new Query();
                 query.addCriteria(Criteria.where("task_id").is(taskId)).
                         addCriteria(Criteria.where("tool_name").is(toolCheckerSetVO.getToolName()));
@@ -128,19 +126,16 @@ public class ToolDao
      * @param userName   更改人
      */
     public Boolean updateToolConfigInfo(Long taskId, String toolName, String userName, String specConfig,
-            String platformIp)
-    {
+            String platformIp) {
         Query query = new Query();
         query.addCriteria(Criteria.where("task_id").is(taskId)).addCriteria(Criteria.where("tool_name").is(toolName));
 
         Update update = new Update();
-        if (specConfig != null)
-        {
+        if (specConfig != null) {
             update.set("spec_config", specConfig);
         }
 
-        if (StringUtils.isNotBlank(platformIp))
-        {
+        if (StringUtils.isNotBlank(platformIp)) {
             update.set("platform_ip", platformIp);
         }
 
@@ -155,13 +150,14 @@ public class ToolDao
      * @param toolName
      * @param toolImageRevision
      */
-    public void updateToolImageRevision(long taskId, String toolName, String toolImageRevision)
-    {
+    public void updateToolImageRevision(long taskId, String toolName, String toolImageRevision) {
         Query query = new Query();
         query.addCriteria(Criteria.where("task_id").is(taskId)).
                 addCriteria(Criteria.where("tool_name").is(toolName));
         Update update = new Update();
         update.set("tool_image_revision", toolImageRevision);
+        update.set("updated_date", System.currentTimeMillis());
+        update.set("updated_by", "system");
         mongoTemplate.updateMulti(query, update, ToolConfigInfoEntity.class);
     }
 
@@ -175,26 +171,15 @@ public class ToolDao
      * @return list
      */
     public List<ToolConfigInfoEntity> getTaskIdsAndFollowStatusPage(Collection<Long> taskIds,
-            List<Integer> followStatus, Pageable pageable)
-    {
+            List<Integer> followStatus, Pageable pageable) {
         Query query = new Query();
-        if (CollectionUtils.isNotEmpty(taskIds))
-        {
+        if (CollectionUtils.isNotEmpty(taskIds)) {
             query.addCriteria(Criteria.where("task_id").in(taskIds));
         }
-        if (CollectionUtils.isNotEmpty(followStatus))
-        {
+        if (CollectionUtils.isNotEmpty(followStatus)) {
             query.addCriteria(Criteria.where("follow_status").in(followStatus));
         }
-
-        // 当前构建ID字段存在且不为空
-        List<Criteria> criteria = new ArrayList<>();
-        criteria.add(Criteria.where("current_build_id").exists(true));
-        criteria.add(Criteria.where("current_build_id").ne(""));
-        query.addCriteria(new Criteria().andOperator(criteria.toArray(new Criteria[0])));
-
-        if (pageable != null)
-        {
+        if (pageable != null) {
             query.with(pageable);
         }
 
@@ -209,13 +194,10 @@ public class ToolDao
      * @param followStatus       跟进状态
      */
     public void batchUpdateToolFollowStatus(List<ToolConfigInfoEntity> toolConfigInfoList,
-            ComConstants.FOLLOW_STATUS followStatus)
-    {
-        if (CollectionUtils.isNotEmpty(toolConfigInfoList))
-        {
+            ComConstants.FOLLOW_STATUS followStatus) {
+        if (CollectionUtils.isNotEmpty(toolConfigInfoList)) {
             BulkOperations ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, ToolConfigInfoEntity.class);
-            toolConfigInfoList.forEach(entity ->
-            {
+            toolConfigInfoList.forEach(entity -> {
                 Query query = new Query();
                 query.addCriteria(Criteria.where("_id").is(new ObjectId(entity.getEntityId())).and("task_id")
                         .is(entity.getTaskId()));
@@ -229,7 +211,6 @@ public class ToolDao
             });
             ops.execute();
         }
-
     }
 
 
@@ -276,5 +257,31 @@ public class ToolDao
         List<ObjectId> objectIdList = idList.stream().map(id -> new ObjectId(id)).collect(Collectors.toList());
         query.addCriteria(Criteria.where("_id").in(objectIdList));
         mongoTemplate.remove(query, ToolConfigInfoEntity.class);
+    }
+
+    /**
+     * 获取工具指定状态的清单
+     *
+     * @param toolNameSet 工具名
+     * @param followStatusList 状态列表
+     * @return list
+     */
+    public List<TaskIdToolInfoEntity> findTaskIdByTool(Set<String> toolNameSet, List<Integer> followStatusList) {
+        if (CollectionUtils.isEmpty(toolNameSet)) {
+            return Collections.emptyList();
+        }
+
+        Document fieldsObj = new Document();
+        fieldsObj.put("task_id", true);
+        fieldsObj.put("tool_name", true);
+
+        Query query = new BasicQuery(new Document(), fieldsObj);
+        query.addCriteria(Criteria.where("tool_name").in(toolNameSet));
+
+        if (CollectionUtils.isNotEmpty(followStatusList)) {
+            query.addCriteria(Criteria.where("follow_status").in(followStatusList));
+        }
+
+        return mongoTemplate.find(query, TaskIdToolInfoEntity.class, "t_tool_config");
     }
 }

@@ -32,7 +32,7 @@ import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
 import com.tencent.bk.codecc.defect.vo.common.BuildVO;
 import com.tencent.devops.common.api.analysisresult.BaseLastAnalysisResultVO;
 import com.tencent.devops.common.api.analysisresult.ToolLastAnalysisResultVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 
 import java.util.Collection;
 import java.util.List;
@@ -168,7 +168,7 @@ public interface TaskLogService
      * @param taskId
      * @return
      */
-    List<BuildVO> getTaskBuildInfos(long taskId, int limit);
+    List<BuildVO> getTaskBuildInfos(long taskId);
 
     /**
      * 批量获取任务的工具最新分析记录
@@ -219,4 +219,12 @@ public interface TaskLogService
     List<TaskLogVO> getCurrBuildInfo(long taskId, String buildId);
 
     Map<String, Boolean> defectCommitSuccess(long taskId, List<String> toolNameSet, String buildId, int stepNum);
+
+    /**
+     * 根据taskId和toolName获取上一次执行成功的分析记录
+     * @param taskId
+     * @param toolName
+     * @return
+     */
+    TaskLogVO getLastTaskLogByTaskIdAndToolName(long taskId, String toolName);
 }

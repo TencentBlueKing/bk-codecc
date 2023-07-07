@@ -8,5 +8,6 @@ data class FuzzyHashInfoModel @ExperimentalUnsignedTypes constructor(
     val b2: String?,
     val b2Length: Int?,
     var b2ParArray: MutableMap<Char, ULong>?,
-    val valid: Boolean?
+    val valid: Boolean?,
+    val lineNumList : Set<Int>?
 )

@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.data.util.Pair;
 
 /**
  * V3规则集服务
@@ -60,6 +61,16 @@ public interface IV3CheckerSetBizService
                                          String user);
 
     /**
+     * 刷新本次规则更新涉及的任务的信息。包括强制全量标志，工具，告警状态等
+     * @param checkerSetEntity
+     * @param fromCheckerSet
+     * @param version
+     * @param user
+     */
+    void updateTaskAfterChangeCheckerSet(
+        CheckerSetEntity checkerSetEntity, CheckerSetEntity fromCheckerSet, int version, String user);
+
+    /**
      * 查询规则集列表
      *
      * @param projectId
@@ -103,11 +114,29 @@ public interface IV3CheckerSetBizService
      * 查询规则集列表
      *
      */
-    List<CheckerSetVO> getTaskCheckerSets(String projectId,
-                                          long taskId,
-                                          String toolName,
-                                          String dimension,
-                                          boolean needProps);
+    List<CheckerSetVO> getTaskCheckerSets(
+            String projectId,
+            long taskId,
+            String toolName,
+            String dimension,
+            boolean needProps
+    );
+
+    List<CheckerSetVO> getTaskCheckerSets(
+            String projectId,
+            List<Long> taskIdList,
+            List<String> toolNameList
+    );
+
+    /**
+     * 获取任务的规则集，含checker_props
+     *
+     * @param projectId
+     * @param taskId
+     * @param toolNameList
+     * @return
+     */
+    List<CheckerSetVO> getTaskCheckerSets(String projectId, long taskId, List<String> toolNameList);
 
     /**
      * 分页查询规则集列表
@@ -162,7 +191,7 @@ public interface IV3CheckerSetBizService
      * 一键关联单个规则集与项目或任务
      *
      */
-    Boolean setRelationshipsOnce(String user, String projectId, long taskId, String toolName);
+    Pair<Boolean,String> setRelationshipsOnce(String user, String projectId, long taskId, String toolName);
 
     /**
      * 批量关联任务和规则集
@@ -200,6 +229,20 @@ public interface IV3CheckerSetBizService
     List<CheckerSetVO> getCheckerSetsByTaskId(Long taskId);
 
     /**
+     * I18N包装: findAvailableCheckerSetsByProject
+     *
+     * @param projectId
+     * @param legacyList
+     * @param toolIntegratedStatus
+     * @return
+     */
+    List<CheckerSetEntity> findAvailableCheckerSetsByProjectI18NWrapper(
+            String projectId,
+            List<Boolean> legacyList,
+            int toolIntegratedStatus
+    );
+
+    /**
      * 根据项目ID查询规则集
      * legacy == true，查询旧插件规则集
      * legacy == false，查询新插件规则集
@@ -230,10 +273,9 @@ public interface IV3CheckerSetBizService
     /**
      * 为开源扫描配置规则集
      * @param checkerSetList
-     * @param projectId
      * @return
      */
-    List<CheckerSetVO> queryCheckerSetsForOpenScan(Set<CheckerSetVO> checkerSetList, String projectId);
+    List<CheckerSetVO> queryCheckerSetsForOpenScan(Set<CheckerSetVO> checkerSetList);
 
     Boolean updateCheckerSetBaseInfoByOp(String userName, V3UpdateCheckerSetReqExtVO checkerSetVO);
 
@@ -243,4 +285,40 @@ public interface IV3CheckerSetBizService
      * @return
      */
     CheckerSetParamsVO getCheckerSetParams();
+
+    /**
+     * 查询规则列表通过规则id和指定版本
+     * @return
+     */
+    List<CheckerSetVO> queryCheckerDetailForPreCI();
+
+    /**
+     * 查询规则列表通过指定规则集
+     * @param checkerSetIdList
+     * @return
+     */
+    List<CheckerSetVO> queryCheckerDetailForContent(List<String> checkerSetIdList);
+
+    /**
+     * 根据规则集ID查询规则集名称
+     *
+     * @return string
+     */
+    String queryCheckerSetNameByCheckerSetId(String checkerSetId);
+
+    /**
+     * 获取任务关联的规则
+     *
+     * @param projectId
+     * @param taskIdList
+     * @param toolNameList
+     * @param needProps
+     * @return
+     */
+    List<CheckerSetVO> getTaskCheckerSetsCore(
+            String projectId,
+            List<Long> taskIdList,
+            List<String> toolNameList,
+            boolean needProps
+    );
 }

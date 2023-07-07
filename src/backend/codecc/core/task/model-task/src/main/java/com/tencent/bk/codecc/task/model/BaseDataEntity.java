@@ -44,8 +44,7 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Document(collection = "t_base_data")
-public class BaseDataEntity extends CommonEntity
-{
+public class BaseDataEntity extends CommonEntity {
     @Indexed
     @Field("param_code")
     private String paramCode;
@@ -76,6 +75,9 @@ public class BaseDataEntity extends CommonEntity
 
     @Field("param_extend5")
     private String paramExtend5;
+
+    @Field("param_extend6")
+    private String paramExtend6;
 
     @Field("lang_full_key")
     private String langFullKey;

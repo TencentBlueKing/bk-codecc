@@ -2,12 +2,12 @@ package com.tencent.bk.codecc.defect.service.statistic;
 
 import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.CLOCStatisticsDao;
-import com.tencent.bk.codecc.defect.model.CLOCDefectEntity;
-import com.tencent.bk.codecc.defect.model.CLOCStatisticEntity;
+import com.tencent.bk.codecc.defect.model.defect.CLOCDefectEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
+import com.tencent.bk.codecc.defect.utils.CommonKafkaClient;
 import com.tencent.bk.codecc.defect.vo.CLOCLanguageVO;
 import com.tencent.bk.codecc.defect.vo.UploadCLOCStatisticVO;
-import com.tencent.devops.common.api.pojo.Result;
-import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import java.util.Collections;
@@ -27,6 +27,8 @@ public class CLOCDefectStatisticService {
     private CLOCStatisticRepository clocStatisticRepository;
     @Autowired
     private CLOCStatisticsDao clocStatisticsDao;
+    @Autowired
+    private CommonKafkaClient commonKafkaClient;
 
     /**
      * 新增 cloc、SCC 工具 statics 信息

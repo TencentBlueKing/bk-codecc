@@ -29,8 +29,8 @@ package com.tencent.bk.codecc.defect.service.impl;
 import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.dao.mongorepository.DUPCDefectRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.DUPCStatisticRepository;
-import com.tencent.bk.codecc.defect.model.DUPCDefectEntity;
-import com.tencent.bk.codecc.defect.model.DUPCStatisticEntity;
+import com.tencent.bk.codecc.defect.model.defect.DUPCDefectEntity;
+import com.tencent.bk.codecc.defect.model.statistic.DUPCStatisticEntity;
 import com.tencent.bk.codecc.defect.service.AbstractDataReportBizService;
 import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
 import com.tencent.bk.codecc.defect.vo.DupcChartRiskFactorVO;
@@ -45,11 +45,16 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_DATA_REPORT_DATE;
@@ -61,8 +66,7 @@ import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_DATA_R
  * @date 2019/6/3
  */
 @Service("DUPCDataReportBizService")
-public class DUPCDataReportBizServiceImpl extends AbstractDataReportBizService
-{
+public class DUPCDataReportBizServiceImpl extends AbstractDataReportBizService {
     @Autowired
     private DUPCDefectRepository dupcDefectRepository;
 
@@ -73,8 +77,8 @@ public class DUPCDataReportBizServiceImpl extends AbstractDataReportBizService
     private ThirdPartySystemCaller thirdPartySystemCaller;
 
     @Override
-    public CommonDataReportRspVO getDataReport(Long taskId, String toolName, int size, String startTime, String endTime)
-    {
+    public CommonDataReportRspVO getDataReport(Long taskId, String toolName, int size,
+                                               String startTime, String endTime) {
         // 检查日期有效性
         DateTimeUtils.checkDateValidity(startTime, endTime);
 
@@ -82,8 +86,10 @@ public class DUPCDataReportBizServiceImpl extends AbstractDataReportBizService
         ducpDataReportRsp.setTaskId(taskId);
         ducpDataReportRsp.setToolName(toolName);
         ducpDataReportRsp.setChartTrendList(getDupcChartTrend(taskId, toolName, size, startTime, endTime));
-        List<DUPCDefectEntity> fileInfoList = dupcDefectRepository.getByTaskIdAndStatus(taskId, ComConstants.DefectStatus.NEW.value());
-        DupcChartRiskFactorVO dupcChartRiskFactorVO = CollectionUtils.isNotEmpty(fileInfoList) ? getChartRiskFactor(fileInfoList) : new DupcChartRiskFactorVO();
+        List<DUPCDefectEntity> fileInfoList =
+                dupcDefectRepository.getByTaskIdAndStatus(taskId, ComConstants.DefectStatus.NEW.value());
+        DupcChartRiskFactorVO dupcChartRiskFactorVO = CollectionUtils.isNotEmpty(fileInfoList)
+                ? getChartRiskFactor(fileInfoList) : new DupcChartRiskFactorVO();
         ducpDataReportRsp.setChartRiskList(dupcChartRiskFactorVO);
         return ducpDataReportRsp;
     }
@@ -95,8 +101,7 @@ public class DUPCDataReportBizServiceImpl extends AbstractDataReportBizService
      * @param fileInfoList
      * @return
      */
-    private DupcChartRiskFactorVO getChartRiskFactor(List<DUPCDefectEntity> fileInfoList)
-    {
+    private DupcChartRiskFactorVO getChartRiskFactor(List<DUPCDefectEntity> fileInfoList) {
         DupcChartRiskFactorVO dupcRskFactor = new DupcChartRiskFactorVO();
 
         // 统计的数据
@@ -109,23 +114,16 @@ public class DUPCDataReportBizServiceImpl extends AbstractDataReportBizService
         float h = Float.valueOf(riskConfigMap.get(ComConstants.RiskFactor.H.name()));
         float m = Float.valueOf(riskConfigMap.get(ComConstants.RiskFactor.M.name()));
 
-        fileInfoList.forEach(dupc ->
-        {
+        fileInfoList.forEach(dupc -> {
             // 工具侧上报的文件代码重复率是带%号的，比如12.57%，所以要先去除掉后面的百分号比较
             float dupcRate = convertDupRate2Float(dupc.getDupRate());
 
-            if (MapUtils.isNotEmpty(riskConfigMap))
-            {
-                if (dupcRate >= m && dupcRate < h)
-                {
+            if (MapUtils.isNotEmpty(riskConfigMap)) {
+                if (dupcRate >= m && dupcRate < h) {
                     mCount.getAndIncrement();
-                }
-                else if (dupcRate >= h && dupcRate < sh)
-                {
+                } else if (dupcRate >= h && dupcRate < sh) {
                     hCount.getAndIncrement();
-                }
-                else if (dupcRate >= sh)
-                {
+                } else if (dupcRate >= sh) {
                     shCount.getAndIncrement();
                 }
             }
@@ -144,29 +142,22 @@ public class DUPCDataReportBizServiceImpl extends AbstractDataReportBizService
 
 
     @Override
-    public List<LocalDate> getShowDateList(int size, String startTime, String endTime)
-    {
+    public List<LocalDate> getShowDateList(int size, String startTime, String endTime) {
         List<LocalDate> dateList = Lists.newArrayList();
-        if (StringUtils.isEmpty(startTime) && StringUtils.isEmpty(endTime))
-        {
+        if (StringUtils.isEmpty(startTime) && StringUtils.isEmpty(endTime)) {
             // 当前日期
-            if (size == 0)
-            {
+            if (size == 0) {
                 size = 12;
             }
             LocalDate currentDate = LocalDate.now();
             dateList.add(currentDate);
-            for (int i = 0; i < size - 1; i++)
-            {
+            for (int i = 0; i < size - 1; i++) {
                 LocalDate mondayOfWeek = currentDate.minusWeeks(i).with(DayOfWeek.MONDAY);
-                if (!currentDate.equals(mondayOfWeek))
-                {
+                if (!currentDate.equals(mondayOfWeek)) {
                     dateList.add(mondayOfWeek);
                 }
             }
-        }
-        else
-        {
+        } else {
             getWeekDateListByDate(startTime, endTime, dateList);
         }
         return dateList;
@@ -180,8 +171,7 @@ public class DUPCDataReportBizServiceImpl extends AbstractDataReportBizService
      * @return
      */
     private DupcChartTrendListVO getDupcChartTrend(Long taskId, String toolName, int size, String startTime,
-            String endTime)
-    {
+                                                   String endTime) {
         // 趋势图展示的日期 [12周的dupc报表]
         List<LocalDate> dateList = getShowDateList(size, startTime, endTime);
         LocalDate todayDate = LocalDate.now();
@@ -189,27 +179,26 @@ public class DUPCDataReportBizServiceImpl extends AbstractDataReportBizService
 
         // 数据报表日期国际化
         Map<String, GlobalMessage> globalMessageMap = globalMessageUtil.getGlobalMessageMap(GLOBAL_DATA_REPORT_DATE);
-        List<DUPCStatisticEntity> statistic = dupcStatisticRepository.findByTaskIdAndToolNameOrderByTimeDesc(taskId, toolName);
+        List<DUPCStatisticEntity> statistic =
+                dupcStatisticRepository.findByTaskIdAndToolNameOrderByTimeDesc(taskId, toolName,
+                        Sort.by(new Sort.Order(Sort.Direction.DESC, "time")));
 
         // 如果是选择了日期则不需要展示国际化描述
         boolean dateRangeFlag = true;
-        if (StringUtils.isEmpty(startTime) && StringUtils.isEmpty(endTime))
-        {
+        if (StringUtils.isEmpty(startTime) && StringUtils.isEmpty(endTime)) {
             dateRangeFlag = false;
         }
 
         // 平均复杂度列表
         List<DupcChartTrendVO> chartAverageList = new ArrayList<>(dateList.size());
-        for (LocalDate date : dateList)
-        {
+        for (LocalDate date : dateList) {
             DupcChartTrendVO chartTrend = new DupcChartTrendVO();
             chartTrend.setDate(date.toString());
             chartTrend.setTips(setTips(date, todayDate, lastDate, globalMessageMap, dateRangeFlag));
 
             // 没有分析记录，则每个日期的平均复杂度为0
             float dupc = ComConstants.COMMON_NUM_0F;
-            if (CollectionUtils.isNotEmpty(statistic))
-            {
+            if (CollectionUtils.isNotEmpty(statistic)) {
                 // 时间按倒序排序
                 statistic.sort(Comparator.comparing(DUPCStatisticEntity::getTime).reversed());
 
@@ -218,7 +207,7 @@ public class DUPCDataReportBizServiceImpl extends AbstractDataReportBizService
                         .filter(an -> localDate2Millis(date.plusDays(1)) > an.getTime())
                         .findFirst().orElseGet(DUPCStatisticEntity::new);
 
-                if(Objects.nonNull(statisticEntity.getDupRate())){
+                if (Objects.nonNull(statisticEntity.getDupRate())) {
                     dupc = statisticEntity.getDupRate();
                 }
             }
@@ -241,14 +230,11 @@ public class DUPCDataReportBizServiceImpl extends AbstractDataReportBizService
      * @param dupRateStr
      * @return
      */
-    private float convertDupRate2Float(String dupRateStr)
-    {
+    private float convertDupRate2Float(String dupRateStr) {
         float dupRate = 0;
-        if (StringUtils.isNotBlank(dupRateStr))
-        {
+        if (StringUtils.isNotBlank(dupRateStr)) {
             dupRate = Float.valueOf(dupRateStr.substring(0, dupRateStr.length() - 1));
         }
         return dupRate;
     }
-
 }

@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.cluster
 
-import com.tencent.bk.codecc.defect.model.CCNDefectEntity
+import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectOutputModelV2
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -70,5 +70,9 @@ class ClusterCCNCompareProcess : AbstractClusterCompareProcess<CCNDefectEntity>(
 
     override fun getPinpointHashMap(aggregateDefectInputList: List<CCNDefectEntity>): Map<String?, List<CCNDefectEntity>> {
         return aggregateDefectInputList.groupBy { it.pinpointHash }
+    }
+
+    override fun getLineNumList(aggregateDefectInputList: List<CCNDefectEntity>): Set<Int>? {
+        return null
     }
 }

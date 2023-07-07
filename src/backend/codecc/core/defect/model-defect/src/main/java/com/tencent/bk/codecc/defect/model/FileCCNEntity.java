@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 /**
  * 文件圈复杂度列表
@@ -21,6 +22,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @CompoundIndexes({
         @CompoundIndex(name = "taskid_filerelpath_idx", def = "{'task_id': 1, 'file_rel_path': 1}", background = true)
 })
+@Sharded(shardKey = "task_id")
 public class FileCCNEntity extends CommonEntity
 {
     /**

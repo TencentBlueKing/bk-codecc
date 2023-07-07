@@ -26,6 +26,8 @@ public class PipelineTaskVO extends CommonVO
 
     private String cnName;
 
+    private Boolean autoLang;
+
     private List<String> codeLanguages;
 
     private List<PipelineToolVO> tools;

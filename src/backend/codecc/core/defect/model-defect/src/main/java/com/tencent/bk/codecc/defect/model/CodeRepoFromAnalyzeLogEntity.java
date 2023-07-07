@@ -17,6 +17,7 @@ import org.json.JSONObject;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -57,7 +58,8 @@ public class CodeRepoFromAnalyzeLogEntity
     public static class CodeRepo
     {
         private String buildId;
-
+        
+        @Indexed(background = true)
         private String url;
 
         private String branch;

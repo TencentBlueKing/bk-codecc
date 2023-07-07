@@ -26,25 +26,33 @@
 
 package com.tencent.bk.codecc.defect.utils;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.tencent.bk.codecc.defect.api.ServiceReportTaskLogRestResource;
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
 import com.tencent.bk.codecc.task.api.ServiceBaseDataResource;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
-import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
+import com.tencent.devops.common.api.BaseDataVO;
+import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.RiskFactor;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import java.util.AbstractMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * 外部服务公共调度器
@@ -57,6 +65,33 @@ import java.util.stream.Collectors;
 public class ThirdPartySystemCaller {
     @Autowired
     private Client client;
+
+    private LoadingCache<RiskFactor, Entry<Integer, Integer>> ccnRiskFactorCache = CacheBuilder.newBuilder()
+            .expireAfterWrite(10, TimeUnit.MINUTES).build(
+                    new CacheLoader<RiskFactor, Entry<Integer, Integer>>() {
+                        @Override
+                        public Map.Entry<Integer, Integer> load(@NotNull ComConstants.RiskFactor riskFactor) {
+                            Map<String, String> riskFactorMap = getRiskFactorConfig(ComConstants.Tool.CCN.name());
+
+                            int sh = Integer.parseInt(riskFactorMap.get(ComConstants.RiskFactor.SH.name()));
+                            int h = Integer.parseInt(riskFactorMap.get(ComConstants.RiskFactor.H.name()));
+                            int m = Integer.parseInt(riskFactorMap.get(ComConstants.RiskFactor.M.name()));
+
+                            switch (riskFactor) {
+                                case SH:
+                                    return new AbstractMap.SimpleEntry<>(sh, null);
+                                case H:
+                                    return new AbstractMap.SimpleEntry<>(h, sh);
+                                case M:
+                                    return new AbstractMap.SimpleEntry<>(m, h);
+                                case L:
+                                    return new AbstractMap.SimpleEntry<>(null, m);
+                                default:
+                                    return new AbstractMap.SimpleEntry<>(null, null);
+                            }
+                        }
+                    }
+            );
 
     /**
      * 调用task模块的接口获取任务信息
@@ -147,4 +182,37 @@ public class ThirdPartySystemCaller {
         return taskInfoResult.getData();
     }
 
+    /**
+     * 根据任务id批量获取project id
+     */
+    public Map<Long, String> getTaskProjectIdMap(Set<Long> taskIdSet) {
+        QueryTaskListReqVO reqVO = new QueryTaskListReqVO();
+        reqVO.setTaskIds(taskIdSet);
+        Result<Map<Long, String>> result = client.get(ServiceTaskRestResource.class).getProjectIdMapByTaskId(reqVO);
+        if (result.isNotOk() || result.getData() == null) {
+            log.error("getTaskProjectIdMap fail!");
+            throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
+        }
+        return result.getData();
+    }
+
+    /**
+     * 获取指定工具已下架的任务id
+     * @param toolSet 工具名集合
+     * @return map
+     */
+    public Map<String, Set<Long>> getToolTaskIdMap(Set<String> toolSet) {
+        Result<Map<String, Set<Long>>> result =
+                client.get(ServiceTaskRestResource.class).queryTaskIdByWithdrawTool(toolSet);
+        if (result.isNotOk() || result.getData() == null) {
+            log.error("getToolTaskIdMap fail! toolSet: {}", toolSet);
+            throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
+        }
+        return result.getData();
+    }
+
+    public Map.Entry<Integer, Integer> getCCNRiskFactorConfig(ComConstants.RiskFactor riskFactor) {
+        //获取风险系数值
+        return ccnRiskFactorCache.getUnchecked(riskFactor);
+    }
 }

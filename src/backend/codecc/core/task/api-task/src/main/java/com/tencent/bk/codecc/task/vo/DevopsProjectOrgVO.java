@@ -29,8 +29,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @ApiModel("持续集成项目组织架构视图")
-public class DevopsProjectOrgVO
-{
+public class DevopsProjectOrgVO {
     @ApiModelProperty("事业群ID")
     private Integer bgId;
 

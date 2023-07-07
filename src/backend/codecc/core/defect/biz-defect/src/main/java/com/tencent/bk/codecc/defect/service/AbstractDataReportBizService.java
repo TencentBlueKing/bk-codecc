@@ -56,6 +56,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class AbstractDataReportBizService implements IDataReportBizService
 {
     private static Logger logger = LoggerFactory.getLogger(AbstractDataReportBizService.class);
+    private static final ZoneOffset DEFAULT_ZONE_OFFSET = OffsetDateTime.now().getOffset();
 
     public abstract List<LocalDate> getShowDateList(int size, String startTime, String endTime);
 
@@ -245,20 +246,24 @@ public abstract class AbstractDataReportBizService implements IDataReportBizServ
      * @param moment
      * @return
      */
-    protected int moment2DateDiff(long moment){
+    protected int moment2DateDiff(long moment) {
         int result;
-        long temp = moment - getTina();
-        result = (int)(temp/(24*3600));
-        if(temp<0) result = result-1;
+        long temp = moment - getTinaV2();
+        result = (int) (temp / (24 * 3600));
+        if (temp < 0) {
+            result = result - 1;
+        }
         return result;
     }
 
-
     /**
      * 获得今天0点的秒数
+     * 注：优先使用V2版本，性能好太多
+     *
      * @return
      */
-    private long getTina(){
+    @Deprecated
+    private long getTina() {
         String today = getDatebyDiff(0);
         String todayZero = today + " 00:00:00";
         long tina = getTimeStamp(todayZero);
@@ -266,6 +271,15 @@ public abstract class AbstractDataReportBizService implements IDataReportBizServ
         return tina;
     }
 
+    /**
+     * 获得今天0点的秒数
+     *
+     * @return
+     */
+    private long getTinaV2() {
+        return LocalDateTime.of(LocalDate.now(), LocalTime.of(0, 0, 0))
+                .toEpochSecond(DEFAULT_ZONE_OFFSET);
+    }
 
     /**
      * 从一个具体时间，比如2016-12-12 23:23:15，获得秒数
@@ -405,5 +419,4 @@ public abstract class AbstractDataReportBizService implements IDataReportBizServ
             endDate = endDate.minusDays(1);
         }
     }
-
 }

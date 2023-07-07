@@ -33,4 +33,12 @@ public interface ToolBuildStackRepository extends MongoRepository<ToolBuildStack
      * @return
      */
     List<ToolBuildStackEntity> findByTaskIdAndToolNameInAndBuildId(long taskId, List<String> toolNames, String buildId);
+
+    /**
+     * 根据任务ID和构建ID查询
+     *
+     * @param taskId
+     * @param buildId
+     */
+    List<ToolBuildStackEntity> findByTaskIdAndBuildId(long taskId, String buildId);
 }

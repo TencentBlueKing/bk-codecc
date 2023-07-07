@@ -27,14 +27,23 @@
 package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.bk.codecc.defect.vo.OperationHistoryVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
+
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TASK_ID;
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
 
 /**
  * 操作记录接口
@@ -60,5 +69,16 @@ public interface UserOperHisRestResource
                     String toolName,
             @ApiParam("功能id清单")
                     List<String> funcId
+    );
+
+    @ApiOperation("设置codeCC任务用户权限操作记录")
+    @Path("/settings/authority")
+    @POST
+    Result<Boolean> settingsAuthorityOperationHistory(
+            @ApiParam("触发参数") List<String> reqVOList,
+            @ApiParam(value = "用户", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String userId,
+            @ApiParam(value = "任务ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID) long taskId
     );
 }

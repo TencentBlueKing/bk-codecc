@@ -2,20 +2,17 @@ package com.tencent.bk.codecc.codeccjob.service.impl
 
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
 import com.tencent.devops.common.api.QueryTaskListReqVO
-import com.tencent.devops.common.auth.api.external.AuthTaskService
 import com.tencent.devops.common.auth.api.pojo.external.KEY_CREATE_FROM
 import com.tencent.devops.common.auth.api.pojo.external.KEY_PIPELINE_ID
 import com.tencent.devops.common.auth.api.pojo.external.PREFIX_TASK_INFO
+import com.tencent.devops.common.auth.api.service.AuthTaskService
 import com.tencent.devops.common.client.Client
-import com.tencent.devops.common.pojo.GongfengBaseInfo
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.context.annotation.Primary
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 
 @Component
-@Primary
 class JobAuthTaskServiceImpl @Autowired constructor(
         private val client: Client,
         private val redisTemplate: RedisTemplate<String, String>
@@ -39,12 +36,7 @@ class JobAuthTaskServiceImpl @Autowired constructor(
             }
 
         }
-        return createFrom  ?: ""
-    }
-
-    override fun getGongfengProjInfo(taskId: Long): GongfengBaseInfo? {
-        // TODO("Not yet implemented")
-        return null
+        return createFrom ?: ""
     }
 
 
@@ -65,18 +57,18 @@ class JobAuthTaskServiceImpl @Autowired constructor(
                 }
             }
         }
-        return pipelineId  ?: ""
+        return pipelineId ?: ""
     }
 
-    override fun getGongfengCIProjInfo(gongfengId: Int): GongfengBaseInfo? {
-        // TODO("Not yet implemented")
-        return null
+    override fun getTaskBgId(taskId: Long): String {
+        return "-1"
     }
 
     override fun queryPipelineListForUser(user: String, projectId: String, actions: Set<String>): Set<String> {
         val request = QueryTaskListReqVO()
         request.projectId = projectId
-        return client.get(ServiceTaskRestResource::class.java).batchGetTaskList(request).data?.map { it.pipelineId }?.toSet()
+        return client.get(ServiceTaskRestResource::class.java)
+                .batchGetTaskList(request).data?.map { it.pipelineId }?.toSet()
             ?: setOf()
     }
 
@@ -84,7 +76,8 @@ class JobAuthTaskServiceImpl @Autowired constructor(
         val request = QueryTaskListReqVO()
         request.projectId = projectId
         request.userId = user
-        return client.get(ServiceTaskRestResource::class.java).batchGetTaskList(request).data?.map { it.pipelineId }?.toSet()
+        return client.get(ServiceTaskRestResource::class.java)
+                .batchGetTaskList(request).data?.map { it.pipelineId }?.toSet()
             ?: setOf()
     }
 
@@ -92,13 +85,14 @@ class JobAuthTaskServiceImpl @Autowired constructor(
         val request = QueryTaskListReqVO()
         request.projectId = projectId
         return client.get(ServiceTaskRestResource::class.java)
-            .batchGetTaskList(request).data?.map { it.pipelineId }?.toSet() ?: setOf()
+                .batchGetTaskList(request).data?.map { it.pipelineId }?.toSet() ?: setOf()
     }
 
     override fun queryTaskListForUser(user: String, projectId: String, actions: Set<String>): Set<String> {
         val request = QueryTaskListReqVO()
         request.projectId = projectId
-        return client.get(ServiceTaskRestResource::class.java).batchGetTaskList(request).data?.map { it.taskId.toString() }?.toSet()
+        return client.get(ServiceTaskRestResource::class.java)
+                .batchGetTaskList(request).data?.map { it.taskId.toString() }?.toSet()
             ?: setOf()
     }
 
@@ -106,17 +100,19 @@ class JobAuthTaskServiceImpl @Autowired constructor(
         val result = mutableListOf<String>()
         val request = QueryTaskListReqVO()
         request.projectId = projectId
-        client.get(ServiceTaskRestResource::class.java).batchGetTaskList(request).data?.forEach { result.addAll(it.taskOwner) }
+        client.get(ServiceTaskRestResource::class.java)
+                .batchGetTaskList(request).data?.forEach { result.addAll(it.taskOwner) }
         return result
     }
 
     override fun queryTaskListByPipelineIds(pipelineIds: Set<String>): Set<String> {
-        return client.get(ServiceTaskRestResource::class.java).queryTaskListByPipelineIds(pipelineIds).data ?: setOf()
+        return client.get(ServiceTaskRestResource::class.java)
+                .queryTaskListByPipelineIds(pipelineIds).data ?: setOf()
     }
 
     override fun queryPipelineIdsByTaskIds(taskIds: Set<Long>): Set<String> {
         return client.get(ServiceTaskRestResource::class.java).getTaskInfosByIds(taskIds.toList()).data
-            ?.filter { it != null && !it.pipelineId.isNullOrEmpty() }?.map { it.pipelineId }?.toSet() ?: emptySet()
+                ?.filter { it != null && !it.pipelineId.isNullOrEmpty() }?.map { it.pipelineId }?.toSet() ?: emptySet()
     }
 
     companion object {

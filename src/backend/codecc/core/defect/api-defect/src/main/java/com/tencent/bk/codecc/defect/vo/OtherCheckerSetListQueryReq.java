@@ -3,10 +3,9 @@ package com.tencent.bk.codecc.defect.vo;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetCategory;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetSource;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Set;
 import lombok.Data;
 import org.springframework.data.domain.Sort;
-
-import java.util.Set;
 
 /**
  * 描述
@@ -15,8 +14,8 @@ import java.util.Set;
  * @date 2020/2/25
  */
 @Data
-public class OtherCheckerSetListQueryReq
-{
+public class OtherCheckerSetListQueryReq {
+
     @ApiModelProperty("关键字")
     private String keyWord;
 

@@ -28,7 +28,9 @@ package com.tencent.bk.codecc.defect.vo;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 告警提交的请求体
@@ -38,8 +40,10 @@ import lombok.Data;
  */
 @Data
 @ApiModel("告警提交的请求体")
-public class CommitDefectVO
-{
+@AllArgsConstructor
+@NoArgsConstructor
+public class CommitDefectVO {
+
     @ApiModelProperty(value = "任务ID", required = true)
     private long taskId;
 
@@ -60,4 +64,14 @@ public class CommitDefectVO
 
     @ApiModelProperty(value = "创建来源")
     private String createFrom;
+
+    @ApiModelProperty(value = "重新提交次数")
+    private Integer recommitTimes;
+
+    @ApiModelProperty("告警文件大小，用于MQ投递决策")
+    private Long defectFileSize;
+
+    @ApiModelProperty("是否重新分配")
+    private boolean isReallocate;
+
 }

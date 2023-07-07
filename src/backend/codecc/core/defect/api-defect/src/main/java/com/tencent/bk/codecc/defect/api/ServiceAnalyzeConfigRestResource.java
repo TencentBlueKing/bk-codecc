@@ -27,13 +27,14 @@
 package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
-import com.tencent.bk.codecc.task.vo.pipeline.PipelineBuildInfoVO;
 import com.tencent.devops.common.api.annotation.ServiceInterface;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 /**
@@ -47,8 +48,7 @@ import javax.ws.rs.core.MediaType;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @ServiceInterface(value = "report")
-public interface ServiceAnalyzeConfigRestResource
-{
+public interface ServiceAnalyzeConfigRestResource {
     @ApiOperation("查询任务的规则配置")
     @Path("/task/checkers")
     @POST

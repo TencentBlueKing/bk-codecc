@@ -12,12 +12,19 @@
  
 package com.tencent.bk.codecc.task.dao.mongotemplate;
 
+import com.google.common.collect.Lists;
+import com.mongodb.BasicDBObject;
 import com.tencent.bk.codecc.task.model.GrayToolProjectEntity;
+import com.tencent.bk.codecc.task.vo.GrayToolProjectReqVO;
 import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.BasicQuery;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -25,6 +32,7 @@ import org.springframework.data.repository.support.PageableExecutionUtils;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 
 /**
@@ -61,38 +69,76 @@ public class GrayToolProjectDao
 
     /**
      * 分页查询灰度项目列表
+     *
      * @param reqVO
      * @param pageable
      */
-    public Page<GrayToolProjectEntity> findGrayToolPage(GrayToolProjectVO reqVO, Pageable pageable) {
-        Query query = new Query();
+    public Page<GrayToolProjectEntity> findGrayToolPage(GrayToolProjectReqVO reqVO, Pageable pageable) {
 
+        Criteria criteria = new Criteria();
+        List<Criteria> criteriaList = Lists.newArrayList();
+
+        // 项目id
         String projectId = reqVO.getProjectId();
-        if (projectId != null && ! projectId.isEmpty()) {
-            query.addCriteria(Criteria.where("project_id").in(projectId));
+        if (StringUtils.isNotEmpty(projectId)) {
+            criteriaList.add(Criteria.where("project_id").is(projectId));
         }
-
+        // 创建人
         String createBy = reqVO.getCreatedBy();
-        if (createBy != null && ! createBy.isEmpty()) {
-            query.addCriteria(Criteria.where("created_by").in(createBy));
+        if (StringUtils.isNotEmpty(createBy)) {
+            criteriaList.add(Criteria.where("created_by").is(createBy));
+        }
+        // 更新人
+        String updateBy = reqVO.getUpdatedBy();
+        if (StringUtils.isNotEmpty(updateBy)) {
+            criteriaList.add(Criteria.where("updated_by").is(updateBy));
         }
 
-        String updateBy = reqVO.getUpdatedBy();
-        if (updateBy != null && ! updateBy.isEmpty()) {
-            query.addCriteria(Criteria.where("updated_by").in(updateBy));
+        // 筛除机器创建项目-GRAY_TASK_POOL_*开头的项目(0:筛除 1:不筛除)
+        Integer hasRobotTaskBool = reqVO.getHasRobotTaskBool();
+        if (hasRobotTaskBool == 0) {
+            criteriaList.add(Criteria.where("project_id").regex("^(?!GRAY_TASK_POOL_)"));
         }
+
+        // 灰度状态
+        if (reqVO.getStatus() != null) {
+            criteriaList.add(Criteria.where("status").is(reqVO.getStatus()));
+        }
+
+        // 是否 开源治理项目
+        if (reqVO.getOpenSourceProject() != null) {
+            criteriaList.add(Criteria.where("is_open_source").is(reqVO.getOpenSourceProject()));
+        }
+
+        if (CollectionUtils.isNotEmpty(criteriaList)) {
+            criteria.andOperator(criteriaList.toArray(new Criteria[0]));
+        }
+
+        Query query = new Query();
+        query.addCriteria(criteria);
 
         if (pageable != null) {
             query.with(pageable);
         }
 
-        List<GrayToolProjectEntity> grayToolProjectEntityList = mongoTemplate.find(query,
-                                                                GrayToolProjectEntity.class, "t_gray_tool_project");
+        List<GrayToolProjectEntity> grayToolProjectEntityList =
+                mongoTemplate.find(query, GrayToolProjectEntity.class, "t_gray_tool_project");
 
-        return PageableExecutionUtils.getPage(
-                grayToolProjectEntityList,
-                pageable,
+        return PageableExecutionUtils.getPage(grayToolProjectEntityList, pageable,
                 () -> mongoTemplate.count(query.limit(-1).skip(-1), GrayToolProjectEntity.class));
     }
 
+    /**
+     * 获取灰度项目ID列表
+     *
+     * @return list
+     */
+    public List<GrayToolProjectEntity> findAllGrayProjectIdSet() {
+        Document fieldsObj = new Document();
+        fieldsObj.put("project_id", true);
+        Query query = new BasicQuery(new Document(), fieldsObj);
+        // 仅筛选所有灰度任务池的项目id
+        query.addCriteria(Criteria.where("project_id").regex("^GRAY_TASK_POOL_"));
+        return mongoTemplate.find(query, GrayToolProjectEntity.class, "t_gray_tool_project");
+    }
 }

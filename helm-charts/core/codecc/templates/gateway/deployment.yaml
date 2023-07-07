@@ -1,8 +1,9 @@
+{{- if .Values.gateway.enabled -}}
 apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
 kind: Deployment
 metadata:
   name: {{ include "common.names.fullname" . }}-gateway
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
+  labels: {{- include "codecc.labels.standard" . | nindent 4 }}
     app.kubernetes.io/component: gateway
     {{- if .Values.commonLabels }}
       {{- include "common.tplvalues.render" (dict "value" .Values.commonLabels "context" $) | nindent 4 }}
@@ -12,12 +13,12 @@ metadata:
   {{- end }}
 spec:
   selector:
-    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+    matchLabels: {{- include "codecc.labels.matchLabels" . | nindent 6 }}
       app.kubernetes.io/component: gateway
   replicas: {{ default 1 .Values.gateway.replicaCount }}
   template:
     metadata:
-      labels: {{- include "common.labels.standard" . | nindent 8 }}
+      labels: {{- include "codecc.labels.standard" . | nindent 8 }}
         app.kubernetes.io/component: gateway
         {{- if .Values.gateway.podLabels }}
         {{- include "common.tplvalues.render" (dict "value" .Values.gateway.podLabels "context" $) | nindent 8 }}
@@ -73,7 +74,7 @@ spec:
               value: "127.0.0.1"
             - name: BK_CODECC_CONSUL_DOMAIN
               value: "bkdevops"
-            - name: BK_CODECC_CONSUL_DISCOVERY_TAG
+            - name: bkCodeccConsulDiscoveryTag
               value: "dev"
             - name: BK_CI_ENV
               value: {{ .Values.config.bkCiEnv }}
@@ -101,3 +102,4 @@ spec:
             - name: http
               containerPort: 80
               protocol: TCP
+{{- end }}

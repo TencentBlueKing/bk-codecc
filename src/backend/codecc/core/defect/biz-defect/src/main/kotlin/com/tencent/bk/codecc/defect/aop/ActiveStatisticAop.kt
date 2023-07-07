@@ -12,16 +12,14 @@
 
 package com.tencent.bk.codecc.defect.aop
 
-import com.tencent.bk.codecc.defect.model.CLOCStatisticEntity
+import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity
 import com.tencent.bk.codecc.defect.service.statistic.ActiveStatisticService
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO
-import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.util.ThreadPoolUtil
 import org.aspectj.lang.annotation.After
 import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.annotation.Before
 import org.aspectj.lang.annotation.Pointcut
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 

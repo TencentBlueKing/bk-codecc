@@ -26,23 +26,33 @@
 
 package com.tencent.bk.codecc.defect.service.impl;
 
+import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_DATA_REPORT_DATE;
+
 import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.LintStatisticRepository;
-import com.tencent.bk.codecc.defect.model.LintDefectV2Entity;
-import com.tencent.bk.codecc.defect.model.LintStatisticEntity;
+import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
+import com.tencent.bk.codecc.defect.model.statistic.LintStatisticEntity;
 import com.tencent.bk.codecc.defect.service.AbstractDataReportBizService;
-import com.tencent.bk.codecc.defect.service.newdefectjudge.NewDefectJudgeService;
 import com.tencent.bk.codecc.defect.vo.ChartLegacyListVO;
 import com.tencent.bk.codecc.defect.vo.ChartLegacyVO;
 import com.tencent.bk.codecc.defect.vo.LintChartAuthorListVO;
 import com.tencent.bk.codecc.defect.vo.LintDataReportRspVO;
 import com.tencent.bk.codecc.defect.vo.common.CommonDataReportRspVO;
+import com.tencent.bk.codecc.defect.vo.report.ChartAuthorBaseVO;
 import com.tencent.bk.codecc.defect.vo.report.ChartAuthorListVO;
 import com.tencent.bk.codecc.defect.vo.report.CommonChartAuthorVO;
 import com.tencent.devops.common.api.pojo.GlobalMessage;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.util.DateTimeUtils;
+import com.tencent.devops.common.util.IterableUtils;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -51,17 +61,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_DATA_REPORT_DATE;
 
 /**
  * Lint类工具的数据报表实现
@@ -77,8 +76,6 @@ public class LintDataReportBizServiceImpl extends AbstractDataReportBizService {
     private LintDefectV2Repository lintDefectV2Repository;
     @Autowired
     private LintStatisticRepository lintStatisticRepository;
-    @Autowired
-    private NewDefectJudgeService newDefectJudgeService;
 
     /**
      * lint类数据报表
@@ -88,7 +85,8 @@ public class LintDataReportBizServiceImpl extends AbstractDataReportBizService {
      * @return
      */
     @Override
-    public CommonDataReportRspVO getDataReport(Long taskId, String toolName, int size, String startTime, String endTime) {
+    public CommonDataReportRspVO getDataReport(Long taskId, String toolName, int size, String startTime,
+            String endTime) {
         // 检查日期有效性
         DateTimeUtils.checkDateValidity(startTime, endTime);
 
@@ -96,15 +94,12 @@ public class LintDataReportBizServiceImpl extends AbstractDataReportBizService {
         lintDataReportRes.setTaskId(taskId);
         lintDataReportRes.setToolName(toolName);
 
-        // 查询新老告警判定时间
-        long newDefectJudgeTime = newDefectJudgeService.getNewDefectJudgeTime(taskId, toolName, null);
-
         // 告警作者分布列表
         LintChartAuthorListVO lintChartAuthorListVO = new LintChartAuthorListVO();
         LintStatisticEntity curStatistic = new LintStatisticEntity();
 
         // 分页的统计当前遗留告警及各个作者的告警数
-        pagingStatisticDefect(taskId, toolName, newDefectJudgeTime, curStatistic, lintChartAuthorListVO);
+        pagingStatisticDefect(taskId, toolName, curStatistic, lintChartAuthorListVO);
 
         // 获取告警遗留分布列表
         lintDataReportRes.setChartLegacys(getChartLegacyList(taskId, toolName, size, startTime, endTime, curStatistic));
@@ -119,19 +114,20 @@ public class LintDataReportBizServiceImpl extends AbstractDataReportBizService {
      *
      * @param taskId
      * @param toolName
-     * @param newDefectJudgeTime
      * @param lintChartAuthorListVO
      */
-    protected void pagingStatisticDefect(Long taskId, String toolName, long newDefectJudgeTime,
-                                         LintStatisticEntity curStatistic,
-                                         LintChartAuthorListVO lintChartAuthorListVO) {
+    protected void pagingStatisticDefect(Long taskId, String toolName, LintStatisticEntity curStatistic,
+            LintChartAuthorListVO lintChartAuthorListVO) {
         // 新告警
-        ChartAuthorListVO newAuthorList = new ChartAuthorListVO();
+        final ChartAuthorListVO newAuthorList = new ChartAuthorListVO();
         // 历史告警
-        ChartAuthorListVO historyAuthorList = new ChartAuthorListVO();
+        final ChartAuthorListVO historyAuthorList = new ChartAuthorListVO();
+        // 总告警
+        final ChartAuthorListVO authorList = new ChartAuthorListVO();
 
         Map<String, CommonChartAuthorVO> newChartAuthorMap = new HashMap<>();
         Map<String, CommonChartAuthorVO> historyChartAuthorMap = new HashMap<>();
+        Map<String, CommonChartAuthorVO> chartAuthorMap = new HashMap<>();
 
         int pageNum = 0;
         int pageSize = 100000;
@@ -144,25 +140,20 @@ public class LintDataReportBizServiceImpl extends AbstractDataReportBizService {
             totalPage = defectPage.getTotalPages();
 
             // 超过100W告警则不继续统计
-            if (totalPage > 10){
+            if (totalPage > 10) {
                 log.info("defect is too much to statistic, taskId:{}, toolName:{}, totalDefect: {}",
                         taskId, toolName, defectPage);
                 return;
             }
             defectPage.forEach(defect -> {
-                // 判断是新告警还是历史告警
-                long defectCreateTime = DateTimeUtils.getThirteenTimestamp(defect.getLineUpdateTime());
-                if (defectCreateTime >= newDefectJudgeTime) {
-                    curStatistic.setNewDefectCount(
-                            (curStatistic.getNewDefectCount() == null ? 0 : curStatistic.getNewDefectCount()) + 1);
+                curStatistic.setDefectCount(
+                        (curStatistic.getDefectCount() == null ? 0 : curStatistic.getDefectCount()) + 1);
+                calculateAuthorDefectCount(chartAuthorMap, defect);
 
-                    calculateAuthorDefectCount(newChartAuthorMap, defect);
-                } else {
-                    curStatistic.setHistoryDefectCount((curStatistic.getHistoryDefectCount() == null
-                            ? 0 : curStatistic.getHistoryDefectCount()) + 1);
+                curStatistic.setNewDefectCount(
+                        (curStatistic.getNewDefectCount() == null ? 0 : curStatistic.getNewDefectCount()) + 1);
 
-                    calculateAuthorDefectCount(historyChartAuthorMap, defect);
-                }
+                calculateAuthorDefectCount(newChartAuthorMap, defect);
             });
 
             pageNum++;
@@ -170,15 +161,20 @@ public class LintDataReportBizServiceImpl extends AbstractDataReportBizService {
         while (pageNum < totalPage);
 
         newAuthorList.setAuthorList(new ArrayList<>(newChartAuthorMap.values()));
-        historyAuthorList.setAuthorList(new ArrayList<>(historyChartAuthorMap.values()));
+        List<ChartAuthorBaseVO> authorVoList = new ArrayList<>(historyChartAuthorMap.values());
+        authorVoList.sort(Comparator.comparingInt(ChartAuthorBaseVO::getTotal));
+        historyAuthorList.setAuthorList(authorVoList);
+        authorList.setAuthorList(new ArrayList<>(chartAuthorMap.values()));
 
         curStatistic.setTime(System.currentTimeMillis());
 
         // 统计总数
         super.setTotalChartAuthor(newAuthorList);
         super.setTotalChartAuthor(historyAuthorList);
+        super.setTotalChartAuthor(authorList);
         lintChartAuthorListVO.setNewAuthorList(newAuthorList);
         lintChartAuthorListVO.setHistoryAuthorList(historyAuthorList);
+        lintChartAuthorListVO.setAuthorList(authorList);
     }
 
     /**
@@ -193,9 +189,9 @@ public class LintDataReportBizServiceImpl extends AbstractDataReportBizService {
      * @return
      */
     private ChartLegacyListVO getChartLegacyList(long taskId, String toolName, int size, String startTime,
-                                                 String endTime, LintStatisticEntity curStatistic) {
+            String endTime, LintStatisticEntity curStatistic) {
         // 获取lint分析记录数据
-        List<LintStatisticEntity> lintStatisticList = lintStatisticRepository.findByTaskIdAndToolNameOrderByTimeDesc(taskId, toolName);
+        List<LintStatisticEntity> lintStatisticList = lintStatisticRepository.findByTaskIdAndToolName(taskId, toolName);
         if (CollectionUtils.isNotEmpty(lintStatisticList)) {
             // 获取遗留告警统计作为当前最新的统计
             lintStatisticList.add(curStatistic);
@@ -250,6 +246,7 @@ public class LintDataReportBizServiceImpl extends AbstractDataReportBizService {
                 if (Objects.nonNull(statisticEntity.getHistoryDefectCount())) {
                     chartLegacy.setHistoryCount(statisticEntity.getHistoryDefectCount());
                 }
+                chartLegacy.setCount(chartLegacy.getNewCount() + chartLegacy.getHistoryCount());
             }
             legacyList.add(chartLegacy);
         }
@@ -265,8 +262,14 @@ public class LintDataReportBizServiceImpl extends AbstractDataReportBizService {
         return result;
     }
 
-    private void calculateAuthorDefectCount(Map<String, CommonChartAuthorVO> chartAuthorMap, LintDefectV2Entity defect) {
-        String author = StringUtils.isEmpty(defect.getAuthor()) ? "No Author" : defect.getAuthor();
+    private void calculateAuthorDefectCount(
+            Map<String, CommonChartAuthorVO> chartAuthorMap,
+            LintDefectV2Entity defect
+    ) {
+        String defaultAuthor = "No Author";
+        String author = CollectionUtils.isEmpty(defect.getAuthor()) ? defaultAuthor
+                : IterableUtils.getFirst(defect.getAuthor(), defaultAuthor);
+
         CommonChartAuthorVO authorVO = chartAuthorMap.get(author);
         if (authorVO == null) {
             authorVO = new CommonChartAuthorVO();
@@ -283,6 +286,7 @@ public class LintDataReportBizServiceImpl extends AbstractDataReportBizService {
                 authorVO.setNormal(authorVO.getNormal() + 1);
                 break;
             case ComConstants.PROMPT_IN_DB:
+            case ComConstants.PROMPT:
                 authorVO.setPrompt(authorVO.getPrompt() + 1);
                 break;
             default:

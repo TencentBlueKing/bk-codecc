@@ -27,10 +27,12 @@
 package com.tencent.bk.codecc.task.api;
 
 import com.tencent.devops.common.api.RefreshDockerImageHashReqVO;
+import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -38,6 +40,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 /**
@@ -73,8 +76,39 @@ public interface ServiceToolMetaRestResource {
                     String toolName
     );
 
+
+    @ApiOperation("获取工具元数据")
+    @Path("/tool/pattern/{pattern}")
+    @GET
+    Result<List<ToolMetaDetailVO>> getToolByPattern(
+            @PathParam("pattern")
+            String pattern
+    );
+
+    @ApiOperation("获取工具元数据")
+    @Path("/tool/allTools")
+    @GET
+    Result<List<ToolMetaDetailVO>> getAllTools();
+
     @ApiOperation("刷新工具docker镜像的hash值")
     @Path("/dockerImageHash")
     @POST
     Result<Boolean> refreshDockerImageHash(RefreshDockerImageHashReqVO refreshDockerImageHashReqVO);
+
+    @ApiOperation("查询工具列表")
+    @Path("/toolList")
+    @GET
+    Result<List<ToolMetaBaseVO>> toolList(
+            @ApiParam(value = "是否查询详细信息")
+            @QueryParam("isDetail")
+            Boolean isDetail
+    );
+
+    @ApiOperation("通过工具名称查询工具元数据")
+    @Path("/listTools")
+    @POST
+    Result<List<ToolMetaDetailVO>> queryToolMetaDataByToolName(
+            @ApiParam(value = "工具名称列表", required = true)
+            List<String> toolNameList
+    );
 }

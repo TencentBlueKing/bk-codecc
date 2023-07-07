@@ -27,7 +27,7 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.tencent.bk.codecc.defect.dao.mongorepository.DefectRepository;
-import com.tencent.bk.codecc.defect.model.DefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.defect.service.AbstractTreeService;
 import com.tencent.devops.common.constant.ComConstants;
 import org.apache.commons.collections.CollectionUtils;
@@ -55,15 +55,16 @@ public class CommonTreeServiceImpl extends AbstractTreeService
     @Override
     public Set<String> getDefectPaths(Long taskId, String toolName)
     {
-        List<DefectEntity> defectEntityList = defectRepository.findByTaskIdAndToolNameAndStatus(taskId, toolName, ComConstants.DefectStatus.NEW.value());
+        List<CommonDefectEntity> commonDefectEntityList = defectRepository.findByTaskIdAndToolNameAndStatus(
+                taskId, toolName, ComConstants.DefectStatus.NEW.value());
 
         Set<String> defectPaths = new TreeSet<>();
-        if (CollectionUtils.isNotEmpty(defectEntityList))
+        if (CollectionUtils.isNotEmpty(commonDefectEntityList))
         {
             Map<String, String> codeRepoUrlMap = getRelatePathMap(taskId);
-            defectEntityList.forEach(defectEntity ->
+            commonDefectEntityList.forEach(defectEntity ->
             {
-                String filePathname = trimWinPathPrefix(defectEntity.getFilePathname());
+                String filePathname = trimWinPathPrefix(defectEntity.getFilePath());
                 String codeFileUrl = codeRepoUrlMap.get(filePathname.toLowerCase());
 
                 if (StringUtils.isEmpty(codeFileUrl))

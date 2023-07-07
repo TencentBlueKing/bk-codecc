@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 工具构建运行时栈表，每次启动分析是生成
@@ -59,4 +60,23 @@ public class ToolBuildStackEntity extends CommonEntity
      */
     @Field("delete_files")
     private List<String> deleteFiles;
+
+
+    /**
+     * 根路径列表
+     */
+    @Field("root_paths")
+    private Set<String> rootPaths;
+
+    /**
+     * 增量扫描起始时间，WOODPECKER_COMMITSCAN
+     */
+    @Field("commit_since")
+    private Long commitSince;
+
+    /**
+     * 备注说明
+     */
+    @Field("remark")
+    private String remark;
 }

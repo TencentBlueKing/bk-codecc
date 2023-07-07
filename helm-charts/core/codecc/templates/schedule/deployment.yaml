@@ -3,7 +3,7 @@ apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
 kind: Deployment
 metadata:
   name: {{ include "common.names.fullname" . }}-schedule
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
+  labels: {{- include "codecc.labels.standard" . | nindent 4 }}
     app.kubernetes.io/name: schedule
     app.kubernetes.io/component: microservice
     {{- if .Values.commonLabels }}
@@ -14,13 +14,13 @@ metadata:
   {{- end }}
 spec:
   selector:
-    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+    matchLabels: {{- include "codecc.labels.matchLabels" . | nindent 6 }}
       app.kubernetes.io/name: schedule
       app.kubernetes.io/component: microservice
   replicas: {{ default 1 .Values.schedule.replicaCount }}
   template:
     metadata:
-      labels: {{- include "common.labels.standard" . | nindent 8 }}
+      labels: {{- include "codecc.labels.standard" . | nindent 8 }}
         app.kubernetes.io/name: schedule
         app.kubernetes.io/component: microservice
         {{- if .Values.schedule.podLabels }}
@@ -52,6 +52,7 @@ spec:
       {{- if .Values.schedule.podSecurityContext.enabled }}
       securityContext: {{- omit .Values.schedule.podSecurityContext "enabled" | toYaml | nindent 8 }}
       {{- end }}
+      {{- if .Values.init.storage.enabled }}
       initContainers:
         - name: storage
           image: {{ include "common.images.image" ( dict "imageRoot" .Values.init.storage.image "global" .Values.global) }}
@@ -70,13 +71,13 @@ spec:
             - name: BK_CODECC_STORAGE_BKREPO_PASSWORD
               value: {{ .Values.config.bkCodeccStorageBkrepoPassword }}
             - name: BK_CODECC_STORAGE_BKREPO_PROJECT
-              value: {{ .Values.config.bkCodeccStorageBkrepoProject }}
-            - name: BK_CODECC_STORAGE_BKREPO_REPO
               value: {{ .Values.config.bkCodeccStorageBkrepoRepo }}
-            - name: BK_CODECC_STORAGE_BKREPO_HOST
+            - name: BK_CODECC_STORAGE_BKREPO_REPO
               value: {{ .Values.config.bkCodeccStorageBkrepoHost }}
-            - name: BK_CODECC_STORAGE_BKREPO_SCHEMA
+            - name: BK_CODECC_STORAGE_BKREPO_HOST
               value: {{ .Values.config.bkCodeccStorageBkrepoSchema }}
+            - name: BK_CODECC_STORAGE_BKREPO_SCHEMA
+              value: {{ .Values.config.bkCodeccLogCollectEnable }}
           volumeMounts:
             {{- if eq .Values.config.bkCodeccStorageType "nfs" }}
             - name: nfs-data
@@ -85,6 +86,7 @@ spec:
             - name: shared-data
               mountPath: {{ .Values.config.bkCodeccFileDataPath }}
             {{- end }}
+      {{- end }}
       containers:
         - name: schedule
           image: {{ include "common.images.image" ( dict "imageRoot" .Values.schedule.image "global" .Values.global) }}
@@ -100,8 +102,12 @@ spec:
               value: {{ .Values.schedule.env.JVM_XMS }}
             - name: JVM_XMX
               value: {{ .Values.schedule.env.JVM_XMX }}
+            - name: JVM_OPTIONS
+              value: {{ .Values.schedule.env.JVM_OPTIONS }}
             - name: SERVICE_PREFIX
-              value: {{ include "common.names.fullname" . }}
+              value: {{ include "common.names.fullname" . }}-
+            - name: SERVICE_SUFFIX
+              value: {{ .Values.config.bkCodeccServiceSuffix }}
             - name: SERVER_FULLNAME
               value: {{ include "common.names.fullname" . }}-schedule
             - name: SERVER_COMMON_NAME
@@ -112,13 +118,10 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
-            - name: monitor
-              containerPort: 18080
-              protocol: TCP
           livenessProbe:
             httpGet:
               path: /management/health/liveness
-              port: monitor
+              port: http
             initialDelaySeconds: 120
             periodSeconds: 15
             timeoutSeconds: 10
@@ -127,7 +130,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /management/health/readiness
-              port: monitor
+              port: http
             initialDelaySeconds: 60
             periodSeconds: 15
             timeoutSeconds: 10

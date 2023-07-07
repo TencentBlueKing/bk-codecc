@@ -12,22 +12,26 @@
 
 package com.tencent.bk.codecc.codeccjob.service.impl;
 
-import com.tencent.bk.codecc.defect.model.DefectEntity;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.DefectRepository;
+import com.google.common.collect.Sets;
+import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.DefectDao;
+import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.codeccjob.service.AbstractFilterPathBizService;
+import com.tencent.bk.codecc.defect.api.ServiceDefectRestResource;
+import com.tencent.bk.codecc.defect.mapping.DefectConverter;
+import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.task.vo.FilterPathInputVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.util.PathUtils;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import kotlin.Pair;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
  * 通用工具的路径屏蔽
@@ -40,60 +44,104 @@ import java.util.Set;
 public class CommonFilterPathBizServiceImpl extends AbstractFilterPathBizService
 {
     @Autowired
-    private DefectRepository defectRepository;
+    private DefectDao defectDao;
+    @Autowired
+    private Client client;
+    @Autowired
+    private LintDefectV2Dao lintDefectV2Dao;
+    @Autowired
+    private DefectConverter defectConverter;
 
     @Override
     public Result processBiz(FilterPathInputVO filterPathInputVO)
     {
-        List<DefectEntity> defectEntityList = defectRepository.findByTaskIdAndToolName(filterPathInputVO.getTaskId(), filterPathInputVO.getToolName());
-        if (CollectionUtils.isNotEmpty(defectEntityList))
-        {
-            long currTime = System.currentTimeMillis();
+        Long taskId = filterPathInputVO.getTaskId();
+        String toolName = filterPathInputVO.getToolName();
 
-            List<DefectEntity> needUpdateDefectList = new ArrayList<>();
-            defectEntityList.forEach(defectEntity ->
-            {
-                int status = defectEntity.getStatus();
-                // 告警未被修复，且命中过滤路径
-                if ((status & ComConstants.DefectStatus.FIXED.value()) == 0
-                        && checkIfMaskByPath(defectEntity.getFilePathname(), filterPathInputVO.getFilterPaths()))
-                {
-                    if (filterPathInputVO.getAddFile())
-                    {
+        boolean isMigrationSuccessful = Boolean.TRUE.equals(
+                client.get(ServiceDefectRestResource.class).commonToLintMigrationSuccessful(taskId).getData()
+        );
+
+        // 不需要查询已修复的告警
+        Set<Integer> excludeStatusSet = Sets.newHashSet(ComConstants.DefectStatus.FIXED.value(),
+                ComConstants.DefectStatus.NEW.value() | ComConstants.DefectStatus.FIXED.value());
+        String lastId = null;
+        int size;
+        do {
+            List<CommonDefectEntity> defectList =
+                    getDefectList(isMigrationSuccessful, filterPathInputVO, taskId, toolName, excludeStatusSet, lastId);
+
+            size = defectList.size();
+            if (size > 0) {
+                StringBuilder builder = new StringBuilder();
+                filterPathInputVO.getFilterPaths().forEach(builder::append);
+                List<CommonDefectEntity> needUpdateDefectList = new ArrayList<>();
+                long currTime = System.currentTimeMillis();
+                defectList.forEach(defect -> {
+                    int status = defect.getStatus();
+                    if (filterPathInputVO.getAddFile()) {
                         status = status | ComConstants.DefectStatus.PATH_MASK.value();
-                        if (defectEntity.getExcludeTime() == 0)
-                        {
-                            defectEntity.setExcludeTime(currTime);
+                        defect.setMaskPath(builder.toString());
+                        if (defect.getExcludeTime() == 0) {
+                            defect.setExcludeTime(currTime);
                         }
-                    }
-                    else
-                    {
-                        if ((status & ComConstants.DefectStatus.PATH_MASK.value()) > 0)
-                        {
+                    } else {
+                        if ((status & ComConstants.DefectStatus.PATH_MASK.value()) > 0) {
                             status = status - ComConstants.DefectStatus.PATH_MASK.value();
-                            if (status < ComConstants.DefectStatus.PATH_MASK.value())
-                            {
-                                defectEntity.setExcludeTime(0);
+                            if (status < ComConstants.DefectStatus.PATH_MASK.value()) {
+                                defect.setMaskPath(null);
+                                defect.setExcludeTime(0L);
                             }
                         }
                     }
+
+                    if (defect.getStatus() != status) {
+                        defect.setStatus(status);
+                        needUpdateDefectList.add(defect);
+                    }
+                });
+
+                if (isMigrationSuccessful) {
+                    lintDefectV2Dao.batchUpdateDefectStatusExcludeBit(
+                            taskId, defectConverter.commonToLint(needUpdateDefectList)
+                    );
+                } else {
+                    defectDao.batchUpdateDefectStatusExcludeBit(taskId, needUpdateDefectList);
                 }
 
-                if (defectEntity.getStatus() != status)
-                {
-                    defectEntity.setStatus(status);
-                    needUpdateDefectList.add(defectEntity);
-                }
+                doAfterFilterPathDone(filterPathInputVO.getTaskId(), filterPathInputVO.getToolName(),
+                        needUpdateDefectList);
 
-            });
+                lastId = defectList.get(size - 1).getEntityId();
+            }
+        } while (size == PAGE_SIZE);
 
-            defectRepository.saveAll(needUpdateDefectList);
-        }
         return new Result(CommonMessageCode.SUCCESS);
     }
 
-    protected Boolean checkIfMaskByPath(String filePathname, Set<String> filterPaths)
+    private List<CommonDefectEntity> getDefectList(
+            boolean isMigrationSuccessful, FilterPathInputVO filterPathInputVO, Long taskId,
+            String toolName, Set<Integer> excludeStatusSet, String lastId
+    ) {
+        if (isMigrationSuccessful) {
+            return defectConverter.lintToCommon(
+                    lintDefectV2Dao.findDefectsByFilePath(
+                            taskId, toolName, excludeStatusSet, filterPathInputVO.getFilterPaths(), PAGE_SIZE, lastId
+                    )
+            );
+        }
+
+        return defectDao.findDefectsByFilePath(
+                taskId, toolName, excludeStatusSet, filterPathInputVO.getFilterPaths(), PAGE_SIZE, lastId
+        );
+    }
+
+    protected Boolean checkIfMaskByPath(CommonDefectEntity defectEntity, Set<String> filterPaths)
     {
-        return PathUtils.checkIfMaskByPath(filePathname, filterPaths);
+        Pair<Boolean, String> pair = PathUtils.checkIfMaskByPath(defectEntity.getFilePath(), filterPaths);
+        if (pair.getFirst()) {
+            defectEntity.setMaskPath(pair.getSecond());
+        }
+        return pair.getFirst();
     }
 }

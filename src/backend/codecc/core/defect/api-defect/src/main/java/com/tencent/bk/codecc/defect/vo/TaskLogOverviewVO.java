@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 @Data
 @ApiModel("工具执行记录请求对象")
 public class TaskLogOverviewVO {
+
     @ApiModelProperty(value = "任务ID")
     private Long taskId;
 

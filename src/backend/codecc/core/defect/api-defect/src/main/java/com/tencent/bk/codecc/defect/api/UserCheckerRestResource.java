@@ -27,10 +27,12 @@
 package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.bk.codecc.defect.vo.*;
-import com.tencent.bk.codecc.defect.vo.checkerset.*;
+import com.tencent.bk.codecc.defect.vo.checkerset.AddCheckerSet2TaskReqVO;
+import com.tencent.bk.codecc.defect.vo.checkerset.CheckerSetDifferenceVO;
+import com.tencent.bk.codecc.defect.vo.checkerset.UpdateCheckerSetReqVO;
+import com.tencent.bk.codecc.defect.vo.checkerset.UserCreatedCheckerSetsVO;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerListSortType;
-import com.tencent.devops.common.api.checkerset.CheckerSetVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -38,7 +40,6 @@ import org.springframework.data.domain.Sort;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
-
 import java.util.List;
 
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
@@ -54,8 +55,7 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
 @Path("/user/checker")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public interface UserCheckerRestResource
-{
+public interface UserCheckerRestResource {
 
     @ApiOperation("获取配置规则包")
     @Path("/tasks/{taskId}/toolName/{toolName}/checkers")
@@ -157,7 +157,7 @@ public interface UserCheckerRestResource
     @ApiOperation("更新规则参数配置")
     @Path("/taskId/{taskId}/tools/{toolName}/param/{paramValue}")
     @PUT
-    Result<Boolean>  updateCheckerConfigParam(
+    Result<Boolean> updateCheckerConfigParam(
             @ApiParam(value = "任务Id", required = true)
             @PathParam("taskId")
                     Long taskId,
@@ -178,7 +178,7 @@ public interface UserCheckerRestResource
     @ApiOperation("获取规则详情")
     @Path("/detail/toolName/{toolName}")
     @GET
-    Result<CheckerDetailVO>  queryCheckerDetail(
+    Result<CheckerDetailVO> queryCheckerDetail(
             @ApiParam(value = "工具名称", required = true)
             @PathParam("toolName")
                     String toolName,
@@ -195,26 +195,26 @@ public interface UserCheckerRestResource
                     CheckerListQueryReq checkerListQueryReq,
             @ApiParam(value = "项目id", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
-            String projectId,
+                    String projectId,
             @ApiParam("页数")
             @QueryParam("pageNum")
                     Integer pageNum,
             @ApiParam("页数")
             @QueryParam("pageSize")
-            Integer pageSize,
+                    Integer pageSize,
             @ApiParam("升序或降序")
             @QueryParam("sortType")
-            Sort.Direction sortType,
+                    Sort.Direction sortType,
             @ApiParam("排序字段")
             @QueryParam("sortField")
-            CheckerListSortType sortField);
+                    CheckerListSortType sortField);
 
     @ApiOperation("获取规则数量")
     @Path("/count")
     @POST
     Result<List<CheckerCommonCountVO>> queryCheckerCountList(
             @ApiParam(value = "规则数量查询条件", required = true)
-            CheckerListQueryReq checkerListQueryReq,
+                    CheckerListQueryReq checkerListQueryReq,
             @ApiParam(value = "项目id", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
                     String projectId);
@@ -223,9 +223,9 @@ public interface UserCheckerRestResource
     @Path("/toolName/{toolName}/queryChecker")
     @GET
     Result<List<CheckerDetailVO>> queryCheckerByTool(
-        @ApiParam(value = "工具名称", required = true)
-        @PathParam("toolName")
-            String toolName
+            @ApiParam(value = "工具名称", required = true)
+            @PathParam("toolName")
+                    String toolName
     );
 
     /**
@@ -238,5 +238,18 @@ public interface UserCheckerRestResource
     @Path("/update")
     @POST
     Result<Boolean> updateCheckerByCheckerKey(
-            @ApiParam(value = "规则详情请求体", required = true) CheckerDetailVO checkerDetailVO);
+            @ApiParam(value = "规则详情请求体", required = true)
+                    CheckerDetailVO checkerDetailVO,
+            @ApiParam(value = "用户ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+                    String userId
+            );
+
+    @ApiOperation("获取规则详情列表")
+    @Path("/list/preci")
+    @POST
+    Result<List<CheckerDetailVO>> queryCheckerDetailListForPreCI(
+            @ApiParam(value = "规则清单查询条件", required = true)
+                    CheckerDetailListQueryReqVO checkerListQueryReq
+    );
 }

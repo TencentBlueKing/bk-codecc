@@ -12,21 +12,23 @@
 
 package com.tencent.bk.codecc.codeccjob.service.impl;
 
-import com.tencent.bk.codecc.defect.model.CCNDefectEntity;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.CCNDefectRepository;
+import com.google.common.collect.Sets;
+import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.CCNDefectDao;
 import com.tencent.bk.codecc.codeccjob.service.AbstractFilterPathBizService;
+import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.task.vo.FilterPathInputVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
-import com.tencent.devops.common.util.PathUtils;
+
+import java.util.ArrayList;
+import java.util.Set;
+
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * ccn类工具的路径屏蔽
@@ -36,42 +38,61 @@ import java.util.stream.Collectors;
  */
 @Service("CCNFilterPathBizService")
 @Slf4j
-public class CCNFilterPathBizServiceImpl extends AbstractFilterPathBizService
-{
+public class CCNFilterPathBizServiceImpl extends AbstractFilterPathBizService {
+
     @Autowired
-    private CCNDefectRepository ccnDefectRepository;
+    private CCNDefectDao ccnDefectDao;
 
     @Override
-    public Result processBiz(FilterPathInputVO filterPathInputVO)
-    {
+    public Result processBiz(FilterPathInputVO filterPathInputVO) {
         // CCN类屏蔽路径
-        List<CCNDefectEntity> ccnFileInfoList = ccnDefectRepository.findByTaskId(filterPathInputVO.getTaskId());
-        if (CollectionUtils.isNotEmpty(ccnFileInfoList))
-        {
-            long currTime = System.currentTimeMillis();
-            List<CCNDefectEntity> needUpdateDefectList = ccnFileInfoList.stream()
-                    .filter(defectEntity ->
-                    {
-                        String path = defectEntity.getUrl();
-                        if (StringUtils.isEmpty(path)) {
-                            path = defectEntity.getRelPath();
+        // 不需要查询已修复的告警
+        Set<Integer> excludeStatusSet = Sets.newHashSet(ComConstants.DefectStatus.FIXED.value(),
+                ComConstants.DefectStatus.NEW.value() | ComConstants.DefectStatus.FIXED.value());
+        String lastId = null;
+        int size;
+        do {
+            List<CCNDefectEntity> ccnFileInfoList = ccnDefectDao.findDefectsByFilePath(filterPathInputVO.getTaskId(),
+                    excludeStatusSet, filterPathInputVO.getFilterPaths(), PAGE_SIZE, lastId);
+            size = ccnFileInfoList.size();
+            if (size > 0) {
+                StringBuilder builder = new StringBuilder();
+                filterPathInputVO.getFilterPaths().forEach(builder::append);
+                List<CCNDefectEntity> needUpdateDefectList = new ArrayList<>();
+                long currTime = System.currentTimeMillis();
+                ccnFileInfoList.forEach(defect -> {
+                    int status = defect.getStatus();
+                    if (filterPathInputVO.getAddFile()) {
+                        status = status | ComConstants.DefectStatus.PATH_MASK.value();
+                        defect.setMaskPath(builder.toString());
+                        if (defect.getExcludeTime() == null || defect.getExcludeTime() == 0) {
+                            defect.setExcludeTime(currTime);
                         }
-                        if (StringUtils.isEmpty(path)){
-                            path = defectEntity.getFilePath();
+                    } else {
+                        if ((status & ComConstants.DefectStatus.PATH_MASK.value()) > 0) {
+                            status = status - ComConstants.DefectStatus.PATH_MASK.value();
+                            if (status < ComConstants.DefectStatus.PATH_MASK.value()) {
+                                defect.setMaskPath(null);
+                                defect.setExcludeTime(0L);
+                            }
                         }
-                        if (StringUtils.isEmpty(path)) {
-                            return false;
-                        }
-                        return PathUtils.checkIfMaskByPath(path, filterPathInputVO.getFilterPaths());
-                    })
-                    .collect(Collectors.toList());
-            needUpdateDefectList.forEach(defectEntity ->
-            {
-                defectEntity.setStatus(getUpdateStatus(filterPathInputVO, defectEntity.getStatus()));
-                defectEntity.setExcludeTime(currTime);
-            });
-            ccnDefectRepository.saveAll(needUpdateDefectList);
-        }
+                    }
+
+                    if (defect.getStatus() != status) {
+                        defect.setStatus(status);
+                        needUpdateDefectList.add(defect);
+                    }
+                });
+
+                ccnDefectDao.batchUpdateDefectStatusExcludeBit(filterPathInputVO.getTaskId(), needUpdateDefectList);
+
+                doAfterFilterPathDone(filterPathInputVO.getTaskId(), filterPathInputVO.getToolName(),
+                        needUpdateDefectList);
+
+                lastId = ccnFileInfoList.get(size - 1).getEntityId();
+            }
+        } while (size == PAGE_SIZE);
+
         return new Result(CommonMessageCode.SUCCESS);
     }
 }

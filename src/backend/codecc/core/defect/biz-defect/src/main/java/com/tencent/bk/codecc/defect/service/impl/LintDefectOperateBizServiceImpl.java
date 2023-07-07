@@ -14,21 +14,22 @@ package com.tencent.bk.codecc.defect.service.impl;
 
 import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
 import com.tencent.bk.codecc.defect.model.CodeCommentEntity;
-import com.tencent.bk.codecc.defect.model.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.SingleCommentEntity;
+import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.vo.SingleCommentVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
+import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import com.tencent.devops.common.util.BeanUtils;
+import java.util.ArrayList;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.bson.types.ObjectId;
-import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Optional;
 
 /**
  * lint类告警操作服务实现
@@ -38,35 +39,41 @@ import java.util.Optional;
  */
 @Service("LINTDefectOperateBizService")
 @Slf4j
-public class LintDefectOperateBizServiceImpl extends AbstractDefectOperateBizService
-{
+public class LintDefectOperateBizServiceImpl extends AbstractDefectOperateBizService {
+
     @Autowired
     private LintDefectV2Repository lintDefectV2Repository;
 
+    @Autowired
+    private Client client;
+
+    @Value("${codecc.public.url}")
+    private String codeccGateWay;
+
     @Override
-    public void addCodeComment(String defectId, String commentId, String userName, SingleCommentVO singleCommentVO)
-    {
+    public void addCodeComment(
+            String defectId, String toolName, String commentId, String userName,
+            SingleCommentVO singleCommentVO, String fileName, String nameCn,
+            String checker, String projectId, String taskId
+    ) {
         log.info("start to add code comment, defect id: {}, comment id: {}", defectId, commentId);
-        if (!userName.equalsIgnoreCase(singleCommentVO.getUserName()))
-        {
+
+        if (!userName.equalsIgnoreCase(singleCommentVO.getUserName())) {
             log.info("permission denied for user name: {}", userName);
             throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{userName}, null);
         }
+
         //如果comment_id为空，则表示是重新新建的评论系列
-        if (StringUtils.isBlank(commentId))
-        {
-            Optional<LintDefectV2Entity> optional = lintDefectV2Repository.findById(defectId);
-            if (optional.isPresent())
-            {
-                LintDefectV2Entity defectV2Entity = optional.get();
+        if (StringUtils.isBlank(commentId)) {
+            LintDefectV2Entity defectV2Entity = lintDefectV2Repository.findById(defectId).orElse(null);
+            if (null != defectV2Entity) {
                 CodeCommentEntity codeCommentEntity = new CodeCommentEntity();
                 SingleCommentEntity singleCommentEntity = new SingleCommentEntity();
                 BeanUtils.copyProperties(singleCommentVO, singleCommentEntity);
                 singleCommentEntity.setSingleCommentId(new ObjectId().toString());
                 Long currentTime = System.currentTimeMillis();
                 singleCommentEntity.setCommentTime(currentTime / ComConstants.COMMON_NUM_1000L);
-                codeCommentEntity.setCommentList(new ArrayList<SingleCommentEntity>()
-                {{
+                codeCommentEntity.setCommentList(new ArrayList<SingleCommentEntity>() {{
                     add(singleCommentEntity);
                 }});
                 codeCommentEntity.setCreatedDate(currentTime);
@@ -78,13 +85,17 @@ public class LintDefectOperateBizServiceImpl extends AbstractDefectOperateBizSer
                 lintDefectV2Repository.save(defectV2Entity);
             }
         }
-        //如果comment_id不为空，则直接更新
-        else
-        {
+        else {
             saveCodeComment(commentId, singleCommentVO);
         }
-        log.info("add code comment success!");
+
+        // 查看评论有无 @开发者
+        if (singleCommentVO.getComment().contains("@")) {
+            // 发送评论给被@到的人
+            codeCommentSendRtx(
+                    singleCommentVO.getComment(), checker, projectId,
+                    taskId, toolName, defectId, userName, nameCn, fileName
+            );
+        }
     }
-
-
 }

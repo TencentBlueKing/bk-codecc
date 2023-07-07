@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 /**
  * 代码仓库视图
  *
@@ -16,8 +18,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @ApiModel("代码仓库信息视图")
-public class CodeRepoVO
-{
+public class CodeRepoVO {
     /**
      * 仓库ID
      */
@@ -29,9 +30,13 @@ public class CodeRepoVO
     private String url;
 
     /**
-     * 仓库版本号
+     * 仓库版本号(短)
      */
     private String revision;
+    /**
+     * 仓库版本号(长)
+     */
+    private String commitID;
 
     /**
      * 仓库分支
@@ -42,4 +47,9 @@ public class CodeRepoVO
      * 仓库别名
      */
     private String aliasName;
+
+    /**
+     * 子模块列表
+     */
+    private List<RepoSubModuleVO> subModules;
 }

@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.List;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 /**
  * 代码仓库信息实体类
@@ -26,6 +27,7 @@ import java.util.List;
 @CompoundIndexes({
         @CompoundIndex(name = "task_id_1_build_id_1", def = "{'task_id': 1, 'build_id': 1}")
 })
+@Sharded(shardKey = "task_id")
 public class CodeRepoInfoEntity extends CommonEntity
 {
     /**
@@ -58,4 +60,10 @@ public class CodeRepoInfoEntity extends CommonEntity
     @Deprecated
     @Field("temp_delete_files")
     private List<String> tempDeleteFiles;
+
+    /**
+     * 拉取仓库子路径
+     */
+    @Field("repo_relative_path_list")
+    private List<String> repoRelativePathList;
 }

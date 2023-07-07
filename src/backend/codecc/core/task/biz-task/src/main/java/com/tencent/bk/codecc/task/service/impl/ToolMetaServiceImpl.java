@@ -17,26 +17,32 @@ import com.google.gson.reflect.TypeToken;
 import com.tencent.bk.codecc.task.constant.TaskConstants.ToolPattern;
 import com.tencent.bk.codecc.task.dao.ToolMetaCacheServiceImpl;
 import com.tencent.bk.codecc.task.dao.mongorepository.BaseDataRepository;
+import com.tencent.bk.codecc.task.dao.mongorepository.TaskRepository;
 import com.tencent.bk.codecc.task.dao.mongorepository.ToolMetaRepository;
 import com.tencent.bk.codecc.task.model.BaseDataEntity;
+import com.tencent.bk.codecc.task.model.TaskInfoEntity;
+import com.tencent.bk.codecc.task.model.ToolBinaryEntity;
+import com.tencent.bk.codecc.task.model.ToolEnvEntity;
 import com.tencent.bk.codecc.task.model.ToolMetaEntity;
 import com.tencent.bk.codecc.task.model.ToolVersionEntity;
 import com.tencent.bk.codecc.task.service.GrayToolProjectService;
 import com.tencent.bk.codecc.task.service.ToolMetaService;
 import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
+import com.tencent.bk.codecc.task.vo.gongfeng.ToolVersionExtVO;
 import com.tencent.devops.common.api.RefreshDockerImageHashReqVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
+import com.tencent.devops.common.api.ToolVersionVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.api.pojo.Result;
 import com.tencent.devops.common.client.Client;
+import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.util.AESUtil;
 import com.tencent.devops.common.util.GsonUtils;
-import com.tencent.devops.common.util.JsonUtil;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.web.mq.ConstantsKt;
 import com.tencent.devops.image.api.ServiceDockerImageResource;
 import com.tencent.devops.image.pojo.CheckDockerImageRequest;
@@ -49,15 +55,18 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -77,12 +86,16 @@ public class ToolMetaServiceImpl implements ToolMetaService {
     private static final String TOOL_TYPE = "TOOL_TYPE";
     private static final String LANG = "LANG";
     private static final String DOCKER_IMAGE_DEFAULT_ACCOUNT = "DOCKER_IMAGE_DEFAULT_ACCOUNT";
+    private static final String ALL_LANGUAGE_STRING = "ALL";
+
     @Value("${aes.encryptor.key:#{null}}")
     private String encryptorKey;
     @Autowired
     private ToolMetaRepository toolMetaRepository;
     @Autowired
     private BaseDataRepository baseDataRepository;
+    @Autowired
+    private TaskRepository taskRepository;
     @Autowired
     private ToolMetaCacheServiceImpl toolMetaCacheService;
     @Autowired
@@ -120,6 +133,17 @@ public class ToolMetaServiceImpl implements ToolMetaService {
 
         List<BaseDataEntity> baseDataEntityList =
                 baseDataRepository.findByParamTypeIn(Lists.newArrayList(TOOL_TYPE, LANG, DOCKER_IMAGE_DEFAULT_ACCOUNT));
+
+        // 工具支持的代码语言列表包含"ALL" 则将语言替换成所有语言
+        if (CollectionUtils.isNotEmpty(toolMetaDetailVO.getSupportedLanguages())
+                && toolMetaDetailVO.getSupportedLanguages().contains(ALL_LANGUAGE_STRING)) {
+            // 所有语言
+            List<String> codeLangList =
+                    baseDataEntityList.stream().map(BaseDataEntity::getLangFullKey)
+                            .filter(StringUtils::isNotBlank).collect(Collectors.toList());
+            toolMetaDetailVO.setSupportedLanguages(codeLangList);
+        }
+        log.info("begin register tool: {}", toolMetaDetailVO);
 
         // 参数校验
         validateParam(toolMetaDetailVO, baseDataEntityList);
@@ -168,7 +192,6 @@ public class ToolMetaServiceImpl implements ToolMetaService {
                         new String[]{toolMetaEntity.getPattern() + " -> " + pattern}, null);
             }
 
-            String oldType = toolMetaEntity.getType();
             toolMetaEntity.setName(toolName);
             toolMetaEntity.setDisplayName(toolMetaDetailVO.getDisplayName());
             toolMetaEntity.setType(toolMetaDetailVO.getType());
@@ -181,7 +204,9 @@ public class ToolMetaServiceImpl implements ToolMetaService {
             toolMetaEntity.setUpdatedDate(System.currentTimeMillis());
             toolMetaEntity.setDockerImageAccount(dockerImageAccount.getParamCode());
             toolMetaEntity.setDockerImagePasswd(dockerImageAccount.getParamValue());
-
+            toolMetaEntity.setProcessList(toolMetaDetailVO.getProcessList());
+            toolMetaEntity.setClusterType(toolMetaDetailVO.getClusterType());
+            String oldType = toolMetaEntity.getType();
             // 如果工具类型变更了，需要重新对工具排序
             if (oldType.equals(toolMetaDetailVO.getType())) {
                 resetToolOrder(toolMetaEntity, baseDataEntityList);
@@ -204,16 +229,31 @@ public class ToolMetaServiceImpl implements ToolMetaService {
                 .findFirst().orElse(null);
         long curTime = System.currentTimeMillis();
         if (toolVersionEntity == null) {
+            if (Objects.isNull(toolMetaDetailVO.getBinary())) {
+                ToolMetaDetailVO.Binary binary = new ToolMetaDetailVO.Binary();
+                toolMetaDetailVO.setBinary(binary);
+            }
+            List<ToolEnvEntity> toolEnvEntityList = new ArrayList<>();
+            if (Objects.nonNull(toolMetaDetailVO.getBinary().getToolEnvs())) {
+                BeanUtils.copyProperties(toolMetaDetailVO.getBinary().getToolEnvs(),toolEnvEntityList);
+            }
+            ToolBinaryEntity toolBinaryEntity = new ToolBinaryEntity();
+            BeanUtils.copyProperties(toolMetaDetailVO.getBinary(), toolBinaryEntity);
+            toolBinaryEntity.setToolEnvs(toolEnvEntityList);
             toolVersionEntity = new ToolVersionEntity(
                     ToolIntegratedStatus.T.name(),
                     toolMetaDetailVO.getDockerTriggerShell(),
                     toolMetaDetailVO.getDockerImageURL(),
                     toolMetaDetailVO.getDockerImageVersion(),
                     toolMetaDetailVO.getForeignDockerImageVersion(),
-                    null, curTime, userName, curTime, userName);
+                    null,
+                    toolBinaryEntity,
+                    curTime, userName, curTime, userName);
             toolVersionSet.add(toolVersionEntity);
             toolMetaEntity.setToolVersions(toolVersionSet);
+
         } else {
+            log.info("exit toolVersionEntity: {} ", toolVersionEntity);
             toolVersionEntity.setDockerTriggerShell(toolMetaDetailVO.getDockerTriggerShell());
             toolVersionEntity.setDockerImageURL(toolMetaDetailVO.getDockerImageURL());
             toolVersionEntity.setDockerImageVersion(toolMetaDetailVO.getDockerImageVersion());
@@ -222,6 +262,18 @@ public class ToolMetaServiceImpl implements ToolMetaService {
             toolVersionEntity.setCreatedBy(userName);
             toolVersionEntity.setUpdatedDate(curTime);
             toolVersionEntity.setUpdatedBy(userName);
+            if (Objects.isNull(toolMetaDetailVO.getBinary())) {
+                ToolMetaDetailVO.Binary binary = new ToolMetaDetailVO.Binary();
+                toolMetaDetailVO.setBinary(binary);
+            }
+            List<ToolEnvEntity> toolEnvEntityList = new ArrayList<>();
+            if (Objects.nonNull(toolMetaDetailVO.getBinary().getToolEnvs())) {
+                BeanUtils.copyProperties(toolMetaDetailVO.getBinary().getToolEnvs(),toolEnvEntityList);
+            }
+            ToolBinaryEntity toolBinaryEntity = new ToolBinaryEntity();
+            BeanUtils.copyProperties(toolMetaDetailVO.getBinary(), toolBinaryEntity);
+            toolBinaryEntity.setToolEnvs(toolEnvEntityList);
+            toolVersionEntity.setBinary(toolBinaryEntity);
         }
 
         String newDockerImageHash = getDockerImageHash(toolMetaEntity, toolMetaDetailVO.getDockerImageVersion());
@@ -244,39 +296,66 @@ public class ToolMetaServiceImpl implements ToolMetaService {
     }
 
     @Override
-    public List<ToolMetaDetailVO> queryToolMetaDataList(String projectId) {
+    public List<ToolMetaDetailVO> queryToolMetaDataList(String projectId, Long taskId) {
         Map<String, ToolMetaBaseVO> toolMetaDetailVOMap =
                 toolMetaCacheService.getToolMetaListFromCache(Boolean.TRUE, Boolean.TRUE);
-
 
         //工具版本，T-测试版本，G-灰度版本，P-正式发布版本
         String toolV = ToolIntegratedStatus.P.name();
 
-        //查询是否灰度项目，并获取灰度状态
-        GrayToolProjectVO grayPro = grayToolProjectService.findGrayInfoByProjectId(projectId);
-        if (grayPro != null) {
-            if (grayPro.getStatus() == ToolIntegratedStatus.G.value()) {
-                toolV = ToolIntegratedStatus.G.name();
-            } else if (grayPro.getStatus() == ToolIntegratedStatus.T.value()) {
-                toolV = ToolIntegratedStatus.T.name();
+        // 是否预发布
+        TaskInfoEntity taskDetail = null;
+        if (taskId != null) {
+            taskDetail = taskRepository.findFirstByTaskId(taskId);
+        }
+        if (taskDetail != null
+            && taskDetail.getCheckerSetEnvType() != null
+            && taskDetail.getCheckerSetEnvType().equals(ComConstants.CheckerSetEnvType.PRE_PROD.getKey())) {
+            toolV = ToolIntegratedStatus.PRE_PROD.name();
+            log.info("get tool meta from pre prod: {}", taskId);
+        } else {
+            //查询是否灰度项目，并获取灰度状态
+            GrayToolProjectVO grayPro = grayToolProjectService.findGrayInfoByProjectId(projectId);
+            if (grayPro != null) {
+                if (grayPro.getStatus() == ToolIntegratedStatus.G.value()) {
+                    toolV = ToolIntegratedStatus.G.name();
+                } else if (grayPro.getStatus() == ToolIntegratedStatus.T.value()) {
+                    toolV = ToolIntegratedStatus.T.name();
+                }
             }
         }
 
         List<ToolMetaDetailVO> toolMetaDetailVOList = new ArrayList<>(toolMetaDetailVOMap.size());
         String finalToolV = toolV;
         toolMetaDetailVOMap.forEach((toolName, tool) -> {
+
+            boolean match = false;
+
             ToolMetaDetailVO toolMetaDetailVO = (ToolMetaDetailVO) tool;
             toolMetaDetailVO.setGraphicDetails(null);
             toolMetaDetailVO.setLogo(null);
             //通过灰度状态toolV，获取相应版本，并赋值到toolMetaDetailVO的dockerImageVersion
-            toolMetaDetailVO.getToolVersions().forEach(toolversion -> {
+            for (ToolVersionVO toolversion: toolMetaDetailVO.getToolVersions()) {
                 if (finalToolV.equals(toolversion.getVersionType())) {
                     toolMetaDetailVO.setDockerTriggerShell(toolversion.getDockerTriggerShell());
                     toolMetaDetailVO.setDockerImageURL(toolversion.getDockerImageURL());
                     toolMetaDetailVO.setDockerImageVersion(toolversion.getDockerImageVersion());
                     toolMetaDetailVO.setDockerImageVersionType(finalToolV);
+                    match = true;
                 }
-            });
+            }
+
+            if (!match) {
+                log.info("start to find prod tool meta for : {}, {}", projectId, taskId);
+                for (ToolVersionVO toolversion: toolMetaDetailVO.getToolVersions()) {
+                    if (ToolIntegratedStatus.P.name().equals(toolversion.getVersionType())) {
+                        toolMetaDetailVO.setDockerTriggerShell(toolversion.getDockerTriggerShell());
+                        toolMetaDetailVO.setDockerImageURL(toolversion.getDockerImageURL());
+                        toolMetaDetailVO.setDockerImageVersion(toolversion.getDockerImageVersion());
+                        toolMetaDetailVO.setDockerImageVersionType(ToolIntegratedStatus.P.name());
+                    }
+                }
+            }
 
             toolMetaDetailVOList.add(toolMetaDetailVO);
         });
@@ -364,7 +443,7 @@ public class ToolMetaServiceImpl implements ToolMetaService {
         List<CheckDockerImageRequest> requestList =
                 Lists.newArrayList(new CheckDockerImageRequest(imageUrl, registryHost, userId, passwd));
         try {
-            Result<List<CheckDockerImageResponse>> imageResult =
+            com.tencent.devops.common.api.pojo.Result<List<CheckDockerImageResponse>> imageResult =
                     client.getDevopsService(ServiceDockerImageResource.class).checkDockerImage(userId, requestList);
             if (imageResult.isNotOk() || null == imageResult.getData()
                     || null == imageResult.getData().get(0) || imageResult.getData().get(0).getErrorCode() != 0) {
@@ -480,8 +559,8 @@ public class ToolMetaServiceImpl implements ToolMetaService {
                 .sorted(Comparator.comparing(BaseDataEntity::getParamExtend3))
                 .collect(Collectors.toList());
 
-        BaseDataEntity toolOederEntity = baseDataRepository.findFirstByParamType(RedisKeyConstants.KEY_TOOL_ORDER);
-        String toolOrder = toolOederEntity.getParamValue();
+        BaseDataEntity toolOrderEntity = baseDataRepository.findFirstByParamType(RedisKeyConstants.KEY_TOOL_ORDER);
+        String toolOrder = toolOrderEntity.getParamValue();
         String[] toolOrderArr = toolOrder.split(STRING_SPLIT);
 
         // 1.分组
@@ -505,6 +584,8 @@ public class ToolMetaServiceImpl implements ToolMetaService {
         for (BaseDataEntity toolType : toolTypeList) {
             List<String> toolList = groupToolByTypeMap.get(toolType.getParamCode());
             if (CollectionUtils.isNotEmpty(toolList)) {
+                // 每种工具类型中的工具 根据首字母正序排序
+                toolList.sort(String::compareTo);
                 for (String toolId : toolList) {
                     newToolOrder.append(toolId).append(",");
                 }
@@ -516,8 +597,8 @@ public class ToolMetaServiceImpl implements ToolMetaService {
             newToolOrder.deleteCharAt(newToolOrder.length() - 1);
         }
 
-        toolOederEntity.setParamValue(newToolOrder.toString());
-        baseDataRepository.save(toolOederEntity);
+        toolOrderEntity.setParamValue(newToolOrder.toString());
+        baseDataRepository.save(toolOrderEntity);
 
         // 同步刷新redis缓存中工具的顺序
         redisTemplate.opsForValue().set(RedisKeyConstants.KEY_TOOL_ORDER, toolOrder);
@@ -533,27 +614,24 @@ public class ToolMetaServiceImpl implements ToolMetaService {
     }
 
     @Override
-    public String updateToolMetaToStatus(String toolName, ToolIntegratedStatus status, String username) {
-        ToolMetaEntity toolEntity = toolMetaRepository.findFirstByName(toolName);
-
-        if (toolEntity == null) {
-            throw new CodeCCException(CommonMessageCode.INVALID_TOOL_NAME, new String[]{toolName}, null);
-        }
-
-        if (status == ToolIntegratedStatus.T) {
+    public String updateToolMetaToStatus(
+            String toolName,
+            String toolImageTag,
+            ToolIntegratedStatus fromStatus,
+            ToolIntegratedStatus toStatus,
+            String username
+    ) {
+        if (toStatus == ToolIntegratedStatus.T) {
             // do nothing
             return "Test integrated status update successfully";
         }
 
-        if (status == ToolIntegratedStatus.G) {
-            return changeToolStatus(toolEntity, ToolIntegratedStatus.T, ToolIntegratedStatus.G, username);
+        ToolMetaEntity toolEntity = toolMetaRepository.findFirstByName(toolName);
+        if (toolEntity == null) {
+            throw new CodeCCException(CommonMessageCode.INVALID_TOOL_NAME, new String[]{toolName}, null);
         }
 
-        if (status == ToolIntegratedStatus.P) {
-            return changeToolStatus(toolEntity, ToolIntegratedStatus.G, ToolIntegratedStatus.P, username);
-        }
-
-        return String.format("integrated status %s do not thing", status);
+        return changeToolStatus(toolEntity, toolImageTag, fromStatus, toStatus, username);
     }
 
     @Override
@@ -590,10 +668,11 @@ public class ToolMetaServiceImpl implements ToolMetaService {
     }
 
     private String changeToolStatus(ToolMetaEntity toolEntity,
+                                    String toolImageTag,
                                     ToolIntegratedStatus fromStatus,
                                     ToolIntegratedStatus toStatus,
                                     String username) {
-        log.info("change tool status: {}, {}, {}", toolEntity.getName(), fromStatus, toStatus);
+        log.info("change tool status: {}, update {} {} to {}", toolEntity.getName(), toolImageTag, fromStatus, toStatus);
 
 
         List<ToolVersionEntity> toolVersions =
@@ -608,10 +687,8 @@ public class ToolMetaServiceImpl implements ToolMetaService {
 
         lastToolVersions.forEach(it -> lastToolVersionsMap.put(it.getVersionType(), it));
 
-        ToolVersionEntity fromEntity = toolVersionsMap.getOrDefault(fromStatus.name(), new ToolVersionEntity());
-        ToolVersionEntity toEntity = toolVersionsMap.getOrDefault(toStatus.name(), null);
         ToolVersionEntity lastToolVersion = lastToolVersionsMap.getOrDefault(toStatus.name(), new ToolVersionEntity());
-
+        ToolVersionEntity toEntity = toolVersionsMap.getOrDefault(toStatus.name(), null);
         log.info("backup test data: {}", toolEntity.getName());
         if (toEntity != null) {
             BeanUtils.copyProperties(toEntity, lastToolVersion);
@@ -620,15 +697,26 @@ public class ToolMetaServiceImpl implements ToolMetaService {
             lastToolVersionsMap.put(toStatus.name(), lastToolVersion);
         } else {
             toEntity = new ToolVersionEntity();
+            ToolVersionEntity prodToolVersion = toolVersionsMap.getOrDefault(ToolIntegratedStatus.P.name(), null);
+            if (prodToolVersion != null) {
+                BeanUtils.copyProperties(prodToolVersion, lastToolVersion);
+                lastToolVersion.setVersionType(toStatus.name());
+                lastToolVersion.setUpdatedBy(username);
+                lastToolVersion.setUpdatedDate(System.currentTimeMillis());
+                lastToolVersionsMap.put(toStatus.name(), lastToolVersion);
+            }
         }
 
-
         log.info("copy data: {}", toolEntity.getName());
-
+        ToolVersionEntity fromEntity = toolVersionsMap.getOrDefault(fromStatus.name(), new ToolVersionEntity());
         BeanUtils.copyProperties(fromEntity, toEntity);
         toEntity.setVersionType(toStatus.name());
         toEntity.setUpdatedBy(username);
         toEntity.setUpdatedDate(System.currentTimeMillis());
+        //如果传递的工具镜像版本不为空，这保存该版本号
+        if (!StringUtils.isEmpty(toolImageTag)) {
+            toEntity.setDockerImageVersion(toolImageTag);
+        }
         toolVersionsMap.put(toStatus.name(), toEntity);
 
         // update toolEntity
@@ -645,5 +733,163 @@ public class ToolMetaServiceImpl implements ToolMetaService {
         updateToolMeta(toolEntity);
         return String.format("%s integrated status update to %s status successfully: %s", fromStatus, toStatus,
                 resultMsg);
+    }
+
+    @Override
+    public List<ToolMetaDetailVO> queryAllToolMetaDataList() {
+        Map<String, ToolMetaBaseVO> toolMetaDetailVOMap =
+                toolMetaCacheService.getToolMetaListFromCache(Boolean.TRUE, Boolean.TRUE);
+
+        //设置P-正式发布版本
+        String toolV = ToolIntegratedStatus.P.name();
+        String finalToolV = toolV;
+        List<ToolMetaDetailVO> toolMetaDetailVOList = new ArrayList<>(toolMetaDetailVOMap.size());
+        toolMetaDetailVOMap.forEach((toolName, tool) -> {
+            ToolMetaDetailVO toolMetaDetailVO = (ToolMetaDetailVO) tool;
+            toolMetaDetailVO.setGraphicDetails(null);
+            toolMetaDetailVO.setLogo(null);
+            //获取正式版本的镜像信息填充toolMetaDetailVO
+            toolMetaDetailVO.getToolVersions().forEach(toolversion -> {
+                if (finalToolV.equals(toolversion.getVersionType())) {
+                    //保存镜像信息
+                    toolMetaDetailVO.setDockerTriggerShell(toolversion.getDockerTriggerShell());
+                    toolMetaDetailVO.setDockerImageURL(toolversion.getDockerImageURL());
+                    toolMetaDetailVO.setDockerImageVersion(toolversion.getDockerImageVersion());
+                    toolMetaDetailVO.setToolImageRevision(toolversion.getDockerImageHash());
+                    toolMetaDetailVO.setDockerImageVersionType(finalToolV);
+                    //保存二进制信息
+                    toolMetaDetailVO.setBinary(toolversion.getBinary());
+                }
+            });
+
+            toolMetaDetailVOList.add(toolMetaDetailVO);
+        });
+
+        return toolMetaDetailVOList;
+    }
+
+    @Override
+    public List<ToolMetaDetailVO> getToolsByToolName(List<String> toolNameList) {
+        Map<String, ToolMetaBaseVO> toolMetaDetailVOMap =
+                toolMetaCacheService.getToolMetaListFromCache(Boolean.TRUE, Boolean.TRUE);
+
+        //设置P-正式发布版本
+        String toolV = ToolIntegratedStatus.P.name();
+        String finalToolV = toolV;
+        List<ToolMetaDetailVO> toolMetaDetailVOList = new ArrayList<>(toolMetaDetailVOMap.size());
+        toolMetaDetailVOMap.forEach((toolName, tool) -> {
+            if (toolNameList.contains(toolName)) {
+                ToolMetaDetailVO toolMetaDetailVO = (ToolMetaDetailVO) tool;
+                toolMetaDetailVO.setGraphicDetails(null);
+                toolMetaDetailVO.setLogo(null);
+                //获取正式版本的镜像信息填充toolMetaDetailVO
+                toolMetaDetailVO.getToolVersions().forEach(toolversion -> {
+                    if (finalToolV.equals(toolversion.getVersionType())) {
+                        //保存镜像信息
+                        toolMetaDetailVO.setDockerTriggerShell(toolversion.getDockerTriggerShell());
+                        toolMetaDetailVO.setDockerImageURL(toolversion.getDockerImageURL());
+                        toolMetaDetailVO.setDockerImageVersion(toolversion.getDockerImageVersion());
+                        toolMetaDetailVO.setToolImageRevision(toolversion.getDockerImageHash());
+                        toolMetaDetailVO.setDockerImageVersionType(finalToolV);
+                        //保存二进制信息
+                        toolMetaDetailVO.setBinary(toolversion.getBinary());
+                    }
+                });
+                toolMetaDetailVOList.add(toolMetaDetailVO);
+            }
+        });
+
+        return toolMetaDetailVOList;
+    }
+
+    @Override
+    public String getSCCLangFilterForPreCI() {
+        BaseDataEntity entity = baseDataRepository
+                .findFirstByParamTypeAndParamCode(ComConstants.PRECI_SCC_LANG_FILTER,
+                        ComConstants.PRECI_SCC_LANG_FILTER);
+
+        if (entity == null) {
+            log.error("basedata config error: PRECI_SCC_LANG_FILTER is null");
+
+            return "";
+        }
+
+        return entity.getParamValue();
+    }
+
+    /**
+     * 更新开源扫描工具版本信息
+     *
+     * @param reqVO    请求体
+     * @param userName 更新人
+     * @return boolean
+     */
+    @Override
+    public Boolean updateOpenSourceToolVersionInfo(ToolVersionExtVO reqVO, String userName) {
+        log.info("updateOpenSourceToolVersionInfo userName: {}, reqVO: {}", userName, reqVO);
+
+        String toolName = reqVO.getToolName();
+        String dockerImageVersion = reqVO.getDockerImageVersion();
+        String dockerImageHash = reqVO.getDockerImageHash();
+        if (StringUtils.isBlank(toolName) || StringUtils.isBlank(dockerImageVersion)
+                || StringUtils.isBlank(dockerImageHash)) {
+            log.warn("Abort update, param is blank!");
+            return false;
+        }
+
+        ToolMetaEntity toolMetaEntity = toolMetaRepository.findFirstByName(toolName);
+        if (null == toolMetaEntity) {
+            log.warn("Abort update, unknown tool: {}", toolName);
+            return false;
+        }
+
+        List<ToolVersionEntity> toolVersions = toolMetaEntity.getToolVersions();
+        if (CollectionUtils.isNotEmpty(toolVersions)) {
+            // 取出当前工具版本
+            Map<String, ToolVersionEntity> currToolVersionsMap = toolVersions.stream()
+                    .collect(Collectors.toMap(ToolVersionEntity::getVersionType, Function.identity(), (k, v) -> v));
+            ToolVersionEntity currToolVersion = currToolVersionsMap.get(ToolIntegratedStatus.O.name());
+            if (null == currToolVersion) {
+                log.warn("Abort update, currToolVersion is not exist!");
+                return false;
+            }
+
+            // 记录当前的版本添加到last版本
+            List<ToolVersionEntity> lastToolVersions =
+                    toolMetaEntity.getLastToolVersions() != null ? toolMetaEntity.getLastToolVersions()
+                            : Lists.newArrayList();
+            Map<String, ToolVersionEntity> lastToolVersionsMap = lastToolVersions.stream()
+                    .collect(Collectors.toMap(ToolVersionEntity::getVersionType, Function.identity(), (k, v) -> v));
+            ToolVersionEntity lastToolVersion =
+                    lastToolVersionsMap.computeIfAbsent(ToolIntegratedStatus.O.name(), k -> new ToolVersionEntity());
+            BeanUtils.copyProperties(currToolVersion, lastToolVersion);
+            toolMetaEntity.setLastToolVersions(Lists.newArrayList(lastToolVersionsMap.values()));
+
+            // 记录更新时间、更新人
+            currToolVersion.setUpdatedDate(System.currentTimeMillis());
+            currToolVersion.setUpdatedBy(userName);
+            currToolVersion.setDockerImageVersion(dockerImageVersion);
+            currToolVersion.setDockerImageHash(dockerImageHash);
+
+            toolMetaEntity.setToolVersions(Lists.newArrayList(currToolVersionsMap.values()));
+        }
+
+        toolMetaRepository.save(toolMetaEntity);
+        return true;
+    }
+
+    @Override
+    public List<ToolMetaDetailVO> getToolsByPattern(String pattern) {
+        List<ToolMetaEntity> entities = toolMetaRepository.findByPattern(pattern);
+        if (CollectionUtils.isEmpty(entities)) {
+            return Collections.emptyList();
+        }
+        List<ToolMetaDetailVO> vos = new ArrayList<>();
+        for (ToolMetaEntity entity : entities) {
+            ToolMetaDetailVO vo = new ToolMetaDetailVO();
+            BeanUtils.copyProperties(entity, vo);
+            vos.add(vo);
+        }
+        return vos;
     }
 }

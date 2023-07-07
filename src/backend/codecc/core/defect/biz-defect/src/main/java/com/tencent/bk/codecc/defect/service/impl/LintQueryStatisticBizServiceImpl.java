@@ -27,20 +27,19 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.tencent.bk.codecc.defect.dao.mongorepository.LintStatisticRepository;
-import com.tencent.bk.codecc.defect.model.LintStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.LintStatisticEntity;
 import com.tencent.bk.codecc.defect.service.IQueryStatisticBizService;
 import com.tencent.devops.common.api.analysisresult.BaseLastAnalysisResultVO;
 import com.tencent.devops.common.api.analysisresult.LintLastAnalysisResultVO;
 import com.tencent.devops.common.api.analysisresult.NotRepairedAuthorVO;
 import com.tencent.devops.common.api.analysisresult.ToolLastAnalysisResultVO;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.util.BeanUtils;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.stream.Collectors;
 
 /**
  * Lint类查询分析统计结果的业务逻辑类
@@ -51,6 +50,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service("LINTQueryStatisticBizService")
 public class LintQueryStatisticBizServiceImpl implements IQueryStatisticBizService {
+
     @Autowired
     private LintStatisticRepository lintStatisticRepository;
 
@@ -90,8 +90,9 @@ public class LintQueryStatisticBizServiceImpl implements IQueryStatisticBizServi
                 );
             }
         }
+
         lastAnalysisResultVO.setPattern(ComConstants.ToolPattern.LINT.name());
-//        log.info("task_id:{}, toolName: {}, lint statistic :{}", taskId, toolName, lastAnalysisResultVO);
+
         return lastAnalysisResultVO;
     }
 }

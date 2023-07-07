@@ -29,11 +29,13 @@ package com.tencent.bk.codecc.defect.service.impl;
 import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository;
-import com.tencent.bk.codecc.defect.model.CCNDefectEntity;
-import com.tencent.bk.codecc.defect.model.CCNStatisticEntity;
+import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CCNStatisticEntity;
 import com.tencent.bk.codecc.defect.service.AbstractDataReportBizService;
 import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
-import com.tencent.bk.codecc.defect.vo.*;
+import com.tencent.bk.codecc.defect.vo.CCNDataReportRspVO;
+import com.tencent.bk.codecc.defect.vo.ChartAverageListVO;
+import com.tencent.bk.codecc.defect.vo.ChartAverageVO;
 import com.tencent.bk.codecc.defect.vo.common.CommonDataReportRspVO;
 import com.tencent.bk.codecc.defect.vo.report.CCNChartAuthorVO;
 import com.tencent.bk.codecc.defect.vo.report.ChartAuthorListVO;
@@ -44,11 +46,18 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.connection.SortParameters;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_DATA_REPORT_DATE;
 
@@ -59,8 +68,7 @@ import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_DATA_R
  * @date 2019/5/31
  */
 @Service("CCNDataReportBizService")
-public class CCNDataReportBizServiceImpl extends AbstractDataReportBizService
-{
+public class CCNDataReportBizServiceImpl extends AbstractDataReportBizService {
 
     @Autowired
     private CCNDefectRepository ccnDefectRepository;
@@ -72,8 +80,8 @@ public class CCNDataReportBizServiceImpl extends AbstractDataReportBizService
     private CCNStatisticRepository ccnStatisticRepository;
 
     @Override
-    public CommonDataReportRspVO getDataReport(Long taskId, String toolName, int size, String startTime, String endTime)
-    {
+    public CommonDataReportRspVO getDataReport(Long taskId, String toolName, int size,
+                                               String startTime, String endTime) {
         // 检查日期有效性
         DateTimeUtils.checkDateValidity(startTime, endTime);
 
@@ -84,8 +92,10 @@ public class CCNDataReportBizServiceImpl extends AbstractDataReportBizService
         ccnDataReportRes.setChartAverageList(getChartAverageList(taskId, toolName, size, startTime, endTime));
 
         // 查询CCN告警类，只查询NEW的告警
-        List<CCNDefectEntity> ccnDefectList = ccnDefectRepository.findByTaskIdAndStatus(taskId, ComConstants.DefectStatus.NEW.value());
-        ChartAuthorListVO chartAuthorListVO = CollectionUtils.isNotEmpty(ccnDefectList) ? getChartAuthorList(ccnDefectList) : new ChartAuthorListVO();
+        List<CCNDefectEntity> ccnDefectList =
+                ccnDefectRepository.findByTaskIdAndStatus(taskId, ComConstants.DefectStatus.NEW.value());
+        ChartAuthorListVO chartAuthorListVO = CollectionUtils.isNotEmpty(ccnDefectList)
+                ? getChartAuthorList(ccnDefectList) : new ChartAuthorListVO();
         // 获取告警作者分布列表
         ccnDataReportRes.setChartAuthorList(chartAuthorListVO);
 
@@ -103,8 +113,7 @@ public class CCNDataReportBizServiceImpl extends AbstractDataReportBizService
      * @param ccnFileEntity
      * @return
      */
-    private ChartAuthorListVO getChartAuthorList(List<CCNDefectEntity> ccnFileEntity)
-    {
+    private ChartAuthorListVO getChartAuthorList(List<CCNDefectEntity> ccnFileEntity) {
         // 作者对应的图表数据Map
         Map<String, CCNChartAuthorVO> chartAuthorMap = new HashMap<>();
 
@@ -113,12 +122,10 @@ public class CCNDataReportBizServiceImpl extends AbstractDataReportBizService
 
         ccnFileEntity.stream()
                 .filter(ccn -> StringUtils.isNotBlank(ccn.getAuthor()))
-                .forEach(ccn ->
-                {
+                .forEach(ccn -> {
                     String author = ccn.getAuthor();
                     CCNChartAuthorVO chartAuthor = chartAuthorMap.get(author);
-                    if (Objects.isNull(chartAuthor))
-                    {
+                    if (Objects.isNull(chartAuthor)) {
                         chartAuthor = new CCNChartAuthorVO();
                         chartAuthor.setAuthorName(author);
                     }
@@ -129,8 +136,7 @@ public class CCNDataReportBizServiceImpl extends AbstractDataReportBizService
                 });
 
         ChartAuthorListVO chartAuthorListVO = new ChartAuthorListVO();
-        if (MapUtils.isNotEmpty(chartAuthorMap))
-        {
+        if (MapUtils.isNotEmpty(chartAuthorMap)) {
             chartAuthorListVO.setAuthorList(new ArrayList<>(chartAuthorMap.values()));
             super.setTotalChartAuthor(chartAuthorListVO);
         }
@@ -145,8 +151,7 @@ public class CCNDataReportBizServiceImpl extends AbstractDataReportBizService
      * @return
      */
     private ChartAverageListVO getChartAverageList(Long taskId, String toolName, int size, String startTime,
-            String endTime)
-    {
+                                                   String endTime) {
         // 趋势图展示的日期 [12周的ccn报表]
         List<LocalDate> dateList = getShowDateList(size, startTime, endTime);
         LocalDate todayDate = LocalDate.now();
@@ -154,27 +159,26 @@ public class CCNDataReportBizServiceImpl extends AbstractDataReportBizService
 
         // 如果是选择了日期则不需要展示国际化描述
         boolean dateRangeFlag = true;
-        if (StringUtils.isEmpty(startTime) && StringUtils.isEmpty(endTime))
-        {
+        if (StringUtils.isEmpty(startTime) && StringUtils.isEmpty(endTime)) {
             dateRangeFlag = false;
         }
 
         // 数据报表日期国际化
         Map<String, GlobalMessage> globalMessageMap = globalMessageUtil.getGlobalMessageMap(GLOBAL_DATA_REPORT_DATE);
-        List<CCNStatisticEntity> statistic = ccnStatisticRepository.findByTaskIdAndToolNameOrderByTimeDesc(taskId, toolName);
+        List<CCNStatisticEntity> statistic =
+                ccnStatisticRepository.findByTaskIdAndToolNameOrderByTimeDesc(taskId, toolName,
+                        Sort.by(new Sort.Order(Sort.Direction.DESC, "time")));
 
         // 平均复杂度列表
         List<ChartAverageVO> chartAverageList = new ArrayList<>(dateList.size());
-        for (LocalDate date : dateList)
-        {
+        for (LocalDate date : dateList) {
             ChartAverageVO chartAverage = new ChartAverageVO();
             chartAverage.setDate(date.toString());
             chartAverage.setTips(setTips(date, todayDate, lastDate, globalMessageMap, dateRangeFlag));
 
             // 没有分析记录，则每个日期的平均复杂度为0
             float averageCcn = ComConstants.COMMON_NUM_0F;
-            if (CollectionUtils.isNotEmpty(statistic))
-            {
+            if (CollectionUtils.isNotEmpty(statistic)) {
                 // 时间按倒序排序
                 statistic.sort(Comparator.comparing(CCNStatisticEntity::getTime).reversed());
 
@@ -183,7 +187,7 @@ public class CCNDataReportBizServiceImpl extends AbstractDataReportBizService
                         .filter(an -> localDate2Millis(date.plusDays(1)) > an.getTime())
                         .findFirst().orElseGet(CCNStatisticEntity::new);
 
-                if(Objects.nonNull(analysisEntity.getAverageCCN())){
+                if (Objects.nonNull(analysisEntity.getAverageCCN())) {
                     averageCcn = analysisEntity.getAverageCCN();
                 }
             }
@@ -202,21 +206,20 @@ public class CCNDataReportBizServiceImpl extends AbstractDataReportBizService
     /**
      * 获取超标圈复杂度趋势图
      *
-     * @param taskId        任务ID
-     * @param toolName      工具名称
-     * @param size          元素个数
+     * @param taskId   任务ID
+     * @param toolName 工具名称
+     * @param size     元素个数
      * @return chart
      */
-    private ChartAverageListVO getChartBeyondThresholdList(Long taskId, String toolName, int size, String startTime, String endTime)
-    {
+    private ChartAverageListVO getChartBeyondThresholdList(Long taskId, String toolName, int size,
+                                                           String startTime, String endTime) {
         List<CCNStatisticEntity> statistic = ccnStatisticRepository.findByTaskIdAndToolName(taskId, toolName);
         // 时间按倒序排序
         statistic.sort(Comparator.comparing(CCNStatisticEntity::getTime).reversed());
 
         // 如果是选择了日期则不需要展示国际化描述
         boolean dateRangeFlag = true;
-        if (StringUtils.isEmpty(startTime) && StringUtils.isEmpty(endTime))
-        {
+        if (StringUtils.isEmpty(startTime) && StringUtils.isEmpty(endTime)) {
             dateRangeFlag = false;
         }
 
@@ -229,8 +232,7 @@ public class CCNDataReportBizServiceImpl extends AbstractDataReportBizService
         Map<String, GlobalMessage> globalMessageMap = globalMessageUtil.getGlobalMessageMap(GLOBAL_DATA_REPORT_DATE);
 
         List<ChartAverageVO> chartAverageList = Lists.newArrayListWithCapacity(dateList.size());
-        for (LocalDate localDate : dateList)
-        {
+        for (LocalDate localDate : dateList) {
             ChartAverageVO chartAverage = new ChartAverageVO();
             chartAverage.setDate(localDate.toString());
             chartAverage.setTips(setTips(localDate, todayDate, lastDate, globalMessageMap, dateRangeFlag));
@@ -242,8 +244,7 @@ public class CCNDataReportBizServiceImpl extends AbstractDataReportBizService
 
             int ccnBeyondThresholdSum = 0;
             Integer ccnSum = analysisEntity.getCcnBeyondThresholdSum();
-            if (ccnSum != null)
-            {
+            if (ccnSum != null) {
                 ccnBeyondThresholdSum = ccnSum;
             }
 
@@ -265,34 +266,25 @@ public class CCNDataReportBizServiceImpl extends AbstractDataReportBizService
      * @param ccn
      * @param author
      */
-    private void setLevel(int ccn, CCNChartAuthorVO author, Map<String, String> riskConfigMap)
-    {
+    private void setLevel(int ccn, CCNChartAuthorVO author, Map<String, String> riskConfigMap) {
         // 统计的数据
         int superHigh = author.getSuperHigh();
         int high = author.getHigh();
         int medium = author.getMedium();
         int low = author.getLow();
 
-        if (MapUtils.isNotEmpty(riskConfigMap))
-        {
+        if (MapUtils.isNotEmpty(riskConfigMap)) {
             int sh = Integer.valueOf(riskConfigMap.get(ComConstants.RiskFactor.SH.name()));
             int h = Integer.valueOf(riskConfigMap.get(ComConstants.RiskFactor.H.name()));
             int m = Integer.valueOf(riskConfigMap.get(ComConstants.RiskFactor.M.name()));
 
-            if (ccn >= sh)
-            {
+            if (ccn >= sh) {
                 ++superHigh;
-            }
-            else if (ccn >= h && ccn < sh)
-            {
+            } else if (ccn >= h && ccn < sh) {
                 ++high;
-            }
-            else if (ccn >= m && ccn < h)
-            {
+            } else if (ccn >= m && ccn < h) {
                 ++medium;
-            }
-            else if (ccn < m)
-            {
+            } else if (ccn < m) {
                 ++low;
             }
         }
@@ -306,31 +298,24 @@ public class CCNDataReportBizServiceImpl extends AbstractDataReportBizService
 
 
     @Override
-    public List<LocalDate> getShowDateList(int size, String startTime, String endTime)
-    {
+    public List<LocalDate> getShowDateList(int size, String startTime, String endTime) {
         // [2019-12-24, 2019-12-23, 2019-12-16, 2019-12-09, 2019-12-02, 2019-12-01]
         List<LocalDate> dateList = Lists.newArrayList();
-        if (StringUtils.isNotEmpty(startTime) || StringUtils.isNotEmpty(endTime))
-        {
+        if (StringUtils.isNotEmpty(startTime) || StringUtils.isNotEmpty(endTime)) {
             // 开始时间
             getWeekDateListByDate(startTime, endTime, dateList);
-        }
-        else
-        {
+        } else {
             // 如果开始、结束时间都为空 则按日期节点数展示
-            if (size == 0)
-            {
+            if (size == 0) {
                 size = 12;
             }
             LocalDate currentDate = LocalDate.now();
 
             dateList.add(currentDate);
-            for (int i = 0; i < size - 1; i++)
-            {
+            for (int i = 0; i < size - 1; i++) {
                 // 按每周一维度
                 LocalDate mondayOfWeek = currentDate.minusWeeks(i).with(DayOfWeek.MONDAY);
-                if (!currentDate.equals(mondayOfWeek))
-                {
+                if (!currentDate.equals(mondayOfWeek)) {
                     dateList.add(mondayOfWeek);
                 }
             }

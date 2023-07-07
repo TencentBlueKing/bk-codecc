@@ -49,6 +49,9 @@ public class ChartLegacyVO
     @ApiModelProperty("历史告警数")
     private Integer historyCount;
 
+    @ApiModelProperty("总告警数")
+    private Integer count;
+
     @ApiModelProperty("显示日期")
     private String tips;
 
@@ -59,6 +62,7 @@ public class ChartLegacyVO
     {
         newCount = 0;
         historyCount = 0;
+        count = 0;
     }
 
 }

@@ -25,4 +25,7 @@ public class PipelineBuildInfoVO
 
     @ApiModelProperty(value = "扫描白名单列表")
     private List<String> repoWhiteList;
+
+    @ApiModelProperty(value = "拉取代码库相对子路径")
+    private List<String> repoRelativePathList;
 }

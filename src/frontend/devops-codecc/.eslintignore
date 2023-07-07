@@ -5,3 +5,6 @@ static/
 webpack_cache/
 css/
 *.min.js
+node_modules/
+src/assets/
+eslint-out.html

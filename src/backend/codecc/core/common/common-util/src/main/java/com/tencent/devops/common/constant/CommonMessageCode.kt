@@ -37,6 +37,8 @@ package com.tencent.devops.common.constant
  */
 object CommonMessageCode {
 
+    const val DB_QUERY_TIME_OUT= "-99"
+
     /**
      * 成功
      */
@@ -71,7 +73,6 @@ object CommonMessageCode {
      * 查看代码内容文件过大
      */
     const val FILE_CONTENT_TOO_LARGE = "2100019"
-
 
     /**
      *  {0}无权限
@@ -147,4 +148,28 @@ object CommonMessageCode {
      * 通过json文件传入的参数非法
      */
     const val JSON_PARAM_IS_INVALID = "2300020"
+
+    /**
+     * 任务提单没oauth授权
+     */
+    const val REACH_LIMIT = "2300023"
+
+    const val UNKNOWN_ERROR = "2300024"
+
+    const val INTERNAL_SERVICE_ERROR = "2300025"
+
+    const val IO_ERROR = "2300026"
+
+    const val QUERY_PARAM_REQUEST_ERROR = "2300027"
+
+    const val REQUEST_BODY_PARAM_ERROR = "2300028"
+
+    const val REGULAR_EXP_INVALID = "2300029"
+
+    const val UNAUTHORIZED_ACCESS_TO_RESOURCES = "2300030"
+
+    /**
+     * 项目告警数过多
+     */
+    const val PROJECT_DEFECT_TOO_MANY = "2300031"
 }

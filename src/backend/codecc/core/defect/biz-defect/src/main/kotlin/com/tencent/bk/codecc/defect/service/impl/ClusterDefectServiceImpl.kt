@@ -1,28 +1,37 @@
 package com.tencent.bk.codecc.defect.service.impl
 
 import com.tencent.bk.codecc.defect.dao.ToolMetaCacheServiceImpl
+import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository
+import com.tencent.bk.codecc.defect.dao.mongotemplate.CommonStatisticDao
+import com.tencent.bk.codecc.defect.dao.mongotemplate.LintStatisticDao
+import com.tencent.bk.codecc.defect.model.statistic.StatisticEntity
 import com.tencent.bk.codecc.defect.service.ClusterDefectService
-import com.tencent.bk.codecc.defect.service.TaskLogOverviewService
+import com.tencent.bk.codecc.defect.service.CommonDefectMigrationService
+import com.tencent.bk.codecc.defect.service.IV3CheckerSetBizService
 import com.tencent.bk.codecc.defect.service.TaskLogService
+import com.tencent.bk.codecc.defect.vo.enums.CheckerCategory
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
 import com.tencent.devops.common.api.clusterresult.BaseClusterResultVO
 import com.tencent.devops.common.client.Client
-import com.tencent.devops.common.constant.ComConstants
+import com.tencent.devops.common.constant.ComConstants.ToolType
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware
 import org.springframework.stereotype.Component
-import java.util.stream.Collectors
 
 
 @Component
 class ClusterDefectServiceImpl @Autowired constructor(
-        private var applicationContext: ApplicationContext,
-        private val client: Client,
-        private val taskLogOverviewService: TaskLogOverviewService,
-        private val taskLogService: TaskLogService,
-        private val toolMetaCacheServiceImpl: ToolMetaCacheServiceImpl
+    private var applicationContext: ApplicationContext,
+    private val client: Client,
+    private val taskLogService: TaskLogService,
+    private val toolMetaCacheServiceImpl: ToolMetaCacheServiceImpl,
+    private val v3CheckerSetBizService: IV3CheckerSetBizService,
+    private val checkerRepository: CheckerRepository,
+    private val lintStatisticDao: LintStatisticDao,
+    private val commonStatisticDao: CommonStatisticDao,
+    private val commonDefectMigrationService: CommonDefectMigrationService
 ) : ApplicationContextAware {
 
     override fun setApplicationContext(applicationContext: ApplicationContext) {
@@ -41,78 +50,59 @@ class ClusterDefectServiceImpl @Autowired constructor(
      * @param toolName
      */
     fun cluster(taskId: Long, buildId: String, toolName: String) {
-        logger.info("$toolName trigger cluster for $taskId $buildId")
-        val taskStatus = getTaskStatus(taskId, buildId)
-        // 不等待正在执行的任务,若任务还在执行中则不聚类信息
-        if (taskStatus.second != ComConstants.StepFlag.SUCC.value()) {
-            logger.info(taskStatus.first)
-            return
+        logger.info("trigger cluster begin, $taskId, $buildId, $toolName")
+
+        val taskLogVOList = taskLogService.getCurrBuildInfo(taskId, buildId)
+        val toolNameList = taskLogVOList.map { x -> x.toolName }
+        var toolNameToDimensionStatisticMap: Map<String, StatisticEntity> = mapOf()
+        val dimensionToToolMap: Map<String, List<String>>
+        val isMigrationSuccessful = commonDefectMigrationService.isMigrationSuccessful(taskId)
+
+        if (isMigrationSuccessful) {
+            dimensionToToolMap = getDimensionToToolMap(taskId, toolNameList)
+            if (dimensionToToolMap.isEmpty()) {
+                logger.info("trigger cluster dimensionToToolMap is empty, task id: $taskId, build id: $buildId")
+                return
+            }
+
+            val statisticList = mutableListOf<StatisticEntity>()
+            statisticList.addAll(lintStatisticDao.getLatestStatisticForCluster(taskId, toolNameList, buildId))
+            statisticList.addAll(commonStatisticDao.getLatestStatisticForCluster(taskId, toolNameList, buildId))
+            toolNameToDimensionStatisticMap = statisticList.associateBy { it.toolName }
+        } else {
+            dimensionToToolMap = toolNameList.groupBy { y -> toolMetaCacheServiceImpl.getToolBaseMetaCache(y).type }
         }
 
-        // 聚类逻辑，由通过上面判断的线程来执行
-        logger.info("$toolName trigger cluster for $taskId $buildId success")
-        // 工具根据 Type 分类
-        val taskLogVOList = taskLogService.getCurrBuildInfo(taskId, buildId)
-        val toolMap = taskLogVOList.stream()
-                .map { t ->
-                    t.toolName
-                }.collect(Collectors.toList()).groupBy {
-                    toolMetaCacheServiceImpl.getToolBaseMetaCache(it).type
-                }
+        logger.info("trigger cluster dimensionToToolMap: $dimensionToToolMap")
 
-        val clusterBeans =
-                applicationContext.getBeansOfType(ClusterDefectService::class.java)
-        toolMap.forEach { (type, toolList) ->
-            clusterBeans[type]?.cluster(
-                    taskId = taskId,
-                    buildId = buildId,
-                    toolList = toolList)
+        val clusterBeans = applicationContext.getBeansOfType(ClusterDefectService::class.java)
+        dimensionToToolMap.entries.forEach { (dimension, toolNames) ->
+            clusterBeans[dimension]?.cluster(
+                taskId = taskId,
+                buildId = buildId,
+                toolList = toolNames,
+                isMigrationSuccessful = isMigrationSuccessful,
+                toolNameToDimensionStatisticMap = toolNameToDimensionStatisticMap
+            )
         }
     }
 
     /**
-     * 获取任务执行状态
-     * 当所有工具都执行成功时才标记成功
-     *
-     * @param taskId
-     * @param buildId
+     * 获取维度与工具映射
      */
-    private fun getTaskStatus(taskId: Long, buildId: String): Pair<String, Int> {
-        val taskLogVOList = taskLogService.getCurrBuildInfo(taskId, buildId)
-        // 获取任务扫描工具
-        val result = client.get(ServiceTaskRestResource::class.java).getTaskToolList(taskId)
-        if (result.isNotOk() || result.data == null) {
-            // 远程调用失败标记为为执行，不再计算度量信息
-            return Pair(
-                    "get task tool config info from remote fail! message: ${result.message} taskId: $taskId | buildId: $buildId",
-                    ComConstants.StepFlag.FAIL.value())
+    private fun getDimensionToToolMap(taskId: Long, toolNameList: List<String>): Map<String, List<String>> {
+        val projectId = client.get(ServiceTaskRestResource::class.java).getTaskInfoById(taskId)?.data?.projectId
+        if (projectId.isNullOrBlank()) {
+            logger.info("trigger cluster, project id is null, task id: $taskId")
+            return mapOf()
         }
 
-        val toolList = result.data
-        // 获取任务的实际执行工具
-        val actualExeTools = taskLogOverviewService.getActualExeTools(taskId, buildId)
-        // 判断任务是否执行完毕的时候根据任务设置的扫描工具和实际扫描的工具决定
-        toolList?.enableToolList?.filter { toolConfigBaseVO ->
-            actualExeTools?.contains(toolConfigBaseVO.toolName) ?: true }
-                ?.forEach { tool ->
-                    logger.info("cal status ${tool.toolName}")
-                    val taskLog = taskLogVOList.find { taskLogVO ->
-                        taskLogVO.toolName.equals(tool.toolName, true)
-                    } ?: return Pair(
-                            "${tool.toolName} not found! taskId: $taskId | buildId: $buildId",
-                            ComConstants.StepFlag.FAIL.value()
-                    )
+        val checkerKeyList = v3CheckerSetBizService.getTaskCheckerSets(projectId, taskId, toolNameList)
+                ?.flatMap { x -> (x.checkerProps ?: listOf()).map { y -> y.checkerKey } }
 
-                    // 执行成功则继续分析
-                    if (taskLog.flag != ComConstants.StepFlag.SUCC.value()) {
-                        return Pair(
-                                "${taskLog.toolName} execute not success! taskId: $taskId | buildId: $buildId",
-                                taskLog.flag
-                        )
-                    }
-                }
-
-        return Pair("", ComConstants.StepFlag.SUCC.value())
+        return checkerRepository.findClusterFieldByToolNameInAndCheckerKeyIn(toolNameList, checkerKeyList)
+                .distinctBy { "${it.checkerCategory}_${it.toolName}" }
+                .groupBy({ convertToDimension(it.checkerCategory) }, { it.toolName })
     }
 
     /**
@@ -123,15 +113,30 @@ class ClusterDefectServiceImpl @Autowired constructor(
      */
     fun getClusterStatistic(taskId: Long, buildId: String): List<BaseClusterResultVO> {
         logger.info("get cluster statistic: $taskId $buildId")
+
         // 通过接口实现类遍历拿到所有工具的聚类信息
-        val clusterBeans =
-                applicationContext.getBeansOfType(ClusterDefectService::class.java)
+        val clusterBeans = applicationContext.getBeansOfType(ClusterDefectService::class.java)
         val clusterResultVOList = mutableListOf<BaseClusterResultVO>()
         clusterBeans.forEach { (_, clusterService) ->
             clusterResultVOList.add(clusterService.getClusterStatistic(taskId, buildId))
         }
 
         return clusterResultVOList
+    }
+
+    /**
+     * 规则标签转换为通用维度标签
+     */
+    fun convertToDimension(checkerCategory: String): String {
+        return when (checkerCategory) {
+            CheckerCategory.CODE_DEFECT.name -> ToolType.DEFECT.name
+            CheckerCategory.CODE_FORMAT.name -> ToolType.STANDARD.name
+            CheckerCategory.SECURITY_RISK.name -> ToolType.SECURITY.name
+            CheckerCategory.DUPLICATE.name -> ToolType.DUPC.name
+            CheckerCategory.COMPLEXITY.name -> ToolType.CCN.name
+            // mock: no match bean name
+            else -> "OTHERS"
+        }
     }
 
     companion object {

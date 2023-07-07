@@ -33,7 +33,8 @@ import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.api.ServiceAnalyzeConfigRestResource;
 import com.tencent.bk.codecc.defect.api.ServiceDefectRestResource;
 import com.tencent.bk.codecc.defect.api.ServiceToolBuildInfoResource;
-import com.tencent.bk.codecc.defect.vo.SetForceFullScanReqVO;
+import com.tencent.bk.codecc.defect.vo.ToolBuildStackReqVO;
+import com.tencent.bk.codecc.task.constant.TaskMessageCode;
 import com.tencent.bk.codecc.task.dao.mongorepository.BaseDataRepository;
 import com.tencent.bk.codecc.task.dao.mongorepository.TaskRepository;
 import com.tencent.bk.codecc.task.dao.mongorepository.ToolRepository;
@@ -53,7 +54,7 @@ import com.tencent.devops.common.api.CodeRepoVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolVersionVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.ScanType;
@@ -64,8 +65,12 @@ import com.tencent.devops.common.util.GsonUtils;
 import com.tencent.devops.common.util.List2StrUtil;
 import com.tencent.devops.common.util.PathUtils;
 import com.tencent.devops.common.web.mq.ConstantsKt;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -110,23 +115,26 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
     private GrayToolProjectService grayToolProjectService;
 
     @Override
-    public AnalyzeConfigInfoVO getAnalyzeConfig(String streamName, String toolName, PipelineBuildInfoVO pipelineBuildInfoVO) {
+    public AnalyzeConfigInfoVO getAnalyzeConfig(String streamName, String toolName,
+                                                PipelineBuildInfoVO pipelineBuildInfoVO) {
         log.info("start to get defect config!, stream name: {}, tool type: {}, {}",
                 streamName, toolName, GsonUtils.toJson(pipelineBuildInfoVO));
         AnalyzeConfigInfoVO analyzeConfigInfoVO = new AnalyzeConfigInfoVO();
 
         // 任务详细信息
-        TaskInfoEntity taskInfoEntity = taskRepository.findFirstByNameEn(streamName);
+        TaskInfoEntity taskInfoEntity = taskRepository.findFirstWithoutToolsByNameEn(streamName);
         if (null == taskInfoEntity) {
-            throw new CodeCCException("empty task info found out! stream name: {}", new String[]{streamName});
+            throw new CodeCCException(TaskMessageCode.TASK_NOT_FOUND);
         }
 
         // 工具详细信息
         ToolConfigInfoEntity toolConfigInfoEntity =
                 toolRepository.findFirstByTaskIdAndToolName(taskInfoEntity.getTaskId(), toolName);
         if (toolConfigInfoEntity == null) {
-            throw new CodeCCException("empty tool info found out ! stream name: {}, toolName: {}, task: {} ",
-                    new String[]{streamName, toolName, taskInfoEntity + ""});
+            throw new CodeCCException(
+                    TaskMessageCode.TOOL_CONFIG_NOT_FOUND,
+                    new String[]{"task id: " + taskInfoEntity.getTaskId()}
+            );
         }
         analyzeConfigInfoVO.setTaskId(taskInfoEntity.getTaskId());
         analyzeConfigInfoVO.setMultiToolType(toolName.toUpperCase());
@@ -156,9 +164,16 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
         analyzeConfigInfoVO.setToolOptions(new ArrayList<>(toolOptionSet));
         analyzeConfigInfoVO.setParamJson(null);
 
+        HttpServletRequest request =
+                ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        String buildId = request.getHeader(AUTH_HEADER_DEVOPS_BUILD_ID);
+
         // 增量全量
         analyzeConfigInfoVO = addScanType(analyzeConfigInfoVO, pipelineBuildInfoVO, taskInfoEntity,
-                toolConfigInfoEntity);
+                toolConfigInfoEntity, buildId);
+
+        // 扫描方式后置处理
+        addScanTypePostHandle(analyzeConfigInfoVO, buildId);
 
         analyzeConfigInfoVO.setPlatformIp(toolConfigInfoEntity.getPlatformIp());
 
@@ -178,9 +193,11 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
 
         //如果有个性化触发信息，则传递给工具端
         if (null != taskInfoEntity.getCustomProjInfo()) {
-            analyzeConfigInfoVO.setRepoUrlMap(new HashMap<String, String>() {{
-                put("pseudoRepo", taskInfoEntity.getCustomProjInfo().getUrl());
-            }});
+            analyzeConfigInfoVO.setRepoUrlMap(new HashMap<String, String>() {
+                {
+                    put("pseudoRepo", taskInfoEntity.getCustomProjInfo().getUrl());
+                }
+            });
         }
 
         log.info("get defect config finish!, task id: {}, tool type: {}", taskInfoEntity.getTaskId(), toolName);
@@ -189,7 +206,7 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
 
     /**
      * 设置屏蔽路径
-     * <p>
+     *
      * 对于.code.yml中的测试代码，也要进行代码规范检查
      *
      * @param analyzeConfigInfoVO
@@ -224,7 +241,8 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
      * @param toolConfigInfoEntity
      * @return
      */
-    private List<AnalyzeConfigInfoVO.ToolOptions> getToolOptions(TaskInfoEntity taskInfoEntity, ToolConfigInfoEntity toolConfigInfoEntity) {
+    private List<AnalyzeConfigInfoVO.ToolOptions> getToolOptions(TaskInfoEntity taskInfoEntity,
+                                                                 ToolConfigInfoEntity toolConfigInfoEntity) {
         List<AnalyzeConfigInfoVO.ToolOptions> toolOptionList = new ArrayList<>();
         // 编译工具个性化参数
         if (StringUtils.isNotBlank(taskInfoEntity.getProjectBuildCommand())) {
@@ -249,7 +267,8 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
         }
 
         if (Tool.PINPOINT.name().equals(toolConfigInfoEntity.getToolName())) {
-            PlatformVO platformVO = platformService.getPlatformByToolNameAndIp(toolConfigInfoEntity.getToolName(), toolConfigInfoEntity.getPlatformIp());
+            PlatformVO platformVO = platformService.getPlatformByToolNameAndIp(toolConfigInfoEntity.getToolName(),
+                    toolConfigInfoEntity.getPlatformIp());
             if (platformVO != null) {
                 AnalyzeConfigInfoVO.ToolOptions pinpointTokenOption = new AnalyzeConfigInfoVO.ToolOptions();
                 pinpointTokenOption.setOptionName("pinpointToken");
@@ -308,8 +327,8 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
      */
     private AnalyzeConfigInfoVO addChecker(AnalyzeConfigInfoVO analyzeConfigInfoVO, TaskInfoEntity taskInfoEntity) {
         // 如果是老插件，并且工具是重复率或者圈复杂度，则不需要查询规则
-        if (StringUtils.isEmpty(taskInfoEntity.getAtomCode()) &&
-                (Tool.DUPC.name().equalsIgnoreCase(analyzeConfigInfoVO.getMultiToolType())
+        if (StringUtils.isEmpty(taskInfoEntity.getAtomCode())
+                && (Tool.DUPC.name().equalsIgnoreCase(analyzeConfigInfoVO.getMultiToolType())
                         || Tool.CCN.name().equalsIgnoreCase(analyzeConfigInfoVO.getMultiToolType()))) {
             return analyzeConfigInfoVO;
         }
@@ -335,8 +354,9 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
      * @param toolConfigInfoEntity
      * @return
      */
-    private AnalyzeConfigInfoVO addScanType(AnalyzeConfigInfoVO analyzeConfigInfoVO, PipelineBuildInfoVO pipelineBuildInfoVO,
-                                            TaskInfoEntity taskInfoEntity, ToolConfigInfoEntity toolConfigInfoEntity) {
+    private AnalyzeConfigInfoVO addScanType(AnalyzeConfigInfoVO analyzeConfigInfoVO,
+            PipelineBuildInfoVO pipelineBuildInfoVO, TaskInfoEntity taskInfoEntity,
+            ToolConfigInfoEntity toolConfigInfoEntity, String buildId) {
         Integer taskScanType = taskInfoEntity.getScanType();
         long taskId = analyzeConfigInfoVO.getTaskId();
         String toolName = analyzeConfigInfoVO.getMultiToolType();
@@ -350,42 +370,58 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
         List<BaseDataEntity> baseDataEntityList = baseDataRepository.findByParamTypeIn(paramTypes);
         Map<String, BaseDataEntity> baseDataEntityMap = baseDataEntityList.stream()
                 .collect(Collectors.toMap(BaseDataEntity::getParamType, Function.identity(), (k, v) -> v));
-        List<String> incrementalExceptTools = List2StrUtil.fromString(baseDataEntityMap
-                .get(ComConstants.BaseConfig.INCREMENTAL_EXCEPT_TOOLS.name()).getParamValue(), ComConstants.STRING_SPLIT);
+        List<String> incrementalExceptTools = List2StrUtil.fromString(
+                baseDataEntityMap.get(ComConstants.BaseConfig.INCREMENTAL_EXCEPT_TOOLS.name()).getParamValue(),
+                ComConstants.STRING_SPLIT);
 
         // 1.支持增量的工具才支持diff模式，diff模式不强制全量处理
+        log.info("taskId:{},buildId:{},toolName:{},taskScanType:{}", taskId, buildId, toolName, taskScanType);
         if (!incrementalExceptTools.contains(toolName)
                 && !Tool.COVERITY.name().equalsIgnoreCase(toolName)) {
-            if (taskScanType != null && taskScanType == ScanType.DIFF_MODE.code) {
+            if (taskScanType != null && (taskScanType == ScanType.DIFF_MODE.code
+                    || taskScanType == ScanType.FILE_DIFF_MODE.code
+                    || taskScanType == ScanType.BRANCH_DIFF_MODE.code)) {
                 analyzeConfigInfoVO.setScanType(taskScanType);
                 return analyzeConfigInfoVO;
             }
         }
 
         // 2.判断是否是强制全量
-        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        String buildId = request.getHeader(AUTH_HEADER_DEVOPS_BUILD_ID);
         analyzeConfigInfoVO.setBuildId(buildId);
         analyzeConfigInfoVO.setRepoIds(pipelineBuildInfoVO.getRepoIds());
         analyzeConfigInfoVO.setCodeRepos(pipelineBuildInfoVO.getCodeRepos());
         analyzeConfigInfoVO.setRepoWhiteList(pipelineBuildInfoVO.getRepoWhiteList());
         analyzeConfigInfoVO.setScanType(taskScanType);
         analyzeConfigInfoVO.setAtomCode(taskInfoEntity.getAtomCode());
+        analyzeConfigInfoVO.setRepoRelativePathList(pipelineBuildInfoVO.getRepoRelativePathList());
 
         log.info("start to get build info: {}, {}, {}", taskId, toolName, buildId);
-        Result<AnalyzeConfigInfoVO> result = client.get(ServiceAnalyzeConfigRestResource.class).getBuildInfo(analyzeConfigInfoVO);
+        Result<AnalyzeConfigInfoVO> result =
+                client.get(ServiceAnalyzeConfigRestResource.class).getBuildInfo(analyzeConfigInfoVO);
         if (result == null || result.isNotOk()) {
             log.error("Get tool build info failed! taskId={}, toolName={}, buildId={}", taskId, toolName, buildId);
-            throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL, new String[]{"Get tool build info failed!"}, null);
+            throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL,
+                    new String[]{"Get tool build info failed!"}, null);
         }
         analyzeConfigInfoVO = result.getData();
 
         // 如果是强制全量，说明配置有变更，直接返回全量扫描
         if (analyzeConfigInfoVO.getScanType() != null
                 && ScanType.FULL.code == analyzeConfigInfoVO.getScanType()) {
+            setToolImageRevision(taskInfoEntity, toolConfigInfoEntity);
+            return analyzeConfigInfoVO;
+        } else if (isPreMerge(analyzeConfigInfoVO.getCodeRepos())) {
+            analyzeConfigInfoVO.setScanType(ScanType.FULL.code);
+            setToolBuildStackFullScan(taskId, toolName, buildId);
+            setToolImageRevision(taskInfoEntity, toolConfigInfoEntity);
             return analyzeConfigInfoVO;
         } else {
-            if (isToolImageChange(toolConfigInfoEntity, buildId, taskInfoEntity.getProjectId())) {
+            boolean isChanged = isToolImageChange(
+                    toolConfigInfoEntity, buildId, taskInfoEntity.getProjectId(),
+                    taskInfoEntity.getCheckerSetEnvType()
+            );
+
+            if (isChanged) {
                 // 如果工具镜像有变更，也应该强制全量
                 analyzeConfigInfoVO.setScanType(ScanType.FULL.code);
                 setToolBuildStackFullScan(taskId, toolName, buildId);
@@ -393,12 +429,16 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
             }
         }
 
-        BaseDataEntity fastIncrBaseDataEnity = baseDataEntityMap.get(ComConstants.BaseConfig.FAST_INCREMENTAL_TASK_WHITE_LIST.name());
+        BaseDataEntity fastIncrBaseDataEnity =
+                baseDataEntityMap.get(ComConstants.BaseConfig.FAST_INCREMENTAL_TASK_WHITE_LIST.name());
         String status = fastIncrBaseDataEnity.getParamStatus();
-        List<String> fastIncrTasks = List2StrUtil.fromString(fastIncrBaseDataEnity.getParamValue(), ComConstants.STRING_SPLIT);
-        BaseDataEntity fastIncrOpensourceBaseDataEnity = baseDataEntityMap.get(ComConstants.BaseConfig.FAST_INCREMENTAL_OPENSOURCE_TASK_WHITE_LIST.name());
+        List<String> fastIncrTasks =
+                List2StrUtil.fromString(fastIncrBaseDataEnity.getParamValue(), ComConstants.STRING_SPLIT);
+        BaseDataEntity fastIncrOpensourceBaseDataEnity =
+                baseDataEntityMap.get(ComConstants.BaseConfig.FAST_INCREMENTAL_OPENSOURCE_TASK_WHITE_LIST.name());
         String opensourceStatus = fastIncrOpensourceBaseDataEnity.getParamStatus();
-        List<String> fastIncrOpensourceTasks = List2StrUtil.fromString(fastIncrOpensourceBaseDataEnity.getParamValue(), ComConstants.STRING_SPLIT);
+        List<String> fastIncrOpensourceTasks =
+                List2StrUtil.fromString(fastIncrOpensourceBaseDataEnity.getParamValue(), ComConstants.STRING_SPLIT);
 
         /*
          * 普通任务的灰度开关:
@@ -406,7 +446,8 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
          * ENABLE标志灰度开关打开，只有在白名单里面的任务才可以执行快速增量
          */
         boolean fastIncrGrey = ComConstants.Status.DISABLE.name().equalsIgnoreCase(status)
-                || (ComConstants.Status.ENABLE.name().equalsIgnoreCase(status) && fastIncrTasks.contains(String.valueOf(taskId)));
+                || (ComConstants.Status.ENABLE.name().equalsIgnoreCase(status)
+                && fastIncrTasks.contains(String.valueOf(taskId)));
 
         /*
          * 开源任务的灰度开关:
@@ -414,7 +455,8 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
          * ENABLE标志灰度开关打开，只有在白名单里面的任务才可以执行快速增量
          */
         boolean opensourceFastIncrGrey = ComConstants.Status.DISABLE.name().equalsIgnoreCase(opensourceStatus)
-                || (ComConstants.Status.ENABLE.name().equalsIgnoreCase(opensourceStatus) && fastIncrOpensourceTasks.contains(String.valueOf(taskId)));
+                || (ComConstants.Status.ENABLE.name().equalsIgnoreCase(opensourceStatus)
+                && fastIncrOpensourceTasks.contains(String.valueOf(taskId)));
         log.info("fastIncrGrey: {}, opensourceFastIncrGrey: {}", fastIncrGrey, opensourceFastIncrGrey);
         /*
          * 3.判断是否进行快速增量，满足以下条件才执行快速增量
@@ -483,8 +525,8 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
                 if (Tool.COVERITY.name().equalsIgnoreCase(toolName)
                         && baseDataEntityMap.get(ComConstants.BaseConfig.INCREMENTAL_TASK_WHITE_LIST.name()) != null) {
                     List<String> incrementalTasks = List2StrUtil.fromString(
-                            baseDataEntityMap.get(ComConstants.BaseConfig.INCREMENTAL_TASK_WHITE_LIST.name()).getParamValue(),
-                            ComConstants.STRING_SPLIT);
+                            baseDataEntityMap.get(ComConstants.BaseConfig.INCREMENTAL_TASK_WHITE_LIST.name())
+                                    .getParamValue(), ComConstants.STRING_SPLIT);
                     if (incrementalTasks.contains(String.valueOf(taskId))) {
                         scanType = taskScanType;
                     }
@@ -492,8 +534,30 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
             }
         }
         analyzeConfigInfoVO.setScanType(scanType);
+        if (toolName.equals(Tool.WOODPECKER_COMMITSCAN.name())
+                && analyzeConfigInfoVO.getScanType() == ScanType.INCREMENTAL.code) {
+            analyzeConfigInfoVO.setCommitSince(getToolBuildStackCommitSince(analyzeConfigInfoVO));
+
+            setToolBuildStackCommitSince(taskId,
+                    toolName,
+                    buildId,
+                    analyzeConfigInfoVO.getCommitSince());
+        }
 
         return analyzeConfigInfoVO;
+    }
+
+    /**
+     * 根据代码库分支，判断是否是mr触发预合并（预合并会自动生成虚拟分支devops-virtual-branch）
+     *
+     * @param codeRepos 本次扫描的代码库列表
+     * @return 是否是预合并
+     */
+    private boolean isPreMerge(List<CodeRepoVO> codeRepos) {
+        if (CollectionUtils.isEmpty(codeRepos)) {
+            return false;
+        }
+        return codeRepos.stream().anyMatch(it -> "devops-virtual-branch".equals(it.getBranch()));
     }
 
     /**
@@ -504,10 +568,36 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
      * @param buildId
      */
     private void setToolBuildStackFullScan(long taskId, String toolName, String buildId) {
-        SetForceFullScanReqVO setForceFullScanReqVO = new SetForceFullScanReqVO();
-        setForceFullScanReqVO.setLandunBuildId(buildId);
-        setForceFullScanReqVO.setToolNames(Lists.newArrayList(toolName));
-        client.get(ServiceToolBuildInfoResource.class).setToolBuildStackFullScan(taskId, setForceFullScanReqVO);
+        ToolBuildStackReqVO toolBuildStackReqVO = new ToolBuildStackReqVO();
+        toolBuildStackReqVO.setLandunBuildId(buildId);
+        toolBuildStackReqVO.setToolNames(Lists.newArrayList(toolName));
+        client.get(ServiceToolBuildInfoResource.class).setToolBuildStackFullScan(taskId, toolBuildStackReqVO);
+    }
+
+    private void setToolBuildStackCommitSince(
+            long taskId, String toolName, String buildId, Long commitSince) {
+        ToolBuildStackReqVO toolBuildStackReqVO = new ToolBuildStackReqVO();
+        toolBuildStackReqVO.setLandunBuildId(buildId);
+        toolBuildStackReqVO.setToolName(toolName);
+        toolBuildStackReqVO.setCommitSince(1000 * commitSince);
+        client.get(ServiceToolBuildInfoResource.class).setToolBuildStackCommitSince(
+                taskId, toolBuildStackReqVO);
+    }
+
+    private long getToolBuildStackCommitSince(AnalyzeConfigInfoVO analyzeConfigInfoVO) {
+        ToolBuildStackReqVO toolBuildStackReqVO = new ToolBuildStackReqVO();
+        toolBuildStackReqVO.setLandunBuildId(analyzeConfigInfoVO.getBuildId());
+        toolBuildStackReqVO.setToolName(analyzeConfigInfoVO.getMultiToolType());
+        Result<Long> result = client.get(ServiceToolBuildInfoResource.class)
+                .getToolBuildStackCommitSince(analyzeConfigInfoVO.getTaskId(), toolBuildStackReqVO);
+        if (result.isNotOk() || result.getData() == null) {
+            log.error("getToolBuildStackCommitSince fail: {} {} {}",
+                    analyzeConfigInfoVO.getTaskId(),
+                    analyzeConfigInfoVO.getBuildId(),
+                    analyzeConfigInfoVO.getMultiToolType());
+            return 0L;
+        }
+        return result.getData() / 1000;
     }
 
     /**
@@ -521,14 +611,6 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
         log.info("lastCodeRepoSet: {}\ncurrCodeRepoSet:{}",
                 GsonUtils.toJson(lastCodeRepos),
                 GsonUtils.toJson(codeRepos));
-        if (CollectionUtils.isNotEmpty(codeRepos)) {
-            List<String> branches = codeRepos.stream().map(CodeRepoVO::getBranch).collect(Collectors.toList());
-            if (CollectionUtils.isNotEmpty(branches) && branches.contains("devops-virtual-branch")) {
-                //虚拟分支，默认变更
-                log.info("has devops-virtual-branch repo change");
-                return true;
-            }
-        }
         if (lastCodeRepos != null && codeRepos != null && lastCodeRepos.size() == codeRepos.size()) {
             Set<String> lastCodeRepoSet = lastCodeRepos.stream().map(repo -> String.format("%s_%s",
                     PathUtils.formatRepoUrlToHttp(repo.getUrl() == null ? "" : repo.getUrl()),
@@ -551,40 +633,19 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
      * @param toolConfigInfoEntity
      * @param buildId
      * @param projectId
+     * @param checkerSetEnvType
      * @return
      */
-    private boolean isToolImageChange(ToolConfigInfoEntity toolConfigInfoEntity, String buildId, String projectId) {
+    private boolean isToolImageChange(
+            ToolConfigInfoEntity toolConfigInfoEntity,
+            String buildId, String projectId, String checkerSetEnvType
+    ) {
         long taskId = toolConfigInfoEntity.getTaskId();
         String toolName = toolConfigInfoEntity.getToolName();
         log.info("check is tool image changed, taskId:{}, toolName:{}, buildId:{}", taskId, toolName, buildId);
 
         String oldToolImageRevision = toolConfigInfoEntity.getToolImageRevision();
-        String newToolImageRevision;
-
-        ToolMetaBaseVO toolMetaBaseVO = toolMetaCacheService.getToolBaseMetaCache(toolName);
-
-        // coverity,klocwork,pinpoint工具没有镜像，通过工具版本号来判断是否有变化
-        if (Tool.COVERITY.name().equals(toolName) || Tool.KLOCWORK.name().equals(toolName) || Tool.PINPOINT.name().equals(toolName)) {
-            newToolImageRevision = toolMetaBaseVO.getToolVersion();
-        } else {
-            //工具版本，T-测试版本，G-灰度版本，P-正式发布版本
-            String toolV = ComConstants.ToolIntegratedStatus.P.name();
-
-            //查询是否灰度项目，并获取灰度状态
-            GrayToolProjectVO grayPro = grayToolProjectService.findGrayInfoByProjectId(projectId);
-            if (grayPro != null) {
-                if (grayPro.getStatus() == ComConstants.ToolIntegratedStatus.G.value()) {
-                    toolV = ComConstants.ToolIntegratedStatus.G.name();
-                } else if (grayPro.getStatus() == ComConstants.ToolIntegratedStatus.T.value()) {
-                    toolV = ComConstants.ToolIntegratedStatus.T.name();
-                }
-            }
-            String finalToolV = toolV;
-            ToolVersionVO toolVersionVO = toolMetaBaseVO.getToolVersions().stream()
-                    .filter(it -> it.getVersionType().equalsIgnoreCase(finalToolV)).findFirst().get();
-            newToolImageRevision = toolVersionVO != null
-                    ? toolVersionVO.getDockerImageHash() : toolMetaBaseVO.getToolImageRevision();
-        }
+        String newToolImageRevision = getCurToolImageRevision(projectId, taskId, toolName, checkerSetEnvType);
 
         if (StringUtils.isNotEmpty(newToolImageRevision) && !newToolImageRevision.equals(oldToolImageRevision)) {
             log.info("need to update tool image! taskId: {}, toolName: {}, buildId: {}", taskId, toolName, buildId);
@@ -601,4 +662,93 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
         return false;
     }
 
+    private void addScanTypePostHandle(AnalyzeConfigInfoVO analyzeConfigInfoVO, String buildId) {
+        // 覆盖场景：#1全量、#2增量扫描、#1重试触发增量
+        if (analyzeConfigInfoVO != null && analyzeConfigInfoVO.getScanType() != null
+                && ScanType.INCREMENTAL.code == analyzeConfigInfoVO.getScanType()) {
+            ToolBuildStackReqVO reqVO = new ToolBuildStackReqVO(
+                    buildId,
+                    null,
+                    analyzeConfigInfoVO.getMultiToolType(),
+                    null,
+                    analyzeConfigInfoVO.getScanType()
+            );
+
+            client.get(ServiceToolBuildInfoResource.class).setToolBuildStackNotFullScanIfRebuildIncr(
+                    analyzeConfigInfoVO.getTaskId(),
+                    reqVO
+            );
+        }
+    }
+
+    /**
+     * 获取当前工具镜像版本
+     *
+     * @param projectId
+     * @param taskId
+     * @param toolName
+     * @param checkerSetEnvType
+     * @return
+     */
+    private String getCurToolImageRevision(
+            String projectId, Long taskId,
+            String toolName, String checkerSetEnvType
+    ) {
+        ToolMetaBaseVO toolMetaBaseVO = toolMetaCacheService.getToolBaseMetaCache(toolName);
+
+        // coverity,klocwork,pinpoint工具没有镜像，通过工具版本号来判断是否有变化
+        if (Tool.COVERITY.name().equals(toolName) || Tool.KLOCWORK.name().equals(toolName)
+                || Tool.PINPOINT.name().equals(toolName)) {
+            return toolMetaBaseVO.getToolVersion();
+        } else {
+            // 工具版本，T-测试版本，G-灰度版本，P-正式发布版本
+            String toolV = ComConstants.ToolIntegratedStatus.P.name();
+
+            // 查询是否灰度项目，并获取灰度状态
+            GrayToolProjectVO grayPro = grayToolProjectService.findGrayInfoByProjectId(projectId);
+            if (grayPro != null) {
+                if (grayPro.getStatus() == ComConstants.ToolIntegratedStatus.G.value()) {
+                    toolV = ComConstants.ToolIntegratedStatus.G.name();
+                } else if (grayPro.getStatus() == ComConstants.ToolIntegratedStatus.T.value()) {
+                    toolV = ComConstants.ToolIntegratedStatus.T.name();
+                }
+            }
+
+            if (StringUtils.isNotBlank(checkerSetEnvType)
+                    && checkerSetEnvType.equals(ComConstants.CheckerSetEnvType.PRE_PROD.getKey())) {
+                toolV = ComConstants.ToolIntegratedStatus.PRE_PROD.name();
+            }
+
+            String finalToolV = toolV;
+            ToolVersionVO toolVersionVO = toolMetaBaseVO.getToolVersions().stream()
+                    .filter(it -> it.getVersionType().equalsIgnoreCase(finalToolV)).findFirst().orElse(null);
+
+            // 取不到就取现网的
+            if (toolVersionVO == null) {
+                toolVersionVO = toolMetaBaseVO.getToolVersions().stream()
+                        .filter(it -> it.getVersionType().equalsIgnoreCase(
+                                ComConstants.CheckerSetEnvType.PROD.name())).findFirst().orElse(null);
+            }
+
+            String imageRevision = toolVersionVO != null ? toolVersionVO.getDockerImageHash()
+                    : toolMetaBaseVO.getToolImageRevision();
+
+            log.info("get tool image revision of task, {}, {}, {}, {}", taskId, toolName, finalToolV, imageRevision);
+
+            return imageRevision;
+        }
+    }
+
+    private void setToolImageRevision(
+            TaskInfoEntity taskInfoEntity,
+            ToolConfigInfoEntity toolConfigInfoEntity
+    ) {
+        long taskId = toolConfigInfoEntity.getTaskId();
+        String projectId = taskInfoEntity.getProjectId();
+        String checkerSetEnvType = taskInfoEntity.getCheckerSetEnvType();
+        String toolName = toolConfigInfoEntity.getToolName();
+        String toolImageRevision = getCurToolImageRevision(projectId, taskId, toolName, checkerSetEnvType);
+        toolConfigInfoEntity.setToolImageRevision(toolImageRevision);
+        toolDao.updateToolImageRevision(taskId, toolName, toolImageRevision);
+    }
 }

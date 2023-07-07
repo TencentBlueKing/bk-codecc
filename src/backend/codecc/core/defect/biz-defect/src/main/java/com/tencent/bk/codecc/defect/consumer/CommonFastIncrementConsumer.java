@@ -12,31 +12,42 @@
 
 package com.tencent.bk.codecc.defect.consumer;
 
+import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.dao.mongorepository.BuildRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CommonStatisticRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.DefectRepository;
+import com.tencent.bk.codecc.defect.dao.mongotemplate.DefectDao;
+import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.defect.mapping.DefectConverter;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.CheckerStatisticEntity;
-import com.tencent.bk.codecc.defect.model.CommonStatisticEntity;
-import com.tencent.bk.codecc.defect.model.DefectEntity;
-import com.tencent.bk.codecc.defect.pojo.CommonDefectStatisticModel;
+import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CommonStatisticEntity;
+import com.tencent.bk.codecc.defect.pojo.statistic.CommonDefectStatisticModel;
+import com.tencent.bk.codecc.defect.pojo.statistic.DefectStatisticModel;
 import com.tencent.bk.codecc.defect.service.BuildDefectService;
+import com.tencent.bk.codecc.defect.service.BuildSnapshotService;
+import com.tencent.bk.codecc.defect.service.CommonDefectMigrationService;
 import com.tencent.bk.codecc.defect.service.impl.CommonAnalyzeTaskBizServiceImpl;
-import com.tencent.bk.codecc.defect.service.newdefectjudge.NewDefectJudgeService;
-import com.tencent.bk.codecc.defect.service.statistic.CommonDefectStatisticService;
+import com.tencent.bk.codecc.defect.service.impl.redline.CompileRedLineReportServiceImpl;
+import com.tencent.bk.codecc.defect.service.statistic.CommonDefectStatisticServiceImpl;
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.service.BaseDataCacheService;
 import com.tencent.devops.common.web.aop.annotation.EndReport;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Lint告警提交消息队列的消费者
@@ -48,10 +59,13 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CommonFastIncrementConsumer extends AbstractFastIncrementConsumer
 {
+
     @Autowired
     private BuildRepository buildRepository;
     @Autowired
     private DefectRepository defectRepository;
+    @Autowired
+    private DefectDao defectDao;
     @Autowired
     private BuildDefectService buildDefectService;
     @Autowired
@@ -62,9 +76,19 @@ public class CommonFastIncrementConsumer extends AbstractFastIncrementConsumer
     @Autowired
     private CheckerRepository checkerRepository;
     @Autowired
-    private NewDefectJudgeService newDefectJudgeService;
+    private CommonDefectStatisticServiceImpl commonDefectStatisticService;
     @Autowired
-    private CommonDefectStatisticService commonDefectStatisticService;
+    private CompileRedLineReportServiceImpl compileRedLineReportServiceImpl;
+    @Autowired
+    private BuildSnapshotService buildSnapshotService;
+    @Autowired
+    private CommonDefectMigrationService commonDefectMigrationService;
+    @Autowired
+    private LintDefectV2Repository lintDefectV2Repository;
+    @Autowired
+    private DefectConverter defectConverter;
+    @Autowired
+    private BaseDataCacheService baseDataCacheService;
 
     /**
      * 告警提交
@@ -141,81 +165,94 @@ public class CommonFastIncrementConsumer extends AbstractFastIncrementConsumer
         String toolName = analyzeConfigInfoVO.getMultiToolType();
         String buildId = analyzeConfigInfoVO.getBuildId();
         TaskDetailVO taskVO = thirdPartySystemCaller.getTaskInfo(streamName);
-        List<DefectEntity> allNewDefectList =
-            defectRepository.findByTaskIdAndToolNameAndStatus(taskId, toolName, ComConstants.DefectStatus.NEW.value());
+        List<CommonDefectEntity> allNewDefectList;
+        boolean isMigrationSuccessful = commonDefectMigrationService.isMigrationSuccessful(taskId);
 
-        // 当任务没设置新问题判定时间时，统一取任务的创建时间，所以不要传toolName；保证前端展示跟后端统计的一致性
-        long newDefectJudgeTime = newDefectJudgeService.getNewDefectJudgeTime(taskId, taskVO);
-        log.info("saveAndStatisticDefect cov fast, newDefectJudgeTime: {}", newDefectJudgeTime);
-        CommonDefectStatisticModel statistic =
-                commonDefectStatisticService.statistic(newDefectJudgeTime, allNewDefectList);
+        if (isMigrationSuccessful) {
+            allNewDefectList = defectConverter.lintToCommon(
+                    lintDefectV2Repository.findNoneInstancesFieldByTaskIdAndToolNameAndStatus(
+                            taskId,
+                            toolName,
+                            ComConstants.DefectStatus.NEW.value()
+                    )
+            );
+        } else {
+            allNewDefectList = defectRepository.findNoneInstancesFieldByTaskIdAndToolNameAndStatus(
+                    taskId,
+                    toolName,
+                    ComConstants.DefectStatus.NEW.value()
+            );
+        }
 
-        CommonStatisticEntity statisticEntity = new CommonStatisticEntity();
-        statisticEntity.setTaskId(taskId);
-        statisticEntity.setToolName(toolName);
-        statisticEntity.setTime(System.currentTimeMillis());
-        statisticEntity.setBuildId(buildId);
-        statisticEntity.setNewCount(0);
-        statisticEntity.setFixedCount(0);
-        statisticEntity.setExistCount(allNewDefectList.size());
-        statisticEntity.setCloseCount(0);
-        statisticEntity.setExcludeCount(0);
-        statisticEntity.setExistPromptCount(statistic.getExistPromptCount());
-        statisticEntity.setExistNormalCount(statistic.getExistNormalCount());
-        statisticEntity.setExistSeriousCount(statistic.getExistSeriousCount());
-        statisticEntity.setNewPromptCount(statistic.getNewPromptCount());
-        statisticEntity.setNewNormalCount(statistic.getNewNormalCount());
-        statisticEntity.setNewSeriousCount(statistic.getNewSeriousCount());
-        statisticEntity.setNewAuthors(statistic.getNewAuthors());
-        statisticEntity.setExistAuthors(statistic.getExistAuthors());
-        statisticEntity.setPromptAuthors(statistic.getNewPromptAuthors());
-        statisticEntity.setNormalAuthors(statistic.getNewNormalAuthors());
-        statisticEntity.setSeriousAuthors(statistic.getNewSeriousAuthors());
-        statisticEntity.setExistPromptAuthors(statistic.getExistPromptAuthors());
-        statisticEntity.setExistNormalAuthors(statistic.getExistNormalAuthors());
-        statisticEntity.setExistSeriousAuthors(statistic.getExistSeriousAuthors());
+        Integer historyIgnoreType = baseDataCacheService.getHistoryIgnoreType();
+        List<CommonDefectEntity> allIgnoreDefectList =
+                defectDao.findIgnoreDefectForSnapshot(taskId, toolName, historyIgnoreType);
+
+        CommonDefectStatisticModel statisticModel =
+                commonDefectStatisticService.statistic(new DefectStatisticModel<>(taskVO,
+                        toolName,
+                        0,
+                        buildId,
+                        null,
+                        allNewDefectList,
+                        null,
+                        null,
+                        Lists.newArrayList()
+                )
+        );
+
+        CommonStatisticEntity statisticEntity = statisticModel.getBuilder().convert();
         statisticEntity.setCheckerStatistic(getCheckerStatistic(toolName, allNewDefectList));
         commonStatisticRepository.save(statisticEntity);
 
+        // 将数据加入数据平台
+        // commonKafkaClient.pushCommonStatisticToKafka(statisticEntity);
+
         // 保存本次构建遗留告警告警列表快照
         BuildEntity buildEntity = buildRepository.findFirstByBuildId(buildId);
-        buildDefectService.saveCommonBuildDefect(taskId, toolName, buildEntity, allNewDefectList);
+        buildSnapshotService.saveCommonBuildDefect(taskId, toolName, buildEntity, allNewDefectList,
+                allIgnoreDefectList);
 
         // 改由MQ汇总发送 {@link EmailNotifyServiceImpl#sendWeChatBotRemind(RtxNotifyModel, TaskInfoEntity)}
         // 发送群机器人通知
         // commonAnalyzeTaskBizService.sendBotRemind(taskVO, statisticEntity, toolName);
 
         // 保存质量红线数据
-        redLineReportService.saveRedLineData(taskVO, toolName, buildId);
+        compileRedLineReportServiceImpl.saveRedLineData(taskVO, toolName, buildId, allNewDefectList);
     }
 
-    private List<CheckerStatisticEntity> getCheckerStatistic(String toolName, List<DefectEntity> allDefectEntityList) {
+    private List<CheckerStatisticEntity> getCheckerStatistic(
+            String toolName, List<CommonDefectEntity> allCommonDefectEntityList) {
         // get checker map
-        Set<String> checkerIds = allDefectEntityList.stream()
-            .map(DefectEntity::getCheckerName).collect(Collectors.toSet());
+        Set<String> checkerIds = allCommonDefectEntityList.stream()
+            .map(CommonDefectEntity::getChecker).collect(Collectors.toSet());
         Map<String, CheckerDetailEntity> checkerDetailMap = new HashMap<>();
         checkerRepository.findByToolNameAndCheckerKeyIn(toolName, checkerIds)
             .forEach(it -> checkerDetailMap.put(it.getCheckerKey(), it));
 
         // get lint checker statistic data
         Map<String, CheckerStatisticEntity> checkerStatisticEntityMap = new HashMap<>();
-        for (DefectEntity entity: allDefectEntityList) {
-            CheckerStatisticEntity item = checkerStatisticEntityMap.get(entity.getCheckerName());
+        for (CommonDefectEntity entity: allCommonDefectEntityList) {
+            if (ComConstants.DefectStatus.NEW.value() != entity.getStatus()) {
+                continue;
+            }
+
+            CheckerStatisticEntity item = checkerStatisticEntityMap.get(entity.getChecker());
             if (item == null) {
                 item = new CheckerStatisticEntity();
-                item.setName(entity.getCheckerName());
+                item.setName(entity.getChecker());
 
-                CheckerDetailEntity checker = checkerDetailMap.get(entity.getCheckerName());
+                CheckerDetailEntity checker = checkerDetailMap.get(entity.getChecker());
                 if (checker != null) {
                     item.setId(checker.getEntityId());
                     item.setName(checker.getCheckerName());
                     item.setSeverity(checker.getSeverity());
                 } else {
-                    log.warn("not found checker for tool: {}, {}", toolName, entity.getCheckerName());
+                    log.warn("not found checker for tool: {}, {}", toolName, entity.getChecker());
                 }
             }
             item.setDefectCount(item.getDefectCount() + 1);
-            checkerStatisticEntityMap.put(entity.getCheckerName(), item);
+            checkerStatisticEntityMap.put(entity.getChecker(), item);
         }
         return new ArrayList<>(checkerStatisticEntityMap.values());
     }

@@ -14,16 +14,17 @@ package com.tencent.bk.codecc.defect.service.impl;
 
 import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.CLOCStatisticsDao;
-import com.tencent.bk.codecc.defect.model.CLOCDefectEntity;
-import com.tencent.bk.codecc.defect.model.CLOCStatisticEntity;
+import com.tencent.bk.codecc.defect.model.defect.CLOCDefectEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
 import com.tencent.bk.codecc.defect.service.CLOCUploadStatisticService;
+import com.tencent.bk.codecc.defect.utils.CommonKafkaClient;
 import com.tencent.bk.codecc.defect.vo.CLOCLanguageVO;
 import com.tencent.bk.codecc.defect.vo.UploadCLOCStatisticVO;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigParamJsonVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
@@ -59,6 +60,9 @@ public class CLOCUploadStatisticServiceImpl implements CLOCUploadStatisticServic
 
     @Autowired
     private CLOCStatisticRepository clocStatisticRepository;
+
+    @Autowired
+    private CommonKafkaClient commonKafkaClient;
 
     @Override
     public Result uploadStatistic(UploadCLOCStatisticVO uploadCLOCStatisticVO)
@@ -205,6 +209,8 @@ public class CLOCUploadStatisticServiceImpl implements CLOCUploadStatisticServic
 
         clocStatisticsDao.batchUpsertCLOCStatistic(currStatisticMap.values());
 
+        //推送数据到数据平台
+        commonKafkaClient.pushCLOCStatisticToKafka(currStatisticMap.values());
         //如果本次为首次上报，且上报语言内容为空，则插入一条其他语言的记录
         if (MapUtils.isEmpty(currStatisticMap)
                 && MapUtils.isEmpty(clocLanguageMap)) {

@@ -12,20 +12,25 @@
 
 package com.tencent.bk.codecc.task.dao.mongotemplate;
 
+import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.task.model.UserLogInfoEntity;
-import org.apache.commons.collections.CollectionUtils;
+import com.tencent.bk.codecc.task.model.UserLogInfoStatEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -43,10 +48,12 @@ public class UserLogDao {
 
     /**
      * 获取所有用户名单
+     *
      * @return list
      */
     public List<String> findDistinctUserName() {
-        List<String> distinct = mongoTemplate.findDistinct(new Query(),"user_name","t_user_log_info",String.class);
+        List<String> distinct = mongoTemplate.findDistinct(new Query(),"user_name",
+                "t_user_log_info",String.class);
         return CollectionUtils.isEmpty(distinct)? Collections.emptyList() : distinct;
     }
 
@@ -75,4 +82,25 @@ public class UserLogDao {
     }
 
 
+    /**
+     * 根据登录时间查询 当时间 的UserLogInfoEntity
+     *
+     * @return list
+     */
+    public List<UserLogInfoEntity> getUserLogByLoginTime(Date startTime, Date endTime) {
+
+        MatchOperation match = Aggregation.match(Criteria.where("login_time").gte(startTime).lte(endTime));
+
+        // 查询指定字段
+        ProjectionOperation project = Aggregation.project("user_name");
+
+        // user_name分组
+        GroupOperation group = Aggregation.group("user_name").first("user_name").as("user_name");
+
+        Aggregation aggregation = Aggregation.newAggregation(match, project, group);
+        AggregationResults<UserLogInfoEntity> queryResults =
+                mongoTemplate.aggregate(aggregation, "t_user_log_info", UserLogInfoEntity.class);
+
+        return queryResults.getMappedResults();
+    }
 }

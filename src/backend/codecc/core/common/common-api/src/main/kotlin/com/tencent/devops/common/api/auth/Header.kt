@@ -31,9 +31,26 @@ const val AUTH_HEADER_DEVOPS_USER_ID = "X-DEVOPS-UID"
 const val AUTH_HEADER_DEVOPS_PROJECT_ID: String = "X-DEVOPS-PROJECT-ID"
 const val AUTH_HEADER_DEVOPS_ACCESS_TOKEN: String = "X-DEVOPS-ACCESS-TOKEN"
 const val AUTH_HEADER_DEVOPS_BK_TICKET: String = "X-DEVOPS-BK-TICKET"
-const val AUTH_HEADER_DEVOPS_TOKEN: String = "X-DEVOPS-TOKEN"
-const val AUTH_HEADER_DEVOPS_BK_TOKEN: String = "X-DEVOPS-BK-TOKEN"
 const val AUTH_HEADER_DEVOPS_TASK_ID: String = "X-DEVOPS-TASK-ID"
 const val AUTH_HEADER_DEVOPS_APP_CODE: String = "X-DEVOPS-APP-CODE"
 const val AUTH_HEADER_DEVOPS_USER_ID_DEFAULT_VALUE: String = "admin"
 const val AUTH_HEADER_DEVOPS_BUILD_ID: String = "x-devops-build-id"
+const val AUTH_HEADER_DEVOPS_BK_TOKEN: String = "X-DEVOPS-BK-TOKEN"
+const val AUTH_HEADER_DEVOPS_REPO_USER_ID = "X-BKREPO-UID"
+const val AUTH_HEADER_DEVOPS_WEBHOOK_TOKEN = "X-DEVOPS-WEBHOOK-TOKEN"
+const val AUTH_HEADER_DEVOPS_BK_GATEWAY_TAG = "X-GATEWAY-TAG"
+const val AUTH_HEADER_DEVOPS_TOOL_IMAGE_TAG = "X-DEVOPS-TOOL-IMAGE-TAG"
+const val AUTH_HEADER_DEVOPS_TOKEN: String = "X-DEVOPS-TOKEN"
+
+/**
+ * Build接口在内部调用中流转的Header
+ * 入口是 BuildIdHeaderCacheEnterFilter 将 缓存线程的BuildId
+ * Client 请求时判断是否存在BuildId缓存 决定是否调用Report服务
+ *
+ */
+const val TRACE_HEADER_BUILD_ID = "TRACE-BUILD-ID"
+
+/**
+ * 链路ID
+ */
+const val TRACE_ID = "TRACE-ID"

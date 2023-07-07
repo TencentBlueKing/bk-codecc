@@ -9,65 +9,66 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.tencent.bk.codecc.defect.dao.mongorepository.FileDefectGatherRepository;
+import com.tencent.bk.codecc.defect.dao.mongotemplate.FileDefectGatherDao;
 import com.tencent.bk.codecc.defect.model.FileDefectGatherEntity;
 import com.tencent.bk.codecc.defect.service.FileDefectGatherService;
-import com.tencent.bk.codecc.defect.utils.ParamUtils;
 import com.tencent.bk.codecc.defect.vo.FileDefectGatherVO;
 import com.tencent.devops.common.constant.ComConstants;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import com.tencent.devops.common.util.BeanUtils;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.util.CollectionUtils;
 
 /**
  * 文件告警收敛业务实现类
- * 
- * @date 2020/5/26
+ *
  * @version V1.0
+ * @date 2020/5/26
  */
 @Service
 @Slf4j
-public class FileDefectGatherServiceImpl implements FileDefectGatherService
-{
+public class FileDefectGatherServiceImpl implements FileDefectGatherService {
+
     @Autowired
-    private FileDefectGatherRepository fileDefectGatherRepository;
+    private FileDefectGatherDao fileDefectGatherDao;
 
     @Override
-    public FileDefectGatherVO getFileDefectGather(long taskId, String toolName, String dimension)
-    {
-        List<String> toolNameSet = ParamUtils.getToolsByDimension(toolName, dimension, taskId);
-
-        if (CollectionUtils.isEmpty(toolNameSet)) {
+    public FileDefectGatherVO getFileDefectGather(Map<Long, List<String>> taskToolMap) {
+        if (MapUtils.isEmpty(taskToolMap)) {
             return null;
         }
 
-        List<FileDefectGatherEntity> gatherFileList = fileDefectGatherRepository.findByTaskIdAndToolNameInAndStatus(taskId, toolNameSet, ComConstants.DefectStatus.NEW.value());
+        List<FileDefectGatherEntity> gatherFileList = fileDefectGatherDao.findByTaskIdInAndToolNameInAndStatus(
+                taskToolMap,
+                ComConstants.DefectStatus.NEW.value()
+        );
 
-        if (CollectionUtils.isNotEmpty(gatherFileList))
-        {
-            FileDefectGatherVO fileDefectGatherVO = new FileDefectGatherVO();
-            fileDefectGatherVO.setDefectCount(0);
-            List<FileDefectGatherVO.GatherFile> gatherFileVOList = gatherFileList.stream().map(gatherFileEntity ->
-            {
-                FileDefectGatherVO.GatherFile gatherFile = new FileDefectGatherVO.GatherFile();
-                BeanUtils.copyProperties(gatherFileEntity, gatherFile);
-                fileDefectGatherVO.setDefectCount(fileDefectGatherVO.getDefectCount() + gatherFile.getTotal());
-                return gatherFile;
-            }).collect(Collectors.toList());
-            fileDefectGatherVO.setGatherFileList(gatherFileVOList);
-            fileDefectGatherVO.setFileCount(gatherFileVOList.size());
-            log.info("getFileDefectGather success, fileCount:{}, defectCount:{}", fileDefectGatherVO.getFileCount(), fileDefectGatherVO.getDefectCount());
-            return fileDefectGatherVO;
+        if (CollectionUtils.isEmpty(gatherFileList)) {
+            log.info("getFileDefectGather is empty: {}", taskToolMap);
+            return null;
         }
-        log.info("getFileDefectGather success: Empty.");
-        return null;
+
+        FileDefectGatherVO fileDefectGatherVO = new FileDefectGatherVO();
+        fileDefectGatherVO.setDefectCount(0);
+        List<FileDefectGatherVO.GatherFile> gatherFileVOList = gatherFileList.stream().map(gatherFileEntity ->
+        {
+            FileDefectGatherVO.GatherFile gatherFile = new FileDefectGatherVO.GatherFile();
+            BeanUtils.copyProperties(gatherFileEntity, gatherFile);
+            fileDefectGatherVO.setDefectCount(fileDefectGatherVO.getDefectCount() + gatherFile.getTotal());
+            return gatherFile;
+        }).collect(Collectors.toList());
+        fileDefectGatherVO.setGatherFileList(gatherFileVOList);
+        fileDefectGatherVO.setFileCount(gatherFileVOList.size());
+
+        return fileDefectGatherVO;
     }
 }

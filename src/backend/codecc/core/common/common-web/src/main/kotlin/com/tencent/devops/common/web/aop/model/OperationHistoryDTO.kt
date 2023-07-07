@@ -42,6 +42,11 @@ data class OperationHistoryDTO(
         val pipelineId: String,
 
         /**
+         * 单流水线对应多任务场景
+         */
+        val multiPipelineMark: String?,
+
+        /**
          * 功能id
          */
         val funcId: String,
@@ -77,7 +82,17 @@ data class OperationHistoryDTO(
         val toolName: String?,
 
         /**
+         * 工具维度
+         */
+        val dimension: String?,
+
+        /**
          * 操作员
          */
-        val operator: String
+        val operator: String,
+
+        /**
+         * 项目id
+         */
+        val projectId: String?
 )
