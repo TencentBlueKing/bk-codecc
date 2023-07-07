@@ -22,8 +22,7 @@ import org.springframework.data.redis.core.RedisTemplate
 class RBACAuthPermissionApi(
     client: Client,
     redisTemplate: RedisTemplate<String, String>,
-    private val rbacAuthProperties: RBACAuthProperties,
-    private val authTaskService: AuthTaskService
+    private val rbacAuthProperties: RBACAuthProperties
 ) : AbstractAuthExPermissionApi(
     client,
     redisTemplate
@@ -92,14 +91,22 @@ class RBACAuthPermissionApi(
      * 查询指定流水线下特定权限的用户清单  TODO 会议讨论结果：V3不支持，待定
      */
     override fun queryPipelineUserListForAction(taskId: String, projectId: String, actions: Set<String>): List<String> {
-        return authTaskService.queryTaskUserListForAction(taskId, projectId, actions)
+        return getAuthTaskService()?.queryTaskUserListForAction(taskId, projectId, actions) ?: emptyList()
+    }
+
+    private fun getAuthTaskService(): AuthTaskService? {
+        return try {
+            SpringContextUtil.getBean(AuthTaskService::class.java)
+        } catch (e: Exception) {
+            null
+        }
     }
 
     /**
      * 查询指定代码检查任务下特定权限的用户清单 TODO 会议讨论结果：V3不支持，待定
      */
     override fun queryTaskUserListForAction(taskId: String, projectId: String, actions: Set<String>): List<String> {
-        return authTaskService.queryTaskUserListForAction(taskId, projectId, actions)
+        return getAuthTaskService()?.queryTaskUserListForAction(taskId, projectId, actions) ?: emptyList()
     }
 
     /**
