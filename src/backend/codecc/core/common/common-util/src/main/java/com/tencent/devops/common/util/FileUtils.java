@@ -49,7 +49,12 @@ public class FileUtils {
                 parentPath.mkdirs();
             }
         }
-
+        /*
+         *  防护方法：判断用户输入文件名是否存在..，存在则可能导致跨目录
+         */
+        if (filePath.contains("..")) {
+            return false;
+        }
         try (BufferedWriter bw = new BufferedWriter(
                 new OutputStreamWriter(
                         new FileOutputStream(filePath), StandardCharsets.UTF_8))) {
