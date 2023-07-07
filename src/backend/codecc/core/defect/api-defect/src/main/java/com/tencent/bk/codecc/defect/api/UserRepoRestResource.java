@@ -13,7 +13,7 @@
 package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.devops.common.api.CodeRepoVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -53,16 +53,17 @@ public interface UserRepoRestResource
     @Path("/oauth/url")
     @GET
     Result<String> getOauthUrl(
-        @ApiParam("用户Id")
-        @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            @ApiParam("用户Id")
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userId,
-        @ApiParam("项目Id")
-        @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            @ApiParam("项目Id")
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId,
-        @ApiParam("任务Id")
-        @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
+            @ApiParam("任务Id")
+            @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             long taskId,
-        @ApiParam("工具英文名")
-        @QueryParam("toolName")
-            String toolName);
+            @ApiParam("工具英文名")
+            @QueryParam("toolName")
+            String toolName
+    );
 }

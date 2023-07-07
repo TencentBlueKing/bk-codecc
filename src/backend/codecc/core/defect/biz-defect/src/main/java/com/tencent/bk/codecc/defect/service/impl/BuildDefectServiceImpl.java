@@ -3,6 +3,9 @@ package com.tencent.bk.codecc.defect.service.impl;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.BuildDefectDao;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.ToolBuildInfoDao;
 import com.tencent.bk.codecc.defect.model.*;
+import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.service.BuildDefectService;
 import com.tencent.devops.common.constant.ComConstants;
 import org.apache.commons.collections.CollectionUtils;
@@ -45,7 +48,7 @@ public class BuildDefectServiceImpl implements BuildDefectService
                 buildDefectEntity.setToolName(toolName);
                 buildDefectEntity.setBuildId(buildEntity.getBuildId());
                 buildDefectEntity.setBuildNum(buildEntity.getBuildNo());
-                buildDefectEntity.setFilePath(defectList.get(0).getRelPath());
+                buildDefectEntity.setFilePath(file);
                 buildDefectEntity.setFileDefectIds(fileDefectIds);
                 buildDefectEntityList.add(buildDefectEntity);
             }
@@ -80,7 +83,7 @@ public class BuildDefectServiceImpl implements BuildDefectService
     }
 
     @Override
-    public void saveCommonBuildDefect(long taskId, String toolName, BuildEntity buildEntity, List<DefectEntity> allNewDefectList)
+    public void saveCommonBuildDefect(long taskId, String toolName, BuildEntity buildEntity, List<CommonDefectEntity> allNewDefectList)
     {
         List<BuildDefectEntity> buildDefectEntityList = allNewDefectList.stream()
                 .filter(defect -> defect.getStatus() == ComConstants.DefectStatus.NEW.value())

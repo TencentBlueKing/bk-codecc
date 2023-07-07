@@ -12,9 +12,9 @@
 
 package com.tencent.bk.codecc.defect.service;
 
-import com.tencent.bk.codecc.defect.model.CLOCDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.CLOCDefectEntity;
 import com.tencent.bk.codecc.defect.vo.UploadCLOCStatisticVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.CommonMessageCode;
 
 import java.util.List;

@@ -28,7 +28,7 @@ package com.tencent.bk.codecc.defect.component;
 
 import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
-import com.tencent.bk.codecc.defect.model.LintDefectV2Entity;
+import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.LintFileEntity;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.RedisKeyConstants;

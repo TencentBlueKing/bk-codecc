@@ -28,7 +28,7 @@ package com.tencent.devops.common.auth
 
 import com.tencent.devops.common.auth.api.GithubAuthExPermissionApi
 import com.tencent.devops.common.auth.api.GithubAuthExRegisterApi
-import com.tencent.devops.common.auth.api.external.AuthTaskService
+import com.tencent.devops.common.auth.api.service.AuthTaskService
 import com.tencent.devops.common.auth.pojo.GithubAuthProperties
 import com.tencent.devops.common.client.Client
 import org.slf4j.LoggerFactory

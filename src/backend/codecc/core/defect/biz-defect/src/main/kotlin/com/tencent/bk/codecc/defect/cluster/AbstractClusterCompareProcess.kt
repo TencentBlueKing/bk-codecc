@@ -3,7 +3,6 @@ package com.tencent.bk.codecc.defect.cluster
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectOutputModelV2
 import com.tencent.bk.codecc.defect.pojo.FuzzyHashInfoModel
 import org.slf4j.LoggerFactory
-import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -25,7 +24,7 @@ abstract class AbstractClusterCompareProcess<T> {
     abstract fun clusterMethod(
         inputDefectList: List<T>,
         md5SameMap: MutableMap<String, Boolean>
-    ): CopyOnWriteArrayList<AggregateDefectOutputModelV2<T>>
+    ): List<AggregateDefectOutputModelV2<T>>
 
     /**
      * 根据清单大小获取并发线程池
@@ -58,12 +57,14 @@ abstract class AbstractClusterCompareProcess<T> {
 
         //3. 开始逐个比较，相似的告警分在一组
         pinpointHashMap.forEach lit@{ t, u ->
+            val lineNumList = getLineNumList(u)
             val fuzzyHashInfoModel =
                 configNodeProperties(
                     u,
                     t,
                     index,
-                    unionFindClass
+                    unionFindClass,
+                    lineNumList
                 ) ?: return@lit
             for (i in 0 until index) {
                 try {
@@ -73,12 +74,21 @@ abstract class AbstractClusterCompareProcess<T> {
                         continue
                     }
                     val preFuzzyHashInfoModel = preElement.fuzzyHashInfoModel ?: continue
+                    /**
+                     * 比较规则：
+                     * 1. 如果行号不相等，则比较文本，如果文本有相似度，则认为是同一个告警
+                     * 2. 如果文件路径+checker+行号相等(行号集中有交集的话)，则认为是同一个告警
+                     */
                     if (FuzzyCompare.fuzzyCompare(
                             preFuzzyHashInfoModel,
                             fuzzyHashInfoModel
                         ) >= similarityThreshold
                     ) {
                         unionFindClass.unionCollection(i, index)
+                    } else {
+                        if (lineNumInterSet(preFuzzyHashInfoModel.lineNumList, fuzzyHashInfoModel.lineNumList)) {
+                            unionFindClass.unionCollection(i, index)
+                        }
                     }
                 } catch (e: Exception) {
                     logger.info("compare pinpoint hash fail! continue to next")
@@ -124,6 +134,26 @@ abstract class AbstractClusterCompareProcess<T> {
     abstract fun getPinpointHashMap(aggregateDefectInputList: List<T>): Map<String?, List<T>>
 
     /**
+     * 获取行号清单
+     */
+    abstract fun getLineNumList(aggregateDefectInputList: List<T>) : Set<Int>?
+
+    /**
+     * 判断行号是否有交集
+     */
+    private fun lineNumInterSet(preLineNumSet: Set<Int>?, lineNumSet: Set<Int>?): Boolean {
+        if (preLineNumSet.isNullOrEmpty() || lineNumSet.isNullOrEmpty()) {
+            return false
+        }
+        for (lineNum in preLineNumSet) {
+            if (lineNumSet.contains(lineNum)) {
+                return true
+            }
+        }
+        return false
+    }
+
+    /**
      * 对于每个告警进行配置属性，配置好的属性放进并查集数组的字段中
      * @param aggregateDefectInputModel 按特征hash值分组后的告警清单
      * @param pinpointHash 该分组的特征hash值
@@ -135,12 +165,13 @@ abstract class AbstractClusterCompareProcess<T> {
         aggregateDefectInputModel: List<T>,
         pinpointHash: String?,
         index: Int,
-        unionFindClass: UnionFindClass<T>
+        unionFindClass: UnionFindClass<T>,
+        lineNumList: Set<Int>?
     ): FuzzyHashInfoModel? {
         val unionFindNodeInfo = unionFindClass.getArrayElement(index) ?: return null
         unionFindNodeInfo.aggregateDefectInputModel = aggregateDefectInputModel
         unionFindNodeInfo.pinpointHash = pinpointHash
-        val emptyFuzzyHashInfoModel = FuzzyHashInfoModel(null, null, null, null, null, null, null, false)
+        val emptyFuzzyHashInfoModel = FuzzyHashInfoModel(null, null, null, null, null, null, null, false, null)
         //如果hash为空，则置为false
         if (pinpointHash.isNullOrBlank()) {
             logger.info("pinpoint hash is empty!")
@@ -205,7 +236,8 @@ abstract class AbstractClusterCompareProcess<T> {
             b2 = strb2,
             b2Length = strb2Length,
             b2ParArray = null,
-            valid = true
+            valid = true,
+            lineNumList = lineNumList
         )
         unionFindNodeInfo.fuzzyHashInfoModel = fuzzyHashInfoModel
         return fuzzyHashInfoModel

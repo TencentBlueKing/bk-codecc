@@ -9,7 +9,7 @@ data class JobInfoVO(
         val classUrl: String,
         @ApiModelProperty("类名字")
         val className: String,
-        @ApiModelProperty("job名字")
+        @ApiModelProperty("job名字，唯一标识")
         val jobName: String,
         @ApiModelProperty("触发器名字")
         val triggerName: String,
@@ -18,5 +18,7 @@ data class JobInfoVO(
         @ApiModelProperty("job入参")
         val jobParam: MutableMap<String, Any>?,
         @ApiModelProperty("分片tag名")
-        val shardTag: String
+        val shardTag: String,
+        @ApiModelProperty("最后更新时间")
+        val updatedDate: Long
 )

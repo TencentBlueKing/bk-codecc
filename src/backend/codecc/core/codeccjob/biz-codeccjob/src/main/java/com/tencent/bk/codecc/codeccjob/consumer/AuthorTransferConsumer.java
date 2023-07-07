@@ -98,7 +98,8 @@ public class AuthorTransferConsumer
         // 工具维度的所有类型告警数据都需要更新
         tools.forEach(toolName ->
                 {
-                    if (!ComConstants.Tool.DUPC.name().equals(toolName) && !ComConstants.Tool.CLOC.name().equals(toolName))
+                    if (!ComConstants.Tool.DUPC.name().equals(toolName) && !ComConstants.Tool.CLOC.name().equals(toolName) &&
+                        !ComConstants.Tool.SCC.name().equalsIgnoreCase(toolName))
                     {
                         log.info("toolName:{}", toolName);
                         authorTransferVO.setToolName(toolName);

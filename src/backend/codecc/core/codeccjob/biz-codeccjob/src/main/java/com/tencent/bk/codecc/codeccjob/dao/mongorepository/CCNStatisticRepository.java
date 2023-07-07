@@ -28,9 +28,11 @@
 
 package com.tencent.bk.codecc.codeccjob.dao.mongorepository;
 
-import com.tencent.bk.codecc.defect.model.CCNStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CCNStatisticEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 /**
  * Lint每次分析的统计信息持久化
@@ -48,4 +50,6 @@ public interface CCNStatisticRepository extends MongoRepository<CCNStatisticEnti
      * @return
      */
     CCNStatisticEntity findFirstByTaskIdAndBuildId(long taskId, String buildId);
+
+    void deleteAllByTaskIdAndToolNameAndBuildIdIn(long taskId, String toolName, List<String> buildIds);
 }

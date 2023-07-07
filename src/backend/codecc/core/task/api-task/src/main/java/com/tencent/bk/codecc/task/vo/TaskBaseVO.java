@@ -10,12 +10,13 @@
  *
  * Terms of the MIT License:
  * ---------------------------------------------------
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+ * Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
  * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -26,12 +27,10 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import com.tencent.bk.codecc.task.vo.scanconfiguration.NewDefectJudgeVO;
 import com.tencent.devops.common.api.CommonVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -49,8 +48,7 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ApiModel("任务的基本信息")
-public class TaskBaseVO extends CommonVO
-{
+public class TaskBaseVO extends CommonVO {
     @ApiModelProperty(value = "任务主键id", required = true)
     private long taskId;
 
@@ -70,6 +68,9 @@ public class TaskBaseVO extends CommonVO
 
     @ApiModelProperty(value = "流水线ID", required = true)
     private String pipelineId;
+
+    @ApiModelProperty(value = "流水线一对多标识", required = false)
+    private String multiPipelineMark;
 
     @ApiModelProperty(value = "流水线名称", required = true)
     private String pipelineName;
@@ -131,4 +132,14 @@ public class TaskBaseVO extends CommonVO
 
     @ApiModelProperty(value = "任务扫描的代码库配置信息")
     private TaskCodeLibraryVO codeLibraryInfo;
+
+    @ApiModelProperty(value = "是否可以运行")
+    private Boolean hasNoPermission;
+    
+
+    @ApiModelProperty(value = "是否禁止页面忽略告警")
+    private Boolean prohibitIgnore;
+
+    @ApiModelProperty
+    private Integer cleanIndex;
 }

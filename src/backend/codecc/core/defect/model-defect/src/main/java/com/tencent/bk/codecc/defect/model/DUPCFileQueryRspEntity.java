@@ -27,6 +27,7 @@
 package com.tencent.bk.codecc.defect.model;
 
 import com.tencent.bk.codecc.defect.model.common.CommonFileQueryRspEntity;
+import com.tencent.bk.codecc.defect.model.defect.DUPCDefectEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.domain.Page;

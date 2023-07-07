@@ -24,8 +24,7 @@ import org.springframework.data.domain.Sort;
  * @date 2020/3/30
  */
 
-public class PageableUtils
-{
+public class PageableUtils {
     /**
      * 生成分页请求对象
      *
@@ -37,15 +36,11 @@ public class PageableUtils
      * @return PR
      */
     public static Pageable getPageable(Integer pageNum, Integer pageSize, String sortField, Sort.Direction sortType,
-            String defaultSortField)
-    {
+            String defaultSortField) {
         Sort pageSort;
-        if (StringUtils.isEmpty(sortField) || null == sortType)
-        {
+        if (StringUtils.isEmpty(sortField) || null == sortType) {
             pageSort = Sort.by(Sort.Direction.ASC, defaultSortField);
-        }
-        else
-        {
+        } else {
             pageSort = Sort.by(sortType, sortField);
         }
 
@@ -60,8 +55,7 @@ public class PageableUtils
      * @param pageSize         每页数量
      * @return PR
      */
-    public static Pageable getPageable(Integer pageNum, Integer pageSize)
-    {
+    public static Pageable getPageable(Integer pageNum, Integer pageSize) {
 
         return PageRequest.of(pageNum == null || pageNum - 1 < 0 ? 0 : pageNum - 1,
             pageSize == null || pageSize <= 0 ? 10 : pageSize);

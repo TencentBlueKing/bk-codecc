@@ -16,6 +16,9 @@ import com.tencent.bk.codecc.task.model.UserLogInfoStatEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.Set;
+
 /**
  * 用户登录统计持久类
  *
@@ -32,5 +35,7 @@ public interface UserLogInfoStatRepository extends MongoRepository<UserLogInfoSt
      * @return entity
      */
     UserLogInfoStatEntity findFirstByUserName(String userName);
+
+    List<UserLogInfoStatEntity> findByUserNameIn(Set<String> userNames);
 
 }

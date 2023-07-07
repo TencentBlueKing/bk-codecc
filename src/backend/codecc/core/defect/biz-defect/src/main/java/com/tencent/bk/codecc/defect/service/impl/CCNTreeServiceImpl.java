@@ -27,7 +27,7 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository;
-import com.tencent.bk.codecc.defect.model.CCNDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.service.AbstractTreeService;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.util.PathUtils;

@@ -1,4 +1,5 @@
 .idea/
+.codecc/
 .gradle/
 build/
 !com/tencent/devops/common/pipeline/pojo/element/build/
@@ -10,9 +11,6 @@ reports/
 *.iml
 .DS_Store
 *.log
-gradle/
-gradlew
-gradlew.bat
 version.txt
 service/service-task/src/test/
 classes/
@@ -22,3 +20,5 @@ classes/
 /defect/boot-defect/src/test/
 /schedule/boot-schedule/src/test/
 /coverity/boot-coverity/src/test/
+/.temp/
+/build.yml

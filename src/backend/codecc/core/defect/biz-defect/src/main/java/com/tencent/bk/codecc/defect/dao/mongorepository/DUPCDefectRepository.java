@@ -26,7 +26,7 @@
 
 package com.tencent.bk.codecc.defect.dao.mongorepository;
 
-import com.tencent.bk.codecc.defect.model.DUPCDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.DUPCDefectEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -66,7 +66,7 @@ public interface DUPCDefectRepository extends MongoRepository<DUPCDefectEntity, 
      * @param relPath
      * @return
      */
-    DUPCDefectEntity findByTaskIdAndRelPath(long taskId, String relPath);
+    DUPCDefectEntity findFirstByTaskIdAndRelPath(long taskId, String relPath);
 
 
     /**
@@ -97,6 +97,6 @@ public interface DUPCDefectRepository extends MongoRepository<DUPCDefectEntity, 
      * @return
      */
     @Query(fields = "{'block_list':0}", value = "{'task_id': ?0, 'file_path':?1}")
-    DUPCDefectEntity findFirstByTaskIdAndFilePath(long taskId, String status);
+    List<DUPCDefectEntity> findByTaskIdAndFilePath(long taskId, String status);
 
 }

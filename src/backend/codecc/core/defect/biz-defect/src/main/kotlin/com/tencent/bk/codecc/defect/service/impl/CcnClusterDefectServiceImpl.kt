@@ -1,7 +1,13 @@
 package com.tencent.bk.codecc.defect.service.impl
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.*
+import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository
+import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository
+import com.tencent.bk.codecc.defect.dao.mongorepository.CcnClusterStatisticRepository
+import com.tencent.bk.codecc.defect.dao.mongorepository.CommonStatisticRepository
+import com.tencent.bk.codecc.defect.dao.mongorepository.DUPCStatisticRepository
+import com.tencent.bk.codecc.defect.dao.mongorepository.LintStatisticRepository
 import com.tencent.bk.codecc.defect.model.CcnClusterStatisticEntity
+import com.tencent.bk.codecc.defect.model.statistic.StatisticEntity
 import com.tencent.devops.common.api.clusterresult.BaseClusterResultVO
 import com.tencent.devops.common.api.clusterresult.CcnClusterResultVO
 import com.tencent.devops.common.constant.ComConstants
@@ -14,40 +20,48 @@ import java.math.BigDecimal
 
 @Service("CCN")
 class CcnClusterDefectServiceImpl @Autowired constructor(
-        lintStatisticRepository: LintStatisticRepository,
-        commonStatisticRepository: CommonStatisticRepository,
-        dupcStatisticRepository: DUPCStatisticRepository,
-        ccnStatisticRepository: CCNStatisticRepository,
-        private val clocStatisticRepository: CLOCStatisticRepository,
-        private val toolMetaCacheService: ToolMetaCacheService,
-        private val ccnClusterStatisticRepository: CcnClusterStatisticRepository
-): AbstractClusterDefectService(
-        lintStatisticRepository,
-        commonStatisticRepository,
-        dupcStatisticRepository,
-        ccnStatisticRepository,
-        clocStatisticRepository
+    lintStatisticRepository: LintStatisticRepository,
+    commonStatisticRepository: CommonStatisticRepository,
+    dupcStatisticRepository: DUPCStatisticRepository,
+    ccnStatisticRepository: CCNStatisticRepository,
+    private val clocStatisticRepository: CLOCStatisticRepository,
+    private val toolMetaCacheService: ToolMetaCacheService,
+    private val ccnClusterStatisticRepository: CcnClusterStatisticRepository
+) : AbstractClusterDefectService(
+    lintStatisticRepository,
+    commonStatisticRepository,
+    dupcStatisticRepository,
+    ccnStatisticRepository,
+    clocStatisticRepository
 ) {
-    override fun cluster(taskId: Long, buildId: String, toolList: List<String>) {
+    override fun cluster(
+        taskId: Long,
+        buildId: String,
+        toolList: List<String>,
+        isMigrationSuccessful: Boolean,
+        toolNameToDimensionStatisticMap: Map<String, StatisticEntity>
+    ) {
         logger.info("ccn cluster $taskId $buildId ${toolList.size}")
         var totalCount = 0
         var ccnBeyondThresholdSum = 0
         // 获取当前分类下所有工具的告警数据
-        toolList.forEach{
+        toolList.forEach {
             val toolDetail = toolMetaCacheService.getToolBaseMetaCache(it)
             val clusterResultVO = getStatistic(
-                    taskId = taskId,
-                    buildId = buildId,
-                    toolName = it,
-                    pattern = toolDetail.pattern)
+                taskId = taskId,
+                buildId = buildId,
+                toolName = it,
+                pattern = toolDetail.pattern
+            )
             totalCount += (clusterResultVO.totalCount ?: 0)
             ccnBeyondThresholdSum += (clusterResultVO.ccnBeyondThresholdSum ?: 0)
         }
 
-        val lastCcnClusterStatisticEntity: CcnClusterStatisticEntity?  =
-                ccnClusterStatisticRepository.findFirstByTaskIdOrderByTimeDesc(taskId)
-        val clocList =
-                clocStatisticRepository.findByTaskIdAndToolNameAndBuildId(taskId, ComConstants.Tool.CLOC.name, buildId)
+        val lastCcnClusterStatisticEntity: CcnClusterStatisticEntity? =
+            ccnClusterStatisticRepository.findFirstByTaskIdOrderByTimeDesc(taskId)
+        // 获取总行数计算千行平均告警数
+        var clocList =
+            clocStatisticRepository.findByTaskIdAndToolNameAndBuildId(taskId, ComConstants.Tool.SCC.name, buildId)
         val sumLines = clocList.stream().mapToInt {
             (it.sumComment + it.sumCode + it.sumBlank).toInt()
         }.sum()
@@ -66,18 +80,18 @@ class CcnClusterDefectServiceImpl @Autowired constructor(
         if (lastCcnClusterStatisticEntity != null) {
             totalCountChange = totalCount - lastCcnClusterStatisticEntity.totalCount
             averageThousandDefectChange =
-                    averageThousandDefect - lastCcnClusterStatisticEntity.averageThousandDefect
+                averageThousandDefect - lastCcnClusterStatisticEntity.averageThousandDefect
         }
 
         val defectClusterStatisticEntity = CcnClusterStatisticEntity(
-                taskId,
-                buildId,
-                toolList,
-                System.currentTimeMillis(),
-                totalCount,
-                totalCountChange,
-                averageThousandDefect,
-                averageThousandDefectChange
+            taskId,
+            buildId,
+            toolList,
+            System.currentTimeMillis(),
+            totalCount,
+            totalCountChange,
+            averageThousandDefect,
+            averageThousandDefectChange
         )
 
         ccnClusterStatisticRepository.save(defectClusterStatisticEntity)
@@ -87,8 +101,8 @@ class CcnClusterDefectServiceImpl @Autowired constructor(
         val ccnClusterResultVO = CcnClusterResultVO()
         ccnClusterResultVO.type = ComConstants.ToolType.CCN.name
         val ccnClusterStatisticEntity =
-                ccnClusterStatisticRepository.findFirstByTaskIdAndBuildId(taskId, buildId)
-                        ?: return ccnClusterResultVO
+            ccnClusterStatisticRepository.findFirstByTaskIdAndBuildId(taskId, buildId)
+                ?: return ccnClusterResultVO
         BeanUtils.copyProperties(ccnClusterResultVO, ccnClusterStatisticEntity)
         ccnClusterResultVO.type = ComConstants.ToolType.CCN.name
         ccnClusterResultVO.toolList = ccnClusterStatisticEntity.toolList

@@ -27,8 +27,8 @@
 package com.tencent.devops.common.service.utils
 
 import com.tencent.devops.common.api.pojo.GlobalMessage
-import com.tencent.devops.common.api.pojo.Result
-import com.tencent.devops.common.util.JsonUtil
+import com.tencent.devops.common.api.pojo.codecc.Result
+import com.tencent.devops.common.codecc.util.JsonUtil
 import org.apache.commons.lang.StringUtils
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -98,7 +98,7 @@ class MessageCodeUtil @Autowired constructor() {
             try {
                 val redisTemplate: RedisTemplate<String, String> = SpringContextUtil.getBean(
                     RedisTemplate::class.java,
-                    "stringRedisTemplate"
+                    "redisTemplate"
                 ) as RedisTemplate<String, String>
                 // 根据状态码从redis中获取该状态码对应的信息
                 val messageCodeDetailStr = redisTemplate.opsForValue().get(messageCode)

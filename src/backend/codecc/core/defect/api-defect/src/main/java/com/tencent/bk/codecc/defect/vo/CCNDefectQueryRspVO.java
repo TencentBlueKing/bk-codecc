@@ -42,74 +42,67 @@ import org.springframework.data.domain.Page;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ApiModel("圈复杂度查询返回视图")
-public class CCNDefectQueryRspVO extends CommonDefectQueryRspVO
-{
+public class CCNDefectQueryRspVO extends CommonDefectQueryRspVO {
 
     /**
      * 风险系数极高的个数
      */
     @ApiModelProperty("风险系数极高的个数")
-    private int superHighCount;
+    private long superHighCount;
 
     /**
      * 风险系数高的个数
      */
     @ApiModelProperty("风险系数高的个数")
-    private int highCount;
+    private long highCount;
 
     /**
      * 风险系数中的个数
      */
     @ApiModelProperty("风险系数中的个数")
-    private int mediumCount;
+    private long mediumCount;
 
     /**
      * 风险系数低的个数
      */
     @ApiModelProperty("风险系数低的个数")
-    private int lowCount;
+    private long lowCount;
 
     @ApiModelProperty("待修复告警数")
-    private int existCount;
+    private long existCount;
 
     @ApiModelProperty("已修复告警数")
-    private int fixCount;
+    private long fixCount;
 
     @ApiModelProperty("已忽略告警数")
-    private int ignoreCount;
+    private long ignoreCount;
 
     @ApiModelProperty("已屏蔽告警数")
-    private int maskCount;
+    private long maskCount;
 
     /**
      * 新增告警的个数
      */
     @ApiModelProperty("新增告警的个数")
-    private int newDefectCount;
+    private long newDefectCount;
 
     /**
      * 历史告警的个数
      */
     @ApiModelProperty("历史告警的个数")
-    private int historyDefectCount;
+    private long historyDefectCount;
 
     /**
      * 告警总数
      */
     @ApiModelProperty("告警总数")
-    private int totalCount;
+    private long totalCount;
 
     /**
      * 缺陷列表
      */
     @ApiModelProperty("缺陷列表")
     private Page<CCNDefectVO> defectList;
-
-    /**
-     * 新老告警判定时间
-     */
-    @ApiModelProperty("新老告警判定时间")
-    private long newDefectJudgeTime;
 
     /**
      * 圈复杂度阀值

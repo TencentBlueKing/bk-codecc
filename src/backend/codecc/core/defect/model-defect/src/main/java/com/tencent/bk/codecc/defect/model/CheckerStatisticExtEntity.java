@@ -33,4 +33,7 @@ public class CheckerStatisticExtEntity extends CheckerStatisticEntity {
     @JsonProperty("task_in_use")
     private Set<Long> taskInUse;
 
+    @Field("status")
+    private Integer status;
+
 }

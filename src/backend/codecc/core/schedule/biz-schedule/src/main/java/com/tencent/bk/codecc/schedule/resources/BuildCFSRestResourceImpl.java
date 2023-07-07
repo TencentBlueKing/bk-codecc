@@ -14,8 +14,13 @@ package com.tencent.bk.codecc.schedule.resources;
 
 import com.tencent.bk.codecc.schedule.api.BuildCFSRestResource;
 import com.tencent.bk.codecc.schedule.service.UploadDownloadService;
-import com.tencent.bk.codecc.schedule.vo.*;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.bk.codecc.schedule.vo.DownloadVO;
+import com.tencent.bk.codecc.schedule.vo.FileChunksMergeVO;
+import com.tencent.bk.codecc.schedule.vo.FileIndexVO;
+import com.tencent.bk.codecc.schedule.vo.FileInfoModel;
+import com.tencent.bk.codecc.schedule.vo.GetFileSizeVO;
+import com.tencent.bk.codecc.schedule.vo.UploadVO;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.web.RestResource;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -29,14 +34,13 @@ import java.io.InputStream;
  * @date 2019/10/9
  */
 @RestResource
-public class BuildCFSRestResourceImpl implements BuildCFSRestResource
-{
+public class BuildCFSRestResourceImpl implements BuildCFSRestResource {
     @Autowired
     private UploadDownloadService uploadDownloadService;
 
     @Override
     public Result<Boolean> upload(String fileName, Integer chunks, Integer chunk, String uploadType, String buildId,
-            InputStream file) {
+                                  InputStream file) {
         UploadVO uploadVO = new UploadVO();
         uploadVO.setFileName(fileName);
         uploadVO.setChunks(chunks);
@@ -47,38 +51,32 @@ public class BuildCFSRestResourceImpl implements BuildCFSRestResource
     }
 
     @Override
-    public Result<Boolean> chunksMerge(FileChunksMergeVO fileChunksMergeVO)
-    {
+    public Result<Boolean> chunksMerge(FileChunksMergeVO fileChunksMergeVO) {
         return new Result<>(uploadDownloadService.chunksMerge(fileChunksMergeVO));
     }
 
     @Override
-    public Result<Long> getFileSize(GetFileSizeVO getFileSizeVO)
-    {
+    public Result<Long> getFileSize(GetFileSizeVO getFileSizeVO) {
         return new Result<>(uploadDownloadService.getFileSize(getFileSizeVO));
     }
 
     @Override
-    public Response download(DownloadVO downloadVO)
-    {
+    public Response download(DownloadVO downloadVO) {
         return uploadDownloadService.download(downloadVO);
     }
 
     @Override
-    public Result<FileInfoModel> getFileInfo(GetFileSizeVO getFileSizeVO)
-    {
+    public Result<FileInfoModel> getFileInfo(GetFileSizeVO getFileSizeVO) {
         return new Result<>(uploadDownloadService.getFileInfo(getFileSizeVO));
     }
 
     @Override
-    public Result<FileIndexVO> index(String fileName, String type)
-    {
+    public Result<FileIndexVO> index(String fileName, String type) {
         return new Result<>(uploadDownloadService.index(fileName, type));
     }
 
     @Override
-    public Result<FileIndexVO> getFileIndex(String fileName, String type)
-    {
+    public Result<FileIndexVO> getFileIndex(String fileName, String type) {
         return new Result<>(uploadDownloadService.getFileIndex(fileName, type));
     }
 }

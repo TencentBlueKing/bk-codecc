@@ -28,6 +28,7 @@ package com.tencent.bk.codecc.defect.vo.redline;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Objects;
 import lombok.Data;
 
 /**
@@ -62,5 +63,23 @@ public class RedLineVO
     @ApiModelProperty("其他字段（语言等）")
     private String extra;
 
+    @ApiModelProperty("单工具，按规则标签统计的维度信息")
+    private RLDimensionVO dimensionByChecker;
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        RedLineVO redLineVO = (RedLineVO) o;
+        return detail.equals(redLineVO.detail) && enName.equals(redLineVO.enName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(enName, detail);
+    }
 }

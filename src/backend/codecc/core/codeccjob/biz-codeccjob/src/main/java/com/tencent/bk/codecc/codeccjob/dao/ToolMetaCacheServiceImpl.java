@@ -28,28 +28,28 @@ package com.tencent.bk.codecc.codeccjob.dao;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.ToolMetaCacheService;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * 工具缓存
@@ -106,15 +106,14 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService
             }
             Set<ToolMetaBaseVO> toolDimensionSet = toolMetaBasicDimensionMap.get(dimensionMapKey);
             if (toolDimensionSet == null) {
-                toolDimensionSet = Sets.newHashSet();
+                toolDimensionSet = new CopyOnWriteArraySet<>();
             }
             toolDimensionSet.add(tool);
             toolMetaBasicDimensionMap.put(dimensionMapKey, toolDimensionSet);
         }
 
-        log.info("load tool dimension cache success: {}", toolMetaBasicDimensionMap);
-
-        log.info("load tool cache success: {}", toolMetaBasicMap);
+        log.info("load tool dimension cache success: {}", toolMetaBasicDimensionMap.size());
+        log.info("load tool cache success: {}", toolMetaBasicMap.size());
 
         return toolMetaBaseVOS;
     }
@@ -148,6 +147,17 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService
             pattern = toolMetaBaseVO.getPattern();
         }
         return pattern;
+    }
+
+    /**
+     * 查询工具执行聚类逻辑的类型
+     *
+     * @param toolName
+     * @return
+     */
+    @Override
+    public String getClusterType(String toolName) {
+        return null;
     }
 
     /**
@@ -248,6 +258,11 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService
             loadToolBaseCache();
         }
         return toolMetaBasicDimensionMap.get(dimension).stream().map(ToolMetaBaseVO::getName).collect(Collectors.toList());
+    }
+
+    @Override
+    public String getDisplayNameByLocale(String toolName, Locale locale) {
+        throw new UnsupportedOperationException("not supported yet");
     }
 
     /**

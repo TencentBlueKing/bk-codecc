@@ -9,35 +9,60 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package com.tencent.bk.codecc.codeccjob.service;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.vo.common.AuthorTransferVO;
 import com.tencent.devops.common.service.IBizService;
-
+import java.util.HashSet;
 import java.util.List;
+import org.springframework.util.CollectionUtils;
 
 /**
  * 告警处理人转换的抽象类
- * 
- * @date 2019/12/3
+ *
  * @version V1.0
+ * @date 2019/12/3
  */
-public abstract class AbstractAuthorTransBizService implements IBizService<AuthorTransferVO>
-{
+public abstract class AbstractAuthorTransBizService implements IBizService<AuthorTransferVO> {
 
-    protected String transferAuthor(List<AuthorTransferVO.TransferAuthorPair> transferAuthorList, String author)
-    {
-        String newAuthor = author;
-        for (AuthorTransferVO.TransferAuthorPair transferAuthorPair : transferAuthorList)
-        {
+    protected String transferAuthor(
+            List<AuthorTransferVO.TransferAuthorPair> transferAuthorList,
+            String curAuthor
+    ) {
+        for (AuthorTransferVO.TransferAuthorPair transferAuthorPair : transferAuthorList) {
             String sourceAuthor = transferAuthorPair.getSourceAuthor();
             String targetAuthor = transferAuthorPair.getTargetAuthor();
-            if (sourceAuthor.equals(newAuthor))
-            {
-                newAuthor = targetAuthor;
+
+            if (sourceAuthor.equals(curAuthor)) {
+                return targetAuthor;
             }
         }
-        return newAuthor;
+
+        return curAuthor;
+    }
+
+    protected List<String> transferAuthor(
+            List<AuthorTransferVO.TransferAuthorPair> transferAuthorList,
+            List<String> curAuthorList
+    ) {
+        if (CollectionUtils.isEmpty(transferAuthorList) || CollectionUtils.isEmpty(curAuthorList)) {
+            return curAuthorList;
+        }
+
+        HashSet<String> curAuthorSet = Sets.newHashSet(curAuthorList);
+
+        for (AuthorTransferVO.TransferAuthorPair transferAuthorPair : transferAuthorList) {
+            String sourceAuthor = transferAuthorPair.getSourceAuthor();
+            String targetAuthor = transferAuthorPair.getTargetAuthor();
+
+            if (curAuthorSet.contains(sourceAuthor)) {
+                return Lists.newArrayList(targetAuthor);
+            }
+        }
+
+        return curAuthorList;
     }
 }

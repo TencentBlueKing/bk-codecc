@@ -10,12 +10,13 @@
  *
  * Terms of the MIT License:
  * ---------------------------------------------------
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+ *  Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
  * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -32,8 +33,7 @@ package com.tencent.bk.codecc.schedule.constant;
  * @version V1.0
  * @date 2019/10/2
  */
-public interface ScheduleConstants
-{
+public interface ScheduleConstants {
     /**
      * 分片文件的后缀
      */
@@ -42,8 +42,7 @@ public interface ScheduleConstants
     /**
      * 上传类型
      */
-    enum UploadType
-    {
+    enum UploadType {
         /**
          * 上传中间结果
          */
@@ -68,8 +67,7 @@ public interface ScheduleConstants
     /**
      * 下载类型
      */
-    enum DownloadType
-    {
+    enum DownloadType {
         /**
          * 上传失败的中间结果，所在目录/data/bkee/codecc/cfs/result_upload
          */
@@ -109,8 +107,7 @@ public interface ScheduleConstants
     /**
      * 分析服务器RPC方法
      */
-    enum RpcMethod
-    {
+    enum RpcMethod {
         /**
          * 触发分析接口
          */
@@ -124,17 +121,20 @@ public interface ScheduleConstants
         /**
          * 检查分析进程是否
          */
-        CHECK("check_agent_analyze_job");
+        CHECK("check_agent_analyze_job"),
+
+        /**
+         * 检查分析进程是否
+         */
+        COMMIT("trigger_agent_commit_job");
 
         private String methodName;
 
-        RpcMethod(String methodName)
-        {
+        RpcMethod(String methodName) {
             this.methodName = methodName;
         }
 
-        public String methodName()
-        {
+        public String methodName() {
             return this.methodName;
         }
     }

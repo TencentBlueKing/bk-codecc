@@ -12,9 +12,8 @@ println("gradle assemly mode property is $property")
 fun getImportByProperty(property: String) : AssemblyMode{
     return when (val assemblyMode = AssemblyMode.ofValueOrDefault(property)) {
         AssemblyMode.CONSUL,AssemblyMode.K8S -> assemblyMode
-        else -> AssemblyMode.K8S
+        else -> AssemblyMode.CONSUL
     }
 }
 
-project.dependencies.add("api",
-    project(":core:common:common-client:common-client-${getImportByProperty(property).name.toLowerCase()}"))
+project.dependencies.add("api", project(":core:common:common-client:common-client-${getImportByProperty(property).name.toLowerCase()}"))

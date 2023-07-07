@@ -27,8 +27,10 @@
 package com.tencent.devops.common.web.handler
 
 import com.tencent.devops.common.api.exception.StreamException
-import com.tencent.devops.common.api.pojo.Result
+import com.tencent.devops.common.api.pojo.codecc.Result
+import com.tencent.devops.common.constant.CommonMessageCode
 import com.tencent.devops.common.service.Profile
+import com.tencent.devops.common.service.utils.I18NUtils
 import com.tencent.devops.common.service.utils.SpringContextUtil
 import org.slf4j.LoggerFactory
 import javax.ws.rs.core.MediaType
@@ -54,12 +56,19 @@ class IOExceptionMapper : ExceptionMapper<StreamException> {
         val message = if (SpringContextUtil.getBean(Profile::class.java).isDebug()) {
             exception.message
         } else {
-            "IO处理出现异常"
+            I18NUtils.getMessage(CommonMessageCode.IO_ERROR)
         }
 
         return Response.status(status)
                 .type(MediaType.APPLICATION_JSON_TYPE)
-                .entity(Result<Void>(status.statusCode, message)).build()
+                .entity(
+                    Result<Void>(
+                        status = status.statusCode,
+                        errCode = CommonMessageCode.IO_ERROR,
+                        message = message
+                    )
+                )
+                .build()
     }
 
 }

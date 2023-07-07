@@ -33,4 +33,13 @@ public interface CodeRepoInfoRepository extends MongoRepository<CodeRepoInfoEnti
      * @return
      */
     List<CodeRepoInfoEntity> findByTaskIdAndBuildIdIn(long taskId, Set<String> buildIdSet);
+
+    /**
+     * 按任务ID查询
+     *
+     * @param taskId
+     * @param buildIdSet
+     * @return
+     */
+    List<CodeRepoInfoEntity> findByTaskIdInAndBuildIdIn(List<Long> taskId, List<String> buildIdSet);
 }

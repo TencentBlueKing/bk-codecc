@@ -55,4 +55,7 @@ public class UpdateDefectVO {
 
     @ApiModelProperty(value = "告警列表", required = true)
     private List<DefectDetailVO> defectList;
+
+    @ApiModelProperty("数据迁移是否成功")
+    private Boolean migrationSuccessful;
 }

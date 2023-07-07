@@ -2,8 +2,8 @@ package com.tencent.bk.codecc.codeccjob.config
 
 import com.tencent.bk.codecc.codeccjob.consumer.WebsocketConsumer
 import com.tencent.devops.common.util.IPUtils
-import com.tencent.devops.common.web.mq.EXCHANGE_TASKLOG_DEFECT_WEBSOCKET
-import com.tencent.devops.common.web.mq.QUEUE_TASKLOG_DEFECT_WEBSOCKET
+import com.tencent.devops.common.web.mq.EXCHANGE_CODECCJOB_TASKLOG_WEBSOCKET
+import com.tencent.devops.common.web.mq.QUEUE_CODECCJOB_TASKLO_WEBSOCKET
 import org.springframework.amqp.core.Binding
 import org.springframework.amqp.core.BindingBuilder
 import org.springframework.amqp.core.FanoutExchange
@@ -26,19 +26,17 @@ class WebSocketMQConfig {
 
     @Bean
     fun rabbitAdmin(@Autowired connectionFactory: ConnectionFactory): RabbitAdmin {
-        val rabbitAdmin = RabbitAdmin(connectionFactory)
-        rabbitAdmin.isAutoStartup = true
-        return rabbitAdmin
+        return RabbitAdmin(connectionFactory)
     }
     
     @Bean
     fun websocketDefectExchange() : FanoutExchange{
-        return FanoutExchange(EXCHANGE_TASKLOG_DEFECT_WEBSOCKET, true, false)
+        return FanoutExchange(EXCHANGE_CODECCJOB_TASKLOG_WEBSOCKET, true, false)
     }
 
     @Bean
     fun websocketDefectQueue() : Queue {
-        return Queue("$QUEUE_TASKLOG_DEFECT_WEBSOCKET${IPUtils.getInnerIP().replace(".", "")}$localPort")
+        return Queue("$QUEUE_CODECCJOB_TASKLO_WEBSOCKET${IPUtils.getInnerIP().replace(".", "")}$localPort")
     }
 
     @Bean
@@ -58,7 +56,6 @@ class WebSocketMQConfig {
         @Autowired websocketConsumer: WebsocketConsumer,
         @Autowired messageConverter: Jackson2JsonMessageConverter
     ): SimpleMessageListenerContainer {
-        rabbitAdmin.declareQueue(websocketDefectQueue)
         val container = SimpleMessageListenerContainer(connectionFactory)
         container.setQueueNames(websocketDefectQueue.name)
         container.setConcurrentConsumers(5)

@@ -46,7 +46,7 @@ public class MetricsVO {
     private double rdIndicatorsScore;
 
     @ApiModelProperty(value = "平均千行复杂度超标数")
-    private Double averageThousandDefect;
+    private double averageThousandDefect;
 
     @ApiModelProperty(value = "一般程度规范告警数")
     private int codeStyleNormalDefectCount;
@@ -89,6 +89,15 @@ public class MetricsVO {
 
     @ApiModelProperty(value = "分析时间")
     private long lastAnalysisTime;
+
+    @ApiModelProperty
+    private Long totalSecurityDefectCount;
+
+    @ApiModelProperty
+    private Long totalDefectCount;
+
+    @ApiModelProperty
+    private Long totalStyleDefectCount;
 
     @Data
     public static class Analysis {

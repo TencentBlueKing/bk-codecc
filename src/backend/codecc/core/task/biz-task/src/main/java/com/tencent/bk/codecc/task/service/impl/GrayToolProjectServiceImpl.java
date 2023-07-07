@@ -30,15 +30,19 @@
 package com.tencent.bk.codecc.task.service.impl;
 
 import com.tencent.bk.codecc.task.service.GrayToolProjectService;
+import com.tencent.bk.codecc.task.vo.GrayToolProjectReqVO;
 import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
 import com.tencent.bk.codecc.task.vo.GrayToolReportVO;
 import com.tencent.bk.codecc.task.vo.TriggerGrayToolVO;
 import com.tencent.devops.common.api.pojo.Page;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
+import com.tencent.devops.common.api.util.UUIDUtil;
+import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 /**
  * 灰度工具项目服务代码
@@ -52,58 +56,55 @@ public class GrayToolProjectServiceImpl implements GrayToolProjectService {
 
     @Override
     public GrayToolProjectVO findGrayInfoByProjectId(String projectId) {
-        // TODO("not implemented")
-        GrayToolProjectVO mockResult = new GrayToolProjectVO();
-        mockResult.setProjectId(projectId);
-        mockResult.setOpenSourceProject(false);
-        return mockResult;
+        GrayToolProjectVO projectVO = new GrayToolProjectVO();
+        projectVO.setStatus(ToolIntegratedStatus.P.value());
+        return projectVO;
     }
 
     @Override
     public Boolean updateGrayInfo(String userId, GrayToolProjectVO grayToolProjectVO) {
-        // TODO("not implemented")
-        return null;
+        return true;
     }
 
     @Override
-    public Page<GrayToolProjectVO> queryGrayToolProjectList(GrayToolProjectVO reqVO, Integer pageNum,
-                                                            Integer pageSize, String sortField, String sortType) {
-        // TODO("not implemented")
-        return null;
+    public Page<GrayToolProjectVO> queryGrayToolProjectList(GrayToolProjectReqVO reqVO, Integer pageNum,
+            Integer pageSize, String sortField, String sortType) {
+        return new Page<>(0, pageNum, pageSize, 0, Collections.emptyList());
     }
 
     @Override
     public Boolean save(String userId, GrayToolProjectVO grayToolProjectVO) {
-        // TODO("not implemented")
-        return null;
+        return true;
     }
 
     @Override
-    public void selectGrayTaskPool(String toolName, String userName) {
-        // TODO("not implemented")
+    public void selectGrayTaskPool(String toolName, String stage, String userName) {
+
     }
 
     @Override
     public Set<Long> findTaskListByToolName(String toolName) {
-        // TODO("not implemented")
-        return null;
+        return new HashSet<>();
     }
 
     @Override
-    public TriggerGrayToolVO triggerGrayToolTasks(String toolName) {
-        // TODO("not implemented")
-        return null;
+    public TriggerGrayToolVO triggerGrayToolTasks(String toolName, String taskNum) {
+        String codeccBuildId = UUIDUtil.INSTANCE.generate();
+        return new TriggerGrayToolVO(codeccBuildId, Collections.emptySet());
     }
 
     @Override
     public GrayToolReportVO findGrayToolReportByToolNameAndBuildId(String toolName, String codeccBuildId) {
-        // TODO("not implemented")
         return null;
     }
 
     @Override
     public List<GrayToolProjectVO> findGrayToolProjectByProjectIds(Set<String> projectIdSet) {
-        // TODO("not implemented")
-        return null;
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Set<String> findAllGrayProjectIdSet() {
+        return Collections.emptySet();
     }
 }

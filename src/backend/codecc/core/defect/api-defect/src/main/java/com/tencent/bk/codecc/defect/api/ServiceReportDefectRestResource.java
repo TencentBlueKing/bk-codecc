@@ -29,14 +29,20 @@ package com.tencent.bk.codecc.defect.api;
 import com.tencent.bk.codecc.defect.vo.UpdateDefectVO;
 import com.tencent.bk.codecc.defect.vo.UploadDefectVO;
 import com.tencent.devops.common.api.annotation.ServiceInterface;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
 import java.util.Set;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 
 /**
  * 后台微服务（如coverity）告警上报服务接口
@@ -49,18 +55,21 @@ import java.util.Set;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @ServiceInterface(value = "report")
-public interface ServiceReportDefectRestResource
-{
+public interface ServiceReportDefectRestResource {
+
     @ApiOperation("查询所有的告警ID")
     @Path("/ids/taskId/{taskId}/toolName/{toolName}")
     @GET
     Result<Set<Long>> queryIds(
             @ApiParam(value = "任务ID", required = true)
             @PathParam("taskId")
-                    long taskId,
+            long taskId,
             @ApiParam(value = "工具名称", required = true)
             @PathParam("toolName")
-                    String toolName
+            String toolName,
+            @ApiParam(value = "数据是否迁移成功", required = false)
+            @QueryParam("migrationSuccessful")
+            Boolean migrationSuccessful
     );
 
     @ApiOperation("批量更新告警状态")
@@ -68,19 +77,19 @@ public interface ServiceReportDefectRestResource
     @PUT
     Result updateDefectStatus(
             @ApiParam(value = "告警状态映射表", required = true)
-                    UpdateDefectVO updateDefectVO);
+            UpdateDefectVO updateDefectVO);
 
     @ApiOperation("上报告警")
     @Path("/")
     @POST
     Result reportDefects(
             @ApiParam(value = "告警详细信息", required = true)
-                    UploadDefectVO uploadDefectVO);
+            UploadDefectVO uploadDefectVO);
 
     @ApiOperation("更新告警详情")
     @Path("/update/detail")
     @POST
     Result updateDefects(
             @ApiParam(value = "告警详细信息", required = true)
-                    UpdateDefectVO updateDefectVO);
+            UpdateDefectVO updateDefectVO);
 }

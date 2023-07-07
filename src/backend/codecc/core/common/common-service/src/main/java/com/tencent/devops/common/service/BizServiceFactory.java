@@ -28,18 +28,17 @@ package com.tencent.devops.common.service;
 
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.BizServiceFlag;
+import com.tencent.devops.common.constant.ComConstants.ToolPattern;
+import com.tencent.devops.common.constant.ComConstants.ToolType;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.utils.SpringContextUtil;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.SetUtils;
-import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.BeansException;
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.BeansException;
 
 /**
  * 多工具业务处理器的工厂类
@@ -48,42 +47,43 @@ import java.util.Set;
  * @date 2018/1/18
  */
 @Slf4j
-public class BizServiceFactory<T>
-{
+public class BizServiceFactory<T> {
+
     /**
      * 为不同类型的工具创建相应的数据报表处理器
      *
      * @param toolName
+     * @param flag 用于区分不同的处理器
      * @return
      */
-    public T createBizService(String toolName, String businessType, Class<T> clz)
-    {
-        String toolProcessorBeanName = String.format("%s%s%s", toolName, businessType, ComConstants.BIZ_SERVICE_POSTFIX);
-        String parrernProcessorBeanName = null;
+    public T doCreateBizService(String toolName, BizServiceFlag flag, String businessType, Class<T> clz) {
+        String toolProcessorBeanName = String.format("%s%s%s%s", toolName, flag.getFlag(),
+                businessType, ComConstants.BIZ_SERVICE_POSTFIX);
+        String patternProcessorBeanName = null;
         String commonProcessorBeanName = null;
 
         // 获取工具名称开头的处理类
         T processor = getProcessor(clz, toolProcessorBeanName);
 
         // 获取工具类型开头的处理类
-        if (processor == null)
-        {
+        if (processor == null) {
             ToolMetaCacheService toolMetaCacheService = SpringContextUtil.Companion.getBean(ToolMetaCacheService.class);
             // BizService的bean名（PatternBizTypeBizService）的后缀名,比如：COVERITYBatchMarkDefectBizService
-            parrernProcessorBeanName = String.format("%s%s%s", toolMetaCacheService.getToolPattern(toolName), businessType, ComConstants.BIZ_SERVICE_POSTFIX);
-            processor = getProcessor(clz, parrernProcessorBeanName);
+            patternProcessorBeanName = String.format("%s%s%s%s", toolMetaCacheService.getToolPattern(toolName),
+                    flag.getFlag(), businessType, ComConstants.BIZ_SERVICE_POSTFIX);
+            processor = getProcessor(clz, patternProcessorBeanName);
         }
 
         // 如果没找到工具的具体处理类，则采用通用的处理器
-        if (processor == null)
-        {
-            commonProcessorBeanName = String.format("%s%s%s", ComConstants.COMMON_BIZ_SERVICE_PREFIX, businessType, ComConstants.BIZ_SERVICE_POSTFIX);
+        if (processor == null) {
+            commonProcessorBeanName = String.format("%s%s%s%s", ComConstants.COMMON_BIZ_SERVICE_PREFIX, flag.getFlag(),
+                    businessType, ComConstants.BIZ_SERVICE_POSTFIX);
             processor = getProcessor(clz, commonProcessorBeanName);
         }
 
-        if (processor == null)
-        {
-            log.error("get bean name [{}, {}, {}] fail!", toolProcessorBeanName, parrernProcessorBeanName, commonProcessorBeanName);
+        if (processor == null) {
+            log.error("get bean name [{}, {}, {}] fail!", toolProcessorBeanName, patternProcessorBeanName,
+                    commonProcessorBeanName);
             throw new CodeCCException(CommonMessageCode.NOT_FOUND_PROCESSOR);
         }
 
@@ -96,8 +96,26 @@ public class BizServiceFactory<T>
      * @param toolName
      * @return
      */
-    public T createBizService(String toolName, String dimension, String businessType, Class<T> clz)
-    {
+    public T createBizService(String toolName, String businessType, Class<T> clz) {
+        return doCreateBizService(toolName, BizServiceFlag.CORE, businessType, clz);
+    }
+
+    public T createBizService(String toolName, BizServiceFlag flag, String businessType, Class<T> clz) {
+        return doCreateBizService(toolName, flag, businessType, clz);
+    }
+
+    /**
+     * 为不同类型的工具创建相应的数据报表处理器
+     *
+     * @param toolName
+     * @return
+     */
+    public T createBizService(String toolName, String dimension, String businessType, Class<T> clz) {
+        return createBizService(toolName, dimension, BizServiceFlag.CORE, businessType, clz);
+    }
+
+    public T createBizService(String toolName, String dimension, BizServiceFlag flag, String businessType,
+            Class<T> clz) {
         if (StringUtils.isNotBlank(toolName)) {
             return createBizService(toolName, businessType, clz);
         }
@@ -107,7 +125,79 @@ public class BizServiceFactory<T>
             List<String> toolNameSet = toolMetaCacheService.getToolDetailByDimension(dimension);
             if (CollectionUtils.isNotEmpty(toolNameSet)) {
                 List<String> toolNameList = new ArrayList<>(toolNameSet);
-                return createBizService(toolNameList.get(0), businessType ,clz);
+                return createBizService(toolNameList.get(0), flag, businessType, clz);
+            }
+        }
+
+        throw new CodeCCException(CommonMessageCode.NOT_FOUND_PROCESSOR);
+    }
+
+    /**
+     * 为不同工具/维度构造业务逻辑器
+     *
+     * @param toolNameList
+     * @param dimensionList
+     * @param businessType
+     * @param clz
+     * @return
+     */
+    public T createBizService(
+            List<String> toolNameList,
+            List<String> dimensionList,
+            String businessType,
+            Class<T> clz
+    ) {
+        return createBizService(toolNameList, dimensionList, BizServiceFlag.CORE, businessType, clz);
+    }
+
+
+    /**
+     * 为不同工具/维度构造业务逻辑器
+     *
+     * @param toolNameList
+     * @param dimensionList
+     * @param flag
+     * @param businessType
+     * @param clz
+     * @return
+     */
+    public T createBizService(
+            List<String> toolNameList,
+            List<String> dimensionList,
+            BizServiceFlag flag,
+            String businessType,
+            Class<T> clz
+    ) {
+        // 全不选
+        if (CollectionUtils.isEmpty(toolNameList) && CollectionUtils.isEmpty(dimensionList)) {
+            return createBizService(ToolPattern.LINT.name(), flag, businessType, clz);
+        }
+
+        // 任意一项多选
+        if ((CollectionUtils.isNotEmpty(toolNameList) && toolNameList.size() > 1)
+                || (CollectionUtils.isNotEmpty(dimensionList) && dimensionList.size() > 1)) {
+            return createBizService(ToolPattern.LINT.name(), flag, businessType, clz);
+        }
+
+        // 其中一项单选：优先按工具处理
+        if (CollectionUtils.isNotEmpty(toolNameList)) {
+            String toolName = toolNameList.get(0);
+
+            if (ToolType.DUPC_CCN_SCC_CLOC_SET.contains(toolName)) {
+                return createBizService(toolName, flag, businessType, clz);
+            } else {
+                return createBizService(ToolPattern.LINT.name(), flag, businessType, clz);
+            }
+        }
+
+        // 其中一项单选：其次按维度处理
+        if (CollectionUtils.isNotEmpty(dimensionList)) {
+            String dimension = dimensionList.get(0);
+
+            if (ToolType.DIMENSION_FOR_LINT_PATTERN_SET.contains(dimension)) {
+                return createBizService(ToolPattern.LINT.name(), flag, businessType, clz);
+            } else {
+                return createBizService("", dimension, flag, businessType, clz);
             }
         }
 
@@ -116,25 +206,21 @@ public class BizServiceFactory<T>
 
     /**
      * 为不同类型的业务创建相应的处理器
+     *
      * @param businessType
      * @param clz
      * @return
      */
-    public T createBizService(String businessType, Class<T> clz)
-    {
+    public T createBizService(String businessType, Class<T> clz) {
         String beanName = String.format("%s%s", businessType, ComConstants.BIZ_SERVICE_POSTFIX);
         T processor = null;
-        try
-        {
+        try {
             processor = SpringContextUtil.Companion.getBean(clz, beanName);
-        }
-        catch (BeansException e)
-        {
+        } catch (BeansException e) {
             log.error("Bean Name [{}] Not Found:", beanName);
         }
 
-        if (processor == null)
-        {
+        if (processor == null) {
             log.error("get bean name [{}] fail!", beanName);
             throw new CodeCCException(CommonMessageCode.NOT_FOUND_PROCESSOR);
         }
@@ -142,15 +228,11 @@ public class BizServiceFactory<T>
         return processor;
     }
 
-    private <T> T getProcessor(Class<T> clz, String beanName)
-    {
+    private <T> T getProcessor(Class<T> clz, String beanName) {
         T processor = null;
-        try
-        {
+        try {
             processor = SpringContextUtil.Companion.getBean(clz, beanName);
-        }
-        catch (BeansException e)
-        {
+        } catch (BeansException e) {
             //log.error("Bean Name [{}] Not Found:", beanName);
         }
         return processor;

@@ -26,6 +26,10 @@
 
 package com.tencent.bk.codecc.codeccjob.consumer;
 
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_TASK_PERSONAL;
+import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_TASK_PERSONAL;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_TASK_PERSONAL;
+
 import com.tencent.bk.codecc.codeccjob.service.TaskPersonalStatisticService;
 import com.tencent.bk.codecc.defect.vo.TaskPersonalStatisticRefreshReq;
 import lombok.extern.slf4j.Slf4j;
@@ -36,8 +40,6 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import static com.tencent.devops.common.web.mq.ConstantsKt.*;
-
 /**
  * 分析版本队列消费逻辑
  *
@@ -46,29 +48,33 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.*;
  */
 @Component
 @Slf4j
-public class TaskPersonalStatisticConsumer
-{
+public class TaskPersonalStatisticConsumer {
 
     @Autowired
     private TaskPersonalStatisticService taskPersonalStatisticService;
 
+    @RabbitListener(
+            bindings = @QueueBinding(
+                    key = ROUTE_TASK_PERSONAL,
+                    value = @Queue(value = QUEUE_TASK_PERSONAL, durable = "true"),
+                    exchange = @Exchange(
+                            value = EXCHANGE_TASK_PERSONAL, durable = "true", delayed = "true", type = "topic"
+                    )
+            )
+    )
+    public void refreshTaskPersonalStatistic(TaskPersonalStatisticRefreshReq mqObj) {
+        long taskId = mqObj != null ? mqObj.getTaskId() : 0L;
 
-    @RabbitListener(bindings = @QueueBinding(key = ROUTE_TASK_PERSONAL,
-            value = @Queue(value = QUEUE_TASK_PERSONAL, durable = "true"),
-            exchange = @Exchange(value = EXCHANGE_TASK_PERSONAL, durable = "true", delayed = "true", type = "topic")))
-    public void refreshTaskPersonalStatistic(TaskPersonalStatisticRefreshReq taskPersonalStatisticRefreshReq)
-    {
-        try
-        {
-            taskPersonalStatisticService.refresh(
-                taskPersonalStatisticRefreshReq.getTaskId(), taskPersonalStatisticRefreshReq.getExtraInfo());
-        }
-        catch (Exception e)
-        {
-            log.error("refresh task personal statistic error! task id: {}, extraInfo: {}",
-                taskPersonalStatisticRefreshReq.getTaskId(), taskPersonalStatisticRefreshReq.getExtraInfo());
-        }
+        try {
+            long beginTime = System.currentTimeMillis();
+            log.info("refresh task personal statistic begin, task id: {}, mq obj: {}", taskId, mqObj);
 
+            taskPersonalStatisticService.refresh(mqObj.getTaskId(), mqObj.getExtraInfo());
+
+            long costTime = System.currentTimeMillis() - beginTime;
+            log.info("refresh task personal statistic end, task id: {}, cost: {}", taskId, costTime);
+        } catch (Exception e) {
+            log.error("refresh task personal statistic error, task id: {}, mq obj: {}", taskId, mqObj, e);
+        }
     }
-
 }

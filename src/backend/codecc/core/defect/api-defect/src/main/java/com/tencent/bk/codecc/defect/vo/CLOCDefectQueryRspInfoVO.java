@@ -23,6 +23,16 @@ public class CLOCDefectQueryRspInfoVO {
     @ApiModelProperty("当前语言注释行数")
     private long sumComment;
 
+    @ApiModelProperty("注释率")
+    private Double commentRate;
+
+    @ApiModelProperty("当前语言有效注释行数")
+    private Long sumEfficientComment;
+
+    @ApiModelProperty("有效注释率")
+    private Double efficientCommentRate;
+
     @ApiModelProperty("当前语言行数占比")
     private int proportion;
+
 }

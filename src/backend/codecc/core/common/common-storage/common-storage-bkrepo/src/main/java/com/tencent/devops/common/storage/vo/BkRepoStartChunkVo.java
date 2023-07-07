@@ -4,8 +4,9 @@ import lombok.Data;
 
 @Data
 public class BkRepoStartChunkVo {
+
     /**
-     * 	分块上传id
+     * 分块上传id
      */
     private String uploadId;
     /**

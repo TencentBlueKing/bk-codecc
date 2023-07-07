@@ -20,15 +20,22 @@ import com.tencent.bk.codecc.defect.vo.SingleCommentVO;
  * @date 2020/3/2
  * @version V1.0
  */
-public interface IDefectOperateBizService
-{
+public interface IDefectOperateBizService {
     /**
      * 添加代码评论
+     *
      * @param defectId
+     * @param toolName
+     * @param fileName
      * @param commentId
+     * @param userName
      * @param singleCommentVO
+     * @param projectId
+     * @param taskId
      */
-    void addCodeComment(String defectId, String commentId, String userName, SingleCommentVO singleCommentVO);
+    void addCodeComment(String defectId, String toolName, String commentId, String userName,
+            SingleCommentVO singleCommentVO, String fileName, String nameCn, String checker, String projectId,
+            String taskId);
 
     /**
      * 更新代码评论

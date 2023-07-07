@@ -43,7 +43,7 @@ public interface AnalyzeConfigService
      *
      * @param streamName
      * @param multiToolType
-     * @return
+     * @return AnalyzeConfigInfoVO
      */
     AnalyzeConfigInfoVO getAnalyzeConfig(String streamName, String multiToolType, PipelineBuildInfoVO pipelineBuildInfoVO);
 }

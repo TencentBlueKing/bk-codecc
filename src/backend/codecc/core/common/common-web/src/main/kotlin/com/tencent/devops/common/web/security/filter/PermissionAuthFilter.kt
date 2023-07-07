@@ -32,9 +32,9 @@ import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_USER_ID
 import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.api.exception.UnauthorizedException
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi
-import com.tencent.devops.common.auth.api.external.AuthTaskService
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction
 import com.tencent.devops.common.auth.api.pojo.external.model.BkAuthExResourceActionModel
+import com.tencent.devops.common.auth.api.service.AuthTaskService
 import com.tencent.devops.common.auth.api.util.PermissionUtil
 import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.constant.CommonMessageCode
@@ -56,7 +56,6 @@ class PermissionAuthFilter(
     override fun filter(requestContext: ContainerRequestContext) {
         val authExPermissionApi = SpringContextUtil.getBean(AuthExPermissionApi::class.java)
         val authTaskService = SpringContextUtil.getBean(AuthTaskService::class.java)
-
         val user = requestContext.getHeaderString(AUTH_HEADER_DEVOPS_USER_ID)
 
         // 如果是管理员就直接校验通过
@@ -64,14 +63,12 @@ class PermissionAuthFilter(
             return
         }
 
-
-
         val projectId = requestContext.getHeaderString(AUTH_HEADER_DEVOPS_PROJECT_ID)
-        if (user.isNullOrBlank()  || projectId.isNullOrBlank()) {
+
+        if (user.isNullOrBlank() || projectId.isNullOrBlank()) {
             logger.error("insufficient param info! user: $user, projectId: $projectId")
             throw UnauthorizedException("insufficient param info!")
         }
-
         // 当没获取到任务id时，只校验项目维度的权限
         val taskId = requestContext.getHeaderString(AUTH_HEADER_DEVOPS_TASK_ID)
         if (taskId.isNullOrBlank()) {
@@ -85,23 +82,25 @@ class PermissionAuthFilter(
 
         val taskCreateFrom = authTaskService.getTaskCreateFrom(taskId.toLong())
         logger.info("task create from: $taskCreateFrom, user: $user， projectId: $projectId")
+
+        // 若是BG管理员则校验通过
+        if (authExPermissionApi.isBgAdminMember(user, taskId, taskCreateFrom)) {
+            return
+        }
         val result = when (taskCreateFrom) {
             ComConstants.BsTaskCreateFrom.BS_PIPELINE.value() -> {
                 val pipelineAuthResults: MutableList<BkAuthExResourceActionModel> = mutableListOf()
                 // 工蜂CI项目没有在蓝鲸权限中心注册过，需要走Oauth鉴权与工蜂权限对齐
                 if (Pattern.compile("^git_[0-9]+$").matcher(projectId).find()) {
-                    logger.info("auth gongfeng ci project, taskId: {} | projectId: {} | user: {}", taskId, projectId, user)
-                    val isPass = authExPermissionApi.validateGongfengPermission(user, taskId, projectId, actions)
-                    pipelineAuthResults.add(BkAuthExResourceActionModel("pipeline_auth", null, null,
-                            isPass))
+                    return
                 } else {
                     // 普通流水线在蓝鲸权限中心鉴权
-                    val codeccActions = PermissionUtil.getCodeCCPermissionsFromActions(actions)
-                    val pipelinePermissionAuthResult = authExPermissionApi.validateTaskBatchPermission(
+                    val pipelieActions = PermissionUtil.getPipelinePermissionsFromActions(actions)
+                    val pipelinePermissionAuthResult = authExPermissionApi.validatePipelineBatchPermission(
                             user,
                             taskId,
                             projectId,
-                            codeccActions
+                            pipelieActions
                     )
                     var pipelineAuthPass = true
                     pipelinePermissionAuthResult.forEach {
@@ -121,13 +120,7 @@ class PermissionAuthFilter(
                 pipelineAuthResults
             }
             ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value() -> {
-                if (!authExPermissionApi.validateGongfengPermission(user, taskId, projectId, actions)) {
-                    logger.error("empty validate result: $user")
-                    throw CodeCCException(CommonMessageCode.PERMISSION_DENIED, arrayOf(user))
-                } else {
-                    logger.info("gongfeng authorization pass, task id: $taskId")
-                    return
-                }
+                return
             }
             else -> {
                 val codeccActions = PermissionUtil.getCodeCCPermissionsFromActions(actions)

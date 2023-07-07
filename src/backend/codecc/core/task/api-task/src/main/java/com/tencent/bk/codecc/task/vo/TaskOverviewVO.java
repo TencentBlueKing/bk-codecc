@@ -107,10 +107,10 @@ public class TaskOverviewVO
     @ApiModelProperty(value = "安全严重问题数")
     private int codeSecuritySeriousDefectCount;
 
-    @ApiModelProperty(value = "工具最近一次分析结果列表")
+    @ApiModelProperty(value = "按工具最近一次分析结果列表")
     private List<LastAnalysis> lastAnalysisResultList;
 
-    @ApiModelProperty(value = "工具最近一次分析结果列表")
+    @ApiModelProperty(value = "按维度最近一次分析结果列表")
     private List<LastCluster> lastClusterResultList;
 
     @Data

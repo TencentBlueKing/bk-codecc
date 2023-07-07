@@ -1,6 +1,7 @@
 package com.tencent.devops.common.util;
 
 import com.tencent.devops.common.api.exception.CodeCCException;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;

@@ -29,11 +29,10 @@ package com.tencent.bk.codecc.defect.service.impl.pipelinereport;
 import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.CCNDefectDao;
-import com.tencent.bk.codecc.defect.model.CCNStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CCNStatisticEntity;
 import com.tencent.bk.codecc.defect.model.pipelinereport.CCNSnapShotEntity;
 import com.tencent.bk.codecc.defect.model.pipelinereport.ToolSnapShotEntity;
 import com.tencent.bk.codecc.defect.service.ICheckReportBizService;
-import com.tencent.bk.codecc.defect.service.newdefectjudge.NewDefectJudgeService;
 import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import lombok.extern.slf4j.Slf4j;
@@ -61,9 +60,8 @@ public class CCNCheckReportBizServiceImpl implements ICheckReportBizService
     @Value("${bkci.public.url:#{null}}")
     private String devopsHost;
 
-    @Autowired
-    private NewDefectJudgeService newDefectJudgeService;
-
+    @Value("${bkci.public.schemes:http}")
+    private String devopsSchemes;
     @Autowired
     private CCNDefectDao ccnDefectDao;
 
@@ -77,7 +75,7 @@ public class CCNCheckReportBizServiceImpl implements ICheckReportBizService
 
         handleToolBaseInfo(ccnSnapShotEntity, taskId, toolName, projectId, buildId);
 
-        CCNStatisticEntity ccnStatistic = ccnStatisticRepository.findFirstByTaskIdAndBuildId(taskId, buildId);
+        CCNStatisticEntity ccnStatistic = ccnStatisticRepository.findFirstByTaskIdAndBuildIdOrderByTimeDesc(taskId, buildId);
         if (ccnStatistic == null)
         {
             return ccnSnapShotEntity;
@@ -103,13 +101,18 @@ public class CCNCheckReportBizServiceImpl implements ICheckReportBizService
         //获取工具信息
         ccnSnapShotEntity.setToolNameCn(toolMetaCacheService.getToolDisplayName(toolName));
         ccnSnapShotEntity.setToolNameEn(toolName);
-        if (StringUtils.isNotEmpty(projectId))
-        {
-            String defectDetailUrl = String.format("%s/console/codecc/%s/task/%d/defect/ccn/list?buildId=%s",
-                    devopsHost, projectId, taskId, buildId);
+        if (StringUtils.isNotEmpty(projectId)) {
+            String defectDetailUrl = String.format(
+                    "%s://%s/console/codecc/%s/task/%d/defect/ccn/list?buildId=%s",
+                    devopsSchemes, devopsHost, projectId, taskId, buildId
+            );
+
+            String defectReportUrl = String.format(
+                    "%s://%s/console/codecc/%s/task/%d/defect/ccn/charts",
+                    devopsSchemes, devopsHost, projectId, taskId
+            );
+
             ccnSnapShotEntity.setDefectDetailUrl(defectDetailUrl);
-            String defectReportUrl = String.format("%s/console/codecc/%s/task/%d/defect/ccn/charts",
-                    devopsHost, projectId, taskId);
             ccnSnapShotEntity.setDefectReportUrl(defectReportUrl);
         }
     }

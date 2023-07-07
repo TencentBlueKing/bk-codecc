@@ -27,10 +27,13 @@
 package com.tencent.bk.codecc.task.resources;
 
 import com.tencent.bk.codecc.task.api.ServiceToolMetaRestResource;
+import com.tencent.bk.codecc.task.service.MetaService;
 import com.tencent.bk.codecc.task.service.ToolMetaService;
 import com.tencent.devops.common.api.RefreshDockerImageHashReqVO;
+import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.annotation.I18NResponse;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.web.RestResource;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
@@ -47,6 +50,9 @@ public class ServiceToolMetaRestResourceImpl implements ServiceToolMetaRestResou
 {
     @Autowired
     private ToolMetaService toolMetaService;
+
+    @Autowired
+    private MetaService metaService;
 
     @Override
     public Result<Boolean> validateToolType(String toolType) {
@@ -67,7 +73,28 @@ public class ServiceToolMetaRestResourceImpl implements ServiceToolMetaRestResou
     }
 
     @Override
+    public Result<List<ToolMetaDetailVO>> getToolByPattern(String pattern) {
+        return new Result<>(toolMetaService.getToolsByPattern(pattern));
+    }
+
+    @Override
+    public Result<List<ToolMetaDetailVO>> getAllTools() {
+        return new Result<>(toolMetaService.queryAllToolMetaDataList());
+    }
+
+    @Override
     public Result<Boolean> refreshDockerImageHash(RefreshDockerImageHashReqVO refreshDockerImageHashReqVO) {
         return new Result<>(toolMetaService.refreshDockerImageHash(refreshDockerImageHashReqVO));
+    }
+
+    @Override
+    @I18NResponse
+    public Result<List<ToolMetaBaseVO>> toolList(Boolean isDetail) {
+        return new Result<>(metaService.toolList(isDetail));
+    }
+
+    @Override
+    public Result<List<ToolMetaDetailVO>> queryToolMetaDataByToolName(List<String> toolNameList) {
+        return new Result<>(toolMetaService.getToolsByToolName(toolNameList));
     }
 }

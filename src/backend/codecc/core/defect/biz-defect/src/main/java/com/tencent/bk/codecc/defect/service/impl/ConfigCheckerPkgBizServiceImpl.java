@@ -52,7 +52,7 @@ import com.tencent.bk.codecc.task.vo.checkerset.ToolCheckerSetVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.GlobalMessage;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.CheckerConstants;
 import com.tencent.devops.common.constant.ComConstants;
@@ -177,8 +177,10 @@ public class ConfigCheckerPkgBizServiceImpl implements IConfigCheckerPkgBizServi
         // 按规则包ID分组规则明细
         Map<String, List<CheckerDetailVO>> checkerPkgsMap = getToolCheckerPkg(taskId, toolName, toolConfigInfo.getParamJson(), finalCodeLang);
 
-        // 设置规则详情状态
-        setCheckerStatus(taskDetailVO, toolConfigInfo, checkerPkgsMap);
+        if (taskDetailVO != null) {
+            // 设置规则详情状态
+            setCheckerStatus(taskDetailVO, toolConfigInfo, checkerPkgsMap);
+        }
 
         // 规则包国际化
         Map<String, GlobalMessage> globalMessageMap = globalMessageUtil.getGlobalMessageMap(GLOBAL_CHECKER_PACKAGE_MSG);

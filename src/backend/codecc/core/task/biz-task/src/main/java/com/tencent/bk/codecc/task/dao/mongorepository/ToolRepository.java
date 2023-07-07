@@ -68,7 +68,7 @@ public interface ToolRepository extends MongoRepository<ToolConfigInfoEntity, St
      * @return
      */
     @Query(fields = "{'platform_ip':1}", value = "{'task_id': ?0, 'tool_name': ?1}")
-    ToolConfigInfoEntity findPlatformIpFirstByTaskIdAndToolName(long taskId, String toolName);
+    List<ToolConfigInfoEntity> findPlatformIpByTaskIdAndToolName(long taskId, String toolName);
 
 
     /**
@@ -99,4 +99,22 @@ public interface ToolRepository extends MongoRepository<ToolConfigInfoEntity, St
      */
     @Query(fields = "{'checker_set':0}")
     List<ToolConfigInfoEntity> findByTaskIdIn(Collection<Long> taskIdSet);
+
+    /**
+     * 获取某个platform IP下的所有任务
+     *
+     * @param toolName   工具
+     * @param platformIp IP
+     * @return list
+     */
+    List<ToolConfigInfoEntity> findByToolNameAndPlatformIp(String toolName, String platformIp);
+
+    /**
+     * 批量查询指定任务工具的
+     *
+     * @param taskIdSet 任务ID集合
+     * @param toolName  工具
+     * @return
+     */
+    List<ToolConfigInfoEntity> findByTaskIdInAndToolName(Collection<Long> taskIdSet, String toolName);
 }

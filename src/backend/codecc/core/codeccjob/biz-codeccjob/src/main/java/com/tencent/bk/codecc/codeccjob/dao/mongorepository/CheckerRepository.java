@@ -14,6 +14,7 @@ package com.tencent.bk.codecc.codeccjob.dao.mongorepository;
 
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -32,6 +33,7 @@ public interface CheckerRepository extends MongoRepository<CheckerDetailEntity, 
      * @param toolName 工具名
      * @return list
      */
+    @Query(fields = "{'checker_key': 1, 'create_date': 1}")
     List<CheckerDetailEntity> findByToolName(String toolName);
 
 }

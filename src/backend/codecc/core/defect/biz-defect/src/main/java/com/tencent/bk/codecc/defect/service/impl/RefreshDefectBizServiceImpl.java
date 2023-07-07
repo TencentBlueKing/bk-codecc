@@ -3,11 +3,9 @@ package com.tencent.bk.codecc.defect.service.impl;
 import com.mongodb.bulk.BulkWriteResult;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.CLOCStatisticsDao;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.DefectDao;
-import com.tencent.bk.codecc.defect.model.CLOCDefectEntity;
-import com.tencent.bk.codecc.defect.model.CLOCStatisticEntity;
+import com.tencent.bk.codecc.defect.model.defect.CLOCDefectEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
 import com.tencent.bk.codecc.defect.service.RefreshDefectBizService;
-import com.tencent.devops.common.util.StringCompress;
-import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +19,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@Deprecated
 public class RefreshDefectBizServiceImpl implements RefreshDefectBizService {
 
     private static Logger logger = LoggerFactory.getLogger(RefreshDefectBizServiceImpl.class);

@@ -31,13 +31,11 @@ import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.CheckerSetType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.apache.commons.collections.CollectionUtils;
 
 /**
  * 任务详细信息
@@ -48,8 +46,8 @@ import org.apache.commons.collections.CollectionUtils;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ApiModel("任务详细信息")
-public class TaskDetailVO extends TaskBaseVO
-{
+public class TaskDetailVO extends TaskBaseVO {
+
     @ApiModelProperty(value = "任务成员")
     private List<String> taskMember;
 
@@ -232,4 +230,40 @@ public class TaskDetailVO extends TaskBaseVO
      * 是否扫描测试代码，true-扫描，false-不扫描，默认不扫描
      */
     private Boolean scanTestSource = false;
+
+    @ApiModelProperty(value = "自动语言识别")
+    private Boolean autoLang;
+
+    @ApiModelProperty(value = "检查规则集环境类型:preProd/prod")
+    private String checkerSetEnvType;
+
+    @ApiModelProperty
+    private Long totalSecurityDefectCount;
+
+    @ApiModelProperty
+    private Long totalDefectCount;
+
+    @ApiModelProperty
+    private Long totalStyleDefectCount;
+
+    @ApiModelProperty(value = "代码库总分")
+    private double rdIndicatorsScore;
+
+    @ApiModelProperty(value = "是否按开源治理计分")
+    private boolean openScan;
+
+    @ApiModelProperty(value = "仓库管理者")
+    private List<String> repoOwner;
+
+    @ApiModelProperty(value = "流水线model的taskId")
+    private String pipelineTaskId;
+
+    @ApiModelProperty(value = "流水线model的taskName")
+    private String pipelineTaskName;
+
+    @ApiModelProperty(value = "数据是否迁移成功")
+    private Boolean dataMigrationSuccessful;
+
+    @ApiModelProperty(value = "超时时间")
+    private Integer timeout;
 }

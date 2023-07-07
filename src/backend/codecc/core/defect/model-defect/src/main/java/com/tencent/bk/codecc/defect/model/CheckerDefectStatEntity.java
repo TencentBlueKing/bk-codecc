@@ -15,6 +15,8 @@ package com.tencent.bk.codecc.defect.model;
 import com.tencent.codecc.common.db.CommonEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -29,6 +31,10 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Document(collection = "t_checker_defect_stat")
+@CompoundIndexes({
+        @CompoundIndex(name = "toolname_1_datafrom_1_statdate_1",
+                def = "{'tool_name': 1, 'data_from': 1, 'stat_date': 1}", background = true)
+})
 public class CheckerDefectStatEntity extends CommonEntity {
 
     @Field("tool_name")
@@ -39,22 +45,22 @@ public class CheckerDefectStatEntity extends CommonEntity {
     private String checkerName;
 
     @Field("open_checker_task_count")
-    private Integer openCheckerTaskCount;
+    private int openCheckerTaskCount;
 
     @Field("defect_total_count")
-    private Integer defectTotalCount;
+    private int defectTotalCount;
 
     @Field("exist_count")
-    private Integer existCount;
+    private int existCount;
 
     @Field("fixed_count")
-    private Integer fixedCount;
+    private int fixedCount;
 
     @Field("ignore_count")
-    private Integer ignoreCount;
+    private int ignoreCount;
 
     @Field("excluded_count")
-    private Integer excludedCount;
+    private int excludedCount;
 
     @Field("checker_create_date")
     private Long checkerCreatedDate;

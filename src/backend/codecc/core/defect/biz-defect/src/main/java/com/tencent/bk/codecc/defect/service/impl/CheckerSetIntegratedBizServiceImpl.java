@@ -3,12 +3,15 @@ package com.tencent.bk.codecc.defect.service.impl;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerSetHisRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerSetProjectRelationshipRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerSetRepository;
+import com.tencent.bk.codecc.defect.model.checkerset.CheckerPropsEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetHisEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetProjectRelationshipEntity;
 import com.tencent.bk.codecc.defect.service.ICheckerSetIntegratedBizService;
 import com.tencent.bk.codecc.defect.service.IV3CheckerSetBizService;
-import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.bk.codecc.task.api.ServiceBaseDataResource;
+import com.tencent.devops.common.api.checkerset.CheckerSetVO;
+import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import com.tencent.devops.common.util.GsonUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,14 +46,22 @@ public class CheckerSetIntegratedBizServiceImpl implements ICheckerSetIntegrated
     @Autowired
     private IV3CheckerSetBizService v3CheckerSetBizService;
 
+    @Autowired
+    private Client client;
+
     @Override
-    public String updateToStatus(String toolName,
-                                 String buildId,
-                                 ToolIntegratedStatus toStatus,
-                                 String user,
-                                 Set<String> checkerSetIds,
-                                 Set<String> changeCheckerIds) {
-        List<CheckerSetEntity> changedFromCheckerSetList = init(toolName, toStatus, checkerSetIds, changeCheckerIds);
+    public String updateToStatus(
+            String toolName,
+            String buildId,
+            ToolIntegratedStatus fromStatus,
+            ToolIntegratedStatus toStatus,
+            String user,
+            Set<String> checkerSetIds,
+            Set<String> changeCheckerIds
+    ) {
+        List<CheckerSetEntity> changedFromCheckerSetList =
+                init(toolName, fromStatus, toStatus, checkerSetIds, changeCheckerIds);
+
         List<String> changedFromCheckerSetIdList =
                 changedFromCheckerSetList.stream().map(CheckerSetEntity::getCheckerSetId).collect(Collectors.toList());
 
@@ -57,66 +69,149 @@ public class CheckerSetIntegratedBizServiceImpl implements ICheckerSetIntegrated
             return "no change checker set for update, do nothing...";
         }
 
-        List<CheckerSetEntity> newCheckerSetList = new ArrayList<>();
-        if (toStatus == ToolIntegratedStatus.G) {
+        if (toStatus == ToolIntegratedStatus.G || toStatus == ToolIntegratedStatus.PRE_PROD) {
             List<CheckerSetEntity> toCheckerSetList =
                     checkerSetRepository.findByCheckerSetIdInAndVersion(changedFromCheckerSetIdList, toStatus.value());
 
-            backup(toolName, toStatus, buildId, toCheckerSetList);
+            if (CollectionUtils.isEmpty(toCheckerSetList)) {
+                log.info("back up the max version checker set: {}", toolName);
+                List<CheckerSetEntity> prodCheckerSet =
+                    getMaxVersionMap(changedFromCheckerSetIdList).values().stream().map(it -> {
+                        it.setVersion(toStatus.value());
+                        return it;
+                    }).collect(Collectors.toList());
+                backup(toolName, toStatus, buildId, prodCheckerSet);
+            } else {
+                log.info("back up the checker set: {}", toolName);
+                backup(toolName, toStatus, buildId, toCheckerSetList);
+            }
 
             checkerSetRepository.deleteAll(toCheckerSetList);
 
-            newCheckerSetList = getNewCheckerSetForGray(changedFromCheckerSetList, user);
-
+            List<CheckerSetEntity> newCheckerSetList =
+                    getNewCheckerSetForGrayOrPreProd(changedFromCheckerSetList, user, toStatus);
             checkerSetRepository.saveAll(newCheckerSetList);
 
             // 把旧规则集toCheckerSetList换成新规则newCheckerSetList，需要设置强制全量及告警状态
             Map<String, CheckerSetEntity> oldCheckerSetMap = toCheckerSetList.stream()
                     .collect(Collectors.toMap(CheckerSetEntity::getCheckerSetId, Function.identity(), (k, v) -> k));
-            updateTaskAfterChangeCheckerSet(newCheckerSetList, oldCheckerSetMap, user);
+            updateTaskAfterChangeCheckerSet(newCheckerSetList, oldCheckerSetMap, user, toStatus);
+
+            if (toStatus == ToolIntegratedStatus.PRE_PROD) {
+                List<CheckerSetVO> list = newCheckerSetList.stream().map(it -> {
+                    CheckerSetVO checkerSetVO = new CheckerSetVO();
+                    checkerSetVO.setCheckerSetId(it.getCheckerSetId());
+                    checkerSetVO.setToolList(
+                        it.getCheckerProps().stream().map(CheckerPropsEntity::getToolName).collect(Collectors.toSet()));
+                    return checkerSetVO;
+                }).collect(Collectors.toList());
+                log.info("is pre prod and update lang pre prod checker set: {}", list);
+                Set<String> updateLangPreProdCheckerSetId =
+                    client.get(ServiceBaseDataResource.class).updateLangPreProdConfig(list).getData();
+                log.info("finish update lang pre prod checker set: {}", updateLangPreProdCheckerSetId);
+            }
+
+            return String.format("batch update checker set successfully: %s, %s, %s",
+                toolName, toStatus, newCheckerSetList);
         } else if (toStatus == ToolIntegratedStatus.P) {
             Map<String, CheckerSetEntity> checkerSetMap = getMaxVersionMap(changedFromCheckerSetIdList);
 
             backup(toolName, toStatus, buildId, checkerSetMap.values());
 
-            newCheckerSetList = getNewCheckerSetForProd(changedFromCheckerSetList, checkerSetMap, user);
-
-            checkerSetRepository.saveAll(newCheckerSetList);
+            List<CheckerSetEntity> newCheckerSetList
+                    = getNewCheckerSetForProd(changedFromCheckerSetList, checkerSetMap, user);
 
             // 把旧规则集checkerSetMap换成新规则newCheckerSetList，需要设置强制全量及告警状态
-            updateTaskAfterChangeCheckerSet(newCheckerSetList, checkerSetMap, user);
+            List<CheckerSetEntity> updateCheckerSetList = updateTaskAfterChangeCheckerSet(newCheckerSetList,
+                checkerSetMap, user, toStatus);
+            if (CollectionUtils.isNotEmpty(updateCheckerSetList)) {
+                checkerSetRepository.saveAll(updateCheckerSetList);
+            }
+
+            return String.format("batch update checker set successfully: %s, %s, %s",
+                toolName, toStatus, updateCheckerSetList);
         }
 
-        return String.format("batch update checker set successfully: %s, %s, %s", toolName, toStatus, newCheckerSetList);
+        return "";
     }
 
-    private void updateTaskAfterChangeCheckerSet(List<CheckerSetEntity> newCheckerSetList, Map<String,
-            CheckerSetEntity> oldCheckerSetMap, String user) {
+    private List<CheckerSetEntity> updateTaskAfterChangeCheckerSet(List<CheckerSetEntity> newCheckerSetList,
+                                                                   Map<String, CheckerSetEntity> oldCheckerSetMap,
+                                                                   String user, ToolIntegratedStatus toStatus) {
 
         log.info("====================================newCheckerSetList======================================\n{}",
                 GsonUtils.toJson(newCheckerSetList));
         log.info("====================================oldCheckerSetMap======================================\n{}",
                 GsonUtils.toJson(oldCheckerSetMap));
 
+        List<CheckerSetEntity> updateCheckerSetList = new ArrayList<>();
         newCheckerSetList.forEach(newCheckerSet -> {
             String checkerSetId = newCheckerSet.getCheckerSetId();
             CheckerSetEntity oldCheckerSet = oldCheckerSetMap.get(checkerSetId);
-            if (oldCheckerSet != null) {
+            if (diffWithOld(oldCheckerSet, newCheckerSet)) {
+                log.info("start to save checker set and update project");
+
+                updateCheckerSetList.add(newCheckerSet);
                 // 查询已关联此规则集，且选择了latest版本自动更新的项目数据
-                List<CheckerSetProjectRelationshipEntity> projectRelationships = projectRelationshipRepository
-                        .findByCheckerSetIdAndUselatestVersion(oldCheckerSet.getCheckerSetId(), true);
-                v3CheckerSetBizService.updateTaskAfterChangeCheckerSet(newCheckerSet, oldCheckerSet,
-                        projectRelationships, user);
+                if (oldCheckerSet != null) {
+                    if (toStatus == ToolIntegratedStatus.PRE_PROD) {
+                        v3CheckerSetBizService.updateTaskAfterChangeCheckerSet(newCheckerSet, oldCheckerSet,
+                            ToolIntegratedStatus.PRE_PROD.value(), user);
+                    } else {
+                        List<CheckerSetProjectRelationshipEntity> projectRelationships = projectRelationshipRepository
+                            .findByCheckerSetIdAndUselatestVersion(oldCheckerSet.getCheckerSetId(), true);
+                        v3CheckerSetBizService.updateTaskAfterChangeCheckerSet(newCheckerSet, oldCheckerSet,
+                            projectRelationships, user);
+                    }
+                }
             }
         });
+        return updateCheckerSetList;
     }
 
-    private List<CheckerSetEntity> getNewCheckerSetForGray(List<CheckerSetEntity> changedFromCheckerSetList,
-                                                           String user) {
+    private boolean diffWithOld(CheckerSetEntity oldCheckerSet, CheckerSetEntity newCheckerSet) {
+        // 比较规则
+        if (oldCheckerSet == null) {
+            return true;
+        }
+        Set<String> oldCheckerSetIds =
+            oldCheckerSet.getCheckerProps().stream().map(CheckerPropsEntity::getCheckerKey).collect(Collectors.toSet());
+        Set<String> newCheckerSetIds =
+            newCheckerSet.getCheckerProps().stream().map(CheckerPropsEntity::getCheckerKey).collect(Collectors.toSet());
+
+        if (!oldCheckerSetIds.equals(newCheckerSetIds)) {
+            Set<String> diffSet = new HashSet<>(newCheckerSetIds);
+            diffSet.removeAll(oldCheckerSetIds);
+            log.info("diff checker set is : {}", diffSet);
+            return true;
+        }
+
+        // 比较规则属性
+        Map<String, CheckerPropsEntity> oldCheckerPropsMap =
+            oldCheckerSet.getCheckerProps().stream().collect(Collectors.toMap(CheckerPropsEntity::getCheckerKey,
+                Function.identity(), (k, v) -> v));
+        Map<String, CheckerPropsEntity> newCheckerPropsMap =
+            newCheckerSet.getCheckerProps().stream().collect(Collectors.toMap(CheckerPropsEntity::getCheckerKey,
+                Function.identity(), (k, v) -> v));
+
+        if (!oldCheckerPropsMap.equals(newCheckerPropsMap)) {
+            log.info("diff with props of checker...");
+            return true;
+        }
+
+        log.info("the new and old checker set is same");
+
+        return false;
+    }
+
+    private List<CheckerSetEntity> getNewCheckerSetForGrayOrPreProd(
+        List<CheckerSetEntity> changedFromCheckerSetList,
+        String user,
+        ToolIntegratedStatus toStatus) {
         log.info("get gray data and change to gray status");
 
         return changedFromCheckerSetList.stream().map(testCheckerSet -> {
-            testCheckerSet.setVersion(ToolIntegratedStatus.G.value());
+            testCheckerSet.setVersion(toStatus.value());
             testCheckerSet.setEntityId(null);
             testCheckerSet.setLastUpdateTime(System.currentTimeMillis());
             testCheckerSet.setUpdatedBy(user);
@@ -149,8 +244,9 @@ public class CheckerSetIntegratedBizServiceImpl implements ICheckerSetIntegrated
                         ToolIntegratedStatus toStatus,
                         String buildId,
                         Collection<CheckerSetEntity> toCheckerSetList) {
-        List<CheckerSetHisEntity> hisCheckerSetEntities =
-                checkerSetHisRepository.findByToolNameInAndVersion(toolName, toStatus.value());
+        List<CheckerSetHisEntity> hisCheckerSetEntities;
+        hisCheckerSetEntities =
+            checkerSetHisRepository.findByToolNameInAndVersion(toolName, toStatus.value());
 
         if (CollectionUtils.isNotEmpty(hisCheckerSetEntities)) {
             if (hisCheckerSetEntities.get(0).getBuildId().equals(buildId)) {
@@ -170,44 +266,27 @@ public class CheckerSetIntegratedBizServiceImpl implements ICheckerSetIntegrated
             return checkerSetHisEntity;
         }).collect(Collectors.toList());
 
-        if (toStatus == ToolIntegratedStatus.G) {
-            checkerSetHisRepository.deleteByToolNameAndVersion(toolName, toStatus.value());
-        } else {
-            checkerSetHisRepository.deleteByToolNameAndVersionNot(toolName, ToolIntegratedStatus.G.value());
-        }
+        checkerSetHisRepository.deleteByToolNameAndVersion(toolName, toStatus.value());
         checkerSetHisRepository.saveAll(bakCheckerSetList);
     }
 
-    private List<CheckerSetEntity> init(String toolName, ToolIntegratedStatus toStatus,
-                                        Set<String> checkerSetIds, Set<String> changeCheckerIds) {
+    private List<CheckerSetEntity> init(
+            String toolName,
+            ToolIntegratedStatus fromStatus,
+            ToolIntegratedStatus toStatus,
+            Set<String> checkerSetIds,
+            Set<String> changeCheckerIds
+    ) {
         if (toStatus == ToolIntegratedStatus.T) {
             log.info("do nothing for checker set status init: {}", toolName);
             return new ArrayList<>();
         }
-//
-//        if (CollectionUtils.isEmpty(changeCheckerIds)) {
-//            log.info("no changed checker, do nothing for init...: {}", toolName);
-//            return new ArrayList<>();
-//        }
-
-        ToolIntegratedStatus fromStatus = toStatus == ToolIntegratedStatus.G
-                ? ToolIntegratedStatus.T : ToolIntegratedStatus.G;
 
         log.info("get from data and change to status");
         List<CheckerSetEntity> fromCheckerSetList =
                 checkerSetRepository.findByCheckerSetIdInAndVersion(checkerSetIds, fromStatus.value());
+
         return fromCheckerSetList;
-        //        List<CheckerSetEntity> changedFromCheckerSetList = new ArrayList<>();
-        //        fromCheckerSetList.forEach(it -> {
-        //            for (CheckerPropsEntity checkerPropsEntity : it.getCheckerProps()) {
-        //                if (changeCheckerIds.contains(checkerPropsEntity.getCheckerKey())) {
-        //                    changedFromCheckerSetList.add(it);
-        //                    break;
-        //                }
-        //            }
-        //        });
-        //
-        //        return changedFromCheckerSetList;
     }
 
     @Override
@@ -217,14 +296,14 @@ public class CheckerSetIntegratedBizServiceImpl implements ICheckerSetIntegrated
         }
 
         log.info("get backup checker set: {}, {}", checkerSetIds, status);
-        List<CheckerSetEntity> bakCheckerSetList =
-                checkerSetHisRepository.findByToolNameInAndVersion(toolName, status.value()).stream().map(it -> {
-                    CheckerSetEntity checkerSetEntity = new CheckerSetEntity();
-                    BeanUtils.copyProperties(it, checkerSetEntity);
-                    return checkerSetEntity;
-                }).collect(Collectors.toList());
+        List<CheckerSetEntity> bakCheckerSetList = checkerSetHisRepository.findByToolNameInAndVersion(
+            toolName, status.value()).stream().map(it -> {
+            CheckerSetEntity checkerSetEntity = new CheckerSetEntity();
+            BeanUtils.copyProperties(it, checkerSetEntity);
+            return checkerSetEntity;
+        }).collect(Collectors.toList());
 
-        if (status == ToolIntegratedStatus.G) {
+        if (status == ToolIntegratedStatus.G || status == ToolIntegratedStatus.PRE_PROD) {
             List<CheckerSetEntity> bakGrayCheckerSetList = bakCheckerSetList.stream().map(it -> {
                 CheckerSetEntity checkerSetEntity = new CheckerSetEntity();
                 BeanUtils.copyProperties(it, checkerSetEntity);
@@ -246,14 +325,14 @@ public class CheckerSetIntegratedBizServiceImpl implements ICheckerSetIntegrated
             checkerSetRepository.saveAll(bakGrayCheckerSetList);
 
             // 把旧规则集换成新规则，需要设置强制全量及告警状态
-            updateTaskAfterChangeCheckerSet(bakGrayCheckerSetList, oldCheckerSetMap, user);
+            updateTaskAfterChangeCheckerSet(bakGrayCheckerSetList, oldCheckerSetMap, user, status);
         } else if (status == ToolIntegratedStatus.P) {
             // use bak checker to cover the prod
             List<CheckerSetEntity> newProdCheckerSetList = new ArrayList<>();
             List<String> bakCheckerSetIdList =
                     bakCheckerSetList.stream().map(CheckerSetEntity::getCheckerSetId).collect(Collectors.toList());
             Map<String, CheckerSetEntity> maxVersionMap = getMaxVersionMap(bakCheckerSetIdList);
-            bakCheckerSetList.stream().forEach(checkerSetEntity -> {
+            bakCheckerSetList.forEach(checkerSetEntity -> {
                 CheckerSetEntity latestCheckerSet = maxVersionMap.get(checkerSetEntity.getCheckerSetId());
 
                 if (latestCheckerSet != null) {
@@ -270,7 +349,7 @@ public class CheckerSetIntegratedBizServiceImpl implements ICheckerSetIntegrated
             checkerSetRepository.saveAll(newProdCheckerSetList);
 
             // 把旧规则集换成新规则，需要设置强制全量及告警状态
-            updateTaskAfterChangeCheckerSet(newProdCheckerSetList, maxVersionMap, user);
+            updateTaskAfterChangeCheckerSet(newProdCheckerSetList, maxVersionMap, user, status);
         }
 
         return String.format("batch revert checker set successfully: %s, %s, %s", toolName, status, checkerSetIds);

@@ -1,5 +1,6 @@
 package com.tencent.bk.codecc.task.dao.mongotemplate;
 
+import com.mongodb.BasicDBObject;
 import com.tencent.bk.codecc.task.model.PlatformInfoEntity;
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
@@ -10,6 +11,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 /**

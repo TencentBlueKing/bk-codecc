@@ -49,8 +49,8 @@ import java.util.List;
 @CompoundIndexes({
         @CompoundIndex(name = "project_id_1_buildId_1", def = "{'project_id': 1, 'build_id': 1}")
 })
-public class SnapShotEntity extends CommonEntity
-{
+public class SnapShotEntity extends CommonEntity {
+
     @Field("project_id")
     private String projectId;
 
@@ -66,4 +66,12 @@ public class SnapShotEntity extends CommonEntity
     @Field("tool_snapshot_list")
     private List<ToolSnapShotEntity> toolSnapshotList;
 
+    @Field("metadata_report")
+    private Boolean metadataReport;
+
+    /**
+     * 用于区分同一次构建的重试边界，值为流水线启动时间戳，同一次构建上下文中是固定不变
+     */
+    @Field("build_flag")
+    private Long buildFlag;
 }

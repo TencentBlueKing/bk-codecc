@@ -28,12 +28,13 @@ package com.tencent.bk.codecc.codeccjob;
 
 import com.tencent.devops.common.service.MicroService;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 
+@EntityScan(value = "com.tencent.bk.codecc.defect.model")
 @MicroService
-public class JobBootApplication
-{
-    public static void main(String[] args)
-    {
+public class JobBootApplication {
+
+    public static void main(String[] args) {
         SpringApplication.run(JobBootApplication.class, args);
     }
 }

@@ -12,19 +12,23 @@
 
 package com.tencent.codecc.common.db;
 
+import com.google.common.collect.Lists;
+import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.Page;
+import com.tencent.devops.common.constant.CommonMessageCode;
+import java.time.Duration;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.bson.types.ObjectId;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import org.springframework.util.CollectionUtils;
 
 /**
  * MongoDB分页查询工具类
@@ -39,43 +43,42 @@ public class MongoPageHelper
     public static final String ID = "_id";
     private final MongoTemplate mongoTemplate;
 
-    public MongoPageHelper(MongoTemplate mongoTemplate)
-    {
+    public MongoPageHelper(MongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
     }
 
     /**
      * 分页查询，直接返回集合类型的结果.
-     *
-     * @see MongoPageHelper#pageQuery(Query, Class, Function, Integer, Integer, List< Order>)
      */
-    public <T> Page<T> pageQuery(Query query, Class<T> entityClass, Integer pageSize, Integer pageNum, List<Order> sortList)
-    {
-        return pageQuery(query, entityClass, Function.identity(), pageSize, pageNum, sortList);
+    public <T> Page<T> pageQuery(
+            Query query, Class<T> entityClass, Integer pageSize, Integer pageNum,
+            List<Order> sortList, Duration timeout
+    ) {
+        return pageQuery(query, entityClass, Function.identity(), pageSize, pageNum, sortList, timeout);
     }
 
     /**
      * 分页查询，不考虑条件分页，直接使用skip-limit来分页.
-     *
-     * @see MongoPageHelper#pageQuery(Query, Class, Function, Integer, Integer, List< Order>, String)
      */
-    public <T, R> Page<R> pageQuery(Query query, Class<T> entityClass, Function<T, R> mapper, Integer pageSize, Integer pageNum, List<Order> sortList)
-    {
-        return pageQuery(query, entityClass, mapper, pageSize, pageNum, sortList, null);
+    public <T, R> Page<R> pageQuery(
+            Query query, Class<T> entityClass, Function<T, R> mapper, Integer pageSize,
+            Integer pageNum, List<Order> sortList, Duration timeout
+    ) {
+        return pageQuery(query, entityClass, mapper, pageSize, pageNum, sortList, null, timeout);
     }
 
     /**
      * 分页查询.
      *
-     * @param query       Mongo Query对象，构造你自己的查询条件.
+     * @param query Mongo Query对象，构造你自己的查询条件.
      * @param entityClass Mongo collection定义的entity class，用来确定查询哪个集合.
-     * @param mapper      映射器，你从db查出来的list的元素类型是entityClass, 如果你想要转换成另一个对象，比如去掉敏感字段等，可以使用mapper来决定如何转换.
-     * @param pageSize    分页的大小.
-     * @param pageNum     当前页.
-     * @param lastId      条件分页参数, 区别于skip-limit，采用find(_id>lastId).limit分页.
-     *                    如果不跳页，像朋友圈，微博这样下拉刷新的分页需求，需要传递上一页的最后一条记录的ObjectId。 如果是null，则返回pageNum那一页.
-     * @param <T>         collection定义的class类型.
-     * @param <R>         最终返回时，展现给页面时的一条记录的类型。
+     * @param mapper 映射器，你从db查出来的list的元素类型是entityClass, 如果你想要转换成另一个对象，比如去掉敏感字段等，可以使用mapper来决定如何转换.
+     * @param pageSize 分页的大小.
+     * @param pageNum 当前页.
+     * @param lastId 条件分页参数, 区别于skip-limit，采用find(_id>lastId).limit分页.
+     *         如果不跳页，像朋友圈，微博这样下拉刷新的分页需求，需要传递上一页的最后一条记录的ObjectId。 如果是null，则返回pageNum那一页.
+     * @param <T> collection定义的class类型.
+     * @param <R> 最终返回时，展现给页面时的一条记录的类型。
      * @return Page       一个封装page信息的对象.
      */
     public <T, R> Page<R> pageQuery(
@@ -85,43 +88,60 @@ public class MongoPageHelper
             Integer pageSize,
             Integer pageNum,
             List<Order> sortList,
-            String lastId)
-    {
-        //分页逻辑
-        long beginTime = System.currentTimeMillis();
-        long total = mongoTemplate.count(query, entityClass);
-        log.info("page query get total cost: {}", System.currentTimeMillis() - beginTime);
-
-        if (total == 0L)
-        {
-            log.info("page query total is 0");
-            log.info("page query get record cost: {}", System.currentTimeMillis() - beginTime);
-            return new Page<>(total, pageNum, pageSize, 0, new ArrayList<>());
-        }
-        final Integer pages = (int) Math.ceil(total / (double) pageSize);
-        if (pageNum <= 0 || pageNum > pages)
-        {
+            String lastId,
+            Duration timeout
+    ) {
+        if (pageNum <= 0) {
             pageNum = FIRST_PAGE_NUM;
         }
-        final Criteria criteria = new Criteria();
-        if (StringUtils.isNotBlank(lastId))
-        {
-            if (pageNum != FIRST_PAGE_NUM)
-            {
-                criteria.and(ID).gt(lastId);
-            }
-            query.limit(pageSize);
+
+        Query queryForFindList = Query.of(query);
+        Criteria criteria = new Criteria();
+
+        if (timeout != null) {
+            queryForFindList.maxTime(timeout);
         }
-        else
-        {
+
+        if (StringUtils.isNotBlank(lastId)) {
+            if (pageNum != FIRST_PAGE_NUM) {
+                criteria.and(ID).gt(new ObjectId(lastId));
+            }
+            queryForFindList.limit(pageSize);
+        } else {
             int skip = pageSize * (pageNum - 1);
-            query.skip(skip).limit(pageSize);
+            queryForFindList.skip(skip).limit(pageSize);
+        }
+
+        long beginTime = System.currentTimeMillis();
+        List<T> entityList =
+                mongoTemplate.find(queryForFindList.addCriteria(criteria).with(Sort.by(sortList)), entityClass);
+        log.info("page query get record cost: {}", System.currentTimeMillis() - beginTime);
+
+        if (CollectionUtils.isEmpty(entityList)) {
+            return new Page<>(0L, pageNum, pageSize, 0, Lists.newArrayList());
+        }
+
+        if (timeout != null) {
+            // 计算剩余可用的超时时间
+            long availableTimeout = (beginTime + timeout.toMillis()) - System.currentTimeMillis();
+            if (availableTimeout <= 0) {
+                throw new CodeCCException(CommonMessageCode.DB_QUERY_TIME_OUT, "mongodb operation timeout");
+            }
+
+            // 实际上该超时并不能作用于count，SDK导致
+            query.maxTime(Duration.ofMillis(availableTimeout));
         }
 
         beginTime = System.currentTimeMillis();
-        final List<T> entityList = mongoTemplate.find(query.addCriteria(criteria).with(Sort.by(sortList)), entityClass);
-        log.info("page query get record cost: {}", System.currentTimeMillis() - beginTime);
-        final Page<R> pageResult = new Page<>(total, pageNum, pageSize, pages, entityList.stream().map(mapper).collect(Collectors.toList()));
+        long total = mongoTemplate.count(query, entityClass);
+        log.info("page query get total cost: {}", System.currentTimeMillis() - beginTime);
+        int pages = (int) Math.ceil(total / (double) pageSize);
+
+        final Page<R> pageResult = new Page<>(
+                total, pageNum, pageSize, pages,
+                entityList.stream().map(mapper).collect(Collectors.toList())
+        );
+
         return pageResult;
     }
 }

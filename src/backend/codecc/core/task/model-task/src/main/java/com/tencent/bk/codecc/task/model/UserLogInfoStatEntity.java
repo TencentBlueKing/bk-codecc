@@ -55,4 +55,6 @@ public class UserLogInfoStatEntity extends CommonEntity {
     @Field("center_id")
     private Integer centerId;
 
+    @Field("group_id")
+    private Integer groupId;
 }

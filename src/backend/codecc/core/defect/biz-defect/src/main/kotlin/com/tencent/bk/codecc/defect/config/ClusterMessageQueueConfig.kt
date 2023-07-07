@@ -20,6 +20,7 @@ import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
@@ -37,7 +38,7 @@ open class ClusterMessageQueueConfig {
     }
 
     @Bean
-    open fun clusterQueue() = Queue(QUEUE_CLUSTER_ALLOCATION)
+    open fun clusterQueue() = Queue(QUEUE_CLUSTER_ALLOCATION, true, false, false)
 
     @Bean
     open fun clusterReplyQueue() = Queue("$QUEUE_REPLY_CLUSTER_ALLOCATION.${IPUtils.getInnerIP().replace(".", "")}.$localPort")
@@ -50,6 +51,7 @@ open class ClusterMessageQueueConfig {
         return BindingBuilder.bind(clusterQueue).
             to(clusterExchange).with(ROUTE_CLUSTER_ALLOCATION)
     }
+
 
     @Bean
     open fun clusterContainer(
@@ -65,6 +67,7 @@ open class ClusterMessageQueueConfig {
         container.setMaxConcurrentConsumers(20)
         container.setStartConsumerMinInterval(5)
         container.setConsecutiveActiveTrigger(5)
+        container.setPrefetchCount(1)
         container.setAmqpAdmin(rabbitAdmin)
         //确保只有一个消费者消费，保证负载不超时
         val adapter = MessageListenerAdapter(defectClusterComponent, defectClusterComponent::executeClusterNew.name)
@@ -87,6 +90,7 @@ open class ClusterMessageQueueConfig {
         container.setMaxConcurrentConsumers(20)
         container.setStartConsumerMinInterval(2)
         container.setConsecutiveActiveTrigger(2)
+        container.setPrefetchCount(1)
         container.setAmqpAdmin(rabbitAdmin)
         return container
     }

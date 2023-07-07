@@ -11,7 +11,7 @@ public class BkRepoResult<T> {
 
     private T data;
 
-    public Boolean isOk(){
+    public Boolean isOk() {
         return code != null && code == 0;
     }
 }

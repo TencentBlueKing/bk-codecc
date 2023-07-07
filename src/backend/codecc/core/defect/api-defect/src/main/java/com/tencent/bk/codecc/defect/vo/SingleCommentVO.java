@@ -24,8 +24,8 @@ import lombok.Data;
  */
 @Data
 @ApiModel("单个代码评论视图")
-public class SingleCommentVO
-{
+public class SingleCommentVO {
+
     @ApiModelProperty("评论id")
     private String singleCommentId;
 

@@ -76,9 +76,6 @@ public class DefectQueryRspVO extends CommonDefectQueryRspVO
     @ApiModelProperty("总告警数")
     private int totalCount;
 
-    @ApiModelProperty("新老告警判定时间")
-    private long newDefectJudgeTime;
-
     @ApiModelProperty("文件路径树")
     private TreeNodeVO filePathTree;
 

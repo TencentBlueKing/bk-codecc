@@ -10,12 +10,14 @@
  *
  * Terms of the MIT License:
  * ---------------------------------------------------
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use, copy,
+ * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+ * persons to whom the Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial
+ * portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
  * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -26,6 +28,7 @@
 
 package com.tencent.bk.codecc.task.service;
 
+import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.api.ServiceCheckerSetRestResource;
 import com.tencent.bk.codecc.task.constant.TaskConstants;
 import com.tencent.bk.codecc.task.dao.mongorepository.TaskRepository;
@@ -40,7 +43,7 @@ import com.tencent.bk.codecc.task.vo.ToolConfigParamJsonVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.CheckerSetType;
@@ -49,6 +52,7 @@ import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.redis.lock.RedisLock;
 import com.tencent.devops.common.service.ToolMetaCacheService;
+import com.tencent.devops.common.util.List2StrUtil;
 import com.tencent.devops.common.util.MD5Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -61,7 +65,15 @@ import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -76,8 +88,7 @@ import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt
  * @date 2019/5/6
  */
 @Slf4j
-public abstract class AbstractTaskRegisterService implements TaskRegisterService
-{
+public abstract class AbstractTaskRegisterService implements TaskRegisterService {
     @Autowired
     private ToolMetaCacheService toolMetaCache;
 
@@ -94,6 +105,9 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
     protected ToolService toolService;
 
     @Autowired
+    private TaskService taskService;
+
+    @Autowired
     protected PathFilterService pathFilterService;
 
     @Autowired
@@ -108,9 +122,11 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
     @Autowired
     protected Client client;
 
+    @Autowired
+    protected PipelineCallbackRegisterService pipelineCallbackRegisterService;
+
     @Override
-    public Boolean checkeIsStreamRegistered(String nameEn)
-    {
+    public Boolean checkeIsStreamRegistered(String nameEn) {
         return taskRepository.existsByNameEn(nameEn);
     }
 
@@ -120,14 +136,12 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
      * @param taskDetailVO
      * @param userName
      */
-    protected TaskInfoEntity createTask(TaskDetailVO taskDetailVO, String userName)
-    {
+    protected TaskInfoEntity createTask(TaskDetailVO taskDetailVO, String userName) {
         // 生成任务英文名
         taskDetailVO.setStatus(TaskConstants.TaskStatus.ENABLE.value());
 
         // 校验新接入的项目英文名是否已经被注册过
-        if (checkeIsStreamRegistered(taskDetailVO.getNameEn()))
-        {
+        if (checkeIsStreamRegistered(taskDetailVO.getNameEn())) {
             log.error("the task name has been registered! task name: {}", taskDetailVO.getNameCn());
             throw new CodeCCException(CommonMessageCode.KEY_IS_EXIST, new String[]{taskDetailVO.getNameCn()}, null);
         }
@@ -135,14 +149,17 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
         // 创建新项目到数据库
         TaskInfoEntity taskInfoEntity = new TaskInfoEntity();
         BeanUtils.copyProperties(taskDetailVO, taskInfoEntity, "toolConfigInfoList");
+        if (taskDetailVO.getCheckerSetType() != null && !StringUtils.isEmpty(
+                taskDetailVO.getCheckerSetType().value())) {
+            taskInfoEntity.setCheckerSetType(taskDetailVO.getCheckerSetType().value());
+        }
         long currentTime = System.currentTimeMillis();
         taskInfoEntity.setCreatedBy(userName);
         taskInfoEntity.setCreatedDate(currentTime);
         taskInfoEntity.setUpdatedBy(userName);
         taskInfoEntity.setUpdatedDate(currentTime);
         //设置初始项目接口人及项目成员为自己
-        List<String> users = new ArrayList<String>()
-        {{
+        List<String> users = new ArrayList<String>() {{
             add(userName);
         }};
         taskInfoEntity.setTaskOwner(users);
@@ -159,6 +176,8 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
         //处理共通化路径
         pathFilterService.addDefaultFilterPaths(taskInfoEntity);
 
+        taskInfoEntity.setAutoLang(taskDetailVO.getAutoLang());
+
         //保存项目信息
         TaskInfoEntity taskInfoResult = taskRepository.save(taskInfoEntity);
         log.info("save task info successfully! task id: {}, entity id: {}", taskId, taskInfoResult.getEntityId());
@@ -174,25 +193,14 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
      * @param cnName
      * @return
      */
-    protected String handleCnName(String cnName)
-    {
-        if (StringUtils.isEmpty(cnName))
-        {
+    protected String handleCnName(String cnName) {
+        if (StringUtils.isEmpty(cnName)) {
             log.error("cn name is empty!");
             throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{cnName}, null);
         }
         StringBuffer a = new StringBuffer(cnName);
-        for (int i = 0; i < a.length(); i++)
-        {
-            String tmpStr = a.substring(i, i + 1);
-            if (!regexMatch("[a-zA-Z0-9_\\u4e00-\\u9fa5]", tmpStr))
-            {//单个字符匹配不上用下划线代替
-                a.replace(i, i + 1, "_");
-            }
-        }
         //长度限制50个字符以内
-        if (a.length() > 50)
-        {
+        if (a.length() > 50) {
             return a.substring(0, 50);
         }
         return a.toString();
@@ -206,8 +214,7 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
      * @param sourceText
      * @return
      */
-    private boolean regexMatch(String regex, String sourceText)
-    {
+    private boolean regexMatch(String regex, String sourceText) {
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(sourceText);
         return matcher.matches();
@@ -221,20 +228,14 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
      * @param createFrom
      * @return
      */
-    public String getTaskStreamName(String projectId, String pipelineId, String createFrom)
-    {
+    public String getTaskStreamName(String projectId, String pipelineId, String createFrom) {
         String md5Str = MD5Utils.getMD5(String.format("%s%s", projectId, pipelineId));
         String result = null;
-        if (ComConstants.BsTaskCreateFrom.BS_PIPELINE.value().equals(createFrom))
-        {
+        if (ComConstants.BsTaskCreateFrom.BS_PIPELINE.value().equals(createFrom)) {
             result = ComConstants.PIPELINE_ENNAME_PREFIX + "_" + md5Str;
-        }
-        else if (ComConstants.BsTaskCreateFrom.BS_CODECC.value().equals(createFrom))
-        {
+        } else if (ComConstants.BsTaskCreateFrom.BS_CODECC.value().equals(createFrom)) {
             result = ComConstants.CODECC_ENNAME_PREFIX + "_" + md5Str;
-        }
-        else if (ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value().equals(createFrom))
-        {
+        } else if (ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value().equals(createFrom)) {
             result = ComConstants.GONGFENG_ENNAME_PREFIX + "_" + md5Str;
         }
 
@@ -248,8 +249,7 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
      * @param toolName
      * @return
      */
-    protected ToolConfigInfoVO instBatchToolInfoModel(TaskDetailVO taskDetailVO, String toolName)
-    {
+    protected ToolConfigInfoVO instBatchToolInfoModel(TaskDetailVO taskDetailVO, String toolName) {
         ToolConfigInfoVO toolConfig = new ToolConfigInfoVO();
         toolConfig.setTaskId(taskDetailVO.getTaskId());
         toolConfig.setToolName(toolName);
@@ -267,47 +267,38 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
      * @return
      */
     @Override
-    public JSONObject getParamJson(TaskDetailVO taskDetailVO, String toolName, String createFrom)
-    {
+    public JSONObject getParamJson(TaskDetailVO taskDetailVO, String toolName, String createFrom) {
         JSONObject paramJson = new JSONObject();
 
         List<ToolConfigParamJsonVO> toolConfigParams = taskDetailVO.getDevopsToolParams();
         Map<String, String> toolConfigParamMap;
-        if (CollectionUtils.isNotEmpty(toolConfigParams))
-        {
+        if (CollectionUtils.isNotEmpty(toolConfigParams)) {
             toolConfigParamMap = toolConfigParams.stream()
-                    .map(toolConfigParamJsonVO ->
-                    {
-                        if (StringUtils.isEmpty(toolConfigParamJsonVO.getChooseValue()))
-                        {
+                    .map(toolConfigParamJsonVO -> {
+                        if (StringUtils.isEmpty(toolConfigParamJsonVO.getChooseValue())) {
                             toolConfigParamJsonVO.setChooseValue("");
                         }
                         return toolConfigParamJsonVO;
                     })
-                    .collect(Collectors.toMap(ToolConfigParamJsonVO::getVarName, ToolConfigParamJsonVO::getChooseValue, (k, v) -> v));
-        }
-        else
-        {
+                    .collect(Collectors.toMap(ToolConfigParamJsonVO::getVarName,
+                            ToolConfigParamJsonVO::getChooseValue, (k, v) -> v));
+        } else {
             toolConfigParamMap = new HashMap<>();
         }
         //获取工具的配置的个性化参数
         ToolMetaBaseVO toolMetaBaseVO = toolMetaCache.getToolBaseMetaCache(toolName);
         String toolParamJson = toolMetaBaseVO.getParams();
-        if (StringUtils.isEmpty(toolParamJson))
-        {
+        if (StringUtils.isEmpty(toolParamJson)) {
             return paramJson;
         }
 
         //如果是蓝盾流水线项目，且参数不带go_path，就设置为空串
         boolean exceptRelPath = false;
-        if (ComConstants.BsTaskCreateFrom.BS_PIPELINE.value().equalsIgnoreCase(createFrom))
-        {
+        if (ComConstants.BsTaskCreateFrom.BS_PIPELINE.value().equalsIgnoreCase(createFrom)) {
             exceptRelPath = true;
-            if (CollectionUtils.isNotEmpty(toolConfigParams))
-            {
+            if (CollectionUtils.isNotEmpty(toolConfigParams)) {
                 if (toolConfigParams.stream().noneMatch(toolConfigParamJsonVO ->
-                        toolConfigParamJsonVO.getVarName().equalsIgnoreCase(ComConstants.PARAMJSON_KEY_GO_PATH)))
-                {
+                        toolConfigParamJsonVO.getVarName().equalsIgnoreCase(ComConstants.PARAMJSON_KEY_GO_PATH))) {
                     toolConfigParamMap.put(ComConstants.PARAMJSON_KEY_GO_PATH, "");
                 }
             }
@@ -315,22 +306,17 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
 
         //将蓝盾传入的个性化参数组装进工具的paramJson字段中
         JSONArray toolParamsArray = new JSONArray(toolParamJson);
-        for (int i = 0; i < toolParamsArray.length(); i++)
-        {
+        for (int i = 0; i < toolParamsArray.length(); i++) {
             JSONObject paramJsonObj = toolParamsArray.getJSONObject(i);
             String varName = paramJsonObj.getString("varName");
-            try
-            {
+            try {
                 // 蓝盾流水线项目不需要rel_path参数
-                if (exceptRelPath && ComConstants.PARAMJSON_KEY_REL_PATH.equals(varName))
-                {
+                if (exceptRelPath && ComConstants.PARAMJSON_KEY_REL_PATH.equals(varName)) {
                     continue;
                 }
                 String varValue = toolConfigParamMap.get(varName);
                 paramJson.put(varName, varValue);
-            }
-            catch (JSONException e)
-            {
+            } catch (JSONException e) {
                 log.error("传入参数错误：参数[{}]不能为空", varName, e);
                 throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{varName}, null);
             }
@@ -338,20 +324,22 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
         return paramJson;
     }
 
-    protected void adaptV3AtomCodeCC(TaskDetailVO taskDetailVO)
-    {
+    protected void adaptV3AtomCodeCC(TaskDetailVO taskDetailVO) {
         // 所有任务添加 CLOC 工具
         CheckerSetVO clocCheckerSet = new CheckerSetVO();
-        clocCheckerSet.setCheckerSetId("standard_cloc");
-        clocCheckerSet.setToolList(Collections.singleton(Tool.CLOC.name()));
+        clocCheckerSet.setCheckerSetId("standard_scc");
+        clocCheckerSet.setToolList(Collections.singleton(Tool.SCC.name()));
         clocCheckerSet.setVersion(Integer.MAX_VALUE);
         clocCheckerSet.setCodeLang(1073741824L);
         if ((taskDetailVO.getCodeLang() & 1073741824L) <= 0) {
-            taskDetailVO.setCodeLang(taskDetailVO.getCodeLang() + 1073741824L);
+            taskDetailVO.setCodeLang(taskDetailVO.getCodeLang() | 1073741824L);
         }
+        taskDetailVO.getCheckerSetList().removeIf(checkerSetVO ->
+                "standard_cloc".equalsIgnoreCase(checkerSetVO.getCheckerSetId()));
         taskDetailVO.getCheckerSetList().add(clocCheckerSet);
         // 初始化规则集列表
-        Set<String> checkerSetIdList = taskDetailVO.getCheckerSetList().stream().map(CheckerSetVO::getCheckerSetId).collect(Collectors.toSet());
+        Set<String> checkerSetIdList = taskDetailVO.getCheckerSetList().stream()
+                .map(CheckerSetVO::getCheckerSetId).collect(Collectors.toSet());
         Result<List<CheckerSetVO>> result;
 
         // 兼容旧逻辑判断
@@ -363,11 +351,10 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
         } else {
             log.info("query checker set for open source {}", taskDetailVO.getProjectId());
             result = client.get(ServiceCheckerSetRestResource.class).queryCheckerSetsForOpenScan(
-                    new HashSet<>(taskDetailVO.getCheckerSetList()), taskDetailVO.getProjectId());
+                    new HashSet<>(taskDetailVO.getCheckerSetList()));
         }
 
-        if (result.isNotOk() || CollectionUtils.isEmpty(result.getData()))
-        {
+        if (result.isNotOk() || CollectionUtils.isEmpty(result.getData())) {
             String errorLog = "query checker sets fail, result: " + result;
             log.error(errorLog);
             throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL, new String[]{errorLog});
@@ -377,27 +364,26 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
         //要对语言进行过滤
         List<CheckerSetVO> resultCheckerSetList = result.getData();
         List<CheckerSetVO> finalCheckerSetList = resultCheckerSetList.stream().filter(checkerSetVO ->
-            (checkerSetVO.getCodeLang() & taskDetailVO.getCodeLang()) > 0L
+                (checkerSetVO.getCodeLang() & taskDetailVO.getCodeLang()) > 0L
         ).collect(Collectors.toList());
         taskDetailVO.setCheckerSetList(finalCheckerSetList);
         log.info("adapt v3 atom final checker set for task: " + taskDetailVO.getTaskId() + ", " + finalCheckerSetList);
 
         // 初始化工具列表
         Set<String> reqToolSet = new HashSet<>();
-        taskDetailVO.getCheckerSetList().forEach(checkerSetVO ->
-        {
-            if (CollectionUtils.isNotEmpty(checkerSetVO.getToolList()))
-            {
+        taskDetailVO.getCheckerSetList().forEach(checkerSetVO -> {
+            if (CollectionUtils.isNotEmpty(checkerSetVO.getToolList())) {
                 reqToolSet.addAll(checkerSetVO.getToolList());
             }
         });
         log.info("adapt v3 atom req tool set for task: " + taskDetailVO.getTaskId() + ", " + reqToolSet);
 
         List<ToolConfigInfoVO> toolList = new ArrayList<>();
-        reqToolSet.forEach(toolName ->
-        {
-            ToolConfigInfoVO toolConfigInfoVO = instBatchToolInfoModel(taskDetailVO, toolName);
-            toolList.add(toolConfigInfoVO);
+        reqToolSet.forEach(toolName -> {
+            if (!Tool.CLOC.name().equalsIgnoreCase(toolName)) {
+                ToolConfigInfoVO toolConfigInfoVO = instBatchToolInfoModel(taskDetailVO, toolName);
+                toolList.add(toolConfigInfoVO);
+            }
         });
         log.info("adapt v3 atom get tool list for task: " + taskDetailVO.getTaskId() + ", " + toolList);
         taskDetailVO.setToolConfigInfoList(toolList);
@@ -412,7 +398,7 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
      * @param forceFullScanTools
      */
     protected void upsert(TaskDetailVO taskDetailVO, TaskInfoEntity taskInfoEntity, String userName,
-            List<String> forceFullScanTools) {
+                          List<String> forceFullScanTools) {
         String lockKey = String.format("lock:task:upsert_tool_config:%s", taskInfoEntity.getTaskId());
         RedisLock redisLock = new RedisLock(redisTemplate, lockKey, 5);
 
@@ -435,23 +421,23 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
      * @param forceFullScanTools
      */
     private void upsertCore(TaskDetailVO taskDetailVO, TaskInfoEntity taskInfoEntity, String userName,
-            List<String> forceFullScanTools) {
-        // 旧工具列表
+                            List<String> forceFullScanTools) {
         TaskInfoEntity refreshTaskInfo = taskRepository.findFirstByTaskId(taskInfoEntity.getTaskId());
-        List<ToolConfigInfoEntity> oldToolList = refreshTaskInfo != null
-                ? refreshTaskInfo.getToolConfigInfoList()
-                : taskInfoEntity.getToolConfigInfoList();
+        if (refreshTaskInfo != null) {
+            taskInfoEntity.setToolConfigInfoList(refreshTaskInfo.getToolConfigInfoList());
+            taskInfoEntity.setToolNames(refreshTaskInfo.getToolNames());
+        }
+
+        // 旧工具列表
+        List<ToolConfigInfoEntity> oldToolList = taskInfoEntity.getToolConfigInfoList();
 
         // 清理脏数据
         clearDirtyToolConfig(taskInfoEntity.getTaskId(), oldToolList);
 
         Map<String, ToolConfigInfoEntity> oldToolMap;
-        if (CollectionUtils.isEmpty(oldToolList))
-        {
+        if (CollectionUtils.isEmpty(oldToolList)) {
             oldToolMap = new HashMap<>();
-        }
-        else
-        {
+        } else {
             // 并发导致小部分引用的toolConfig可能为null，需过滤处理
             oldToolMap = oldToolList.stream().filter(Objects::nonNull).collect(Collectors
                     .toMap(ToolConfigInfoEntity::getToolName, toolConfigInfoEntity -> toolConfigInfoEntity,
@@ -462,29 +448,21 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
         long taskId = taskInfoEntity.getTaskId();
         List<ToolConfigInfoVO> toolList = taskDetailVO.getToolConfigInfoList();
         long curTime = System.currentTimeMillis();
-        for (ToolConfigInfoVO reqTool : toolList)
-        {
+        for (ToolConfigInfoVO reqTool : toolList) {
             String toolName = reqTool.getToolName();
             ToolConfigInfoEntity toolConfigInfoEntity = oldToolMap.get(toolName);
-            if (toolConfigInfoEntity == null)
-            {
-                try
-                {
+            if (toolConfigInfoEntity == null) {
+                try {
                     toolConfigInfoEntity = toolService.registerTool(reqTool, taskInfoEntity, userName);
                     toolConfigInfoEntityList.add(toolConfigInfoEntity);
                     log.info("add task {} tool {}", taskId, toolName);
                     forceFullScanTools.add(toolName);
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     log.error("add task {} tool {} fail!", taskId, toolName, e);
                 }
-            }
-            else
-            {
+            } else {
                 // 重新启用工具
-                if (ComConstants.FOLLOW_STATUS.WITHDRAW.value() == toolConfigInfoEntity.getFollowStatus())
-                {
+                if (ComConstants.FOLLOW_STATUS.WITHDRAW.value() == toolConfigInfoEntity.getFollowStatus()) {
                     toolConfigInfoEntity.setFollowStatus(toolConfigInfoEntity.getLastFollowStatus());
                     toolConfigInfoEntity.setParamJson(reqTool.getParamJson());
                     toolConfigInfoEntity.setUpdatedBy(userName);
@@ -493,10 +471,9 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
                     // 重新启用的工具需要设置强制全量扫描标志
                     forceFullScanTools.add(toolName);
                     log.info("enable task {} tool {}", taskId, toolName);
-                }
-                // 修改工具
-                else if (!specialParamUtil.isSameParam(toolName, toolConfigInfoEntity.getParamJson(), reqTool.getParamJson()))
-                {
+                } else if (!specialParamUtil.isSameParam(toolName,
+                        toolConfigInfoEntity.getParamJson(), reqTool.getParamJson())) {
+                    // 修改工具
                     toolConfigInfoEntity.setParamJson(reqTool.getParamJson());
                     toolConfigInfoEntity.setUpdatedBy(userName);
                     toolConfigInfoEntity.setUpdatedDate(curTime);
@@ -504,9 +481,7 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
                     // 修改了特殊参数的工具需要设置强制全量扫描标志
                     forceFullScanTools.add(toolName);
                     log.info("modify task {} tool {}", taskId, toolName);
-                }
-                else if (taskDetailVO.isOldAtomCodeChangeToNew())
-                {
+                } else if (taskDetailVO.isOldAtomCodeChangeToNew()) {
                     // 老插件切换为新插件需要设置强制全量扫描标志
                     forceFullScanTools.add(toolName);
                 }
@@ -518,14 +493,11 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
         }
 
         // 停用工具
-        if (MapUtils.isNotEmpty(oldToolMap))
-        {
-            for (Map.Entry<String, ToolConfigInfoEntity> entry : oldToolMap.entrySet())
-            {
+        if (MapUtils.isNotEmpty(oldToolMap)) {
+            for (Map.Entry<String, ToolConfigInfoEntity> entry : oldToolMap.entrySet()) {
                 ToolConfigInfoEntity toolConfigInfoEntity = entry.getValue();
                 int toolFollowStatus = toolConfigInfoEntity.getFollowStatus();
-                if (ComConstants.FOLLOW_STATUS.WITHDRAW.value() != toolFollowStatus)
-                {
+                if (ComConstants.FOLLOW_STATUS.WITHDRAW.value() != toolFollowStatus) {
                     toolConfigInfoEntity.setFollowStatus(ComConstants.FOLLOW_STATUS.WITHDRAW.value());
                     toolConfigInfoEntity.setLastFollowStatus(toolFollowStatus);
                     toolConfigInfoEntity.setUpdatedBy(userName);
@@ -535,6 +507,22 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
 
                 toolConfigInfoEntityList.add(toolConfigInfoEntity);
             }
+        }
+
+        // 整理toolNames，修复历史数据
+        List<String> toolNameList = List2StrUtil
+                .fromString(taskInfoEntity.getToolNames(), ComConstants.TOOL_NAMES_SEPARATOR);
+        if (CollectionUtils.isNotEmpty(toolNameList)
+                && CollectionUtils.isNotEmpty(toolConfigInfoEntityList)
+                && toolNameList.size() != toolConfigInfoEntityList.size()) {
+            log.info("sort out tool names field, task id: {}, before: {}", taskId, taskInfoEntity.getToolNames());
+            Collections.sort(toolConfigInfoEntityList, Comparator.comparingLong(ToolConfigInfoEntity::getCreatedDate));
+            Set<String> newToolNames = Sets.newLinkedHashSet(
+                    toolConfigInfoEntityList.stream().map(ToolConfigInfoEntity::getToolName)
+                            .collect(Collectors.toList())
+            );
+            taskInfoEntity.setToolNames(StringUtils.join(newToolNames, ComConstants.TOOL_NAMES_SEPARATOR));
+            log.info("sort out tool names field, task id: {}, after: {}", taskId, taskInfoEntity.getToolNames());
         }
 
         toolConfigInfoEntityList = toolRepository.saveAll(toolConfigInfoEntityList);
@@ -579,6 +567,37 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
 
             log.info("clear dirty tool config, task id: {}, total size: {}, del size: {}, del detail: {}",
                     taskId, totalToolList.size(), toDelToolList.size(), toDelToolList);
+        }
+    }
+
+    /**
+     * 为任务赋值组织架构信息
+     *
+     * @param taskId 任务id
+     */
+    protected void refreshOrgInfo(Long taskId) {
+        try {
+            taskService.refreshTaskOrgInfo(taskId);
+        } catch (Exception e) {
+            log.error("refresh org info failed!", e);
+        }
+    }
+
+    /**
+     * 注册流水线构建结束回调
+     *
+     * @param projectId
+     * @param pipelineId
+     * @param userId
+     */
+    protected void checkAndAddPipelineFinishCallBack(String projectId, String pipelineId, String userId) {
+        try {
+            if (pipelineCallbackRegisterService.checkIfRegisterBuildEndCallBack(pipelineId)) {
+                return;
+            }
+            pipelineCallbackRegisterService.registerBuildEndCallback(projectId, pipelineId, userId);
+        } catch (Exception e) {
+            log.error("check and add pipeline finish callback failed!", e);
         }
     }
 }

@@ -31,13 +31,16 @@ import com.tencent.bk.codecc.task.service.BaseDataService;
 import com.tencent.bk.codecc.task.service.PipelineService;
 import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.bk.codecc.task.vo.RepoInfoVO;
+import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.auth.api.OpAuthApi;
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.web.RestResource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.util.List;
 import java.util.Map;
@@ -62,22 +65,27 @@ public class ServiceBaseDataResourceImpl implements ServiceBaseDataResource
     @Autowired
     private AuthExPermissionApi authExPermissionApi;
 
+    @Autowired
+    private OpAuthApi opAuthApi;
 
     @Override
-    public Result<List<BaseDataVO>> getInfoByTypeAndCode(String paramType, String paramCode)
-    {
+    public Result<List<BaseDataVO>> getInfoByTypeAndCode(String paramType, String paramCode) {
         return new Result<>(baseDataService.findBaseDataInfoByTypeAndCode(paramType, paramCode));
     }
 
     @Override
-    public Result<Map<String, RepoInfoVO>> getRepoUrlByProjects(Set<String> bkProjectIds)
+    public Result<List<BaseDataVO>> getInfoByTypeAndCodeList(String paramType, List<String> paramCodeList)
     {
+        return new Result<>(baseDataService.findBaseDataInfoByTypeAndCodeList(paramType, paramCodeList));
+    }
+
+    @Override
+    public Result<Map<String, RepoInfoVO>> getRepoUrlByProjects(Set<String> bkProjectIds) {
         return new Result<>(pipelineService.getRepoUrlByBkProjects(bkProjectIds));
     }
 
     @Override
-    public Result<List<BaseDataVO>> getParamsByType(String paramType)
-    {
+    public Result<List<BaseDataVO>> getParamsByType(String paramType) {
         return new Result<>(baseDataService.findBaseDataInfoByType(paramType));
     }
 
@@ -93,29 +101,35 @@ public class ServiceBaseDataResourceImpl implements ServiceBaseDataResource
 
     @Override
     public Result<Boolean> updateExcludeUserMember(String userName, BaseDataVO baseDataVO) {
-        // 判断是否为管理员
-        if (!authExPermissionApi.isAdminMember(userName)) {
-            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, new String[]{"admin member"});
+        // 判断是否为OP管理员
+        if (!opAuthApi.isOpAdminMember(userName)) {
+            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, new String[]{"op admin member"});
         }
         return new Result<>(baseDataService.updateExcludeUserMember(baseDataVO, userName));
     }
-
 
     @Override
     public Result<List<String>> queryExcludeUserMember() {
         return new Result<>(baseDataService.queryMemberListByParamType(ComConstants.KEY_EXCLUDE_USER_LIST));
     }
 
-
     @Override
     public Result<Boolean> updateAdminMember(String userName, BaseDataVO baseDataVO) {
-        // 判断是否为管理员
-        if (!authExPermissionApi.isAdminMember(userName)) {
-            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, new String[]{"admin member"});
+        // 判断是否为OP管理员
+        if (!opAuthApi.isOpAdminMember(userName)) {
+            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, new String[]{"op admin member"});
         }
         return new Result<>(baseDataService.updateAdminMember(baseDataVO, userName));
     }
 
+    @Override
+    public Result<Boolean> updateOpAdminMember(String userName, BaseDataVO baseDataVO) {
+        // 判断是否为OP管理员
+        if (!opAuthApi.isOpAdminMember(userName)) {
+            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, new String[]{"op admin member"});
+        }
+        return new Result<>(baseDataService.updateAdminMember(baseDataVO, userName));
+    }
 
     @Override
     public Result<List<String>> queryAdminMember() {
@@ -123,7 +137,17 @@ public class ServiceBaseDataResourceImpl implements ServiceBaseDataResource
     }
 
     @Override
+    public Result<List<String>> queryOpAdminMember() {
+        return new Result<>(baseDataService.queryMemberListByParamType(ComConstants.KEY_OP_ADMIN_MEMBER));
+    }
+
+    @Override
     public Result<List<BaseDataVO>> findBaseData() {
         return new Result<>(baseDataService.findBaseData());
+    }
+
+    @Override
+    public Result<Set<String>> updateLangPreProdConfig(List<CheckerSetVO> checkerSetVOS) {
+        return new Result<>(baseDataService.updateLangPreProdConfig(checkerSetVOS));
     }
 }

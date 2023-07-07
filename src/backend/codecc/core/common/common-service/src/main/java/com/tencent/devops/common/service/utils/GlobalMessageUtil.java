@@ -29,16 +29,13 @@ package com.tencent.devops.common.service.utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.GlobalMessage;
-import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
-import com.tencent.devops.common.util.JsonUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
@@ -61,8 +58,8 @@ import static com.tencent.devops.common.constant.ComConstants.*;
  * @date 2019/7/17
  */
 @Component
-public class GlobalMessageUtil
-{
+@Deprecated
+public class GlobalMessageUtil {
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -71,7 +68,7 @@ public class GlobalMessageUtil
     private RedisTemplate<String, String> redisTemplate;
 
 
-    private static Logger logger = LoggerFactory.getLogger(GlobalMessageUtil.class);
+    private static final Logger logger = LoggerFactory.getLogger(GlobalMessageUtil.class);
 
 
     /**
@@ -82,34 +79,29 @@ public class GlobalMessageUtil
      * @param redisKey key
      * @return 国际化信息
      */
-    public Map<String, GlobalMessage> getGlobalMessageMap(String redisKey)
-    {
+    public Map<String, GlobalMessage> getGlobalMessageMap(String redisKey) {
         Map<String, GlobalMessage> messageCodeDetailMap = new HashMap<>();
 
-        if (StringUtils.isNotBlank(redisKey))
-        {
+        if (StringUtils.isNotBlank(redisKey)) {
             Map<Object, Object> messageDetailMap = redisTemplate.opsForHash().entries(redisKey);
 
-            if (MapUtils.isEmpty(messageDetailMap))
-            {
-                JedisConnectionFactory jedisConnectionFactory = (JedisConnectionFactory) redisTemplate.getConnectionFactory();
+            if (MapUtils.isEmpty(messageDetailMap)) {
+                JedisConnectionFactory jedisConnectionFactory =
+                        (JedisConnectionFactory) redisTemplate.getConnectionFactory();
                 logger.error("operation type map not initialized: {}, {}, {}, {}", redisKey,
                     jedisConnectionFactory.getHostName(),
                     jedisConnectionFactory.getPort(),
                     jedisConnectionFactory.getDatabase());
                 return new HashMap<>();
             }
-            for (Map.Entry<Object, Object> entry : messageDetailMap.entrySet())
-            {
+            for (Map.Entry<Object, Object> entry : messageDetailMap.entrySet()) {
                 String messageDetailStr = (String) entry.getValue();
                 GlobalMessage globalMessage;
-                try
-                {
+                try {
+                    // logger.info("key: {}, value: {}", entry.getKey(), messageDetailStr);
                     globalMessage = objectMapper.readValue(messageDetailStr, GlobalMessage.class);
-                }
-                catch (IOException e)
-                {
-                    logger.error("operation type message deserialize fail! key: {}", entry.getKey());
+                } catch (IOException e) {
+                    // logger.error("operation type message deserialize fail! key: {}", entry.getKey());
                     continue;
                 }
                 messageCodeDetailMap.put((String) entry.getKey(), globalMessage);
@@ -200,18 +192,14 @@ public class GlobalMessageUtil
      * @param locale        语言
      * @return 国际化信息
      */
-    public String getMessageByLocale(GlobalMessage globalMessage, String locale)
-    {
-        if(Objects.isNull(globalMessage)){
+    public String getMessageByLocale(GlobalMessage globalMessage, String locale) {
+        if (Objects.isNull(globalMessage)) {
             return STRING_TIPS;
         }
         // 后期加上繁体
-        if (ZH_CN.equalsIgnoreCase(locale))
-        {
+        if (ZH_CN.equalsIgnoreCase(locale)) {
             return globalMessage.getMessageZhCn();
-        }
-        else
-        {
+        } else {
             return globalMessage.getMessageEn();
         }
     }

@@ -27,18 +27,18 @@
 package com.tencent.bk.codecc.task.model;
 
 import com.tencent.codecc.common.db.CommonEntity;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * task entity
@@ -54,6 +54,7 @@ import java.util.Set;
                 background = true)
 })
 public class TaskInfoEntity extends CommonEntity {
+
     /**
      * 项目主键id
      */
@@ -123,6 +124,10 @@ public class TaskInfoEntity extends CommonEntity {
     @Indexed
     @Field("pipeline_id")
     private String pipelineId;
+
+
+    @Field("multi_pipeline_mark")
+    private String multiPipelineMark;
 
     /**
      * 项目创建来源
@@ -393,8 +398,8 @@ public class TaskInfoEntity extends CommonEntity {
     private Integer opensourceDisableReason;
 
     /*
-    * 是否回写工蜂
-    */
+     * 是否回写工蜂
+     */
     @Field("mr_comment_enable")
     private Boolean mrCommentEnable;
 
@@ -409,4 +414,55 @@ public class TaskInfoEntity extends CommonEntity {
      */
     @Field("latest_scan_result")
     private TaskFailRecordEntity taskFailRecordEntity;
+
+    @Field("auto_lang")
+    private Boolean autoLang;
+
+    /**
+     * 是否禁止页面忽略告警
+     */
+    @Field("prohibit_ignore")
+    private Boolean prohibitIgnore;
+
+    /**
+     * 规则集类型
+     */
+    @Field("checker_set_type")
+    private String checkerSetType;
+
+    /**
+     * 规则集环境类型：prod、preProd
+     */
+    @Field("checker_set_env_type")
+    private String checkerSetEnvType;
+
+    /**
+     * 仓库管理者
+     */
+    @Field("repo_owner")
+    private List<String> repoOwner;
+
+    /**
+     * 流水线model的taskId
+     */
+    @Field("pipeline_task_id")
+    private String pipelineTaskId;
+
+    /**
+     * 流水线model的taskName
+     */
+    @Field("pipeline_task_name")
+    private String pipelineTaskName;
+
+    /**
+     * 超时时间（S）
+     */
+    @Field("timeout")
+    private Integer timeout;
+
+    /**
+     * 语言
+     */
+    @Transient
+    private List<String> codeLanguages;
 }

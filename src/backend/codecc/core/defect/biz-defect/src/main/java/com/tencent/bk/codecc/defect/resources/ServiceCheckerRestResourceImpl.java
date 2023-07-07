@@ -32,14 +32,14 @@ import com.tencent.bk.codecc.defect.service.ICheckerSetBizService;
 import com.tencent.bk.codecc.defect.service.IConfigCheckerPkgBizService;
 import com.tencent.bk.codecc.defect.vo.CheckerPkgRspVO;
 import com.tencent.bk.codecc.defect.vo.ConfigCheckersPkgReqVO;
+import com.tencent.bk.codecc.defect.vo.QueryTaskCheckerDimensionRequest;
 import com.tencent.bk.codecc.defect.vo.checkerset.AddCheckerSet2TaskReqVO;
 import com.tencent.bk.codecc.defect.vo.checkerset.GetCheckerSetsReqVO;
 import com.tencent.bk.codecc.defect.vo.checkerset.PipelineCheckerSetVO;
 import com.tencent.bk.codecc.defect.vo.checkerset.UserCheckerSetsVO;
-import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
 import com.tencent.bk.codecc.task.vo.checkerset.ClearTaskCheckerSetReqVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.web.RestResource;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -103,4 +103,16 @@ public class ServiceCheckerRestResourceImpl implements ServiceCheckerRestResourc
                 clearTaskCheckerSetReqVO.getNeedUpdatePipeline()));
     }
 
+    @Override
+    public Result<List<String>> queryDimensionByToolChecker(
+            QueryTaskCheckerDimensionRequest request
+    ) {
+        return new Result<>(
+                checkerService.queryTaskCheckerDimension(
+                        request.getTaskIdList(),
+                        request.getProjectId(),
+                        request.getToolNameList()
+                )
+        );
+    }
 }

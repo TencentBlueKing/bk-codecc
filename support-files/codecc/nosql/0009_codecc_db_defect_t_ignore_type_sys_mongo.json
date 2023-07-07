@@ -1,0 +1,66 @@
+{
+    "_id" : {"$oid":"63bd5ec96504e97ecf55c1d6"},
+    "name" : "存量问题",
+    "ignore_type_id" : 24,
+    "status" : 0,
+    "create_date" : 1673354558970,
+    "created_by" : "sysadmin",
+    "updated_date" : 1673354558970,
+    "updated_by" : "sysadmin",
+    "_class" : "com.tencent.bk.codecc.defect.model.ignore.IgnoreTypeSysEntity"
+}
+{
+    "_id" : {"$oid":"63bd5ec96504e97ecf55c1d1"},
+    "name" : "检查工具规则误报",
+    "ignore_type_id" : 1,
+    "status" : 0,
+    "create_date" : 1673354558970,
+    "created_by" : "sysadmin",
+    "updated_date" : 1673354558970,
+    "updated_by" : "sysadmin",
+    "_class" : "com.tencent.bk.codecc.defect.model.ignore.IgnoreTypeSysEntity"
+}
+{
+    "_id" : {"$oid":"63bd5ec96504e97ecf55c1d3"},
+    "name" : "其它",
+    "ignore_type_id" : 4,
+    "status" : 1,
+    "create_date" : 1673354558970,
+    "created_by" : "sysadmin",
+    "updated_date" : 1673354558970,
+    "updated_by" : "sysadmin",
+    "_class" : "com.tencent.bk.codecc.defect.model.ignore.IgnoreTypeSysEntity"
+}
+{
+    "_id" : {"$oid":"63bd5ec96504e97ecf55c1d4"},
+    "name" : "第三方代码/自动生成代码",
+    "ignore_type_id" : 25,
+    "status" : 0,
+    "create_date" : 1673354558970,
+    "created_by" : "sysadmin",
+    "updated_date" : 1673354558970,
+    "updated_by" : "sysadmin",
+    "_class" : "com.tencent.bk.codecc.defect.model.ignore.IgnoreTypeSysEntity"
+}
+{
+    "_id" : {"$oid":"63bd5ec96504e97ecf55c1d2"},
+    "name" : "设计如此",
+    "ignore_type_id" : 2,
+    "status" : 0,
+    "create_date" : 1673354558970,
+    "created_by" : "sysadmin",
+    "updated_date" : 1673354558970,
+    "updated_by" : "sysadmin",
+    "_class" : "com.tencent.bk.codecc.defect.model.ignore.IgnoreTypeSysEntity"
+}
+{
+    "_id" : {"$oid":"63bd5ec96504e97ecf55c1d5"},
+    "name" : "待后续重构",
+    "ignore_type_id" : 26,
+    "status" : 0,
+    "create_date" : 1673354558970,
+    "created_by" : "sysadmin",
+    "updated_date" : 1673354558970,
+    "updated_by" : "sysadmin",
+    "_class" : "com.tencent.bk.codecc.defect.model.ignore.IgnoreTypeSysEntity"
+}

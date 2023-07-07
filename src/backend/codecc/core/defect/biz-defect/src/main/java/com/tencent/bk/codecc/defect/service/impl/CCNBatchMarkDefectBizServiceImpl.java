@@ -1,11 +1,18 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
+import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.CCNDefectDao;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
+import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
+import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.BusinessType;
+import com.tencent.devops.common.constant.ComConstants.DefectStatus;
+import com.tencent.devops.common.constant.ComConstants.ToolType;
 import java.util.List;
+import java.util.Set;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
+import org.springframework.stereotype.Service;
 
 /**
  * 批量忽略的处理器
@@ -20,8 +27,35 @@ public class CCNBatchMarkDefectBizServiceImpl extends AbstractCCNBatchDefectProc
     private CCNDefectDao defectDao;
 
     @Override
-    protected void doBiz(List defectList, BatchDefectProcessReqVO batchDefectProcessReqVO)
-    {
-        defectDao.batchMarkDefect(batchDefectProcessReqVO.getTaskId(), defectList, batchDefectProcessReqVO.getMarkFlag());
+    protected void doBiz(List defectList, BatchDefectProcessReqVO batchDefectProcessReqVO) {
+        defectDao.batchMarkDefect(batchDefectProcessReqVO.getTaskId(), defectList,
+                batchDefectProcessReqVO.getMarkFlag());
+    }
+
+    @Override
+    protected void doBizByPage(List defectList, BatchDefectProcessReqVO batchDefectProcessReqVO) {
+        defectDao.batchMarkDefect(batchDefectProcessReqVO.getTaskId(), defectList,
+                batchDefectProcessReqVO.getMarkFlag());
+    }
+
+
+    @Override
+    protected void processAfterAllPageDone(BatchDefectProcessReqVO batchDefectProcessReqVO) {
+
+    }
+
+    @Override
+    protected Set<String> getStatusCondition(DefectQueryReqVO queryCondObj) {
+        // 对于恢复忽略再标记的需要开放忽略
+        if (queryCondObj != null && queryCondObj.getRevertAndMark() != null && queryCondObj.getRevertAndMark()) {
+            return Sets.newHashSet(String.valueOf(ComConstants.DefectStatus.NEW.value()),
+                    String.valueOf(DefectStatus.IGNORE.value()));
+        }
+        return Sets.newHashSet(String.valueOf(ComConstants.DefectStatus.NEW.value()));
+    }
+
+    @Override
+    protected Pair<BusinessType, ToolType> getBusinessTypeToolTypePair() {
+        return Pair.of(BusinessType.MARK_DEFECT, ToolType.CCN);
     }
 }

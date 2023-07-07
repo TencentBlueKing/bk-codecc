@@ -10,13 +10,12 @@
  *
  * Terms of the MIT License:
  * ---------------------------------------------------
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
- * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
+ * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of
- * the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
  * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -38,9 +37,11 @@ open class ConsulServiceTarget<T> constructor(
         override val type: Class<T>,
         private val discoveryClient: DiscoveryClient,
         private val tag: String?,
+        override val commonUrlPrefix : String = "/api",
 ) : FeignTarget<T>(
     serviceName,
-    type
+    type,
+    commonUrlPrefix
 ) {
 
     companion object{
@@ -63,7 +64,6 @@ open class ConsulServiceTarget<T> constructor(
         instances.forEach { serviceInstance ->
             if (serviceInstance is ConsulServiceInstance && serviceInstance.tags.contains(tag) &&
                 !usedInstance.contains(serviceInstance.url())) {
-                logger.info("service instance url: ${serviceInstance.url()}")
                 matchTagInstances.add(serviceInstance)
             }
         }
@@ -84,5 +84,10 @@ open class ConsulServiceTarget<T> constructor(
         usedInstance[matchTagInstances[0].url()] = matchTagInstances[0]
         return matchTagInstances[0]
     }
+
+    override fun url(): String {
+        return choose(serviceName).url()
+    }
+
 
 }

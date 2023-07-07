@@ -32,9 +32,11 @@ import com.tencent.bk.codecc.task.service.PipelineService;
 import com.tencent.bk.codecc.task.vo.BuildEnvVO;
 import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.bk.codecc.task.vo.OpenScanAndEpcToolNameMapVO;
+import com.tencent.bk.codecc.task.vo.OpenScanAndPreProdCheckerSetMapVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.annotation.I18NResponse;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.web.RestResource;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -56,9 +58,9 @@ public class UserMetaRestResourceImpl implements UserMetaRestResource
     @Autowired
     private PipelineService pipelineService;
 
+    @I18NResponse
     @Override
-    public Result<List<ToolMetaBaseVO>> toolList(Boolean isDetail)
-    {
+    public Result<List<ToolMetaBaseVO>> toolList(Boolean isDetail) {
         return new Result<>(metaService.toolList(isDetail));
     }
 
@@ -83,5 +85,10 @@ public class UserMetaRestResourceImpl implements UserMetaRestResource
     @Override
     public Result<OpenScanAndEpcToolNameMapVO> getOpenScanAndEpcToolNameMap() {
         return new Result<>(metaService.getOpenScanAndEpcToolNameMap());
+    }
+
+    @Override
+    public Result<OpenScanAndPreProdCheckerSetMapVO> getOpenScanAndPreProdCheckerSetMap() {
+        return new Result<>(metaService.getOpenScanAndPreProdCheckerSetMap());
     }
 }

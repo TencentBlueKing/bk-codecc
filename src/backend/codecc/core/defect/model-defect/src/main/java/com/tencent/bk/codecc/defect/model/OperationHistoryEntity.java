@@ -34,6 +34,8 @@ import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.util.List;
+
 /**
  * 操作记录实体类
  *
@@ -44,10 +46,10 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @EqualsAndHashCode(callSuper = true)
 @Document(collection = "t_operation_history")
 @CompoundIndexes({
-        @CompoundIndex(name = "task_id_1_func_id_1", def = "{'task_id': 1, 'func_id': 1}")
+        @CompoundIndex(name = "task_id_1_func_id_1", def = "{'task_id': 1, 'func_id': 1}"),
+        @CompoundIndex(name = "create_date_1_func_id_1", def = "{'create_date': 1, 'func_id': 1}", background = true)
 })
-public class OperationHistoryEntity extends CommonEntity
-{
+public class OperationHistoryEntity extends CommonEntity {
     @Field("task_id")
     private long taskId;
 

@@ -32,7 +32,7 @@ import com.tencent.bk.sdk.iam.service.impl.DefaultHttpClientServiceImpl
 import com.tencent.bk.sdk.iam.service.impl.PolicyServiceImpl
 import com.tencent.bk.sdk.iam.service.impl.TokenServiceImpl
 import com.tencent.devops.common.auth.api.*
-import com.tencent.devops.common.auth.api.external.AuthTaskService
+import com.tencent.devops.common.auth.api.service.AuthTaskService
 import com.tencent.devops.common.auth.service.IamEsbService
 import com.tencent.devops.common.auth.utils.CodeCCAuthResourceApi
 import com.tencent.devops.common.client.Client
@@ -77,7 +77,7 @@ class V3AuthExAutoConfiguration {
     @Bean
     fun authExPermissionApi(redisTemplate: RedisTemplate<String, String>,
                             client: Client,
-                            authTaskService: AuthTaskService,
+                            authTaskService : AuthTaskService,
                             codeccAuthPermissionStrApi: AuthPermissionStrApi) =
             V3AuthExPermissionApi(
                 client = client,

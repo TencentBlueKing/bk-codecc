@@ -10,12 +10,13 @@
  *
  * Terms of the MIT License:
  * ---------------------------------------------------
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+ *  Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
  * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -26,11 +27,28 @@
 
 package com.tencent.bk.codecc.defect.service;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.tencent.bk.codecc.defect.component.ScmJsonComponent;
-import com.tencent.bk.codecc.defect.dao.mongorepository.*;
+import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoFromAnalyzeLogRepository;
+import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoInfoRepository;
+import com.tencent.bk.codecc.defect.dao.mongorepository.FirstAnalysisSuccessTimeRepository;
+import com.tencent.bk.codecc.defect.dao.mongorepository.LintStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository;
+import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildStackRepository;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.ToolBuildInfoDao;
 import com.tencent.bk.codecc.defect.dto.WebsocketDTO;
-import com.tencent.bk.codecc.defect.model.*;
+import com.tencent.bk.codecc.defect.model.BuildEntity;
+import com.tencent.bk.codecc.defect.model.CodeRepoFromAnalyzeLogEntity;
+import com.tencent.bk.codecc.defect.model.FirstAnalysisSuccessEntity;
+import com.tencent.bk.codecc.defect.model.incremental.CodeRepoEntity;
+import com.tencent.bk.codecc.defect.model.incremental.CodeRepoInfoEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CCNStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.LintStatisticEntity;
+import com.tencent.bk.codecc.defect.model.TaskLogEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
 import com.tencent.bk.codecc.defect.service.file.ScmFileInfoService;
 import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
@@ -38,15 +56,21 @@ import com.tencent.bk.codecc.defect.vo.CommitDefectVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogOverviewVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
+import com.tencent.bk.codecc.defect.vo.common.BuildVO;
 import com.tencent.bk.codecc.defect.vo.customtool.ScmInfoVO;
 import com.tencent.bk.codecc.task.api.ServiceGrayToolProjectResource;
 import com.tencent.bk.codecc.task.api.ServiceToolRestResource;
-import com.tencent.bk.codecc.task.vo.*;
+import com.tencent.bk.codecc.task.vo.GrayTaskStatVO;
+import com.tencent.bk.codecc.task.vo.TaskBaseVO;
+import com.tencent.bk.codecc.task.vo.TaskDetailVO;
+import com.tencent.bk.codecc.task.vo.TaskOverviewVO;
+import com.tencent.bk.codecc.task.vo.ToolConfigBaseVO;
+import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
 import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.analysisresult.BaseLastAnalysisResultVO;
 import com.tencent.devops.common.api.analysisresult.ToolLastAnalysisResultVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
@@ -54,15 +78,16 @@ import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.service.BaseDataCacheService;
 import com.tencent.devops.common.service.IBizService;
 import com.tencent.devops.common.service.ToolMetaCacheService;
+import com.tencent.devops.common.service.aop.AbstractI18NResponseAspect;
+import com.tencent.devops.common.service.utils.I18NUtils;
 import com.tencent.devops.common.util.DateTimeUtils;
-import com.tencent.devops.common.util.JsonUtil;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.util.PathUtils;
 import com.tencent.devops.common.util.ThreadPoolUtil;
 import com.tencent.devops.common.web.aop.annotation.ActiveStatistic;
 import com.tencent.devops.common.web.aop.annotation.EndAnalyze;
 import com.tencent.devops.common.web.mq.ConstantsKt;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.Locale;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -75,8 +100,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -106,7 +134,7 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
     @Autowired
     private FirstAnalysisSuccessTimeRepository firstSuccessTimeRepository;
     @Autowired
-    private BuildRepository buildRepository;
+    private BuildService buildService;
     @Autowired
     protected ToolMetaCacheService toolMetaCacheService;
     @Autowired
@@ -125,6 +153,13 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
     private BaseDataCacheService baseDataCacheService;
     @Autowired
     private LintStatisticRepository lintStatisticRepository;
+    @Autowired
+    private CCNStatisticRepository ccnStatisticRepository;
+    @Autowired
+    private CLOCStatisticRepository clocStatisticRepository;
+    @Autowired
+    private CodeRepoInfoRepository codeRepoInfoRepository;
+
 
     @ActiveStatistic
     @Override
@@ -147,14 +182,21 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
         long taskId = taskVO.getTaskId();
         uploadTaskLogStepVO.setTaskId(taskId);
 
-        TaskLogEntity lastTaskLogEntity = taskLogRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
+        TaskLogEntity lastTaskLogEntity =
+                taskLogRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
         ToolConfigBaseVO toolConfigBaseVO;
 
+        //判断，如果构建号为空，需要更新
+        if (null != lastTaskLogEntity && null == lastTaskLogEntity.getBuildNum()) {
+            BuildEntity buildEntity = buildService.getBuildEntityByBuildId(buildId);
+            if (null != buildEntity && null != buildEntity.getBuildNo()) {
+                lastTaskLogEntity.setBuildNum(buildEntity.getBuildNo());
+            }
+        }
+
         //如果是流水线运行失败
-        if (null != uploadTaskLogStepVO.getPipelineFail() && uploadTaskLogStepVO.getPipelineFail())
-        {
-            if (null != lastTaskLogEntity)
-            {
+        if (null != uploadTaskLogStepVO.getPipelineFail() && uploadTaskLogStepVO.getPipelineFail()) {
+            if (null != lastTaskLogEntity) {
                 toolConfigBaseVO = updateAbortAnalysisTaskLog(lastTaskLogEntity,
                     StringUtils.isEmpty(uploadTaskLogStepVO.getMsg()) ? "流水线运行异常" : uploadTaskLogStepVO.getMsg());
             } else {
@@ -188,11 +230,12 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
 
         //开源扫描的不发websocket
         String key = String.format("%s%d", RedisKeyConstants.TASK_WEBSOCKET_SESSION_PREFIX, taskId);
-        if (!ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value().equalsIgnoreCase(taskVO.getCreateFrom())
-            || null != redisTemplate.opsForValue().get(key)) {
+        if ((!ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value().equalsIgnoreCase(taskVO.getCreateFrom())
+                || null != redisTemplate.opsForValue().get(key))
+                && lastTaskLogEntity != null) {
             sendWebSocketMsg(toolConfigBaseVO, uploadTaskLogStepVO, lastTaskLogEntity, taskVO, taskId, toolName);
         }
-        log.info("upload tasklog success.");
+        log.info("upload tasklog success, {}, {}, {}", taskId, buildId, toolName);
         return new Result(CommonMessageCode.SUCCESS, "upload taskLog ok");
     }
 
@@ -231,18 +274,39 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
                 && String.format("%s%s", ComConstants.GRAY_PROJECT_PREFIX, taskLogEntity.getToolName())
                 .equals(taskVO.getProjectId())
                 && uploadTaskLogStepVO.getStepNum() == getSubmitStepNum()
-                && uploadTaskLogStepVO.getFlag() == ComConstants.StepFlag.SUCC.value())
-        {
+                && uploadTaskLogStepVO.getFlag() == ComConstants.StepFlag.SUCC.value()) {
             GrayTaskStatVO grayTaskStatVO = null;
-            LintStatisticEntity lintStatisticEntity = lintStatisticRepository.findFirstByTaskIdAndToolNameAndBuildId(
-                    taskLogEntity.getTaskId(), taskLogEntity.getToolName(), taskLogEntity.getBuildId());
-            if (null != lintStatisticEntity && StringUtils.isNotBlank(lintStatisticEntity.getEntityId()))
-            {
-                grayTaskStatVO = new GrayTaskStatVO(
-                        lintStatisticEntity.getTotalSerious(), lintStatisticEntity.getTotalNormal(),
-                        lintStatisticEntity.getTotalPrompt(), taskLogEntity.getElapseTime(),
-                        taskLogEntity.getCurrStep(), taskLogEntity.getFlag()
-                );
+
+            // 兼容ccn工具
+            if (taskLogEntity.getToolName().equals(ComConstants.Tool.CCN.name())) {
+                CCNStatisticEntity ccnStatisticEntity = ccnStatisticRepository
+                        .findFirstByTaskIdAndBuildId(taskLogEntity.getTaskId(), taskLogEntity.getBuildId());
+                if (null != ccnStatisticEntity && StringUtils.isNotBlank(ccnStatisticEntity.getEntityId())) {
+                    grayTaskStatVO = new GrayTaskStatVO(
+                            ccnStatisticEntity.getSuperHighCount() + ccnStatisticEntity.getHighCount(),
+                            ccnStatisticEntity.getMediumCount(), ccnStatisticEntity.getLowCount(),
+                            taskLogEntity.getElapseTime(), taskLogEntity.getCurrStep(), taskLogEntity.getFlag());
+                }
+            } else if (taskLogEntity.getToolName().equals(ComConstants.Tool.SCC.name())) {
+                // 兼容SCC工具
+                CLOCStatisticEntity clocStatisticEntity =
+                        clocStatisticRepository.findFirstByTaskIdAndToolNameAndBuildId(taskLogEntity.getTaskId(),
+                                ComConstants.Tool.SCC.name(),
+                                taskLogEntity.getBuildId());
+                if (null != clocStatisticEntity && StringUtils.isNotBlank(clocStatisticEntity.getEntityId())) {
+                    grayTaskStatVO = new GrayTaskStatVO(
+                            0, 0, 0, taskLogEntity.getElapseTime(), taskLogEntity.getCurrStep(),
+                            taskLogEntity.getFlag());
+                }
+            } else {
+                LintStatisticEntity lintStatisticEntity = lintStatisticRepository
+                        .findFirstByTaskIdAndToolNameAndBuildId(taskLogEntity.getTaskId(), taskLogEntity.getToolName(),
+                                taskLogEntity.getBuildId());
+                if (null != lintStatisticEntity && StringUtils.isNotBlank(lintStatisticEntity.getEntityId())) {
+                    grayTaskStatVO = new GrayTaskStatVO(lintStatisticEntity.getTotalSerious(),
+                            lintStatisticEntity.getTotalNormal(), lintStatisticEntity.getTotalPrompt(),
+                            taskLogEntity.getElapseTime(), taskLogEntity.getCurrStep(), taskLogEntity.getFlag());
+                }
             }
             client.get(ServiceGrayToolProjectResource.class).processGrayReport(taskLogEntity.getTaskId(),
                     taskLogEntity.getBuildId(), grayTaskStatVO);
@@ -298,8 +362,10 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
         } else if (fileSize > 1024 * 1024 * 200 && fileSize < 1024 * 1024 * 1024) {
             // 告警文件大于200M，小于1G，走大项目专用提单消息队列
             log.warn("告警文件大于200M小于1G: {}", fileSize);
-            exchange = String.format("%s%s.large", ConstantsKt.PREFIX_EXCHANGE_DEFECT_COMMIT, toolPattern.toLowerCase());
-            routingKey = String.format("%s%s.large", ConstantsKt.PREFIX_ROUTE_DEFECT_COMMIT, toolPattern.toLowerCase());
+            exchange = String.format("%s%s.large",
+                    ConstantsKt.PREFIX_EXCHANGE_DEFECT_COMMIT, toolPattern.toLowerCase());
+            routingKey = String.format("%s%s.large",
+                    ConstantsKt.PREFIX_ROUTE_DEFECT_COMMIT, toolPattern.toLowerCase());
         } else {
             log.info("告警文件小于200M: {}", fileSize);
             exchange = String.format("%s%s.new", ConstantsKt.PREFIX_EXCHANGE_DEFECT_COMMIT, toolPattern.toLowerCase());
@@ -307,21 +373,51 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
         }
 
         // 通过消息队列异步提单
-        CommitDefectVO commitDefectVO = new CommitDefectVO();
-        commitDefectVO.setTaskId(uploadTaskLogStepVO.getTaskId());
-        commitDefectVO.setStreamName(uploadTaskLogStepVO.getStreamName());
-        commitDefectVO.setToolName(toolName);
-        commitDefectVO.setBuildId(uploadTaskLogStepVO.getPipelineBuildId());
-        commitDefectVO.setTriggerFrom(uploadTaskLogStepVO.getTriggerFrom());
+        CommitDefectVO commitDefectVO = getCommitDefectVO(uploadTaskLogStepVO, taskVO, fileSize);
         rabbitTemplate.convertAndSend(exchange, routingKey, commitDefectVO);
+    }
+
+    /**
+     * 获取MQ消息体
+     *
+     * @param uploadTaskLogStepVO
+     * @param taskVO
+     * @param fileSize 告警文件大小，若为0，则内部重新计算
+     * @return
+     */
+    protected CommitDefectVO getCommitDefectVO(
+            UploadTaskLogStepVO uploadTaskLogStepVO,
+            TaskDetailVO taskVO,
+            long fileSize
+    ) {
+        if (fileSize == 0) {
+            fileSize = scmJsonComponent.getDefectFileSize(
+                    uploadTaskLogStepVO.getStreamName(),
+                    uploadTaskLogStepVO.getToolName(),
+                    uploadTaskLogStepVO.getPipelineBuildId()
+            );
+        }
+
+        CommitDefectVO vo = new CommitDefectVO();
+        vo.setTaskId(uploadTaskLogStepVO.getTaskId());
+        vo.setStreamName(uploadTaskLogStepVO.getStreamName());
+        vo.setToolName(uploadTaskLogStepVO.getToolName());
+        vo.setBuildId(uploadTaskLogStepVO.getPipelineBuildId());
+        vo.setTriggerFrom(uploadTaskLogStepVO.getTriggerFrom());
+        vo.setCreateFrom(taskVO.getCreateFrom());
+        vo.setDefectFileSize(fileSize);
+
+        return vo;
     }
 
     protected void updateCodeRepository(UploadTaskLogStepVO uploadTaskLogStepVO, TaskLogEntity taskLogEntity) {
         if (uploadTaskLogStepVO.getStepNum() == getSubmitStepNum()
                 && uploadTaskLogStepVO.getFlag() == ComConstants.StepFlag.SUCC.value()) {
+            Locale locale = AbstractI18NResponseAspect.getLocale();
+
             ThreadPoolUtil.addRunnableTask(() -> {
                 // 保存代码仓信息
-                saveCodeRepoInfo(uploadTaskLogStepVO);
+                saveCodeRepoInfo(uploadTaskLogStepVO, locale);
             });
         }
     }
@@ -332,11 +428,30 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
      * @param uploadTaskLogStepVO
      * @return
      */
-    protected void saveCodeRepoInfo(UploadTaskLogStepVO uploadTaskLogStepVO) {
+    protected void saveCodeRepoInfo(UploadTaskLogStepVO uploadTaskLogStepVO, Locale locale) {
         StringBuffer scmInfoStrBuf = new StringBuffer();
         JSONArray repoInfoJsonArr = scmJsonComponent.loadRepoInfo(uploadTaskLogStepVO.getStreamName(),
                 uploadTaskLogStepVO.getToolName(), uploadTaskLogStepVO.getPipelineBuildId());
         if (repoInfoJsonArr != null && repoInfoJsonArr.length() > 0) {
+            // 保存commit信息
+            CodeRepoInfoEntity codeRepoInfoEntity =
+                    codeRepoInfoRepository.findFirstByTaskIdAndBuildId(uploadTaskLogStepVO.getTaskId(),
+                            uploadTaskLogStepVO.getPipelineBuildId());
+            if (null == codeRepoInfoEntity) {
+                codeRepoInfoEntity = new CodeRepoInfoEntity();
+                codeRepoInfoEntity.setTaskId(uploadTaskLogStepVO.getTaskId());
+                codeRepoInfoEntity.setBuildId(uploadTaskLogStepVO.getPipelineBuildId());
+            }
+            List<CodeRepoEntity> repoList = codeRepoInfoEntity.getRepoList();
+            if (CollectionUtils.isEmpty(repoList)) {
+                repoList = Lists.newArrayList();
+            }
+            // url + branch作为key
+            Map<String, CodeRepoEntity> urlBranchEntityMap = Maps.newHashMap();
+            for (CodeRepoEntity entity : repoList) {
+                urlBranchEntityMap.put(entity.getUrl() + entity.getBranch(), entity);
+            }
+
             Long currentTime = System.currentTimeMillis();
             Set<CodeRepoFromAnalyzeLogEntity.CodeRepo> codeRepoSet = new HashSet<>();
             for (int i = 0; i < repoInfoJsonArr.length(); i++) {
@@ -354,16 +469,37 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
 
                     String commitTimeStr = DateTimeUtils.second2Moment(
                         codeRepoInfo.getFileUpdateTime() / ComConstants.COMMON_NUM_1000L);
-                    scmInfoStrBuf.append("代码库：").append(formatUrl).append("，")
-                            .append("版本号：").append(codeRepoInfo.getRevision()).append("，")
-                            .append("提交时间：").append(commitTimeStr).append("，")
-                            .append("提交人：").append(codeRepoInfo.getFileUpdateAuthor()).append("，")
-                            .append("分支：").append(codeRepoInfo.getBranch())
+                    scmInfoStrBuf.append(I18NUtils.getMessage("ANALYZE_SCM_CODE_REPOSITORY", locale))
+                            .append(formatUrl)
+                            .append("，")
+                            .append(I18NUtils.getMessage("ANALYZE_SCM_CODE_VERSION", locale))
+                            .append(codeRepoInfo.getRevision())
+                            .append("，")
+                            .append(I18NUtils.getMessage("ANALYZE_SCM_CODE_COMMIT_TIME", locale))
+                            .append(commitTimeStr)
+                            .append("，")
+                            .append(I18NUtils.getMessage("ANALYZE_SCM_CODE_AUTHOR", locale))
+                            .append(codeRepoInfo.getFileUpdateAuthor())
+                            .append("，")
+                            .append(I18NUtils.getMessage("ANALYZE_SCM_CODE_BRANCH", locale))
+                            .append(codeRepoInfo.getBranch())
                             .append("\n");
+                    // 如果数据还没创建
+                    CodeRepoEntity codeRepoEntity =
+                            urlBranchEntityMap.get(codeRepoInfo.getUrl() + codeRepoInfo.getBranch());
+                    if (null == codeRepoEntity) {
+                        codeRepoEntity = new CodeRepoEntity();
+                        codeRepoEntity.setUrl(formatUrl);
+                        codeRepoEntity.setBranch(codeRepoInfo.getBranch());
+                        codeRepoEntity.setRevision(codeRepoInfo.getRevision());
+                        codeRepoEntity.setRepoId(codeRepoInfo.getRepoId());
+                        urlBranchEntityMap.put(codeRepoInfo.getUrl() + codeRepoInfo.getBranch(), codeRepoEntity);
+                    }
+                    codeRepoEntity.setCommitTime(commitTimeStr);
                 }
             }
             CodeRepoFromAnalyzeLogEntity codeRepoFromAnalyzeLogEntity = codeRepoFromAnalyzeLogRepository
-                .findCodeRepoFromAnalyzeLogEntityFirstByTaskId(uploadTaskLogStepVO.getTaskId());
+                .findFirstByTaskId(uploadTaskLogStepVO.getTaskId());
             if (codeRepoFromAnalyzeLogEntity == null) {
                 codeRepoFromAnalyzeLogEntity = new CodeRepoFromAnalyzeLogEntity();
                 codeRepoFromAnalyzeLogEntity.setTaskId(uploadTaskLogStepVO.getTaskId());
@@ -371,8 +507,7 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
             } else {
                 //如果代码库有更新，都取最新的
                 Set<CodeRepoFromAnalyzeLogEntity.CodeRepo> codeRepos = codeRepoFromAnalyzeLogEntity.getCodeRepoList();
-                if (CollectionUtils.isNotEmpty(codeRepos))
-                {
+                if (CollectionUtils.isNotEmpty(codeRepos)) {
                     codeRepoSet.removeAll(codeRepos);
                     codeRepoSet.addAll(codeRepos);
                 }
@@ -380,6 +515,11 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
             }
             codeRepoFromAnalyzeLogRepository.save(codeRepoFromAnalyzeLogEntity);
             log.info("update code repo successfully!");
+
+            if (scmInfoStrBuf.length() > 0) {
+                codeRepoInfoEntity.setRepoList(Lists.newArrayList(urlBranchEntityMap.values()));
+                codeRepoInfoRepository.save(codeRepoInfoEntity);
+            }
         }
 
         if (scmInfoStrBuf.length() > 0) {
@@ -411,7 +551,8 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
                                     TaskLogEntity taskLogEntity, TaskDetailVO taskDetailVO,
                                     long taskId, String toolName) {
         //1. 推送消息至任务详情首页面
-        TaskOverviewVO.LastAnalysis lastAnalysis = assembleAnalysisResult(toolConfigBaseVO, uploadTaskLogStepVO, toolName);
+        TaskOverviewVO.LastAnalysis lastAnalysis =
+                assembleAnalysisResult(toolConfigBaseVO, uploadTaskLogStepVO, toolName);
         //获取告警数量信息
         if (ComConstants.Step4MutliTool.COMMIT.value() == uploadTaskLogStepVO.getStepNum()
                 && ComConstants.StepFlag.SUCC.value() == uploadTaskLogStepVO.getFlag()) {
@@ -429,8 +570,7 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
         List<TaskLogEntity.TaskUnit> stepArrayEntity = taskLogEntity.getStepArray();
         List<TaskLogVO.TaskUnit> stepArrayVO = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(stepArrayEntity)) {
-            stepArrayVO = stepArrayEntity.stream().map(taskUnit ->
-            {
+            stepArrayVO = stepArrayEntity.stream().map(taskUnit -> {
                 TaskLogVO.TaskUnit taskUnitVO = new TaskLogVO.TaskUnit();
                 BeanUtils.copyProperties(taskUnit, taskUnitVO);
                 return taskUnitVO;
@@ -460,11 +600,12 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
         if (taskLogOverviewVO != null
                 && taskLogOverviewVO.getTaskLogVOList() != null) {
             taskLogOverviewVO.getTaskLogVOList()
-                    .sort(Comparator.comparingInt(it -> toolOrderList.indexOf(it.getToolName())));
+                    .sort(Comparator.comparingInt(it -> toolOrderList.contains(it.getToolName())
+                            ? toolOrderList.indexOf(it.getToolName()) : Integer.MAX_VALUE));
         }
 
         WebsocketDTO websocketDTO = new WebsocketDTO(taskLogVO, lastAnalysis, taskDetailVO, taskLogOverviewVO);
-        rabbitTemplate.convertAndSend(ConstantsKt.EXCHANGE_TASKLOG_DEFECT_WEBSOCKET, "",
+        rabbitTemplate.convertAndSend(ConstantsKt.EXCHANGE_CODECCJOB_TASKLOG_WEBSOCKET, "",
                 websocketDTO);
     }
 
@@ -479,10 +620,8 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
         long startTime = uploadTaskLogStepVO.getStartTime();
         long endTime = uploadTaskLogStepVO.getEndTime();
         long elapseTime = uploadTaskLogStepVO.getElapseTime();
-        if (elapseTime == 0L)
-        {
-            if (endTime != 0 && startTime != 0 && endTime > startTime)
-            {
+        if (elapseTime == 0L) {
+            if (endTime != 0 && startTime != 0 && endTime > startTime) {
                 elapseTime = endTime - startTime;
             }
         }
@@ -502,19 +641,20 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
             for (ToolConfigInfoVO toolConfigInfoVO : toolConfigInfoVOList) {
 
                 if (ComConstants.FOLLOW_STATUS.WITHDRAW.value() != toolConfigInfoVO.getFollowStatus()) {
+                    String toolName = toolConfigInfoVO.getToolName();
                     // 获取工具展示名称
-                    ToolMetaBaseVO toolMetaBaseVO = toolMetaCacheService.getToolBaseMetaCache(toolConfigInfoVO.getToolName());
+                    ToolMetaBaseVO toolMetaBaseVO = toolMetaCacheService.getToolBaseMetaCache(toolName);
                     //添加进度条
-                    if (toolConfigInfoVO.getToolName().equalsIgnoreCase(taskLogEntity.getToolName())) {
+                    if (toolName.equalsIgnoreCase(taskLogEntity.getToolName())) {
                         Integer curStep = taskLogEntity.getCurrStep();
                         int submitStepNum = getSubmitStepNum();
-                        if (taskLogEntity.getCurrStep() == submitStepNum && taskLogEntity.getEndTime() != 0)
-                        {
+                        if (taskLogEntity.getCurrStep() == submitStepNum && taskLogEntity.getEndTime() != 0) {
                             curStep = submitStepNum + 1;
                         }
                         toolConfigInfoVO.setCurStep(curStep);
-                        toolConfigInfoVO.setStepStatus(uploadTaskLogStepVO.getFlag() == ComConstants.StepFlag.FAIL.value() ?
-                                ComConstants.StepStatus.FAIL.value() : ComConstants.StepStatus.SUCC.value());
+                        toolConfigInfoVO.setStepStatus(
+                                uploadTaskLogStepVO.getFlag() == ComConstants.StepFlag.FAIL.value()
+                                        ? ComConstants.StepStatus.FAIL.value() : ComConstants.StepStatus.SUCC.value());
                         toolConfigInfoVO.setStartTime(taskLogEntity.getStartTime());
                         totalFinishStep += toolConfigInfoVO.getCurStep();
                     } else {
@@ -525,8 +665,7 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
                         }
                     }
 
-                    switch (toolMetaBaseVO.getPattern())
-                    {
+                    switch (toolMetaBaseVO.getPattern()) {
                         case "LINT":
                             totalStep += 5;
                             break;
@@ -544,15 +683,16 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
                     minStartTime = Math.min(minStartTime, toolConfigInfoVO.getStartTime());
 
                     if (!processFlag) {
-                        processFlag = taskDetailDisplayInfo(toolConfigInfoVO, taskDetailVO, toolMetaBaseVO.getDisplayName());
+                        Locale locale = AbstractI18NResponseAspect.getLocale();
+                        String toolDisplayName = toolMetaCacheService.getDisplayNameByLocale(toolName, locale);
+                        processFlag = taskDetailDisplayInfo(toolConfigInfoVO, taskDetailVO, toolDisplayName);
                     }
                 }
             }
             if (totalStep == 0) {
                 taskDetailVO.setDisplayProgress(0);
             } else {
-                if (totalFinishStep > totalStep)
-                {
+                if (totalFinishStep > totalStep) {
                     totalFinishStep = totalStep;
                 }
                 taskDetailVO.setDisplayProgress(totalFinishStep * 100 / totalStep);
@@ -562,8 +702,7 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
             }
             if (minStartTime < Long.MAX_VALUE) {
                 taskDetailVO.setMinStartTime(minStartTime);
-            }
-            else {
+            } else {
                 taskDetailVO.setMinStartTime(0L);
             }
         }
@@ -621,7 +760,7 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
      * @param uploadTaskLogStepVO
      * @param taskVO
      */
-    private ToolConfigBaseVO updateTaskLog(TaskLogEntity taskLogEntity,
+    public ToolConfigBaseVO updateTaskLog(TaskLogEntity taskLogEntity,
                                            UploadTaskLogStepVO uploadTaskLogStepVO,
                                            TaskBaseVO taskVO) {
         appendStepInfo(taskLogEntity, uploadTaskLogStepVO, taskVO);
@@ -637,8 +776,8 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
      * @param uploadTaskLogStepVO
      * @param taskVO
      */
-    private void appendStepInfo(TaskLogEntity taskLogEntity, UploadTaskLogStepVO uploadTaskLogStepVO, TaskBaseVO taskVO)
-    {
+    private void appendStepInfo(TaskLogEntity taskLogEntity, UploadTaskLogStepVO uploadTaskLogStepVO,
+                                TaskBaseVO taskVO) {
         TaskLogEntity.TaskUnit taskStep = new TaskLogEntity.TaskUnit();
         BeanUtils.copyProperties(uploadTaskLogStepVO, taskStep);
 
@@ -671,6 +810,7 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
                 lastTaskStep.setEndTime(taskStep.getEndTime());
                 lastTaskStep.setMsg(taskStep.getMsg());
                 lastTaskStep.setElapseTime(taskStep.getEndTime() - lastTaskStep.getStartTime());
+                lastTaskStep.setRecommitTimes(taskStep.getRecommitTimes());
             } else {
                 taskLogEntity.getStepArray().add(taskStep);
                 lastTaskStep.setFlag(ComConstants.StepFlag.SUCC.value());
@@ -682,15 +822,15 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
         uploadTaskLogStepVO.setElapseTime(taskLogEntity.getElapseTime());
     }
 
-    private void setScanType(TaskLogEntity.TaskUnit taskStep, UploadTaskLogStepVO uploadTaskLogStepVO, TaskBaseVO taskVO)
-    {
+    private void setScanType(TaskLogEntity.TaskUnit taskStep, UploadTaskLogStepVO uploadTaskLogStepVO,
+                             TaskBaseVO taskVO) {
         long taskId = uploadTaskLogStepVO.getTaskId();
         String toolName = uploadTaskLogStepVO.getToolName();
         String buildId = uploadTaskLogStepVO.getPipelineBuildId();
         if (uploadTaskLogStepVO.getStepNum() == ComConstants.Step4MutliTool.SCAN.value()) {
             String scanTypeMsg = "";
             if (uploadTaskLogStepVO.isFastIncrement()) {
-                scanTypeMsg = "超快增量扫描";
+                scanTypeMsg = I18NUtils.getMessage("SCAN_TYPE_FAST_INCREMENT");
             } else {
                 String pattern = toolMetaCacheService.getToolPattern(toolName);
                 if (ComConstants.ToolPattern.LINT.name().equals(pattern)
@@ -698,13 +838,19 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
                         || ComConstants.Tool.CLOC.name().equals(pattern)) {
                     ToolBuildStackEntity toolBuildStackEntity =
                             toolBuildStackRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
-                    boolean isFullScan = toolBuildStackEntity != null ? toolBuildStackEntity.isFullScan() : true;
+                    boolean isFullScan = toolBuildStackEntity == null || toolBuildStackEntity.isFullScan();
                     if (taskVO.getScanType() != null && taskVO.getScanType() == ComConstants.ScanType.DIFF_MODE.code) {
-                        scanTypeMsg = "MR/PR扫描";
+                        scanTypeMsg = I18NUtils.getMessage("SCAN_TYPE_MR_PR_LINE_NUM");
+                    } else if (taskVO.getScanType() != null
+                            && taskVO.getScanType() == ComConstants.ScanType.FILE_DIFF_MODE.code) {
+                        scanTypeMsg = I18NUtils.getMessage("SCAN_TYPE_MR_PR_FILE");
+                    } else if (taskVO.getScanType() != null
+                            && taskVO.getScanType() == ComConstants.ScanType.BRANCH_DIFF_MODE.code) {
+                        scanTypeMsg = I18NUtils.getMessage("SCAN_TYPE_DIFF");
                     } else if (isFullScan) {
-                        scanTypeMsg = "全量扫描";
+                        scanTypeMsg = I18NUtils.getMessage("SCAN_TYPE_FULL");
                     } else {
-                        scanTypeMsg = "增量扫描";
+                        scanTypeMsg = I18NUtils.getMessage("SCAN_TYPE_FAST_FULL");
                     }
                 }
             }
@@ -788,7 +934,12 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
         setTriggerInfo(taskStep, taskBaseVO);
 
         // 2.如果是流水线任务，则查询流水线的构建信息并且保存到codecc本地
-        String buildNum = saveBuildInfo(taskLogEntity);
+        //modified  去掉，在插件运行开始的时候保存
+        BuildVO buildVO = buildService.getBuildVOByBuildId(taskLogEntity.getBuildId());
+        String buildNum = null;
+        if (null != buildVO) {
+            buildNum = buildVO.getBuildNum();
+        }
         taskLogEntity.setBuildNum(buildNum);
 
         // 3.保存分析记录
@@ -799,30 +950,6 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
         ToolConfigBaseVO finalToolConfigBaseVO = updateToolStatus(taskLogEntity);
         BeanUtils.copyProperties(finalToolConfigBaseVO, toolConfigBaseVO);
         return taskLogEntity;
-    }
-
-    /**
-     * @param taskLogEntity
-     */
-    private String saveBuildInfo(TaskLogEntity taskLogEntity) {
-        String buildNum = null;
-        String pipeline = taskLogEntity.getPipelineId();
-        String buildId = taskLogEntity.getBuildId();
-        if (StringUtils.isNotEmpty(pipeline) && StringUtils.isNotEmpty(buildId)) {
-            BuildEntity buildEntity = buildRepository.findFirstByBuildId(buildId);
-            if (buildEntity == null) {
-                BuildEntity buildInfo = pipelineService.getBuildIdInfo(buildId);
-                if (buildInfo != null) {
-                    buildRepository.save(buildInfo);
-                    buildNum = buildInfo.getBuildNo();
-                }
-            } else {
-                buildNum = buildEntity.getBuildNo();
-            }
-            log.info("save build info finish, buildNum is {}", buildNum);
-        }
-
-        return buildNum;
     }
 
     /**
@@ -844,16 +971,12 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
         //蓝盾流水线创建的codecc任务
         if (ComConstants.BsTaskCreateFrom.BS_PIPELINE.value().equals(taskBaseVO.getCreateFrom())) {
             triggerInfo = "流水线（" + taskBaseVO.getNameCn() + "）触发";
-        }
-        //codecc服务创建的codecc任务
-        else if (ComConstants.BsTaskCreateFrom.BS_CODECC.value().equals(taskBaseVO.getCreateFrom())) {
+        } else if (ComConstants.BsTaskCreateFrom.BS_CODECC.value().equals(taskBaseVO.getCreateFrom())) {
+            //codecc服务创建的codecc任务
             String msg = taskStep.getMsg();
-            if (StringUtils.isEmpty(msg))
-            {
+            if (StringUtils.isEmpty(msg)) {
                 triggerInfo = "定时触发";
-            }
-            else
-            {
+            } else {
                 triggerInfo = msg;
             }
         }
@@ -898,7 +1021,8 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
         toolConfigBaseVO.setToolName(taskLogEntity.getToolName());
 
         toolConfigBaseVO.setCurStep(curStep);
-        int stepStatus = taskLogEntity.getFlag() == ComConstants.StepFlag.FAIL.value() ? ComConstants.StepStatus.FAIL.value() : ComConstants.StepStatus.SUCC.value();
+        int stepStatus = taskLogEntity.getFlag() == ComConstants.StepFlag.FAIL.value()
+                ? ComConstants.StepStatus.FAIL.value() : ComConstants.StepStatus.SUCC.value();
         toolConfigBaseVO.setStepStatus(stepStatus);
         toolConfigBaseVO.setCurrentBuildId(taskLogEntity.getBuildId());
 
@@ -923,7 +1047,8 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
      */
     public void saveFirstSuccessAnalyszeTime(long taskId, String toolName) {
         //设置首次成功扫描完成时间为区分文件新增与历史的时间
-        FirstAnalysisSuccessEntity firstSuccessTimeEntity = firstSuccessTimeRepository.findFirstByTaskIdAndToolName(taskId, toolName);
+        FirstAnalysisSuccessEntity firstSuccessTimeEntity =
+                firstSuccessTimeRepository.findFirstByTaskIdAndToolName(taskId, toolName);
         if (firstSuccessTimeEntity == null) {
             firstSuccessTimeEntity = new FirstAnalysisSuccessEntity();
             firstSuccessTimeEntity.setTaskId(taskId);

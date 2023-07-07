@@ -9,27 +9,42 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package com.tencent.bk.codecc.task.vo;
 
-import com.tencent.devops.common.constant.ComConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * 任务清单查询请求视图
- * 
+ *
  * @date 2020/2/11
  * @version V1.0
  */
 @Data
 @ApiModel("任务清单查询请求视图")
-public class TaskListReqVO 
-{
+public class TaskListReqVO {
     @ApiModelProperty("任务状态")
     private TaskListStatus taskStatus;
 
     @ApiModelProperty("任务名: bs_pipeline -- 流水线;  bs_codecc;服务创建")
     private String taskSource;
+
+    @ApiModelProperty(value = "第几页")
+    private int page = 0;
+
+    @ApiModelProperty(value = "每页多少条")
+    private int pageSize = 10;
+
+    @ApiModelProperty(value = "是否分页")
+    private Boolean pageable;
+
+    @ApiModelProperty(value = "是否展示已停用任务")
+    private Boolean showDisabledTask;
+
+    @ApiModelProperty("任务状态集合")
+    private List<TaskListStatus> taskStatusList;
 }

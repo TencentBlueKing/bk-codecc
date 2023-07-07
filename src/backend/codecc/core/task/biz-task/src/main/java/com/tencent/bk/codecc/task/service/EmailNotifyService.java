@@ -12,12 +12,15 @@
 
 package com.tencent.bk.codecc.task.service;
 
+import com.tencent.bk.codecc.defect.dto.IgnoreTypeEmailDTO;
 import com.tencent.bk.codecc.quartz.pojo.OperationType;
 import com.tencent.bk.codecc.task.pojo.EmailMessageModel;
 import com.tencent.bk.codecc.task.pojo.EmailNotifyModel;
 import com.tencent.bk.codecc.task.pojo.RtxNotifyModel;
 import com.tencent.bk.codecc.task.pojo.WeChatMessageModel;
+import com.tencent.devops.common.api.RtxNotifyVO;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -73,4 +76,31 @@ public interface EmailNotifyService
      * @return 更新命中的taskId
      */
     List<Long> turnOnWechatNotifyForGongFeng(Integer bgId, Integer deptId, Integer centerId);
+
+    /**
+     * 评论问题企业微信通知@到的开发者
+     *
+     * @param rtxNotifyVO 企业微信通知视图
+     * @return boolean
+     */
+    Boolean codeCommentSendRtx(RtxNotifyVO rtxNotifyVO);
+
+
+    /**
+     * 计算定时报告cron表达式
+     *
+     * @param dates 非quartz表达式的星期，单纯的周一~周日对应1~7
+     * @param hour
+     * @return
+     */
+    String calcDailyEmailCronExpression(Collection<Integer> dates, Integer hour);
+
+    /**
+     * 修复定时报告相关数据
+     */
+    void fixDailyEmailQuartz();
+
+    void commonSendRtx(RtxNotifyVO rtxNotifyVO);
+
+    void sendIgnoreTypeReportEmail(IgnoreTypeEmailDTO ignoreTypeEmailDTO);
 }

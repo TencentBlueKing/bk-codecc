@@ -30,8 +30,10 @@ import com.tencent.bk.codecc.task.model.TaskInfoEntity;
 import com.tencent.bk.codecc.task.model.ToolConfigInfoEntity;
 import com.tencent.bk.codecc.task.vo.*;
 import com.tencent.bk.codecc.task.vo.checkerset.ToolCheckerSetVO;
+import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.ToolMetaBaseVO;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 
 import java.util.List;
 
@@ -206,6 +208,15 @@ public interface ToolService
      * @return boolean
      */
     Boolean batchUpdateToolFollowStatus(Integer pageSize);
+
+    /**
+     * 根据taskId集合刷新工具的跟进状态
+     *
+     * @param userName 用户名
+     * @param reqVO    请求体
+     * @return boolean
+     */
+    Boolean refreshToolFollowStatusByTaskIds(String userName, QueryTaskListReqVO reqVO);
 
     /**
      * 仅用于初始化查询工具数量

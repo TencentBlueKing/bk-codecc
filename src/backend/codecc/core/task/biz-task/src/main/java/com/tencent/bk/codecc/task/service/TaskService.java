@@ -30,27 +30,30 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.tencent.bk.codecc.task.enums.TaskSortType;
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
 import com.tencent.bk.codecc.task.vo.MetadataVO;
-import com.tencent.bk.codecc.task.pojo.GongfengPublicProjModel;
 import com.tencent.bk.codecc.task.vo.NotifyCustomVO;
+import com.tencent.bk.codecc.task.vo.RuntimeUpdateMetaVO;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
 import com.tencent.bk.codecc.task.vo.TaskCodeLibraryVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
+import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigRequest;
+import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse;
 import com.tencent.bk.codecc.task.vo.TaskListReqVO;
 import com.tencent.bk.codecc.task.vo.TaskListVO;
 import com.tencent.bk.codecc.task.vo.TaskMemberVO;
 import com.tencent.bk.codecc.task.vo.TaskOverviewVO;
 import com.tencent.bk.codecc.task.vo.TaskOwnerAndMemberVO;
 import com.tencent.bk.codecc.task.vo.TaskStatusVO;
+import com.tencent.bk.codecc.task.vo.TaskUpdateDeptInfoVO;
 import com.tencent.bk.codecc.task.vo.TaskUpdateVO;
 import com.tencent.bk.codecc.task.vo.pipeline.PipelineTaskVO;
 import com.tencent.bk.codecc.task.vo.scanconfiguration.ScanConfigurationVO;
 import com.tencent.bk.codecc.task.vo.tianyi.QueryMyTasksReqVO;
 import com.tencent.bk.codecc.task.vo.tianyi.TaskInfoVO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
+import com.tencent.devops.common.api.StatisticTaskCodeLineToolVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.pojo.Page;
 import com.tencent.devops.common.constant.ComConstants;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,8 +64,7 @@ import java.util.Set;
  * @version V1.0
  * @date 2019/4/23
  */
-public interface TaskService
-{
+public interface TaskService {
 
     /**
      * 查询任务清单
@@ -131,13 +133,24 @@ public interface TaskService
     Boolean updateTask(TaskUpdateVO taskUpdateVO, Long taskId, String userName);
 
     /**
-     * 修改任务基本信息 - 内部服务间调用
+     * 修改任务repoOwner
      *
-     * @param taskUpdateVO
+     * @param taskId
+     * @param repoOwners
      * @param userName
      * @return
      */
-    Boolean updateTaskByServer(TaskUpdateVO taskUpdateVO, String userName);
+    Boolean updateTaskRepoOwner(Long taskId, List<String> repoOwners, String userName);
+
+
+    /**
+     * 修改任务repoOwner
+     *
+     * @param taskId
+     * @param userName
+     * @return
+     */
+    Boolean updateRuntimeInfo(Long taskId, RuntimeUpdateMetaVO runtimeUpdateMetaVO, String userName);
 
     /**
      * 获取任务信息概览
@@ -184,6 +197,17 @@ public interface TaskService
      */
     Boolean stopTask(String pipelineId, String disabledReason, String userName);
 
+    /**
+     * 停用单个流水线任务
+     *
+     * @param pipelineId
+     * @param multiPipelineMark
+     * @param disabledReason
+     * @param userName
+     * @return
+     */
+    Boolean stopSinglePipelineTask(String pipelineId, String multiPipelineMark,
+            String disabledReason, String userName);
 
     /**
      * 停用任务
@@ -249,6 +273,7 @@ public interface TaskService
 
     /**
      * 手动触发分析-不加代理
+     *
      * @param taskId
      * @param isFirstTrigger
      * @param userName
@@ -268,11 +293,12 @@ public interface TaskService
 
     /**
      * 发送任务开始信号
+     *
      * @param taskId
      * @param buildId
      * @return
      */
-    Boolean sendStartTaskSignal(Long taskId, String buildId);
+    Boolean sendStartTaskSignal(Long taskId, String buildId, Integer timeout);
 
 
     /**
@@ -282,7 +308,43 @@ public interface TaskService
      * @param user
      * @return
      */
-    PipelineTaskVO getTaskInfoByPipelineId(String pipelineId, String user);
+    PipelineTaskVO getTaskInfoByPipelineId(String pipelineId, String multiPipelineMark, String user);
+
+    /**
+     * 通过流水线ID获取任务信息
+     *
+     * @param pipelineId
+     * @param user
+     * @return
+     */
+    List<PipelineTaskVO> getTaskInfoByPipelineId(String pipelineId, String user);
+
+    /**
+     * 通过流水线ID获取任务ID
+     *
+     * @param pipelineId
+     * @param user
+     * @return
+     */
+    List<Long> getTaskIdsByPipelineId(String pipelineId, String user);
+
+    /**
+     * 检查工具是否已经下架
+     *
+     * @param toolName
+     * @param taskInfoEntity
+     * @return true:已下架，false:未下架
+     */
+    boolean checkToolRemoved(String toolName, TaskInfoEntity taskInfoEntity);
+
+    /**
+     * 通过流水线信息获取任务id
+     *
+     * @param pipelineId
+     * @param multiPipelineMark
+     * @return
+     */
+    Long getTaskIdByPipelineInfo(String pipelineId, String multiPipelineMark);
 
 
     /**
@@ -302,15 +364,8 @@ public interface TaskService
     TaskInfoEntity getTaskById(Long taskId);
 
     /**
-     * 保存任务信息
-     *
-     * @param taskInfoEntity
-     * @return
-     */
-    Boolean saveTaskInfo(TaskInfoEntity taskInfoEntity);
-
-    /**
      * 根据bg id查询任务清单
+     *
      * @param bgId
      * @return
      */
@@ -318,10 +373,11 @@ public interface TaskService
 
     /**
      * 通过task id查询任务清单
+     *
      * @param taskIds
      * @return
      */
-    public List<TaskBaseVO> getTasksByIds(List<Long> taskIds);
+    List<TaskBaseVO> getTasksByIds(List<Long> taskIds);
 
 
     /**
@@ -344,6 +400,7 @@ public interface TaskService
 
     /**
      * 更新定时报告信息
+     *
      * @param taskId
      * @param notifyCustomVO
      */
@@ -351,6 +408,7 @@ public interface TaskService
 
     /**
      * 更新置顶用户信息
+     *
      * @param taskId
      * @param user
      * @return
@@ -375,12 +433,14 @@ public interface TaskService
 
     /**
      * api使用作者转换
+     *
      * @param taskId
      * @param transferAuthorPairs
      * @param userId
      * @return
      */
-    Boolean authorTransferForApi(Long taskId, List<ScanConfigurationVO.TransferAuthorPair> transferAuthorPairs, String userId);
+    Boolean authorTransferForApi(Long taskId, List<ScanConfigurationVO.TransferAuthorPair> transferAuthorPairs,
+            String userId);
 
 
     /**
@@ -392,13 +452,7 @@ public interface TaskService
     Set<Integer> queryDeptIdByBgId(Integer bgId);
 
     /**
-     * 按工蜂id获取任务实体清单
-     * @param gongfengProjectId
-     * @return
-     */
-    TaskInfoEntity getTaskByGongfengId(Integer gongfengProjectId);
-
-    /** 多条件查询任务列表
+     * 多条件查询任务列表
      *
      * @param taskListReqVO 请求体
      * @return 任务列表
@@ -422,46 +476,21 @@ public interface TaskService
 
     /**
      * 更新任务管理员和任务成员
-     * @param taskOwnerAndMemberVO
+     *
+     * @param vo
      * @param taskId
      */
-    void updateTaskOwnerAndMember(TaskOwnerAndMemberVO taskOwnerAndMemberVO, Long taskId);
+    void updateTaskOwnerAndMember(TaskOwnerAndMemberVO vo, Long taskId);
 
-    /**
-     * 获取蓝盾插件开源扫描任务信息
-     *
-     */
-    List<Long> getBkPluginTaskIds();
 
     /**
      * 触发蓝盾插件打分任务
-     *
      */
     Boolean triggerBkPluginScoring();
 
-    List<MetadataVO> listTaskToolDimension(Long taskId);
-
-    /**
-     * 根据代码库别名获取任务信息
-     *
-     * @param aliasName
-     */
-    TaskDetailVO getTaskInfoByAliasName(String aliasName);
-
-    /**
-     * 根据代码库id获取任务状态
-     *
-     * @param id
-     */
-    TaskDetailVO getTaskInfoByGongfengId(int id, GongfengPublicProjModel gongfengPublicProjModel);
-
-    /**
-     * 根据工蜂代码库创建扫描任务并计入开源扫描任务
-     */
-//    Boolean createTaskByRepoId(String repoId, List<String> langs);
-
     /**
      * 按创建来源查询任务ID
+     *
      * @param taskCreateFrom 任务来源列表
      * @return list
      */
@@ -500,7 +529,61 @@ public interface TaskService
 
     /**
      * 添加路径白名单
-     *
      */
     boolean addWhitePath(long taskId, List<String> pathList);
+
+    /**
+     * 编辑任务信息
+     *
+     * @param reqVO 请求体
+     * @return bool
+     */
+    Boolean editTaskDetail(TaskUpdateDeptInfoVO reqVO);
+
+    /**
+     * 按任务id获取项目id map
+     */
+    Map<Long, String> getProjectIdMapByTaskId(QueryTaskListReqVO taskListReqVO);
+
+    Map<String, Set<Long>> queryTaskIdByWithdrawTool(Set<String> toolSet);
+
+    long countTaskSize();
+
+    List<TaskDetailVO> getTaskIdByPage(int page, int pageSize);
+
+    /**
+     * 定时任务统计任务数、代码行、工具数
+     *
+     * @param reqVO 请求体
+     */
+    void statisticTaskCodeLineTool(StatisticTaskCodeLineToolVO reqVO);
+
+    List<TaskBaseVO> queryTaskListByProjectId(String projectId);
+
+    List<String> queryProjectIdPage(Set<String> createFrom, Integer pageNum, Integer pageSize);
+
+    List<Long> queryTaskIdPageByProjectId(String projectId, Integer pageNum, Integer pageSize);
+
+    /**
+     * 获取任务详情，且工具信息是已排序的
+     *
+     * @param request
+     * @return
+     */
+    TaskInfoWithSortedToolConfigResponse getTaskInfoWithSortedToolConfig(
+            TaskInfoWithSortedToolConfigRequest request
+    );
+
+    List<TaskBaseVO> getTaskIdAndCreateFromWithPage(long lastTaskId, Integer limit);
+
+    List<TaskBaseVO> listTaskBase(String userId, String projectId);
+
+    List<Long> queryTaskIdByProjectIdWithPermission(String projectId, String userId);
+
+    Map<Long, String> listTaskNameCn(List<Long> taskIdList);
+
+    boolean multiTaskVisitable(String projectId);
+
+
+    List<MetadataVO> listTaskToolDimension(List<Long> taskIdList, String projectId);
 }

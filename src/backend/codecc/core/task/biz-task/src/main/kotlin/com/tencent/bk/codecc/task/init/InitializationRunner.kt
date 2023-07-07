@@ -31,6 +31,7 @@ import com.tencent.bk.codecc.task.dao.mongorepository.BaseDataRepository
 import com.tencent.bk.codecc.task.dao.mongorepository.TaskRepository
 import com.tencent.bk.codecc.task.model.OpenSourceCheckerSet
 import com.tencent.bk.codecc.task.model.TaskInfoEntity
+import com.tencent.bk.codecc.task.service.AdminAuthorizeService
 import com.tencent.bk.codecc.task.service.code.InitResponseCode
 import com.tencent.devops.common.auth.api.pojo.external.KEY_ADMIN_MEMBER
 import com.tencent.devops.common.auth.api.pojo.external.KEY_CREATE_FROM
@@ -53,12 +54,13 @@ import org.springframework.stereotype.Component
 
 @Component
 class InitializationRunner @Autowired constructor(
-        private val initResponseCode: InitResponseCode,
-        private val taskRepository: TaskRepository,
-        private val baseDataRepository: BaseDataRepository,
-        private val redisTemplate: RedisTemplate<String, String>,
-        private val toolMetaCacheService: ToolMetaCacheService,
-        private val commonDao: CommonDao
+    private val initResponseCode: InitResponseCode,
+    private val taskRepository: TaskRepository,
+    private val baseDataRepository: BaseDataRepository,
+    private val redisTemplate: RedisTemplate<String, String>,
+    private val toolMetaCacheService: ToolMetaCacheService,
+    private val adminAuthorizeService: AdminAuthorizeService,
+    private val commonDao: CommonDao
 ) : CommandLineRunner {
 
     @Value("\${auth.url:#{null}}")
@@ -175,12 +177,17 @@ class InitializationRunner @Autowired constructor(
          * 234: S3
          * 955: 其他
          */
-        val baseDataEntityList = baseDataRepository.findAllByParamType("BG_ADMIN_MEMBER")
-        if (!baseDataEntityList.isNullOrEmpty()) {
-            baseDataEntityList.forEach {
-                redisTemplate.opsForHash<String, String>()
-                    .put(RedisKeyConstants.KEY_USER_BG_ADMIN, it.paramCode, it.paramValue)
-            }
+//        val baseDataEntityList = baseDataRepository.findAllByParamType("BG_ADMIN_MEMBER")
+//        if (!baseDataEntityList.isNullOrEmpty()) {
+//            baseDataEntityList.forEach {
+//                redisTemplate.opsForHash<String, String>()
+//                    .put(RedisKeyConstants.KEY_USER_BG_ADMIN, it.paramCode, it.paramValue)
+//            }
+//        }
+        // 新BG管理员清单
+        val initializationBgAdminMember = adminAuthorizeService.initializationBgAdminMember()
+        if (initializationBgAdminMember) {
+            logger.info("initialization BgAdminMember success.")
         }
     }
 
@@ -239,18 +246,13 @@ class InitializationRunner @Autowired constructor(
                     }
                 }
 
-                if (needBgCache) {
-                    redisTemplate.execute { connection ->
-                        for (task in pageTasks) {
-                            // 如果是工蜂，则要加映射信息
-                            if (ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value() == task.createFrom) {
-                                connection.hSet(
-                                    RedisKeyConstants.KEY_TASK_BG_MAPPING.toByteArray(),
-                                    task.taskId.toString().toByteArray(),
-                                    task.bgId.toString().toByteArray()
-                                )
-                            }
-                        }
+                redisTemplate.execute { connection ->
+                    for (task in pageTasks) {
+                        connection.hSet(
+                            RedisKeyConstants.KEY_TASK_BG_MAPPING.toByteArray(),
+                            task.taskId.toString().toByteArray(),
+                            task.bgId.toString().toByteArray()
+                        )
                     }
                 }
 

@@ -93,6 +93,7 @@ public class AbstractCommitDefectRabbitMQConfig
         SimpleMessageListenerContainer container = factory.createListenerContainer(endpoint);
         container.setConnectionFactory(connectionFactory);
         container.setQueueNames(queueName);
+        container.setPrefetchCount(1);
         container.setConcurrentConsumers(concurrentConsumers);
         container.setMaxConcurrentConsumers(maxConcurrentConsumers);
         return container;

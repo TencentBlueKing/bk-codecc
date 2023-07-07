@@ -2,7 +2,7 @@ package com.tencent.bk.codecc.task.api;
 
 import com.tencent.bk.codecc.task.vo.GrayTaskStatVO;
 import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -27,7 +27,7 @@ public interface ServiceGrayToolProjectResource {
     @ApiOperation("查询构建ID关系")
     @Path("/project/{projectId}")
     @GET
-    Result<GrayToolProjectVO> getGrayToolProjectInfoByProjrctId(
+    Result<GrayToolProjectVO> getGrayToolProjectInfoByProjectId(
             @ApiParam(value = "项目ID")
             @PathParam("projectId")
                     String projectId);

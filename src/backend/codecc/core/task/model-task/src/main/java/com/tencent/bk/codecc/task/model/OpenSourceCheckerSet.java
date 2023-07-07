@@ -12,6 +12,7 @@
  
 package com.tencent.bk.codecc.task.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -26,14 +27,22 @@ import java.util.Set;
 @Data
 public class OpenSourceCheckerSet {
     @Field("checker_set_id")
+    @JsonProperty("checker_set_id")
     private String checkerSetId;
 
     @Field("tool_list")
+    @JsonProperty("tool_list")
     private Set<String> toolList;
 
     @Field("checker_set_type")
+    @JsonProperty("checker_set_type")
     private String checkerSetType;
 
     @Field("version")
+    @JsonProperty("version")
     private Integer version;
+
+    @Field("last_version")
+    @JsonProperty("last_version")
+    private Integer lastVersion;
 }

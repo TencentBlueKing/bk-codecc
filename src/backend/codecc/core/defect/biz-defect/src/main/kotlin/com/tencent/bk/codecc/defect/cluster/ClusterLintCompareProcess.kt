@@ -1,7 +1,8 @@
 package com.tencent.bk.codecc.defect.cluster
 
-import com.tencent.bk.codecc.defect.model.LintDefectV2Entity
+import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectOutputModelV2
+import com.tencent.devops.common.web.aop.annotation.LogTime
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.util.concurrent.CopyOnWriteArrayList
@@ -19,11 +20,20 @@ class ClusterLintCompareProcess : AbstractClusterCompareProcess<LintDefectV2Enti
         return aggregateDefectInputList.groupBy { it.pinpointHash }
     }
 
+    override fun getLineNumList(aggregateDefectInputList: List<LintDefectV2Entity>): Set<Int>? {
+        val lineNumSet = mutableSetOf<Int>()
+        aggregateDefectInputList.forEach {
+            lineNumSet.add(it.lineNum)
+        }
+        return lineNumSet
+    }
+
     /**
      * 聚类主方法
      * @param inputDefectList 输入告警清单
      * @param md5SameMap md5相同映射
      */
+    @LogTime(threshold = 15,unit = TimeUnit.MINUTES)
     @ExperimentalUnsignedTypes
     override fun clusterMethod(
         inputDefectList: List<LintDefectV2Entity>,
@@ -51,11 +61,15 @@ class ClusterLintCompareProcess : AbstractClusterCompareProcess<LintDefectV2Enti
                         } else {
                             configAndCompare(u)
                         }
-                        outputFileList.addAll(outputFileMap.map {
+                        val defectOutputList = outputFileMap.map {
                             AggregateDefectOutputModelV2(
-                                defects = it.value
+                                    defects = it.value
                             )
-                        })
+                        }
+                        //使用同步方法块保证，LinkedList在多线程addAll过程中的安全性
+                        synchronized(outputFileList){
+                            outputFileList.addAll(defectOutputList)
+                        }
                     } catch (e: Exception) {
                         logger.info("config and compare elements fail! index is $t, msg is${e.message}")
                     } finally {
@@ -65,11 +79,15 @@ class ClusterLintCompareProcess : AbstractClusterCompareProcess<LintDefectV2Enti
             }
             //定时,超时2个小时自动超时
             lock.await(2, TimeUnit.HOURS)
-        } catch (e: Exception) {
+        } catch (e : InterruptedException) {
+            logger.info("execute cluster process fail!CountDownLatch Await More Than 2 Hours!InputDefectList " +
+                    "Size:${inputDefectList.size}，Exception Msg is ${e.message}")
+        }catch (e: Exception) {
             logger.info("execute cluster process fail!")
         } finally {
             executor.shutdownNow()
         }
         return outputFileList
     }
+
 }

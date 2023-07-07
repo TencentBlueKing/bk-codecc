@@ -55,6 +55,12 @@ public class ChartLegacyListVO
     @ApiModelProperty("历史告警图表展示的最低数量")
     private Integer historyMinHeight;
 
+    @ApiModelProperty("图表展示的最高数量")
+    private Integer maxHeight;
+
+    @ApiModelProperty("图表展示的最低数量")
+    private Integer minHeight;
+
     @ApiModelProperty("告警遗留列表")
     private List<ChartLegacyVO> legacyList;
 
@@ -89,6 +95,8 @@ public class ChartLegacyListVO
         this.newMinHeight = newMin;
         this.historyMaxHeight = oldMax;
         this.historyMinHeight = oldMin;
+        this.maxHeight = this.newMaxHeight + this.historyMaxHeight;
+        this.minHeight = this.newMinHeight + this.historyMinHeight;
     }
 
 }

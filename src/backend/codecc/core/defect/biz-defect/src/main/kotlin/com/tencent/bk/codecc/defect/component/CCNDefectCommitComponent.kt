@@ -5,13 +5,13 @@ import com.tencent.bk.codecc.defect.cluster.ClusterCCNCompareProcess
 import com.tencent.bk.codecc.defect.component.abstract.AbstractDefectCommitComponent
 import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository
 import com.tencent.bk.codecc.defect.model.BuildEntity
-import com.tencent.bk.codecc.defect.model.CCNDefectEntity
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity
+import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectNewInputModel
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectOutputModelV2
 import com.tencent.bk.codecc.defect.pojo.DefectClusterDTO
-import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.api.codecc.util.JsonUtil
+import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.api.util.UUIDUtil
 import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.constant.CommonMessageCode
@@ -25,10 +25,10 @@ class CCNDefectCommitComponent constructor(
     private val ccnDefectRepository: CCNDefectRepository,
     private val clusterCCNCompareProcess: ClusterCCNCompareProcess,
     private val newCCNDefectTracingComponent: NewCCNDefectTracingComponent,
-    scmJsonComponent: ScmJsonComponent
-) : AbstractDefectCommitComponent<CCNDefectEntity>(scmJsonComponent){
+    private val scmJsonComponent: ScmJsonComponent
+) : AbstractDefectCommitComponent<CCNDefectEntity>(scmJsonComponent) {
 
-    companion object{
+    companion object {
         private val logger = LoggerFactory.getLogger(CCNDefectCommitComponent::class.java)
     }
 
@@ -62,14 +62,15 @@ class CCNDefectCommitComponent constructor(
             val outputDefectList = clusterCCNCompareProcess.clusterMethod(inputDefectList, md5SameMap)
             logger.info("[ccn cluster process] cluster result, output group size: ${outputDefectList.size}")
             //6. 对于聚类结果进行后处理
-            val upsertDefectList = postHandleDefectList(outputDefectList, buildEntity, transferAuthorList)
+            val upsertDefectList = postHandleDefectList(
+                outputDefectList, buildEntity, transferAuthorList, commitDefectVO.isReallocate)
             logger.info("[ccn cluster process] post handle result, result defect size: ${upsertDefectList.size}")
             //7. 分批保存告警
             newCCNDefectTracingComponent.saveDefects(
                 commitDefectVO.taskId,
                 commitDefectVO.toolName,
-                aggregateDefectNewInputModel.filterPath,
-                aggregateDefectNewInputModel.pathList,
+                aggregateDefectNewInputModel.filterPaths,
+                aggregateDefectNewInputModel.whitePaths,
                 buildEntity,
                 upsertDefectList
             )
@@ -88,19 +89,19 @@ class CCNDefectCommitComponent constructor(
         currentDefectList: List<CCNDefectEntity>,
         preDefectList: List<CCNDefectEntity>,
         md5SameMap: MutableMap<String, Boolean>
-    ): List<CCNDefectEntity>{
+    ): List<CCNDefectEntity> {
         val md5Map = getMd5Map(streamName, toolName, buildId)
         val relPathMap = mutableMapOf<String, String>()
         val finalDefectList = mutableListOf<CCNDefectEntity>()
         //1.先处理本次上报的告警
         currentDefectList.forEach {
-            if(!it.relPath.isNullOrBlank()){
+            if (!it.relPath.isNullOrBlank()) {
                 relPathMap[it.relPath] = it.filePath
             }
             it.md5 = md5Map[it.filePath]
             it.entityId = ObjectId.get().toString()
             it.newDefect = true
-            if(it.status == 0){
+            if (it.status == 0) {
                 it.status = ComConstants.DefectStatus.NEW.value()
             }
         }
@@ -109,11 +110,11 @@ class CCNDefectCommitComponent constructor(
         val processedPreDefectList = preDefectList.filter { !it.pinpointHash.isNullOrBlank() }
         processedPreDefectList.forEach {
             it.newDefect = false
-            if(it.status == 0){
+            if (it.status == 0) {
                 it.status = ComConstants.DefectStatus.NEW.value()
             }
             val filePath = relPathMap[it.relPath]
-            if(!filePath.isNullOrBlank()){
+            if (!filePath.isNullOrBlank()) {
                 it.filePath = filePath
             }
             val fileMd5 = md5Map[it.filePath]
@@ -134,19 +135,23 @@ class CCNDefectCommitComponent constructor(
 
 
     override fun getCurrentDefectList(
-        inputFileName: String
+        inputFilePath: String
     ): AggregateDefectNewInputModel<CCNDefectEntity> {
-        val inputFile = File(inputFileName)
-        var i=0
-        while (!inputFile.exists() && i < 3){
+        val inputFileName = inputFilePath.substring(inputFilePath.lastIndexOf("/") + 1)
+        val inputFile = File(inputFilePath)
+        var i = 0
+        while (!inputFile.exists() && i < 3) {
+            scmJsonComponent.indexNoThrow(inputFileName, ScmJsonComponent.AGGREGATE)
             Thread.sleep(10000L)
             i++
         }
-        if(!inputFile.exists()){
+        if (!inputFile.exists()) {
             logger.info("input file not exists! will return null")
             throw CodeCCException(CommonMessageCode.SYSTEM_ERROR)
         }
-        return JsonUtil.to(inputFile.readText(), object : TypeReference<AggregateDefectNewInputModel<CCNDefectEntity>>() {})
+        return JsonUtil.to(
+            inputFile.readText(),
+            object : TypeReference<AggregateDefectNewInputModel<CCNDefectEntity>>() {})
     }
 
 
@@ -155,8 +160,8 @@ class CCNDefectCommitComponent constructor(
      */
     override fun getPreDefectList(
         defectClusterDTO: DefectClusterDTO,
-        relPathSet : Set<String>?,
-        filePathSet : Set<String>?
+        relPathSet: Set<String>?,
+        filePathSet: Set<String>?
     ): List<CCNDefectEntity> {
         val taskId = defectClusterDTO.commitDefectVO.taskId
         val finalDefects = mutableListOf<CCNDefectEntity>()
@@ -180,14 +185,14 @@ class CCNDefectCommitComponent constructor(
     }
 
 
-
     /**
      * 告警清单后处理
      */
     override fun postHandleDefectList(
         outputDefectList: List<AggregateDefectOutputModelV2<CCNDefectEntity>>,
         buildEntity: BuildEntity?,
-        transferAuthorList: List<TransferAuthorEntity.TransferAuthorPair>?
+        transferAuthorList: List<TransferAuthorEntity.TransferAuthorPair>?,
+        isReallocate: Boolean?
     ): List<CCNDefectEntity> {
         if (outputDefectList.isNullOrEmpty()) {
             logger.info("output defect list is empty! build id: ${buildEntity?.buildId}")
@@ -208,10 +213,14 @@ class CCNDefectCommitComponent constructor(
              */
             if (newDefects.isNullOrEmpty()) {
                 oldDefects.forEach { oldDefect ->
-                    if(oldDefect.status == ComConstants.DefectStatus.NEW.value()){
+                    if (oldDefect.status == ComConstants.DefectStatus.NEW.value()) {
                         fixDefect(oldDefect, buildEntity)
                         oldDefect.pinpointHashGroup = groupId
                         upsertDefectList.add(oldDefect)
+                    }
+                    // 判断是否配置了处理人重新分配
+                    if (true == isReallocate) {
+                        transferAuthor(oldDefect, transferAuthorList)
                     }
                 }
             } else {
@@ -220,6 +229,7 @@ class CCNDefectCommitComponent constructor(
                  * 1.有对应老告警：
                  *   1.1 老告警是已修复，则变为重新打开
                  *   1.2 老告警是其他状态，则不变更状态直接上报
+                 *   1.3 老告警是忽略状态，且注释忽略为flag为true，且新告警注释忽略flag为false，则变为重新打开，老告警注释忽略flag配置为false
                  * 2.无对应老告警
                  *   2.1 告警是首次创建的告警
                  * 3.老告警列表比新告警多，部分老告警没有对应的新告警
@@ -236,9 +246,33 @@ class CCNDefectCommitComponent constructor(
                     }
                     if (null != selectedOldDefect) {
                         //用新告警信息更新老告警信息
-                        updateOldDefectInfo(selectedOldDefect, newDefect, transferAuthorList)
-                        if (selectedOldDefect.status and ComConstants.DefectStatus.FIXED.value() > 0) {
-                            reopenDefect(selectedOldDefect)
+                        updateOldDefectInfo(selectedOldDefect, newDefect, transferAuthorList, buildEntity, isReallocate)
+                        // 设置是否处理的状态
+                        if (null != selectedOldDefect.mark
+                                && selectedOldDefect.mark.equals(ComConstants.MarkStatus.MARKED.value())
+                                && selectedOldDefect.status.equals(ComConstants.DefectStatus.NEW.value())
+                        ) {
+                            selectedOldDefect.markButNoFixed = true
+                        }
+                        val ignoreFlag = null != newDefect.ignoreCommentDefect && newDefect.ignoreCommentDefect
+                        if (ignoreFlag) {
+                            if (selectedOldDefect.status == ComConstants.DefectStatus.NEW.value()) {
+                                ignoreDefect(
+                                    selectedOldDefect, newDefect.author, newDefect.ignoreCommentReason,
+                                    buildEntity?.buildId
+                                )
+                            }
+                        } else {
+                            if (selectedOldDefect.status and ComConstants.DefectStatus.FIXED.value() > 0) {
+                                reopenDefect(selectedOldDefect)
+                            }
+                            if ((selectedOldDefect.status and ComConstants.DefectStatus.IGNORE.value() > 0) &&
+                                    null != selectedOldDefect.ignoreCommentDefect && selectedOldDefect.ignoreCommentDefect &&
+                                    (null == newDefect.ignoreCommentDefect || !newDefect.ignoreCommentDefect)
+                            ) {
+                                selectedOldDefect.ignoreCommentDefect = false
+                                reopenDefect(selectedOldDefect)
+                            }
                         }
                         if (selectedOldDefect.author.isNullOrBlank()) {
                             selectedOldDefect.author = newDefect.author
@@ -250,6 +284,12 @@ class CCNDefectCommitComponent constructor(
                         if (null != buildEntity) {
                             selectedOldDefect.createBuildNumber = buildEntity.buildNo
                         }
+                        if (null != selectedOldDefect.ignoreCommentDefect && selectedOldDefect.ignoreCommentDefect) {
+                            ignoreDefect(
+                                selectedOldDefect, selectedOldDefect.author,
+                                selectedOldDefect.ignoreCommentReason, buildEntity?.buildId
+                            )
+                        }
                         //作者转换
                         transferAuthor(selectedOldDefect, transferAuthorList)
                     }
@@ -257,8 +297,8 @@ class CCNDefectCommitComponent constructor(
                     upsertDefectList.add(selectedOldDefect)
                 }
                 //老告警比新告警多出来的那部分告警变成已修复
-                if (!oldDefects.isNullOrEmpty() && oldDefects.size > newDefects.size) {
-                    val needToCloseDefects = oldDefects.subList(newDefects.size, oldDefects.size)
+                if (!sortedOldDefects.isNullOrEmpty() && sortedOldDefects.size > sortedNewDefects.size) {
+                    val needToCloseDefects = sortedOldDefects.subList(sortedNewDefects.size, sortedOldDefects.size)
                     needToCloseDefects.forEach { closeDefect ->
                         if (closeDefect.status == ComConstants.DefectStatus.NEW.value()) {
                             fixDefect(closeDefect, buildEntity)
@@ -271,7 +311,6 @@ class CCNDefectCommitComponent constructor(
         }
         return upsertDefectList
     }
-
 
     /**
      * 将告警设置为已修复
@@ -296,7 +335,9 @@ class CCNDefectCommitComponent constructor(
      */
     private fun updateOldDefectInfo(
         selectOldDefect: CCNDefectEntity, newDefect: CCNDefectEntity,
-        transferAuthorList: List<TransferAuthorEntity.TransferAuthorPair>?
+        transferAuthorList: List<TransferAuthorEntity.TransferAuthorPair>?,
+        buildEntity: BuildEntity?,
+        isReallocate: Boolean?
     ) {
         with(selectOldDefect) {
             ccn = newDefect.ccn
@@ -316,10 +357,15 @@ class CCNDefectCommitComponent constructor(
             revision = newDefect.revision
             branch = newDefect.branch
             subModule = newDefect.subModule
-            if(author.isNullOrBlank()){
+            if (author.isNullOrBlank() || true == isReallocate) {
                 author = newDefect.author
                 //作者转换
                 transferAuthor(this, transferAuthorList)
+            }
+            if (status and ComConstants.DefectStatus.IGNORE.value() > 0
+                    && status and ComConstants.DefectStatus.FIXED.value() == 0
+            ) {
+                ignoreBuildId = buildEntity?.buildId
             }
         }
     }
@@ -347,6 +393,37 @@ class CCNDefectCommitComponent constructor(
         oldDefect.status = ComConstants.DefectStatus.NEW.value()
         oldDefect.fixedTime = null
         oldDefect.fixedBuildNumber = null
+    }
+
+    /**
+     * 忽略告警
+     */
+    private fun ignoreDefect(oldDefect: CCNDefectEntity, author: String, ignoreReason: String, buildId: String?) {
+        oldDefect.status = oldDefect.status or ComConstants.DefectStatus.IGNORE.value()
+        oldDefect.ignoreCommentDefect = true
+        oldDefect.ignoreAuthor = author
+        oldDefect.ignoreBuildId = buildId
+        val ignoreReasonRegex = Regex("^\\s*(工具误报|其他|设计如此)\\s*([:：])")
+        val groupValues = ignoreReasonRegex.find(ignoreReason)?.groupValues
+        when (groupValues?.get(1)) {
+            "工具误报" -> {
+                oldDefect.ignoreReasonType = ComConstants.IgnoreReasonType.ERROR_DETECT.value()
+                oldDefect.ignoreReason = ignoreReason.substringAfter(groupValues[2])
+            }
+            "其他" -> {
+                oldDefect.ignoreReasonType = ComConstants.IgnoreReasonType.OTHER.value()
+                oldDefect.ignoreReason = ignoreReason.substringAfter(groupValues[2])
+            }
+            "设计如此" -> {
+                oldDefect.ignoreReasonType = ComConstants.IgnoreReasonType.SPECIAL_PURPOSE.value()
+                oldDefect.ignoreReason = ignoreReason.substringAfter(groupValues[2])
+            }
+            else -> {
+                oldDefect.ignoreReasonType = ComConstants.IgnoreReasonType.OTHER.value()
+                oldDefect.ignoreReason = ignoreReason
+            }
+        }
+        oldDefect.ignoreTime = System.currentTimeMillis()
     }
 
 }

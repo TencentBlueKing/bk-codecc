@@ -16,23 +16,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.tencent.bk.codecc.defect.api.OpDefectRestResource;
-import com.tencent.bk.codecc.defect.api.ServiceTaskLogOverviewResource;
+import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.dao.CommonDao;
 import com.tencent.bk.codecc.task.dao.mongorepository.AnalyzeCountStatRepository;
-import com.tencent.bk.codecc.task.dao.mongorepository.CodeLineStatisticRepository;
-import com.tencent.bk.codecc.task.dao.mongorepository.TaskStatisticRepository;
 import com.tencent.bk.codecc.task.dao.mongorepository.ToolElapseTimeRepository;
-import com.tencent.bk.codecc.task.dao.mongorepository.ToolStatisticRepository;
-import com.tencent.bk.codecc.task.dao.mongotemplate.TaskDao;
-import com.tencent.bk.codecc.task.dao.mongotemplate.ToolDao;
 import com.tencent.bk.codecc.task.model.AnalyzeCountStatEntity;
-import com.tencent.bk.codecc.task.model.CodeLineStatisticEntity;
-import com.tencent.bk.codecc.task.model.TaskStatisticEntity;
 import com.tencent.bk.codecc.task.model.ToolElapseTimeEntity;
-import com.tencent.bk.codecc.task.model.ToolCountScriptEntity;
-import com.tencent.bk.codecc.task.model.ToolStatisticEntity;
-import com.tencent.bk.codecc.task.service.TaskService;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
+import com.tencent.devops.common.api.StatisticTaskCodeLineToolVO;
 import com.tencent.devops.common.api.codecc.util.JsonUtil;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
@@ -40,7 +31,6 @@ import com.tencent.devops.common.constant.ComConstants.DefectStatType;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.util.DateTimeUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.amqp.rabbit.annotation.Exchange;
@@ -52,14 +42,12 @@ import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
-import static com.tencent.devops.common.constant.ComConstants.TOTAL_BLANK;
-import static com.tencent.devops.common.constant.ComConstants.TOTAL_CODE;
-import static com.tencent.devops.common.constant.ComConstants.TOTAL_COMMENT;
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_ACTIVE_STAT;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_ACTIVE_STAT;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_ACTIVE_STAT;
@@ -78,33 +66,13 @@ public class ActiveStatisticConsumer {
     @Autowired
     private Client client;
     @Autowired
-    private TaskDao taskDao;
-    @Autowired
-    private ToolDao toolDao;
-    @Autowired
     private CommonDao commonDao;
     @Autowired
-    private TaskService taskService;
-    @Autowired
     private RedisTemplate<String, String> redisTemplate;
-    @Autowired
-    private TaskStatisticRepository taskStatisticRepository;
-    @Autowired
-    private ToolStatisticRepository toolStatisticRepository;
-    @Autowired
-    private CodeLineStatisticRepository codeLineStatisticRepository;
     @Autowired
     private AnalyzeCountStatRepository analyzeCountStatRepository;
     @Autowired
     private ToolElapseTimeRepository toolElapseTimeRepository;
-
-
-    // 清理前days天的数据
-    private static final int DEL_REDIS_KEY_BEFORE_DAYS = -8;
-    private static final int DEL_REDIS_KEY_BEFORE_DAYS_TOOL = -31;
-    // 按长度分割列表
-    private static final int PARTITION_LENGTH = 5000;
-
 
     /**
      * 定时任务统计每日数据
@@ -118,19 +86,11 @@ public class ActiveStatisticConsumer {
             log.info("ActiveStatistic begin date: {}", date);
             long endTime = DateTimeUtils.getTimeStampEnd(date);
 
-            List<Long> openSourceTaskIds = taskService.queryTaskIdByType(DefectStatType.GONGFENG_SCAN);
-            List<Long> userTaskIds = taskService.queryTaskIdByType(DefectStatType.USER);
-
-            // 统计任务数
-            taskStatistic(endTime, date, DefectStatType.GONGFENG_SCAN.value(), openSourceTaskIds);
-            taskStatistic(endTime, date, DefectStatType.USER.value(), userTaskIds);
-            log.info("taskStatistic finish.");
-
-            // 统计工具数
             String toolOrder = commonDao.getToolOrder();
-            toolStatistic(endTime, date, DefectStatType.GONGFENG_SCAN, openSourceTaskIds, toolOrder);
-            toolStatistic(endTime, date, DefectStatType.USER, userTaskIds, toolOrder);
-            log.info("toolStatistic finish.");
+
+            // 分页获取任务ID 统计任务数、工具数、分析代码行
+            pageTaskIdStatistic(endTime, date, toolOrder);
+            log.info("pageTaskIdStatistic finish.");
 
             // 保存执行分析的任务ID来统计执行次数
             statisticToolAnalyzeCount(date, DefectStatType.GONGFENG_SCAN, toolOrder);
@@ -141,162 +101,45 @@ public class ActiveStatisticConsumer {
             toolAnalyzeElapseTimeStat(date, DefectStatType.USER.value(), toolOrder);
             log.info("toolAnalyzeElapseTimeStat finish.");
 
-
-            // 统计每日代码行
-            codeLineStatistic(date, DefectStatType.GONGFENG_SCAN.value(), openSourceTaskIds);
-            codeLineStatistic(date, DefectStatType.USER.value(), userTaskIds);
-            log.info("codeLineStatistic finish.");
-
             // 统计每日新增代码库/代码分支数
             codeRepoStatDaily();
             log.info("codeRepoStatDaily finish.");
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
+        } catch (Throwable e) {
+            log.error("ActiveStatisticConsumer error", e);
         }
     }
 
     /**
-     * 统计任务数
+     * 分页获取任务ID 定时统计任务数、工具数、分析代码行
      *
      * @param endTime   截止时间戳
      * @param date      统计日期
-     * @param dataFrom  数据来源范围
+     * @param toolOrder 工具列表
      */
-    private void taskStatistic(Long endTime, String date, String dataFrom, List<Long> taskIds) {
-        TaskStatisticEntity taskStat = taskStatisticRepository.findFirstByDateAndDataFrom(date, dataFrom);
-        if (taskStat == null) {
-            taskStat = new TaskStatisticEntity();
-        }
-        taskStat.setDate(date);
-        taskStat.setDataFrom(dataFrom);
-        // 任务总数
-        Long taskCount = taskDao.findDailyTaskCount(endTime, dataFrom);
-        taskStat.setTaskCount(taskCount.intValue());
+    private void pageTaskIdStatistic(long endTime, String date, String toolOrder) {
+        log.info("pageTaskIdStatistic endTime: [{}], date: [{}], toolOrder:[{}]", endTime, date, toolOrder);
+        // 设置来源范围
+        List<DefectStatType> dataFromList = new ArrayList<>();
+        dataFromList.add(DefectStatType.GONGFENG_SCAN);
+        dataFromList.add(DefectStatType.USER);
 
-        // 活跃总数
-        String key = String.format("%s%s:%s", RedisKeyConstants.PREFIX_ACTIVE_TASK, date, dataFrom);
-        Long activeTaskCount = redisTemplate.opsForSet().size(key);
-        taskStat.setActiveCount(activeTaskCount.intValue());
+        // 设置请求参数
+        StatisticTaskCodeLineToolVO reqVO = new StatisticTaskCodeLineToolVO();
+        reqVO.setEndTime(endTime);
+        reqVO.setDate(date);
+        reqVO.setToolOrder(toolOrder);
+        reqVO.setDataFromList(dataFromList);
 
-        // 执行次数
-        QueryTaskListReqVO reqVO = new QueryTaskListReqVO();
-        reqVO.setTaskIds(taskIds);
-        long[] startTimeAndEndTime = DateTimeUtils.getStartTimeAndEndTime(date, date);
-        reqVO.setStartTime(startTimeAndEndTime[0]);
-        reqVO.setEndTime(startTimeAndEndTime[1]);
-        Integer taskAnalyzes = client.get(ServiceTaskLogOverviewResource.class).getTaskAnalyzeCount(reqVO).getData();
-        taskStat.setAnalyzeCount(taskAnalyzes != null ? taskAnalyzes : 0);
-
-        taskStatisticRepository.save(taskStat);
-        // 清理冗余数据
-        delRedisKeyBefore7Days(RedisKeyConstants.PREFIX_ACTIVE_TASK, dataFrom);
-    }
-
-    /**
-     * 统计工具数
-     *
-     * @param endTime   截止时间戳
-     * @param date      统计日期
-     * @param dataFrom  数据来源范围
-     */
-    private void toolStatistic(Long endTime, String date, DefectStatType dataFrom, List<Long> taskIdList,
-            String toolOrder) {
-        if (StringUtils.isEmpty(toolOrder)) {
-            log.error("toolOrder is empty!");
-            return;
-        }
-        // 统计工具数
-        List<ToolCountScriptEntity> toolCountEntities = toolDao.findDailyToolCount(taskIdList, endTime);
-        Map<String, Integer> toolCountMap = toolCountEntities.stream()
-                .collect(Collectors.toMap(ToolCountScriptEntity::getToolName, ToolCountScriptEntity::getCount));
-        // 获取活跃数
-        String key = String.format("%s%s:%s", RedisKeyConstants.PREFIX_ACTIVE_TOOL, date, dataFrom.value());
-        Map<Object, Object> toolActiveCountMap = redisTemplate.opsForHash().entries(key);
-        if (null == toolActiveCountMap) {
-            toolActiveCountMap = Maps.newHashMap();
+        // 防止异常影响后续任务
+        try {
+            log.info("start task statisticTaskCodeLineTool");
+            client.get(ServiceTaskRestResource.class).statisticTaskCodeLineTool(reqVO);
+            log.info("end task statisticTaskCodeLineTool, time :{}", System.currentTimeMillis());
+        } catch (RuntimeException e) {
+            log.error("pageTaskIdStatistic execute failure");
+            e.printStackTrace();
         }
 
-        Map<String, ToolStatisticEntity> toolStatMap = Maps.newHashMap();
-        List<ToolStatisticEntity> entityList = toolStatisticRepository.findByDateAndDataFrom(date, dataFrom.value());
-        if (CollectionUtils.isNotEmpty(entityList)) {
-            toolStatMap = entityList.stream()
-                    .collect(Collectors.toMap(ToolStatisticEntity::getToolName, Function.identity(), (k, v) -> v));
-        }
-
-        String[] toolArr = toolOrder.split(ComConstants.STRING_SPLIT);
-        // 获取分析成功次数
-        List<Object> succObjects = redisTemplate.executePipelined((RedisCallback<Long>) conn -> {
-            for (String tool : toolArr) {
-                String redisKey = getToolAnalyzeSuccStatKey(date, dataFrom.value(), tool);
-                conn.lLen(redisKey.getBytes());
-            }
-            return null;
-        });
-        // 获取分析失败次数
-        List<Object> failObjects = redisTemplate.executePipelined((RedisCallback<Long>) conn -> {
-            for (String tool : toolArr) {
-                String redisKey = getToolAnalyzeFailStatKey(date, dataFrom.value(), tool);
-                conn.lLen(redisKey.getBytes());
-            }
-            return null;
-        });
-
-        List<ToolStatisticEntity> toolStatisticEntities = Lists.newArrayList();
-        for (int i = 0; i < toolArr.length; i++) {
-            String toolName = toolArr[i];
-            // 统计该工具总分析次数
-            Long succCount = (Long) succObjects.get(i);
-            Long failCount = (Long) failObjects.get(i);
-            int analyzeCount = 0;
-            if (null != succCount) {
-                analyzeCount += succCount.intValue();
-            }
-            if (null != failCount) {
-                analyzeCount += failCount.intValue();
-            }
-
-            ToolStatisticEntity toolStat = toolStatMap.computeIfAbsent(toolName, v -> new ToolStatisticEntity());
-            toolStat.setDate(date);
-            toolStat.setDataFrom(dataFrom.value());
-            toolStat.setToolName(toolName);
-            toolStat.setToolCount(toolCountMap.getOrDefault(toolName, 0));
-            toolStat.setActiveCount(Integer.parseInt(toolActiveCountMap.getOrDefault(toolName, 0).toString()));
-            toolStat.setAnalyzeCount(analyzeCount);
-
-            toolStatisticEntities.add(toolStat);
-        }
-
-        toolStatisticRepository.saveAll(toolStatisticEntities);
-        // 清理冗余数据
-        delRedisKeyBefore7Days(RedisKeyConstants.PREFIX_ACTIVE_TOOL, dataFrom.value());
-        delToolRedisKeyBeforeDays(dataFrom.value(), toolArr);
-    }
-
-    /**
-     * 每天清理前7天的计数器
-     *
-     * @param keyPrefix Redis key前缀
-     * @param dataFrom  统计数据来源
-     */
-    private void delRedisKeyBefore7Days(String keyPrefix, String dataFrom) {
-        String dateByDiff = DateTimeUtils.getDateByDiff(DEL_REDIS_KEY_BEFORE_DAYS);
-        redisTemplate.delete(keyPrefix + dateByDiff + RedisKeyConstants.INTERVAL_FLAG + dataFrom);
-    }
-
-    /**
-     * 清理各个工具的计数器
-     */
-    private void delToolRedisKeyBeforeDays(String dataFrom, String[] toolArr) {
-        String dateByDiff = DateTimeUtils.getDateByDiff(DEL_REDIS_KEY_BEFORE_DAYS_TOOL);
-        redisTemplate.executePipelined((RedisCallback<Object>) conn -> {
-            for (String tool : toolArr) {
-                String key = getToolAnalyzeFailStatKey(dateByDiff, dataFrom, tool);
-                conn.del(key.getBytes());
-                key = getToolAnalyzeSuccStatKey(dateByDiff, dataFrom, tool);
-                conn.del(key.getBytes());
-            }
-            return null;
-        });
     }
 
     /**
@@ -311,45 +154,6 @@ public class ActiveStatisticConsumer {
      */
     private String getToolAnalyzeFailStatKey(String date, String dataFrom, String toolName) {
         return String.format("%s%s:%s:%s", RedisKeyConstants.PREFIX_ANALYZE_FAIL_COUNT, date, dataFrom, toolName);
-    }
-
-    /**
-     * 统计分析代码行
-     *
-     * @param date     统计日期
-     * @param dataFrom 数据来源范围
-     */
-    private void codeLineStatistic(String date, String dataFrom, List<Long> taskIdList) {
-        CodeLineStatisticEntity codeLineStatEntity = new CodeLineStatisticEntity();
-        codeLineStatEntity.setDate(date);
-        codeLineStatEntity.setDataFrom(dataFrom);
-
-        String key = RedisKeyConstants.CODE_LINE_STAT + date + RedisKeyConstants.INTERVAL_FLAG + dataFrom;
-        Map<Object, Object> objObjMap = redisTemplate.opsForHash().entries(key);
-        if (null == objObjMap) {
-            objObjMap = Maps.newHashMap();
-        }
-        codeLineStatEntity.setDailyBlank(Long.parseLong(objObjMap.getOrDefault(TOTAL_BLANK, "0").toString()));
-        codeLineStatEntity.setDailyComment(Long.parseLong(objObjMap.getOrDefault(TOTAL_COMMENT, "0").toString()));
-        codeLineStatEntity.setDailyCode(Long.parseLong(objObjMap.getOrDefault(TOTAL_CODE, "0").toString()));
-
-        long totalCodeLine = 0;
-        List<List<Long>> partitionList = Lists.partition(taskIdList, PARTITION_LENGTH);
-        try {
-            for (List<Long> taskIds : partitionList) {
-                QueryTaskListReqVO reqVO = new QueryTaskListReqVO();
-                reqVO.setTaskIds(taskIds);
-                Long sumCodeLine = client.get(OpDefectRestResource.class).getTaskCodeLineCount(reqVO).getData();
-                if (sumCodeLine != null) {
-                    totalCodeLine += sumCodeLine;
-                }
-            }
-        } catch (Exception e) {
-            log.error("query statistic total code line fail!", e);
-        }
-        codeLineStatEntity.setSumCode(totalCodeLine);
-
-        codeLineStatisticRepository.save(codeLineStatEntity);
     }
 
     /**
@@ -373,7 +177,11 @@ public class ActiveStatisticConsumer {
         List<Object> failObjects = redisTemplate.executePipelined((RedisCallback<Long>) conn -> {
             for (String tool : toolArr) {
                 String redisKey = getToolAnalyzeFailStatKey(date, dataFrom.value(), tool);
-                conn.lRange(redisKey.getBytes(), 0, -1);
+                try {
+                    conn.lRange(redisKey.getBytes(StandardCharsets.UTF_8.name()), 0, -1);
+                } catch (UnsupportedEncodingException e) {
+                    log.error(e.getMessage(), e);
+                }
             }
             return null;
         });

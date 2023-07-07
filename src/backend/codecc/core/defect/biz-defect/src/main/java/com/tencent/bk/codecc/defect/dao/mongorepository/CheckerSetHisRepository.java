@@ -23,4 +23,6 @@ public interface CheckerSetHisRepository extends MongoRepository<CheckerSetHisEn
     void deleteByToolNameAndVersionNot(String toolName, int version);
 
     List<CheckerSetHisEntity> findByToolNameInAndVersion(String toolName, int version);
+
+    List<CheckerSetHisEntity> findByToolNameInAndVersionNot(String toolName, int version);
 }

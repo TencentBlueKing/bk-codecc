@@ -12,11 +12,10 @@
 
 package com.tencent.bk.codecc.defect.consumer;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerSetTaskRelationshipRepository;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.CheckerSetDao;
-import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetTaskRelationshipEntity;
+import com.tencent.bk.codecc.defect.dao.mongotemplate.CheckerSetTaskRelationshipDao;
+import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetTaskCountEntity;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
@@ -25,10 +24,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
-import static com.tencent.devops.common.web.mq.ConstantsKt.*;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_REFRESH_CHECKERSET_USAGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_REFRESH_CHECKERSET_USAGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_REFRESH_CHECKERSET_USAGE;
 
 /**
  * 刷新规则集使用量消息队列的消费者
@@ -38,10 +37,9 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.*;
  */
 @Component
 @Slf4j
-public class RefreshCheckerSetUsageConsumer
-{
+public class RefreshCheckerSetUsageConsumer {
     @Autowired
-    private CheckerSetTaskRelationshipRepository checkerSetTaskRelationshipRepository;
+    private CheckerSetTaskRelationshipDao checkerSetTaskRelationshipDao;
 
     @Autowired
     private CheckerSetDao checkerSetDao;
@@ -49,22 +47,14 @@ public class RefreshCheckerSetUsageConsumer
     @RabbitListener(bindings = @QueueBinding(key = ROUTE_REFRESH_CHECKERSET_USAGE,
             value = @Queue(value = QUEUE_REFRESH_CHECKERSET_USAGE, durable = "true"),
             exchange = @Exchange(value = EXCHANGE_REFRESH_CHECKERSET_USAGE, durable = "true", delayed = "true")))
-    public void refreshCheckerSetUsage()
-    {
+    public void refreshCheckerSetUsage() {
         log.info("begin refreshCheckerSetUsage.");
 
-        try
-        {
-            List<CheckerSetTaskRelationshipEntity> taskRelationshipEntityList = checkerSetTaskRelationshipRepository.findAll();
-
-            Map<String, Long> checkerSetCountMap = taskRelationshipEntityList.stream().filter(checkerSetTaskRelationshipEntity ->
-                    StringUtils.isNotBlank(checkerSetTaskRelationshipEntity.getCheckerSetId())).
-                    collect(Collectors.groupingBy(CheckerSetTaskRelationshipEntity::getCheckerSetId, Collectors.counting()));
-
-            checkerSetDao.updateCheckerSetUsage(checkerSetCountMap);
-        }
-        catch (Exception e)
-        {
+        try {
+            List<CheckerSetTaskCountEntity> checkerSetTaskCountList =
+                    checkerSetTaskRelationshipDao.countCheckerSetGroupByCheckerSetId();
+            checkerSetDao.updateCheckerSetUsage(checkerSetTaskCountList);
+        } catch (Exception e) {
             log.error("refreshCheckerSetUsage fail.", e);
         }
         log.info("end refreshCheckerSetUsage.");

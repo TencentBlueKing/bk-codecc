@@ -25,6 +25,24 @@ public class RLCompileDefectVO
     @ApiModelProperty("遗留提示告警数")
     private long remainPrompt;
 
+    @ApiModelProperty("新严重告警数")
+    private long newSerious;
+
+    @ApiModelProperty("新一般告警数")
+    private long newNormal;
+
+    @ApiModelProperty("新提示告警数")
+    private long newPrompt;
+
+    @ApiModelProperty("历史严重告警数（遗留 - 新）")
+    private long historySerious;
+
+    @ApiModelProperty("历史一般告警数（遗留 - 新）")
+    private long historyNormal;
+
+    @ApiModelProperty("历史提示告警数（遗留 - 新）")
+    private long historyPrompt;
+
     @ApiModelProperty("规则包告警数")
     private Map<String, Long> checkerPkgCounts;
 }

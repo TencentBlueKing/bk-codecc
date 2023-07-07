@@ -27,20 +27,21 @@
 package com.tencent.bk.codecc.task.resources;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.task.api.UserTaskRestResource;
 import com.tencent.bk.codecc.task.enums.EmailType;
 import com.tencent.bk.codecc.task.enums.TaskSortType;
 import com.tencent.bk.codecc.task.pojo.EmailNotifyModel;
 import com.tencent.bk.codecc.task.pojo.RtxNotifyModel;
 import com.tencent.bk.codecc.task.service.EmailNotifyService;
-import com.tencent.bk.codecc.task.service.GongfengPublicProjService;
-import com.tencent.bk.codecc.task.service.GongfengTriggerService;
 import com.tencent.bk.codecc.task.service.PathFilterService;
 import com.tencent.bk.codecc.task.service.TaskRegisterService;
 import com.tencent.bk.codecc.task.service.TaskService;
-import com.tencent.bk.codecc.task.vo.CreateTaskConfigVO;
 import com.tencent.bk.codecc.task.vo.FilterPathInputVO;
 import com.tencent.bk.codecc.task.vo.FilterPathOutVO;
+import com.tencent.bk.codecc.task.vo.ListTaskNameCnRequest;
+import com.tencent.bk.codecc.task.vo.ListTaskNameCnResponse;
+import com.tencent.bk.codecc.task.vo.ListTaskToolDimensionRequest;
 import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.bk.codecc.task.vo.NotifyCustomVO;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
@@ -57,19 +58,21 @@ import com.tencent.bk.codecc.task.vo.TaskUpdateVO;
 import com.tencent.bk.codecc.task.vo.TreeNodeTaskVO;
 import com.tencent.bk.codecc.task.vo.path.CodeYmlFilterPathVO;
 import com.tencent.bk.codecc.task.vo.scanconfiguration.ScanConfigurationVO;
-import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.RtxNotifyVO;
+import com.tencent.devops.common.api.annotation.I18NResponse;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
 import com.tencent.devops.common.client.Client;
-import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.web.RestResource;
+import com.tencent.devops.common.web.condition.CommunityCondition;
 import com.tencent.devops.common.web.security.AuthMethod;
-import java.util.List;
-
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Conditional;
+
+import java.util.List;
 
 /**
  * 任务清单资源实现
@@ -79,12 +82,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
  */
 @RestResource
 @Slf4j
+@Conditional(CommunityCondition.class)
 public class UserTaskRestResourceImpl implements UserTaskRestResource {
     @Autowired
     private TaskService taskService;
-
-    @Autowired
-    private GongfengPublicProjService gongfengPublicProjService;
 
     @Autowired
     @Qualifier("devopsTaskRegisterService")
@@ -94,27 +95,32 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
     private PathFilterService pathFilterService;
 
     @Autowired
-    private GongfengTriggerService gongfengTriggerService;
+    private EmailNotifyService emailNotifyService;
+    @Autowired
+    private Client client;
 
     @Override
     public Result<TaskListVO> getTaskList(String projectId, String user, TaskSortType taskSortType, TaskListReqVO taskListReqVO) {
         return new Result<>(taskService.getTaskList(projectId, user, taskSortType, taskListReqVO));
     }
 
-    @Autowired
-    private EmailNotifyService emailNotifyService;
-
-    @Autowired
-    private Client client;
+    @Override
+    public Result<Boolean> testEx() {
+        return null;
+    }
 
     @Override
     public Result<Boolean> triggerNotify(Long taskId, Integer type) {
         if (type.equals(1)) {
             emailNotifyService.sendReport(new EmailNotifyModel(taskId, null, EmailType.INSTANT));
-        } else if (type.equals(2)) {
-            emailNotifyService.sendRtx(new RtxNotifyModel(taskId, true,null));
-        } else if (type.equals(3)) {
-            emailNotifyService.sendRtx(new RtxNotifyModel(taskId, false,null));
+        } else {
+            if (type.equals(2)) {
+                emailNotifyService.sendRtx(new RtxNotifyModel(taskId, true, null));
+            } else {
+                if (type.equals(3)) {
+                    emailNotifyService.sendRtx(new RtxNotifyModel(taskId, false, null));
+                }
+            }
         }
 
         return new Result<>(true);
@@ -149,7 +155,7 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
     }
 
     @Override
-//    @AuthMethod(permission = {CodeCCAuthAction.TASK_MANAGE})
+    //    @AuthMethod(permission = {CodeCCAuthAction.TASK_MANAGE})
     public Result<Boolean> updateScanConfiguration(Long taskId, String user, ScanConfigurationVO scanConfigurationVO) {
         return new Result<>(taskService.updateScanConfiguration(taskId, user, scanConfigurationVO));
     }
@@ -215,18 +221,13 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
     @Override
     @AuthMethod(permission = {CodeCCAuthAction.ANALYZE})
     public Result<Boolean> executeTask(long taskId, String isFirstTrigger,
-                                       String userName) {
+                                                                          String userName) {
         return new Result<>(taskService.manualExecuteTask(taskId, isFirstTrigger, userName));
     }
 
     @Override
     public Result<TaskMemberVO> getTaskUsers(long taskId, String projectId) {
         return new Result<>(taskService.getTaskUsers(taskId, projectId));
-    }
-
-    @Override
-    public Result<Boolean> extendGongfengScanRange(Integer startPage, Integer endPage, Integer startHour, Integer startMinute) {
-        return new Result<>(gongfengPublicProjService.extendGongfengScanRange(startPage, endPage, startHour, startMinute));
     }
 
     @Override
@@ -238,15 +239,24 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
 
 
     @Override
-    public Result<Boolean> updateTopUserInfo(String user, Long taskId, Boolean topFlag)
-    {
+    public Result<Boolean> updateTopUserInfo(String user, Long taskId, Boolean topFlag) {
         return new Result<>(taskService.updateTopUserInfo(taskId, user, topFlag));
     }
 
     @Override
-    public Result<Boolean> updateTaskOwnerAndMember(TaskOwnerAndMemberVO taskOwnerAndMemberVO, Long taskId)
-    {
-        taskService.updateTaskOwnerAndMember(taskOwnerAndMemberVO, taskId);
+    public Result<Boolean> syncKafkaTaskInfo(String dataType, String washTime) {
+        return new Result<>(true);
+    }
+
+    @Override
+    public Result<Boolean> manualTriggerPipeline(List<Long> taskIdList) {
+        return new Result<>(true);
+    }
+
+    @Override
+    public Result<Boolean> updateTaskOwnerAndMember(TaskOwnerAndMemberVO vo, Long taskId) {
+        taskService.updateTaskOwnerAndMember(vo, taskId);
+
         return new Result<>(true);
     }
 
@@ -257,28 +267,44 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
 
     @Override
     public Result<Boolean> triggerBkPluginScoring() {
-        return new Result<>(taskService.triggerBkPluginScoring());
+        return new Result<>(true);
     }
 
     @Override
     public Result<List<MetadataVO>> listTaskToolDimension(Long taskId) {
-        return new Result<>(taskService.listTaskToolDimension(taskId));
+        return new Result<>(taskService.listTaskToolDimension(Lists.newArrayList(taskId), ""));
     }
 
-    @Override public Result<Boolean> createTaskForBkPlugins(String repoId, CreateTaskConfigVO createTaskConfigVO) {
-        if (StringUtils.isBlank(repoId) || createTaskConfigVO.getLangs().isEmpty()) {
-            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_NULL);
-        }
+    @Override
+    @I18NResponse
+    public Result<List<MetadataVO>> listTaskToolDimension(String projectId, ListTaskToolDimensionRequest request) {
+        return new Result<>(taskService.listTaskToolDimension(request.getTaskIdList(), projectId));
+    }
 
-        try {
-            boolean isSucc = gongfengTriggerService.createTaskByRepoId(repoId, createTaskConfigVO.getLangs());
-            if (isSucc) {
-                return new Result<>(true);
-            } else {
-                return new Result<>(0, CommonMessageCode.SYSTEM_ERROR, "工蜂任务不合法", false);
-            }
-        } catch (CodeCCException e) {
-            return new Result<>(2300021, "2300021", "任务创建失败", false);
-        }
+    @Override
+    public Result<Boolean> codeCommentSendRtx(RtxNotifyVO rtxNotifyVO) {
+        return new Result<>(true);
+    }
+
+    @Override
+    public Result<List<TaskBaseVO>> listTaskBase(String userId, String projectId) {
+        return new Result<>(taskService.listTaskBase(userId, projectId));
+    }
+
+    @Override
+    public Result<ListTaskNameCnResponse> listTaskNameCn(ListTaskNameCnRequest request) {
+        Map<Long, String> data = taskService.listTaskNameCn(request.getTaskIdList());
+
+        return new Result<>(new ListTaskNameCnResponse(data));
+    }
+
+    @Override
+    public Result<Boolean> multiTaskVisitable(String projectId) {
+        return new Result<>(taskService.multiTaskVisitable(projectId));
+    }
+
+    @Override
+    public Result<Boolean> isRbacPermission(String projectId, Boolean needRefresh) {
+        return new Result<>(false);
     }
 }

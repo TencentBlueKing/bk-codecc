@@ -12,7 +12,6 @@
 
 package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
-import com.tencent.bk.codecc.defect.model.CheckerConfigEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +49,9 @@ public class ToolBuildStackDao
                 .set("build_id", toolBuildStackEntity.getBuildId())
                 .set("base_build_id", toolBuildStackEntity.getBaseBuildId())
                 .set("full_scan", toolBuildStackEntity.isFullScan())
-                .set("delete_files", toolBuildStackEntity.getDeleteFiles());
+                .set("delete_files", toolBuildStackEntity.getDeleteFiles())
+                .set("root_paths", toolBuildStackEntity.getRootPaths())
+                .set("commit_since", toolBuildStackEntity.getCommitSince());
         mongoTemplate.upsert(query, update, ToolBuildStackEntity.class);
     }
 
@@ -71,7 +72,9 @@ public class ToolBuildStackDao
                         .set("build_id", entity.getBuildId())
                         .set("base_build_id", entity.getBaseBuildId())
                         .set("full_scan", entity.isFullScan())
-                        .set("delete_files", entity.getDeleteFiles());
+                        .set("delete_files", entity.getDeleteFiles())
+                        .set("root_paths", entity.getRootPaths())
+                        .set("commit_since", entity.getCommitSince());
                 ops.upsert(query, update);
             }
             ops.execute();

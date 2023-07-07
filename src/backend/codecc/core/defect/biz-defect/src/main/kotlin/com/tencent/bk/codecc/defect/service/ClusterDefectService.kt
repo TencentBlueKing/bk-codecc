@@ -1,5 +1,6 @@
 package com.tencent.bk.codecc.defect.service
 
+import com.tencent.bk.codecc.defect.model.statistic.StatisticEntity
 import com.tencent.devops.common.api.clusterresult.BaseClusterResultVO
 
 /**
@@ -14,7 +15,13 @@ interface ClusterDefectService {
      * @param buildId
      * @param toolList 当前分类的工具集合
      */
-    fun cluster(taskId: Long, buildId: String, toolList: List<String>)
+    fun cluster(
+        taskId: Long,
+        buildId: String,
+        toolList: List<String>,
+        isMigrationSuccessful: Boolean,
+        toolNameToDimensionStatisticMap: Map<String, StatisticEntity>
+    )
 
     /**
      * 获取指定构建的聚类结果

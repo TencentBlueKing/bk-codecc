@@ -12,6 +12,7 @@
 
 package com.tencent.bk.codecc.codeccjob.consumer;
 
+import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.codeccjob.dao.mongorepository.CodeRepoInfoRepository;
 import com.tencent.bk.codecc.codeccjob.dao.mongorepository.CodeRepoStatRepository;
 import com.tencent.bk.codecc.defect.model.CodeRepoStatisticEntity;
@@ -31,6 +32,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Set;
 
 import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.KEY_CREATE_FROM;
 import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.PREFIX_TASK_INFO;
@@ -62,8 +64,16 @@ public class CodeRepoStatConsumer {
      * @param uploadTaskLogStepVO vo
      */
     @RabbitListener(bindings = @QueueBinding(key = ROUTE_CODE_REPO_STAT, value = @Queue(value = QUEUE_CODE_REPO_STAT),
-            exchange = @Exchange(value = EXCHANGE_CODE_REPO_STAT)))
+            exchange = @Exchange(value = EXCHANGE_CODE_REPO_STAT, durable = "false")))
     public void consumer(UploadTaskLogStepVO uploadTaskLogStepVO) {
+        try {
+            businessCore(uploadTaskLogStepVO);
+        } catch (Throwable t) {
+            log.error("CodeRepoStatConsumer error, mq obj: {}", uploadTaskLogStepVO, t);
+        }
+    }
+
+    private void businessCore(UploadTaskLogStepVO uploadTaskLogStepVO) {
         if (null == uploadTaskLogStepVO) {
             log.error("CodeRepoStatConsumer uploadTaskLogStepVO is null.");
             return;
@@ -98,7 +108,7 @@ public class CodeRepoStatConsumer {
                     // 如果没有就新建一个
                     statisticEntity = new CodeRepoStatisticEntity();
                     // 检查是否有记录过该代码库
-                    CodeRepoStatisticEntity entity = codeRepoStatRepository.findOneByDataFromAndUrl(createFrom, url);
+                    CodeRepoStatisticEntity entity = codeRepoStatRepository.findFirstByDataFromAndUrl(createFrom, url);
                     if (null != entity) {
                         // 有则同步首次分析时间
                         statisticEntity.setUrlFirstScan(entity.getUrlFirstScan());
@@ -112,6 +122,15 @@ public class CodeRepoStatConsumer {
                     statisticEntity.setBranchFirstScan(codeRepoInfoEntity.getCreatedDate());
                 }
                 statisticEntity.setBranchLastScan(codeRepoInfoEntity.getUpdatedDate());
+
+                // 增加任务id字段记录关联的代码库信息
+                Set<Long> taskIdSet = statisticEntity.getTaskIdSet();
+                if (null == taskIdSet) {
+                    taskIdSet = Sets.newHashSet();
+                }
+                taskIdSet.add(taskId);
+                statisticEntity.setTaskIdSet(taskIdSet);
+
                 codeRepoStatRepository.save(statisticEntity);
             }
         }

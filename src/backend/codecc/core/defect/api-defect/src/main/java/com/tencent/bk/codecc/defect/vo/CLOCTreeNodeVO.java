@@ -18,8 +18,20 @@ public class CLOCTreeNodeVO extends TreeNodeVO {
     @ApiModelProperty("注释行数")
     private long commentLines;
 
+    @ApiModelProperty("注释率")
+    private Double commentRate;
+
+    @ApiModelProperty("有效注释行数")
+    private Long efficientCommentLines;
+
+    @ApiModelProperty("有效注释率")
+    private Double efficientCommentRate;
+
     @ApiModelProperty("总行数")
     private long totalLines;
+
+    @ApiModelProperty("用于计算有效注释率的总行数-排除了部分语言")
+    private long totalLinesForEfficient;
 
     @ApiModelProperty("树ID")
     private String treeId;
@@ -58,8 +70,20 @@ public class CLOCTreeNodeVO extends TreeNodeVO {
         this.commentLines += commentLines;
     }
 
+    public void addEfficientComment(Long efficientCommentLines) {
+        if (efficientCommentLines != null && this.efficientCommentLines != null) {
+            this.efficientCommentLines += efficientCommentLines;
+        } else if (efficientCommentLines != null) {
+            this.efficientCommentLines = efficientCommentLines;
+        }
+    }
+
     public void addTotal(long totalLines) {
         this.totalLines += totalLines;
+    }
+
+    public void addTotalForEfficient(long totalLines) {
+        this.totalLinesForEfficient += totalLines;
     }
 
 }

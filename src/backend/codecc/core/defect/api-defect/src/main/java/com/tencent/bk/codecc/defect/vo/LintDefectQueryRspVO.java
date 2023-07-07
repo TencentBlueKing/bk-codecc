@@ -71,9 +71,6 @@ public class LintDefectQueryRspVO extends CommonDefectQueryRspVO
     @ApiModelProperty("符合条件的告警总数")
     private int totalCount;
 
-    @ApiModelProperty("新老告警判定时间")
-    private long newDefectJudgeTime;
-
     /**
      * 按文件聚类时使用
      */

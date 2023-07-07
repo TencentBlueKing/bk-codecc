@@ -26,7 +26,8 @@
 
 package com.tencent.bk.codecc.defect.dao.mongorepository;
 
-import com.tencent.bk.codecc.defect.model.CCNStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CCNStatisticEntity;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -59,7 +60,7 @@ public interface CCNStatisticRepository extends MongoRepository<CCNStatisticEnti
      * @return
      */
     @Query(fields = "{'time':1, 'average_ccn':1}", value = "{'task_id':?0, 'tool_name': ?1}")
-    List<CCNStatisticEntity> findByTaskIdAndToolNameOrderByTimeDesc(long taskId, String toolName);
+    List<CCNStatisticEntity> findByTaskIdAndToolNameOrderByTimeDesc(long taskId, String toolName, Sort sort);
 
     /**
      * 根据任务ID、构建ID查询
@@ -69,6 +70,8 @@ public interface CCNStatisticRepository extends MongoRepository<CCNStatisticEnti
      * @return
      */
     CCNStatisticEntity findFirstByTaskIdAndBuildId(long taskId, String buildId);
+
+    CCNStatisticEntity findFirstByTaskIdAndBuildIdOrderByTimeDesc(long taskId, String buildId);
 
     /**
      * 根据任务ID、工具名称、构建ID查询

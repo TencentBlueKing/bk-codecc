@@ -27,10 +27,11 @@
 package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.bk.codecc.defect.vo.common.BackendParamsVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
+import io.swagger.annotations.ApiParam;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 
@@ -44,10 +45,34 @@ import javax.ws.rs.core.MediaType;
 @Path("/user/backendParams")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public interface UserBackendParamsResource
-{
+public interface UserBackendParamsResource {
+
     @ApiOperation("查询后端配置参数")
     @Path("/")
     @GET
     Result<BackendParamsVO> getParams();
+
+
+    @ApiOperation("告警提交MQ触发-大项目")
+    @Path("/pubMsgToCommitDefect/{mode}")
+    @POST
+    Result<Boolean> pubMsgToCommitDefect(
+            @PathParam("mode")
+            String mode,
+            String jsonBody
+    );
+
+    @ApiOperation("数据迁移模式开关")
+    @Path("/dataMigration/commonToLint/switch")
+    @POST
+    Result<Boolean> commonToLintDataMigrationSwitch(
+            @ApiParam(value = "三种模式: single/batch/off", required = true)
+            @QueryParam("mode")
+            String mode
+    );
+
+    @ApiOperation("触发批量数据迁移")
+    @Path("/dataMigration/trigger/batchCommonToLint")
+    @POST
+    Result<Boolean> batchCommonToLintDataMigration();
 }

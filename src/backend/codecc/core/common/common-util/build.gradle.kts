@@ -7,7 +7,7 @@ dependencies {
     api("org.hashids:hashids")
     //注意 新加的依赖
 //    api("org.glassfish.jersey.bundles.repackaged:jersey-guava")
-    api("com.google.guava:guava")
+    api("com.google.guava:guava:29.0-jre")
     api("com.fasterxml.jackson.module:jackson-module-kotlin")
     api("com.fasterxml.jackson.core:jackson-databind")
     api("com.fasterxml.jackson.core:jackson-core")
@@ -26,7 +26,8 @@ dependencies {
 //    api("org.springframework.boot:spring-boot-starter-web")
     api(group = "org.json", name = "json", version = "20180130")
     api(group = "org.slf4j", name = "slf4j-api")
-    api(group = "org.apache.poi", name = "poi")
-    api(group = "org.apache.poi", name = "poi-ooxml")
+    api(group = "org.apache.poi", name = "poi", version = "3.17")
+    api(group = "org.apache.poi", name = "poi-ooxml", version = "3.17")
     api(group = "org.apache.commons", name = "commons-exec")
+    api("com.github.ben-manes.caffeine:caffeine")
 }

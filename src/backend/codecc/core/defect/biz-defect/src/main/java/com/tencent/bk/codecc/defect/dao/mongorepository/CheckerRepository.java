@@ -114,4 +114,19 @@ public interface CheckerRepository extends MongoRepository<CheckerDetailEntity, 
      * @return
      */
     void deleteByToolNameAndCheckerVersion(String toolName, Integer version);
+
+    @Query(fields = "{'checker_key': 1, 'checker_category': 1, 'tool_name': 1}")
+    List<CheckerDetailEntity> findClusterFieldByToolNameInAndCheckerKeyIn(
+            List<String> toolNameList,
+            List<String> checkerKeyList
+    );
+
+    @Query(fields = "{'checker_key': 1, 'checker_category': 1, 'tool_name': 1}")
+    List<CheckerDetailEntity> findStatisticFieldByToolNameAndCheckerKeyIn(String toolName, Set<String> checkerKeys);
+
+    @Query(fields = "{'checker_key': 1, 'checker_category': 1, 'tool_name': 1}")
+    List<CheckerDetailEntity> findStatisticFieldByToolName(String toolName);
+
+    @Query(fields = "{'checker_key':1, 'checker_type': 1}")
+    List<CheckerDetailEntity> findCheckerKeyAndTypeByToolNameIn(List<String> toolNameSet);
 }

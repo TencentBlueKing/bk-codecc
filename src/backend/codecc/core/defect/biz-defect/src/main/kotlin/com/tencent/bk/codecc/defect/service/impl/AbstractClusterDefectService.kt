@@ -4,7 +4,6 @@ import com.tencent.bk.codecc.defect.dao.mongorepository.*
 import com.tencent.bk.codecc.defect.service.ClusterDefectService
 import com.tencent.devops.common.api.clusterresult.BaseClusterResultVO
 import com.tencent.devops.common.service.annotation.CCN
-import com.tencent.devops.common.service.annotation.CLOC
 import com.tencent.devops.common.service.annotation.DUPC
 import com.tencent.devops.common.service.annotation.tool_pattern.LINT
 import org.slf4j.LoggerFactory
@@ -57,7 +56,7 @@ abstract class AbstractClusterDefectService constructor(
      * @param toolName
      */
     fun getDefectStatistic(clusterResultVO: BaseClusterResultVO, taskId: Long, buildId: String, toolName: String) {
-        logger.info("defect statistic")
+        logger.info("defect statistic $taskId $toolName $buildId")
         val commonStatistic = commonStatisticRepository.findFirstByTaskIdAndToolNameAndBuildId(
                 taskId,
                 toolName,
@@ -79,7 +78,7 @@ abstract class AbstractClusterDefectService constructor(
      */
     @LINT
     fun getLintStatistic(clusterResultVO: BaseClusterResultVO, taskId: Long, buildId: String, toolName: String) {
-        logger.info("lint statistic")
+        logger.info("lint statistic $taskId $toolName $buildId")
         val lintStatistic = lintStatisticRepository.findFirstByTaskIdAndToolNameAndBuildId(
                 taskId,
                 toolName,
@@ -102,7 +101,7 @@ abstract class AbstractClusterDefectService constructor(
      */
     @DUPC
     fun getDUPCStatistic(clusterResultVO: BaseClusterResultVO, taskId: Long, buildId: String, toolName: String) {
-        logger.info("dupc statistic")
+        logger.info("dupc statistic $taskId $toolName $buildId")
     }
 
     /**
@@ -111,25 +110,11 @@ abstract class AbstractClusterDefectService constructor(
      */
     @CCN
     fun getCCNStatistic(clusterResultVO: BaseClusterResultVO, taskId: Long, buildId: String, toolName: String) {
-        logger.info("ccn statistic")
+        logger.info("ccn statistic $taskId $toolName $buildId")
         val ccnStatistic = ccnStatisticRepository.findFirstByTaskIdAndBuildId(taskId, buildId) ?: return
         clusterResultVO.ccnBeyondThresholdSum = ccnStatistic.ccnBeyondThresholdSum
         clusterResultVO.totalCount = ccnStatistic.superHighCount + ccnStatistic.highCount+
                 ccnStatistic.mediumCount + ccnStatistic.lowCount
-    }
-
-    /**
-     * CLOC 表数据查询逻辑
-     *
-     */
-    @CLOC
-    fun getCLOCStatistic(clusterResultVO: BaseClusterResultVO, taskId: Long, buildId: String, toolName: String) {
-        logger.info("cloc statistic")
-        val clocStatisticList = clocStatisticRepository.findByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId)
-        val sumLines = clocStatisticList.stream()
-                .mapToLong { (it.sumBlank + it.sumCode + it.sumComment) }
-                .sum()
-        clusterResultVO.totalLines = sumLines
     }
 
     companion object {

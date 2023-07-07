@@ -12,7 +12,7 @@
 
 package com.tencent.bk.codecc.codeccjob.dao.mongorepository;
 
-import com.tencent.bk.codecc.defect.model.CLOCStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -33,4 +33,5 @@ public interface CLOCStatisticRepository extends MongoRepository<CLOCStatisticEn
      */
     List<CLOCStatisticEntity> findByTaskIdAndToolNameAndBuildId(Long taskId, String toolName, String buildId);
 
+    void deleteAllByTaskIdAndToolNameInAndBuildIdIn(long taskId, List<String> toolNames, List<String> buildIds);
 }

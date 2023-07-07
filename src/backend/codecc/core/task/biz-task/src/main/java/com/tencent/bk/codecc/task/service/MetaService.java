@@ -26,11 +26,12 @@
 
 package com.tencent.bk.codecc.task.service;
 
+import com.tencent.bk.codecc.task.model.BaseDataEntity;
 import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.bk.codecc.task.vo.OpenScanAndEpcToolNameMapVO;
+import com.tencent.bk.codecc.task.vo.OpenScanAndPreProdCheckerSetMapVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
-
 import java.util.List;
 import java.util.Map;
 
@@ -40,8 +41,8 @@ import java.util.Map;
  * @version V1.0
  * @date 2019/4/25
  */
-public interface MetaService
-{
+public interface MetaService {
+
     /**
      * 查询工具清单
      *
@@ -67,6 +68,14 @@ public interface MetaService
     Map<String, List<MetadataVO>> queryMetadatas(String metadataType);
 
     /**
+     * 国际化装换
+     *
+     * @param baseDataEntityList
+     * @return
+     */
+    List<MetadataVO> convertToI18N(List<BaseDataEntity> baseDataEntityList);
+
+    /**
      * 获取工具顺序
      *
      * @return
@@ -82,4 +91,9 @@ public interface MetaService
      * 获取开源治理/EPC对应工具列表映射
      */
     OpenScanAndEpcToolNameMapVO getOpenScanAndEpcToolNameMap();
+
+    /**
+     * 获取开源治理/预发布版对应规则集映射
+     */
+    OpenScanAndPreProdCheckerSetMapVO getOpenScanAndPreProdCheckerSetMap();
 }

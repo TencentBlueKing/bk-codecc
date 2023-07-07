@@ -15,8 +15,12 @@ package com.tencent.bk.codecc.defect.service.impl;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.CLOCDefectDao;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.CLOCStatisticsDao;
+import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskLogOverviewDao;
+import com.tencent.bk.codecc.defect.dao.mongotemplate.ToolBuildInfoDao;
 import com.tencent.bk.codecc.defect.dto.CodeLineModel;
-import com.tencent.bk.codecc.defect.model.CLOCStatisticEntity;
+import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
+import com.tencent.bk.codecc.defect.model.TaskLogOverviewEntity;
 import com.tencent.bk.codecc.defect.service.ICLOCQueryCodeLineService;
 import com.tencent.bk.codecc.defect.vo.CLOCDefectQueryRspInfoVO;
 import com.tencent.bk.codecc.defect.vo.ToolClocRspVO;
@@ -35,17 +39,18 @@ import java.util.stream.Collectors;
  * @version V1.0
  */
 @Service
-public class CLOCQueryCodeLineServiceImpl implements ICLOCQueryCodeLineService
-{
+public class CLOCQueryCodeLineServiceImpl implements ICLOCQueryCodeLineService {
     @Autowired
     private CLOCDefectDao clocDefectDao;
     @Autowired
     private CLOCStatisticsDao clocStatisticsDao;
     @Autowired
     private CLOCStatisticRepository clocStatisticRepository;
+    @Autowired
+    private ToolBuildInfoDao toolBuildInfoDao;
+
     @Override
-    public ToolClocRspVO getCodeLineInfo(Long taskId, String toolName)
-    {
+    public ToolClocRspVO getCodeLineInfo(Long taskId, String toolName) {
         List<CodeLineModel> codeLineModelList = clocDefectDao.getCodeLineInfo(taskId, toolName);
         ToolClocRspVO toolClocRspVO = new ToolClocRspVO();
         toolClocRspVO.setTaskId(taskId);
@@ -65,11 +70,15 @@ public class CLOCQueryCodeLineServiceImpl implements ICLOCQueryCodeLineService
         if (CollectionUtils.isEmpty(taskIds)) {
             return codeLine;
         }
-        List<CLOCStatisticEntity> entityList = clocStatisticsDao.queryLastBuildIdByTaskIds(taskIds);
-        if (CollectionUtils.isEmpty(entityList)) {
+
+//        List<TaskLogOverviewEntity> taskLogOverviewEntityList =
+//                taskLogOverviewDao.findBuildIdsByStartTime(taskIds, null, null, null);
+        List<ToolBuildInfoEntity> toolBuildInfoEntities = toolBuildInfoDao.findLatestBuildIdByTaskIdSet(taskIds);
+        if (CollectionUtils.isEmpty(toolBuildInfoEntities)) {
             return codeLine;
         }
-        List<String> buildIds = entityList.stream().map(CLOCStatisticEntity::getBuildId).collect(Collectors.toList());
+        List<String> buildIds = toolBuildInfoEntities.stream().map(ToolBuildInfoEntity::getDefectBaseBuildId)
+                .collect(Collectors.toList());
 
         List<CLOCStatisticEntity> statisticEntityList =
                 clocStatisticsDao.batchStatClocStatisticByTaskId(taskIds, buildIds);
@@ -79,13 +88,11 @@ public class CLOCQueryCodeLineServiceImpl implements ICLOCQueryCodeLineService
     }
 
     @Override
-    public CLOCDefectQueryRspInfoVO generateSpecificLanguage(long taskId, String toolName, String language)
-    {
+    public CLOCDefectQueryRspInfoVO generateSpecificLanguage(long taskId, String toolName, String language) {
         CLOCStatisticEntity clocStatisticEntity = clocStatisticRepository
                 .findFirstByTaskIdAndToolNameAndLanguageOrderByUpdatedDateDesc(taskId, toolName, language);
         CLOCDefectQueryRspInfoVO clocDefectQueryRspInfoVO = new CLOCDefectQueryRspInfoVO();
-        if (null != clocStatisticEntity)
-        {
+        if (null != clocStatisticEntity) {
             clocDefectQueryRspInfoVO.setLanguage(language);
             clocDefectQueryRspInfoVO.setSumCode(clocStatisticEntity.getSumCode());
             clocDefectQueryRspInfoVO.setSumBlank(clocStatisticEntity.getSumBlank());

@@ -38,14 +38,8 @@ enum class AuthRole(val roleName: String,
                     CodeCCAuthAction.DEFECT_MANAGE,
                     CodeCCAuthAction.DEFECT_VIEW,
                     CodeCCAuthAction.REPORT_VIEW),
-            listOf<PipelineAuthAction>(
-                    PipelineAuthAction.DELETE,
-                    PipelineAuthAction.DOWNLOAD,
-                    PipelineAuthAction.EDIT,
-                    PipelineAuthAction.EXECUTE,
-                    PipelineAuthAction.LIST,
-                    PipelineAuthAction.SHARE,
-                    PipelineAuthAction.VIEW
+                listOf<PipelineAuthAction>(
+                    PipelineAuthAction.EDIT
             )
     ),
     TASK_MEMBER("member", "成员",
@@ -55,11 +49,7 @@ enum class AuthRole(val roleName: String,
                     CodeCCAuthAction.DEFECT_VIEW,
                     CodeCCAuthAction.REPORT_VIEW),
             listOf<PipelineAuthAction>(
-                    PipelineAuthAction.DOWNLOAD,
-                    PipelineAuthAction.EXECUTE,
-                    PipelineAuthAction.LIST,
-                    PipelineAuthAction.SHARE,
-                    PipelineAuthAction.VIEW
+                    PipelineAuthAction.EXECUTE
             )
     ),
     TASK_VIEWER("viewer", "查看者",
@@ -67,9 +57,6 @@ enum class AuthRole(val roleName: String,
                     CodeCCAuthAction.DEFECT_VIEW,
                     CodeCCAuthAction.REPORT_VIEW),
             listOf<PipelineAuthAction>(
-                    PipelineAuthAction.DOWNLOAD,
-                    PipelineAuthAction.LIST,
-                    PipelineAuthAction.SHARE,
                     PipelineAuthAction.VIEW
             )
     )

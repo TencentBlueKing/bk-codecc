@@ -28,10 +28,8 @@ package com.tencent.bk.codecc.defect.vo;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.Data;
-
-import javax.validation.constraints.NotNull;
-import java.time.LocalDate;
 
 /**
  * lint类告警视图
@@ -41,8 +39,9 @@ import java.time.LocalDate;
  */
 @Data
 @ApiModel("lint类告警视图")
-public class LintDefectVO
-{
+public class LintDefectVO {
+    private Long taskId;
+
     @ApiModelProperty(value = "所属文件的主键id")
     private String entityId;
 
@@ -56,7 +55,7 @@ public class LintDefectVO
     private int lineNum;
 
     @ApiModelProperty("告警作者")
-    private String author;
+    private List<String> author;
 
     @ApiModelProperty("告警规则")
     private String checker;
@@ -133,6 +132,9 @@ public class LintDefectVO
     @ApiModelProperty(value = "告警被标记为已修改的时间")
     private Long markTime;
 
+    @ApiModelProperty(value = "标记了，但是再次扫描没有修复")
+    private Boolean markButNoFixed;
+
     @ApiModelProperty("创建时的构建号")
     private String createBuildNumber;
 
@@ -153,4 +155,10 @@ public class LintDefectVO
 
     @ApiModelProperty("工具名")
     private String toolName;
+
+    @ApiModelProperty("是否注释忽略")
+    private Boolean ignoreCommentDefect;
+
+    @ApiModelProperty("所属任务名称")
+    private String taskNameCn;
 }

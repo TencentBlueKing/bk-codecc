@@ -28,7 +28,7 @@ package com.tencent.devops.common.auth
 
 import com.tencent.devops.common.auth.api.MockAuthExPermissionApi
 import com.tencent.devops.common.auth.api.MockAuthExRegisterApi
-import com.tencent.devops.common.auth.api.external.AuthTaskService
+import com.tencent.devops.common.auth.api.service.AuthTaskService
 import com.tencent.devops.common.client.Client
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.AutoConfigureOrder
@@ -53,7 +53,8 @@ class MockAuthExAutoConfiguration() {
     }
 
     @Bean
-    fun authExPermissionApi(redisTemplate: RedisTemplate<String, String>, client: Client, authTaskService: AuthTaskService) =
+    fun authExPermissionApi(redisTemplate: RedisTemplate<String, String>, client: Client,
+                            authTaskService: AuthTaskService) =
             MockAuthExPermissionApi(client, redisTemplate, authTaskService)
 
     @Bean

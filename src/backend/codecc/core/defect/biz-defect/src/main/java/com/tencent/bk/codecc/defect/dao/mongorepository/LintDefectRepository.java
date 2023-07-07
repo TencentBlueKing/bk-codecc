@@ -123,15 +123,6 @@ public interface LintDefectRepository extends MongoRepository<LintFileEntity, St
     @Query(value = "{'task_id': ?0, 'tool_name': ?1, 'status': ?2, 'rel_path': {'$in': ?3}}")
     List<LintFileEntity> findByTaskIdAndToolNameAndStatusAndRelPathIn(long taskId, String toolName, int status, Set<String> relPaths);
 
-    /**
-     * 通过文件id和和告警id查询告警
-     *
-     * @param entityId
-     * @param defectId
-     * @return
-     */
-    @Query(value = "{'_id': ?0, 'defect_list': {'$elemMatch': {'defect_id': ?1}}}")
-    LintFileEntity findByEntityIdAndDefectId(String entityId, String defectId);
 
     /**
      * 通过文件ID列表查询

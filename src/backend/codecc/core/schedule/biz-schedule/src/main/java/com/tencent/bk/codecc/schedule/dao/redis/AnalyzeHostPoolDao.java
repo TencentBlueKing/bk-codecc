@@ -10,12 +10,13 @@
  *
  * Terms of the MIT License:
  * ---------------------------------------------------
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+ *  Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
  * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -32,7 +33,7 @@ import com.tencent.bk.codecc.schedule.vo.PushVO;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.redis.lock.JRedisLock;
-import com.tencent.devops.common.util.JsonUtil;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -49,6 +50,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 分析主机线程池池
@@ -59,12 +61,11 @@ import java.util.Set;
 @Repository
 @Slf4j
 public class AnalyzeHostPoolDao {
+    private static final int EXPIRY_TIME_MILLIS = Integer.getInteger("lock.expiry.millis", 100);
     @Autowired
     private StringRedisTemplate redisTemplate;
     @Autowired
     private ConcurrentAnalyzeConfigCache concurrentAnalyzeConfigCache;
-
-    private static final int EXPIRY_TIME_MILLIS = Integer.getInteger("lock.expiry.millis", 100);
 
     /**
      * 停止分析标志
@@ -91,7 +92,8 @@ public class AnalyzeHostPoolDao {
         if (StringUtils.isNotEmpty(createFrom)) {
             lockKey = RedisKeyConstants.LOCK_HOST_POOL_OPENSOURCE;
         }
-        JRedisLock lock = new JRedisLock(redisTemplate, lockKey, JRedisLock.DEFAULT_ACQUIRE_TIMEOUT_MILLIS, EXPIRY_TIME_MILLIS);
+        JRedisLock lock = new JRedisLock(redisTemplate, lockKey, JRedisLock.DEFAULT_ACQUIRE_TIMEOUT_MILLIS,
+                EXPIRY_TIME_MILLIS);
 
         if (!lock.acquire()) {
             return null;
@@ -119,7 +121,8 @@ public class AnalyzeHostPoolDao {
             // 获取项目当前并发数
             nowConcurrentCount = getProjectNowConcurrentCount(projectId);
 
-            log.info("project: {}, max concurrent: {}, now concurrent: {}", projectId, projectMaxConcurrent, nowConcurrentCount);
+            log.info("project: {}, max concurrent: {}, now concurrent: {}",
+                    projectId, projectMaxConcurrent, nowConcurrentCount);
             // 超过最大并发数，停止下发，消息重会队列
             if (nowConcurrentCount >= projectMaxConcurrent) {
                 return null;
@@ -131,7 +134,8 @@ public class AnalyzeHostPoolDao {
         Map<Object, Object> analyzeHostMap = redisTemplate.opsForHash().entries(RedisKeyConstants.KEY_ANALYZE_HOST);
         for (Map.Entry<Object, Object> entry : analyzeHostMap.entrySet()) {
             String analyzeHostStr = (String) entry.getValue();
-            AnalyzeHostPoolModel analyzeHostPoolModel = JsonUtil.INSTANCE.to(analyzeHostStr, AnalyzeHostPoolModel.class);
+            AnalyzeHostPoolModel analyzeHostPoolModel =
+                    JsonUtil.INSTANCE.to(analyzeHostStr, AnalyzeHostPoolModel.class);
             Set<String> supportTools = analyzeHostPoolModel.getSupportTools();
             Set<String> supportTaskTypes = analyzeHostPoolModel.getSupportTaskTypes();
 
@@ -157,9 +161,7 @@ public class AnalyzeHostPoolDao {
                 if (idle > maxIdle) {
                     maxIdle = idle;
                     mostIdleHost = analyzeHostPoolModel;
-                }
-                // 如果相等，则取当前空闲率（idle/pool）最高的机器
-                else {
+                } else { // 如果相等，则取当前空闲率（idle/pool）最高的机器
                     if (idle == maxIdle) {
                         if (mostIdleHost == null) {
                             mostIdleHost = analyzeHostPoolModel;
@@ -185,10 +187,12 @@ public class AnalyzeHostPoolDao {
                 mostIdleHost.setJobList(jobList);
             }
             jobList.add(new AnalyzeHostPoolModel.AnalyzeJob(streamName, toolName, buildId, projectId));
-            redisTemplate.opsForHash().put(RedisKeyConstants.KEY_ANALYZE_HOST, mostIdleHost.getIp(), JsonUtil.INSTANCE.toJson(mostIdleHost));
+            redisTemplate.opsForHash().put(RedisKeyConstants.KEY_ANALYZE_HOST, mostIdleHost.getIp(),
+                    JsonUtil.INSTANCE.toJson(mostIdleHost));
 
             if (StringUtils.isEmpty(createFrom)) {
-                redisTemplate.opsForHash().put(RedisKeyConstants.PROJ_CONCURRENT_ANALYZE_COUNT, projectId, String.valueOf(nowConcurrentCount + 1));
+                redisTemplate.opsForHash().put(RedisKeyConstants.PROJ_CONCURRENT_ANALYZE_COUNT, projectId,
+                        String.valueOf(nowConcurrentCount + 1));
             }
 
         }
@@ -197,13 +201,15 @@ public class AnalyzeHostPoolDao {
 
     /**
      * 释放主机的线程
+     *
      * @param toolName
      * @param streamName
      * @param hostIp
      */
     public boolean freeHostThread(String toolName, String streamName, String hostIp, String buildId) {
         log.info("begin freeHostThread: {}, {}, {}, {}", toolName, streamName, hostIp, buildId);
-        JRedisLock lock = new JRedisLock(redisTemplate, RedisKeyConstants.LOCK_HOST_POOL, JRedisLock.DEFAULT_ACQUIRE_TIMEOUT_MILLIS, EXPIRY_TIME_MILLIS);
+        JRedisLock lock = new JRedisLock(redisTemplate, RedisKeyConstants.LOCK_HOST_POOL,
+                JRedisLock.DEFAULT_ACQUIRE_TIMEOUT_MILLIS, EXPIRY_TIME_MILLIS);
 
         if (!lock.acquire()) {
             return false;
@@ -213,7 +219,8 @@ public class AnalyzeHostPoolDao {
         try {
             Object analyzeHostObj = redisTemplate.opsForHash().get(RedisKeyConstants.KEY_ANALYZE_HOST, hostIp);
             if (analyzeHostObj != null) {
-                AnalyzeHostPoolModel analyzeHostPoolModel = JsonUtil.INSTANCE.to((String) analyzeHostObj, AnalyzeHostPoolModel.class);
+                AnalyzeHostPoolModel analyzeHostPoolModel = JsonUtil.INSTANCE.to((String) analyzeHostObj,
+                        AnalyzeHostPoolModel.class);
 
                 List<AnalyzeHostPoolModel.AnalyzeJob> jobList = analyzeHostPoolModel.getJobList();
                 if (CollectionUtils.isNotEmpty(jobList)) {
@@ -235,10 +242,12 @@ public class AnalyzeHostPoolDao {
                     }
                     if (removeSuccess) {
                         analyzeHostPoolModel.setIdle(analyzeHostPoolModel.getIdle() + 1);
-                        redisTemplate.opsForHash().put(RedisKeyConstants.KEY_ANALYZE_HOST, hostIp, JsonUtil.INSTANCE.toJson(analyzeHostPoolModel));
+                        redisTemplate.opsForHash().put(RedisKeyConstants.KEY_ANALYZE_HOST, hostIp,
+                                JsonUtil.INSTANCE.toJson(analyzeHostPoolModel));
 
-                        if (nowConcurrentCount > 0 && StringUtils.isNotEmpty(projectId)){
-                            redisTemplate.opsForHash().put(RedisKeyConstants.PROJ_CONCURRENT_ANALYZE_COUNT, projectId, String.valueOf(nowConcurrentCount - 1));
+                        if (nowConcurrentCount > 0 && StringUtils.isNotEmpty(projectId)) {
+                            redisTemplate.opsForHash().put(RedisKeyConstants.PROJ_CONCURRENT_ANALYZE_COUNT, projectId,
+                                    String.valueOf(nowConcurrentCount - 1));
                         }
                     }
                 }
@@ -262,7 +271,8 @@ public class AnalyzeHostPoolDao {
         Map<Object, Object> analyzeHostMap = redisTemplate.opsForHash().entries(RedisKeyConstants.KEY_ANALYZE_HOST);
         for (Map.Entry<Object, Object> entry : analyzeHostMap.entrySet()) {
             String analyzeHostStr = (String) entry.getValue();
-            AnalyzeHostPoolModel analyzeHostPoolModel = JsonUtil.INSTANCE.to(analyzeHostStr, AnalyzeHostPoolModel.class);
+            AnalyzeHostPoolModel analyzeHostPoolModel = JsonUtil.INSTANCE.to(analyzeHostStr,
+                    AnalyzeHostPoolModel.class);
             hostList.add(analyzeHostPoolModel);
         }
         return hostList;
@@ -276,7 +286,8 @@ public class AnalyzeHostPoolDao {
      */
     public boolean batchFreeHostThread(Map<String, List<AnalyzeHostPoolModel.AnalyzeJob>> needFreeHostMap) {
         log.info("begin batchFreeHostThread");
-        JRedisLock lock = new JRedisLock(redisTemplate, RedisKeyConstants.LOCK_HOST_POOL, JRedisLock.DEFAULT_ACQUIRE_TIMEOUT_MILLIS, EXPIRY_TIME_MILLIS);
+        JRedisLock lock = new JRedisLock(redisTemplate, RedisKeyConstants.LOCK_HOST_POOL,
+                JRedisLock.DEFAULT_ACQUIRE_TIMEOUT_MILLIS, EXPIRY_TIME_MILLIS);
         if (!lock.acquire()) {
             return false;
         }
@@ -289,7 +300,8 @@ public class AnalyzeHostPoolDao {
             Map<String, Integer> freeProjectMap = new HashMap<>();
             res.forEach(analyzeHostObj -> {
                 if (analyzeHostObj != null) {
-                    AnalyzeHostPoolModel analyzeHostPoolModel = JsonUtil.INSTANCE.to((String) analyzeHostObj, AnalyzeHostPoolModel.class);
+                    AnalyzeHostPoolModel analyzeHostPoolModel = JsonUtil.INSTANCE.to((String) analyzeHostObj,
+                            AnalyzeHostPoolModel.class);
                     List<AnalyzeHostPoolModel.AnalyzeJob> jobList = analyzeHostPoolModel.getJobList();
                     if (CollectionUtils.isNotEmpty(jobList)) {
                         // 释放的线程数
@@ -306,7 +318,7 @@ public class AnalyzeHostPoolDao {
                                     it.remove();
                                     freeThreadCount++;
                                     String projectId = analyzeJob.getProjectId();
-                                    if (StringUtils.isNotEmpty(projectId)){
+                                    if (StringUtils.isNotEmpty(projectId)) {
                                         Integer freeCount = freeProjectMap.get(projectId);
                                         freeProjectMap.put(projectId, freeCount == null ? 1 : freeCount + 1);
                                     }
@@ -323,7 +335,7 @@ public class AnalyzeHostPoolDao {
             });
             redisTemplate.opsForHash().putAll(RedisKeyConstants.KEY_ANALYZE_HOST, updateHostMap);
 
-            if (freeProjectMap.size() > 0){
+            if (freeProjectMap.size() > 0) {
                 Map<String, String> updateProjectMap = new HashMap<>();
                 List<Object> projectIdSet = new ArrayList<>();
                 projectIdSet.addAll(freeProjectMap.keySet());
@@ -336,7 +348,8 @@ public class AnalyzeHostPoolDao {
                         if (projectConcurrent > 0) {
                             String projectId = projectIdSet.get(i).toString();
                             projectConcurrent = projectConcurrent - freeProjectMap.get(projectId);
-                            updateProjectMap.put(projectId, projectConcurrent > 0 ? String.valueOf(projectConcurrent) : "0");
+                            updateProjectMap.put(projectId, projectConcurrent > 0
+                                    ? String.valueOf(projectConcurrent) : "0");
                         }
                     }
                 }
@@ -365,6 +378,7 @@ public class AnalyzeHostPoolDao {
 
     /**
      * 获取项目队列等待任务数
+     *
      * @param projectId
      * @return
      */
@@ -376,6 +390,7 @@ public class AnalyzeHostPoolDao {
 
     /**
      * 设置项目队列等待任务数
+     *
      * @param projectId
      */
     public void resetProjectQueueCount(String projectId) {
@@ -384,6 +399,7 @@ public class AnalyzeHostPoolDao {
 
     /**
      * 获取并设置项目队列等待任务数
+     *
      * @param projectId
      * @param increment
      * @return
@@ -393,5 +409,35 @@ public class AnalyzeHostPoolDao {
         Long queueCount = redisTemplate.opsForHash()
                 .increment(RedisKeyConstants.PROJ_QUEUE_ANALYZE_COUNT, projectId, increment);
         return queueCount;
+    }
+
+    /**
+     * 缓存分析服务器ip
+     *
+     * @param streamName
+     * @param toolName
+     * @param buildId
+     * @param ipAndPort
+     */
+    @NotNull
+    public void cacheAnalyzeHost(String streamName, String toolName, String buildId, String ipAndPort) {
+        String key = String.format("%s:%s:%s:%s", RedisKeyConstants.ANALYZE_HOST_CACHE, streamName, toolName, buildId);
+        redisTemplate.opsForValue().set(key, ipAndPort);
+        redisTemplate.expire(key, 48, TimeUnit.HOURS);
+    }
+
+    /**
+     * 获取分析服务器
+     *
+     * @param streamName
+     * @param toolName
+     * @param buildId
+     */
+    @NotNull
+    public String getAnalyzeHost(String streamName, String toolName, String buildId) {
+        String key = String.format("%s:%s:%s:%s", RedisKeyConstants.ANALYZE_HOST_CACHE, streamName, toolName, buildId);
+        String ipAndPort = redisTemplate.opsForValue().get(key);
+        redisTemplate.delete(key);
+        return ipAndPort;
     }
 }

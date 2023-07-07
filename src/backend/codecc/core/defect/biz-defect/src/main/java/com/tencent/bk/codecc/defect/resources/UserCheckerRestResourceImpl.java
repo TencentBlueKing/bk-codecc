@@ -33,8 +33,13 @@ import com.tencent.bk.codecc.defect.service.IConfigCheckerPkgBizService;
 import com.tencent.bk.codecc.defect.vo.*;
 import com.tencent.bk.codecc.defect.vo.checkerset.*;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerListSortType;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.annotation.I18NResponse;
+import com.tencent.devops.common.api.exception.CodeCCException;
+import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.auth.api.OpAuthApi;
+import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
+import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.web.RestResource;
 import com.tencent.devops.common.web.security.AuthMethod;
 import lombok.extern.slf4j.Slf4j;
@@ -51,8 +56,7 @@ import java.util.List;
  */
 @Slf4j
 @RestResource
-public class UserCheckerRestResourceImpl implements UserCheckerRestResource
-{
+public class UserCheckerRestResourceImpl implements UserCheckerRestResource {
 
     @Autowired
     private IConfigCheckerPkgBizService configCheckerPkgBizService;
@@ -63,45 +67,45 @@ public class UserCheckerRestResourceImpl implements UserCheckerRestResource
     @Autowired
     private CheckerService checkerService;
 
+    @Autowired
+    private AuthExPermissionApi authExPermissionApi;
+
+    @Autowired
+    private OpAuthApi opAuthApi;
+
     @Override
     @AuthMethod(permission = {CodeCCAuthAction.TASK_MANAGE})
-    public Result<GetCheckerListRspVO> checkerPkg(Long taskId, String toolName)
-    {
+    public Result<GetCheckerListRspVO> checkerPkg(Long taskId, String toolName) {
         return new Result<>(configCheckerPkgBizService.getConfigCheckerPkg(taskId, toolName));
     }
 
     @Override
     @AuthMethod(permission = {CodeCCAuthAction.TASK_MANAGE})
-    public Result<Boolean> configCheckerPkg(String user, Long taskId, String toolName, ConfigCheckersPkgReqVO packageVo)
-    {
+    public Result<Boolean> configCheckerPkg(String user, Long taskId, String toolName, ConfigCheckersPkgReqVO packageVo) {
         return new Result<>(configCheckerPkgBizService.configCheckerPkg(taskId, toolName, packageVo, user));
     }
 
     @Override
     @AuthMethod(permission = {CodeCCAuthAction.TASK_MANAGE})
     public Result<Boolean> updateCheckerSet(Long taskId, String toolName, String checkerSetId, UpdateCheckerSetReqVO updateCheckerSetReqVO, String user,
-            String projectId)
-    {
+                                            String projectId) {
         return new Result<>(checkerSetBizService.updateCheckerSet(taskId, toolName, checkerSetId, updateCheckerSetReqVO, user, projectId));
     }
 
     @Override
-    public Result<Boolean> addCheckerSet2Task(String user, Long taskId, AddCheckerSet2TaskReqVO addCheckerSet2TaskReqVO)
-    {
+    public Result<Boolean> addCheckerSet2Task(String user, Long taskId, AddCheckerSet2TaskReqVO addCheckerSet2TaskReqVO) {
         addCheckerSet2TaskReqVO.setNeedUpdatePipeline(true);
         return new Result<>(checkerSetBizService.addCheckerSet2Task(user, taskId, addCheckerSet2TaskReqVO));
     }
 
     @Override
-    public Result<UserCreatedCheckerSetsVO> getUserCreatedCheckerSet(String toolName, String user, String projectId)
-    {
+    public Result<UserCreatedCheckerSetsVO> getUserCreatedCheckerSet(String toolName, String user, String projectId) {
         return new Result<>(checkerSetBizService.getUserCreatedCheckerSet(toolName, user, projectId));
     }
 
     @Override
     public Result<CheckerSetDifferenceVO> getCheckerSetVersionDifference(String user, String projectId, String toolName, String checkerSetId,
-            CheckerSetDifferenceVO checkerSetDifferenceVO)
-    {
+                                                                         CheckerSetDifferenceVO checkerSetDifferenceVO) {
         return new Result<>(checkerSetBizService.getCheckerSetVersionDifference(user, projectId, toolName, checkerSetId, checkerSetDifferenceVO));
     }
 
@@ -111,22 +115,29 @@ public class UserCheckerRestResourceImpl implements UserCheckerRestResource
     }
 
     @Override
-    public Result<CheckerDetailVO> queryCheckerDetail(String toolName, String checkerKey)
-    {
+    @I18NResponse
+    public Result<CheckerDetailVO> queryCheckerDetail(String toolName, String checkerKey) {
         return new Result<>(checkerService.queryCheckerDetail(toolName, checkerKey));
     }
 
     @Override
-    public Result<List<CheckerDetailVO>> queryCheckerDetailList(CheckerListQueryReq checkerListQueryReq, String projectId, Integer pageNum,
-                                                                Integer pageSize, Sort.Direction sortType, CheckerListSortType sortField)
-    {
-        return new Result<>(checkerService.queryCheckerDetailList(checkerListQueryReq, projectId, pageNum, pageSize, sortType, sortField));
+    @I18NResponse
+    public Result<List<CheckerDetailVO>> queryCheckerDetailList(
+            CheckerListQueryReq checkerListQueryReq,
+            String projectId,
+            Integer pageNum,
+            Integer pageSize,
+            Sort.Direction sortType,
+            CheckerListSortType sortField
+    ) {
+        return new Result<>(checkerService.queryCheckerDetailList(checkerListQueryReq, projectId, pageNum,
+                pageSize, sortType, sortField));
     }
 
 
     @Override
-    public Result<List<CheckerCommonCountVO>> queryCheckerCountList(CheckerListQueryReq checkerListQueryReq, String projectId)
-    {
+    public Result<List<CheckerCommonCountVO>> queryCheckerCountList(CheckerListQueryReq checkerListQueryReq,
+                                                                    String projectId) {
         return new Result<>(checkerService.queryCheckerCountListNew(checkerListQueryReq, projectId));
     }
 
@@ -136,7 +147,17 @@ public class UserCheckerRestResourceImpl implements UserCheckerRestResource
     }
 
     @Override
-    public Result<Boolean> updateCheckerByCheckerKey(CheckerDetailVO checkerDetailVO) {
+    public Result<Boolean> updateCheckerByCheckerKey(CheckerDetailVO checkerDetailVO, String userId) {
+        // 判断是否为OP管理员
+        if (!opAuthApi.isOpAdminMember(userId)) {
+            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, new String[]{"op admin member"});
+        }
         return new Result<>(checkerService.updateCheckerByCheckerKey(checkerDetailVO));
+    }
+
+
+    @Override
+    public Result<List<CheckerDetailVO>> queryCheckerDetailListForPreCI(CheckerDetailListQueryReqVO checkerListQueryReq) {
+        return new Result<>(checkerService.queryCheckerDetailList(checkerListQueryReq));
     }
 }

@@ -37,16 +37,23 @@ import org.springframework.stereotype.Repository;
  * @date 2019/6/27
  */
 @Repository
-public interface SnapShotRepository extends MongoRepository<SnapShotEntity, String>
-{
+public interface SnapShotRepository extends MongoRepository<SnapShotEntity, String> {
 
     /**
-     * 根据项目id和构建id查询信息
+     * 根据项目id、构建id、任务id查询信息
      *
      * @param projectId
      * @param buildId
+     * @param taskId
      * @return
      */
-    SnapShotEntity findFirstByProjectIdAndBuildId(String projectId, String buildId);
+    SnapShotEntity findFirstByProjectIdAndBuildIdAndTaskId(String projectId, String buildId, long taskId);
 
+    SnapShotEntity findFirstByProjectIdAndBuildIdAndTaskIdOrderByBuildFlagDesc(
+            String projectId,
+            String buildId,
+            long taskId
+    );
+
+    SnapShotEntity findFirstByProjectIdAndBuildIdAndBuildFlag(String projectId, String buildId, Long buildFlag);
 }

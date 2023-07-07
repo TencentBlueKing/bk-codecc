@@ -1,10 +1,15 @@
 package com.tencent.bk.codecc.defect.config
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.tencent.bk.codecc.defect.component.DefectClusterComponent
 import com.tencent.bk.codecc.defect.component.ExpireTaskHandleComponent
+import com.tencent.bk.codecc.defect.component.PipelineBuildEndHandleComponent
+import com.tencent.bk.codecc.defect.condition.AsyncReportCondition
+import com.tencent.bk.codecc.defect.condition.DefectCondition
 import com.tencent.devops.common.web.mq.*
-import org.springframework.amqp.core.*
+import org.springframework.amqp.core.Binding
+import org.springframework.amqp.core.BindingBuilder
+import org.springframework.amqp.core.CustomExchange
+import org.springframework.amqp.core.Queue
 import org.springframework.amqp.rabbit.connection.ConnectionFactory
 import org.springframework.amqp.rabbit.core.RabbitAdmin
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer
@@ -12,8 +17,10 @@ import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
 
+@Conditional(DefectCondition::class)
 @Configuration
 class CommonMessageQueueConfig {
 
@@ -25,7 +32,8 @@ class CommonMessageQueueConfig {
 
     @Bean
     fun expiredTaskExchange(): CustomExchange {
-        return CustomExchange(EXCHANGE_EXPIRED_TASK_STATUS, "x-delayed-message", true, false, mapOf("x-delayed-type" to "direct"))
+        return CustomExchange(EXCHANGE_EXPIRED_TASK_STATUS, "x-delayed-message", true,
+            false, mapOf("x-delayed-type" to "direct"))
     }
 
     @Bean
@@ -59,13 +67,58 @@ class CommonMessageQueueConfig {
         container.setMaxConcurrentConsumers(5)
         container.setStartConsumerMinInterval(1)
         container.setConsecutiveActiveTrigger(1)
+        container.setPrefetchCount(1)
         container.setAmqpAdmin(rabbitAdmin)
         //确保只有一个消费者消费，保证负载不超时
-        val adapter = MessageListenerAdapter(expiredTaskHandleComponent, expiredTaskHandleComponent::updateExpiredTaskStatus.name)
+        val adapter = MessageListenerAdapter(expiredTaskHandleComponent,
+            expiredTaskHandleComponent::updateExpiredTaskStatus.name)
         adapter.setMessageConverter(messageConverter)
         container.setMessageListener(adapter)
         return container
     }
 
 
+    @Bean
+    fun pipelineBuildEndExchange(): CustomExchange {
+        return CustomExchange(
+            EXCHANGE_PIPELINE_BUILD_END_CALLBACK, "x-delayed-message", true,
+            false, mapOf("x-delayed-type" to "direct"))
+    }
+
+    @Bean
+    fun pipelineBuildEndQueue() = Queue(QUEUE_PIPELINE_BUILD_END_CALLBACK)
+
+    @Bean
+    fun pipelineBuildEndQueueBind(
+        @Autowired pipelineBuildEndQueue: Queue,
+        @Autowired pipelineBuildEndExchange: CustomExchange
+    ): Binding {
+        return BindingBuilder.bind(pipelineBuildEndQueue).
+        to(pipelineBuildEndExchange).with(ROUTE_PIPELINE_BUILD_END_CALLBACK).noargs()
+    }
+
+
+    @Bean
+    fun pipelineBuildEndListenerContainer(
+        @Autowired connectionFactory: ConnectionFactory,
+        @Autowired pipelineBuildEndQueue: Queue,
+        @Autowired rabbitAdmin: RabbitAdmin,
+        @Autowired pipelineBuildEndHandleComponent: PipelineBuildEndHandleComponent,
+        @Autowired messageConverter: Jackson2JsonMessageConverter
+    ): SimpleMessageListenerContainer {
+        val container = SimpleMessageListenerContainer(connectionFactory)
+        container.setQueueNames(pipelineBuildEndQueue.name)
+        container.setConcurrentConsumers(5)
+        container.setMaxConcurrentConsumers(5)
+        container.setStartConsumerMinInterval(1)
+        container.setConsecutiveActiveTrigger(1)
+        container.setPrefetchCount(1)
+        container.setAmqpAdmin(rabbitAdmin)
+        //确保只有一个消费者消费，保证负载不超时
+        val adapter = MessageListenerAdapter(pipelineBuildEndHandleComponent,
+            pipelineBuildEndHandleComponent::handlePipelineBuildEndCallback.name)
+        adapter.setMessageConverter(messageConverter)
+        container.setMessageListener(adapter)
+        return container
+    }
 }

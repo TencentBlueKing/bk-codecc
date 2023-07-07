@@ -73,12 +73,15 @@ public class BaseDataVO extends CommonVO
     @ApiModelProperty("参数扩展字段5")
     private String paramExtend5;
 
-    @ApiModelProperty("LANG类型专用")
+    @ApiModelProperty("LANG类型专用-语言全称")
     private String langFullKey;
 
-    @ApiModelProperty("LANG类型专用")
+    @ApiModelProperty("LANG类型专用-语言类型")
     private String langType;
 
-    @ApiModelProperty("LANG类型专用")
+    @ApiModelProperty("LANG类型专用-开源治理规范规则集")
     private List<OpenSourceCheckerSetVO> openSourceCheckerListVO;
+
+    @ApiModelProperty("LANG类型专用-epc规范规则集")
+    private List<OpenSourceCheckerSetVO> epcCheckerSets;
 }

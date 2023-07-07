@@ -1,11 +1,10 @@
 package com.tencent.devops.common.auth
 
-import com.tencent.devops.common.auth.api.external.RBACAuthProperties
-import com.tencent.devops.common.auth.api.external.RBACAuthPropertiesData
 import com.tencent.devops.common.auth.api.external.RBACAuthPermissionApi
+import com.tencent.devops.common.auth.api.external.RBACAuthProperties
 import com.tencent.devops.common.auth.api.external.RBACAuthRegisterApi
+import com.tencent.devops.common.auth.api.service.AuthTaskService
 import com.tencent.devops.common.client.Client
-import com.tencent.devops.common.client.pojo.AllProperties
 import org.springframework.boot.autoconfigure.AutoConfigureOrder
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
@@ -23,18 +22,17 @@ class RBACAuthAutoConfiguration {
     @Bean
     fun rbacAuthPermissionApi(
         rbacAuthProperties: RBACAuthProperties,
-        allProperties: AllProperties,
         redisTemplate: RedisTemplate<String, String>,
         client: Client
-    ) = RBACAuthPermissionApi(client, redisTemplate, rbacAuthProperties, allProperties)
+    ) = RBACAuthPermissionApi(client, redisTemplate, rbacAuthProperties)
 
     @Bean
     fun rbacAuthRegisterApi(
         rbacAuthProperties: RBACAuthProperties,
-        allProperties: AllProperties,
         client: Client
-    ) = RBACAuthRegisterApi(client, rbacAuthProperties, allProperties)
+    ) = RBACAuthRegisterApi(client, rbacAuthProperties)
 
     @Bean
     fun rbacAuthProperties() = RBACAuthProperties()
+
 }

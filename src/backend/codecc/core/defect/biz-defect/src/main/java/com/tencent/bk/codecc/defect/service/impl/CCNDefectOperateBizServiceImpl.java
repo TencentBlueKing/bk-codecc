@@ -13,9 +13,9 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository;
-import com.tencent.bk.codecc.defect.model.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.model.CodeCommentEntity;
 import com.tencent.bk.codecc.defect.model.SingleCommentEntity;
+import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.vo.SingleCommentVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.constant.ComConstants;
@@ -38,23 +38,22 @@ import java.util.ArrayList;
  */
 @Service("CCNDefectOperateBizService")
 @Slf4j
-public class CCNDefectOperateBizServiceImpl extends AbstractDefectOperateBizService
-{
+public class CCNDefectOperateBizServiceImpl extends AbstractDefectOperateBizService {
 
     @Autowired
     private CCNDefectRepository ccnDefectRepository;
 
-
     @Override
-    public void addCodeComment(String defectId, String commentId, String userName, SingleCommentVO singleCommentVO) {
+    public void addCodeComment(String defectId, String toolName, String commentId, String userName,
+            SingleCommentVO singleCommentVO, String fileName, String nameCn, String checker, String projectId,
+            String taskId) {
         log.info("start to add code comment, defect id: {}, comment id: {}", defectId, commentId);
-        if(!userName.equalsIgnoreCase(singleCommentVO.getUserName()))
-        {
+        if (!userName.equalsIgnoreCase(singleCommentVO.getUserName())) {
             log.info("permission denied for user name: {}", userName);
             throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{userName}, null);
         }
         //如果comment_id为空，则表示是重新新建的评论系列
-        if(StringUtils.isBlank(commentId)){
+        if (StringUtils.isBlank(commentId)) {
             CCNDefectEntity ccnDefectEntity = ccnDefectRepository.findFirstByEntityId(defectId);
             CodeCommentEntity codeCommentEntity = new CodeCommentEntity();
             SingleCommentEntity singleCommentEntity = new SingleCommentEntity();
@@ -62,7 +61,9 @@ public class CCNDefectOperateBizServiceImpl extends AbstractDefectOperateBizServ
             Long currentTime = System.currentTimeMillis();
             singleCommentEntity.setSingleCommentId(new ObjectId().toString());
             singleCommentEntity.setCommentTime(currentTime / ComConstants.COMMON_NUM_1000L);
-            codeCommentEntity.setCommentList(new ArrayList<SingleCommentEntity>(){{add(singleCommentEntity);}});
+            codeCommentEntity.setCommentList(new ArrayList<SingleCommentEntity>() {{
+                add(singleCommentEntity);
+            }});
             codeCommentEntity.setCreatedDate(currentTime);
             codeCommentEntity.setUpdatedDate(currentTime);
             codeCommentEntity.setCreatedBy(singleCommentVO.getUserName());
@@ -72,9 +73,17 @@ public class CCNDefectOperateBizServiceImpl extends AbstractDefectOperateBizServ
             ccnDefectRepository.save(ccnDefectEntity);
         }
         //如果comment_id不为空，则直接更新
-        else
-        {
+        else {
             saveCodeComment(commentId, singleCommentVO);
+        }
+
+        // 查看评论有无 @开发者
+        if (singleCommentVO.getComment().contains("@")) {
+            // 发送评论给被@到的人
+            codeCommentSendRtx(singleCommentVO.getComment(), checker, projectId, taskId, toolName, defectId, userName,
+                    nameCn, fileName);
+        } else {
+            log.info("Not eligible to send message");
         }
     }
 }

@@ -39,14 +39,16 @@ import lombok.Data;
  */
 @Data
 @ApiModel("数据报表的作者列表分布视图")
-public class LintChartAuthorListVO
-{
+public class LintChartAuthorListVO {
 
     @ApiModelProperty("新的告警作者列表")
     private ChartAuthorListVO newAuthorList;
 
     @ApiModelProperty("历史的告警作者列表")
     private ChartAuthorListVO historyAuthorList;
+
+    @ApiModelProperty("作者列表")
+    private ChartAuthorListVO authorList;
 
 
 }

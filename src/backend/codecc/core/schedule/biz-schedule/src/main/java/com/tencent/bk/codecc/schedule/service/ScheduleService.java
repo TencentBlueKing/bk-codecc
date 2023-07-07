@@ -29,6 +29,8 @@ public interface ScheduleService
 
     Boolean dipatch(PushVO pushVO, AnalyzeHostPoolModel mostIdleHost);
 
+    Boolean commit(PushVO pushVO, String ipAndPort);
+
     void abort(PushVO pushVO);
 
     Boolean free(FreeVO freeVO);
@@ -36,4 +38,6 @@ public interface ScheduleService
     void checkAnalyzeHostThreadAlive();
 
     TailLogRspVO tailLog(String streamName, String toolName, String buildId, long beginLine);
+
+    void uploadAbortTaskLog(String streamName, String toolName, String buildId, String msg);
 }

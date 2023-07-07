@@ -26,8 +26,9 @@
 
 package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
-import com.tencent.bk.codecc.defect.model.DUPCDefectEntity;
-import com.tencent.bk.codecc.defect.model.DUPCStatisticEntity;
+import com.mongodb.BasicDBObject;
+import com.tencent.bk.codecc.defect.model.defect.DUPCDefectEntity;
+import com.tencent.bk.codecc.defect.model.statistic.DUPCStatisticEntity;
 import com.tencent.bk.codecc.defect.vo.CodeBlockVO;
 import com.tencent.devops.common.constant.ComConstants;
 import org.apache.commons.collections.CollectionUtils;
@@ -159,25 +160,29 @@ public class DUPCDefectDao
         return queryResult.getMappedResults();
     }
 
-    public void upsertDupcDefect(List<DUPCDefectEntity> dupcDefectEntities)
-    {
+    public void upsertDupcDefect(List<DUPCDefectEntity> dupcDefectEntities) {
         BulkOperations ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, DUPCDefectEntity.class);
-        if (CollectionUtils.isNotEmpty(dupcDefectEntities))
-        {
-            for (DUPCDefectEntity dupcDefectEntity : dupcDefectEntities)
-            {
-                Query query = new Query();
-                Criteria criteria = Criteria.where("task_id").is(dupcDefectEntity.getTaskId());
+        if (CollectionUtils.isNotEmpty(dupcDefectEntities)) {
+            for (DUPCDefectEntity dupcDefectEntity : dupcDefectEntities) {
+                /*
+                 *  场景:
+                 *  构建#1, rel_path == null, upsert by file_path
+                 *  构建#2, rel_path != null, upsert by rel_path
+                 *  因此，同1个告警在db可能存在两条数据，并且rel_path == null会导致获取代码片段时异常
+                 *  所以，upsert条件改为orOperator，以修复历史数据
+                 */
+                long taskId = dupcDefectEntity.getTaskId();
+                Criteria criteria = Criteria.where("task_id").is(taskId);
+                criteria.andOperator(
+                        new Criteria().orOperator(
+                                Criteria.where("task_id").is(taskId)
+                                        .and("rel_path").is(dupcDefectEntity.getRelPath()),
+                                Criteria.where("task_id").is(taskId)
+                                        .and("file_path").is(dupcDefectEntity.getFilePath())
+                        )
+                );
 
-                if (StringUtils.isNotEmpty(dupcDefectEntity.getRelPath()))
-                {
-                    criteria.and("rel_path").is(dupcDefectEntity.getRelPath());
-                }
-                else
-                {
-                    criteria.and("file_path").is(dupcDefectEntity.getFilePath());
-                }
-                query.addCriteria(criteria);
+                Query query = new Query(criteria);
                 Update update = new Update();
                 update.set("task_id", dupcDefectEntity.getTaskId())
                         .set("tool_name", dupcDefectEntity.getToolName())

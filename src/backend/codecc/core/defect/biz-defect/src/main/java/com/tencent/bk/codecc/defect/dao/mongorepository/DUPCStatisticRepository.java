@@ -26,7 +26,8 @@
 
 package com.tencent.bk.codecc.defect.dao.mongorepository;
 
-import com.tencent.bk.codecc.defect.model.DUPCStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.DUPCStatisticEntity;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -59,7 +60,7 @@ public interface DUPCStatisticRepository extends MongoRepository<DUPCStatisticEn
      * @return
      */
     @Query(fields = "{'time':1, 'dup_rate':1}", value = "{'task_id':?0, 'tool_name': ?1}")
-    List<DUPCStatisticEntity> findByTaskIdAndToolNameOrderByTimeDesc(long taskId, String toolName);
+    List<DUPCStatisticEntity> findByTaskIdAndToolNameOrderByTimeDesc(long taskId, String toolName, Sort sort);
 
     /**
      * 根据任务ID、构建ID查询

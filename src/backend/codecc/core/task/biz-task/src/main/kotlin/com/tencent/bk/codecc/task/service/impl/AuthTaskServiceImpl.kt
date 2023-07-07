@@ -1,21 +1,19 @@
 package com.tencent.bk.codecc.task.service.impl
 
 import com.tencent.bk.codecc.task.dao.mongorepository.TaskRepository
-import com.tencent.devops.common.auth.api.external.AuthTaskService
 import com.tencent.devops.common.auth.api.pojo.external.KEY_CREATE_FROM
 import com.tencent.devops.common.auth.api.pojo.external.KEY_PIPELINE_ID
 import com.tencent.devops.common.auth.api.pojo.external.PREFIX_TASK_INFO
-import com.tencent.devops.common.pojo.GongfengBaseInfo
+import com.tencent.devops.common.auth.api.service.AuthTaskService
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.context.annotation.Primary
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 
 @Component
-@Primary
 class AuthTaskServiceImpl @Autowired constructor(
     private val taskRepository: TaskRepository,
-    private val redisTemplate: RedisTemplate<String, String>
+    private val redisTemplate: RedisTemplate<String, String>,
 ) : AuthTaskService {
 
     /**
@@ -35,11 +33,6 @@ class AuthTaskServiceImpl @Autowired constructor(
         return createFrom ?: ""
     }
 
-    override fun getGongfengProjInfo(taskId: Long): GongfengBaseInfo? {
-        // TODO("Not yet implemented")
-        return null
-    }
-
     /**
      * 获取任务所属流水线ID
      */
@@ -54,12 +47,14 @@ class AuthTaskServiceImpl @Autowired constructor(
                 redisTemplate.opsForHash<String, String>().put(PREFIX_TASK_INFO + taskId, KEY_PIPELINE_ID, pipelineId)
             }
         }
-        return pipelineId ?: ""
+        return pipelineId  ?: ""
     }
 
-    override fun getGongfengCIProjInfo(gongfengId: Int): GongfengBaseInfo? {
-        // TODO("Not yet implemented")
-        return null
+    /**
+     * 查询任务bg id
+     */
+    override fun getTaskBgId(taskId: Long): String {
+        return "-1"
     }
 
     override fun queryPipelineListForUser(user: String, projectId: String, actions: Set<String>): Set<String> {
@@ -67,7 +62,8 @@ class AuthTaskServiceImpl @Autowired constructor(
     }
 
     override fun queryPipelineListForUser(user: String, projectId: String): Set<String> {
-        return taskRepository.findByProjectId(projectId).filter { it.taskMember.contains(user) }.map { it.pipelineId }.toSet()
+        return taskRepository.findByProjectId(projectId)
+                .filter { it.taskMember.contains(user) }.map { it.pipelineId }.toSet()
     }
 
     override fun queryPipelineListByProjectId(projectId: String): Set<String> {
@@ -90,5 +86,9 @@ class AuthTaskServiceImpl @Autowired constructor(
 
     override fun queryPipelineIdsByTaskIds(taskIds: Set<Long>): Set<String> {
         return taskRepository.findByTaskIdIn(taskIds).filter { it.pipelineId != null }.map { it.pipelineId }.toSet()
+    }
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(AuthTaskServiceImpl::class.java)
     }
 }

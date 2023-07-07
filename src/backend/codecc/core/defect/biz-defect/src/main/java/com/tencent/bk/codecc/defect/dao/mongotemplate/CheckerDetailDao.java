@@ -13,8 +13,10 @@
 package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.dao.AddFieldOperation;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
+import com.tencent.bk.codecc.defect.vo.CheckerDetailListQueryReqVO;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerCategory;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerListSortType;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerRecommendType;
@@ -22,6 +24,12 @@ import com.tencent.devops.common.api.checkerset.CheckerPropVO;
 import com.tencent.devops.common.api.pojo.Page;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
@@ -31,22 +39,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.LimitOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.SkipOperation;
 import org.springframework.data.mongodb.core.aggregation.SortOperation;
-import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.BasicQuery;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * 规则详情持久类
@@ -103,8 +104,7 @@ public class CheckerDetailDao {
             andCriteria.add(Criteria.where("checker_language").elemMatch(new Criteria().in(codeLang)));
         }
         if (CollectionUtils.isNotEmpty(checkerCategory)) {
-            andCriteria.add(Criteria.where("checker_category").in(checkerCategory.stream()
-                    .map(Enum::name).collect(Collectors.toSet())));
+            andCriteria.add(Criteria.where("checker_category").in(checkerCategory.stream().map(Enum::name).collect(Collectors.toSet())));
         }
         if (CollectionUtils.isNotEmpty(toolName)) {
             andCriteria.add(Criteria.where("tool_name").in(toolName));
@@ -128,8 +128,7 @@ public class CheckerDetailDao {
             andCriteria.add(Criteria.where("editable").in(editable));
         }
         if (CollectionUtils.isNotEmpty(checkerRecommend)) {
-            andCriteria.add(Criteria.where("checker_recommend").in(checkerRecommend.stream()
-                    .map(Enum::name).collect(Collectors.toSet())));
+            andCriteria.add(Criteria.where("checker_recommend").in(checkerRecommend.stream().map(Enum::name).collect(Collectors.toSet())));
         }
 
         if (CollectionUtils.isNotEmpty(checkerSetSelected) && CollectionUtils.isNotEmpty(selectedCheckerKey)) {
@@ -143,14 +142,36 @@ public class CheckerDetailDao {
             andCriteria.add(new Criteria().orOperator(criteriaList.toArray(new Criteria[0])));
         }
 
-        if (toolIntegratedStatus != ToolIntegratedStatus.P) {
-            andCriteria.add(Criteria.where("checker_version").in(Arrays.asList(toolIntegratedStatus.value(),
-                    ToolIntegratedStatus.P.value(),
-                    null)));
+        // 正式项目  toolIntegratedStatus只能筛选比自己value()更大的version
+        if (toolIntegratedStatus == ToolIntegratedStatus.P) {
+            andCriteria.add(Criteria.where("checker_version").nin(
+                    Arrays.asList(
+                            ToolIntegratedStatus.G.value(),
+                            ToolIntegratedStatus.T.value(),
+                            ToolIntegratedStatus.PRE_PROD.value())));
+        } else if (toolIntegratedStatus == ToolIntegratedStatus.T) {
+            // 测试项目应该可以看到测试、灰度、预发布、发布的规则并进行配置
+            andCriteria.add(Criteria.where("checker_version").in(
+                    Arrays.asList(
+                            ToolIntegratedStatus.T.value(),
+                            ToolIntegratedStatus.G.value(),
+                            ToolIntegratedStatus.PRE_PROD.value(),
+                            ToolIntegratedStatus.P.value(),
+                            null)));
+        } else if (toolIntegratedStatus == ToolIntegratedStatus.G) {
+            // 灰度项目应该可以看到灰度、预发布、发布的规则并进行配置
+            andCriteria.add(Criteria.where("checker_version").in(
+                    Arrays.asList(
+                            ToolIntegratedStatus.G.value(),
+                            ToolIntegratedStatus.PRE_PROD.value(),
+                            ToolIntegratedStatus.P.value(),
+                            null)));
         } else {
-            andCriteria.add(Criteria.where("checker_version").nin(Arrays.asList(
-                    ToolIntegratedStatus.G.value(),
-                    ToolIntegratedStatus.T.value())));
+            andCriteria.add(Criteria.where("checker_version").in(
+                    Arrays.asList(
+                            toolIntegratedStatus.value(),
+                            ToolIntegratedStatus.P.value(),
+                            null)));
         }
 
         if (CollectionUtils.isNotEmpty(andCriteria)) {
@@ -166,7 +187,6 @@ public class CheckerDetailDao {
             //添加字段
             AddFieldOperation addField = new AddFieldOperation(new Document("checkerSetSelected",
                     new Document("$in", new Object[]{"$checker_key", selectedCheckerKey})));
-
             if (null != pageNum || null != pageSize || null != sortType || null != sortField) {
                 Integer queryPageNum = pageNum == null || pageNum - 1 < 0 ? 0 : pageNum - 1;
                 Integer queryPageSize = pageSize == null || pageSize <= 0 ? 10 : pageSize;
@@ -258,5 +278,163 @@ public class CheckerDetailDao {
         query.addCriteria(criteria);
         List<CheckerDetailEntity> checkerList = mongoTemplate.find(query, CheckerDetailEntity.class);
         return checkerList;
+    }
+
+    /**
+     * 根据工具和key查询规则详情
+     *
+     * @param checkerPropVOList
+     * @return
+     */
+    public List<CheckerDetailEntity> findByToolNameAndCheckerKey(List<CheckerPropVO> checkerPropVOList) {
+        if (CollectionUtils.isEmpty(checkerPropVOList)) {
+            return Lists.newArrayList();
+        }
+
+        List<Criteria> orCriteriaList = Lists.newArrayList();
+        for (CheckerPropVO vo : checkerPropVOList) {
+            orCriteriaList.add(
+                    Criteria.where("tool_name").is(vo.getToolName())
+                            .and("checker_key").in(vo.getCheckerKey())
+            );
+        }
+
+        Document fieldsObj = new Document();
+        fieldsObj.put("tool_name", true);
+        fieldsObj.put("checker_key", true);
+        fieldsObj.put("props", true);
+
+        Query query = new BasicQuery(new Document(), fieldsObj);
+        query.addCriteria(new Criteria().orOperator(orCriteriaList.toArray(new Criteria[0])));
+
+        return mongoTemplate.find(query, CheckerDetailEntity.class);
+    }
+
+    /**
+     * 根据工具和规则key查询规则
+     * @param toolCheckerList
+     * @return
+     */
+    public List<CheckerDetailEntity> findByToolNameAndCheckerNames(
+            List<CheckerDetailListQueryReqVO.ToolCheckers> toolCheckerList) {
+
+        List<Criteria> orCriteriaList = Lists.newArrayList();
+        toolCheckerList.forEach(it ->
+            orCriteriaList.add(Criteria.where("tool_name").is(it.getToolName())
+                    .and("checker_key").in(it.getCheckerList()))
+        );
+
+        Criteria criteria = new Criteria();
+        if (CollectionUtils.isNotEmpty(orCriteriaList)) {
+            criteria.orOperator(orCriteriaList.toArray(new Criteria[0]));
+        }
+
+        Query query = new Query();
+        query.addCriteria(criteria);
+        List<CheckerDetailEntity> checkerList = mongoTemplate.find(query, CheckerDetailEntity.class);
+        return checkerList;
+    }
+
+    /**
+     * 根据传入参数条件查询，并工具名去重
+     *
+     * @param toolNameList
+     * @param checkerCategoryList 数据库对应是枚举的name()，请看@see
+     * @return
+     */
+    public List<String> distinctToolNameByCheckerCategoryInAndToolNameIn(
+            List<String> toolNameList,
+            List<String> checkerCategoryList
+    ) {
+        if (CollectionUtils.isEmpty(toolNameList)
+                && CollectionUtils.isEmpty(checkerCategoryList)) {
+            return Lists.newArrayList();
+        }
+
+        Query query = new Query();
+
+        if (CollectionUtils.isNotEmpty(toolNameList)) {
+            query.addCriteria(Criteria.where("tool_name").in(toolNameList));
+        }
+
+        if (CollectionUtils.isNotEmpty(checkerCategoryList)) {
+            query.addCriteria(Criteria.where("checker_category").in(checkerCategoryList));
+        }
+
+        List<String> retTools = mongoTemplate.findDistinct(
+                query,
+                "tool_name",
+                CheckerDetailEntity.class,
+                String.class
+        );
+
+        return retTools;
+    }
+
+    /**
+     * 根据工具以及规则维度获取规则名字集合
+     *
+     * @see com.tencent.bk.codecc.defect.vo.enums.CheckerCategory
+     * @param toolNameList
+     * @param checkerCategoryList 数据库对应是枚举的name()，请看@see
+     * @param checkerKeyList
+     * @return
+     */
+    public Set<String> findByToolNameInAndCheckerCategory(
+            List<String> toolNameList,
+            List<String> checkerCategoryList,
+            List<String> checkerKeyList
+    ) {
+        if (CollectionUtils.isEmpty(toolNameList)
+                && CollectionUtils.isEmpty(checkerCategoryList)) {
+            return Sets.newHashSet();
+        }
+
+        Document fieldsObj = new Document();
+        fieldsObj.put("checker_key", true);
+        Query query = new BasicQuery(new Document(), fieldsObj);
+
+        if (CollectionUtils.isNotEmpty(toolNameList)) {
+            query.addCriteria(Criteria.where("tool_name").in(toolNameList));
+        }
+
+        if (CollectionUtils.isNotEmpty(checkerCategoryList)) {
+            query.addCriteria(Criteria.where("checker_category").in(checkerCategoryList));
+        }
+
+        if (CollectionUtils.isNotEmpty(checkerKeyList)) {
+            query.addCriteria(Criteria.where("checker_key").in(checkerKeyList));
+        }
+
+        // 规则状态，0为打开
+        query.addCriteria(Criteria.where("status").is(0));
+        List<CheckerDetailEntity> checkerDetailEntityList = mongoTemplate.find(query, CheckerDetailEntity.class);
+
+        if (CollectionUtils.isEmpty(checkerCategoryList)) {
+            return Sets.newHashSet();
+        }
+
+        return checkerDetailEntityList.stream().map(CheckerDetailEntity::getCheckerKey).collect(Collectors.toSet());
+    }
+
+    public List<String> distinctCheckerCategoryByToolNameInAndCheckerKeyIn(
+            List<String> toolNameList,
+            List<String> checkerKeyList
+    ) {
+        if (CollectionUtils.isEmpty(toolNameList)) {
+            return Lists.newArrayList();
+        }
+
+        Query query = new Query(
+                Criteria.where("tool_name").in(toolNameList)
+                        .and("checker_key").in(checkerKeyList)
+        );
+
+        return mongoTemplate.findDistinct(
+                query,
+                "checker_category",
+                CheckerDetailEntity.class,
+                String.class
+        );
     }
 }

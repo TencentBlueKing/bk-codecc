@@ -1,6 +1,9 @@
 package com.tencent.bk.codecc.defect.service;
 
 import com.tencent.bk.codecc.defect.model.*;
+import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 
 import java.util.List;
 
@@ -19,7 +22,8 @@ public interface BuildDefectService
      * @param buildEntity
      * @param allNewDefectList
      */
-    void saveLintBuildDefect(long taskId, String toolName, BuildEntity buildEntity, List<LintDefectV2Entity> allNewDefectList);
+    void saveLintBuildDefect(
+            long taskId, String toolName, BuildEntity buildEntity, List<LintDefectV2Entity> allNewDefectList);
 
     /**
      * 保存圈复杂度的构建告警快照
@@ -28,7 +32,8 @@ public interface BuildDefectService
      * @param buildEntity
      * @param allNewDefectList
      */
-    void saveCCNBuildDefect(long taskId, String toolName, BuildEntity buildEntity, List<CCNDefectEntity> allNewDefectList);
+    void saveCCNBuildDefect(
+            long taskId, String toolName, BuildEntity buildEntity, List<CCNDefectEntity> allNewDefectList);
 
     /**
      * 保存圈复杂度的构建告警快照
@@ -37,5 +42,6 @@ public interface BuildDefectService
      * @param buildEntity
      * @param allNewDefectList
      */
-    void saveCommonBuildDefect(long taskId, String toolName, BuildEntity buildEntity, List<DefectEntity> allNewDefectList);
+    void saveCommonBuildDefect(
+            long taskId, String toolName, BuildEntity buildEntity, List<CommonDefectEntity> allNewDefectList);
 }

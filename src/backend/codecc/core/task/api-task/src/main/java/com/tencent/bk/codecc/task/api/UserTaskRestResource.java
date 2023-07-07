@@ -26,15 +26,14 @@
 
 package com.tencent.bk.codecc.task.api;
 
-import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
-import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TASK_ID;
-import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.tencent.bk.codecc.task.vo.CreateTaskConfigVO;
 import com.tencent.bk.codecc.task.enums.TaskSortType;
+import com.tencent.bk.codecc.task.vo.CreateTaskConfigVO;
 import com.tencent.bk.codecc.task.vo.FilterPathInputVO;
 import com.tencent.bk.codecc.task.vo.FilterPathOutVO;
+import com.tencent.bk.codecc.task.vo.ListTaskNameCnRequest;
+import com.tencent.bk.codecc.task.vo.ListTaskNameCnResponse;
+import com.tencent.bk.codecc.task.vo.ListTaskToolDimensionRequest;
 import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.bk.codecc.task.vo.NotifyCustomVO;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
@@ -43,6 +42,7 @@ import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.TaskIdVO;
 import com.tencent.bk.codecc.task.vo.TaskListReqVO;
 import com.tencent.bk.codecc.task.vo.TaskListVO;
+import com.tencent.devops.common.api.RtxNotifyVO;
 import com.tencent.bk.codecc.task.vo.TaskMemberVO;
 import com.tencent.bk.codecc.task.vo.TaskOverviewVO;
 import com.tencent.bk.codecc.task.vo.TaskOwnerAndMemberVO;
@@ -51,11 +51,12 @@ import com.tencent.bk.codecc.task.vo.TaskUpdateVO;
 import com.tencent.bk.codecc.task.vo.TreeNodeTaskVO;
 import com.tencent.bk.codecc.task.vo.path.CodeYmlFilterPathVO;
 import com.tencent.bk.codecc.task.vo.scanconfiguration.ScanConfigurationVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import java.util.List;
+
+import java.util.Map;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -84,8 +85,12 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
 @Path("/user/task")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public interface UserTaskRestResource
-{
+public interface UserTaskRestResource {
+
+    @Path("/testEx")
+    @POST
+    Result<Boolean> testEx();
+
     @ApiOperation("触发通知")
     @Path("/triggerNotify")
     @GET
@@ -342,23 +347,6 @@ public interface UserTaskRestResource
                     String projectId
     );
 
-    @ApiOperation("动态添加开源扫描任务")
-    @Path("/openScan/startPage/{startPage}/endPage/{endPage}/startHour/{startHour}/startMinute/{startMinute}")
-    @POST
-    Result<Boolean> extendGongfengScanRange(
-            @ApiParam(value = "开始页面", required = true)
-            @PathParam("startPage")
-            Integer startPage,
-            @ApiParam(value = "结束页面", required = true)
-            @PathParam("endPage")
-            Integer endPage,
-            @ApiParam(value = "开始小时数", required = true)
-            @PathParam("startHour")
-            Integer startHour,
-            @ApiParam(value = "开始分钟数", required = true)
-            @PathParam("startMinute")
-            Integer startMinute);
-
     @ApiOperation("保存定制化报告信息")
     @Path("/report")
     @POST
@@ -384,12 +372,31 @@ public interface UserTaskRestResource
             @PathParam("topFlag")
             Boolean topFlag);
 
+    @ApiOperation("保存定制化报告信息")
+    @Path("/dataSynchronization")
+    @GET
+    Result<Boolean> syncKafkaTaskInfo(
+            @ApiParam(value = "是否首次触发")
+            @QueryParam("dataType")
+                    String dataType,
+            @ApiParam(value = "是否首次触发")
+            @QueryParam("washTime")
+                    String washTime
+    );
+
+    @ApiOperation("手动触发流水线")
+    @Path("/manual/pipeline/trigger")
+    @POST
+    Result<Boolean> manualTriggerPipeline(
+            @ApiParam(value = "任务id清单")
+            List<Long> taskIdList);
+
     @ApiOperation("更新任务成员和任务管理员")
     @Path("/member/taskId/{taskId}")
     @PUT
     Result<Boolean> updateTaskOwnerAndMember(
             @ApiParam(value = "任务成员信息")
-            TaskOwnerAndMemberVO taskOwnerAndMemberVO,
+            TaskOwnerAndMemberVO vo,
             @ApiParam(value = "任务id", required = true)
             @PathParam("taskId")
             Long taskId);
@@ -412,19 +419,67 @@ public interface UserTaskRestResource
     @Path("/listDimension")
     @GET
     Result<List<MetadataVO>> listTaskToolDimension(
-        @ApiParam(value = "任务ID", required = true)
-        @QueryParam("taskId")
+            @ApiParam(value = "任务ID", required = true)
+            @QueryParam("taskId")
             Long taskId
     );
 
-    @ApiOperation("创建开源扫描任务")
-    @Path("/repo/create")
+    @ApiOperation("查询工具维度信息")
+    @Path("/listDimension")
     @POST
-    Result<Boolean> createTaskForBkPlugins(
-            @ApiParam(value = "代码库别名", required = true)
-            @HeaderParam("repoId")
-                    String repoId,
-            @ApiParam(value = "语言集", required = true)
-                    CreateTaskConfigVO createTaskConfigVO
+    Result<List<MetadataVO>> listTaskToolDimension(
+            @ApiParam(value = "项目Id", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId,
+            ListTaskToolDimensionRequest request
+    );
+
+
+
+    @ApiOperation("评论问题企业微信通知@到的开发者")
+    @Path("/code/comment/sendRtx")
+    @POST
+    Result<Boolean> codeCommentSendRtx(
+            @ApiParam(value = "企业微信通知视图", required = true)
+                    RtxNotifyVO rtxNotifyVO
+    );
+
+    @ApiOperation("获取任务基本信息，前端下拉框加载")
+    @Path("/listTaskBase")
+    @GET
+    Result<List<TaskBaseVO>> listTaskBase(
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userId,
+            @ApiParam(value = "项目ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId
+    );
+
+    @ApiOperation("获取任务中文名称")
+    @Path("/listTaskNameCn")
+    @POST
+    Result<ListTaskNameCnResponse> listTaskNameCn(
+            ListTaskNameCnRequest request
+    );
+
+    @ApiOperation("检验跨任务的可视性")
+    @Path("/multiTaskVisitable")
+    @GET
+    Result<Boolean> multiTaskVisitable(
+            @ApiParam(value = "项目ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId
+    );
+    
+    @ApiOperation("提供前端查询项目是否迁移到RBAC")
+    @Path("/{projectId}/isRbacPermission")
+    @GET
+    Result<Boolean> isRbacPermission(
+            @ApiParam(value = "项目ID", required = true)
+            @PathParam("projectId")
+                    String projectId,
+            @ApiParam(value = "是否实时查询", required = false)
+            @QueryParam("needRefresh")
+                    Boolean needRefresh
     );
 }

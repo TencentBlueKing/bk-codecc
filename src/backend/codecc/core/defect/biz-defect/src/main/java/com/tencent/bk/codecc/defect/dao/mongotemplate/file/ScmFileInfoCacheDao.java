@@ -15,19 +15,19 @@ import java.util.List;
 
 @Repository
 @Slf4j
-public class ScmFileInfoCacheDao
-{
+public class ScmFileInfoCacheDao {
 
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    public void batchSave(List<ScmFileInfoCacheEntity> fileInfoEntities)
-    {
-        if (CollectionUtils.isNotEmpty(fileInfoEntities))
-        {
+    /**
+     * 批量保存scm缓存信息
+     * @param fileInfoEntities
+     */
+    public void batchSave(List<ScmFileInfoCacheEntity> fileInfoEntities) {
+        if (CollectionUtils.isNotEmpty(fileInfoEntities)) {
             BulkOperations ops = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, ScmFileInfoCacheEntity.class);
-            for (ScmFileInfoCacheEntity fileInfo : fileInfoEntities)
-            {
+            for (ScmFileInfoCacheEntity fileInfo : fileInfoEntities) {
                 Query query = new Query();
                 query.addCriteria(Criteria.where("task_id").is(fileInfo.getTaskId()));
                 query.addCriteria(Criteria.where("tool_name").is(fileInfo.getToolName()));
@@ -42,6 +42,7 @@ public class ScmFileInfoCacheDao
                         .set("revision", fileInfo.getRevision())
                         .set("scm_type", fileInfo.getScmType())
                         .set("url", fileInfo.getUrl())
+                        .set("root_url", fileInfo.getRootUrl())
                         .set("build_id", fileInfo.getBuildId())
                         .set("change_records", fileInfo.getChangeRecords());
 

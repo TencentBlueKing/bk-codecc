@@ -12,13 +12,19 @@
 
 package com.tencent.bk.codecc.defect.api;
 
+import com.tencent.bk.codecc.defect.vo.ToolBuildInfoReqVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectRspVO;
 import com.tencent.bk.codecc.defect.vo.admin.DeptTaskDefectReqVO;
 import com.tencent.bk.codecc.defect.vo.admin.DeptTaskDefectRspVO;
+import com.tencent.bk.codecc.defect.vo.admin.SmokeCheckDetailVO;
+import com.tencent.bk.codecc.defect.vo.admin.SmokeCheckLogVO;
+import com.tencent.bk.codecc.defect.vo.admin.SmokeCheckReqVO;
+import com.tencent.bk.codecc.defect.vo.ignore.IgnoreTypeSysVO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetParamsVO;
 import com.tencent.devops.common.api.checkerset.V3UpdateCheckerSetReqExtVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.Page;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -35,11 +41,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import java.util.List;
+
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
 
 /**
  * op接口资源
- * 
+ *
  * @date 2020/3/11
  * @version V1.0
  */
@@ -134,8 +142,73 @@ public interface OpDefectRestResource {
             @ApiParam(value = "排序字段") @QueryParam(value = "sortField") String sortField,
             @ApiParam(value = "排序方式") @QueryParam(value = "sortType") String sortType);
 
-    @ApiOperation("初始化新增代码库/代码分支数数据")
+    @ApiOperation("修复代码仓库分支总表数据")
+    @Path("/codeRepoStatistic/fixed")
+    @POST
+    Result<Boolean> codeRepoStatisticFixed(
+            @ApiParam(value = "请求体") @Valid DeptTaskDefectReqVO reqVO
+    );
+
+    @ApiOperation("定时任务及初始化代码库/代码分支数数据")
     @Path("/initCodeRepoStatTrend")
     @POST
     Result<Boolean> initCodeRepoStatTrend(@ApiParam(value = "请求体") @Valid QueryTaskListReqVO reqVO);
+
+    @ApiOperation("查询分析成功的任务和工具信息")
+    @Path("/queryAccTaskAndToolName")
+    @POST
+    Result<List<QueryTaskListReqVO>> queryAccessedTaskAndToolName(
+            @ApiParam(value = "请求体") @Valid QueryTaskListReqVO reqVO);
+
+    @ApiOperation("编辑单条工具构建信息")
+    @Path("/editOneToolBuildInfo")
+    @PUT
+    Result<Boolean> editOneToolBuildInfo(
+            @ApiParam(value = "请求体") @Valid ToolBuildInfoReqVO reqVO,
+            @ApiParam(value = "用户名", required = true) @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String userName
+    );
+
+    @ApiOperation("批量编辑工具构建信息")
+    @Path("/editToolBuildInfo")
+    @PUT
+    Result<Boolean> editToolBuildInfo(
+            @ApiParam(value = "请求体") @Valid ToolBuildInfoReqVO reqVO,
+            @ApiParam(value = "用户名", required = true) @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String userName
+    );
+
+    @ApiOperation("根据规则集id获取规则集名称")
+    @Path("/checker/name")
+    @GET
+    Result<String> queryCheckerSetNameByCheckerSetId(
+            @ApiParam(value = "规则集id", required = true) @QueryParam("checkerSetId") String checkerSetId
+    );
+
+    @ApiOperation("新增/修改系统默认的告警忽略类型")
+    @Path("/ignoreTypeSysUpdate")
+    @POST
+    Result<Boolean> ignoreTypeSysUpdate(
+            @ApiParam(value = "用户名", required = true) @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String userName,
+            @ApiParam(value = "冒烟检查请求体", required = true) IgnoreTypeSysVO reqVO
+    );
+
+    @ApiOperation("触发忽略问题Review通知")
+    @Path("/trigger/ignoreTypeNotify")
+    @GET
+    Result<Boolean> triggerProjectStatisticAndSend(
+            @ApiParam(value = "用户名", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+                    String userName,
+            @ApiParam(value = "项目id", required = true)
+            @QueryParam("projectId")
+                    String projectId,
+            @ApiParam(value = "忽略类型名", required = true)
+            @QueryParam("ignoreTypeName")
+                    String ignoreTypeName,
+            @ApiParam(value = "忽略类型id", required = true)
+            @QueryParam("ignoreTypeId")
+                    Integer ignoreTypeId,
+            @ApiParam(value = "忽略类型来源")
+            @QueryParam("createFrom")
+                    String createFrom
+    );
 }

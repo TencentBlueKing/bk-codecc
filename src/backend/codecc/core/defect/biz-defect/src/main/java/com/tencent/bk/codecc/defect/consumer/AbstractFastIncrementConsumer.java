@@ -12,33 +12,42 @@
 
 package com.tencent.bk.codecc.defect.consumer;
 
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
+import com.tencent.bk.codecc.defect.component.DefectConsumerRetryLimitComponent;
 import com.tencent.bk.codecc.defect.component.ScmJsonComponent;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoInfoRepository;
+import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildInfoRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildStackRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.TransferAuthorRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.BuildDao;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.ToolBuildInfoDao;
+import com.tencent.bk.codecc.defect.model.TaskLogEntity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoInfoEntity;
-import com.tencent.bk.codecc.defect.service.RedLineReportService;
+import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
+import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
+import com.tencent.bk.codecc.defect.service.BuildService;
 import com.tencent.bk.codecc.defect.service.file.ScmFileInfoService;
 import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
 import com.tencent.devops.common.api.CodeRepoVO;
-import com.tencent.devops.common.auth.api.external.AuthTaskService;
+import com.tencent.devops.common.auth.api.service.AuthTaskService;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.DefectConsumerType;
+import com.tencent.devops.common.constant.ComConstants.DefectStatus;
 import com.tencent.devops.common.service.IConsumer;
+import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.web.aop.annotation.EndReport;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.List;
 
 /**
  * 告警提交消息队列的消费者抽象类
@@ -47,8 +56,13 @@ import java.util.List;
  * @date 2020/3/12
  */
 @Slf4j
-public abstract class AbstractFastIncrementConsumer implements IConsumer<AnalyzeConfigInfoVO>
-{
+public abstract class AbstractFastIncrementConsumer implements IConsumer<AnalyzeConfigInfoVO> {
+
+    protected static final Set<Integer> STATUS_NEW_FIXED_SET = Stream.of(
+            DefectStatus.NEW.value(),
+            DefectStatus.NEW.value() | DefectStatus.FIXED.value()
+    ).collect(Collectors.toSet());
+
     @Autowired
     public ToolBuildInfoDao toolBuildInfoDao;
     @Autowired
@@ -56,13 +70,11 @@ public abstract class AbstractFastIncrementConsumer implements IConsumer<Analyze
     @Autowired
     public ScmJsonComponent scmJsonComponent;
     @Autowired
-    public BuildDao buildDao;
+    public BuildService buildService;
     @Autowired
     public ToolBuildStackRepository toolBuildStackRepository;
     @Autowired
     public ToolBuildInfoRepository toolBuildInfoRepository;
-    @Autowired
-    public RedLineReportService redLineReportService;
     @Autowired
     public AuthTaskService authTaskService;
     @Autowired
@@ -73,6 +85,10 @@ public abstract class AbstractFastIncrementConsumer implements IConsumer<Analyze
     protected ScmFileInfoService scmFileInfoService;
     @Autowired
     private CodeRepoInfoRepository codeRepoRepository;
+    @Autowired
+    private TaskLogRepository taskLogRepository;
+    @Autowired
+    private DefectConsumerRetryLimitComponent defectConsumerRetryLimitComponent;
 
     /**
      * 告警提交
@@ -81,23 +97,32 @@ public abstract class AbstractFastIncrementConsumer implements IConsumer<Analyze
      */
     @EndReport(isOpenSource = false)
     @Override
-    public void consumer(AnalyzeConfigInfoVO analyzeConfigInfoVO)
-    {
+    public void consumer(AnalyzeConfigInfoVO analyzeConfigInfoVO) {
         long beginTime = System.currentTimeMillis();
-        try
-        {
+        try {
             log.info("fast increment generate result! {}", analyzeConfigInfoVO);
             process(analyzeConfigInfoVO);
-        }
-        catch (Throwable e)
-        {
+        } catch (Throwable e) {
             log.error("fast increment generate result fail!", e);
         }
         log.info("end fast increment generate result cost: {}", System.currentTimeMillis() - beginTime);
     }
 
-    protected void process(AnalyzeConfigInfoVO analyzeConfigInfoVO)
-    {
+    protected void process(AnalyzeConfigInfoVO analyzeConfigInfoVO) {
+        // 检查是否已经达到限制
+        Boolean checkResult = defectConsumerRetryLimitComponent.checkIfReachRetryLimit(
+                analyzeConfigInfoVO.getTaskId(),
+                analyzeConfigInfoVO.getBuildId(),
+                analyzeConfigInfoVO.getMultiToolType(),
+                DefectConsumerType.FAST_INCREMENT,
+                JSONObject.toJSONString(analyzeConfigInfoVO)
+        );
+        if (checkResult) {
+            // 达到限制，不继续
+            log.error("reach retry limit. taskId:{}. buildId:{}. toolName:{}.", analyzeConfigInfoVO.getTaskId(),
+                    analyzeConfigInfoVO.getBuildId(), analyzeConfigInfoVO.getMultiToolType());
+            return;
+        }
         // 排队开始
         uploadTaskLog(analyzeConfigInfoVO,
                 ComConstants.Step4MutliTool.QUEUE.value(),
@@ -161,25 +186,24 @@ public abstract class AbstractFastIncrementConsumer implements IConsumer<Analyze
                 null,
                 false);
 
-        try
-        {
+        try {
             // 生成当前遗留告警的统计信息
             generateResult(analyzeConfigInfoVO);
 
             // 保存代码库信息
             upsertCodeRepoInfo(analyzeConfigInfoVO);
-        }
-        catch (Throwable e)
-        {
+        } catch (Throwable e) {
             e.printStackTrace();
             log.error("fast increment generate result fail!", e);
             // 发送提单失败的分析记录
-            uploadTaskLog(analyzeConfigInfoVO, ComConstants.Step4MutliTool.COMMIT.value(), ComConstants.StepFlag.FAIL.value(), 0, System.currentTimeMillis(), e.getMessage(), false);
+            uploadTaskLog(analyzeConfigInfoVO, ComConstants.Step4MutliTool.COMMIT.value(),
+                    ComConstants.StepFlag.FAIL.value(), 0, System.currentTimeMillis(), e.getMessage(), false);
             return;
         }
 
         // 生成问题结束
-        uploadTaskLog(analyzeConfigInfoVO, ComConstants.Step4MutliTool.COMMIT.value(), ComConstants.StepFlag.SUCC.value(), 0, System.currentTimeMillis(), null, true);
+        uploadTaskLog(analyzeConfigInfoVO, ComConstants.Step4MutliTool.COMMIT.value(),
+                ComConstants.StepFlag.SUCC.value(), 0, System.currentTimeMillis(), null, true);
     }
 
     /**
@@ -197,13 +221,12 @@ public abstract class AbstractFastIncrementConsumer implements IConsumer<Analyze
      * @param msg
      */
     protected void uploadTaskLog(AnalyzeConfigInfoVO analyzeConfigInfoVO,
-                                 int stepNum,
-                                 int stepFlag,
-                                 long startTime,
-                                 long endTime,
-                                 String msg,
-                                 boolean isFinish)
-    {
+            int stepNum,
+            int stepFlag,
+            long startTime,
+            long endTime,
+            String msg,
+            boolean isFinish) {
         UploadTaskLogStepVO uploadTaskLogStepVO = new UploadTaskLogStepVO();
         uploadTaskLogStepVO.setTaskId(analyzeConfigInfoVO.getTaskId());
         uploadTaskLogStepVO.setStreamName(analyzeConfigInfoVO.getNameEn());
@@ -219,32 +242,65 @@ public abstract class AbstractFastIncrementConsumer implements IConsumer<Analyze
         thirdPartySystemCaller.uploadTaskLog(uploadTaskLogStepVO);
     }
 
-    protected void upsertCodeRepoInfo(AnalyzeConfigInfoVO analyzeConfigInfoVO)
-    {
+    protected void upsertCodeRepoInfo(AnalyzeConfigInfoVO analyzeConfigInfoVO) {
         long taskId = analyzeConfigInfoVO.getTaskId();
         String buildId = analyzeConfigInfoVO.getBuildId();
 
         // 校验构建号对应的仓库信息是否已存在
         CodeRepoInfoEntity codeRepoInfo = codeRepoRepository.findFirstByTaskIdAndBuildId(taskId, buildId);
-        if (codeRepoInfo == null)
-        {
+        if (codeRepoInfo == null) {
             // 更新仓库列表和构建ID
             List<CodeRepoEntity> codeRepoEntities = Lists.newArrayList();
             List<CodeRepoVO> codeRepoList = analyzeConfigInfoVO.getCodeRepos();
-            if (CollectionUtils.isNotEmpty(codeRepoList))
-            {
-                for (CodeRepoVO codeRepoVO : codeRepoList)
-                {
+            if (CollectionUtils.isNotEmpty(codeRepoList)) {
+                for (CodeRepoVO codeRepoVO : codeRepoList) {
                     CodeRepoEntity codeRepoEntity = new CodeRepoEntity();
                     BeanUtils.copyProperties(codeRepoVO, codeRepoEntity);
                     codeRepoEntities.add(codeRepoEntity);
                 }
             }
-            codeRepoInfo = new CodeRepoInfoEntity(taskId, buildId, codeRepoEntities, analyzeConfigInfoVO.getRepoWhiteList(), null);
+            codeRepoInfo = new CodeRepoInfoEntity(taskId, buildId, codeRepoEntities,
+                    analyzeConfigInfoVO.getRepoWhiteList(), null, analyzeConfigInfoVO.getRepoRelativePathList());
             Long currentTime = System.currentTimeMillis();
             codeRepoInfo.setUpdatedDate(currentTime);
             codeRepoInfo.setCreatedDate(currentTime);
             codeRepoRepository.save(codeRepoInfo);
         }
+    }
+
+    /**
+     * 获取比对用的基准构建Id
+     *
+     * @return
+     */
+    protected String getBaseBuildIdForFastIncr(ToolBuildStackEntity toolBuildStack,
+            Long taskId,
+            String toolName,
+            String curBuildId) {
+
+        ToolBuildInfoEntity toolBuildInfo = toolBuildInfoRepository.findFirstByTaskIdAndToolName(taskId, toolName);
+
+        // 覆盖场景：#1全量、#1重试触发超快增量
+        if (toolBuildInfo != null && curBuildId.equals(toolBuildInfo.getDefectBaseBuildId())) {
+            return curBuildId;
+        }
+
+        // 覆盖场景：#1全量、#2超快增量、#1重试触发超快增量
+        TaskLogEntity taskLog = taskLogRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, curBuildId);
+        if (taskLog != null && CollectionUtils.isNotEmpty(taskLog.getStepArray())) {
+            boolean isRebuild = taskLog.getStepArray().stream()
+                    .anyMatch(x -> x.getStepNum() == ComConstants.Step4MutliTool.COMMIT.value()
+                            && x.getFlag() == ComConstants.StepFlag.SUCC.value());
+
+            if (isRebuild) {
+                return curBuildId;
+            }
+        }
+
+        if (toolBuildStack != null) {
+            return toolBuildStack.getBaseBuildId();
+        }
+
+        return toolBuildInfo != null ? toolBuildInfo.getDefectBaseBuildId() : "";
     }
 }

@@ -30,6 +30,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.tencent.bk.codecc.defect.api.OpDefectRestResource;
 import com.tencent.bk.codecc.defect.api.ServiceCheckerRestResource;
 import com.tencent.bk.codecc.defect.api.ServiceToolBuildInfoResource;
 import com.tencent.bk.codecc.defect.vo.checkerset.AddCheckerSet2TaskReqVO;
@@ -64,7 +65,7 @@ import com.tencent.bk.codecc.task.vo.checkerset.ToolCheckerSetVO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.external.AuthExRegisterApi;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
@@ -93,6 +94,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -161,7 +164,6 @@ public class ToolServiceImpl implements ToolService
     @Autowired
     private ToolStatisticRepository toolStatisticRepository;
 
-
     @Override
     public Result<Boolean> registerTools(BatchRegisterVO batchRegisterVO, TaskInfoEntity taskInfoEntity, String userName)
     {
@@ -215,9 +217,17 @@ public class ToolServiceImpl implements ToolService
             client.get(ServiceToolBuildInfoResource.class).setForceFullScan(taskId, successTools);
         }
 
+
         // 保存工具信息,只有当不为空的时候才保存
-        if(CollectionUtils.isNotEmpty(toolConfigInfoEntityList))
-        {
+        if (CollectionUtils.isNotEmpty(toolConfigInfoEntityList)) {
+            //遍历查找工具清单中是否有cloc工具，如果有的话，需要下线cloc工具
+            toolConfigInfoEntityList.stream().filter(toolConfigInfoEntity
+                    -> Tool.CLOC.name().equalsIgnoreCase(toolConfigInfoEntity.getToolName()))
+                    .forEach(toolConfigInfoEntity -> {
+                        toolConfigInfoEntity.setFollowStatus(FOLLOW_STATUS.WITHDRAW.value());
+                        toolConfigInfoEntity.setUpdatedBy(userName);
+                        toolConfigInfoEntity.setUpdatedDate(System.currentTimeMillis());
+                    });
             toolConfigInfoEntityList = toolRepository.saveAll(toolConfigInfoEntityList);
             taskInfoEntity.setToolConfigInfoList(toolConfigInfoEntityList);
         }
@@ -624,6 +634,9 @@ public class ToolServiceImpl implements ToolService
     {
         // 查询任务已接入的工具列表
         TaskInfoEntity taskInfoEntity = taskRepository.findFirstByTaskId(taskId);
+
+        log.info("start to update tool for task: {}", taskId);
+
         Map<String, ToolConfigInfoEntity> toolConfigInfoEntityMap = Maps.newHashMap();
         if (CollectionUtils.isNotEmpty(taskInfoEntity.getToolConfigInfoList()))
         {
@@ -663,7 +676,8 @@ public class ToolServiceImpl implements ToolService
         {
             for (ToolConfigInfoEntity toolConfigInfoEntity : taskInfoEntity.getToolConfigInfoList())
             {
-                if (!reqTools.contains(toolConfigInfoEntity.getToolName()))
+                //cloc工具统一需要停用
+                if (!reqTools.contains(toolConfigInfoEntity.getToolName()) || Tool.CLOC.name().equalsIgnoreCase(toolConfigInfoEntity.getToolName()))
                 {
                     int toolFollowStatus = toolConfigInfoEntity.getFollowStatus();
                     if (FOLLOW_STATUS.WITHDRAW.value() != toolFollowStatus)
@@ -754,7 +768,7 @@ public class ToolServiceImpl implements ToolService
             String defaultExecuteTime = getTaskDefaultTime();
 
             // 创建流水线编排并获取流水线ID
-            pipelineId = pipelineService.assembleCreatePipeline(batchRegisterVO, taskInfoEntity, defaultExecuteTime, defaultExecuteDate, userName, relPath);
+            pipelineId = pipelineService.assembleCreatePipeline(batchRegisterVO, taskInfoEntity, defaultExecuteTime, defaultExecuteDate, userName, relPath, "CREATE");
             log.info("create pipeline success! project id: {}, codecc task id: {}, pipeline id: {}", taskInfoEntity.getProjectId(),
                     taskInfoEntity.getTaskId(), pipelineId);
 
@@ -913,17 +927,60 @@ public class ToolServiceImpl implements ToolService
     }
 
 
+    /**
+     * 根据taskId集合刷新工具的跟进状态
+     *
+     * @param userName 用户名
+     * @param reqVO    请求体
+     * @return boolean
+     */
     @Override
-    public Boolean batchUpdateToolFollowStatus(Integer pageSize)
-    {
-        Pageable pageable = PageableUtils.getPageable(1, pageSize, "task_id", Sort.Direction.ASC, "");
+    public Boolean refreshToolFollowStatusByTaskIds(String userName, QueryTaskListReqVO reqVO) {
+        log.info("refreshToolFollowStatusByTaskIdList executor: [{}], reqVO: [{}]", userName, reqVO);
+        // 由于手动掉用的数据量并不大,这里默认pageSize为20
+        Pageable pageable = PageableUtils.getPageable(1, 20, "task_id", Sort.Direction.DESC, "");
+
+        Set<Long> taskIdSet = new HashSet<>();
+        if (CollectionUtils.isNotEmpty(reqVO.getTaskIds())) {
+            Collection<Long> taskIds = reqVO.getTaskIds();
+            taskIdSet = new HashSet<>(taskIds);
+        }
+        List<TaskInfoEntity> taskInfoEntities = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(taskIdSet)) {
+            // 筛选出有效的任务ID
+            taskInfoEntities = taskRepository.findByStatusAndCreateFromInAndTaskIdIn(Status.ENABLE.value(),
+                    Lists.newArrayList(BsTaskCreateFrom.BS_CODECC.value(), BsTaskCreateFrom.BS_PIPELINE.value()),
+                    taskIdSet);
+        }
+        if (CollectionUtils.isNotEmpty(taskInfoEntities)) {
+            return refreshToolFollowStatus(pageable, taskInfoEntities);
+        } else {
+            log.info("The valid task ID is empty!");
+            return false;
+        }
+    }
+
+    @Override
+    public Boolean batchUpdateToolFollowStatus(Integer pageSize) {
+        Pageable pageable = PageableUtils.getPageable(1, pageSize, "task_id", Sort.Direction.DESC, "");
 
         // 1.查询有效的任务ID
         List<TaskInfoEntity> taskInfoEntities = taskRepository.findByStatusAndCreateFromIn(Status.ENABLE.value(),
                 Lists.newArrayList(BsTaskCreateFrom.BS_CODECC.value(), BsTaskCreateFrom.BS_PIPELINE.value()));
+
+        return refreshToolFollowStatus(pageable, taskInfoEntities);
+    }
+
+    /**
+     * 公共方法 操作刷新工具跟进状态
+     * @param pageable 分页器
+     * @param taskInfoEntities 有效的任务id集合
+     * @return boolean
+     */
+    @NotNull
+    private Boolean refreshToolFollowStatus(Pageable pageable, List<TaskInfoEntity> taskInfoEntities) {
         List<Long> taskList = taskInfoEntities.stream().map(TaskInfoEntity::getTaskId).collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(taskList))
-        {
+        if (CollectionUtils.isEmpty(taskList)) {
             log.error("End batchUpdateToolFollowStatus, task id list is empty!");
             return false;
         }
@@ -932,16 +989,70 @@ public class ToolServiceImpl implements ToolService
         List<ToolConfigInfoEntity> toolConfigInfoEntities = toolDao.getTaskIdsAndFollowStatusPage(taskList,
                 Lists.newArrayList(FOLLOW_STATUS.NOT_FOLLOW_UP_0.value(), FOLLOW_STATUS.NOT_FOLLOW_UP_1.value()),
                 pageable);
-        if (CollectionUtils.isEmpty(toolConfigInfoEntities))
-        {
+        if (CollectionUtils.isEmpty(toolConfigInfoEntities)) {
             log.info("End batchUpdateToolFollowStatus, Not follow up tool is empty!");
             return true;
         }
 
-        // 3.批量更新跟进状态
-        toolDao.batchUpdateToolFollowStatus(toolConfigInfoEntities, FOLLOW_STATUS.ACCESSED);
+        Map<String, List<ToolConfigInfoEntity>> toolConfigInfoEntityMap = new HashMap<>();
+        for (ToolConfigInfoEntity toolConfigInfoEntity : toolConfigInfoEntities) {
+            if (toolConfigInfoEntity.getTaskId() != 0 && StringUtils.isNotEmpty(toolConfigInfoEntity.getToolName())) {
+                // 将TaskId和ToolName组合成Key
+                List<ToolConfigInfoEntity> toolConfigInfos = toolConfigInfoEntityMap
+                        .get(toolConfigInfoEntity.getTaskId() + toolConfigInfoEntity.getToolName());
+                if (CollectionUtils.isEmpty(toolConfigInfos)) {
+                    toolConfigInfos = Lists.newArrayList();
+                }
+                toolConfigInfos.add(toolConfigInfoEntity);
+                toolConfigInfoEntityMap
+                        .put(toolConfigInfoEntity.getTaskId() + toolConfigInfoEntity.getToolName(), toolConfigInfos);
+            }
+        }
+        // 根据工具名分组
+        Map<String, List<ToolConfigInfoEntity>> queryToolConfigInfoEntityMap =
+                toolConfigInfoEntities.stream().filter(entity -> StringUtils.isNotEmpty(entity.getToolName()))
+                        .collect(Collectors.groupingBy(ToolConfigInfoEntity::getToolName));
 
-        log.info("finish batchUpdateToolFollowStatus, count: {}", toolConfigInfoEntities.size());
+        List<QueryTaskListReqVO> queryTaskListReqVODataList = new ArrayList<>();
+        for (Map.Entry<String, List<ToolConfigInfoEntity>> entry : queryToolConfigInfoEntityMap.entrySet()) {
+            String toolName = entry.getKey();
+            List<ToolConfigInfoEntity> reqVOList = entry.getValue();
+            Collection<Long> taskIds = null;
+            if (CollectionUtils.isNotEmpty(reqVOList)) {
+                taskIds = reqVOList.stream().map(ToolConfigInfoEntity::getTaskId).collect(Collectors.toList());
+            }
+
+            QueryTaskListReqVO queryTaskListReqVO = new QueryTaskListReqVO();
+            queryTaskListReqVO.setToolName(toolName);
+            queryTaskListReqVO.setTaskIds(taskIds);
+
+            // 调用defect服务接口 查询分析成功的任务和工具信息
+            List<QueryTaskListReqVO> taskListReqVOList =
+                    client.get(OpDefectRestResource.class).queryAccessedTaskAndToolName(queryTaskListReqVO).getData();
+            if (CollectionUtils.isNotEmpty(taskListReqVOList)) {
+                queryTaskListReqVODataList.addAll(taskListReqVOList);
+            }
+        }
+
+        // 获取分析成功的ToolConfigInfoEntity
+        List<ToolConfigInfoEntity> accToolConfigInfoEntity = new ArrayList<>();
+        for (QueryTaskListReqVO queryTaskListReqVO : queryTaskListReqVODataList) {
+            List<ToolConfigInfoEntity> toolConfigInfoEntityList =
+                    toolConfigInfoEntityMap.get(queryTaskListReqVO.getTaskId() + queryTaskListReqVO.getToolName());
+            if (CollectionUtils.isNotEmpty(toolConfigInfoEntityList)) {
+                for (ToolConfigInfoEntity toolConfigInfoEntity : toolConfigInfoEntityList) {
+                    if (toolConfigInfoEntity != null) {
+                        accToolConfigInfoEntity.add(toolConfigInfoEntity);
+                    }
+                }
+            }
+        }
+        log.info("accToolConfigInfoEntity: [{}]", accToolConfigInfoEntity.size());
+
+        // 3.批量更新跟进状态
+        toolDao.batchUpdateToolFollowStatus(accToolConfigInfoEntity, FOLLOW_STATUS.ACCESSED);
+
+        log.info("finish batchUpdateToolFollowStatus, count: {}", accToolConfigInfoEntity.size());
         return true;
     }
 
@@ -1007,4 +1118,6 @@ public class ToolServiceImpl implements ToolService
             toolCountData.add(toolStatisticEntity);
         }
     }
+
+
 }

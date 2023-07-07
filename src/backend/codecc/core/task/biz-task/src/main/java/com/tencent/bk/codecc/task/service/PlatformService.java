@@ -26,10 +26,10 @@
 
 package com.tencent.bk.codecc.task.service;
 
+import com.tencent.bk.codecc.task.vo.PlatformMigrateReqVO;
 import com.tencent.bk.codecc.task.vo.PlatformVO;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Platform业务接口
@@ -73,4 +73,26 @@ public interface PlatformService
      * @return list
      */
     List<PlatformVO> getPlatformInfo(String toolName, String platformIp);
+
+    Boolean batchMigratePlatformForTask(PlatformMigrateReqVO reqVO, String userName);
+
+    Boolean rollsBackMigrateLog(PlatformMigrateReqVO reqVO, String userName);
+
+    /**
+     * 修改Platform配置
+     *
+     * @param userName   用户名
+     * @param platformVO 请求体
+     * @return boolean
+     */
+    Boolean updatePlatformInfo(String userName, PlatformVO platformVO);
+
+    /**
+     * 删除Platform配置
+     *
+     * @param platformVO 请求体
+     * @return boolean
+     */
+    Boolean deletePlatformInfo(PlatformVO platformVO);
+
 }

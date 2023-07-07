@@ -48,7 +48,6 @@ public class WebsocketConsumer {
     @Autowired
     private ObjectMapper objectMapper;
 
-
     public void sendWebsocketMsg(WebsocketDTO websocketDTO) {
         TaskLogVO taskLogVO = websocketDTO.getTaskLogVO();
         TaskOverviewVO.LastAnalysis lastAnalysis = websocketDTO.getLastAnalysisResultList();

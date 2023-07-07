@@ -1,10 +1,14 @@
 package com.tencent.bk.codecc.task.model;
 
+import com.tencent.devops.common.api.ToolMetaDetailVO;
 import com.tencent.devops.common.constant.ComConstants;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Field;
+
+import java.util.List;
 
 /**
  * 工具版本实体
@@ -51,6 +55,12 @@ public class ToolVersionEntity {
      */
     @Field("docker_image_hash")
     private String dockerImageHash;
+
+    /**
+     * 工具以二进制运行的相关信息
+     */
+    @Field("binary")
+    private ToolBinaryEntity binary;
 
     /**
      * 创建时间

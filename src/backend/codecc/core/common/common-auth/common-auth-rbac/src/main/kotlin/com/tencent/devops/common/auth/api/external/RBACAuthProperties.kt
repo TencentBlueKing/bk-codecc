@@ -40,6 +40,12 @@ class RBACAuthProperties {
     val url: String? = null
 
     /**
+     * 后台接口根路径
+     */
+    @Value("\${bkci.public.schemes:http}")
+    val schemes : String = "http"
+
+    /**
      * RBAC权限系统资源类型
      */
     @Value("\${auth.rbac.resourceType:codecc_task}")

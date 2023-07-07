@@ -10,13 +10,12 @@
  *
  * Terms of the MIT License:
  * ---------------------------------------------------
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
- * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
+ * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of
- * the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
  * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -27,30 +26,24 @@
 
 package com.tencent.devops.common.client.ms
 
-import com.tencent.devops.common.api.pojo.Result
+import com.tencent.devops.common.api.pojo.codecc.Result
 import com.tencent.devops.common.constant.CommonMessageCode
 import com.tencent.devops.common.service.utils.MessageCodeUtil
 import feign.Request
 import feign.RequestTemplate
 import feign.Target
-import org.slf4j.LoggerFactory
 import org.springframework.cloud.client.ServiceInstance
 import java.util.concurrent.ConcurrentHashMap
 
 abstract class FeignTarget<T>(
     protected open val serviceName: String,
     protected open val type: Class<T>,
-    private val commonUrlPrefix: String = "/api",
+    protected open val commonUrlPrefix: String,
     protected val errorInfo : Result<String> =
         MessageCodeUtil.generateResponseDataObject(CommonMessageCode.ERROR_SERVICE_NO_FOUND, arrayOf(serviceName)),
     protected val usedInstance: ConcurrentHashMap<String, ServiceInstance> =
         ConcurrentHashMap<String, ServiceInstance>()
 ) : Target<T> {
-
-
-    companion object{
-        private val logger = LoggerFactory.getLogger(FeignTarget::class.java)
-    }
 
     override fun apply(input: RequestTemplate?): Request {
         if (input!!.url().indexOf("http") != 0) {
@@ -65,9 +58,9 @@ abstract class FeignTarget<T>(
 
     protected fun ServiceInstance.url() = "${if (isSecure) "https" else "http"}://$host:$port$commonUrlPrefix"
 
+    protected abstract fun choose(serviceName: String): ServiceInstance
+
     override fun url(): String {
         return choose(serviceName).url()
     }
-
-    protected abstract fun choose(serviceName: String): ServiceInstance
 }

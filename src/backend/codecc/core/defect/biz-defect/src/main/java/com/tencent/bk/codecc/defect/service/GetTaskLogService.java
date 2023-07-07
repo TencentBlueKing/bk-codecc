@@ -31,7 +31,9 @@ import com.tencent.bk.codecc.defect.vo.admin.DeptTaskDefectReqVO;
 import com.tencent.bk.codecc.defect.vo.admin.DeptTaskDefectRspVO;
 import com.tencent.bk.codecc.task.vo.QueryLogRepVO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 任务分析记录服务层
@@ -60,7 +62,8 @@ public interface GetTaskLogService {
      * @return
      */
     QueryLogRepVO queryAnalysisLog(String userId, String projectId, String pipelineId, String buildId,
-                                   String queryKeywords, String tag);
+            String queryKeywords,
+            String tag, String multiPipelineMark);
 
 
     /**
@@ -72,9 +75,9 @@ public interface GetTaskLogService {
      * @param tag
      * @return
      */
-    // NOCC:ParameterNumber(设计如此:)
     QueryLogRepVO getMoreLogs(String userId, String projectId, String pipelineId, String buildId, Integer num,
-                              Boolean fromStart, Long start, Long end, String tag, Integer executeCount);
+            Boolean fromStart,
+            Long start, Long end, String tag, Integer executeCount, String multiPipelineMark);
 
 
     /**
@@ -87,8 +90,9 @@ public interface GetTaskLogService {
      * @param executeCount
      * @return
      */
-    void downloadLogs(String userId, String projectId, String pipelineId, String buildId,
-                      String tag, Integer executeCount);
+    void downloadLogs(String userId, String projectId, String pipelineId, String buildId, String tag,
+            Integer executeCount,
+            String multiPipelineMark);
 
 
     /**
@@ -101,9 +105,26 @@ public interface GetTaskLogService {
      * @param executeCount
      * @return
      */
-    // NOCC:ParameterNumber(设计如此:)
-    QueryLogRepVO getAfterLogs(String userId, String projectId, String pipelineId, String buildId,
-                               Long start, String queryKeywords, String tag, Integer executeCount);
+    QueryLogRepVO getAfterLogs(String userId, String projectId, String pipelineId, String buildId, Long start,
+            String queryKeywords,
+            String tag, Integer executeCount, String multiPipelineMark);
+
+    /**
+     * 查询分析成功的任务和工具信息
+     *
+     * @param reqVO 请求体
+     * @return list
+     */
+    List<QueryTaskListReqVO> queryAccessedTaskAndToolName(QueryTaskListReqVO reqVO);
+
+    /**
+     * 按任务ID获取最新分析状态
+     *
+     * @param taskIds 任务ID集合
+     * @return map
+     */
+    Map<Long, String> getLatestAnalyzeStatus(List<Long> taskIds);
+
 
     /**
      * 获取活跃任务列表(是否活跃看时间区间内 任务的任意工具有成功分析的记录都为活跃)
@@ -112,5 +133,4 @@ public interface GetTaskLogService {
      * @return resp
      */
     DeptTaskDefectRspVO getActiveTaskList(DeptTaskDefectReqVO deptTaskDefectReqVO);
-
 }

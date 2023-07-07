@@ -31,22 +31,27 @@ import com.google.common.collect.Maps;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.CheckerStatisticEntity;
-import com.tencent.bk.codecc.defect.model.CommonStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CommonStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.DimensionStatisticEntity;
+import com.tencent.bk.codecc.defect.pojo.statistic.DimensionStatisticModel;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.util.ObjectDynamicCreator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
 import static com.tencent.devops.common.constant.ComConstants.StaticticItem;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import org.springframework.util.StringUtils;
 
 /**
  * 临时统计信息的持久化
@@ -71,6 +76,8 @@ public class StatisticDao {
     public static final String EXIST_NORMAL_AUTHORS = "EXIST_NORMAL_AUTHORS";
     public static final String EXIST_SERIOUS_AUTHORS = "EXIST_SERIOUS_AUTHORS";
 
+    public static final String DIMENSION_STATISTIC_BY_CHECKER = "DIMENSION_STATISTIC_BY_CHECKER";
+
     /**
      * 分别统计每次分析各状态告警的数量
      *
@@ -88,10 +95,9 @@ public class StatisticDao {
         redisTemplate.executePipelined((RedisCallback<Long>) connection -> {
             defectCountList.forEach(pair -> {
                 String key = String.format("%s%d:%s:%s:%s",
-                    RedisKeyConstants.PREFIX_TMP_STATISTIC, taskId, toolName, buildNum, pair.getKey().name());
-                connection.incrBy(key.getBytes(), pair.getValue());
+                    RedisKeyConstants.PREFIX_TMP_STATISTIC, taskId, toolName, buildNum, pair.getFirst().name());
+                connection.incrBy(key.getBytes(), pair.getSecond());
                 connection.expire(key.getBytes(), 48 * 3600);
-
                 log.info("increase defect count by status batch: {}", key);
             });
             return null;
@@ -204,6 +210,18 @@ public class StatisticDao {
 
         // 获取规则集分类数据
         statisticEntity.setCheckerStatistic(getCheckerStatistic(statisticEntity, buildNum));
+
+        String dimensionStatisticModelStr = redisTemplate.opsForValue().get(key + DIMENSION_STATISTIC_BY_CHECKER);
+        if (!StringUtils.isEmpty(dimensionStatisticModelStr)) {
+            DimensionStatisticModel model =
+                    JsonUtil.INSTANCE.to(dimensionStatisticModelStr, DimensionStatisticModel.class);
+
+            if (model != null) {
+                DimensionStatisticEntity dimensionStatisticEntity = new DimensionStatisticEntity();
+                BeanUtils.copyProperties(model, dimensionStatisticEntity);
+                statisticEntity.setDimensionStatistic(dimensionStatisticEntity);
+            }
+        }
 
         // 获取完后删除临时key
         redisTemplate.delete(keyList);
@@ -359,6 +377,24 @@ public class StatisticDao {
         }
         if (CollectionUtils.isNotEmpty(existSeriousAuthors)) {
             redisTemplate.opsForSet().add(prefix + EXIST_SERIOUS_AUTHORS, existSeriousAuthors.toArray(new String[0]));
+        }
+    }
+
+
+    public void addDimensionStatistic(
+            long taskId,
+            String toolName,
+            String buildNum,
+            DimensionStatisticModel dimensionStatisticModel
+    ) {
+        String prefix = String.format("%s%d:%s:%s:", RedisKeyConstants.PREFIX_TMP_STATISTIC,
+                taskId, toolName, buildNum);
+
+        if (dimensionStatisticModel != null) {
+            redisTemplate.opsForValue().set(
+                    prefix + DIMENSION_STATISTIC_BY_CHECKER,
+                    JsonUtil.INSTANCE.toJson(dimensionStatisticModel)
+            );
         }
     }
 

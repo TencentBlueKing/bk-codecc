@@ -14,29 +14,31 @@ package com.tencent.bk.codecc.defect.vo.enums;
 
 /**
  * 规则集来源
- * 
- * @date 2020/1/6
+ *
  * @version V1.0
+ * @date 2020/1/6
  */
-public enum CheckerSetSource 
-{
+public enum CheckerSetSource {
 
-    DEFAULT("精选"),
+    DEFAULT("精选", "TOP-RATED"),
 
-    RECOMMEND("推荐"),
+    RECOMMEND("推荐", "RECOMMENDED"),
 
-    SELF_DEFINED("自定义");
+    SELF_DEFINED("自定义", "CUSTOM");
 
-    private String name;
+    private String nameCn;
+    private String nameEn;
 
-    CheckerSetSource(String name)
-    {
-        this.name = name;
+    CheckerSetSource(String nameCn, String nameEn) {
+        this.nameCn = nameCn;
+        this.nameEn = nameEn;
     }
 
-    public String getName()
-    {
-        return this.name;
+    public String getNameCn() {
+        return this.nameCn;
     }
 
+    public String getNameEn() {
+        return this.nameEn;
+    }
 }

@@ -57,4 +57,10 @@ public class CommonDefectDetailQueryRspVO
 
     @ApiModelProperty("版本号")
     private String revision;
+
+    @ApiModelProperty("同分支的最后一次构建号")
+    private String lastBuildNumOfSameBranch;
+
+    @ApiModelProperty("该告警在同分支的最后一次构建中是否已被修复")
+    private Boolean defectIsFixedOnLastBuildNumOfSameBranch;
 }

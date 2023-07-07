@@ -41,6 +41,10 @@ public class CustomProjVersionEntity {
     @Field("codecc_plugin_version")
     private String codeccPluginVersion;
 
+
+    @Field("tag")
+    private String tag;
+
     /**
      * 提交id
      */

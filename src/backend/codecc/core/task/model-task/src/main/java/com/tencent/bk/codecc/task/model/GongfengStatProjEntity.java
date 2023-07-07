@@ -30,8 +30,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Document(collection = "t_gongfeng_stat_project")
-public class GongfengStatProjEntity extends CommonEntity
-{
+public class GongfengStatProjEntity extends CommonEntity {
     /**
      * 工蜂项目ID
      */
@@ -95,13 +94,29 @@ public class GongfengStatProjEntity extends CommonEntity
      * 特殊情况注册了的子group用户
      */
     @Field("current_owners")
+    @JsonProperty("current_owners")
     private String currentOwners;
 
     /**
      * 子group用户对应的组织架构信息
      */
     @Field("current_owners_org_paths")
+    @JsonProperty("current_owners_org_paths")
     private String currentOwnersOrgPaths;
+
+    /**
+     * 项目组的在职 owner
+     */
+    @Field("namespace_owners")
+    @JsonProperty("namespace_owners")
+    private String namespaceOwners;
+
+    /**
+     * 项目本身的在职 owner
+     */
+    @Field("project_owners")
+    @JsonProperty("project_owners")
+    private String projectOwners;
 
     /**
      * 创建时间

@@ -43,7 +43,7 @@ public class RefreshToolFollowStatusConsumer
 
     @RabbitListener(bindings = @QueueBinding(key = ROUTE_TOOL_REFRESH_FOLLOWSTATUS,
             value = @Queue(value = QUEUE_TOOL_REFRESH_FOLLOWSTATUS, durable = "true"),
-            exchange = @Exchange(value = EXCHANGE_TOOL_REFRESH_FOLLOWSTATUS, durable = "true")))
+            exchange = @Exchange(value = EXCHANGE_TOOL_REFRESH_FOLLOWSTATUS, durable = "false")))
     public void RefreshToolFollowStatus(RefreshToolFollowStatusModel refreshToolFollowStatusModel)
     {
         log.info("RefreshToolFollowStatus beginning: {}", refreshToolFollowStatusModel);

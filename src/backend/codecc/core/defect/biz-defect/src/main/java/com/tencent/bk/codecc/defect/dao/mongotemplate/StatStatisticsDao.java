@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.dao.mongotemplate;
 
-import com.tencent.bk.codecc.defect.model.StatStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.StatStatisticEntity;
 import java.util.List;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;

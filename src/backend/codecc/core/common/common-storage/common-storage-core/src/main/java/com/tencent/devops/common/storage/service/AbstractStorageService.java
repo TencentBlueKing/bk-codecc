@@ -3,6 +3,8 @@ package com.tencent.devops.common.storage.service;
 import com.tencent.devops.common.storage.StorageService;
 import com.tencent.devops.common.storage.constant.StorageType;
 import com.tencent.devops.common.util.OkhttpUtils;
+import java.util.Arrays;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.StringUtils;
@@ -15,6 +17,7 @@ import java.util.Map;
 
 @Slf4j
 public abstract class AbstractStorageService implements StorageService {
+
     /**
      * 保存时间（默认永久，单位小时）
      * 0 表示永久
@@ -24,6 +27,10 @@ public abstract class AbstractStorageService implements StorageService {
 
     @Value("${storage.type:nfs}")
     private String storageType;
+
+    private static final List<String> localMerge = Arrays.asList(
+            StorageType.NFS.code()
+    );
 
     @Override
     public String upload(String localFilePath, String subPath, String filename) throws FileNotFoundException {
@@ -37,7 +44,7 @@ public abstract class AbstractStorageService implements StorageService {
         return url;
     }
 
-    public abstract String upload(String subPath,String filename, File file);
+    public abstract String upload(String subPath, String filename, File file);
 
     @Override
     public Boolean chunkUpload(String localFilePath, String subPath, String filename, Integer chunkNo, String uploadId)
@@ -51,10 +58,10 @@ public abstract class AbstractStorageService implements StorageService {
     }
 
     public abstract Boolean chunkUpload(String subPath, String filename, File file,
-                                       Integer chunkNo, String uploadId);
+            Integer chunkNo, String uploadId);
 
     @Override
-    public void download(String localFilePath, String storageType, String urlOrPath)  {
+    public void download(String localFilePath, String storageType, String urlOrPath) {
         //如果存储类型不同，则无法获取
         if (storageType == null || storageType.equals(StorageType.NFS.code())) {
             return;
@@ -87,22 +94,23 @@ public abstract class AbstractStorageService implements StorageService {
 
     @Override
     public Boolean ifNeedAndCanDownload(String storageType, String urlOrPath) {
-        log.info("storageType : {}",storageType);
+        log.info("storageType : {}", storageType);
         //NFS不需要下载
-        if(storageType == null || storageType.equals(StorageType.NFS.code())
-                || !StringUtils.hasLength(urlOrPath)){
+        if (storageType == null || storageType.equals(StorageType.NFS.code())
+                || !StringUtils.hasLength(urlOrPath)) {
             return false;
         }
         return getStorageType().equals(storageType);
     }
 
-    protected String getUploadFilePath(String subPath,String filename){
+    protected String getUploadFilePath(String subPath, String filename) {
         return subPath + "/" + filename;
     }
+
 
     @Override
     public boolean ifNeedLocalMerge(String storageType) {
         //NFS不需要下载
-        return storageType == null || storageType.equals(StorageType.NFS.code());
+        return storageType == null || localMerge.contains(storageType);
     }
 }

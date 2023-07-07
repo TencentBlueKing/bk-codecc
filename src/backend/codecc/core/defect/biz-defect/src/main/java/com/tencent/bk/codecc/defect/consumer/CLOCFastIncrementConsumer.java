@@ -14,7 +14,7 @@ package com.tencent.bk.codecc.defect.consumer;
 
 import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository;
 import com.tencent.bk.codecc.defect.dao.mongotemplate.CLOCStatisticsDao;
-import com.tencent.bk.codecc.defect.model.CLOCStatisticEntity;
+import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;

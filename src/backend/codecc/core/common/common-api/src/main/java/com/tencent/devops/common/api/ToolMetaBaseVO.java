@@ -10,12 +10,13 @@
  *
  * Terms of the MIT License:
  * ---------------------------------------------------
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+ * and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions
+ * of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
  * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -26,6 +27,8 @@
 
 package com.tencent.devops.common.api;
 
+import com.tencent.devops.common.api.annotation.I18NFieldMarker;
+import com.tencent.devops.common.api.annotation.I18NModuleCode;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -41,13 +44,15 @@ import java.util.List;
  */
 @Data
 @ApiModel("工具完整信息视图")
-public class ToolMetaBaseVO extends CommonVO
-{
+public class ToolMetaBaseVO extends CommonVO {
     /**
      * 工具模型,LINT、COMPILE、TSCLUA、CCN、DUPC，决定了工具的接入、告警、报表的处理及展示类型
      */
     @ApiModelProperty("工具模型,决定了工具的接入、告警、报表的处理及展示类型")
     private String pattern;
+
+    @ApiModelProperty("工具聚类跟踪方式")
+    private String clusterType;
 
     /**
      * 工具名称，也是唯一KEY
@@ -60,6 +65,7 @@ public class ToolMetaBaseVO extends CommonVO
      * 工具的展示名
      */
     @ApiModelProperty(value = "工具的展示名", required = true)
+    @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.TOOL_DISPLAY_NAME)
     private String displayName;
 
     /**
@@ -82,9 +88,10 @@ public class ToolMetaBaseVO extends CommonVO
     private boolean recommend;
 
     /**
-     * 状态：测试（T）、灰度（保留字段）、发布（P）、下架， 注：测试类工具只有管理员可以在页面上看到，只有管理员可以接入
+     * 状态：测试（T）、灰度（保留字段）、发布（P）、下架(D)， 注：测试类工具只有管理员可以在页面上看到，只有管理员可以接入
      */
-    @ApiModelProperty(value = "态：测试（T）、灰度（保留字段）、发布（P）、下架， 注：测试类工具只有管理员可以在页面上看到，只有管理员可以接入", allowableValues = "{T,P}")
+    @ApiModelProperty(value = "态：测试（T）、灰度（保留字段）、发布（P）、下架(D)， 注：测试类工具只有管理员可以在页面上看到，"
+            + "只有管理员可以接入", allowableValues = "{T,P,D}")
     private String status;
 
     /**

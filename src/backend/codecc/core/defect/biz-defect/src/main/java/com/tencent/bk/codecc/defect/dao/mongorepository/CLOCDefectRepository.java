@@ -12,7 +12,7 @@
 
 package com.tencent.bk.codecc.defect.dao.mongorepository;
 
-import com.tencent.bk.codecc.defect.model.CLOCDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.CLOCDefectEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

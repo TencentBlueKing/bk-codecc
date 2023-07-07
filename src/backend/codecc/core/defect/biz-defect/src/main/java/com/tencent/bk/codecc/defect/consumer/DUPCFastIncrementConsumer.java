@@ -13,20 +13,25 @@
 package com.tencent.bk.codecc.defect.consumer;
 
 import com.google.common.collect.Lists;
+import com.tencent.bk.codecc.defect.dao.mongorepository.DUPCDefectRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.DUPCStatisticRepository;
-import com.tencent.bk.codecc.defect.model.DUPCStatisticEntity;
+import com.tencent.bk.codecc.defect.model.defect.DUPCDefectEntity;
+import com.tencent.bk.codecc.defect.model.statistic.DUPCStatisticEntity;
 import com.tencent.bk.codecc.defect.model.DupcChartTrendEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
 import com.tencent.bk.codecc.defect.service.IDataReportBizService;
+import com.tencent.bk.codecc.defect.service.impl.redline.DupcRedLineReportServiceImpl;
 import com.tencent.bk.codecc.defect.vo.DupcChartTrendVO;
 import com.tencent.bk.codecc.defect.vo.DupcDataReportRspVO;
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.DefectStatus;
 import com.tencent.devops.common.service.BizServiceFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -44,16 +49,18 @@ import java.util.stream.Collectors;
  */
 @Component
 @Slf4j
-public class DUPCFastIncrementConsumer extends AbstractFastIncrementConsumer
-{
+public class DUPCFastIncrementConsumer extends AbstractFastIncrementConsumer {
     @Autowired
     private BizServiceFactory<IDataReportBizService> dataReportBizServiceBizServiceFactory;
     @Autowired
     private DUPCStatisticRepository dupcStatisticRepository;
+    @Autowired
+    private DupcRedLineReportServiceImpl dupcRedLineReportServiceImpl;
+    @Autowired
+    private DUPCDefectRepository dupcDefectRepository;
 
     @Override
-    protected void generateResult(AnalyzeConfigInfoVO analyzeConfigInfoVO)
-    {
+    protected void generateResult(AnalyzeConfigInfoVO analyzeConfigInfoVO) {
         long taskId = analyzeConfigInfoVO.getTaskId();
         String streamName = analyzeConfigInfoVO.getNameEn();
         String toolName = analyzeConfigInfoVO.getMultiToolType();
@@ -61,7 +68,8 @@ public class DUPCFastIncrementConsumer extends AbstractFastIncrementConsumer
 
         TaskDetailVO taskVO = thirdPartySystemCaller.getTaskInfo(streamName);
 
-        ToolBuildStackEntity toolBuildStackEntity = toolBuildStackRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
+        ToolBuildStackEntity toolBuildStackEntity =
+                toolBuildStackRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
 
         // 统计本次扫描的告警
         statistic(taskId, toolName, buildId, toolBuildStackEntity);
@@ -70,21 +78,21 @@ public class DUPCFastIncrementConsumer extends AbstractFastIncrementConsumer
         toolBuildInfoDao.updateDefectBaseBuildId(taskId, toolName, buildId);
 
         // 保存质量红线数据
-        redLineReportService.saveRedLineData(taskVO, toolName, buildId);
+        List<DUPCDefectEntity> allNewDefectList = dupcDefectRepository.getByTaskIdAndStatus(taskId,
+                DefectStatus.NEW.value());
+        dupcRedLineReportServiceImpl.saveRedLineData(taskVO, toolName, buildId, allNewDefectList);
     }
 
-    private void statistic(long taskId, String toolName, String buildId, ToolBuildStackEntity toolBuildStackEntity)
-    {
+    private void statistic(long taskId, String toolName, String buildId, ToolBuildStackEntity toolBuildStackEntity) {
         // 因为代码没有变更，默认重复率不变，所以直接取上一个分析的统计信息
         String baseBuildId;
-        if (toolBuildStackEntity == null)
-        {
+        if (toolBuildStackEntity == null) {
             ToolBuildInfoEntity toolBuildINfoEntity = toolBuildInfoRepository.findFirstByTaskIdAndToolName(taskId, toolName);
-            baseBuildId = toolBuildINfoEntity != null && StringUtils.isNotEmpty(toolBuildINfoEntity.getDefectBaseBuildId()) ? toolBuildINfoEntity.getDefectBaseBuildId() : "";
-        }
-        else
-        {
-            baseBuildId = StringUtils.isNotEmpty(toolBuildStackEntity.getBaseBuildId()) ? toolBuildStackEntity.getBaseBuildId() : "";
+            baseBuildId = toolBuildINfoEntity != null && StringUtils.isNotEmpty(
+                    toolBuildINfoEntity.getDefectBaseBuildId()) ? toolBuildINfoEntity.getDefectBaseBuildId() : "";
+        } else {
+            baseBuildId = StringUtils.isNotEmpty(toolBuildStackEntity.getBaseBuildId())
+                    ? toolBuildStackEntity.getBaseBuildId() : "";
         }
         DUPCStatisticEntity statisticEntity = dupcStatisticRepository.findFirstByTaskIdAndBuildId(taskId, baseBuildId);
         if (statisticEntity != null) {
@@ -93,19 +101,32 @@ public class DUPCFastIncrementConsumer extends AbstractFastIncrementConsumer
             statisticEntity.setDefectChange(0);
             statisticEntity.setDupRateChange(0F);
             statisticEntity.setTime(System.currentTimeMillis());
+
+            // 获取最近5天重复率趋势
+            List<DupcChartTrendEntity> dupcChart = getDupcChartTrend(taskId);
+            statisticEntity.setDupcChart(dupcChart);
             dupcStatisticRepository.save(statisticEntity);
         }
+    }
 
-        // 获取最近5天重复率趋势
+    /**
+     * 获取最近5天重复率趋势
+     *
+     * @param taskId
+     * @return
+     */
+    @NotNull
+    private List<DupcChartTrendEntity> getDupcChartTrend(long taskId) {
         List<DupcChartTrendEntity> dupcChart = Lists.newArrayList();
-        IDataReportBizService dataReportBizService = dataReportBizServiceBizServiceFactory.createBizService(ComConstants.Tool.DUPC.name(),
-                ComConstants.BusinessType.DATA_REPORT.value(), IDataReportBizService.class);
+        IDataReportBizService dataReportBizService =
+                dataReportBizServiceBizServiceFactory.createBizService(ComConstants.Tool.DUPC.name(),
+                        ComConstants.BusinessType.DATA_REPORT.value(), IDataReportBizService.class);
         DupcDataReportRspVO dupcDataReportRspVO = (DupcDataReportRspVO) dataReportBizService
                 .getDataReport(taskId, ComConstants.Tool.DUPC.name(), 5, null, null);
-        if (dupcDataReportRspVO != null)
-        {
+        if (dupcDataReportRspVO != null) {
             //按日期排序
-            dupcDataReportRspVO.getChartTrendList().getDucpChartList().sort(Comparator.comparing(DupcChartTrendVO::getDate));
+            dupcDataReportRspVO.getChartTrendList().getDucpChartList()
+                    .sort(Comparator.comparing(DupcChartTrendVO::getDate));
 
             //重复率值保留两位小数
             dupcDataReportRspVO.getChartTrendList().getDucpChartList().forEach(dupcChartTrendVO ->
@@ -121,7 +142,6 @@ public class DUPCFastIncrementConsumer extends AbstractFastIncrementConsumer
                 return dupcChartTrendEntity;
             }).collect(Collectors.toList()));
         }
-        statisticEntity.setDupcChart(dupcChart);
-        dupcStatisticRepository.save(statisticEntity);
+        return dupcChart;
     }
 }

@@ -12,19 +12,13 @@
 
 package com.tencent.bk.codecc.defect.consumer;
 
-import com.tencent.bk.codecc.defect.api.ServiceReportTaskLogRestResource;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.ToolBuildInfoDao;
-import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
 import com.tencent.bk.codecc.defect.vo.CommitDefectVO;
-import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
 import com.tencent.bk.codecc.defect.vo.customtool.RepoSubModuleVO;
 import com.tencent.bk.codecc.defect.vo.customtool.ScmBlameVO;
 import com.tencent.devops.common.constant.ComConstants;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 /**
  * 告警提交消息队列的消费者抽象类
@@ -34,35 +28,56 @@ import java.util.Map;
  */
 @Component
 @Slf4j
-public class SuperLargeDefectCommitConsumer extends AbstractDefectCommitConsumer
-{
+public class SuperLargeDefectCommitConsumer extends AbstractDefectCommitConsumer {
+
     /**
      * 告警提交
      *
      * @param commitDefectVO
      */
     @Override
-    public void commitDefect(CommitDefectVO commitDefectVO)
-    {
-        try
-        {
+    public void commitDefect(CommitDefectVO commitDefectVO) {
+        try {
             log.info("commit defect! {}", commitDefectVO);
 
             // 发送开始提单的分析记录
-            uploadTaskLog(commitDefectVO, ComConstants.StepFlag.PROCESSING.value(), System.currentTimeMillis(), 0, null);
+            uploadTaskLog(
+                    commitDefectVO,
+                    ComConstants.StepFlag.PROCESSING.value(),
+                    System.currentTimeMillis(),
+                    0,
+                    null
+            );
 
             // 发送提单成功的分析记录
-            uploadTaskLog(commitDefectVO, ComConstants.StepFlag.SUCC.value(), 0, System.currentTimeMillis(), "告警文件大小超过1G，无法入库");
-        }
-        catch (Throwable e)
-        {
+            uploadTaskLog(
+                    commitDefectVO,
+                    ComConstants.StepFlag.SUCC.value(),
+                    0,
+                    System.currentTimeMillis(),
+                    "告警文件大小超过1G，无法入库"
+            );
+        } catch (Throwable e) {
             log.error("commit defect fail!", e);
         }
     }
 
     @Override
-    protected void uploadDefects(CommitDefectVO commitDefectVO, Map<String, ScmBlameVO> fileChangeRecordsMap, Map<String, RepoSubModuleVO> codeRepoIdMap)
-    {
+    protected boolean uploadDefects(
+            CommitDefectVO commitDefectVO,
+            Map<String, ScmBlameVO> fileChangeRecordsMap,
+            Map<String, RepoSubModuleVO> codeRepoIdMap
+    ) {
+        return true;
+    }
 
+    @Override
+    protected String getRecommitMQExchange(CommitDefectVO vo) {
+        throw new UnsupportedOperationException(SuperLargeDefectCommitConsumer.class.getName());
+    }
+
+    @Override
+    protected String getRecommitMQRoutingKey(CommitDefectVO vo) {
+        throw new UnsupportedOperationException(SuperLargeDefectCommitConsumer.class.getName());
     }
 }

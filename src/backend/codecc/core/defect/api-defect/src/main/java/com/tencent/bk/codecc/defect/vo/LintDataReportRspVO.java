@@ -41,8 +41,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ApiModel("Lint类数据报表响应视图")
-public class LintDataReportRspVO extends CommonDataReportRspVO
-{
+public class LintDataReportRspVO extends CommonDataReportRspVO {
 
     @ApiModelProperty("告警遗留数据列表[新/历史遗留]")
     private ChartLegacyListVO chartLegacys;

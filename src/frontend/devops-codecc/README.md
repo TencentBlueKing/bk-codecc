@@ -65,7 +65,7 @@ codecc-frontend
 
 ## 本地开发
 
-0. 拷贝 index.html 为 index-dev.html，并替换文件中的 `__xxx__` 为实际情况的配置值。
+0. 拷贝 index.html 为 index-dev.html，并替换文件中的 `__xxx__` 为实际情况的配置值
 
 1. 配置 host
 
@@ -77,11 +77,14 @@ codecc-frontend
 
     ```
     npm i # 首次
-    npm run local
+    npm run dev
     ```
 
-3. 打开浏览器，访问 <http://dev.codecc.com:8009>
+3. 打开浏览器，访问 <http://dev.codecc.com>
 
 ## 组件
 
 本工程是基于BKUI-CLI脚手架搭建的Vue项目，更多组件可参考[MagicBox Vue组件](https://magicbox.bk.tencent.com/static_api/v3/components_vue/2.0/example/index.html#/changelog)
+
+## 外网部署
+如果需要部署外网版本，可以先执行`npm run modify`，然后就会调用modify-opensource脚本处理内网版差异。

@@ -29,7 +29,7 @@ package com.tencent.bk.codecc.defect.resources;
 import com.tencent.bk.codecc.defect.api.BuildDefectRestResource;
 import com.tencent.bk.codecc.defect.service.UploadRepositoriesService;
 import com.tencent.bk.codecc.defect.vo.coderepository.UploadRepositoriesVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.web.RestResource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -10,12 +10,14 @@
  *
  * Terms of the MIT License:
  * ---------------------------------------------------
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ * and associated documentation files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use, copy,
+ * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+ * persons to whom the Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial
+ * portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
  * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -26,22 +28,40 @@
 
 package com.tencent.bk.codecc.task.api;
 
-import com.tencent.bk.codecc.task.vo.*;
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_BUILD_ID;
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TASK_ID;
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
+
+import com.tencent.bk.codecc.task.vo.CodeYmlRepoOwnerVO;
+import com.tencent.bk.codecc.task.vo.FilterPathInputVO;
+import com.tencent.bk.codecc.task.vo.FilterPathOutVO;
+import com.tencent.bk.codecc.task.vo.NotifyCustomVO;
+import com.tencent.bk.codecc.task.vo.RuntimeUpdateMetaVO;
+import com.tencent.bk.codecc.task.vo.TaskDetailVO;
+import com.tencent.bk.codecc.task.vo.TaskIdVO;
+import com.tencent.bk.codecc.task.vo.ToolConfigPlatformVO;
 import com.tencent.bk.codecc.task.vo.path.CodeYmlFilterPathVO;
 import com.tencent.bk.codecc.task.vo.pipeline.PipelineTaskVO;
 import com.tencent.bk.codecc.task.vo.scanconfiguration.ScanConfigurationVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-
+import java.util.List;
 import javax.validation.Valid;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import java.util.List;
-
-import static com.tencent.devops.common.api.auth.HeaderKt.*;
 
 /**
  * 构建机任务接口
@@ -53,8 +73,7 @@ import static com.tencent.devops.common.api.auth.HeaderKt.*;
 @Path("/build/task")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public interface BuildTaskRestResource
-{
+public interface BuildTaskRestResource {
 
     @ApiOperation("获取任务信息")
     @Path("/taskId/{taskId}")
@@ -62,7 +81,7 @@ public interface BuildTaskRestResource
     Result<TaskDetailVO> getTaskInfoById(
             @ApiParam(value = "任务ID", required = true)
             @PathParam(value = "taskId")
-                    Long taskId
+            Long taskId
     );
 
     @ApiOperation("获取任务信息")
@@ -71,18 +90,21 @@ public interface BuildTaskRestResource
     Result<TaskDetailVO> getTaskInfoByStreamName(
             @ApiParam(value = "流名称（也即任务英文名）", required = true)
             @PathParam(value = "streamName")
-                    String streamName
+            String streamName
     );
 
     @ApiOperation("获取任务信息")
     @Path("/pipeline/{pipelineId}")
     @GET
     Result<PipelineTaskVO> getTaskInfoByPipelineId(
-        @ApiParam(value = "流水线id", required = true)
-        @PathParam(value = "pipelineId")
+            @ApiParam(value = "流水线id", required = true)
+            @PathParam(value = "pipelineId")
             String pipelineId,
-        @ApiParam(value = "用户id", required = true)
-        @QueryParam(value = "userId")
+            @ApiParam(value = "流水线附加标识", required = true)
+            @QueryParam(value = "multiPipelineMark")
+            String multiPipelineMark,
+            @ApiParam(value = "用户id", required = true)
+            @QueryParam(value = "userId")
             String userId
     );
 
@@ -91,23 +113,23 @@ public interface BuildTaskRestResource
     @POST
     Result<TaskIdVO> registerPipelineTask(
             @ApiParam(value = "任务详细信息", required = true)
-                    TaskDetailVO taskDetailVO,
+            TaskDetailVO taskDetailVO,
             @ApiParam(value = "当前项目", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
-                    String projectId,
+            String projectId,
             @ApiParam(value = "当前用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String userName);
+            String userName);
 
     @ApiOperation("修改任务信息")
     @Path("/")
     @PUT
     Result<Boolean> updateTask(
             @ApiParam(value = "任务修改信息", required = true)
-                    TaskDetailVO taskDetailVO,
+            TaskDetailVO taskDetailVO,
             @ApiParam(value = "当前用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String userName
+            String userName
     );
 
     @ApiOperation("停用任务")
@@ -116,13 +138,13 @@ public interface BuildTaskRestResource
     Result<Boolean> stopTask(
             @ApiParam(value = "任务ID", required = true)
             @PathParam(value = "taskId")
-                    Long taskId,
+            Long taskId,
             @ApiParam(value = "停用原因", required = true)
             @QueryParam("disabledReason")
-                    String disabledReason,
+            String disabledReason,
             @ApiParam(value = "当前用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String userName
+            String userName
     );
 
     @ApiOperation("检查任务是否存在")
@@ -131,7 +153,7 @@ public interface BuildTaskRestResource
     Result<Boolean> checkTaskExists(
             @ApiParam(value = "任务ID", required = true)
             @PathParam(value = "taskId")
-                    Long taskId
+            Long taskId
     );
 
     @ApiOperation("保存定制化报告信息")
@@ -140,9 +162,9 @@ public interface BuildTaskRestResource
     Result<Boolean> updateTaskReportInfo(
             @ApiParam(value = "任务id", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
-                    Long taskId,
+            Long taskId,
             @ApiParam(value = "通知信息", required = true)
-                    NotifyCustomVO notifyCustomVO);
+            NotifyCustomVO notifyCustomVO);
 
     @ApiOperation("修改任务扫描触发配置")
     @Path("/taskId/{taskId}/scanConfiguration")
@@ -150,12 +172,12 @@ public interface BuildTaskRestResource
     Result<Boolean> updateScanConfiguration(
             @ApiParam(value = "任务ID", required = true)
             @PathParam(value = "taskId")
-                    Long taskId,
+            Long taskId,
             @ApiParam(value = "当前用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String user,
+            String user,
             @ApiParam(value = "定时分析信息", required = true)
-                    ScanConfigurationVO scanConfigurationVO
+            ScanConfigurationVO scanConfigurationVO
     );
 
     @ApiOperation("添加路径屏蔽")
@@ -164,10 +186,10 @@ public interface BuildTaskRestResource
     Result<Boolean> addFilterPath(
             @ApiParam(value = "任务信息", required = true)
             @Valid
-                    FilterPathInputVO filterPathInput,
+            FilterPathInputVO filterPathInput,
             @ApiParam(value = "当前用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String userName
+            String userName
     );
 
 
@@ -177,16 +199,16 @@ public interface BuildTaskRestResource
     Result<Boolean> deleteFilterPath(
             @ApiParam(value = "删除路径", required = true)
             @QueryParam("path")
-                    String path,
+            String path,
             @ApiParam(value = "路径类型", required = true)
             @QueryParam("pathType")
-                    String pathType,
+            String pathType,
             @ApiParam(value = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
-                    Long taskId,
+            Long taskId,
             @ApiParam(value = "当前用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String userName
+            String userName
     );
 
 
@@ -196,21 +218,49 @@ public interface BuildTaskRestResource
     Result<FilterPathOutVO> filterPath(
             @ApiParam(value = "任务ID", required = true)
             @PathParam("taskId")
-                    Long taskId
+            Long taskId
     );
 
     @ApiOperation("更新code.yml的路径屏蔽")
     @Path("/code/yml/filter/update")
     @POST
     Result<Boolean> codeYmlFilterPath(
-        @ApiParam(value = "任务ID", required = true)
-        @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
+            @ApiParam(value = "任务ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             Long taskId,
-        @ApiParam(value = "当前用户", required = true)
-        @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            @ApiParam(value = "当前用户", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userName,
-        @ApiParam(value = "当前用户", required = true)
+            @ApiParam(value = "当前用户", required = true)
             CodeYmlFilterPathVO codeYmlFilterPathVO
+    );
+
+    @ApiOperation("更新code.yml的repoOwner屏蔽")
+    @Path("/code/yml/repoOwner/update")
+    @POST
+    Result<Boolean> codeYmlRepoOwner(
+            @ApiParam(value = "任务ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
+            Long taskId,
+            @ApiParam(value = "当前用户", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userName,
+            @ApiParam(value = "当前用户", required = true)
+            CodeYmlRepoOwnerVO codeYmlRepoOwnerVO
+    );
+
+    @ApiOperation("更新code.yml的repoOwner屏蔽")
+    @Path("/runtime/update")
+    @POST
+    Result<Boolean> runtimeMetaUpdate(
+            @ApiParam(value = "任务ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
+            Long taskId,
+            @ApiParam(value = "当前用户", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userName,
+            @ApiParam(value = "当前用户", required = true)
+            RuntimeUpdateMetaVO runtimeUpdateMetaVO
     );
 
     @ApiOperation("获取工具platform信息")
@@ -219,10 +269,10 @@ public interface BuildTaskRestResource
     Result<ToolConfigPlatformVO> getToolConfigInfo(
             @ApiParam(value = "任务ID", required = true)
             @QueryParam("taskId")
-                    Long taskId,
+            Long taskId,
             @ApiParam(value = "工具名称", required = true)
             @QueryParam("toolName")
-                    String toolName
+            String toolName
     );
 
     @ApiOperation("发送开始任务信号")
@@ -234,7 +284,10 @@ public interface BuildTaskRestResource
             Long taskId,
             @ApiParam(value = "构件号id", required = true)
             @PathParam("buildId")
-            String buildId);
+            String buildId,
+            @ApiParam(value = "超时时间(S)")
+            @QueryParam("timeout")
+            Integer timeout);
 
     @ApiOperation("触发立即分析")
     @Path("/execute")
@@ -242,13 +295,13 @@ public interface BuildTaskRestResource
     Result<Boolean> executeTask(
             @ApiParam(value = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
-                    long taskId,
+            long taskId,
             @ApiParam(value = "是否首次触发")
             @QueryParam("isFirstTrigger")
-                    String isFirstTrigger,
+            String isFirstTrigger,
             @ApiParam(value = "当前用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String userName);
+            String userName);
 
     @ApiOperation("添加路径白名单")
     @Path("/path")
@@ -256,11 +309,27 @@ public interface BuildTaskRestResource
     Result<Boolean> addWhitePath(
             @ApiParam(value = "当前用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String userName,
+            String userName,
             @ApiParam(value = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
-                    long taskId,
+            long taskId,
             @ApiParam(value = "任务信息", required = true)
-                    List<String> pathList
+            List<String> pathList
+    );
+
+
+    @ApiOperation("注册流水线回调")
+    @Path("/registerPipelineCallback")
+    @POST
+    Result<Boolean> registerPipelineCallback(
+            @ApiParam(value = "当前用户", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userName,
+            @ApiParam(value = "任务ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
+            long taskId,
+            @ApiParam(value = "构建ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_BUILD_ID)
+            String buildId
     );
 }

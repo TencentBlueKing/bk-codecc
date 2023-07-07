@@ -35,7 +35,7 @@ import com.tencent.devops.common.api.checkerset.CheckerPropVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.checkerset.CreateCheckerSetReqVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.CheckerConstants;
 import com.tencent.devops.common.constant.ComConstants;
@@ -45,11 +45,10 @@ import com.tencent.devops.common.util.GsonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -57,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -88,6 +88,8 @@ public class CheckerImportServiceImpl implements CheckerImportService {
     @Autowired
     private CheckerSetProjectRelationshipRepository projectRelationshipRepository;
 
+    private static final String ALL_LANGUAGE_STRING = "ALL";
+
     @Override
     public Map<String, List<CheckerPropVO>> checkerImport(String userName, String projectId,
                                                           CheckerImportVO checkerImportVO) {
@@ -103,6 +105,17 @@ public class CheckerImportServiceImpl implements CheckerImportService {
         }
         List<BaseDataVO> codeLangParams = paramsResult.getData();
 
+        // 规则语言包含"ALL" 则将语言替换成所有语言
+        for (CheckerDetailVO checkerDetailVO : checkerImportVO.getCheckerDetailVOList()) {
+            if (CollectionUtils.isNotEmpty(checkerDetailVO.getCheckerLanguage())
+                    && checkerDetailVO.getCheckerLanguage().contains(ALL_LANGUAGE_STRING)) {
+                Set<String> codeLangSet =
+                        codeLangParams.stream().map(BaseDataVO::getLangFullKey).collect(Collectors.toSet());
+                checkerDetailVO.setCheckerLanguage(codeLangSet);
+            }
+        }
+        log.info("do checker import checkerImportVO:{}", GsonUtils.toJson(checkerImportVO));
+
         // 1.校验入参
         validateParam(checkerImportVO, codeLangParams);
 
@@ -116,6 +129,22 @@ public class CheckerImportServiceImpl implements CheckerImportService {
         Map<String, List<CheckerPropVO>> checkerSetPropsMap = new HashMap<>();
         Map<String, CreateCheckerSetReqVO> createCheckerSetMap = new HashMap<>();
         List<CheckerDetailVO> checkerDetailVOList = checkerImportVO.getCheckerDetailVOList();
+
+        // 重复checker_key规则集成报错
+        if (!checkerDetailVOList.isEmpty()) {
+            Map<String, List<CheckerDetailVO>> checkerMap = checkerDetailVOList.stream()
+                    .collect(Collectors.groupingBy(CheckerDetailVO::getCheckerName));
+            List<String> repeatChecker = new ArrayList<>();
+            checkerMap.forEach((k, v) -> {
+                if (v.size() > 1) {
+                    repeatChecker.add(k);
+                }
+            });
+            if (repeatChecker.size() > 0) {
+                log.error("import same checker_key, please check it.");
+                throw new CodeCCException(CommonMessageCode.KEY_IS_EXIST, new String[]{repeatChecker.toString()});
+            }
+        }
 
         // 本次集成是否有增加新规则
         List<CheckerDetailEntity> newCheckerDetailEntityList = checkerDetailVOList.stream().map(checkerDetailVO -> {
@@ -169,8 +198,7 @@ public class CheckerImportServiceImpl implements CheckerImportService {
         List<CheckerSetEntity> checkerSetList = checkerSetRepository.findByCheckerSetIdIn(checkerSetIds);
         Map<String, CheckerSetEntity> checkerSetMap = checkerSetList.stream()
                 .collect(Collectors.toMap(CheckerSetEntity::getCheckerSetId, Function.identity(), (k, v) -> k));
-        checkerSetPropsMap.forEach((checkerSetId, checkerProps) ->
-        {
+        checkerSetPropsMap.forEach((checkerSetId, checkerProps) -> {
             // 如果规则集没有创建过，先创建规则集
             if (checkerSetMap.get(checkerSetId) == null) {
                 CreateCheckerSetReqVO createCheckerSetReqVO = createCheckerSetMap.get(checkerSetId);
@@ -189,7 +217,7 @@ public class CheckerImportServiceImpl implements CheckerImportService {
             standardCheckerSetVOList.forEach(standardCheckerSetVO -> {
                 Pair<String, List<CheckerPropVO>> standardCheckerSetPair = updateStandardCheckerSet(userName, projectId,
                         checkerImportVO, codeLangParams, standardCheckerSetVO);
-                checkerSetPropsMap.put(standardCheckerSetPair.getKey(), standardCheckerSetPair.getValue());
+                checkerSetPropsMap.put(standardCheckerSetPair.getFirst(), standardCheckerSetPair.getSecond());
             });
         }
 
@@ -279,7 +307,7 @@ public class CheckerImportServiceImpl implements CheckerImportService {
                         projectRelationships, userName);
             }
         }
-        return ImmutablePair.of(standardCheckerSetId, standardCheckerSetVO.getCheckerProps());
+        return Pair.of(standardCheckerSetId, standardCheckerSetVO.getCheckerProps());
     }
 
     /**
@@ -395,8 +423,7 @@ public class CheckerImportServiceImpl implements CheckerImportService {
         CheckerPropVO checkerPropVO = new CheckerPropVO();
         BeanUtils.copyProperties(checkerDetailEntity, checkerPropVO);
         Set<String> checkerLanguageSet = checkerDetailEntity.getCheckerLanguage();
-        checkerLanguageSet.forEach(lang ->
-        {
+        checkerLanguageSet.forEach(lang -> {
             // 默认规则集ID的命名格式：工具名小写_语言_all_checkers, 比如：occheck_oc_all_checkers
             String checkerSetId = String.format("%s_%s_all_checkers", toolName.toLowerCase(), lang.toLowerCase());
             List<CheckerPropVO> checkerPropVOList = checkerSetPropsMap.get(checkerSetId);

@@ -23,10 +23,12 @@ import com.tencent.bk.codecc.schedule.service.ScheduleService;
 import com.tencent.bk.codecc.schedule.vo.FreeVO;
 import com.tencent.bk.codecc.schedule.vo.PushVO;
 import com.tencent.bk.codecc.schedule.vo.TailLogRspVO;
-import com.tencent.devops.common.api.pojo.Result;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
-import com.tencent.devops.common.util.JsonUtil;
+import com.tencent.devops.common.constant.RedisKeyConstants;
+import com.tencent.devops.common.redis.lock.JRedisLock;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.web.RpcClient;
 import com.tencent.devops.common.web.mq.ConstantsKt;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +37,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -49,6 +52,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.tencent.devops.common.constant.ComConstants.COMMIT_PLATFORM_LOCK_EXPIRY_TIME_MILLIS;
+
 /**
  * 调度服务实现
  *
@@ -58,36 +63,34 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class ScheduleServiceImpl implements ScheduleService {
+    /**
+     * VIP项目的优先级
+     */
+    private final int VIP_PRIORITY = 10;  // NOCC:MemberName(设计如此:)
+    /**
+     * 普通项目的默认优先级
+     */
+    private final int DEFAULT_PRIORITY = 3;  // NOCC:MemberName(设计如此:)
+    /**
+     * VIP项目超过最大并发数后降级后的优先级
+     */
+    private final int VIP_DOWNGRAGE_PRIORITY = 2;  // NOCC:MemberName(设计如此:)
+    /**
+     * 普通项目超过最大并发数后降级后的优先级
+     */
+    private final int DOWNGRAGE_PRIORITY = 1;  // NOCC:MemberName(设计如此:)
     @Autowired
     private RabbitTemplate rabbitTemplate;
+    @Autowired
+    private StringRedisTemplate redisTemplate;
     @Autowired
     private Client client;
     @Autowired
     private AnalyzeHostPoolDao analyzeHostPoolDao;
     @Autowired
     private ConcurrentAnalyzeConfigCache concurrentAnalyzeConfigCache;
-    @Value("${result.log.path:#{null}}")
+    @Value("${result.log.path}")
     private String resultLogPath;
-
-    /**
-     * VIP项目的优先级
-     */
-    private final int VIP_PRIORITY = 10;
-
-    /**
-     * 普通项目的默认优先级
-     */
-    private final int DEFAULT_PRIORITY = 3;
-
-    /**
-     * VIP项目超过最大并发数后降级后的优先级
-     */
-    private final int VIP_DOWNGRAGE_PRIORITY = 2;
-
-    /**
-     * 普通项目超过最大并发数后降级后的优先级
-     */
-    private final int DOWNGRAGE_PRIORITY = 1;
 
     @Override
     public Boolean push(String streamName, String toolName, String buildId, String createFrom, String projectId) {
@@ -95,8 +98,8 @@ public class ScheduleServiceImpl implements ScheduleService {
         pushVO.setStreamName(streamName);
         pushVO.setToolName(toolName);
         pushVO.setBuildId(buildId);
-        pushVO.setCreateFrom(createFrom);
         pushVO.setProjectId(projectId);
+        pushVO.setCreateFrom(createFrom);
 
         // createFrom为空表示非工蜂项目
         if (StringUtils.isEmpty(createFrom)) {
@@ -117,7 +120,8 @@ public class ScheduleServiceImpl implements ScheduleService {
             int finalPriority = getPriority(projectId, total, projectMaxConcurrent);
             log.info("project: {}, max concurrent: {}, now concurrent：{}, queue count: {}, priority: {}",
                     projectId, projectMaxConcurrent, nowConcurrentCount, queueCount, finalPriority);
-            rabbitTemplate.convertAndSend(ConstantsKt.EXCHANGE_ANALYZE_DISPATCH, ConstantsKt.ROUTE_ANALYZE_DISPATCH, pushVO,
+            rabbitTemplate.convertAndSend(ConstantsKt.EXCHANGE_ANALYZE_DISPATCH, ConstantsKt.ROUTE_ANALYZE_DISPATCH,
+                    pushVO,
                     message -> {
                         message.getMessageProperties().setPriority(finalPriority);
                         return message;
@@ -125,7 +129,8 @@ public class ScheduleServiceImpl implements ScheduleService {
 
             analyzeHostPoolDao.getSetProjectQueueCount(projectId, 1);
         } else {
-            rabbitTemplate.convertAndSend(ConstantsKt.EXCHANGE_ANALYZE_DISPATCH_OPENSOURCE, ConstantsKt.ROUTE_ANALYZE_DISPATCH_OPENSOURCE, pushVO);
+            rabbitTemplate.convertAndSend(ConstantsKt.EXCHANGE_ANALYZE_DISPATCH_OPENSOURCE,
+                    ConstantsKt.ROUTE_ANALYZE_DISPATCH_OPENSOURCE, pushVO);
         }
         return true;
     }
@@ -136,6 +141,7 @@ public class ScheduleServiceImpl implements ScheduleService {
      * 2.VIP项目超限之后，优先级将为2；
      * 3.普通项目没超限之前，取默认优先级3；
      * 4.普通项目超限之后，优先级将为1；
+     *
      * @param projectId
      * @param concurrentCount
      * @param projectMaxConcurrent
@@ -144,16 +150,16 @@ public class ScheduleServiceImpl implements ScheduleService {
     protected int getPriority(String projectId, Integer concurrentCount, Integer projectMaxConcurrent) {
         int priority;
         Set<String> vipProject = concurrentAnalyzeConfigCache.getVipProject();
-        if (vipProject.contains(projectId)){
+        if (vipProject.contains(projectId)) {
             if (concurrentCount < projectMaxConcurrent) {
                 priority = VIP_PRIORITY;
-            }else {
+            } else {
                 priority = VIP_DOWNGRAGE_PRIORITY;
             }
-        }else {
+        } else {
             if (concurrentCount < projectMaxConcurrent) {
                 priority = DEFAULT_PRIORITY;
-            }else {
+            } else {
                 priority = DOWNGRAGE_PRIORITY;
             }
         }
@@ -171,27 +177,42 @@ public class ScheduleServiceImpl implements ScheduleService {
     }
 
     @Override
+    public Boolean commit(PushVO pushVO, String ipAndPort) {
+        String serverURL = String.format("http://%s/", ipAndPort);
+        Object[] params = new Object[]{
+                pushVO.getStreamName(),
+                pushVO.getToolName(),
+                pushVO.getBuildId(),
+                pushVO.getProjectId()};
+        RpcClient<Boolean> rpcClient = new RpcClient();
+        Boolean response = rpcClient.doRequest(serverURL, ScheduleConstants.RpcMethod.COMMIT.methodName(), params);
+        return response;
+    }
+
+    @Override
     public void abort(PushVO pushVO) {
         List<AnalyzeHostPoolModel> hostList = analyzeHostPoolDao.getAllAnalyzeHosts();
-        hostList.forEach(host ->
-        {
+        hostList.forEach(host -> {
             List<AnalyzeHostPoolModel.AnalyzeJob> jobList = host.getJobList();
             if (CollectionUtils.isNotEmpty(jobList)) {
-                jobList.forEach(analyzeJob ->
-                {
-                    if (pushVO.getStreamName().equals(analyzeJob.getStreamName()) && pushVO.getToolName().equals(analyzeJob.getToolName())) {
+                jobList.forEach(analyzeJob -> {
+                    if (pushVO.getStreamName().equals(analyzeJob.getStreamName())
+                            && pushVO.getToolName().equals(analyzeJob.getToolName())
+                            && pushVO.getBuildId().equals(analyzeJob.getBuildId())) {
                         String serverURL = String.format("http://%s:%s/", host.getIp(), host.getPort());
-                        Object[] params = new Object[]{pushVO.getStreamName(), pushVO.getToolName(), analyzeJob.getBuildId()};
+                        Object[] params = new Object[]{
+                                pushVO.getStreamName(),
+                                pushVO.getToolName(),
+                                analyzeJob.getBuildId()};
                         RpcClient<Boolean> rpcClient = new RpcClient();
-                        Boolean response = rpcClient.doRequest(serverURL, ScheduleConstants.RpcMethod.ABORT.methodName(), params);
+                        Boolean response = rpcClient.doRequest(serverURL,
+                                ScheduleConstants.RpcMethod.ABORT.methodName(), params);
 
                         if (response == null || !response) {
                             log.error("abort analyze job fail, serverURL:{}, params:{}", serverURL, params);
                         }
-                        analyzeHostPoolDao.freeHostThread(pushVO.getToolName(), pushVO.getStreamName(), host.getIp(), analyzeJob.getBuildId());
-
-                        // 中断后需要同步更新分析记录
-                        uploadAbortTaskLog(pushVO.getStreamName(), pushVO.getToolName(), analyzeJob.getBuildId(), String.format("当前任务被新构建%s中断", pushVO.getBuildId()));
+                        analyzeHostPoolDao.freeHostThread(pushVO.getToolName(), pushVO.getStreamName(), host.getIp(),
+                                analyzeJob.getBuildId());
                         return;
                     }
                 });
@@ -201,7 +222,8 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Override
     public Boolean free(FreeVO freeVO) {
-        return analyzeHostPoolDao.freeHostThread(freeVO.getToolName(), freeVO.getStreamName(), freeVO.getHostIp(), freeVO.getBuildId());
+        return analyzeHostPoolDao.freeHostThread(freeVO.getToolName(), freeVO.getStreamName(), freeVO.getHostIp(),
+                freeVO.getBuildId());
     }
 
     @Override
@@ -215,10 +237,13 @@ public class ScheduleServiceImpl implements ScheduleService {
                 String serverURL = String.format("http://%s:%s/", analyzeHost.getIp(), analyzeHost.getPort());
                 RpcClient<?> rpcClient = new RpcClient();
                 log.info("{} request: {}", ScheduleConstants.RpcMethod.CHECK.methodName(), params);
-                Object responseObj = rpcClient.doRequest(serverURL, ScheduleConstants.RpcMethod.CHECK.methodName(), params);
-                log.info("{} response: {}", ScheduleConstants.RpcMethod.CHECK.methodName(), JsonUtil.INSTANCE.toJson(responseObj));
+                Object responseObj = rpcClient.doRequest(serverURL, ScheduleConstants.RpcMethod.CHECK.methodName(),
+                        params);
+                log.info("{} response: {}", ScheduleConstants.RpcMethod.CHECK.methodName(),
+                        JsonUtil.INSTANCE.toJson(responseObj));
                 List<Boolean> response = JsonUtil.INSTANCE.to(JsonUtil.INSTANCE.toJson(responseObj),
-                        new TypeReference<List<Boolean>>() {});
+                        new TypeReference<List<Boolean>>() {
+                        });
                 if (response == null || response.size() != jobList.size()) {
                     log.error("The result returned by the calling interface is incorrect:\n{}\n{}\n{}",
                             serverURL, ScheduleConstants.RpcMethod.CHECK.methodName(), params);
@@ -239,15 +264,15 @@ public class ScheduleServiceImpl implements ScheduleService {
         }
 
         if (needFreeHostMap.size() > 0) {
-            log.info("batch free host thread: {}", ScheduleConstants.RpcMethod.CHECK.methodName(), JsonUtil.INSTANCE.toJson(needFreeHostMap));
+            log.info("batch free host thread: {}", ScheduleConstants.RpcMethod.CHECK.methodName(),
+                    JsonUtil.INSTANCE.toJson(needFreeHostMap));
             analyzeHostPoolDao.batchFreeHostThread(needFreeHostMap);
 
             // 中断后需要同步更新分析记录
-            needFreeHostMap.forEach((ip, jobList) ->
-            {
-                jobList.forEach(analyzeJob ->
-                {
-                    uploadAbortTaskLog(analyzeJob.getStreamName(), analyzeJob.getToolName(), analyzeJob.getBuildId(), String.format("当前任务由于分析服务器[%s]异常而中断", ip));
+            needFreeHostMap.forEach((ip, jobList) -> {
+                jobList.forEach(analyzeJob -> {
+                    uploadAbortTaskLog(analyzeJob.getStreamName(), analyzeJob.getToolName(), analyzeJob.getBuildId(),
+                            String.format("当前任务由于分析服务器[%s]异常而中断", ip));
                 });
             });
         }
@@ -255,7 +280,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Override
     public TailLogRspVO tailLog(String streamName, String toolName, String buildId, long beginLine) {
-        long beginTime = System.currentTimeMillis();
+        long beginTime = System.currentTimeMillis();  // NOCC:VariableDeclarationUsageDistance(工具误报:)
         log.info("begin tail log: {}, {}, {}, {}", streamName, toolName, buildId, beginLine);
         TailLogRspVO tailLogRspVO = new TailLogRspVO();
         if (StringUtils.isEmpty(resultLogPath)) {
@@ -290,9 +315,13 @@ public class ScheduleServiceImpl implements ScheduleService {
         return tailLogRspVO;
     }
 
-
+    @Override
     public void uploadAbortTaskLog(String streamName, String toolName, String buildId, String msg) {
         try {
+            String lockKey = String.format("%s:%s:%s", RedisKeyConstants.CONCURRENT_COMMIT_LOCK, streamName,
+                    toolName);
+            JRedisLock lock = new JRedisLock(redisTemplate, lockKey, COMMIT_PLATFORM_LOCK_EXPIRY_TIME_MILLIS, buildId);
+            lock.releaseDiffClientLock();
             UploadTaskLogStepVO uploadTaskLogStepVO = new UploadTaskLogStepVO();
             uploadTaskLogStepVO.setStreamName(streamName);
             uploadTaskLogStepVO.setToolName(toolName);
