@@ -79,5 +79,9 @@ class GithubAuthExPermissionApi(client: Client,
         return false
     }
 
+    override fun authProjectRole(projectId: String, user: String, role: String?): Boolean {
+        return true
+    }
+
 
 }
