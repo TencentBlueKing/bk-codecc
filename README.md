@@ -9,7 +9,7 @@
 
 代码检查，一般又称为静态代码分析，是指无需运行被测代码，仅通过分析或检查源程序的语法、结构、过程、接口等来检查程序的正确性，找出代码隐藏的错误和缺陷，如内存泄漏，空指针引用，死代码，变量未初始化，复制粘贴错误，重复代码，函数复杂度过高等等。
 
-CodeCC（蓝鲸代码检查平台）构建开放的代码检查平台，提供专业的代码检查解决方案及服务，为产品质量保驾护航。
+CodeCC（蓝鲸代码检查中心）构建开放的代码检查平台，提供专业的代码检查解决方案及服务，为产品质量保驾护航。
 
 ![image](https://user-images.githubusercontent.com/46527215/227879236-b0dc6b63-cd54-466b-a3bf-e65bd2d51589.png)
 
@@ -31,7 +31,8 @@ CodeCC（蓝鲸代码检查平台）构建开放的代码检查平台，提供�
 - [一分钟安装部署（待补充）](docs/overview/installation.md)
 
 ## Support
-[GitHub讨论区](https://github.com/TencentBlueKing/bk-codecc/discussions)
+1. [GitHub讨论区](https://github.com/TencentBlueKing/bk-codecc/discussions)
+2. QQ群：495299374
 
 ## BlueKing Community
 - [BK-CI](https://github.com/Tencent/bk-ci)：蓝盾是一个免费并开源的CI服务，可助你自动化构建-测试-发布工作流，持续、快速、高质量地交付你的产品。
