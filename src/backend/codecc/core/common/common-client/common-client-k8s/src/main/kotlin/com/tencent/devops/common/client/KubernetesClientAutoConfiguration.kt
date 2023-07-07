@@ -28,6 +28,7 @@
 package com.tencent.devops.common.client
 
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_BK_TICKET
+import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_BK_TOKEN
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_PROJECT_ID
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_USER_ID
 import com.tencent.devops.common.client.discovery.DiscoveryUtils
@@ -99,26 +100,30 @@ class KubernetesClientAutoConfiguration {
 
 
     @Bean(name = ["devopsRequestInterceptor"])
-    fun bsRequestInterceptor(): RequestInterceptor {
+    fun bsRequestInterceptor(@Autowired allProperties: AllProperties): RequestInterceptor {
         return RequestInterceptor { requestTemplate ->
             logger.info("url:${requestTemplate.path()}")
             val projectId = DevopsProxy.projectIdThreadLocal.get() as String?
-            if(!projectId.isNullOrBlank()){
+            if (!projectId.isNullOrBlank()) {
                 logger.info("project id of header: $projectId")
                 requestTemplate.header(AUTH_HEADER_DEVOPS_PROJECT_ID, projectId)
             }
 
-            val attributes = RequestContextHolder.getRequestAttributes() as? ServletRequestAttributes
-                ?: return@RequestInterceptor
+            val attributes = RequestContextHolder.getRequestAttributes()
+                    as? ServletRequestAttributes ?: return@RequestInterceptor
             val request = attributes.request
             val bkTicket = request.getHeader(AUTH_HEADER_DEVOPS_BK_TICKET)
             val userName = request.getHeader(AUTH_HEADER_DEVOPS_USER_ID)
+            val bkCiToken = allProperties.devopsToken
 
-            if(!bkTicket.isNullOrBlank()){
+            if (!bkTicket.isNullOrBlank()) {
                 requestTemplate.header(AUTH_HEADER_DEVOPS_BK_TICKET, bkTicket)
             }
-            if(!userName.isNullOrBlank()){
+            if (!userName.isNullOrBlank()) {
                 requestTemplate.header(AUTH_HEADER_DEVOPS_USER_ID, userName)
+            }
+            if (!bkCiToken.isNullOrBlank()) {
+                requestTemplate.header(AUTH_HEADER_DEVOPS_BK_TOKEN, bkCiToken)
             }
         }
     }

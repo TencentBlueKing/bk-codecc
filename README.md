@@ -1,4 +1,4 @@
-![LOGO](docs/resource/img/bkci_cn.png)
+![LOGO](docs/resource/img/codecc.png)
 ---
 [![license](https://img.shields.io/badge/license-mit-brightgreen.svg?style=flat)](https://github.com/TencentBlueKing/bk-codecc/blob/master/LICENSE.txt)
 
