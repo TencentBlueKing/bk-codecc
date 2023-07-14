@@ -125,7 +125,7 @@ public class MongoPageHelper
             // 计算剩余可用的超时时间
             long availableTimeout = (beginTime + timeout.toMillis()) - System.currentTimeMillis();
             if (availableTimeout <= 0) {
-                throw new CodeCCException(CommonMessageCode.DB_QUERY_TIME_OUT, "mongodb operation timeout");
+                throw new CodeCCException(CommonMessageCode.DB_QUERY_TIME_OUT);
             }
 
             // 实际上该超时并不能作用于count，SDK导致

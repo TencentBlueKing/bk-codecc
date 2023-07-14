@@ -32,6 +32,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.mongodb.MongoExecutionTimeoutException;
 import com.tencent.bk.codecc.defect.component.QueryWarningLogicComponent;
+import com.tencent.bk.codecc.defect.constant.DefectMessageCode;
 import com.tencent.bk.codecc.defect.dao.mongorepository.BuildDefectRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerSetRepository;
 import com.tencent.bk.codecc.defect.dao.mongorepository.CodeFileUrlRepository;
@@ -276,11 +277,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                         sortType, defectThirdPartyIdSet, request.getProjectId(), request.getUserId()
                 );
             } catch (CodeCCException | UncategorizedMongoDbException e) {
-                CodeCCException tipsEx = new CodeCCException(
-                        CommonMessageCode.PROJECT_DEFECT_TOO_MANY,
-                        "当前项目问题数过于巨大，请筛选工具后查看",
-                        e
-                );
+                CodeCCException tipsEx = new CodeCCException(DefectMessageCode.PROJECT_DEFECT_TOO_MANY, e);
 
                 if (e instanceof UncategorizedMongoDbException) {
                     if (e.getCause() instanceof MongoExecutionTimeoutException) {

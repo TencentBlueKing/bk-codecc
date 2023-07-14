@@ -57,4 +57,7 @@ open class CodeCCException(
 
     constructor(errCode: String, message: String, errorCause: Throwable? = null) :
             this(errCode, emptyArray(), message, errorCause)
+
+    constructor(errCode: String, errorCause: Throwable) :
+            this(errCode, emptyArray(), null, errorCause)
 }
