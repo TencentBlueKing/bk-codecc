@@ -44,10 +44,11 @@
         </script>
         <script>
             (function(){
+                var prefix = '__BK_CI_PUBLIC_PATH_PREFIX__' ? '__BK_CI_PUBLIC_PATH_PREFIX__' : DEVOPS_SITE_URL
                 if (window.self !== window.top) { // iframe嵌入
                     var script = document.createElement('script')
                     script.type = 'text/javascript'
-                    script.src = '__BK_CI_PUBLIC_PATH_PREFIX__/console/static/devops-utils.js'
+                    script.src = prefix + '/console/static/devops-utils.js'
                     document.getElementsByTagName('head')[0].appendChild(script)
                 }
             })()
