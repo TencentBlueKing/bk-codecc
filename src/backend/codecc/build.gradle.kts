@@ -45,6 +45,7 @@ allprojects {
             dependency("org.apache.commons:commons-exec:${Versions.commonExecVersion}")
             dependency("org.apache.commons:commons-pool2:${Versions.commonPool2Version}")
             dependency("com.vmware:vijava:${Versions.vmwareVersion}")
+            dependency("org.bouncycastle:bcprov-jdk15on:${Versions.bouncyCastleVersion}")
             dependency("org.bouncycastle:bcprov-ext-jdk15on:${Versions.bouncyCastleVersion}")
             dependency("dom4j:dom4j:${Versions.dom4jVersion}")
             dependency("org.apache.commons:commons-compress:${Versions.compressVersion}")
