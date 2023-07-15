@@ -144,6 +144,7 @@ allprojects {
                 entry("common-redis")
                 entry("common-auth-v3")
                 entry("common-kafka")
+                entry("common-api")
             }
             dependencySet("com.tencent.bk.devops.ci.auth:${Versions.devopsVersion}") {
                 entry("api-auth")
