@@ -38,8 +38,6 @@ import com.tencent.bk.codecc.defect.service.IQueryStatisticBizService;
 import com.tencent.bk.codecc.defect.service.PipelineTaskService;
 import com.tencent.bk.codecc.defect.service.TaskLogService;
 import com.tencent.bk.codecc.defect.utils.TaskLogRepoInfoUtils;
-import com.tencent.bk.codecc.defect.vo.GrayBuildNumAndTaskVO;
-import com.tencent.bk.codecc.defect.vo.GrayTaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
