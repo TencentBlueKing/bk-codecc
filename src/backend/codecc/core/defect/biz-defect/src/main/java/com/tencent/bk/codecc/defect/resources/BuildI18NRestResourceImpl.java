@@ -12,7 +12,7 @@ public class BuildI18NRestResourceImpl implements BuildI18NRestResource {
     public Result<String> getLanguageTag(String userId) {
         try {
             // todo:等开源版api-project版本号
-            return new Result<>("zh-cn");
+            return new Result<>("en");
         } catch (Throwable t) {
             return new Result<>(I18NUtils.EN.toLanguageTag());
         }
