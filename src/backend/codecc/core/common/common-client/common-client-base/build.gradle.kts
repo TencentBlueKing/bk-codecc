@@ -5,4 +5,7 @@ dependencies {
     api("io.github.openfeign:feign-jaxrs")
     api("io.github.openfeign:feign-okhttp")
     api("io.github.openfeign:feign-jackson")
+    api(group = "com.tencent.bk.devops.ci.common", name = "common-api"){
+        isChanging=true
+    }
 }

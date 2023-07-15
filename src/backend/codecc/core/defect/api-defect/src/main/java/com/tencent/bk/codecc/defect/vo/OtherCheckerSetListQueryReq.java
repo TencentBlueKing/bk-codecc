@@ -23,7 +23,7 @@ public class OtherCheckerSetListQueryReq {
     private Set<String> checkerSetLanguage;
 
     @ApiModelProperty("规则集类别")
-    private Set<CheckerSetCategory> checkerSetCategory;
+    private Set<String> checkerSetCategory;
 
     @ApiModelProperty("工具名")
     private Set<String> toolName;

@@ -263,7 +263,7 @@ class PipelineScmServiceImpl @Autowired constructor(
             return if (e.errorCode == CommonMessageCode.FILE_CONTENT_TOO_LARGE) {
                 FILE_TOO_LARGE_CONTENT
             } else {
-                throw e
+                e.message
             }
         } catch (e: Exception) {
             logger.error(
