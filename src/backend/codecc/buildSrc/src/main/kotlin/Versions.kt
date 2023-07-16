@@ -15,7 +15,7 @@ object Versions {
     const val vmwareVersion = "5.1"
     const val okHttpVersion = "3.14.9"
     const val commonExecVersion = "1.3"
-    const val bouncyCastleVersion = "1.70"
+    const val bouncyCastleVersion = "1.46"
     const val dom4jVersion = "1.6.1"
     const val slf4jVersion = "1.7.30"
     const val mockitoVersion = "1.10.19"
