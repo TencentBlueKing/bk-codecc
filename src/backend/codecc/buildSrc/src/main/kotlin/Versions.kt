@@ -13,7 +13,7 @@ object Versions {
     const val feignVersion = "10.10.1"
     const val svnkitVersion = "1.9.3"
     const val vmwareVersion = "5.1"
-    const val okHttpVersion = "3.14.9"
+    const val okHttpVersion = "4.9.0"
     const val commonExecVersion = "1.3"
     const val bouncyCastleVersion = "1.46"
     const val dom4jVersion = "1.6.1"
