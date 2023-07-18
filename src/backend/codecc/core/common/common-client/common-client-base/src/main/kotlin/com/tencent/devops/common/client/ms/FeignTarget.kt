@@ -32,6 +32,7 @@ import com.tencent.devops.common.service.utils.MessageCodeUtil
 import feign.Request
 import feign.RequestTemplate
 import feign.Target
+import org.apache.commons.lang.StringUtils
 import org.springframework.cloud.client.ServiceInstance
 import java.util.concurrent.ConcurrentHashMap
 
@@ -56,7 +57,12 @@ abstract class FeignTarget<T>(
 
     override fun name() = serviceName
 
-    protected fun ServiceInstance.url() = "${if (isSecure) "https" else "http"}://$host:$port$commonUrlPrefix"
+    protected fun ServiceInstance.url(): String {
+        val finalHost = if (StringUtils.isNotBlank(host) && host.contains(":") && !host.startsWith("[")) {
+            "[$host]" // 兼容IPv6
+        } else host
+        return "${if (isSecure) "https" else "http"}://$finalHost:$port$commonUrlPrefix"
+    }
 
     protected abstract fun choose(serviceName: String): ServiceInstance
 
