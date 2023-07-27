@@ -671,10 +671,12 @@ public class V3CheckerSetBizServiceImpl implements IV3CheckerSetBizService {
         }
         int toolIntegratedStatus = grayResult.getData().getStatus();
 
+        Set<CheckerSetCategory> categories = CollectionUtils.isEmpty(queryCheckerSetReq.getCheckerSetCategory())
+                ? Collections.emptySet() : queryCheckerSetReq.getCheckerSetCategory().stream()
+                .map(CheckerSetCategory::getByName).filter(Objects::nonNull).collect(Collectors.toSet());
         List<CheckerSetEntity> checkerSetEntities =
                 checkerSetDao.findMoreByCondition(queryCheckerSetReq.getQuickSearch(),
-                        queryCheckerSetReq.getCheckerSetLanguage(), queryCheckerSetReq.getCheckerSetCategory(),
-                        projectCheckerSetIds,
+                        queryCheckerSetReq.getCheckerSetLanguage(), categories, projectCheckerSetIds,
                         queryCheckerSetReq.getProjectInstalled(), toolIntegratedStatus, pageable);
 
         if (CollectionUtils.isEmpty(checkerSetEntities)) {

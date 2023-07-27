@@ -12,6 +12,8 @@
 
 package com.tencent.bk.codecc.defect.vo.enums;
 
+import org.apache.commons.lang.StringUtils;
+
 /**
  * 规则集类型枚举
  *
@@ -48,5 +50,18 @@ public enum CheckerSetCategory {
 
     public String getI18nResourceCode() {
         return this.i18nResourceCode;
+    }
+
+
+    public static CheckerSetCategory getByName(String name) {
+        if (StringUtils.isEmpty(name)) {
+            return null;
+        }
+        for (CheckerSetCategory value : CheckerSetCategory.values()) {
+            if (value.name.equals(name)) {
+                return value;
+            }
+        }
+        return null;
     }
 }

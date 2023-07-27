@@ -37,6 +37,7 @@ import com.tencent.bk.codecc.defect.model.TaskLogGroupEntity;
 import com.tencent.bk.codecc.defect.service.IQueryStatisticBizService;
 import com.tencent.bk.codecc.defect.service.PipelineTaskService;
 import com.tencent.bk.codecc.defect.service.TaskLogService;
+import com.tencent.bk.codecc.defect.utils.TaskLogRepoInfoUtils;
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
@@ -479,18 +480,18 @@ public class TaskLogServiceImpl implements TaskLogService {
             List<TaskLogEntity.TaskUnit> steps = taskLogEntity.getStepArray();
             steps.forEach(taskUnit -> {
                 String msg = taskUnit.getMsg();
-                if (StringUtils.isNotBlank(msg) && msg.contains("代码库：")) {
+                if (TaskLogRepoInfoUtils.hasRepoInfo(msg)) {
                     String[] msgs = msg.split("\n");
                     List<String> msgList = Arrays.asList(msgs);
                     msgList.stream()
                             .filter(StringUtils::isNotBlank)
                             .forEach(s -> {
                                 try {
-                                    String repoUrl = s.substring(s.indexOf("代码库：") + 4, s.indexOf("，版本号："));
-                                    String revision = s.substring(s.indexOf("版本号：") + 4, s.indexOf("，提交时间"));
-                                    String commitTime = s.substring(s.indexOf("提交时间：") + 5, s.indexOf("，提交人"));
-                                    String commitUser = s.substring(s.indexOf("提交人：") + 4, s.indexOf("，分支"));
-                                    String branch = s.substring(s.indexOf("分支：") + 3);
+                                    String repoUrl = TaskLogRepoInfoUtils.getRepoUrl(msg);
+                                    String revision = TaskLogRepoInfoUtils.getRevision(msg);
+                                    String commitTime = TaskLogRepoInfoUtils.getCommitTime(msg);
+                                    String commitUser = TaskLogRepoInfoUtils.getCommitUser(msg);
+                                    String branch = TaskLogRepoInfoUtils.getBranch(msg);
                                     TaskLogRepoInfoVO taskLogRepoInfoVO =
                                             new TaskLogRepoInfoVO(repoUrl, revision, commitTime, commitUser, branch);
                                     repoInfo.put(repoUrl, taskLogRepoInfoVO);
@@ -522,15 +523,15 @@ public class TaskLogServiceImpl implements TaskLogService {
         List<TaskLogEntity.TaskUnit> steps = lastAnalyze.getStepArray();
         for (TaskLogEntity.TaskUnit taskUnit : steps) {
             String msg = taskUnit.getMsg();
-            if (StringUtils.isNotBlank(msg) && msg.contains("代码库：")) {
+            if (TaskLogRepoInfoUtils.hasRepoInfo(msg)) {
                 try {
                     String[] msgs = msg.split("\n");
                     for (String s : msgs) {
-                        repoUrl = s.substring(s.indexOf("代码库：") + 4, s.indexOf("，版本号："));
-                        revision = s.substring(s.indexOf("版本号：") + 4, s.indexOf("，提交时间"));
-                        commitTime = s.substring(s.indexOf("提交时间：") + 5, s.indexOf("，提交人"));
-                        commitUser = s.substring(s.indexOf("提交人：") + 4, s.indexOf("，分支"));
-                        branch = s.substring(s.indexOf("分支：") + 3);
+                        repoUrl = TaskLogRepoInfoUtils.getRepoUrl(msg);
+                        revision = TaskLogRepoInfoUtils.getRevision(msg);
+                        commitTime = TaskLogRepoInfoUtils.getCommitTime(msg);
+                        commitUser = TaskLogRepoInfoUtils.getCommitUser(msg);
+                        branch = TaskLogRepoInfoUtils.getBranch(msg);
                     }
                 } catch (Exception e) {
                     logger.error("代码库信息截取失败: {}", msg);

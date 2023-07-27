@@ -167,9 +167,4 @@ object CommonMessageCode {
     const val REGULAR_EXP_INVALID = "2300029"
 
     const val UNAUTHORIZED_ACCESS_TO_RESOURCES = "2300030"
-
-    /**
-     * 项目告警数过多
-     */
-    const val PROJECT_DEFECT_TOO_MANY = "2300031"
 }

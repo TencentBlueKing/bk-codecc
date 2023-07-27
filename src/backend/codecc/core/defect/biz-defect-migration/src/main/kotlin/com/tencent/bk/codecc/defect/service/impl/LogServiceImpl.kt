@@ -195,14 +195,14 @@ class LogServiceImpl @Autowired constructor(
             .build()
 
         okHttpClient.newCall(request).execute().use { response ->
-            if (response.code() == 404) {
+            if (response.code == 404) {
                 throw OperationException("文件不存在")
             }
             if (!response.isSuccessful) {
                 throw OperationException("获取文件失败")
             }
 
-            response.body()!!.byteStream().use { bs ->
+            response.body!!.byteStream().use { bs ->
                 val buf = ByteArray(4096)
                 var len = bs.read(buf)
                 httpResponse.outputStream.use { os ->
