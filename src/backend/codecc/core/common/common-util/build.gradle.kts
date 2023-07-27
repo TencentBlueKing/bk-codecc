@@ -14,6 +14,7 @@ dependencies {
     api("com.fasterxml.jackson.core:jackson-annotations")
     api("com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider")
     api("com.fasterxml.jackson.jaxrs:jackson-jaxrs-base")
+    api("org.bouncycastle:bcprov-jdk15on")
     api("org.bouncycastle:bcprov-ext-jdk15on")
     api("commons-collections:commons-collections")
     api("commons-lang:commons-lang:2.6")

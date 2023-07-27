@@ -838,7 +838,6 @@
   "lang" : 32,
   "brief_introduction" : "Python代码风格检查工具，可检查代码行的长度、变量命名是否符合编码规范或声明的接口是否被真正的实现等",
   "description" : "Python代码风格检查工具，可检查代码行的长度、变量命名是否符合编码规范或声明的接口是否被真正的实现等",
-  "params" : "[{\"varName\":\"py_version\",\"varType\":\"RADIO\",\"labelName\":\"Python Ver\",\"varDefault\":\"py3\",\"varRequired\":false,\"varOptionList\":[{\"name\":\"Python2\",\"id\":\"py2\"},{\"name\":\"Python3\",\"id\":\"py3\"}]}]",
   "graphic_details" : "",
   "status" : "P",
   "privated" : false,

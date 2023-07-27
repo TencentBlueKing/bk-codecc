@@ -28,6 +28,7 @@ package com.tencent.devops.common.client
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.tencent.devops.common.api.annotation.ServiceInterface
+import com.tencent.devops.common.api.util.JsonUtil
 import com.tencent.devops.common.client.ms.DevopsServiceTarget
 import com.tencent.devops.common.client.ms.ThirdServiceTarget
 import com.tencent.devops.common.client.pojo.AllProperties
@@ -113,8 +114,8 @@ abstract class Client constructor(
         val feignProxy = Feign.builder()
                 .client(feignClient)
                 .errorDecoder(clientErrorDecoder)
-                .encoder(jacksonEncoder)
-                .decoder(jacksonDecoder)
+                .encoder(JacksonEncoder(JsonUtil.getObjectMapper()))
+                .decoder(JacksonDecoder(JsonUtil.getObjectMapper()))
                 .contract(jaxRsContract)
                 .options(Request.Options(10000, 30000))
                 .requestInterceptor(
@@ -170,8 +171,8 @@ abstract class Client constructor(
         val feignProxy = Feign.builder()
                 .client(feignClient)
                 .errorDecoder(clientErrorDecoder)
-                .encoder(jacksonEncoder)
-                .decoder(jacksonDecoder)
+                .encoder(JacksonEncoder(JsonUtil.getObjectMapper()))
+                .decoder(JacksonDecoder(JsonUtil.getObjectMapper()))
                 .contract(jaxRsContract)
                 .options(Request.Options(10000, 30000))
                 .requestInterceptor(
@@ -200,8 +201,8 @@ abstract class Client constructor(
         val feignProxy = Feign.builder()
                 .client(shortRunClient)
                 .errorDecoder(clientErrorDecoder)
-                .encoder(jacksonEncoder)
-                .decoder(jacksonDecoder)
+                .encoder(JacksonEncoder(JsonUtil.getObjectMapper()))
+                .decoder(JacksonDecoder(JsonUtil.getObjectMapper()))
                 .contract(jaxRsContract)
                 .options(Request.Options(5000, 10000))
                 .requestInterceptor(

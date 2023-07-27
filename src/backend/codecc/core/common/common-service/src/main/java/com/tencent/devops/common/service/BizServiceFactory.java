@@ -117,7 +117,7 @@ public class BizServiceFactory<T> {
     public T createBizService(String toolName, String dimension, BizServiceFlag flag, String businessType,
             Class<T> clz) {
         if (StringUtils.isNotBlank(toolName)) {
-            return createBizService(toolName, businessType, clz);
+            return createBizService(toolName, flag, businessType, clz);
         }
 
         if (StringUtils.isNotBlank(dimension)) {

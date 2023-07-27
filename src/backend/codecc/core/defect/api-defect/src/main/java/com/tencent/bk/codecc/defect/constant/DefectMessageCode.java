@@ -81,4 +81,9 @@ public interface DefectMessageCode {
     String DEFECT_NOT_FOUND = "2303011";
 
     String DEFECT_AUTHOR_NOT_FOUND = "2303012";
+
+    /**
+     * 项目告警数过多
+     */
+    String PROJECT_DEFECT_TOO_MANY = "2300031";
 }
