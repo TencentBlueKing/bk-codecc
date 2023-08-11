@@ -60,7 +60,7 @@ class RBACAuthProperties {
     /**
      * 规则集资源类型
      */
-    @Value("\${auth.rbac.rulesetResourceType:codecc_ruleset}")
+    @Value("\${auth.rbac.rulesetResourceType:codecc_rule_set}")
     val rulesetResourceType: String? = null
 
     /**
