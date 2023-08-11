@@ -119,8 +119,7 @@ interface AuthExPermissionApi {
     fun validateUserRulesetPermission(
         projectId: String,
         userId: String,
-        action: String,
-        resourceType: String
+        action: String
     ): Boolean
 
     /**
@@ -129,7 +128,6 @@ interface AuthExPermissionApi {
     fun validateUserIgnoreTypePermission(
         projectId: String,
         userId: String,
-        action: String,
-        resourceType: String
+        action: String
     ): Boolean
 }

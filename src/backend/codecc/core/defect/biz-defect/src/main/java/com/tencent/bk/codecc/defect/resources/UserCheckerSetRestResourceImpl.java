@@ -72,6 +72,10 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
     @Override
     public Result<Boolean> createCheckerSet(String user, String projectId,
             CreateCheckerSetReqVO createCheckerSetReqVO) {
+        if (!authExPermissionApi.validateUserRulesetPermission(projectId, user,
+                CodeCCAuthAction.RULESET_CREATE.getActionName())) {
+            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{projectId});
+        }
         checkerSetBizService.createCheckerSet(user, projectId, createCheckerSetReqVO);
         return new Result<>(true);
     }
@@ -81,6 +85,11 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
             String checkerSetId, String projectId, String user,
             UpdateCheckersOfSetReqVO updateCheckersOfSetReq
     ) {
+        if (!authExPermissionApi.validateUserRulesetPermission(projectId, user,
+                CodeCCAuthAction.RULESET_CREATE.getActionName())) {
+            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{projectId});
+        }
+
         List<CheckerSetEntity> checkerSetEntities = checkerSetRepository.findByCheckerSetId(checkerSetId);
         if (CollectionUtils.isNotEmpty(checkerSetEntities)) {
             if (!checkerSetEntities.get(0).getProjectId().equals(projectId)) {

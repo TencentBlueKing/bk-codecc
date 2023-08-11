@@ -210,8 +210,7 @@ class RBACAuthPermissionApi(
     override fun validateUserRulesetPermission(
         projectId: String,
         userId: String,
-        action: String,
-        resourceType: String
+        action: String
     ): Boolean {
         return validateUserResourcePermission(userId, getBackendAccessToken(), action, projectId,
             rbacAuthProperties.rulesetResourceType!!)
@@ -220,8 +219,7 @@ class RBACAuthPermissionApi(
     override fun validateUserIgnoreTypePermission(
         projectId: String,
         userId: String,
-        action: String,
-        resourceType: String
+        action: String
     ): Boolean {
         return validateUserResourcePermission(userId, getBackendAccessToken(), action, projectId,
             rbacAuthProperties.ignoreTypeResourceType!!)

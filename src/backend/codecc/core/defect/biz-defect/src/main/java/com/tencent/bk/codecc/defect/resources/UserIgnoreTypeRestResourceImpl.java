@@ -6,9 +6,11 @@ import com.tencent.bk.codecc.defect.vo.ignore.IgnoreTypeDefectStatResponse;
 import com.tencent.bk.codecc.defect.vo.ignore.IgnoreTypeProjectConfigVO;
 import com.tencent.bk.codecc.defect.vo.ignore.IgnoreTypeSysVO;
 import com.tencent.devops.common.api.annotation.I18NResponse;
+import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
+import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.web.RestResource;
 import java.util.List;
 
@@ -27,14 +29,20 @@ public class UserIgnoreTypeRestResourceImpl implements UserIgnoreTypeRestResourc
     private AuthExPermissionApi authExPermissionApi;
 
     @Override
-    @AuthMethod(permission = {CodeCCAuthAction.IGNORE_TYPE_MANAGE})
     public Result<Boolean> save(String projectId, String userName, IgnoreTypeProjectConfigVO projectConfig) {
+        if (!authExPermissionApi.validateUserIgnoreTypePermission(projectId, userName,
+                CodeCCAuthAction.IGNORE_TYPE_MANAGE.getActionName())) {
+            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{projectId});
+        }
         return new Result<>(iIgnoreTypeService.ignoreTypeProjectSave(projectId, userName, projectConfig));
     }
 
     @Override
-    @AuthMethod(permission = {CodeCCAuthAction.IGNORE_TYPE_MANAGE})
     public Result<Boolean> updateStatus(String projectId, String userName, IgnoreTypeProjectConfigVO projectConfig) {
+        if (!authExPermissionApi.validateUserIgnoreTypePermission(projectId, userName,
+                CodeCCAuthAction.IGNORE_TYPE_MANAGE.getActionName())) {
+            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{projectId});
+        }
         return new Result<>(iIgnoreTypeService.updateIgnoreTypeProjectStatus(projectId, userName, projectConfig));
     }
 

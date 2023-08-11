@@ -152,8 +152,7 @@ abstract class AbstractAuthExPermissionApi @Autowired constructor(
     override fun validateUserRulesetPermission(
         projectId: String,
         userId: String,
-        action: String,
-        resourceType: String
+        action: String
     ): Boolean {
         return false
     }
@@ -161,8 +160,7 @@ abstract class AbstractAuthExPermissionApi @Autowired constructor(
     override fun validateUserIgnoreTypePermission(
         projectId: String,
         userId: String,
-        action: String,
-        resourceType: String
+        action: String
     ): Boolean {
         return false
     }
