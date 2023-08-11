@@ -320,6 +320,7 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
 
 
     @Override
+    @AuthMethod(permission = {CodeCCAuthAction.DEFECT_MANAGE})
     public Result<List<BatchDefectProcessRspVO>> batchDefectProcess(String projectId, String userName,
             BatchDefectProcessReqVO batchDefectProcessReqVO) {
         batchDefectProcessReqVO.setUserName(userName);
@@ -393,6 +394,7 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
 
     @Override
     @OperationHistory(funcId = FUNC_CODE_COMMENT_ADD, operType = CODE_COMMENT_ADD)
+    @AuthMethod(permission = {CodeCCAuthAction.DEFECT_MANAGE})
     public Result<Boolean> addCodeComment(
             String defectId, String toolName, String commentId, String userName,
             SingleCommentVO singleCommentVO, String fileName, String nameCn,
@@ -408,6 +410,7 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
     }
 
     @Override
+    @AuthMethod(permission = {CodeCCAuthAction.DEFECT_MANAGE})
     public Result<Boolean> updateCodeComment(
             String commentId, String userName, String toolName,
             SingleCommentVO singleCommentVO
@@ -420,6 +423,7 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
 
     @Override
     @OperationHistory(funcId = FUNC_CODE_COMMENT_DEL, operType = CODE_COMMENT_DEL)
+    @AuthMethod(permission = {CodeCCAuthAction.DEFECT_MANAGE})
     public Result<Boolean> deleteCodeComment(
             String commentId, String singleCommentId, String toolName,
             String userName, String entityId, String comment

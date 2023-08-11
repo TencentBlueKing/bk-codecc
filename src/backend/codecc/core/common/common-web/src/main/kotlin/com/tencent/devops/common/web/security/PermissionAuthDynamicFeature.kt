@@ -27,20 +27,48 @@
 package com.tencent.devops.common.web.security
 
 import com.tencent.devops.common.web.security.filter.PermissionAuthFilter
+import org.springframework.core.annotation.AnnotationUtils
+import java.lang.reflect.Method
 import javax.ws.rs.container.DynamicFeature
 import javax.ws.rs.container.ResourceInfo
 import javax.ws.rs.core.FeatureContext
 
 class PermissionAuthDynamicFeature : DynamicFeature {
     override fun configure(resourceInfo: ResourceInfo, context: FeatureContext) {
-        //方法级的注解比类级的注解优先级高
+        /* 开启CGLib代理后，无法通过getResourceMethod()方法直接获取原始方法
         if (resourceInfo.resourceMethod.isAnnotationPresent(AuthMethod::class.java)) {
             val annotation = resourceInfo.resourceMethod.getAnnotation(AuthMethod::class.java)
             context.register(PermissionAuthFilter(annotation.permission.toList()))
             return
+        }*/
+
+        // 方法级的注解比类级的注解优先级高
+        var method: Method = resourceInfo.resourceMethod
+        // 如果是编译器生成的桥接方法，要使用getDeclaringClass()方法获取原始方法的声明类
+        if (method.isBridge) {
+            method = method.declaringClass.getDeclaredMethod(
+                method.name, *method.parameterTypes
+            )
         }
+        val annotatedMethod = AnnotationUtils.findAnnotation(
+            method, AuthMethod::class.java
+        )
+        if (annotatedMethod != null) {
+            context.register(PermissionAuthFilter(annotatedMethod.permission.toList()))
+            return
+        }
+
+        // 子类优先，如果有则也对父类生效
         if (resourceInfo.resourceClass.isAnnotationPresent(AuthMethod::class.java)) {
             val annotation = resourceInfo.resourceClass.getAnnotation(AuthMethod::class.java)
+            context.register(PermissionAuthFilter(annotation.permission.toList()))
+            return
+        }
+
+        // 获取方法声明类是否有AuthMethod配置
+        val clazz = resourceInfo.resourceMethod.declaringClass
+        if (clazz.isAnnotationPresent(AuthMethod::class.java)) {
+            val annotation = clazz.getAnnotation(AuthMethod::class.java)
             context.register(PermissionAuthFilter(annotation.permission.toList()))
         }
     }
