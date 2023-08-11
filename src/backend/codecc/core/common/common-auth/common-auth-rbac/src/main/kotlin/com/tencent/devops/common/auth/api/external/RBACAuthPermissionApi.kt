@@ -207,6 +207,24 @@ class RBACAuthPermissionApi(
         return result.data ?: false
     }
 
+    override fun validateUserRulesetPermission(
+        projectId: String,
+        userId: String,
+        action: String
+    ): Boolean {
+        return validateUserResourcePermission(userId, getBackendAccessToken(), action, projectId,
+            rbacAuthProperties.rulesetResourceType!!)
+    }
+
+    override fun validateUserIgnoreTypePermission(
+        projectId: String,
+        userId: String,
+        action: String
+    ): Boolean {
+        return validateUserResourcePermission(userId, getBackendAccessToken(), action, projectId,
+            rbacAuthProperties.ignoreTypeResourceType!!)
+    }
+
     /**
      * 获取用户某项目下指定资源action的实例列表
      */

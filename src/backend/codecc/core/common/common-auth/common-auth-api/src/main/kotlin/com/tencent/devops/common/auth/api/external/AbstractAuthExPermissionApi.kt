@@ -149,6 +149,22 @@ abstract class AbstractAuthExPermissionApi @Autowired constructor(
         return false
     }
 
+    override fun validateUserRulesetPermission(
+        projectId: String,
+        userId: String,
+        action: String
+    ): Boolean {
+        return false
+    }
+
+    override fun validateUserIgnoreTypePermission(
+        projectId: String,
+        userId: String,
+        action: String
+    ): Boolean {
+        return false
+    }
+
     companion object {
         private val logger = LoggerFactory.getLogger(AbstractAuthExPermissionApi::class.java)
     }

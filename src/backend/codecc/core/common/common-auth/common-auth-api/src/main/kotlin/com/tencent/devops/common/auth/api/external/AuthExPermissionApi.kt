@@ -97,15 +97,37 @@ interface AuthExPermissionApi {
      */
     fun authProjectMultiManager(projectId: String, user: String): Boolean
 
-
     /**
      * 校验是否项目角色
      */
     fun authProjectRole(projectId: String, user: String, role: String?): Boolean
 
-
+    /**
+     * 校验代码问题操作权限
+     */
     fun authDefectOpsPermissions(taskId: Long, projectId: String, username: String, createFrom: String,
                                  actions: List<CodeCCAuthAction>): Boolean
 
+    /**
+     * 判断项目是否已迁移到RBAC
+     */
     fun checkProjectIsRbacPermissionByCache(projectId: String, needRefresh: Boolean? = false): Boolean
+
+    /**
+     * 校验用户是否有项目维度的规则集的操作权限
+     */
+    fun validateUserRulesetPermission(
+        projectId: String,
+        userId: String,
+        action: String
+    ): Boolean
+
+    /**
+     * 校验用户是否有项目维度的忽略类型的操作权限
+     */
+    fun validateUserIgnoreTypePermission(
+        projectId: String,
+        userId: String,
+        action: String
+    ): Boolean
 }
