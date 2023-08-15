@@ -32,6 +32,7 @@ import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -85,12 +86,16 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
             String checkerSetId, String projectId, String user,
             UpdateCheckersOfSetReqVO updateCheckersOfSetReq
     ) {
+        // 获取最新版本的
+        List<CheckerSetEntity> checkerSetEntities = checkerSetRepository.findByCheckerSetId(checkerSetId);
+        CheckerSetEntity latestVersion = checkerSetEntities.stream().filter(it -> it.getVersion() != null)
+                .max(Comparator.comparing(CheckerSetEntity::getVersion)).orElse(null);
+        // 有权限 或者 是规则集的创建者
         if (!authExPermissionApi.validateUserRulesetPermission(projectId, user,
-                CodeCCAuthAction.RULESET_CREATE.getActionName())) {
+                CodeCCAuthAction.RULESET_CREATE.getActionName())
+                && (latestVersion == null || !latestVersion.getCreator().equals(user))) {
             throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{projectId});
         }
-
-        List<CheckerSetEntity> checkerSetEntities = checkerSetRepository.findByCheckerSetId(checkerSetId);
         if (CollectionUtils.isNotEmpty(checkerSetEntities)) {
             if (!checkerSetEntities.get(0).getProjectId().equals(projectId)) {
                 String errMsg = "只可以更新本项目内的规则集！";
