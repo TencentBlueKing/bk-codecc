@@ -1,8 +1,8 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.service.AbstractBatchDefectProcessBizService;
 import com.tencent.bk.codecc.defect.service.LintQueryWarningSpecialService;
@@ -12,7 +12,6 @@ import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.service.utils.SpringContextUtil;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;

@@ -26,12 +26,32 @@
 
 package com.tencent.devops.common.web.security
 
+import com.tencent.devops.common.auth.api.external.CodeCCExtAuthProcessor
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction
+import com.tencent.devops.common.auth.api.pojo.external.ResourceType
+import com.tencent.devops.common.auth.api.pojo.external.UserGroupRole
 import java.lang.annotation.Inherited
+import kotlin.reflect.KClass
 
 @MustBeDocumented
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @Inherited
 annotation class AuthMethod(
-        val permission: Array<CodeCCAuthAction> = [CodeCCAuthAction.REPORT_VIEW])
+    /**
+     * 资源类型 选填，默认task资源类型
+     */
+    val resourceType: ResourceType = ResourceType.TASK,
+    /**
+     * 对资源的操作id  选填，默认查看报表权限
+     */
+    val permission: Array<CodeCCAuthAction> = [CodeCCAuthAction.REPORT_VIEW],
+    /**
+     * 用户组成员校验  选填，校验优先级高
+     */
+    val roles: Array<UserGroupRole> = [],
+    /**
+     * 指定扩展补充鉴权类名（RBAC以外的鉴权）
+     */
+    val extPassClassName: KClass<out CodeCCExtAuthProcessor> = CodeCCExtAuthProcessor::class
+)

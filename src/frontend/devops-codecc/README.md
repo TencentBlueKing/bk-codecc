@@ -2,10 +2,10 @@
 
 ## 概要
 
-* 项目采用前后端分离，后端与前端采用RESTful接口来通信，后端微服务间调用采用RESTful接口通信。
-* 前端统一采用Vue.js框架，后端为SpringCloud微服务框架.
-* 网关采用openresty, 负责用户登录鉴权以及请求的路由转发。
-* 统一前端与后端网关来统一访问域名，消除跨站请求，提升效率。
+- 项目采用前后端分离，后端与前端采用 RESTful 接口来通信，后端微服务间调用采用 RESTful 接口通信。
+- 前端统一采用 Vue.js 框架，后端为 SpringCloud 微服务框架.
+- 网关采用 openresty, 负责用户登录鉴权以及请求的路由转发。
+- 统一前端与后端网关来统一访问域名，消除跨站请求，提升效率。
 
 ## 前端代码工程规范说明
 
@@ -65,26 +65,29 @@ codecc-frontend
 
 ## 本地开发
 
-0. 拷贝 index.html 为 index-dev.html，并替换文件中的 `__xxx__` 为实际情况的配置值
+0. 拷贝 .bk.development.env 为 .bk.local.env，并替换文件中的 `__xxx__` 为实际情况的配置值
 
 1. 配置 host
 
-    ```
-    127.0.0.1       dev.codecc.com
-    ```
+   ```
+   127.0.0.1       dev.codecc.com
+   ```
 
 2. 运行 npm 脚本
 
-    ```
-    npm i # 首次
-    npm run dev
-    ```
+   ```
+   npm i # 首次
+   npm run dev
+   ```
 
-3. 打开浏览器，访问 <http://dev.codecc.com>
+3. 打开浏览器，访问 <https://dev.codecc.com>，注意默认`bk.config.js`里面https是打开的，所以要通过https访问。
+
+**注意: 不要在代码里面写入敏感信息，而是通过上面.env文件配置的方式**
 
 ## 组件
 
-本工程是基于BKUI-CLI脚手架搭建的Vue项目，更多组件可参考[MagicBox Vue组件](https://magicbox.bk.tencent.com/static_api/v3/components_vue/2.0/example/index.html#/changelog)
+本工程是基于 BKUI-CLI 脚手架搭建的 Vue 项目，更多组件可参考[MagicBox Vue 组件](https://magicbox.bk.tencent.com/static_api/v3/components_vue/2.0/example/index.html#/changelog)
 
 ## 外网部署
-如果需要部署外网版本，可以先执行`npm run modify`，然后就会调用modify-opensource脚本处理内网版差异。
+
+如果需要部署外网版本，可以先执行`npm run modify`，然后就会调用 modify-opensource 脚本处理内网版差异。

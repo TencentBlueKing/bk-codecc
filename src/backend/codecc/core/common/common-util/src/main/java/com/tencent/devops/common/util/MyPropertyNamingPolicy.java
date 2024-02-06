@@ -11,73 +11,55 @@ import java.lang.reflect.Field;
  * @version V3.5.0
  * @date 2018/12/14
  */
-public enum MyPropertyNamingPolicy implements FieldNamingStrategy
-{
+public enum MyPropertyNamingPolicy implements FieldNamingStrategy {
 
-    UNDER_SCORE_POLICY
-            {
-                @Override
-                public String translateName(Field f)
-                {
-                    return underscoreName(f.getName());
-                }
-            },
+    UNDER_SCORE_POLICY {
+        @Override
+        public String translateName(Field f) {
+            return underscoreName(f.getName());
+        }
+    },
 
-    CAMEL_SCORE_POLICY
-            {
-                @Override
-                public String translateName(Field f)
-                {
-                    return withoutUnderscoreName(f.getName());
-                }
-            };
+    CAMEL_SCORE_POLICY {
+        @Override
+        public String translateName(Field f) {
+            return withoutUnderscoreName(f.getName());
+        }
+    };
 
 
-    private static String underscoreName(String name)
-    {
-        if (StringUtils.isEmpty(name))
-        {
+    private static String underscoreName(String name) {
+        if (StringUtils.isEmpty(name)) {
             return "";
         }
         StringBuilder result = new StringBuilder();
         result.append(name.substring(0, 1).toLowerCase());
-        for (int i = 1; i < name.length(); ++i)
-        {
+        for (int i = 1; i < name.length(); ++i) {
             String s = name.substring(i, i + 1);
             String slc = s.toLowerCase();
-            if (!(s.equals(slc)))
-            {
+            if (!(s.equals(slc))) {
                 result.append("_").append(slc);
-            }
-            else
-            {
+            } else {
                 result.append(s);
             }
         }
         return result.toString();
     }
 
-    private static String withoutUnderscoreName(String name)
-    {
-        if (StringUtils.isEmpty(name))
-        {
+    private static String withoutUnderscoreName(String name) {
+        if (StringUtils.isEmpty(name)) {
             return "";
         }
         StringBuilder result = new StringBuilder();
         result.append(name.substring(0, 1).toLowerCase());
         boolean underscore = false;
-        for (int i = 1; i < name.length(); ++i)
-        {
+        for (int i = 1; i < name.length(); ++i) {
             String s = name.substring(i, i + 1);
-            if ("_".equals(s))
-            {
+            if ("_".equals(s)) {
                 underscore = true;
                 continue;
-            }
-            else
-            {
-                if (underscore)
-                {
+            } else {
+                if (underscore) {
                     s = s.toUpperCase();
                 }
                 underscore = false;

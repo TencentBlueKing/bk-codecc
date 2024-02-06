@@ -39,4 +39,9 @@ public class RuntimeUpdateMetaVO extends CommonVO {
      * 超时时间（S）
      */
     private Integer timeout;
+
+    /**
+     * 超时时间（S）
+     */
+    private Boolean fileCacheEnable;
 }

@@ -36,6 +36,7 @@ public class ConsoleApp {
         URI resourceUri = Objects.requireNonNull(
                 ConsoleApp.class.getClassLoader().getResource(Constants.TEMPLATE_TRACKING_ENTITY)
         ).toURI();
+        // NOCC:NP-NULL-ON-SOME-PATH-FROM-RETURN-VALUE(设计如此:)
         File resourceDir = Paths.get(resourceUri).getParent().toFile();
 
         List<Class<?>> clazzList = Stream.of(LintDefectV2Entity.class, CommonDefectEntity.class)

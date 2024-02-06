@@ -2,6 +2,10 @@ package com.tencent.bk.codecc.scanschedule.vo;
 
 import lombok.Data;
 
+/**
+ * 简单规则集信息
+ * @author jimxzcai
+ */
 @Data
 public class SimpleCheckerSetVO {
 

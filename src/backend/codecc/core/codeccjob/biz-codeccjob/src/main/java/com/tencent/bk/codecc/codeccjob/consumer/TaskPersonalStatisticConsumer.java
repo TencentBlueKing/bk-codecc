@@ -53,6 +53,11 @@ public class TaskPersonalStatisticConsumer {
     @Autowired
     private TaskPersonalStatisticService taskPersonalStatisticService;
 
+    /**
+     * 刷新个人待处理
+     *
+     * @param mqObj
+     */
     @RabbitListener(
             bindings = @QueueBinding(
                     key = ROUTE_TASK_PERSONAL,
@@ -64,12 +69,15 @@ public class TaskPersonalStatisticConsumer {
     )
     public void refreshTaskPersonalStatistic(TaskPersonalStatisticRefreshReq mqObj) {
         long taskId = mqObj != null ? mqObj.getTaskId() : 0L;
+        if (taskId == 0L) {
+            return;
+        }
 
         try {
             long beginTime = System.currentTimeMillis();
             log.info("refresh task personal statistic begin, task id: {}, mq obj: {}", taskId, mqObj);
 
-            taskPersonalStatisticService.refresh(mqObj.getTaskId(), mqObj.getExtraInfo());
+            taskPersonalStatisticService.refresh(taskId, mqObj.getExtraInfo());
 
             long costTime = System.currentTimeMillis() - beginTime;
             log.info("refresh task personal statistic end, task id: {}, cost: {}", taskId, costTime);

@@ -28,7 +28,7 @@ package com.tencent.bk.codecc.defect.dao.redis;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.collect.Maps;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.CheckerStatisticEntity;
 import com.tencent.bk.codecc.defect.model.statistic.CommonStatisticEntity;

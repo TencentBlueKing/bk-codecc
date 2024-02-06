@@ -42,7 +42,7 @@ public class TaskListReqVO {
     @ApiModelProperty(value = "是否分页")
     private Boolean pageable;
 
-    @ApiModelProperty(value = "是否展示已停用任务")
+    @ApiModelProperty(value = "true, 展示已停用任务; false, 展示启用任务")
     private Boolean showDisabledTask;
 
     @ApiModelProperty("任务状态集合")

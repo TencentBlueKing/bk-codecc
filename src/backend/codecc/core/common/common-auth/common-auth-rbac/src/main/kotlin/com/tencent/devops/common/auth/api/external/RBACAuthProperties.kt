@@ -58,6 +58,18 @@ class RBACAuthProperties {
     val pipeLineResourceType: String? = null
 
     /**
+     * 规则集资源类型
+     */
+    @Value("\${auth.rbac.rulesetResourceType:codecc_rule_set}")
+    val rulesetResourceType: String? = null
+
+    /**
+     * 忽略类型资源类型
+     */
+    @Value("\${auth.rbac.ignoreTypeResourceType:codecc_ignore_type}")
+    val ignoreTypeResourceType: String? = null
+
+    /**
      * 接口access token
      */
     @Value("\${auth.rbac.token:#{null}}")

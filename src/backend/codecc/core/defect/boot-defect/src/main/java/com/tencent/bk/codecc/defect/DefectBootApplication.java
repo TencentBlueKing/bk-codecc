@@ -26,14 +26,20 @@
 
 package com.tencent.bk.codecc.defect;
 
-import com.tencent.devops.common.service.MicroService;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 
-@MicroService
-public class DefectBootApplication
-{
-    public static void main(String[] args)
-    {
+@EntityScan(value = "com.tencent.bk.codecc.defect.model")
+@SpringBootApplication(exclude = {
+        MongoAutoConfiguration.class,
+        MongoDataAutoConfiguration.class
+})
+public class DefectBootApplication {
+
+    public static void main(String[] args) {
         SpringApplication.run(DefectBootApplication.class, args);
     }
 }

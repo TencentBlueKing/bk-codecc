@@ -10,12 +10,13 @@
  *
  * Terms of the MIT License:
  * ---------------------------------------------------
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+ * rights to use, copy,modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+ * persons to whom the Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+ * Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
  * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -26,19 +27,28 @@
 
 package com.tencent.bk.codecc.task.service.impl;
 
+import static com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
+import static com.tencent.devops.common.constant.ComConstants.CommonJudge;
+import static com.tencent.devops.common.constant.ComConstants.DefectStatType;
+import static com.tencent.devops.common.constant.ComConstants.FOLLOW_STATUS;
+import static com.tencent.devops.common.constant.ComConstants.FUNC_TOOL_SWITCH;
+import static com.tencent.devops.common.constant.ComConstants.PipelineToolUpdateType;
+import static com.tencent.devops.common.constant.ComConstants.Status;
+import static com.tencent.devops.common.constant.ComConstants.Tool;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.api.OpDefectRestResource;
-import com.tencent.bk.codecc.defect.api.ServiceCheckerRestResource;
 import com.tencent.bk.codecc.defect.api.ServiceToolBuildInfoResource;
-import com.tencent.bk.codecc.defect.vo.checkerset.AddCheckerSet2TaskReqVO;
 import com.tencent.bk.codecc.task.constant.TaskConstants;
 import com.tencent.bk.codecc.task.constant.TaskMessageCode;
 import com.tencent.bk.codecc.task.dao.mongorepository.TaskRepository;
 import com.tencent.bk.codecc.task.dao.mongorepository.ToolRepository;
 import com.tencent.bk.codecc.task.dao.mongorepository.ToolStatisticRepository;
+import com.tencent.bk.codecc.task.dao.mongotemplate.CommonTaskDao;
+import com.tencent.bk.codecc.task.dao.mongotemplate.DeletedTaskDao;
 import com.tencent.bk.codecc.task.dao.mongotemplate.TaskDao;
 import com.tencent.bk.codecc.task.dao.mongotemplate.ToolDao;
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
@@ -51,16 +61,16 @@ import com.tencent.bk.codecc.task.service.PipelineService;
 import com.tencent.bk.codecc.task.service.PlatformService;
 import com.tencent.bk.codecc.task.service.TaskService;
 import com.tencent.bk.codecc.task.service.ToolService;
-import com.tencent.bk.codecc.task.service.specialparam.SpecialParamUtil;
 import com.tencent.bk.codecc.task.vo.BatchRegisterVO;
-import com.tencent.bk.codecc.task.vo.ParamJsonAndCheckerSetsVO;
 import com.tencent.bk.codecc.task.vo.PlatformVO;
+import com.tencent.bk.codecc.task.vo.TaskDetailVO;
+import com.tencent.bk.codecc.task.vo.TaskProjectCountVO;
 import com.tencent.bk.codecc.task.vo.TaskUpdateVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigBaseVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigInfoWithMetadataVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigPlatformVO;
-import com.tencent.bk.codecc.task.vo.ToolParamJsonAndCheckerSetVO;
+import com.tencent.bk.codecc.task.vo.ToolTaskInfoVO;
 import com.tencent.bk.codecc.task.vo.checkerset.ToolCheckerSetVO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
@@ -73,23 +83,10 @@ import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.BizServiceFactory;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import com.tencent.devops.common.service.utils.PageableUtils;
+import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.DateTimeUtils;
 import com.tencent.devops.common.util.List2StrUtil;
 import com.tencent.devops.common.web.aop.annotation.OperationHistory;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.tencent.devops.common.util.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -102,15 +99,19 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
-import static com.tencent.devops.common.constant.ComConstants.CommonJudge;
-import static com.tencent.devops.common.constant.ComConstants.DefectStatType;
-import static com.tencent.devops.common.constant.ComConstants.FOLLOW_STATUS;
-import static com.tencent.devops.common.constant.ComConstants.FUNC_TOOL_SWITCH;
-import static com.tencent.devops.common.constant.ComConstants.PipelineToolUpdateType;
-import static com.tencent.devops.common.constant.ComConstants.Status;
-import static com.tencent.devops.common.constant.ComConstants.Tool;
+import org.springframework.data.util.Pair;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
 
 /**
  * ci流水线工具管理服务层代码
@@ -120,43 +121,29 @@ import static com.tencent.devops.common.constant.ComConstants.Tool;
  */
 @Slf4j
 @Service
-public class ToolServiceImpl implements ToolService
-{
+public class ToolServiceImpl implements ToolService {
+
     private static Logger logger = LoggerFactory.getLogger(ToolServiceImpl.class);
-
-    @Value("${time.analysis.maxhour:#{null}}")
-    private String maxHour;
-
     @Autowired
     protected ToolRepository toolRepository;
-
-    @Autowired
-    private ToolDao toolDao;
-
     @Autowired
     protected TaskRepository taskRepository;
-
-    @Autowired
-    private TaskDao taskDao;
-
-    @Autowired
-    private BizServiceFactory<IRegisterToolBizService> bizServiceFactory;
-
-    @Autowired
-    private ToolMetaCacheService toolMetaCache;
-
-    @Autowired
-    private PipelineService pipelineService;
-
     @Autowired
     protected Client client;
-
+    @Value("${time.analysis.maxhour:#{null}}")
+    private String maxHour;
+    @Autowired
+    private ToolDao toolDao;
+    @Autowired
+    private TaskDao taskDao;
+    @Autowired
+    private BizServiceFactory<IRegisterToolBizService> bizServiceFactory;
+    @Autowired
+    private ToolMetaCacheService toolMetaCache;
+    @Autowired
+    private PipelineService pipelineService;
     @Autowired
     private AuthExRegisterApi authExRegisterApi;
-
-    @Autowired
-    private SpecialParamUtil specialParamUtil;
-
     @Autowired
     private PlatformService platformService;
     @Autowired
@@ -164,23 +151,24 @@ public class ToolServiceImpl implements ToolService
     @Autowired
     private ToolStatisticRepository toolStatisticRepository;
 
+    @Autowired
+    private DeletedTaskDao deletedTaskDao;
+
     @Override
-    public Result<Boolean> registerTools(BatchRegisterVO batchRegisterVO, TaskInfoEntity taskInfoEntity, String userName)
-    {
+    public Result<Boolean> registerTools(BatchRegisterVO batchRegisterVO, TaskInfoEntity taskInfoEntity,
+            String userName) {
         Result<Boolean> registerResult;
         long taskId = batchRegisterVO.getTaskId();
-        if(CollectionUtils.isEmpty(batchRegisterVO.getTools()))
-        {
+        if (CollectionUtils.isEmpty(batchRegisterVO.getTools())) {
             logger.error("no tools will be registered!");
             return new Result<>(false);
         }
-        if (null == taskInfoEntity)
-        {
+        if (null == taskInfoEntity) {
             taskInfoEntity = taskRepository.findFirstByTaskId(taskId);
-            if (null == taskInfoEntity)
-            {
+            if (null == taskInfoEntity) {
                 log.error("task does not exist! task id: {}", taskId);
-                throw new CodeCCException(CommonMessageCode.RECORD_NOT_EXITS, new String[]{String.valueOf(taskId)}, null);
+                throw new CodeCCException(CommonMessageCode.RECORD_NOT_EXITS, new String[]{String.valueOf(taskId)},
+                        null);
             }
         }
 
@@ -191,62 +179,51 @@ public class ToolServiceImpl implements ToolService
         List<String> failTools = new ArrayList<>();
         List<String> successTools = new ArrayList<>();
         List<ToolConfigInfoEntity> toolConfigInfoEntityList = new ArrayList<>();
-        if(CollectionUtils.isNotEmpty(taskInfoEntity.getToolConfigInfoList()))
-        {
+        if (CollectionUtils.isNotEmpty(taskInfoEntity.getToolConfigInfoList())) {
             toolConfigInfoEntityList = taskInfoEntity.getToolConfigInfoList();
         }
-        for (ToolConfigInfoVO toolConfigInfoVO : batchRegisterVO.getTools())
-        {
-            try
-            {
-                ToolConfigInfoEntity toolConfigInfoEntity = registerTool(toolConfigInfoVO, taskInfoEntity, userName);
-                toolConfigInfoEntityList.add(toolConfigInfoEntity);
-                successTools.add(toolConfigInfoVO.getToolName());
-            }
-            catch (Exception e)
-            {
-                log.error("register tool fail! tool name: {}", toolConfigInfoVO.getToolName(), e);
-                failTools.add(toolConfigInfoVO.getToolName());
+        for (ToolConfigInfoVO toolConfigInfoVO : batchRegisterVO.getTools()) {
+            // 工具没有停用才允许注册
+            if (!taskService.checkToolRemoved(toolConfigInfoVO.getToolName(), taskInfoEntity)) {
+                try {
+                    ToolConfigInfoEntity toolConfigInfoEntity = registerTool(toolConfigInfoVO, taskInfoEntity,
+                            userName);
+                    toolConfigInfoEntityList.add(toolConfigInfoEntity);
+                    successTools.add(toolConfigInfoVO.getToolName());
+
+                } catch (Exception e) {
+                    log.error("register tool fail! tool name: {}", toolConfigInfoVO.getToolName(), e);
+                    failTools.add(toolConfigInfoVO.getToolName());
+                }
             }
         }
 
         // 新注册的工具都需要设置强制全量扫描标志
-        if (CollectionUtils.isNotEmpty(successTools))
-        {
+        if (CollectionUtils.isNotEmpty(successTools)) {
             log.info("set force full scan, taskId:{}, toolNames:{}", taskId, successTools);
             client.get(ServiceToolBuildInfoResource.class).setForceFullScan(taskId, successTools);
         }
 
-
         // 保存工具信息,只有当不为空的时候才保存
         if (CollectionUtils.isNotEmpty(toolConfigInfoEntityList)) {
             //遍历查找工具清单中是否有cloc工具，如果有的话，需要下线cloc工具
-            toolConfigInfoEntityList.stream().filter(toolConfigInfoEntity
-                    -> Tool.CLOC.name().equalsIgnoreCase(toolConfigInfoEntity.getToolName()))
-                    .forEach(toolConfigInfoEntity -> {
-                        toolConfigInfoEntity.setFollowStatus(FOLLOW_STATUS.WITHDRAW.value());
-                        toolConfigInfoEntity.setUpdatedBy(userName);
-                        toolConfigInfoEntity.setUpdatedDate(System.currentTimeMillis());
-                    });
+            toolConfigInfoEntityList.stream().filter(toolConfigInfoEntity -> Tool.CLOC.name()
+                    .equalsIgnoreCase(toolConfigInfoEntity.getToolName())).forEach(toolConfigInfoEntity -> {
+                toolConfigInfoEntity.setFollowStatus(FOLLOW_STATUS.WITHDRAW.value());
+                toolConfigInfoEntity.setUpdatedBy(userName);
+                toolConfigInfoEntity.setUpdatedDate(System.currentTimeMillis());
+            });
             toolConfigInfoEntityList = toolRepository.saveAll(toolConfigInfoEntityList);
             taskInfoEntity.setToolConfigInfoList(toolConfigInfoEntityList);
         }
         taskRepository.save(taskInfoEntity);
 
-
-
         //全部工具添加失败
-        if (failTools.size() == batchRegisterVO.getTools().size())
-        {
+        if (failTools.size() == batchRegisterVO.getTools().size()) {
             registerResult = new Result<>(0, TaskMessageCode.ADD_TOOL_FAIL, "所有工具添加失败", false);
-        }
-        //全部工具添加成功
-        else if (successTools.size() == batchRegisterVO.getTools().size())
-        {
+        } else if (successTools.size() == batchRegisterVO.getTools().size()) { //全部工具添加成功
             registerResult = new Result<>(true);
-        }
-        else
-        {
+        } else {
             StringBuffer buffer = new StringBuffer();
             formatToolNames(successTools, buffer);
             buffer.append("添加成功；\n");
@@ -254,43 +231,32 @@ public class ToolServiceImpl implements ToolService
             buffer.append("添加失败");
             registerResult = new Result<>(0, TaskMessageCode.ADD_TOOL_PARTIALLY_SUCCESS, buffer.toString(), false);
         }
-
-        // 接入成功不再自动启动流水线
-        /*if (CollectionUtils.isNotEmpty(successTools))
-        {
-            //启动流水线
-            String buildId = pipelineService.startPipeline(taskInfoEntity.getPipelineId(), taskInfoEntity.getProjectId(),
-                    taskInfoEntity.getNameEn(), taskInfoEntity.getCreateFrom(), successTools, userName);
-            //更新任务状态
-            TaskInfoEntity finalTaskInfoEntity = taskInfoEntity;
-            successTools.forEach(tool -> pipelineService.updateTaskInitStep(String.valueOf(true), finalTaskInfoEntity, buildId, tool, userName));
-        }*/
         return registerResult;
     }
 
 
     @Override
-    public ToolConfigInfoEntity registerTool(ToolConfigInfoVO toolConfigInfo, TaskInfoEntity taskInfoEntity, String user)
-    {
+    public ToolConfigInfoEntity registerTool(ToolConfigInfoVO toolConfigInfo, TaskInfoEntity taskInfoEntity,
+            String user) {
         String toolName = toolConfigInfo.getToolName();
         String toolNames = taskInfoEntity.getToolNames();
-        if (StringUtils.isNotEmpty(toolNames))
-        {
+        if (StringUtils.isNotEmpty(toolNames)) {
             List<String> toolNameList = List2StrUtil.fromString(toolNames, ComConstants.TOOL_NAMES_SEPARATOR);
-            if (toolNameList.contains(toolName))
-            {
-                if(CollectionUtils.isNotEmpty(taskInfoEntity.getToolConfigInfoList()) &&
-                        taskInfoEntity.getToolConfigInfoList().stream().anyMatch(toolConfigInfoEntity -> toolConfigInfoEntity.getToolName().
-                        equalsIgnoreCase(toolConfigInfo.getToolName())))
-                {
-                    log.error("task [{}] has registered tool before! tool name: {}", taskInfoEntity.getTaskId(), toolName);
+            if (toolNameList.contains(toolName)) {
+                if (CollectionUtils.isNotEmpty(taskInfoEntity.getToolConfigInfoList())
+                        && taskInfoEntity.getToolConfigInfoList().stream().anyMatch(
+                        toolConfigInfoEntity ->
+                                toolConfigInfoEntity.getToolName().equalsIgnoreCase(toolConfigInfo.getToolName()))) {
+                    log.error("task [{}] has registered tool before! tool name: {}", taskInfoEntity.getTaskId(),
+                            toolName);
                     throw new CodeCCException(CommonMessageCode.RECORD_EXIST, new String[]{toolName}, null);
                 }
             }
         }
-        IRegisterToolBizService registerToolBizService = bizServiceFactory.createBizService(
-                toolName, ComConstants.BusinessType.REGISTER_TOOL.value(), IRegisterToolBizService.class);
-        ToolConfigInfoEntity toolConfigInfoEntity = registerToolBizService.registerTool(toolConfigInfo, taskInfoEntity, user);
+        IRegisterToolBizService registerToolBizService = bizServiceFactory.createBizService(toolName,
+                ComConstants.BusinessType.REGISTER_TOOL.value(), IRegisterToolBizService.class);
+        ToolConfigInfoEntity toolConfigInfoEntity = registerToolBizService.registerTool(toolConfigInfo, taskInfoEntity,
+                user);
 
         //添加项目信息
         addNewTool2Proj(toolConfigInfoEntity, taskInfoEntity, user);
@@ -301,25 +267,19 @@ public class ToolServiceImpl implements ToolService
 
     @Override
     @OperationHistory(funcId = FUNC_TOOL_SWITCH)
-    public Boolean toolStatusManage(List<String> toolNameList, String manageType, String userName, long taskId)
-    {
+    public Boolean toolStatusManage(List<String> toolNameList, String manageType, String userName, long taskId) {
         TaskInfoEntity taskInfoEntity = taskRepository.findFirstByTaskId(taskId);
-        for (String toolName : toolNameList)
-        {
+        for (String toolName : toolNameList) {
             ToolConfigInfoEntity toolConfigInfoEntity = toolRepository.findFirstByTaskIdAndToolName(taskId, toolName);
-            if (null == toolConfigInfoEntity)
-            {
+            if (null == toolConfigInfoEntity) {
                 log.error("empty tool config info found out! task id: {}, tool name: {}", taskId, toolName);
                 throw new CodeCCException(CommonMessageCode.RECORD_NOT_EXITS, new String[]{toolName}, null);
             }
-            if (CommonJudge.COMMON_Y.value().equals(manageType))
-            {
+            if (CommonJudge.COMMON_Y.value().equals(manageType)) {
                 toolConfigInfoEntity.setFollowStatus(toolConfigInfoEntity.getLastFollowStatus());
                 log.info("enable tool, task id: {}, tool name: {}", toolConfigInfoEntity.getTaskId(),
                         toolConfigInfoEntity.getToolName());
-            }
-            else
-            {
+            } else {
                 toolConfigInfoEntity.setLastFollowStatus(toolConfigInfoEntity.getFollowStatus());
                 toolConfigInfoEntity.setFollowStatus(FOLLOW_STATUS.WITHDRAW.value());
                 log.info("disable tool, task id: {}, tool name: {}", toolConfigInfoEntity.getTaskId(),
@@ -328,14 +288,11 @@ public class ToolServiceImpl implements ToolService
             toolRepository.save(toolConfigInfoEntity);
         }
 
-        if (CommonJudge.COMMON_Y.value().equalsIgnoreCase(manageType))
-        {
+        if (CommonJudge.COMMON_Y.value().equalsIgnoreCase(manageType)) {
             // registerVo及relPath为空代表CodeElement为空，与之前的逻辑符合
             pipelineService.updatePipelineTools(userName, taskId, toolNameList, taskInfoEntity,
                     PipelineToolUpdateType.ADD, null, null);
-        }
-        else if (CommonJudge.COMMON_N.value().equalsIgnoreCase(manageType))
-        {
+        } else if (CommonJudge.COMMON_N.value().equalsIgnoreCase(manageType)) {
             pipelineService.updatePipelineTools(userName, taskId, toolNameList, taskInfoEntity,
                     PipelineToolUpdateType.REMOVE, null, null);
         }
@@ -343,11 +300,9 @@ public class ToolServiceImpl implements ToolService
     }
 
     @Override
-    public ToolConfigInfoVO getToolByTaskIdAndName(long taskId, String toolName)
-    {
+    public ToolConfigInfoVO getToolByTaskIdAndName(long taskId, String toolName) {
         ToolConfigInfoEntity toolConfigInfoEntity = toolRepository.findFirstByTaskIdAndToolName(taskId, toolName);
-        if (null == toolConfigInfoEntity)
-        {
+        if (null == toolConfigInfoEntity) {
             log.error("no tool info found!, task id: {}, tool name: {}", taskId, toolName);
             throw new CodeCCException(CommonMessageCode.RECORD_NOT_EXITS, new String[]{toolName}, null);
         }
@@ -355,8 +310,7 @@ public class ToolServiceImpl implements ToolService
         BeanUtils.copyProperties(toolConfigInfoEntity, toolConfigInfoVO, "ignoreCheckers", "checkerProps");
 
         // 加入规则集
-        if (toolConfigInfoEntity.getCheckerSet() != null)
-        {
+        if (toolConfigInfoEntity.getCheckerSet() != null) {
             ToolCheckerSetVO toolCheckerSetVO = new ToolCheckerSetVO();
             BeanUtils.copyProperties(toolConfigInfoEntity.getCheckerSet(), toolCheckerSetVO);
             toolConfigInfoVO.setCheckerSet(toolCheckerSetVO);
@@ -365,14 +319,12 @@ public class ToolServiceImpl implements ToolService
     }
 
     @Override
-    public ToolConfigInfoWithMetadataVO getToolWithMetadataByTaskIdAndName(long taskId, String toolName)
-    {
+    public ToolConfigInfoWithMetadataVO getToolWithMetadataByTaskIdAndName(long taskId, String toolName) {
         // 获取工具配置
         ToolConfigInfoVO toolConfigInfoVO = getToolByTaskIdAndName(taskId, toolName);
         ToolConfigInfoWithMetadataVO toolConfigInfoWithMetadataVO = new ToolConfigInfoWithMetadataVO();
         BeanUtils.copyProperties(toolConfigInfoVO, toolConfigInfoWithMetadataVO);
-        if (toolConfigInfoVO.getCheckerSet() != null)
-        {
+        if (toolConfigInfoVO.getCheckerSet() != null) {
             toolConfigInfoWithMetadataVO.setCheckerSet(toolConfigInfoVO.getCheckerSet());
         }
 
@@ -382,8 +334,7 @@ public class ToolServiceImpl implements ToolService
 
         // 获取项目语言
         TaskInfoEntity taskInfoEntity = taskRepository.findFirstByTaskId(taskId);
-        if (null == taskInfoEntity)
-        {
+        if (null == taskInfoEntity) {
             log.error("task does not exist! task id: {}", taskId);
             throw new CodeCCException(CommonMessageCode.RECORD_NOT_EXITS, new String[]{String.valueOf(taskId)}, null);
         }
@@ -400,32 +351,29 @@ public class ToolServiceImpl implements ToolService
      * @return
      */
     @Override
-    public Boolean deletePipeline(Long taskId, String projectId, String userName)
-    {
+    public Boolean deletePipeline(Long taskId, String projectId, String userName) {
         boolean deleteTask = authExRegisterApi.deleteCodeCCTask(String.valueOf(taskId), projectId);
-        if (!deleteTask)
-        {
+        if (!deleteTask) {
             return false;
         }
 
         TaskUpdateVO taskUpdateVO = new TaskUpdateVO();
         taskUpdateVO.setStatus(TaskConstants.TaskStatus.DISABLE.value());
         taskUpdateVO.setDisableTime(String.valueOf(System.currentTimeMillis()));
-        return taskDao.updateTask(taskUpdateVO.getTaskId(), taskUpdateVO.getCodeLang(), taskUpdateVO.getNameCn(), taskUpdateVO.getTaskOwner(),
-                taskUpdateVO.getTaskMember(), taskUpdateVO.getDisableTime(), taskUpdateVO.getStatus(),
-                userName);
+        return taskDao.updateTask(taskUpdateVO.getTaskId(), taskUpdateVO.getCodeLang(), taskUpdateVO.getNameCn(),
+                taskUpdateVO.getTaskOwner(), taskUpdateVO.getTaskMember(), taskUpdateVO.getDisableTime(),
+                taskUpdateVO.getStatus(), userName);
     }
 
     @Override
-    public Boolean updatePipelineTool(Long taskId, List<String> toolList, String userName)
-    {
+    public Boolean updatePipelineTool(Long taskId, List<String> toolList, String userName) {
         TaskInfoEntity taskInfoEntity = taskRepository.findFirstByTaskId(taskId);
-        if (BsTaskCreateFrom.BS_CODECC.name().equals(taskInfoEntity.getCreateFrom()))
-        {
+        if (BsTaskCreateFrom.BS_CODECC.name().equals(taskInfoEntity.getCreateFrom())) {
             log.error("=========the task is created from codecc!=============");
             throw new CodeCCException(CommonMessageCode.SYSTEM_ERROR);
         }
-        pipelineService.updatePipelineTools(userName, taskId, toolList, taskInfoEntity, PipelineToolUpdateType.ADD, null, null);
+        pipelineService.updatePipelineTools(userName, taskId, toolList, taskInfoEntity, PipelineToolUpdateType.ADD,
+                null, null);
         return true;
     }
 
@@ -437,10 +385,8 @@ public class ToolServiceImpl implements ToolService
      * @return
      */
     @Override
-    public Boolean clearCheckerSet(Long taskId, List<String> toolNames)
-    {
-        if (CollectionUtils.isNotEmpty(toolNames))
-        {
+    public Boolean clearCheckerSet(Long taskId, List<String> toolNames) {
+        if (CollectionUtils.isNotEmpty(toolNames)) {
             toolDao.clearCheckerSet(taskId, toolNames);
         }
         return true;
@@ -454,99 +400,15 @@ public class ToolServiceImpl implements ToolService
      * @return
      */
     @Override
-    public Boolean addCheckerSet2Task(Long taskId, List<ToolCheckerSetVO> toolCheckerSets)
-    {
-        if (CollectionUtils.isNotEmpty(toolCheckerSets))
-        {
+    public Boolean addCheckerSet2Task(Long taskId, List<ToolCheckerSetVO> toolCheckerSets) {
+        if (CollectionUtils.isNotEmpty(toolCheckerSets)) {
             List<ToolCheckerSetEntity> toolCheckerSetEntities = Lists.newArrayList();
-            for (ToolCheckerSetVO toolCheckerSetVO : toolCheckerSets)
-            {
+            for (ToolCheckerSetVO toolCheckerSetVO : toolCheckerSets) {
                 ToolCheckerSetEntity toolCheckerSetEntity = new ToolCheckerSetEntity();
                 BeanUtils.copyProperties(toolCheckerSetVO, toolCheckerSetEntity);
                 toolCheckerSetEntities.add(toolCheckerSetEntity);
             }
             toolDao.setCheckerSet(taskId, toolCheckerSetEntities);
-        }
-        return true;
-    }
-
-    /**
-     * 修改工具特殊参数和规则集
-     *
-     * @param user
-     * @param taskId
-     * @param paramJsonAndCheckerSetsVO
-     * @return
-     */
-    @Override
-    public Boolean updateParamJsonAndCheckerSets(String user, Long taskId, ParamJsonAndCheckerSetsVO paramJsonAndCheckerSetsVO)
-    {
-        TaskInfoEntity taskInfoEntity = taskRepository.findFirstByTaskId(taskId);
-        Map<String, ToolConfigInfoEntity> toolConfigInfoEntityMap = Maps.newHashMap();
-        if (CollectionUtils.isNotEmpty(taskInfoEntity.getToolConfigInfoList()))
-        {
-            for (ToolConfigInfoEntity toolConfigInfoEntity : taskInfoEntity.getToolConfigInfoList())
-            {
-                toolConfigInfoEntityMap.put(toolConfigInfoEntity.getToolName(), toolConfigInfoEntity);
-            }
-        }
-        Set<String> checkerUpdatedTools = Sets.newHashSet();
-        Set<String> clearCheckerSetTools = Sets.newHashSet();
-        if (CollectionUtils.isNotEmpty(paramJsonAndCheckerSetsVO.getToolConfig()))
-        {
-            Map<String, ToolConfigInfoEntity> toolConfigMap = Maps.newHashMap();
-            for (ToolParamJsonAndCheckerSetVO reqToolConfig : paramJsonAndCheckerSetsVO.getToolConfig())
-            {
-                String toolName = reqToolConfig.getToolName();
-                ToolConfigInfoEntity currentToolConfig = toolConfigInfoEntityMap.get(toolName);
-                toolConfigMap.put(toolName, currentToolConfig);
-                if (StringUtils.isNotEmpty(reqToolConfig.getParamJson()))
-                {
-                    if (currentToolConfig != null && !specialParamUtil.isSameParam(toolName, currentToolConfig.getParamJson(), reqToolConfig.getParamJson()))
-                    {
-                        checkerUpdatedTools.add(toolName);
-                        clearCheckerSetTools.add(toolName);
-                        currentToolConfig.setParamJson(reqToolConfig.getParamJson());
-                        toolRepository.save(currentToolConfig);
-                    }
-                }
-            }
-
-            List<ToolCheckerSetVO> toolCheckerSets = Lists.newArrayList();
-            for (ToolParamJsonAndCheckerSetVO toolConfig : paramJsonAndCheckerSetsVO.getToolConfig())
-            {
-                String toolName = toolConfig.getToolName();
-                if (toolConfig.getCheckerSet() != null && StringUtils.isNotEmpty(toolConfig.getCheckerSet().getCheckerSetId()))
-                {
-                    String checkerSetId = toolConfig.getCheckerSet().getCheckerSetId();
-                    if (toolConfigMap.get(toolName) == null || toolConfigMap.get(toolName).getCheckerSet() == null
-                            || !checkerSetId.equals(toolConfigMap.get(toolName).getCheckerSet().getCheckerSetId()))
-                    {
-                        checkerUpdatedTools.add(toolName);
-                        ToolCheckerSetVO toolCheckerSetVO = new ToolCheckerSetVO(toolName, checkerSetId, null);
-                        toolCheckerSets.add(toolCheckerSetVO);
-                        clearCheckerSetTools.remove(toolName);
-                    }
-                }
-            }
-            if (CollectionUtils.isNotEmpty(toolCheckerSets))
-            {
-                client.get(ServiceCheckerRestResource.class).addCheckerSet2Task(user, taskId,
-                        new AddCheckerSet2TaskReqVO(toolCheckerSets, CommonJudge.COMMON_N.value(), true));
-            }
-        }
-
-        // 修改工具特殊参数或规则集后，要设置强制全量扫描标志位
-        if (CollectionUtils.isNotEmpty(checkerUpdatedTools))
-        {
-            log.info("set force full scan, taskId:{}, toolNames:{}", taskId, checkerUpdatedTools);
-            client.get(ServiceToolBuildInfoResource.class).setForceFullScan(taskId, Lists.newArrayList(checkerUpdatedTools));
-        }
-
-        // 修改工具特殊参数但不需要关联新的规则集的工具，要清除已关联的规则集
-        if (CollectionUtils.isNotEmpty(clearCheckerSetTools))
-        {
-            clearCheckerSet(taskId, Lists.newArrayList(clearCheckerSetTools));
         }
         return true;
     }
@@ -592,20 +454,17 @@ public class ToolServiceImpl implements ToolService
     }
 
     @Override
-    public Boolean updateToolPlatformInfo(Long taskId, String userName, ToolConfigPlatformVO toolConfigPlatformVO)
-    {
+    public Boolean updateToolPlatformInfo(Long taskId, String userName, ToolConfigPlatformVO toolConfigPlatformVO) {
         // 1.检查参数
-        if (toolConfigPlatformVO == null)
-        {
+        if (toolConfigPlatformVO == null) {
             logger.error("toolConfigPlatformVO is null!");
             throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{"reqObj"}, null);
         }
         // 2.检查参数
         Long taskIdReq = toolConfigPlatformVO.getTaskId();
         String toolName = toolConfigPlatformVO.getToolName();
-        if (taskIdReq == null || !taskIdReq.equals(taskId) || StringUtils.isBlank(toolName) ||
-                StringUtils.isBlank(userName))
-        {
+        if (taskIdReq == null || !taskIdReq.equals(taskId) || StringUtils.isBlank(toolName) || StringUtils.isBlank(
+                userName)) {
             logger.error("parameter is invalid! task:{} userName:{} reqObj:{}", taskId, userName, toolConfigPlatformVO);
             throw new CodeCCException(CommonMessageCode.PARAMETER_IS_NULL, new String[]{"parameter"}, null);
         }
@@ -630,18 +489,15 @@ public class ToolServiceImpl implements ToolService
     }
 
     @Override
-    public Result<Boolean> updateTools(Long taskId, String user, BatchRegisterVO batchRegisterVO)
-    {
+    public Result<Boolean> updateTools(Long taskId, String user, BatchRegisterVO batchRegisterVO) {
         // 查询任务已接入的工具列表
         TaskInfoEntity taskInfoEntity = taskRepository.findFirstByTaskId(taskId);
 
         log.info("start to update tool for task: {}", taskId);
 
         Map<String, ToolConfigInfoEntity> toolConfigInfoEntityMap = Maps.newHashMap();
-        if (CollectionUtils.isNotEmpty(taskInfoEntity.getToolConfigInfoList()))
-        {
-            for (ToolConfigInfoEntity toolConfigInfoEntity : taskInfoEntity.getToolConfigInfoList())
-            {
+        if (CollectionUtils.isNotEmpty(taskInfoEntity.getToolConfigInfoList())) {
+            for (ToolConfigInfoEntity toolConfigInfoEntity : taskInfoEntity.getToolConfigInfoList()) {
                 toolConfigInfoEntityMap.put(toolConfigInfoEntity.getToolName(), toolConfigInfoEntity);
             }
         }
@@ -651,16 +507,13 @@ public class ToolServiceImpl implements ToolService
         List<ToolConfigInfoEntity> updateStatusTools = Lists.newArrayList();
         Iterator<ToolConfigInfoVO> it = batchRegisterVO.getTools().iterator();
         Set<String> reqTools = Sets.newHashSet();
-        while (it.hasNext())
-        {
+        while (it.hasNext()) {
             ToolConfigInfoVO toolConfigInfoVO = it.next();
             reqTools.add(toolConfigInfoVO.getToolName());
-            if (toolConfigInfoEntityMap.get(toolConfigInfoVO.getToolName()) != null)
-            {
+            if (toolConfigInfoEntityMap.get(toolConfigInfoVO.getToolName()) != null) {
                 ToolConfigInfoEntity toolConfigInfoEntity = toolConfigInfoEntityMap.get(toolConfigInfoVO.getToolName());
                 int toolFollowStatus = toolConfigInfoEntity.getFollowStatus();
-                if (FOLLOW_STATUS.WITHDRAW.value() == toolFollowStatus)
-                {
+                if (FOLLOW_STATUS.WITHDRAW.value() == toolFollowStatus) {
                     toolConfigInfoEntity.setFollowStatus(toolConfigInfoEntity.getLastFollowStatus());
                     toolConfigInfoEntity.setUpdatedBy(user);
                     toolConfigInfoEntity.setUpdatedDate(curTime);
@@ -672,16 +525,13 @@ public class ToolServiceImpl implements ToolService
         }
 
         // 获取需要停用的工具列表
-        if (CollectionUtils.isNotEmpty(taskInfoEntity.getToolConfigInfoList()))
-        {
-            for (ToolConfigInfoEntity toolConfigInfoEntity : taskInfoEntity.getToolConfigInfoList())
-            {
+        if (CollectionUtils.isNotEmpty(taskInfoEntity.getToolConfigInfoList())) {
+            for (ToolConfigInfoEntity toolConfigInfoEntity : taskInfoEntity.getToolConfigInfoList()) {
                 //cloc工具统一需要停用
-                if (!reqTools.contains(toolConfigInfoEntity.getToolName()) || Tool.CLOC.name().equalsIgnoreCase(toolConfigInfoEntity.getToolName()))
-                {
+                if (!reqTools.contains(toolConfigInfoEntity.getToolName()) || Tool.CLOC.name()
+                        .equalsIgnoreCase(toolConfigInfoEntity.getToolName())) {
                     int toolFollowStatus = toolConfigInfoEntity.getFollowStatus();
-                    if (FOLLOW_STATUS.WITHDRAW.value() != toolFollowStatus)
-                    {
+                    if (FOLLOW_STATUS.WITHDRAW.value() != toolFollowStatus) {
                         toolConfigInfoEntity.setFollowStatus(FOLLOW_STATUS.WITHDRAW.value());
                         toolConfigInfoEntity.setUpdatedBy(user);
                         toolConfigInfoEntity.setUpdatedDate(curTime);
@@ -693,55 +543,25 @@ public class ToolServiceImpl implements ToolService
         }
 
         // 更新工具状态
-        if (CollectionUtils.isNotEmpty(updateStatusTools))
-        {
+        if (CollectionUtils.isNotEmpty(updateStatusTools)) {
             toolRepository.saveAll(taskInfoEntity.getToolConfigInfoList());
         }
 
         // 新增的工具需要接入
-        if (CollectionUtils.isNotEmpty(batchRegisterVO.getTools()))
-        {
+        if (CollectionUtils.isNotEmpty(batchRegisterVO.getTools())) {
             return registerTools(batchRegisterVO, taskInfoEntity, user);
-        }
-        else
-        {
+        } else {
             return new Result<>(true);
         }
     }
 
-    @NotNull
-    private Map<String, Map<String, PlatformVO>> genToolIpInfoMap(List<PlatformVO> platformInfo)
-    {
-        Map<String, Map<String, PlatformVO>> platformInfoMap = Maps.newHashMap();
-        if (platformInfo != null)
-        {
-            Set<String> tools = platformInfo.stream().map(PlatformVO::getToolName).collect(Collectors.toSet());
-            tools.forEach(tool ->
-            {
-                Map<String, PlatformVO> dateMap = Maps.newHashMap();
-                platformInfo.forEach(info ->
-                {
-                    if (info.getToolName().equals(tool))
-                    {
-                        dateMap.put(info.getIp(), info);
-                    }
-                });
-                platformInfoMap.put(tool, dateMap);
-            });
-        }
-        return platformInfoMap;
-    }
-
-    private void formatToolNames(List<String> tools, StringBuffer buffer)
-    {
+    private void formatToolNames(List<String> tools, StringBuffer buffer) {
         buffer.append("工具[");
-        for (int i = 0; i < tools.size(); i++)
-        {
+        for (int i = 0; i < tools.size(); i++) {
             String toolName = tools.get(i);
             String displayName = toolMetaCache.getToolDisplayName(toolName);
             buffer.append(null != displayName ? displayName : "");
-            if (i != tools.size() - 1)
-            {
+            if (i != tools.size() - 1) {
                 buffer.append(", ");
             }
         }
@@ -756,21 +576,19 @@ public class ToolServiceImpl implements ToolService
      * @param userName
      * @throws JsonProcessingException
      */
-    private void pipelineConfig(BatchRegisterVO batchRegisterVO, TaskInfoEntity taskInfoEntity,
-                                String userName)
-    {
+    private void pipelineConfig(BatchRegisterVO batchRegisterVO, TaskInfoEntity taskInfoEntity, String userName) {
         long taskId = taskInfoEntity.getTaskId();
         String pipelineId = taskInfoEntity.getPipelineId();
         String relPath = getRelPath(batchRegisterVO);
-        if (StringUtils.isEmpty(pipelineId))
-        {
+        if (StringUtils.isEmpty(pipelineId)) {
             List<String> defaultExecuteDate = getTaskDefaultReportDate();
             String defaultExecuteTime = getTaskDefaultTime();
 
             // 创建流水线编排并获取流水线ID
-            pipelineId = pipelineService.assembleCreatePipeline(batchRegisterVO, taskInfoEntity, defaultExecuteTime, defaultExecuteDate, userName, relPath, "CREATE");
-            log.info("create pipeline success! project id: {}, codecc task id: {}, pipeline id: {}", taskInfoEntity.getProjectId(),
-                    taskInfoEntity.getTaskId(), pipelineId);
+            pipelineId = pipelineService.assembleCreatePipeline(batchRegisterVO, taskInfoEntity, defaultExecuteTime,
+                    defaultExecuteDate, userName, relPath, "CREATE");
+            log.info("create pipeline success! project id: {}, codecc task id: {}, pipeline id: {}",
+                    taskInfoEntity.getProjectId(), taskInfoEntity.getTaskId(), pipelineId);
 
             taskInfoEntity.setPipelineId(pipelineId);
             //表示通过codecc_web平台创建蓝盾codecc任务
@@ -778,20 +596,17 @@ public class ToolServiceImpl implements ToolService
             //保存定时执行信息
 //            taskInfoEntity.setExecuteTime(defaultExecuteTime);
 //            taskInfoEntity.setExecuteDate(defaultExecuteDate);
-        }
-        else
-        {
+        } else {
             //更新流水线编排中的工具
             List<String> toolNames = new ArrayList<>();
-            for (ToolConfigInfoVO tool : batchRegisterVO.getTools())
-            {
+            for (ToolConfigInfoVO tool : batchRegisterVO.getTools()) {
                 toolNames.add(tool.getToolName());
             }
-            if (!toolNames.contains(Tool.GOML.name()))
-            {
+            if (!toolNames.contains(Tool.GOML.name())) {
                 relPath = null;
             }
-            pipelineService.updatePipelineTools(userName, taskId, toolNames, taskInfoEntity, PipelineToolUpdateType.ADD, batchRegisterVO, relPath);
+            pipelineService.updatePipelineTools(userName, taskId, toolNames, taskInfoEntity, PipelineToolUpdateType.ADD,
+                    batchRegisterVO, relPath);
         }
 
     }
@@ -802,18 +617,14 @@ public class ToolServiceImpl implements ToolService
      * @param registerVO
      * @return
      */
-    private String getRelPath(BatchRegisterVO registerVO)
-    {
-        if (CollectionUtils.isNotEmpty(registerVO.getTools()))
-        {
-            for (ToolConfigInfoVO toolConfig : registerVO.getTools())
-            {
+    private String getRelPath(BatchRegisterVO registerVO) {
+        if (CollectionUtils.isNotEmpty(registerVO.getTools())) {
+            for (ToolConfigInfoVO toolConfig : registerVO.getTools()) {
                 //常量要区分吗
-                if (Tool.GOML.name().equals(toolConfig.getToolName()) && StringUtils.isNotEmpty(toolConfig.getParamJson()))
-                {
+                if (Tool.GOML.name().equals(toolConfig.getToolName()) && StringUtils.isNotEmpty(
+                        toolConfig.getParamJson())) {
                     JSONObject paramJson = new JSONObject(toolConfig.getParamJson());
-                    if (paramJson.has(ComConstants.PARAMJSON_KEY_REL_PATH))
-                    {
+                    if (paramJson.has(ComConstants.PARAMJSON_KEY_REL_PATH)) {
                         return paramJson.getString(ComConstants.PARAMJSON_KEY_REL_PATH);
                     }
                 }
@@ -828,22 +639,18 @@ public class ToolServiceImpl implements ToolService
      * @param toolConfigBaseVO
      */
     @Override
-    public void updateToolStepStatus(ToolConfigBaseVO toolConfigBaseVO)
-    {
+    public void updateToolStepStatus(ToolConfigBaseVO toolConfigBaseVO) {
         toolDao.updateToolStepStatusByTaskIdAndToolName(toolConfigBaseVO);
     }
 
-    protected void addNewTool2Proj(ToolConfigInfoEntity toolConfigInfoEntity, TaskInfoEntity taskInfoEntity, String user)
-    {
+    protected void addNewTool2Proj(ToolConfigInfoEntity toolConfigInfoEntity, TaskInfoEntity taskInfoEntity,
+            String user) {
         String toolName = toolConfigInfoEntity.getToolName();
         String toolNames = taskInfoEntity.getToolNames();
-        if (StringUtils.isNotEmpty(toolNames))
-        {
+        if (StringUtils.isNotEmpty(toolNames)) {
             toolNames = String.format("%s%s%s", toolNames, ComConstants.TOOL_NAMES_SEPARATOR, toolName);
             taskInfoEntity.setToolNames(toolNames);
-        }
-        else
-        {
+        } else {
             toolNames = toolName;
             taskInfoEntity.setToolNames(toolNames);
         }
@@ -852,8 +659,7 @@ public class ToolServiceImpl implements ToolService
     }
 
 
-    protected String getTaskDefaultTime()
-    {
+    protected String getTaskDefaultTime() {
         float time = new Random().nextInt(Integer.valueOf(maxHour) * 2) / 2f;
         Calendar cal = Calendar.getInstance();
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
@@ -865,8 +671,7 @@ public class ToolServiceImpl implements ToolService
     }
 
 
-    protected List<String> getTaskDefaultReportDate()
-    {
+    protected List<String> getTaskDefaultReportDate() {
         List<String> reportDate = new ArrayList<>();
         reportDate.add(String.valueOf(Calendar.MONDAY));
         reportDate.add(String.valueOf(Calendar.TUESDAY));
@@ -879,8 +684,7 @@ public class ToolServiceImpl implements ToolService
     }
 
     @Override
-    public List<String> getEffectiveToolList(long taskId)
-    {
+    public List<String> getEffectiveToolList(long taskId) {
         TaskInfoEntity taskInfoEntity = taskRepository.findFirstByTaskId(taskId);
         //获取工具配置实体类清单
         List<String> toolNameList = getEffectiveToolList(taskInfoEntity);
@@ -888,34 +692,28 @@ public class ToolServiceImpl implements ToolService
     }
 
     @Override
-    public List<String> getEffectiveToolList(TaskInfoEntity taskInfoEntity)
-    {
+    public List<String> getEffectiveToolList(TaskInfoEntity taskInfoEntity) {
         //获取工具配置实体类清单
         List<ToolConfigInfoEntity> toolConfigInfoEntityList = taskInfoEntity.getToolConfigInfoList();
-        if (CollectionUtils.isEmpty(toolConfigInfoEntityList))
-        {
+        if (CollectionUtils.isEmpty(toolConfigInfoEntityList)) {
             return new ArrayList<>();
         }
         List<String> toolNameList = toolConfigInfoEntityList.stream()
-                .filter(toolConfigInfoEntity -> FOLLOW_STATUS.WITHDRAW.value() != toolConfigInfoEntity.getFollowStatus())
-                .map(ToolConfigInfoEntity::getToolName)
+                .filter(toolConfigInfoEntity -> FOLLOW_STATUS.WITHDRAW.value()
+                        != toolConfigInfoEntity.getFollowStatus()).map(ToolConfigInfoEntity::getToolName)
                 .collect(Collectors.toList());
         return toolNameList;
     }
 
     @Override
-    public List<ToolConfigInfoVO> batchGetToolConfigList(QueryTaskListReqVO queryReqVO)
-    {
+    public List<ToolConfigInfoVO> batchGetToolConfigList(QueryTaskListReqVO queryReqVO) {
         List<ToolConfigInfoVO> toolConfigInfoVoList = Lists.newArrayList();
 
         Collection<Long> taskIds = queryReqVO.getTaskIds();
-        if (CollectionUtils.isNotEmpty(taskIds))
-        {
+        if (CollectionUtils.isNotEmpty(taskIds)) {
             List<ToolConfigInfoEntity> configInfoEntityList = toolRepository.findByTaskIdIn(taskIds);
-            if (CollectionUtils.isNotEmpty(configInfoEntityList))
-            {
-                toolConfigInfoVoList = configInfoEntityList.stream().map(entity ->
-                {
+            if (CollectionUtils.isNotEmpty(configInfoEntityList)) {
+                toolConfigInfoVoList = configInfoEntityList.stream().map(entity -> {
                     ToolConfigInfoVO toolConfigInfoVO = new ToolConfigInfoVO();
                     BeanUtils.copyProperties(entity, toolConfigInfoVO);
                     return toolConfigInfoVO;
@@ -931,7 +729,7 @@ public class ToolServiceImpl implements ToolService
      * 根据taskId集合刷新工具的跟进状态
      *
      * @param userName 用户名
-     * @param reqVO    请求体
+     * @param reqVO 请求体
      * @return boolean
      */
     @Override
@@ -973,6 +771,7 @@ public class ToolServiceImpl implements ToolService
 
     /**
      * 公共方法 操作刷新工具跟进状态
+     *
      * @param pageable 分页器
      * @param taskInfoEntities 有效的任务id集合
      * @return boolean
@@ -998,20 +797,20 @@ public class ToolServiceImpl implements ToolService
         for (ToolConfigInfoEntity toolConfigInfoEntity : toolConfigInfoEntities) {
             if (toolConfigInfoEntity.getTaskId() != 0 && StringUtils.isNotEmpty(toolConfigInfoEntity.getToolName())) {
                 // 将TaskId和ToolName组合成Key
-                List<ToolConfigInfoEntity> toolConfigInfos = toolConfigInfoEntityMap
-                        .get(toolConfigInfoEntity.getTaskId() + toolConfigInfoEntity.getToolName());
+                List<ToolConfigInfoEntity> toolConfigInfos = toolConfigInfoEntityMap.get(
+                        toolConfigInfoEntity.getTaskId() + toolConfigInfoEntity.getToolName());
                 if (CollectionUtils.isEmpty(toolConfigInfos)) {
                     toolConfigInfos = Lists.newArrayList();
                 }
                 toolConfigInfos.add(toolConfigInfoEntity);
-                toolConfigInfoEntityMap
-                        .put(toolConfigInfoEntity.getTaskId() + toolConfigInfoEntity.getToolName(), toolConfigInfos);
+                toolConfigInfoEntityMap.put(toolConfigInfoEntity.getTaskId() + toolConfigInfoEntity.getToolName(),
+                        toolConfigInfos);
             }
         }
         // 根据工具名分组
-        Map<String, List<ToolConfigInfoEntity>> queryToolConfigInfoEntityMap =
-                toolConfigInfoEntities.stream().filter(entity -> StringUtils.isNotEmpty(entity.getToolName()))
-                        .collect(Collectors.groupingBy(ToolConfigInfoEntity::getToolName));
+        Map<String, List<ToolConfigInfoEntity>> queryToolConfigInfoEntityMap = toolConfigInfoEntities.stream()
+                .filter(entity -> StringUtils.isNotEmpty(entity.getToolName()))
+                .collect(Collectors.groupingBy(ToolConfigInfoEntity::getToolName));
 
         List<QueryTaskListReqVO> queryTaskListReqVODataList = new ArrayList<>();
         for (Map.Entry<String, List<ToolConfigInfoEntity>> entry : queryToolConfigInfoEntityMap.entrySet()) {
@@ -1027,8 +826,8 @@ public class ToolServiceImpl implements ToolService
             queryTaskListReqVO.setTaskIds(taskIds);
 
             // 调用defect服务接口 查询分析成功的任务和工具信息
-            List<QueryTaskListReqVO> taskListReqVOList =
-                    client.get(OpDefectRestResource.class).queryAccessedTaskAndToolName(queryTaskListReqVO).getData();
+            List<QueryTaskListReqVO> taskListReqVOList = client.get(OpDefectRestResource.class)
+                    .queryAccessedTaskAndToolName(queryTaskListReqVO).getData();
             if (CollectionUtils.isNotEmpty(taskListReqVOList)) {
                 queryTaskListReqVODataList.addAll(taskListReqVOList);
             }
@@ -1037,8 +836,8 @@ public class ToolServiceImpl implements ToolService
         // 获取分析成功的ToolConfigInfoEntity
         List<ToolConfigInfoEntity> accToolConfigInfoEntity = new ArrayList<>();
         for (QueryTaskListReqVO queryTaskListReqVO : queryTaskListReqVODataList) {
-            List<ToolConfigInfoEntity> toolConfigInfoEntityList =
-                    toolConfigInfoEntityMap.get(queryTaskListReqVO.getTaskId() + queryTaskListReqVO.getToolName());
+            List<ToolConfigInfoEntity> toolConfigInfoEntityList = toolConfigInfoEntityMap.get(
+                    queryTaskListReqVO.getTaskId() + queryTaskListReqVO.getToolName());
             if (CollectionUtils.isNotEmpty(toolConfigInfoEntityList)) {
                 for (ToolConfigInfoEntity toolConfigInfoEntity : toolConfigInfoEntityList) {
                     if (toolConfigInfoEntity != null) {
@@ -1090,17 +889,152 @@ public class ToolServiceImpl implements ToolService
         return true;
     }
 
+    @Override
+    public ToolTaskInfoVO getToolInfoConfigByToolName(String toolName, String detailTime) {
+        // 将字符串时间格式转换成时间戳
+        long[] startTimeAndEndTime = DateTimeUtils.getStartTimeAndEndTime(detailTime, detailTime);
+        long startTime = startTimeAndEndTime[0];
+        long endTime = startTimeAndEndTime[1];
+        // 组建返回数据
+        Map<Integer, List<TaskDetailVO>> taskInfoMap = Maps.newHashMap();
+        taskInfoMap.put(FOLLOW_STATUS.WITHDRAW.value(), Lists.newArrayList());
+        taskInfoMap.put(FOLLOW_STATUS.ACCESSED.value(), Lists.newArrayList());
+        // 项目id
+        Set<String> totalProjectIds = Sets.newHashSet();
+        Set<Long> totalTaskIds = Sets.newHashSet();
+
+        // 机器创建的项目id
+        String filterProjectId = StringUtils.isNotEmpty(toolName)
+                ? String.format("%s%s", ComConstants.GRAY_PROJECT_PREFIX, toolName) : "";
+
+        // 统计任务表
+        statisticToolAccessAndStop(taskDao, startTime, endTime, totalProjectIds, totalTaskIds, toolName,
+                taskInfoMap, filterProjectId);
+
+        // 统计删除任务表
+        statisticToolAccessAndStop(deletedTaskDao, startTime, endTime, totalProjectIds, totalTaskIds, toolName,
+                taskInfoMap, filterProjectId);
+
+        ToolTaskInfoVO toolTaskInfoVO = new ToolTaskInfoVO();
+        toolTaskInfoVO.setTaskIdMap(taskInfoMap);
+        toolTaskInfoVO.setTotalProjectCount(totalProjectIds.size());
+        toolTaskInfoVO.setTotalTaskCount(totalTaskIds.size());
+        return toolTaskInfoVO;
+    }
+
+    private void statisticToolAccessAndStop(CommonTaskDao commonTaskDao, Long startTime, Long endTime,
+                                            Set<String> totalProjectIds, Set<Long> totalTaskIds, String toolName,
+                                            Map<Integer, List<TaskDetailVO>> taskInfoMap, String filterProjectId) {
+
+        int currentSize;
+        Long lastTaskId = 0L;
+        do {
+            // 分页查询的任务id
+            List<Long> taskIds =  commonTaskDao.getTaskIdList(lastTaskId, ComConstants.COMMON_NUM_10000,
+                    filterProjectId);
+
+            // 当前页任务中接入工具的任务id集合
+            Set<Long> toolAccessTaskIds = getToolAccessTaskIds(taskIds, toolName);
+
+            // 接入工具任务数和项目数总量添加
+            totalTaskIds.addAll(toolAccessTaskIds);
+            totalProjectIds.addAll(commonTaskDao.getProjectCount(toolAccessTaskIds).stream().map(
+                    TaskProjectCountVO::getProjectId).collect(Collectors.toSet()));
+
+            // 接入工具的任务id集合中满足首次使用条件和停用条件的任务信息
+            Pair<List<TaskDetailVO>, List<TaskDetailVO>> firstAccessToolTaskInfo = getFirstAccessAndStopTaskInfo(
+                    toolAccessTaskIds, toolName, startTime, endTime, commonTaskDao);
+            // 组建返回内容
+            taskInfoMap.get(FOLLOW_STATUS.ACCESSED.value()).addAll(firstAccessToolTaskInfo.getFirst());
+            taskInfoMap.get(FOLLOW_STATUS.WITHDRAW.value()).addAll(firstAccessToolTaskInfo.getSecond());
+
+            if (taskIds.size() > 0) {
+                lastTaskId = taskIds.get(taskIds.size() - 1);
+            }
+            currentSize = taskIds.size();
+        } while (currentSize >= ComConstants.COMMON_NUM_10000);
+    }
+
+    /**
+     * 获取任务id中接入某工具的任务id集合
+     * @param taskIds 任务id集合
+     * @param toolName 工具名称
+     * @return 接入工具的任务id集合
+     */
+    private Set<Long> getToolAccessTaskIds(List<Long> taskIds, String toolName) {
+        List<ToolConfigInfoEntity> entities = toolDao.findByTaskIdsAndToolName(taskIds, toolName);
+
+        // 当前页接入该工具的任务
+        return entities.stream().map(ToolConfigInfoEntity::getTaskId).collect(Collectors.toSet());
+    }
+
+    /**
+     * 接入工具的任务id集合中满足首次使用条件和停用条件的任务信息
+     * @param toolAccessTaskIds 接入工具的任务列表
+     * @param toolName 工具名称
+     * @param startTime 起始时间
+     * @param endTime
+     * @param commonTaskDao
+     * @return
+     */
+    private Pair<List<TaskDetailVO>, List<TaskDetailVO>> getFirstAccessAndStopTaskInfo(
+            Set<Long> toolAccessTaskIds, String toolName, Long startTime, Long endTime, CommonTaskDao commonTaskDao) {
+
+        // 工具首次接入在时间范围内
+        List<ToolConfigInfoEntity> firstAccessTools = toolDao.findByTaskIdsAndToolNameAndTime(
+                toolAccessTaskIds, toolName, startTime, endTime);
+        Set<Long> firstAccessTaskIds =
+                firstAccessTools.stream().map(ToolConfigInfoEntity::getTaskId).collect(Collectors.toSet());
+        List<TaskInfoEntity> firstAccessTaskInfo = commonTaskDao.getTaskByTaskIds(firstAccessTaskIds);
+
+        // 删除任务中,工具下架时间是当前时段
+        List<ToolConfigInfoEntity> deletedStopToolEntities =
+                toolDao.findStopByTaskIdsAndToolNameAndTime(toolAccessTaskIds, toolName, startTime, endTime);
+        Set<Long> toolWithDrawTaskIds =  deletedStopToolEntities.stream().map(
+                ToolConfigInfoEntity::getTaskId).collect(Collectors.toSet());
+        List<TaskInfoEntity> stopToolTaskInfo = commonTaskDao.getTaskByTaskIds(toolWithDrawTaskIds);
+
+        // 工具在接入状态，但是任务删除是当前时段
+        List<ToolConfigInfoEntity> deletedTaskAccess = toolDao.findUseByTaskIdAndToolName(toolAccessTaskIds, toolName);
+        Set<Long> deletedTaskAccessIds = deletedTaskAccess.stream().map(ToolConfigInfoEntity::getTaskId).collect(
+                Collectors.toSet());
+        // 剔除掉工具下架已统计的任务id
+        deletedTaskAccessIds.removeAll(toolWithDrawTaskIds);
+        List<TaskInfoEntity> deletedStopTasks = commonTaskDao.getStopTask(
+                deletedTaskAccessIds, startTime, endTime);
+        stopToolTaskInfo.addAll(deletedStopTasks);
+
+        return Pair.of(taskInfoEntityToTaskDetailVO(firstAccessTaskInfo),
+                taskInfoEntityToTaskDetailVO(stopToolTaskInfo));
+    }
+
+
+    private List<TaskDetailVO> taskInfoEntityToTaskDetailVO(List<TaskInfoEntity> taskInfoEntities) {
+        return taskInfoEntities.stream().map(taskInfoEntity -> {
+            TaskDetailVO taskDetailVO = new TaskDetailVO();
+            BeanUtils.copyProperties(taskInfoEntity, taskDetailVO);
+            return taskDetailVO;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Long> getTaskInfoByToolNameAndTaskId(List<Long> taskIdList, String toolName) {
+        log.info("taskIdList :{} {}", taskIdList, toolName);
+        List<ToolConfigInfoEntity> entities = toolDao.findByTaskIdsAndToolName(taskIdList, toolName);
+        return entities.stream().map(ToolConfigInfoEntity::getTaskId).collect(Collectors.toList());
+    }
+
     /**
      * 根据工具名分组 查询开源的工具数量
      *
-     * @param taskIdList    任务id集合
+     * @param taskIdList 任务id集合
      * @param toolCountData 容器
-     * @param date          日期
-     * @param endTime       时间
-     * @param createFrom    来源
+     * @param date 日期
+     * @param endTime 时间
+     * @param createFrom 来源
      */
-    private void getToolCount(List<Long> taskIdList, List<ToolStatisticEntity> toolCountData, String date,
-            long endTime, String createFrom) {
+    private void getToolCount(List<Long> taskIdList, List<ToolStatisticEntity> toolCountData, String date, long endTime,
+            String createFrom) {
 
         List<ToolCountScriptEntity> toolCountScriptList = toolDao.findDailyToolCount(taskIdList, endTime);
 

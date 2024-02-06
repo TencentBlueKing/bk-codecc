@@ -12,8 +12,8 @@
  
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.HeadFileRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.HeadFileDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.HeadFileRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.HeadFileDao;
 import com.tencent.bk.codecc.defect.model.HeadFileEntity;
 import com.tencent.bk.codecc.defect.service.IHeadFileService;
 import com.tencent.bk.codecc.defect.vo.HeadFileVO;

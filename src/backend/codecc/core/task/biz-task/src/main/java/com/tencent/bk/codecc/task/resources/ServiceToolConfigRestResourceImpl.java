@@ -24,4 +24,9 @@ public class ServiceToolConfigRestResourceImpl implements ServiceToolConfigRestR
     public Result<List<ToolConfigInfoVO>> getByTaskIdsAndToolName(List<Long> taskIds, String toolName) {
         return new Result<>(toolConfigService.getToolConfigByTaskIdAndToolName(taskIds, toolName));
     }
+
+    @Override
+    public Result<List<ToolConfigInfoVO>> getByTaskIds(List<Long> taskIds) {
+        return new Result<>(toolConfigService.getToolConfigByTaskIdIn(taskIds));
+    }
 }

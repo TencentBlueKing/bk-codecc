@@ -12,25 +12,16 @@
 
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.FileDefectGatherRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.SummaryDefectGatherRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.SummaryDefectGatherDao;
-import com.tencent.bk.codecc.defect.model.FileDefectGatherEntity;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.SummaryDefectGatherRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.SummaryDefectGatherDao;
 import com.tencent.bk.codecc.defect.model.SummaryDefectGatherEntity;
 import com.tencent.bk.codecc.defect.model.SummaryGatherInfo;
-import com.tencent.bk.codecc.defect.service.FileDefectGatherService;
 import com.tencent.bk.codecc.defect.service.SummaryDefectGatherService;
-import com.tencent.bk.codecc.defect.utils.ParamUtils;
 import com.tencent.bk.codecc.defect.vo.FileDefectGatherVO;
 import com.tencent.devops.common.constant.ComConstants;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
-import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 文件告警收敛业务实现类

@@ -29,10 +29,13 @@ package com.tencent.bk.codecc.scanschedule;
 import com.tencent.devops.common.service.MicroService;
 import org.springframework.boot.SpringApplication;
 
+/**
+ * scanschedule启动类
+ * @author jimxzcai
+ */
 @MicroService
 public class ScanScheduleApplication {
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) {
         SpringApplication.run(ScanScheduleApplication.class, args);
     }
 }

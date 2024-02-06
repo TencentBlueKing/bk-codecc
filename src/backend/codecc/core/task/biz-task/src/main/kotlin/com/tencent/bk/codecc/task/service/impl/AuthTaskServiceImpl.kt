@@ -25,7 +25,7 @@ class AuthTaskServiceImpl @Autowired constructor(
         var createFrom = redisTemplate.opsForHash<String, String>().get(PREFIX_TASK_INFO + taskId, KEY_CREATE_FROM)
         if (createFrom.isNullOrEmpty()) {
             val taskInfoEntity = taskRepository.findFirstByTaskId(taskId)
-            if (!taskInfoEntity.createFrom.isNullOrEmpty()) {
+            if (taskInfoEntity != null && !taskInfoEntity.createFrom.isNullOrEmpty()) {
                 createFrom = taskInfoEntity.createFrom
                 redisTemplate.opsForHash<String, String>().put(PREFIX_TASK_INFO + taskId, KEY_CREATE_FROM, createFrom)
             }
@@ -42,7 +42,7 @@ class AuthTaskServiceImpl @Autowired constructor(
         var pipelineId = redisTemplate.opsForHash<String, String>().get(PREFIX_TASK_INFO + taskId, KEY_PIPELINE_ID)
         if (pipelineId.isNullOrEmpty()) {
             val taskInfoEntity = taskRepository.findFirstByTaskId(taskId)
-            if (!taskInfoEntity.pipelineId.isNullOrEmpty()) {
+            if (taskInfoEntity != null && !taskInfoEntity.pipelineId.isNullOrEmpty()) {
                 pipelineId = taskInfoEntity.pipelineId
                 redisTemplate.opsForHash<String, String>().put(PREFIX_TASK_INFO + taskId, KEY_PIPELINE_ID, pipelineId)
             }

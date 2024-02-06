@@ -50,6 +50,7 @@ import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.util.PathUtils;
 import com.tencent.devops.common.web.aop.annotation.OperationHistory;
 import com.tencent.devops.common.web.mq.ConstantsKt;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -173,26 +174,38 @@ public class PathFilterServiceImpl implements PathFilterService
      * @param addPath
      */
     private void processNormalFilterPath(FilterPathInputVO filterPathInput,
-                                         TaskInfoEntity taskEntity, FilterPathInputVO addPath) {
+            TaskInfoEntity taskEntity, FilterPathInputVO addPath) {
         ArrayList<String> newFilterPath = getFilePath(filterPathInput);
 
-        List<String> oldFilterPath = CollectionUtils.isEmpty(taskEntity.getFilterPath()) ?
-                new ArrayList<>() : taskEntity.getFilterPath();
+        /*
+         * 检查新的过滤路径是否合法，去除非法的过滤路径
+         */
+        if (CollectionUtils.isNotEmpty(newFilterPath)) {
+            Iterator<String> iterator = newFilterPath.iterator();
+            while (iterator.hasNext()) {
+                String regexPath = iterator.next();
+                try {
+                    Pattern.compile(regexPath);
+                } catch (PatternSyntaxException e) {
+                    log.error("invalid regex pattern. taskId: {}, regex: {}", taskEntity.getTaskId(), regexPath);
+                    iterator.remove();
+                }
+            }
+        }
 
-        if (CollectionUtils.isNotEmpty(oldFilterPath))
-        {
-            for (String path : newFilterPath)
-            {
+        List<String> oldFilterPath = CollectionUtils.isEmpty(taskEntity.getFilterPath())
+                ? new ArrayList<>() : taskEntity.getFilterPath();
+
+        if (CollectionUtils.isNotEmpty(oldFilterPath)) {
+            for (String path : newFilterPath) {
                 Iterator<String> iterator = oldFilterPath.iterator();
-                while (iterator.hasNext())
-                {
+                while (iterator.hasNext()) {
                     String dbPath = iterator.next();
-                    try{
-                        if (dbPath.matches(path))
-                        {
+                    try {
+                        if (dbPath.matches(path)) {
                             iterator.remove();
                         }
-                    } catch (PatternSyntaxException e){
+                    } catch (PatternSyntaxException e) {
                         log.error("invalid regex pattern");
                         iterator.remove();
                     }
@@ -204,8 +217,7 @@ public class PathFilterServiceImpl implements PathFilterService
         addPath.setFilterDir(oldFilterPath);
 
         // 任务通知, 其他工具類也需要屏蔽此路徑
-        if (CollectionUtils.isNotEmpty(filterPathInput.getEffectiveTools()))
-        {
+        if (CollectionUtils.isNotEmpty(filterPathInput.getEffectiveTools())) {
             rabbitTemplate.convertAndSend(ConstantsKt.EXCHANGE_TASK_FILTER_PATH,
                     ConstantsKt.ROUTE_ADD_TASK_FILTER_PATH, filterPathInput);
         }
@@ -487,8 +499,7 @@ public class PathFilterServiceImpl implements PathFilterService
      * @return
      */
     @Override
-    public TreeNodeTaskVO filterPathTree(Long taskId)
-    {
+    public TreeNodeTaskVO filterPathTree(Long taskId) {
         TreeNodeTaskVO treeNodeVO = new TreeNodeTaskVO();
 
         List<String> toolNames = Collections.singletonList("SCC");

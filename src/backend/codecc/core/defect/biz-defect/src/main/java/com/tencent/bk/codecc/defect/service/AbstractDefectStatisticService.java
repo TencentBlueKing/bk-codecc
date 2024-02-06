@@ -1,10 +1,8 @@
 package com.tencent.bk.codecc.defect.service;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildInfoRepository;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.defect.model.defect.DefectEntity;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
-import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
 import com.tencent.bk.codecc.defect.pojo.statistic.AbstractDefectStatisticModel;
 import com.tencent.bk.codecc.defect.pojo.statistic.DefectStatisticModel;
@@ -12,7 +10,6 @@ import com.tencent.bk.codecc.defect.pojo.statistic.DimensionStatisticModel;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerCategory;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +25,7 @@ public abstract class AbstractDefectStatisticService<T extends DefectEntity, S e
         implements IDefectStatisticService {
 
     @Autowired
-    private ToolBuildInfoRepository toolBuildInfoRepository;
+    private ToolBuildInfoService toolBuildInfoService;
 
     /**
      * 构建对应工具的统计数据记录实体
@@ -152,7 +149,7 @@ public abstract class AbstractDefectStatisticService<T extends DefectEntity, S e
         statisticPostHandleBeforeSave(statisticModel);
         // 保存统计数据
         buildAndSaveStatisticResult(statisticModel);
-        // 异步统计非"待修复"状态的告警
+        // 异步统计非"待修复"状态的告警 LINT && CCN
         asyncStatisticDefect(statisticModel);
         // 数据推送到数据平台
         pushDataKafka(statisticModel);
@@ -167,17 +164,13 @@ public abstract class AbstractDefectStatisticService<T extends DefectEntity, S e
      * @param toolBuildStackEntity 构建信息实体类
      */
     protected void getBaseBuildId(S statisticModel, ToolBuildStackEntity toolBuildStackEntity) {
-        String baseBuildId;
-        if (toolBuildStackEntity == null) {
-            ToolBuildInfoEntity toolBuildInfoEntity = toolBuildInfoRepository.findFirstByTaskIdAndToolName(
-                    statisticModel.getTaskId(), statisticModel.getToolName());
-            baseBuildId = toolBuildInfoEntity != null
-                    && StringUtils.isNotEmpty(toolBuildInfoEntity.getDefectBaseBuildId())
-                    ? toolBuildInfoEntity.getDefectBaseBuildId() : "";
-        } else {
-            baseBuildId = StringUtils.isNotEmpty(toolBuildStackEntity.getBaseBuildId())
-                    ? toolBuildStackEntity.getBaseBuildId() : "";
-        }
+        String baseBuildId = toolBuildInfoService.getBaseBuildIdWhenDefectCommit(
+                toolBuildStackEntity,
+                statisticModel.getTaskId(),
+                statisticModel.getToolName(),
+                statisticModel.getBuildId(),
+                false
+        );
         statisticModel.setBaseBuildId(baseBuildId);
     }
 

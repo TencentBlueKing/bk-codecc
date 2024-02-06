@@ -26,8 +26,8 @@
 
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CommonStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildStackRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CommonStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ToolBuildStackRepository;
 import com.tencent.bk.codecc.defect.model.statistic.CommonStatisticEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
 import com.tencent.bk.codecc.defect.service.IQueryStatisticBizService;
@@ -49,6 +49,7 @@ import java.util.Objects;
  */
 @Service("CommonQueryStatisticBizService")
 public class CommonQueryStatisticBizServiceImpl implements IQueryStatisticBizService {
+
     @Autowired
     private CommonStatisticRepository commonStatisticRepository;
 
@@ -65,7 +66,8 @@ public class CommonQueryStatisticBizServiceImpl implements IQueryStatisticBizSer
         if (isLast) {
             statisticEntity = commonStatisticRepository.findFirstByTaskIdAndToolNameOrderByTimeDesc(taskId, toolName);
         } else {
-            statisticEntity = commonStatisticRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
+            statisticEntity = commonStatisticRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName,
+                    buildId);
         }
 
         CommonLastAnalysisResultVO lastAnalysisResultVO = new CommonLastAnalysisResultVO();
@@ -104,7 +106,7 @@ public class CommonQueryStatisticBizServiceImpl implements IQueryStatisticBizSer
      * @param buildId
      */
     private void setDefectChange(CommonLastAnalysisResultVO lastAnalysisResultVO, long taskId, String toolName,
-                                 String buildId) {
+            String buildId) {
         ToolBuildStackEntity toolBuildStackEntity =
                 toolBuildStackRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
 

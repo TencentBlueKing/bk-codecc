@@ -24,6 +24,7 @@ import java.util.List;
 /**
  * 工具扫描记录的实体类
  *
+ * @author jimxzcai
  * @version V1.0
  * @date 2019/11/4
  */

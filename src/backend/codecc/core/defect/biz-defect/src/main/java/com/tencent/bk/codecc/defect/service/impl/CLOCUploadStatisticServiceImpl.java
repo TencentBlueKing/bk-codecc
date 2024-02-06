@@ -12,8 +12,8 @@
 
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CLOCStatisticsDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CLOCStatisticsDao;
 import com.tencent.bk.codecc.defect.model.defect.CLOCDefectEntity;
 import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
 import com.tencent.bk.codecc.defect.service.CLOCUploadStatisticService;
@@ -207,7 +207,8 @@ public class CLOCUploadStatisticServiceImpl implements CLOCUploadStatisticServic
         log.info("start to upload new cloc statistic info, task id: {}, build id: {}",
                 taskId, buildId);
 
-        clocStatisticsDao.batchUpsertCLOCStatistic(currStatisticMap.values());
+        clocStatisticsDao.batchUpsertCLOCStatistic(currStatisticMap.values(),
+                ComConstants.ScanStatType.NOT_FAST_INCREMENT);
 
         //推送数据到数据平台
         commonKafkaClient.pushCLOCStatisticToKafka(currStatisticMap.values());

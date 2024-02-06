@@ -26,7 +26,7 @@
 
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.DefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DefectRepository;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.defect.service.AbstractTreeService;
 import com.tencent.devops.common.constant.ComConstants;
@@ -47,28 +47,25 @@ import java.util.TreeSet;
  * @date 2019/10/28
  */
 @Service("CommonTreeBizService")
-public class CommonTreeServiceImpl extends AbstractTreeService
-{
+public class CommonTreeServiceImpl extends AbstractTreeService {
+
     @Autowired
     private DefectRepository defectRepository;
 
     @Override
-    public Set<String> getDefectPaths(Long taskId, String toolName)
-    {
+    public Set<String> getDefectPaths(Long taskId, String toolName) {
         List<CommonDefectEntity> commonDefectEntityList = defectRepository.findByTaskIdAndToolNameAndStatus(
                 taskId, toolName, ComConstants.DefectStatus.NEW.value());
 
         Set<String> defectPaths = new TreeSet<>();
-        if (CollectionUtils.isNotEmpty(commonDefectEntityList))
-        {
+        if (CollectionUtils.isNotEmpty(commonDefectEntityList)) {
             Map<String, String> codeRepoUrlMap = getRelatePathMap(taskId);
             commonDefectEntityList.forEach(defectEntity ->
             {
                 String filePathname = trimWinPathPrefix(defectEntity.getFilePath());
                 String codeFileUrl = codeRepoUrlMap.get(filePathname.toLowerCase());
 
-                if (StringUtils.isEmpty(codeFileUrl))
-                {
+                if (StringUtils.isEmpty(codeFileUrl)) {
                     codeFileUrl = filePathname;
                 }
                 defectPaths.add(codeFileUrl);
@@ -77,8 +74,7 @@ public class CommonTreeServiceImpl extends AbstractTreeService
         return defectPaths;
     }
 
-    protected String trimWinPathPrefix(String filePath)
-    {
+    protected String trimWinPathPrefix(String filePath) {
         return filePath;
     }
 }

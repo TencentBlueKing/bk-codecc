@@ -18,11 +18,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.mongodb.MongoCommandException;
-import com.tencent.bk.codecc.defect.dao.mongorepository.DefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.DefectDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.TaskLogRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.DefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.dao.redis.StatisticDao;
 import com.tencent.bk.codecc.defect.mapping.DefectConverter;
 import com.tencent.bk.codecc.defect.model.TaskLogEntity;
@@ -232,7 +232,8 @@ public class UpdateDefectBizServiceImpl implements IUpdateDefectBizService {
                             toStatisticDefectList,
                             null,
                             null,
-                            Lists.newArrayList()
+                            Lists.newArrayList(),
+                            false
                     )
             );
 

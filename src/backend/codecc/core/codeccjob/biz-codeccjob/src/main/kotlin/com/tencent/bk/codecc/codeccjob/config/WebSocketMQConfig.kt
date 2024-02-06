@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.codeccjob.config
 
 import com.tencent.bk.codecc.codeccjob.consumer.WebsocketConsumer
-import com.tencent.devops.common.util.IPUtils
+import com.tencent.devops.common.service.utils.IPUtils
 import com.tencent.devops.common.web.mq.EXCHANGE_CODECCJOB_TASKLOG_WEBSOCKET
 import com.tencent.devops.common.web.mq.QUEUE_CODECCJOB_TASKLO_WEBSOCKET
 import org.springframework.amqp.core.Binding
@@ -35,8 +35,9 @@ class WebSocketMQConfig {
     }
 
     @Bean
-    fun websocketDefectQueue() : Queue {
-        return Queue("$QUEUE_CODECCJOB_TASKLO_WEBSOCKET${IPUtils.getInnerIP().replace(".", "")}$localPort")
+    fun websocketDefectQueue(@Autowired ipUtils: IPUtils) : Queue {
+        return Queue("$QUEUE_CODECCJOB_TASKLO_WEBSOCKET${ipUtils.getInnerIPOrHostName()
+                .replace(".", "")}$localPort")
     }
 
     @Bean

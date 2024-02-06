@@ -32,6 +32,8 @@ import com.tencent.bk.codecc.defect.service.GetTaskLogService;
 import com.tencent.bk.codecc.defect.service.IQueryWarningBizService;
 import com.tencent.bk.codecc.defect.service.impl.StatQueryWarningServiceImpl;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
+import com.tencent.bk.codecc.defect.vo.GrayBuildNumAndTaskVO;
+import com.tencent.bk.codecc.defect.vo.GrayDefectStaticVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectIdVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectPageVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
@@ -124,5 +126,13 @@ public class ServiceDefectRestResourceImpl implements ServiceDefectRestResource 
     @Override
     public Result<Boolean> commonToLintMigrationSuccessful(long taskId) {
         return new Result<>(commonDefectMigrationService.isMigrationSuccessful(taskId));
+    }
+
+    @Override
+    public Result<List<GrayDefectStaticVO>> getGaryDefectStaticList(GrayBuildNumAndTaskVO grayBuildNumAndTaskVO) {
+        IQueryWarningBizService bizService = fileAndDefectQueryFactory.createBizService(
+                ComConstants.ToolPattern.LINT.name(), ComConstants.BusinessType.QUERY_WARNING.value(),
+                IQueryWarningBizService.class);
+        return new Result<>(bizService.getGaryDefectStaticList(grayBuildNumAndTaskVO));
     }
 }

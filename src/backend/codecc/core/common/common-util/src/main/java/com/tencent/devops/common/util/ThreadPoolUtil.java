@@ -104,6 +104,4 @@ public class ThreadPoolUtil {
         ThreadCallable callable = new ThreadCallable(TraceBuildIdThreadCacheUtils.INSTANCE.getBuildId(), task);
         return EXECUTOR.submit(callable);
     }
-
-
 }

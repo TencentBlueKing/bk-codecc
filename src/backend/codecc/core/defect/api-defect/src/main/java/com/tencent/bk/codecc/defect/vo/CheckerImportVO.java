@@ -30,8 +30,7 @@ import java.util.List;
  */
 @Data
 @ApiModel("工具完整信息对象")
-public class CheckerImportVO
-{
+public class CheckerImportVO {
     @ApiModelProperty(value = "工具名", required = true)
     @NotNull(message = "工具名不能为空")
     @Pattern(regexp = "[A-Z0-9\\-]+", message = "工具名称，只能包含大写字母")

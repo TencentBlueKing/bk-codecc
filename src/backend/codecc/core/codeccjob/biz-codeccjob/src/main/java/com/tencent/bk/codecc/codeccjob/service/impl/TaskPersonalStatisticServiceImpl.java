@@ -7,13 +7,13 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.CheckerDetailRepository;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.DUPCDefectRepository;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.DefectRepository;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.TaskPersonalStatisticRepository;
-import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.CCNDefectDao;
-import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.LintDefectV2Dao;
-import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.TaskPersonalStatisticDao;
+import com.tencent.bk.codecc.codeccjob.dao.core.mongorepository.CheckerDetailRepository;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.DUPCDefectRepository;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.DefectRepository;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.TaskPersonalStatisticRepository;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongotemplate.CCNDefectDao;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongotemplate.TaskPersonalStatisticDao;
 import com.tencent.bk.codecc.codeccjob.service.TaskPersonalStatisticService;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.TaskPersonalStatisticEntity;
@@ -100,6 +100,11 @@ public class TaskPersonalStatisticServiceImpl implements TaskPersonalStatisticSe
         Map<String, TaskPersonalStatisticEntity> taskPersonalStatisticMap = new HashMap<>();
 
         TaskDetailVO taskInfo = client.get(ServiceTaskRestResource.class).getTaskInfoById(taskId).getData();
+        if (taskInfo == null) {
+            log.error("task info is null, task id: {}", taskId);
+            return;
+        }
+
         // 停用了的工具不再统计
         List<String> taskToolNameList = taskInfo.getToolConfigInfoList().stream()
                 .filter(x ->
@@ -134,7 +139,6 @@ public class TaskPersonalStatisticServiceImpl implements TaskPersonalStatisticSe
             );
         }
 
-
         Pair<List<String>, List<String>> pairForSecurityDimension = getToolNamesAndCheckerKeysPairByDimension(
                 CheckerCategory.SECURITY_RISK.name(),
                 taskToolNameList
@@ -162,7 +166,6 @@ public class TaskPersonalStatisticServiceImpl implements TaskPersonalStatisticSe
             );
         }
 
-
         Pair<List<String>, List<String>> pairForStandardDimension = getToolNamesAndCheckerKeysPairByDimension(
                 CheckerCategory.CODE_FORMAT.name(),
                 taskToolNameList
@@ -189,7 +192,6 @@ public class TaskPersonalStatisticServiceImpl implements TaskPersonalStatisticSe
             );
         }
 
-
         if (taskToolNameList.contains(ComConstants.Tool.CCN.name())) {
             log.info("start to get overview ccn risk count for task: {}", taskId);
 
@@ -209,7 +211,6 @@ public class TaskPersonalStatisticServiceImpl implements TaskPersonalStatisticSe
                 entity.setRiskCount(entity.getRiskCount() + defectEntity.getDefectCount());
             });
         }
-
 
         if (taskToolNameList.contains(ComConstants.Tool.DUPC.name())) {
             log.info("start to get overview dup file count for task: {}", taskId);

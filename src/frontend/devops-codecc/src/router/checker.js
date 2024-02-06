@@ -1,4 +1,4 @@
-const CheckerList = () => import(/* webpackChunkName: 'checker' */'../views/checker/list')
+const CheckerList = () => import(/* webpackChunkName: 'checker' */ '../views/checker/list');
 
 const routes = [
   {
@@ -9,6 +9,6 @@ const routes = [
       layout: 'outer',
     },
   },
-]
+];
 
-export default routes
+export default routes;

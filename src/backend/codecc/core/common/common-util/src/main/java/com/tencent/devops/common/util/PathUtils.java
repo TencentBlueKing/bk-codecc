@@ -192,6 +192,48 @@ public class PathUtils {
     }
 
     /**
+     * 获取绝对路径与相对路径
+     *
+     * @param sourceUrl
+     * @param sourceRelPath
+     * @param sourceFilePath
+     * @param traceFilePath
+     * @return
+     */
+    public static Pair<String, String> getRelativePathAndRelPath(String sourceUrl, String sourceRelPath,
+            String sourceFilePath, String traceFilePath) {
+
+        if (StringUtils.isBlank(sourceUrl) || StringUtils.isBlank(sourceRelPath)
+                || StringUtils.isBlank(sourceFilePath) || StringUtils.isBlank(traceFilePath)) {
+            return new Pair<>(sourceFilePath, sourceRelPath);
+        }
+
+        if (!sourceRelPath.startsWith("/")) {
+            sourceRelPath = "/" + sourceRelPath;
+        }
+
+        int tmpInd;
+        String relPath = "";
+        if (traceFilePath.equals(sourceFilePath)) {
+            relPath = sourceRelPath;
+        } else {
+            tmpInd = sourceFilePath.lastIndexOf(sourceRelPath);
+            relPath = traceFilePath.substring(tmpInd, traceFilePath.length());
+        }
+
+        String root;
+        tmpInd = sourceUrl.lastIndexOf(sourceRelPath);
+        if (tmpInd < 0) {
+            root = sourceUrl.substring(sourceUrl.lastIndexOf("/"));
+        } else {
+            String tmpPath = sourceUrl.substring(0, tmpInd);
+            root = tmpPath.substring(tmpPath.lastIndexOf("/"));
+        }
+
+        return new Pair<>(root + relPath, relPath);
+    }
+
+    /**
      * 根据工具侧上报的url和rel_path，获取文件的完整url
      * 返回格式：http://github.com/xxx/website/blob/branch/xxx/xxx.java
      *

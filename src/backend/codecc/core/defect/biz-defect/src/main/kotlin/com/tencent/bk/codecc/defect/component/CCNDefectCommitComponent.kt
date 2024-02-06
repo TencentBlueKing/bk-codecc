@@ -3,21 +3,26 @@ package com.tencent.bk.codecc.defect.component
 import com.fasterxml.jackson.core.type.TypeReference
 import com.tencent.bk.codecc.defect.cluster.ClusterCCNCompareProcess
 import com.tencent.bk.codecc.defect.component.abstract.AbstractDefectCommitComponent
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNDefectRepository
 import com.tencent.bk.codecc.defect.model.BuildEntity
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectNewInputModel
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectOutputModelV2
 import com.tencent.bk.codecc.defect.pojo.DefectClusterDTO
+import com.tencent.bk.codecc.defect.service.DefectFilePathClusterService
 import com.tencent.devops.common.api.codecc.util.JsonUtil
 import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.api.util.UUIDUtil
 import com.tencent.devops.common.constant.ComConstants
+import com.tencent.devops.common.constant.ComConstants.Tool
 import com.tencent.devops.common.constant.CommonMessageCode
 import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
+import org.springframework.data.util.Pair
 import org.springframework.stereotype.Component
+import org.springframework.util.CollectionUtils
+import org.springframework.util.StringUtils
 import java.io.File
 
 @Component("CCNDefectCommitComponent")
@@ -25,7 +30,8 @@ class CCNDefectCommitComponent constructor(
     private val ccnDefectRepository: CCNDefectRepository,
     private val clusterCCNCompareProcess: ClusterCCNCompareProcess,
     private val newCCNDefectTracingComponent: NewCCNDefectTracingComponent,
-    private val scmJsonComponent: ScmJsonComponent
+    private val scmJsonComponent: ScmJsonComponent,
+    private val defectFilePathClusterService: DefectFilePathClusterService
 ) : AbstractDefectCommitComponent<CCNDefectEntity>(scmJsonComponent) {
 
     companion object {
@@ -37,18 +43,18 @@ class CCNDefectCommitComponent constructor(
         with(defectClusterDTO) {
             val startTime = System.currentTimeMillis()
             logger.info("[ccn cluster process] cluster process begin! defect cluster info: $defectClusterDTO")
-            //1. 从nfs中读取本次上报告警清单
+            // 1. 从nfs中读取本次上报告警清单
             val aggregateDefectNewInputModel = getCurrentDefectList(inputFilePath)
             val inputDefects = aggregateDefectNewInputModel.defectList
             val relPathSet = aggregateDefectNewInputModel.relPathSet
             val filePathSet = aggregateDefectNewInputModel.filePathSet
             logger.info("[ccn cluster process] current defect size: ${inputDefects.size}, rel path set size: ${relPathSet?.size}, file path set size: ${filePathSet?.size}")
-            //2. 获取原有告警清单
+            // 2. 获取原有告警清单
             val preDefectList = getPreDefectList(this, relPathSet, filePathSet)
             logger.info("[ccn cluster process] pre defect size: ${preDefectList.size}")
-            //3.声明判断md5是否一致的映射，用于比较时简化流程
+            // 3.声明判断md5是否一致的映射，用于比较时简化流程
             val md5SameMap = mutableMapOf<String, Boolean>()
-            //4.组装聚类入参
+            // 4.组装聚类入参
             val inputDefectList = preHandleDefectList(
                 streamName = commitDefectVO.streamName,
                 toolName = commitDefectVO.toolName,
@@ -58,14 +64,18 @@ class CCNDefectCommitComponent constructor(
                 md5SameMap = md5SameMap
             )
             logger.info("[ccn cluster process] pre handle result, input defect size: ${inputDefectList.size}")
-            //5. 聚类得到结果
+            // 5. 聚类得到结果
             val outputDefectList = clusterCCNCompareProcess.clusterMethod(inputDefectList, md5SameMap)
             logger.info("[ccn cluster process] cluster result, output group size: ${outputDefectList.size}")
-            //6. 对于聚类结果进行后处理
+            // 6. 对于聚类结果进行后处理
             val upsertDefectList = postHandleDefectList(
                 outputDefectList, buildEntity, transferAuthorList, commitDefectVO.isReallocate)
             logger.info("[ccn cluster process] post handle result, result defect size: ${upsertDefectList.size}")
-            //7. 分批保存告警
+
+            // 7. 保存文件路径聚合
+            saveDefectPathCluster(commitDefectVO.taskId, Tool.CCN.name, buildEntity, upsertDefectList)
+
+            // 8. 分批保存告警
             newCCNDefectTracingComponent.saveDefects(
                 commitDefectVO.taskId,
                 commitDefectVO.toolName,
@@ -133,7 +143,6 @@ class CCNDefectCommitComponent constructor(
         return finalDefectList
     }
 
-
     override fun getCurrentDefectList(
         inputFilePath: String
     ): AggregateDefectNewInputModel<CCNDefectEntity> {
@@ -153,7 +162,6 @@ class CCNDefectCommitComponent constructor(
             inputFile.readText(),
             object : TypeReference<AggregateDefectNewInputModel<CCNDefectEntity>>() {})
     }
-
 
     /**
      * 获取原有数据库中的告警清单
@@ -183,7 +191,6 @@ class CCNDefectCommitComponent constructor(
         }
         return finalDefects
     }
-
 
     /**
      * 告警清单后处理
@@ -329,7 +336,6 @@ class CCNDefectCommitComponent constructor(
         }
     }
 
-
     /**
      * 更新老告警信息
      */
@@ -362,14 +368,13 @@ class CCNDefectCommitComponent constructor(
                 //作者转换
                 transferAuthor(this, transferAuthorList)
             }
-            if (status and ComConstants.DefectStatus.IGNORE.value() > 0
-                    && status and ComConstants.DefectStatus.FIXED.value() == 0
+            if (status and ComConstants.DefectStatus.IGNORE.value() > 0 &&
+                    status and ComConstants.DefectStatus.FIXED.value() == 0
             ) {
                 ignoreBuildId = buildEntity?.buildId
             }
         }
     }
-
 
     /**
      * 作者转换
@@ -384,7 +389,6 @@ class CCNDefectCommitComponent constructor(
             }
         }
     }
-
 
     /**
      * 重新打开告警
@@ -426,4 +430,55 @@ class CCNDefectCommitComponent constructor(
         oldDefect.ignoreTime = System.currentTimeMillis()
     }
 
+    /**
+     * 保存告警待修复与已修复的文件路径列表
+     */
+    fun saveDefectPathCluster(
+        taskId: Long, toolName: String, buildEntity: BuildEntity?, upsertDefectList: List<CCNDefectEntity>
+    ) {
+        if (!StringUtils.hasLength(toolName) || buildEntity == null || !StringUtils.hasLength(buildEntity.buildId) ||
+                CollectionUtils.isEmpty(upsertDefectList)
+        ) {
+            return
+        }
+
+        try {
+            if (!isFileCacheEnable(taskId)) {
+                return
+            }
+            val startTime = System.currentTimeMillis()
+            logger.info("saveDefectPathCluster start. $taskId, $toolName, ${buildEntity.buildId}")
+            // 取出待修复的项
+            val newDefectPaths = upsertDefectList.filter { it.status == ComConstants.DefectStatus.NEW.value() }
+                    .distinctBy { it.filePath }.map { Pair.of(it.filePath, it.relPath ?: "") }.toList()
+            if (!CollectionUtils.isEmpty(newDefectPaths)) {
+                defectFilePathClusterService.saveBuildDefectFilePath(
+                    taskId,
+                    toolName,
+                    buildEntity.buildId,
+                    ComConstants.DefectStatus.NEW,
+                    newDefectPaths
+                )
+            }
+
+            // 取出已修复的项
+            val fixedDefectPaths = upsertDefectList.filter { it.status and ComConstants.DefectStatus.FIXED.value() > 0 }
+                    .distinctBy { it.filePath }.map { Pair.of(it.filePath, it.relPath ?: "") }.toList()
+            if (!CollectionUtils.isEmpty(fixedDefectPaths)) {
+                defectFilePathClusterService.saveBuildDefectFilePath(
+                    taskId,
+                    toolName,
+                    buildEntity.buildId,
+                    ComConstants.DefectStatus.FIXED,
+                    fixedDefectPaths
+                )
+            }
+            logger.info(
+                "saveDefectPathCluster end. $taskId, $toolName, ${buildEntity.buildId} cost: " +
+                        "${System.currentTimeMillis() - startTime} ms"
+            )
+        } catch (e: Exception) {
+            logger.error("saveDefectPathCluster cause error. $taskId, $toolName, ${buildEntity.buildId}", e)
+        }
+    }
 }

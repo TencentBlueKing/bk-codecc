@@ -30,8 +30,7 @@ import java.util.Set;
  * @date 2019/11/19
  * @version V1.0
  */
-public interface EmailNotifyService 
-{
+public interface EmailNotifyService {
 
     /**
      * 发送即时通知报告

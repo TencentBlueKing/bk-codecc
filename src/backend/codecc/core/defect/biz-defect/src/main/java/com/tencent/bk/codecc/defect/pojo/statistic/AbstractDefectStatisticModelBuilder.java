@@ -84,4 +84,9 @@ public abstract class AbstractDefectStatisticModelBuilder<T extends AbstractDefe
         defectStatisticModel.setNewCountCheckerList(newCountChecker);
         return this;
     }
+
+    public AbstractDefectStatisticModelBuilder<T, S, D> fastIncrementFlag(Boolean fastIncrementFlag) {
+        defectStatisticModel.setFastIncrementFlag(fastIncrementFlag);
+        return this;
+    }
 }

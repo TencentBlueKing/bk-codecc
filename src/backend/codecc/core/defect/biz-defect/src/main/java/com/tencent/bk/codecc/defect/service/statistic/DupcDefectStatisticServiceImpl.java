@@ -2,7 +2,7 @@ package com.tencent.bk.codecc.defect.service.statistic;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.defect.dao.mongorepository.DUPCStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DUPCStatisticRepository;
 import com.tencent.bk.codecc.defect.model.DUPCNotRepairedAuthorEntity;
 import com.tencent.bk.codecc.defect.model.DUPCScanSummaryEntity;
 import com.tencent.bk.codecc.defect.model.DupcChartTrendEntity;
@@ -18,6 +18,7 @@ import com.tencent.bk.codecc.defect.vo.DupcChartTrendVO;
 import com.tencent.bk.codecc.defect.vo.DupcDataReportRspVO;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.service.BizServiceFactory;
+import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import com.tencent.devops.common.util.BeanUtils;
@@ -77,9 +78,8 @@ public class DupcDefectStatisticServiceImpl
                 .toolName(defectStatisticModel.getToolName())
                 .createFrom(defectStatisticModel.getTaskDetailVO().getCreateFrom())
                 .buildId(defectStatisticModel.getBuildId())
-                .baseBuildId(defectStatisticModel.getToolBuildStackEntity() != null
-                        ? defectStatisticModel.getToolBuildStackEntity().getBuildId() : null)
                 .allDefectList(defectStatisticModel.getDefectList())
+                .fastIncrementFlag(defectStatisticModel.getFastIncrementFlag())
                 .build();
     }
 
@@ -109,7 +109,8 @@ public class DupcDefectStatisticServiceImpl
         // 获取当前告警处理人
         Set<String> authorSet = null;
         try {
-            authorSet = Sets.newHashSet(StringUtils.split(defectEntity.getAuthorList(), ";"));
+            authorSet = StringUtils.isEmpty(defectEntity.getAuthorList()) ? Collections.emptySet()
+                    : Sets.newHashSet(StringUtils.split(defectEntity.getAuthorList(), ";"));
         } catch (Exception e) {
             log.error("get dupc author list fail, source string: {} {} {}",
                     statisticModel.getTaskId(),

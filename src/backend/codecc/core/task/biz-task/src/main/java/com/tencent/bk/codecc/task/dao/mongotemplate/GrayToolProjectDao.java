@@ -20,6 +20,7 @@ import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
+import org.junit.Assert;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,7 +29,7 @@ import org.springframework.data.mongodb.core.query.BasicQuery;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.data.repository.support.PageableExecutionUtils;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -42,8 +43,7 @@ import java.util.regex.Pattern;
  * @version V1.0
  */
 @Repository
-public class GrayToolProjectDao 
-{
+public class GrayToolProjectDao {
     @Autowired
     private MongoTemplate mongoTemplate;
 
@@ -53,8 +53,7 @@ public class GrayToolProjectDao
      * @param user
      */
     public void upsertGrayToolProjectEntity(GrayToolProjectEntity grayToolProjectEntity,
-                                            String user)
-    {
+                                            String user) {
         Query query = new Query();
         query.addCriteria(Criteria.where("project_id").is(grayToolProjectEntity.getProjectId()));
         Update update = new Update();
@@ -82,6 +81,11 @@ public class GrayToolProjectDao
         String projectId = reqVO.getProjectId();
         if (StringUtils.isNotEmpty(projectId)) {
             criteriaList.add(Criteria.where("project_id").is(projectId));
+        }
+        // 工具id
+        String toolName = reqVO.getToolName();
+        if (StringUtils.isNotEmpty(toolName)) {
+            criteriaList.add(Criteria.where("tool_name").is(toolName));
         }
         // 创建人
         String createBy = reqVO.getCreatedBy();
@@ -124,6 +128,7 @@ public class GrayToolProjectDao
         List<GrayToolProjectEntity> grayToolProjectEntityList =
                 mongoTemplate.find(query, GrayToolProjectEntity.class, "t_gray_tool_project");
 
+        Assert.assertNotNull("pageable is null!", pageable);
         return PageableExecutionUtils.getPage(grayToolProjectEntityList, pageable,
                 () -> mongoTemplate.count(query.limit(-1).skip(-1), GrayToolProjectEntity.class));
     }

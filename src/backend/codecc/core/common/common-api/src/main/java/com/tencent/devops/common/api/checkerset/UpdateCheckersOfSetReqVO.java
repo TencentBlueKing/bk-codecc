@@ -13,8 +13,7 @@ import java.util.List;
  */
 @Data
 @ApiModel("更新规则集中的规则请求视图")
-public class UpdateCheckersOfSetReqVO
-{
+public class UpdateCheckersOfSetReqVO {
     /**
      * 规则集中的规则
      */

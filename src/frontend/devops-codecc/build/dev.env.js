@@ -3,10 +3,10 @@
  * @author blueking
  */
 
-import merge from 'webpack-merge'
-import prodEnv from './prod.env'
+import merge from 'webpack-merge';
+import prodEnv from './prod.env';
 
-const NODE_ENV = JSON.stringify(process.env.NODE_ENV)
+const NODE_ENV = JSON.stringify(process.env.NODE_ENV);
 
 export default merge(prodEnv, {
   'process.env': {
@@ -14,4 +14,4 @@ export default merge(prodEnv, {
   },
   staticUrl: '/static',
   NODE_ENV,
-})
+});

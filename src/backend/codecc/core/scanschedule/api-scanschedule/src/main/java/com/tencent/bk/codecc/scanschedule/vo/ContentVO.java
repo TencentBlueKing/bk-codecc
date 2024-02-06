@@ -31,12 +31,15 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.ToString;
 
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.List;
 
 /**
  * 下载工具客户端的请求体
  *
+ * @author jimxzcai
  * @version V1.0
  * @date 2019/10/10
  */
@@ -44,12 +47,13 @@ import java.util.List;
 @ApiModel("片段扫描的请求体")
 @ToString
 public class ContentVO {
-    @NotNull(message = "用户名不能空")
+    @NotEmpty(message = "用户名不能空")
     @ApiModelProperty(value = "用户名", required = true)
     private String userId;
 
-    @NotNull(message = "片段不能为空")
+    @NotEmpty(message = "片段不能为空")
     @ApiModelProperty(value = "扫描片段", required = true)
+    @Size(max = 1024 * 32 * 3, message = "字符串长度不能超过(1024 * 32 * 3)")
     private String content;
 
     @NotNull(message = "指定规则集")

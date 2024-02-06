@@ -1,11 +1,11 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCDefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CCNDefectDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CommonStatisticDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.DUPCDefectDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.LintDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CCNDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CommonStatisticDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.DUPCDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectDao;
 import com.tencent.bk.codecc.defect.model.statistic.CCNStatisticEntity;
 import com.tencent.bk.codecc.defect.model.defect.CLOCDefectEntity;
 import com.tencent.bk.codecc.defect.model.statistic.CommonStatisticEntity;

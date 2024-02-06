@@ -59,7 +59,7 @@ class JobManageServiceImpl @Autowired constructor(
         return jobInstanceRepository.findByJobNameIn(jobNames)
     }
 
-    override fun findJobByName(jobName: String): JobInstanceEntity {
+    override fun findJobByName(jobName: String): JobInstanceEntity? {
         return jobInstanceRepository.findFirstByJobName(jobName)
     }
 

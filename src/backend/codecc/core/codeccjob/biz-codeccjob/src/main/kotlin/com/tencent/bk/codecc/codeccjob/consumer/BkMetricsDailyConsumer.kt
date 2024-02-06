@@ -15,19 +15,26 @@ import org.springframework.stereotype.Component
 @Component
 class BkMetricsDailyConsumer @Autowired constructor(
     private val bkMetricsService: BkMetricsService
-){
+) {
     companion object {
-        private val logger = LoggerFactory.getLogger(this::class.java)
+        private val logger = LoggerFactory.getLogger(BkMetricsDailyConsumer::class.java)
     }
 
-    @RabbitListener(bindings = [QueueBinding(key = arrayOf(ROUTE_BK_METRICS_DAILY_TRIGGER),
-        value = Queue(value = QUEUE_BK_METRICS_DAILY_TRIGGER, durable = "true"),
-        exchange = Exchange(value = EXCHANGE_BK_METRICS_DAULY_TRIGGER, durable = "true", delayed = "true"))])
+    @RabbitListener(
+        bindings = [QueueBinding(
+            key = arrayOf(ROUTE_BK_METRICS_DAILY_TRIGGER),
+            value = Queue(value = QUEUE_BK_METRICS_DAILY_TRIGGER, durable = "true"),
+            exchange = Exchange(value = EXCHANGE_BK_METRICS_DAULY_TRIGGER, durable = "true", delayed = "true")
+        )]
+    )
     fun statisticDaily() {
         try {
+            // todo:防重触发
+            logger.info("BkMetricsDailyConsumer begin")
             bkMetricsService.statistic(null)
-        } catch (e: Exception) {
-            logger.error(e.message, e)
+            logger.info("BkMetricsDailyConsumer end")
+        } catch (t: Throwable) {
+            logger.error("BkMetricsDailyConsumer error", t)
         }
     }
 }

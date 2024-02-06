@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CCNDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CCNDefectDao;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
 import com.tencent.devops.common.constant.ComConstants;

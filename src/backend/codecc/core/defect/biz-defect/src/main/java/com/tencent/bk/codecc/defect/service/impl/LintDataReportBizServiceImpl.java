@@ -29,8 +29,8 @@ package com.tencent.bk.codecc.defect.service.impl;
 import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_DATA_REPORT_DATE;
 
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintStatisticRepository;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.statistic.LintStatisticEntity;
 import com.tencent.bk.codecc.defect.service.AbstractDataReportBizService;

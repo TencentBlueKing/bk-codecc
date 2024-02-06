@@ -4,6 +4,10 @@ import lombok.Data;
 
 import java.util.List;
 
+/**
+ * 扫描结果
+ * @author jimxzcai
+ */
 @Data
 public class ScanResultVO {
 

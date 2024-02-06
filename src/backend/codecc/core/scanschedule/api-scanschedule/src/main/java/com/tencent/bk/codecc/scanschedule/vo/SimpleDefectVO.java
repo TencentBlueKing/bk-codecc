@@ -4,6 +4,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import lombok.Data;
 
+/**
+ * 简单告警信息
+ * @author jimxzcai
+ */
 @Data
 @ApiModel("告警信息")
 public class SimpleDefectVO {

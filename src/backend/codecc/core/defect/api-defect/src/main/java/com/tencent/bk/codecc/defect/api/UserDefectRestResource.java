@@ -39,6 +39,7 @@ import com.tencent.bk.codecc.defect.vo.GetFileContentSegmentReqVO;
 import com.tencent.bk.codecc.defect.vo.ListToolNameRequest;
 import com.tencent.bk.codecc.defect.vo.ListToolNameResponse;
 import com.tencent.bk.codecc.defect.vo.QueryCheckersAndAuthorsRequest;
+import com.tencent.bk.codecc.defect.vo.QueryDefectFileContentSegmentReqVO;
 import com.tencent.bk.codecc.defect.vo.QueryFileDefectGatherRequest;
 import com.tencent.bk.codecc.defect.vo.SingleCommentVO;
 import com.tencent.bk.codecc.defect.vo.StatDefectQueryRespVO;
@@ -203,6 +204,9 @@ public interface UserDefectRestResource {
     @Path("/detail")
     @POST
     Result<CommonDefectDetailQueryRspVO> queryDefectDetail(
+            @ApiParam(value = "项目ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId,
             @ApiParam(value = "任务ID", required = false)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             Long taskId,
@@ -224,6 +228,9 @@ public interface UserDefectRestResource {
     @Path("/issue/detail")
     @POST
     Result<CommonDefectDetailQueryRspVO> queryDefectDetailWithIssue(
+            @ApiParam(value = "项目ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId,
             @ApiParam(value = "任务ID", required = false)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             Long taskId,
@@ -241,10 +248,72 @@ public interface UserDefectRestResource {
             Sort.Direction sortType
     );
 
+    @ApiOperation("查询告警详情（不带代码文件片段）")
+    @Path("/withoutFileContent/detail")
+    @POST
+    Result<CommonDefectDetailQueryRspVO> queryDefectDetailWithoutFileContent(
+            @ApiParam(value = "任务ID", required = false)
+            @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
+            Long taskId,
+            @ApiParam(value = "用户ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userId,
+            @ApiParam(value = "查询参数详情", required = true)
+            @Valid
+            CommonDefectDetailQueryReqVO commonDefectDetailQueryReqVO,
+            @ApiParam(value = "排序字段")
+            @QueryParam(value = "sortField")
+            String sortField,
+            @ApiParam(value = "排序方式")
+            @QueryParam(value = "sortType")
+            Sort.Direction sortType
+    );
+
+    @ApiOperation("查询告警详情（带提单信息, 不带代码文件片段）")
+    @Path("/withoutFileContent/issue/detail")
+    @POST
+    Result<CommonDefectDetailQueryRspVO> queryDefectDetailWithIssueWithoutFileContent(
+            @ApiParam(value = "任务ID", required = false)
+            @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
+            Long taskId,
+            @ApiParam(value = "用户ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userId,
+            @ApiParam(value = "查询参数详情", required = true)
+            @Valid
+            CommonDefectDetailQueryReqVO commonDefectDetailQueryReqVO,
+            @ApiParam(value = "排序字段")
+            @QueryParam(value = "sortField")
+            String sortField,
+            @ApiParam(value = "排序方式")
+            @QueryParam(value = "sortType")
+            Sort.Direction sortType
+    );
+
+    @ApiOperation("获取告警文件所对应的片段 (极简接口)")
+    @Path("/defectFileContentSegment")
+    @POST
+    Result<CommonDefectDetailQueryRspVO> queryDefectFileContentSegment(
+            @ApiParam(value = "项目ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId,
+            @ApiParam(value = "任务ID", required = false)
+            @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
+            Long taskId,
+            @ApiParam(value = "用户ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userId,
+            @ApiParam(value = "获取文件片段相关参数", required = true)
+            @Valid
+            QueryDefectFileContentSegmentReqVO request);
+
     @ApiOperation("获取文件片段")
     @Path("/fileContentSegment")
     @POST
     Result<CommonDefectDetailQueryRspVO> getFileContentSegment(
+            @ApiParam(value = "项目ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId,
             @ApiParam(value = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             long taskId,

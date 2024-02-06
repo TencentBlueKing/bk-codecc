@@ -9,17 +9,17 @@
   </div>
 </template>
 <script>
-  import toolStatusCard from '@/components/tool-status-card'
+import toolStatusCard from '@/components/tool-status-card';
 
-  export default {
-    components: {
-      toolStatusCard,
+export default {
+  components: {
+    toolStatusCard,
+  },
+  props: {
+    selectedTypeData: {
+      type: Array,
+      default: [],
     },
-    props: {
-      selectedTypeData: {
-        type: Array,
-        default: [],
-      },
-    },
-  }
+  },
+};
 </script>

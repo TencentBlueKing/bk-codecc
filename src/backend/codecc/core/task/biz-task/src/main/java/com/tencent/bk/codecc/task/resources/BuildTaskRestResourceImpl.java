@@ -49,10 +49,11 @@ import com.tencent.bk.codecc.task.vo.scanconfiguration.ScanConfigurationVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.web.RestResource;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+
+import java.util.List;
 
 /**
  * 构建机任务接口实现
@@ -107,6 +108,14 @@ public class BuildTaskRestResourceImpl implements BuildTaskRestResource {
         log.info("upadte pipeline task request body: {}, username: {}", JsonUtil.INSTANCE.toJson(taskDetailVO),
                 userName);
         return new Result<>(taskRegisterService.updateTask(taskDetailVO, userName));
+    }
+
+    @Override
+    public Result<Boolean> addRelationshipBetweenTaskAndPipeline(Long taskId, String userName, String projectId,
+            String pipelineId) {
+        log.info("addRelationshipBetweenTaskAndPipeline: taskId[{}], pipelineId[{}], userName[{}], projectId[{}].",
+                taskId, pipelineId, userName, projectId);
+        return new Result<>(taskService.addRelationshipBetweenTaskAndPipeline(taskId, userName, projectId, pipelineId));
     }
 
     @Override

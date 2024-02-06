@@ -35,4 +35,6 @@ public class CLOCDefectQueryRspInfoVO {
     @ApiModelProperty("当前语言行数占比")
     private int proportion;
 
+    @ApiModelProperty("项目总文件数")
+    private long sumFileNum;
 }

@@ -84,15 +84,20 @@ public class WebsocketConsumer {
                     taskLogVO.getToolName(), e2);
         }
 
+        Long taskId = 0L;
         try {
-            simpMessagingTemplate.convertAndSend(String.format("/topic/analysisDetail/taskId/%d",
-                    taskLogOverviewVO.getTaskId()),
-                    objectMapper.writeValueAsString(taskLogOverviewVO));
+            if (taskLogOverviewVO != null) {
+                if (taskLogOverviewVO.getTaskId() == null) {
+                    taskLogOverviewVO.setTaskId(taskLogVO.getTaskId());
+                }
+                taskId = taskLogOverviewVO.getTaskId();
+                simpMessagingTemplate.convertAndSend(String.format("/topic/analysisDetail/taskId/%d",
+                        taskLogOverviewVO.getTaskId()), objectMapper.writeValueAsString(taskLogOverviewVO));
+            }
         } catch (JsonProcessingException e1) {
-            logger.error("serialize last analysis detail failed! task id: {}", taskLogOverviewVO.getTaskId());
-        } catch (Exception e2)
-        {
-            logger.error("execute last analysis detail failed! task id: {}", taskLogVO.getTaskId(), e2);
+            logger.error("serialize last analysis detail failed! task id: {}", taskId, e1);
+        } catch (Exception e2) {
+            logger.error("execute last analysis detail failed! task id: {}", taskId, e2);
         }
 
         //3.推送工具进度条至消息详情界面

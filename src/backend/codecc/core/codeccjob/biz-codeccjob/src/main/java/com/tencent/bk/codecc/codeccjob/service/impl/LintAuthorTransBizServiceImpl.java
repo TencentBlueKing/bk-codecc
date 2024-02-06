@@ -12,8 +12,8 @@
 
 package com.tencent.bk.codecc.codeccjob.service.impl;
 
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.LintDefectV2Repository;
-import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.codeccjob.service.AbstractAuthorTransBizService;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.vo.common.AuthorTransferVO;

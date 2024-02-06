@@ -10,8 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
  * @date 2019/11/1
  */
 @Data
-public class CheckerPropsEntity
-{
+public class CheckerPropsEntity {
     /**
      * 规则集所在的工具名称
      */

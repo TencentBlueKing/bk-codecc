@@ -8,7 +8,6 @@ import io.swagger.annotations.ApiParam;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -39,5 +38,14 @@ public interface ServiceToolConfigRestResource {
             @ApiParam(value = "工具名称")
             @QueryParam("toolName")
             String toolName
+    );
+
+    @ApiOperation("根据任务列表获取所有工具配置")
+    @Path("/getByTaskIds")
+    @GET
+    Result<List<ToolConfigInfoVO>> getByTaskIds(
+            @ApiParam(value = "任务ID列表")
+            @QueryParam("taskIds")
+            List<Long> taskIds
     );
 }

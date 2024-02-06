@@ -27,16 +27,14 @@
 package com.tencent.bk.codecc.task.resources;
 
 import com.tencent.bk.codecc.task.api.BuildGrayToolProjectRestResource;
-import com.tencent.bk.codecc.task.api.UserGrayToolProjectRestResource;
 import com.tencent.bk.codecc.task.service.GrayToolProjectService;
-import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
+import com.tencent.bk.codecc.task.vo.GrayReportVO;
 import com.tencent.bk.codecc.task.vo.GrayToolReportVO;
 import com.tencent.bk.codecc.task.vo.TriggerGrayToolVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.web.RestResource;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -65,6 +63,11 @@ public class BuildGrayToolProjectRestResourceImpl implements BuildGrayToolProjec
     @Override
     public Result<GrayToolReportVO> findGrayReportByToolNameAndCodeCCBuildId(String toolName, String codeccBuildId) {
         return new Result<>(grayToolProjectService.findGrayToolReportByToolNameAndBuildId(toolName, codeccBuildId));
+    }
+
+    @Override
+    public Result<GrayToolReportVO> findGaryReportByToolNameAndCodeCCBuildIdAndBuildNum(GrayReportVO grayReportVO) {
+        return new Result<>(grayToolProjectService.findGaryReportByToolNameAndCodeCCBuildIdAndBuildNum(grayReportVO));
     }
 
     @Override

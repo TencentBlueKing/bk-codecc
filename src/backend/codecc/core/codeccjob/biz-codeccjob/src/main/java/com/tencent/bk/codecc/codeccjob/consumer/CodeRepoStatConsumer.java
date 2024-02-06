@@ -12,14 +12,22 @@
 
 package com.tencent.bk.codecc.codeccjob.consumer;
 
+import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.KEY_CREATE_FROM;
+import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.PREFIX_TASK_INFO;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_CODE_REPO_STAT;
+import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_CODE_REPO_STAT;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CODE_REPO_STAT;
+
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.CodeRepoInfoRepository;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.CodeRepoStatRepository;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.CodeRepoInfoRepository;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.CodeRepoStatRepository;
 import com.tencent.bk.codecc.defect.model.CodeRepoStatisticEntity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoInfoEntity;
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
 import com.tencent.devops.common.constant.ComConstants;
+import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -30,15 +38,6 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Set;
-
-import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.KEY_CREATE_FROM;
-import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.PREFIX_TASK_INFO;
-import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_CODE_REPO_STAT;
-import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_CODE_REPO_STAT;
-import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CODE_REPO_STAT;
 
 /**
  * 代码库统计消息消费类
@@ -61,6 +60,7 @@ public class CodeRepoStatConsumer {
 
     /**
      * 处理代码库分支统计消息消费者
+     *
      * @param uploadTaskLogStepVO vo
      */
     @RabbitListener(bindings = @QueueBinding(key = ROUTE_CODE_REPO_STAT, value = @Queue(value = QUEUE_CODE_REPO_STAT),

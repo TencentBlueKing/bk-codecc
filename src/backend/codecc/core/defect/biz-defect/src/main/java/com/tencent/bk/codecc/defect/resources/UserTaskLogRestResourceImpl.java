@@ -50,8 +50,8 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * @date 2019/5/5
  */
 @RestResource
-public class UserTaskLogRestResourceImpl implements UserTaskLogRestResource
-{
+public class UserTaskLogRestResourceImpl implements UserTaskLogRestResource {
+
     @Autowired
     private GetTaskLogService getTaskLogService;
 
@@ -59,8 +59,7 @@ public class UserTaskLogRestResourceImpl implements UserTaskLogRestResource
     private TaskLogOverviewService taskLogOverviewService;
 
     @Override
-    public Result<QueryTaskLogVO> getTaskLogs(String toolName, int page, int pageSize)
-    {
+    public Result<QueryTaskLogVO> getTaskLogs(String toolName, int page, int pageSize) {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         String taskId = request.getHeader(AUTH_HEADER_DEVOPS_TASK_ID);
         QueryTaskLogVO queryTaskLogVO = new QueryTaskLogVO();
@@ -79,17 +78,17 @@ public class UserTaskLogRestResourceImpl implements UserTaskLogRestResource
 
     @Override
     public Result<QueryLogRepVO> getAnalysisLogs(String userId, String projectId, String pipelineId, String buildId,
-                                                 String queryKeywords, String tag, String multiPipelineMark)
-    {
-        return new Result<>(getTaskLogService.queryAnalysisLog(userId, projectId, pipelineId, buildId, queryKeywords, tag,
-                multiPipelineMark));
+            String queryKeywords, String tag, String multiPipelineMark) {
+        return new Result<>(
+                getTaskLogService.queryAnalysisLog(userId, projectId, pipelineId, buildId, queryKeywords, tag,
+                        multiPipelineMark));
     }
 
     @Override
-    public Result<QueryLogRepVO> getMoreLogs(String userId, String projectId, String pipelineId, String buildId, Integer num,
-                                             Boolean fromStart, Long start, Long end, String tag, Integer executeCount,
-                                             String multiPipelineMark)
-    {
+    public Result<QueryLogRepVO> getMoreLogs(String userId, String projectId, String pipelineId, String buildId,
+            Integer num,
+            Boolean fromStart, Long start, Long end, String tag, Integer executeCount,
+            String multiPipelineMark) {
         return new Result<>(getTaskLogService.getMoreLogs(userId, projectId, pipelineId, buildId, num, fromStart,
                 start, end, tag, executeCount, multiPipelineMark));
     }
@@ -112,9 +111,8 @@ public class UserTaskLogRestResourceImpl implements UserTaskLogRestResource
 
     @Override
     public Result<QueryLogRepVO> getAfterLogs(String userId, String projectId, String pipelineId, String buildId,
-                                              Long start, String queryKeywords, String tag, Integer executeCount,
-                                              String multiPipelineMark)
-    {
+            Long start, String queryKeywords, String tag, Integer executeCount,
+            String multiPipelineMark) {
         return new Result<>(getTaskLogService.getAfterLogs(userId, projectId, pipelineId, buildId, start,
                 queryKeywords, tag, executeCount, multiPipelineMark));
     }

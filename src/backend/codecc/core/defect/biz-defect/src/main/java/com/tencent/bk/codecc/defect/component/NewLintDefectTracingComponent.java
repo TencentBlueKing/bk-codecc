@@ -14,8 +14,8 @@ package com.tencent.bk.codecc.defect.component;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
@@ -71,7 +71,7 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
     @Autowired
     private LintDefectV2Dao lintDefectV2Dao;
     @Autowired
-    private MongoTemplate mongoTemplate;
+    private MongoTemplate defectMongoTemplate;
 
     /**
      * 告警跟踪
@@ -291,7 +291,7 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
             }
 
             if (CollectionUtils.isNotEmpty(trackingList)) {
-                trackingList.saveChanges(mongoTemplate, batchSize);
+                trackingList.saveChanges(defectMongoTemplate, batchSize);
             }
 
             if (CollectionUtils.isNotEmpty((replaceList))) {

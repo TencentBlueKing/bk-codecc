@@ -4,6 +4,7 @@ package com.tencent.bk.codecc.task.model;
 import com.tencent.codecc.common.db.CommonEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
@@ -17,11 +18,12 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Document(collection = "t_i18n_message")
 @CompoundIndexes({
         @CompoundIndex(
-                name = "module_code_1_key_1_locale_1",
+                name = "idx_module_code_1_key_1_locale_1",
                 def = "{'module_code': 1, 'key': 1, 'locale':1}",
                 background = true
         )
 })
+@EqualsAndHashCode(callSuper = true)
 public class I18NMessageEntity extends CommonEntity {
 
     /**

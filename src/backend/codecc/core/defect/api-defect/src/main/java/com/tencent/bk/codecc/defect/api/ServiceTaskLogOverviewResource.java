@@ -20,6 +20,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Api(tags = {"BUILD_CHECKER"}, description = "工具执行记录接口")
 @Path("/service/taskLogOverview")
@@ -40,6 +41,18 @@ public interface ServiceTaskLogOverviewResource {
             @ApiParam(value = "任务状态")
             @QueryParam("status")
                     Integer status
+    );
+
+    @ApiOperation("获取扫描记录")
+    @Path("/get")
+    @GET
+    Result<TaskLogOverviewVO> getTaskLogOverview(
+            @ApiParam(value = "任务ID", required = true)
+            @HeaderParam("taskId")
+            Long taskId,
+            @ApiParam(value = "构建号")
+            @QueryParam("buildId")
+            String buildId
     );
 
     @ApiOperation("获取工具记录")
@@ -83,4 +96,12 @@ public interface ServiceTaskLogOverviewResource {
     Result<Map<Long, Map<String, TaskLogRepoInfoVO>>> batchGetLastAnalyzeRepoInfo(
             @ApiParam(value = "任务ID", required = true)
                     List<Long> taskIdList);
+
+    @ApiOperation("获取最后构建ID")
+    @Path("/analyze/last/buildId")
+    @POST
+    Result<Map<Long, String>> getLastAnalyzeBuildIdMap(
+            @ApiParam(value = "任务ID", required = true)
+            Map<Long, Set<String>> taskIdToBuildIds
+    );
 }

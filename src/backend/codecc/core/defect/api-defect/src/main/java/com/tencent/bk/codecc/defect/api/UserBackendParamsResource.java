@@ -30,9 +30,15 @@ import com.tencent.bk.codecc.defect.vo.common.BackendParamsVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-
 import io.swagger.annotations.ApiParam;
-import javax.ws.rs.*;
+import java.util.List;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 /**
@@ -75,4 +81,29 @@ public interface UserBackendParamsResource {
     @Path("/dataMigration/trigger/batchCommonToLint")
     @POST
     Result<Boolean> batchCommonToLintDataMigration();
+
+    @ApiOperation("提单屏蔽")
+    @Path("/addCommitDefectBlockList")
+    @POST
+    Result<String> addCommitDefectBlockList(List<Long> taskIds);
+
+    @ApiOperation("清空提单屏蔽列表")
+    @Path("/clearCommitDefectBlockList")
+    @POST
+    Result<Boolean> clearCommitDefectBlockList(List<Long> taskIds);
+
+    @ApiOperation("降冷指定任务")
+    @Path("/coolDown/{taskId}")
+    @POST
+    Result<Boolean> coolDown(@PathParam("taskId") Long taskId);
+
+    @ApiOperation("加热指定任务")
+    @Path("/warmUp/{taskId}")
+    @POST
+    Result<Boolean> warmUp(@PathParam("taskId") Long taskId);
+
+    @ApiOperation("触发冷热分离任务下发")
+    @Path("/hotColdDataSeparationTrigger")
+    @POST
+    Result<Boolean> hotColdDataSeparationTrigger();
 }

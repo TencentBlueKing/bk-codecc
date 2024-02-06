@@ -1,8 +1,8 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.defect.dao.mongorepository.DefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.DefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.DefectDao;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.defect.service.AbstractBatchDefectProcessBizService;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;

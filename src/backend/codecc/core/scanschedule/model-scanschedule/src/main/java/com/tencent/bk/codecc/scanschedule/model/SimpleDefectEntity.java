@@ -24,6 +24,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 /**
  * 工具扫描告警记录的实体类
  *
+ * @author jimxzcai
  * @version V1.0
  * @date 2019/11/4
  */

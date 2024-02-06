@@ -21,7 +21,7 @@ class GithubAuthExPermissionApi(client: Client,
     override fun  queryPipelineListForUser(user: String, projectId: String, actions: Set<String>): Set<String> {
         val result = client.getDevopsService(ServicePermissionAuthResource::class.java)
             .getUserResourcesByPermissions(
-                user, properties.token ?: "", actions.toList(), projectId,
+                user, properties.token ?: "", null, actions.toList(), projectId,
                 properties.pipelineResourceType ?: "pipeline"
             )
         if (result.isNotOk() || result.data.isNullOrEmpty()) {

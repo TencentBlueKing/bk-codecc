@@ -13,6 +13,7 @@ import lombok.EqualsAndHashCode;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.ToString;
 
 /**
  * 用于保存 lint 类工具在统计流程中需要的初始化指标和计算出的中间结果和最终结果
@@ -22,6 +23,7 @@ import java.util.Set;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class LintDefectStatisticModel extends AbstractDefectStatisticModel {
 
     protected LintDefectStatisticModel() {

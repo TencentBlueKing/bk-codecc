@@ -6,6 +6,7 @@ import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.ToolPattern;
 import com.tencent.devops.common.redis.lock.RedisLock;
 import com.tencent.devops.common.web.mq.ConstantsKt;
+import java.util.Locale;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.MessagePostProcessor;
@@ -53,7 +54,7 @@ public abstract class AbstractDefectCommitOnLock {
             throw new UnsupportedOperationException("gongfeng scan no need lock");
         }
 
-        boolean mustByFileSize = !RECOMMIT_TOOLS_NOT_BY_FILE_SIZE.contains(toolName.toUpperCase());
+        boolean mustByFileSize = !RECOMMIT_TOOLS_NOT_BY_FILE_SIZE.contains(toolName.toUpperCase(Locale.ENGLISH));
         if (mustByFileSize && fileSize == null) {
             throw new IllegalArgumentException("file size arg must not be null");
         }

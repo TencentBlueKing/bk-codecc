@@ -1,10 +1,11 @@
 package com.tencent.bk.codecc.scanschedule.pojo.record;
 
-import com.tencent.bk.codecc.scanschedule.pojo.input.OpenCheckers;
 import lombok.Data;
 
-import java.util.List;
-
+/**
+ * 工具记录类
+ * @author jimxzcai
+ */
 @Data
 public class ToolRecord {
 
@@ -22,6 +23,11 @@ public class ToolRecord {
      * 工具版本
      */
     private String toolVersion;
+
+    /**
+     * 工具运行命令
+     */
+    private String toolCommand;
 
     /**
      * 工具扫描开始时间

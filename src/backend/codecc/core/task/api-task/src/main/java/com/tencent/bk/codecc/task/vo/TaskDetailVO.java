@@ -26,6 +26,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.tencent.bk.codecc.task.vo.checkerset.ToolCheckerSetVO;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.CheckerSetType;
@@ -266,4 +267,10 @@ public class TaskDetailVO extends TaskBaseVO {
 
     @ApiModelProperty(value = "超时时间")
     private Integer timeout;
+
+    @ApiModelProperty(value = "是否开启缓存")
+    private Boolean fileCacheEnable;
+
+    @ApiModelProperty(value = "最新BuildId")
+    private String latestBuildId;
 }

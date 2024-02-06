@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.component;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.common.DefectConsumerRetryLimitRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.common.DefectConsumerRetryLimitRepository;
 import com.tencent.bk.codecc.defect.model.common.DefectConsumerRetryLimitLog;
 import com.tencent.devops.common.constant.ComConstants.DefectConsumerType;
 import java.util.concurrent.TimeUnit;

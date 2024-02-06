@@ -29,8 +29,10 @@ package com.tencent.bk.codecc.task.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.tencent.bk.codecc.task.enums.TaskSortType;
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
+import com.tencent.bk.codecc.task.vo.GetTaskStatusAndCreateFromResponse;
 import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.bk.codecc.task.vo.NotifyCustomVO;
+import com.tencent.bk.codecc.task.vo.PipelineBasicInfoVO;
 import com.tencent.bk.codecc.task.vo.RuntimeUpdateMetaVO;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
 import com.tencent.bk.codecc.task.vo.TaskCodeLibraryVO;
@@ -42,6 +44,7 @@ import com.tencent.bk.codecc.task.vo.TaskListVO;
 import com.tencent.bk.codecc.task.vo.TaskMemberVO;
 import com.tencent.bk.codecc.task.vo.TaskOverviewVO;
 import com.tencent.bk.codecc.task.vo.TaskOwnerAndMemberVO;
+import com.tencent.bk.codecc.task.vo.TaskStatisticVO;
 import com.tencent.bk.codecc.task.vo.TaskStatusVO;
 import com.tencent.bk.codecc.task.vo.TaskUpdateDeptInfoVO;
 import com.tencent.bk.codecc.task.vo.TaskUpdateVO;
@@ -49,6 +52,7 @@ import com.tencent.bk.codecc.task.vo.pipeline.PipelineTaskVO;
 import com.tencent.bk.codecc.task.vo.scanconfiguration.ScanConfigurationVO;
 import com.tencent.bk.codecc.task.vo.tianyi.QueryMyTasksReqVO;
 import com.tencent.bk.codecc.task.vo.tianyi.TaskInfoVO;
+import com.tencent.bk.sdk.iam.dto.callback.request.CallbackRequestDTO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.StatisticTaskCodeLineToolVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
@@ -98,6 +102,14 @@ public interface TaskService {
      * @return
      */
     TaskDetailVO getTaskInfoById(Long taskId);
+
+    /**
+     * 获取任务信息
+     *
+     * @param projectId)
+     * @return
+     */
+    List<TaskDetailVO> getTaskInfoByProjectId(String projectId);
 
     /**
      * 通过taskid查询任务信息，不包含工具信息
@@ -182,20 +194,48 @@ public interface TaskService {
      * 停用任务
      *
      * @param taskId
+     * @param disabledReason
      * @param userName
-     * @return
+     * @return Boolean
      */
     Boolean stopTask(Long taskId, String disabledReason, String userName);
-
 
     /**
      * 停用任务
      *
      * @param pipelineId
+     * @param disabledReason
+     * @param userName
+     * @return Boolean
+     */
+    Boolean stopTask(String pipelineId, String disabledReason, String userName);
+
+    /**
+     * 将自建任务 id 和异步执行该自建任务的流水线 id 建立联系
+     *
+     * @param taskId
+     * @param pipelineId
+     * @param userName
+     * @return Boolean
+     */
+    Boolean addRelationshipBetweenTaskAndPipeline(Long taskId, String userName, String projectId, String pipelineId);
+
+    /**
+     * 删除任务
+     *
+     * @param taskId
      * @param userName
      * @return
      */
-    Boolean stopTask(String pipelineId, String disabledReason, String userName);
+    Boolean deleteTask(String projectId, Long taskId, String userName);
+
+    /**
+     * 获取用到该 CodeCC 任务的流水线
+     *
+     * @param taskId
+     * @return PipelineBasicInfoVO
+     */
+    List<PipelineBasicInfoVO> getRelatedPipelinesByTaskId(String projectId, Long taskId, String userName);
 
     /**
      * 停用单个流水线任务
@@ -379,6 +419,7 @@ public interface TaskService {
      */
     List<TaskBaseVO> getTasksByIds(List<Long> taskIds);
 
+    List<TaskDetailVO> getTaskDetailListByIdsWithDelete(List<Long> taskIds);
 
     /**
      * 根据任务状态及任务接入过的工具获取
@@ -586,4 +627,27 @@ public interface TaskService {
 
 
     List<MetadataVO> listTaskToolDimension(List<Long> taskIdList, String projectId);
+
+    /**
+     * iam（蓝盾）回调实现方法
+     */
+    String getInstanceByResource(CallbackRequestDTO callBackInfo);
+
+    String getLatestBuildId(Long taskId);
+
+    Map<Long, String> getLatestBuildIdMap(List<Long> taskIdList);
+
+    void setTaskToColdFlag(long taskId);
+
+    void setTaskToEnableFlag(long taskId);
+
+    List<Long> getTaskIdListForHotColdDataSeparation(Long lastTaskId, Integer limit);
+
+    List<String> getTaskToolNameList(Long taskId);
+
+    GetTaskStatusAndCreateFromResponse getTaskStatusAndCreateFrom(Long taskId);
+
+    List<TaskStatisticVO> getTaskStatisticByIds(List<Long> taskIds);
+
+    List<Long> getTaskIdNeProjectIdWithPage(String filterProjectId, int pageNum, int pageSize);
 }

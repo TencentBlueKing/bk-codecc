@@ -6,13 +6,17 @@ import lombok.Data;
 
 import java.util.List;
 
+/**
+ * 扫描记录类
+ * @author jimxzcai
+ */
 @Data
 public class ScanRecord {
 
     /**
      * scanId
      */
-    private String scanId;
+    public String scanId;
 
     /**
      * 应用code
@@ -22,56 +26,56 @@ public class ScanRecord {
     /**
      * 用户名
      */
-    private String userName;
+    public String userName;
 
     /**
      * 扫描内容
      */
-    private String content;
+    public String content;
 
     /**
      * 扫描规则集
      */
-    private List<SimpleCheckerSetVO> checkerSets;
+    public List<SimpleCheckerSetVO> checkerSets;
 
     /**
      * 扫描开始时间
      */
-    private Long startTime;
+    public Long startTime;
 
     /**
      * 扫描结束时间
      */
-    private Long endTime;
+    public Long endTime;
 
     /**
      * 扫描耗时
      */
-    private Long elapseTime;
+    public Long elapseTime;
 
     /**
      * 扫描状态: 0：成功，1：失败
      */
-    private int status;
+    public int status;
 
     /**
      * 扫描失败信息
      */
-    private String failMsg;
+    public String failMsg;
 
     /**
      * 扫描告警数
      */
-    private int defectCount;
+    public int defectCount;
 
     /**
      * 告警列表
      */
-    private List<SimpleDefectVO> defectList;
+    public List<SimpleDefectVO> defectList;
 
     /**
      * 工具扫描信息
      */
-    private List<ToolRecord> toolRecordList;
+    public List<ToolRecord> toolRecordList;
 
 }

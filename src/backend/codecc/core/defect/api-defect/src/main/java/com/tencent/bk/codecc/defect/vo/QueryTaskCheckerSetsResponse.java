@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class QueryTaskCheckerSetsResponse extends ArrayList<CheckerSetVO> {
 
+    private static final long serialVersionUID = 1L;
+
     public QueryTaskCheckerSetsResponse(@NotNull Collection<? extends CheckerSetVO> c) {
         super(c);
     }

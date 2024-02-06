@@ -50,7 +50,6 @@ public class PipelineIdRelationServiceImpl implements PipelineIdRelationService 
         pipelineIdRelationDao.updatePipelineIdRelationStatus(pipelineId, triggerDate, ComConstants.ScanStatus.SUCCESS.getCode());
     }
 
-
     @Override
     public void updateFailOrProcessRecord(PipelineIdRelationshipEntity pipelineIdRelationshipEntity){
         PipelineIdRelationshipEntity previousPipelineEntity = pipelineIdRelationshipRepository.findFirstByPipelineIdAndTriggerDate(

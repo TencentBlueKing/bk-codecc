@@ -10,6 +10,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
@@ -37,4 +38,13 @@ public interface ServiceMetricsRestResource {
     Result<List<MetricsVO>> getMetrics(
             @ApiParam(value = "任务ID", required = true)
                     List<Long> taskIds);
+
+    @ApiOperation("根据task id获取最新的度量信息")
+    @Path("/taskId/{taskId}")
+    @GET
+    Result<MetricsVO> getLatestMetrics(
+        @ApiParam(value = "任务ID", required = true)
+        @PathParam(value = "taskId")
+        Long taskId
+    );
 }

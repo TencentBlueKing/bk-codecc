@@ -9,7 +9,10 @@ import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_USER_ID
 import com.tencent.devops.common.api.exception.UnauthorizedException
 import com.tencent.devops.common.api.pojo.Result
 import com.tencent.devops.common.auth.api.AuthPermission
+import com.tencent.devops.common.auth.api.pojo.external.AuthRoleType
+import com.tencent.devops.common.auth.api.pojo.external.ResourceType
 import com.tencent.devops.common.auth.api.pojo.external.model.BkAuthExResourceActionModel
+import com.tencent.devops.common.auth.api.pojo.external.response.AuthRoleUserDetail
 import com.tencent.devops.common.auth.api.service.AuthTaskService
 import com.tencent.devops.common.auth.utils.AuthActionUtil
 import com.tencent.devops.common.client.Client
@@ -208,6 +211,23 @@ class RBACAuthPermissionApi(
     }
 
     /**
+     * 校验用户是否有项目维度的资源操作权限
+     */
+    override fun validateUserProjectPermission(
+        projectId: String,
+        userId: String,
+        action: String
+    ): Boolean {
+        return validateUserResourcePermission(
+            userId,
+            getBackendAccessToken(),
+            action,
+            projectId,
+            ResourceType.PROJECT.name
+        )
+    }
+
+    /**
      * 获取用户某项目下指定资源action的实例列表
      */
     private fun queryUserResourceByPermission(
@@ -266,7 +286,7 @@ class RBACAuthPermissionApi(
         resourceCode: String
     ): Boolean {
         val resPermission = client.getDevopsService(ServicePermissionAuthResource::class.java, projectCode)
-                .validateUserResourcePermission(userId, token, action, projectCode, resourceCode)
+                .validateUserResourcePermission(userId, token, null, action, projectCode, resourceCode)
         if (resPermission.isNotOk()) {
             throw UnauthorizedException("getDevopsService failed!")
         }
@@ -326,5 +346,99 @@ class RBACAuthPermissionApi(
         val result = OkhttpUtils.doHttpPost(url, body = bodyStr, headers = headers)
         logger.info("validateBatch result: $result")
         return JsonUtil.to(result, object : TypeReference<Result<Boolean>>() {})
+    }
+
+    /**
+     * 获取资源下所有成员
+     */
+    private fun queryResourceAllUsers(
+        projectId: String,
+        resourceCode: String,
+        resourceType: String
+    ): List<String> {
+        val url = "${rbacAuthProperties.schemes}://${rbacAuthProperties.url}$baseUrl" +
+            "/open/service/auth/resource/member/${projectId}" +
+            "/getResourceGroupUsers?resourceCode=${resourceCode}&resourceType=${resourceType}"
+        val headers = getCommonHeaders(projectId)
+
+        val result = OkhttpUtils.doGet(url, headers)
+        val resultRspObj = JsonUtil.to(result, object : TypeReference<Result<List<String>>>() {})
+        return resultRspObj.data!!
+    }
+
+    /**
+     * 获取资源下所有成员,按角色分组返回
+     */
+    private fun queryResourceUsersGroupByRole(
+        projectId: String,
+        resourceCode: String,
+        resourceType: String,
+        roleType: AuthRoleType
+    ): Set<String> {
+        val url = "${rbacAuthProperties.schemes}://${rbacAuthProperties.url}$baseUrl" +
+            "/open/service/auth/resource/member/${projectId}" +
+            "/getResourceUsers?resourceCode=${resourceCode}&resourceType=${resourceType}"
+        val headers = getCommonHeaders(projectId)
+
+        val result = OkhttpUtils.doGet(url, headers)
+        val resultRspObj = JsonUtil.to(result, object : TypeReference<Result<List<AuthRoleUserDetail>>>() {})
+
+        val userSet = mutableSetOf<String>()
+        for (it in resultRspObj.data!!) {
+            if (roleType.alias == it.roleName || roleType.roleName.compareTo(it.roleName, ignoreCase = true) == 0) {
+                userSet.addAll(it.userIdList)
+                break
+            }
+        }
+        return userSet
+    }
+
+    /**
+     * 查询扫描服务创建的任务角色成员清单
+     */
+    override fun queryTaskUsersGroupByRole(projectId: String, taskId: Long, roleType: AuthRoleType?): Set<String> {
+        return when (roleType) {
+            null -> {
+                queryResourceAllUsers(
+                    projectId = projectId,
+                    resourceCode = taskId.toString(),
+                    resourceType = rbacAuthProperties.rbacResourceType!!
+                ).toSet()
+            }
+            else -> {
+                queryResourceUsersGroupByRole(
+                    projectId = projectId,
+                    resourceCode = taskId.toString(),
+                    resourceType = rbacAuthProperties.rbacResourceType!!,
+                    roleType = roleType
+                )
+            }
+        }
+    }
+
+    /**
+     * 查询流水线创建的任务角色成员清单
+     */
+    override fun queryPipelineUsersGroupByRole(projectId: String, taskId: Long, roleType: AuthRoleType?): Set<String> {
+        val authTaskService = SpringContextUtil.getBean(AuthTaskService::class.java)
+        val pipelineId = authTaskService.getTaskPipelineId(taskId)
+
+        return when (roleType) {
+            null -> {
+                queryResourceAllUsers(
+                    projectId = projectId,
+                    resourceCode = pipelineId,
+                    resourceType = rbacAuthProperties.pipeLineResourceType!!
+                ).toSet()
+            }
+            else -> {
+                queryResourceUsersGroupByRole(
+                    projectId = projectId,
+                    resourceCode = pipelineId,
+                    resourceType = rbacAuthProperties.pipeLineResourceType!!,
+                    roleType = roleType
+                )
+            }
+        }
     }
 }

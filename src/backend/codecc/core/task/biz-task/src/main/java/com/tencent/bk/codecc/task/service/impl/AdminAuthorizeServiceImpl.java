@@ -132,22 +132,24 @@ public class AdminAuthorizeServiceImpl implements AdminAuthorizeService {
         if (null != authorizeInfoEntity) {
             adminAuthorizeInfoRepository.delete(authorizeInfoEntity);
             // 同时清理缓存数据
-            delBgAdmin(ComConstants.DefectStatType.GONGFENG_SCAN.value(), userId);
-            delBgAdmin(ComConstants.DefectStatType.USER.value(), userId);
-
+            redisTemplate.executePipelined((RedisCallback<Long>) conn -> {
+                for (ComConstants.DefectStatType defectStatType : ComConstants.DefectStatType.values()) {
+                    String formatKey =
+                            String.format("%s%s:%s", RedisKeyConstants.PREFIX_BG_ADMIN, defectStatType.value(), userId);
+                    byte[] key;
+                    try {
+                        key = formatKey.getBytes(StandardCharsets.UTF_8.name());
+                    } catch (UnsupportedEncodingException e) {
+                        logger.error(e.getMessage(), e);
+                        continue;
+                    }
+                    conn.del(key);
+                }
+                return null;
+            });
             return true;
         }
         return false;
-    }
-
-    /**
-     * 删除BG管理员缓存数据
-     * @param userId     用户名id
-     * @param createFrom 来源
-     */
-    private void delBgAdmin(String userId, String createFrom) {
-        String key = String.format("%s%s:%s", RedisKeyConstants.PREFIX_BG_ADMIN, createFrom, userId);
-        redisTemplate.delete(key);
     }
 
     /**

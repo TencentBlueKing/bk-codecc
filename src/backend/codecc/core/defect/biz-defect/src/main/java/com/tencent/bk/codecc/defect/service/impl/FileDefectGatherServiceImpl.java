@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.FileDefectGatherRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.FileDefectGatherDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.FileDefectGatherDao;
 import com.tencent.bk.codecc.defect.model.FileDefectGatherEntity;
 import com.tencent.bk.codecc.defect.service.FileDefectGatherService;
 import com.tencent.bk.codecc.defect.vo.FileDefectGatherVO;

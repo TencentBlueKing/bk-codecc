@@ -13,11 +13,11 @@
 package com.tencent.bk.codecc.defect.consumer;
 
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildDefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildDefectV2Repository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CCNDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CCNDefectDao;
 import com.tencent.bk.codecc.defect.model.BuildDefectEntity;
 import com.tencent.bk.codecc.defect.model.BuildDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
@@ -27,12 +27,14 @@ import com.tencent.bk.codecc.defect.model.redline.RedLineExtraParams;
 import com.tencent.bk.codecc.defect.model.statistic.CCNStatisticEntity;
 import com.tencent.bk.codecc.defect.pojo.statistic.DefectStatisticModel;
 import com.tencent.bk.codecc.defect.service.BuildSnapshotService;
+import com.tencent.bk.codecc.defect.service.ToolBuildInfoService;
 import com.tencent.bk.codecc.defect.service.impl.redline.CCNRedLineReportServiceImpl;
 import com.tencent.bk.codecc.defect.service.statistic.CCNDefectStatisticServiceImpl;
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.DefectStatus;
+import com.tencent.devops.common.service.BaseDataCacheService;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,6 +73,10 @@ public class CCNFastIncrementConsumer extends AbstractFastIncrementConsumer {
     private BuildDefectRepository buildDefectRepository;
     @Autowired
     private BuildSnapshotService buildSnapshotService;
+    @Autowired
+    private BaseDataCacheService baseDataCacheService;
+    @Autowired
+    private ToolBuildInfoService toolBuildInfoService;
 
     @Override
     protected void generateResult(AnalyzeConfigInfoVO analyzeConfigInfoVO) {
@@ -87,7 +93,10 @@ public class CCNFastIncrementConsumer extends AbstractFastIncrementConsumer {
 
         ToolBuildStackEntity toolBuildStackEntity =
                 toolBuildStackRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
-        String baseBuildId = getBaseBuildIdForFastIncr(toolBuildStackEntity, taskId, toolName, buildId);
+        String baseBuildId = toolBuildInfoService.getBaseBuildIdWhenDefectCommit(
+                toolBuildStackEntity, taskId,
+                toolName, buildId, true
+        );
 
         List<CCNDefectEntity> allNewDefectList;
         List<CCNDefectEntity> allIgnoreDefectList;
@@ -113,7 +122,8 @@ public class CCNFastIncrementConsumer extends AbstractFastIncrementConsumer {
         }
 
         // 因为代码没有变更，默认总平均圈复杂度不变，所以直接取上一个分析的平均圈复杂度
-        CCNStatisticEntity baseBuildCcnStatistic = ccnStatisticRepository.findFirstByTaskIdAndBuildId(taskVO.getTaskId(),
+        CCNStatisticEntity baseBuildCcnStatistic = ccnStatisticRepository.findFirstByTaskIdAndBuildId(
+                taskVO.getTaskId(),
                 baseBuildId);
 
         float averageCCN = 0;
@@ -122,14 +132,19 @@ public class CCNFastIncrementConsumer extends AbstractFastIncrementConsumer {
         }
 
         // 统计本次扫描的告警
-        ccnDefectStatisticService.statistic(new DefectStatisticModel<>(taskVO,
-                toolName,
-                averageCCN,
-                buildId,
-                toolBuildStackEntity,
-                allNewDefectList,
-                null,
-                null));
+        ccnDefectStatisticService.statistic(
+                new DefectStatisticModel<>(
+                        taskVO,
+                        toolName,
+                        averageCCN,
+                        buildId,
+                        toolBuildStackEntity,
+                        allNewDefectList,
+                        null,
+                        null,
+                        true
+                )
+        );
 
         // 更新构建告警快照
         buildSnapshotService.saveCCNBuildDefect(taskId, toolName, buildEntity, allNewDefectList, allIgnoreDefectList);
@@ -155,7 +170,7 @@ public class CCNFastIncrementConsumer extends AbstractFastIncrementConsumer {
                 buildDefectV2Repository.findByTaskIdAndBuildIdAndToolName(taskId, baseBuildId, toolName);
 
         if (CollectionUtils.isEmpty(buildDefectList)) {
-            return Pair.of(Lists.newArrayList(),Lists.newArrayList());
+            return Pair.of(Lists.newArrayList(), Lists.newArrayList());
         }
 
         Set<String> defectIdSet = buildDefectList.stream()
@@ -180,7 +195,9 @@ public class CCNFastIncrementConsumer extends AbstractFastIncrementConsumer {
             defect.setEndLines(buildDefect.getEndLines());
         }
 
-        List<CCNDefectEntity> ccnIgnoreDefectList = ccnDefectDao.findAllIgnoreDefectForSnapshot(defectIdSet);
+        Integer historyIgnoreType = baseDataCacheService.getHistoryIgnoreType();
+        List<CCNDefectEntity> ccnIgnoreDefectList =
+                ccnDefectDao.findAllIgnoreDefectForSnapshot(defectIdSet, historyIgnoreType);
         for (CCNDefectEntity defect : ccnIgnoreDefectList) {
             BuildDefectV2Entity buildDefect = buildDefectMap.get(defect.getEntityId());
             defect.setRevision(buildDefect.getRevision());
@@ -190,7 +207,6 @@ public class CCNFastIncrementConsumer extends AbstractFastIncrementConsumer {
             defect.setStartLines(buildDefect.getStartLines());
             defect.setEndLines(buildDefect.getEndLines());
         }
-
 
         return Pair.of(ccnDefectList, ccnIgnoreDefectList);
     }

@@ -16,12 +16,12 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.component.ScheduleJobComponent;
 import com.tencent.bk.codecc.defect.constant.DefectMessageCode;
-import com.tencent.bk.codecc.defect.dao.mongorepository.IgnoreTypeProjectRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.IgnoreTypeSysRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CCNDefectDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.DefectDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.IgnoreTypeProjectDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.IgnoreTypeProjectRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.IgnoreTypeSysRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongotemplate.IgnoreTypeProjectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CCNDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.DefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.dto.IgnoreTypeEmailDTO;
 import com.tencent.bk.codecc.defect.dto.IgnoreTypeStatModel;
 import com.tencent.bk.codecc.defect.model.ignore.IgnoreTypeNotifyEntity;
@@ -186,9 +186,9 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
                     ignoreTypeSysEntity = new IgnoreTypeSysEntity();
                     // 自动生成id
                     ignoreTypeSysEntity.setIgnoreTypeId(generateId());
-                    ignoreTypeSysEntity.applyAuditInfo(userName, userName);
+                    ignoreTypeSysEntity.applyAuditInfoOnCreate(userName);
                 } else {
-                    ignoreTypeSysEntity.applyAuditInfo(userName);
+                    ignoreTypeSysEntity.applyAuditInfoOnUpdate(userName);
                 }
                 String ignoreTypeNameOld = ignoreTypeSysEntity.getName();
                 ignoreTypeSysEntity.setName(ignoreTypeName);
@@ -199,7 +199,7 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
                             .updateIgnoreTypeNameById(ignoreTypeId, ignoreTypeNameOld, ignoreTypeName));
                 }
             } else {
-                ignoreTypeSysEntity.applyAuditInfo(userName);
+                ignoreTypeSysEntity.applyAuditInfoOnUpdate(userName);
             }
 
             // 默认0，启用
@@ -227,9 +227,6 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
         }).collect(Collectors.toList());
     }
 
-    private IgnoreTypeSysEntity getIgnoreTypeSysByName(String name) {
-        return ignoreTypeSysRepository.findFirstByName(name);
-    }
 
     @Override
     @ValidateProject
@@ -355,7 +352,7 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
         //获取系统列表
         List<IgnoreTypeSysEntity> ignoreTypeSysEntities =
                 ignoreTypeSysRepository.findByStatusOrderByIgnoreTypeId(ComConstants.Status.ENABLE.value());
-        boolean projectManager = authExPermissionApi.authProjectMultiManager(projectId, userName);
+        boolean projectManager = isProjectManager(projectId, userName);
         //获取项目配置
         List<IgnoreTypeProjectConfig> ignoreTypeProjectConfigs = ignoreTypeProjectRepository
                 .findByProjectIdAndStatusOrderByIgnoreTypeId(projectId, ComConstants.Status.ENABLE.value());
@@ -396,6 +393,16 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
         }
         return vos;
     }
+
+    private boolean isProjectManager(String projectId, String userName) {
+        try {
+            return authExPermissionApi.authProjectMultiManager(projectId, userName);
+        } catch (Throwable e) {
+            return false;
+        }
+    }
+
+
 
     @Override
     public IgnoreTypeProjectConfigVO ignoreTypeProjectDetail(String projectId, String userName, Integer ignoreTypeId) {
@@ -450,7 +457,7 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
             IgnoreTypeDefectStatResponse response = statResponses.get(0);
             if ((response.getDefect() != null && response.getDefect() > 0)
                     || (response.getRiskFunction() != null && response.getRiskFunction() > 0)) {
-                throw  new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID,
+                throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID,
                         "当前忽略类型问题或者风险函数数量大于0, 无法被删除");
             }
         }

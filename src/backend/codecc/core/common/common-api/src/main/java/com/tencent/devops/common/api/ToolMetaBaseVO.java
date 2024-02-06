@@ -35,6 +35,7 @@ import lombok.Data;
 
 import javax.validation.constraints.Pattern;
 import java.util.List;
+import lombok.EqualsAndHashCode;
 
 /**
  * 工具完整信息对象
@@ -42,6 +43,7 @@ import java.util.List;
  * @version V1.0
  * @date 2019/4/25
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 @ApiModel("工具完整信息视图")
 public class ToolMetaBaseVO extends CommonVO {

@@ -33,6 +33,7 @@ package com.tencent.devops.common.constant;
  * @date 2019/5/6
  */
 public interface RedisKeyConstants {
+
     /**
      * 工具的顺序表
      */
@@ -373,7 +374,7 @@ public interface RedisKeyConstants {
      * 处理人重新分配的缓存key判断
      */
     String IS_REALLOCATE = "reallocate";
-    
+
 
     String PREFIX_MIGRATE_HISTORY_DEFECT = "MIGRATE_HISTORY_DEFECT:";
 
@@ -407,6 +408,36 @@ public interface RedisKeyConstants {
     String REDIS_KEY_ROLLBACL_MIGRATE_DEFECT_ENABLE =
             "LOCK_KEY:ROLLBACK_MIGRATION_HISTORY_DEFECT_ENABLE";
 
+    /**
+     * 调试的BuildId
+     */
+    String DEBUG_BUILD_ID_SET_KEY = "DEBUG_BUILD_ID_SET";
 
 
+    /**
+     * 提单黑名单
+     */
+    String COMMIT_DEFECT_TASK_ID_BLOCK_LIST = "COMMIT_DEFECT_TASK_ID_BLOCK_LIST";
+
+
+    /**
+     * 新增文件缓存密钥锁
+     */
+    String FILE_CACHE_SECRET_CHANGE_LOCK = "FILE_CACHE:SECRET_CHANGE_LOCK";
+
+
+    /**
+     * 新增文件缓存密钥锁
+     */
+    String FILE_CACHE_BUILD_INDEX_LOCK = "FILE_CACHE:BUILD_INDEX:";
+
+
+    String GONGFENG_SCAN_CREATE_TASK_MIGRATE = "GONGFENG_SCAN_CREATE_TASK_MIGRATE";
+
+
+    /**
+     * 开源数据清理相关
+     */
+    String OPEN_SCAN_DATA_CLEAN_TRIGGER_LOCK_KEY = "OPEN_SCAN_DATA_CLEAN_TRIGGER_LOCK_KEY";
+    String OPEN_SCAN_DATA_CLEAN_INTERVAL = "OPEN_SCAN_DATA_CLEAN_INTERVAL";
 }

@@ -2,12 +2,12 @@ package com.tencent.bk.codecc.defect.service.impl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoInfoRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildInfoRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildStackRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.ToolBuildInfoDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.ToolBuildStackDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CodeRepoInfoRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.TaskLogRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ToolBuildInfoRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ToolBuildStackRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.ToolBuildInfoDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.ToolBuildStackDao;
 import com.tencent.bk.codecc.defect.model.TaskLogEntity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoInfoEntity;
@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class ToolBuildInfoServiceImpl implements ToolBuildInfoService {
+
     @Autowired
     private CodeRepoInfoRepository codeRepoRepository;
 
@@ -83,7 +84,8 @@ public class ToolBuildInfoServiceImpl implements ToolBuildInfoService {
         Long taskId = analyzeConfigInfoVO.getTaskId();
         String toolName = analyzeConfigInfoVO.getMultiToolType();
         String buildId = analyzeConfigInfoVO.getBuildId();
-        ToolBuildInfoEntity toolBuildInfoEntity = toolBuildInfoRepository.findFirstByTaskIdAndToolName(taskId, toolName);
+        ToolBuildInfoEntity toolBuildInfoEntity = toolBuildInfoRepository.findFirstByTaskIdAndToolName(taskId,
+                toolName);
         if (null == toolBuildInfoEntity) {
             return analyzeConfigInfoVO;
         }
@@ -102,7 +104,8 @@ public class ToolBuildInfoServiceImpl implements ToolBuildInfoService {
                 for (CodeRepoEntity codeRepoEntity : codeRepoInfoEntity.getRepoList()) {
                     CodeRepoVO codeRepoVO = new CodeRepoVO();
                     BeanUtils.copyProperties(codeRepoEntity, codeRepoVO);
-                    log.info("set codeRepoVO in lastRepoIds taskId: {}, buildId: {}, codeRepoVO: {}", taskId, buildId, codeRepoVO);
+                    log.info("set codeRepoVO in lastRepoIds taskId: {}, buildId: {}, codeRepoVO: {}", taskId, buildId,
+                            codeRepoVO);
                     analyzeConfigInfoVO.getLastCodeRepos().add(codeRepoVO);
                     lastRepoIds.add(codeRepoEntity.getRepoId());
                     lastRepoUrls.add(PathUtils.formatRepoUrlToHttp(codeRepoEntity.getUrl()));
@@ -299,7 +302,7 @@ public class ToolBuildInfoServiceImpl implements ToolBuildInfoService {
      * 批量设置强制全量扫描
      *
      * @param taskIdSet 任务id集合
-     * @param toolName  工具名
+     * @param toolName 工具名
      * @return Boolean
      */
     @Override
@@ -359,5 +362,52 @@ public class ToolBuildInfoServiceImpl implements ToolBuildInfoService {
             log.info("rebuild incr, task id: {}, build id: {}, tool: {}, scan type: {}",
                     taskId, buildId, toolName, scanType);
         }
+    }
+
+    @Override
+    public String getBaseBuildIdWhenDefectCommit(
+            ToolBuildStackEntity toolBuildStack,
+            Long taskId,
+            String toolName,
+            String curBuildId,
+            boolean forBuildSnapshot
+    ) {
+        // 非快照业务
+        if (!forBuildSnapshot) {
+            if (toolBuildStack == null) {
+                ToolBuildInfoEntity toolBuildInfo =
+                        toolBuildInfoRepository.findFirstByTaskIdAndToolName(taskId, toolName);
+                return toolBuildInfo != null && StringUtils.isNotEmpty(toolBuildInfo.getDefectBaseBuildId())
+                        ? toolBuildInfo.getDefectBaseBuildId() : "";
+            } else {
+                return StringUtils.isNotEmpty(toolBuildStack.getBaseBuildId()) ? toolBuildStack.getBaseBuildId() : "";
+            }
+        }
+
+        // 快照业务需额外判断重试的场景
+        ToolBuildInfoEntity toolBuildInfo = toolBuildInfoRepository.findFirstByTaskIdAndToolName(taskId, toolName);
+
+        // 覆盖场景：#1全量、#1重试触发超快增量
+        if (toolBuildInfo != null && curBuildId.equals(toolBuildInfo.getDefectBaseBuildId())) {
+            return curBuildId;
+        }
+
+        // 覆盖场景：#1全量、#2超快增量、#1重试触发超快增量
+        TaskLogEntity taskLog = taskLogRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, curBuildId);
+        if (taskLog != null && CollectionUtils.isNotEmpty(taskLog.getStepArray())) {
+            boolean isRebuild = taskLog.getStepArray().stream()
+                    .anyMatch(x -> x.getStepNum() == ComConstants.Step4MutliTool.COMMIT.value()
+                            && x.getFlag() == ComConstants.StepFlag.SUCC.value());
+
+            if (isRebuild) {
+                return curBuildId;
+            }
+        }
+
+        if (toolBuildStack != null) {
+            return toolBuildStack.getBaseBuildId();
+        }
+
+        return toolBuildInfo != null ? toolBuildInfo.getDefectBaseBuildId() : "";
     }
 }

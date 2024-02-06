@@ -2,8 +2,8 @@ package com.tencent.bk.codecc.defect.component;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildDefectV2Repository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.BuildDefectV2Dao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.BuildDefectV2Dao;
 import com.tencent.bk.codecc.defect.model.BuildDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;

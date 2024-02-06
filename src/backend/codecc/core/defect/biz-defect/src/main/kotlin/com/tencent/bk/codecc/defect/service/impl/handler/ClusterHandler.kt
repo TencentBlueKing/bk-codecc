@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service
  */
 @Service
 class ClusterHandler @Autowired constructor(
+    private val handler: UploadRedLineIndicatorsHandler,
     private val clusterDefectServiceImpl: ClusterDefectServiceImpl
 ) : IHandler {
 
@@ -33,6 +34,8 @@ class ClusterHandler @Autowired constructor(
             logger.error(
                 "cluster defect fail! ${handlerDTO.taskId}, ${handlerDTO.toolName}, ${handlerDTO.buildId}", e
             )
+        } finally {
+            handler.handler(handlerDTO)
         }
     }
 }

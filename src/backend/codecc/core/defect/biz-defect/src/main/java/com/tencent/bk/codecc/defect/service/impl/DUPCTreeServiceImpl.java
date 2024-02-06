@@ -26,7 +26,7 @@
 
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.DUPCDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DUPCDefectRepository;
 import com.tencent.bk.codecc.defect.model.defect.DUPCDefectEntity;
 import com.tencent.bk.codecc.defect.service.AbstractTreeService;
 import com.tencent.devops.common.constant.ComConstants;

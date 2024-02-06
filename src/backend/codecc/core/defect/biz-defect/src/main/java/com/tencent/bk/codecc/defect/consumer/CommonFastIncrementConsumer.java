@@ -13,12 +13,12 @@
 package com.tencent.bk.codecc.defect.consumer;
 
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CommonStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.DefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.DefectDao;
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CommonStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.DefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository;
 import com.tencent.bk.codecc.defect.mapping.DefectConverter;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
@@ -197,7 +197,8 @@ public class CommonFastIncrementConsumer extends AbstractFastIncrementConsumer
                         allNewDefectList,
                         null,
                         null,
-                        Lists.newArrayList()
+                        Lists.newArrayList(),
+                        true
                 )
         );
 

@@ -24,10 +24,18 @@ import java.util.Set;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface ServiceGrayToolProjectResource {
-    @ApiOperation("查询构建ID关系")
-    @Path("/project/{projectId}")
+//    @ApiOperation("查询构建ID关系")
+//    @Path("/project/{projectId}")
+//    @GET
+//    Result<GrayToolProjectVO> getGrayToolProjectInfoByProjectId(
+//            @ApiParam(value = "项目ID")
+//            @PathParam("projectId")
+//                    String projectId);
+
+    @ApiOperation("返回项目下所有工具的灰度配置信息")
+    @Path("/project/{projectId}/detail")
     @GET
-    Result<GrayToolProjectVO> getGrayToolProjectInfoByProjectId(
+    Result<List<GrayToolProjectVO>> getGrayToolProjectDetail(
             @ApiParam(value = "项目ID")
             @PathParam("projectId")
                     String projectId);
@@ -47,6 +55,9 @@ public interface ServiceGrayToolProjectResource {
             @ApiParam(value = "构建id")
             @PathParam("buildId")
             String buildId,
+            @ApiParam(value = "工具名")
+            @QueryParam("toolName")
+            String toolName,
             @ApiParam(value = "告警数量")
             GrayTaskStatVO grayTaskStatVO);
 }

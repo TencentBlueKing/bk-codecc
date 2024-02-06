@@ -1,12 +1,12 @@
 package com.tencent.bk.codecc.defect.service;
 
+import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
 import com.tencent.bk.codecc.defect.vo.ToolBuildStackReqVO;
 import com.tencent.bk.codecc.defect.vo.ToolBuildInfoReqVO;
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 /**
  * 工具构建信息服务
@@ -59,4 +59,22 @@ public interface ToolBuildInfoService {
      * @param buildId
      */
     void setToolBuildStackNotFullScanIfRebuildIncr(Long taskId, String toolName, String buildId, Integer scanType);
+
+    /**
+     * 获取基准buildId
+     *
+     * @param toolBuildStack
+     * @param taskId
+     * @param toolName
+     * @param curBuildId
+     * @param forBuildSnapshot 标识是否快照业务
+     * @return
+     */
+    String getBaseBuildIdWhenDefectCommit(
+            ToolBuildStackEntity toolBuildStack,
+            Long taskId,
+            String toolName,
+            String curBuildId,
+            boolean forBuildSnapshot
+    );
 }

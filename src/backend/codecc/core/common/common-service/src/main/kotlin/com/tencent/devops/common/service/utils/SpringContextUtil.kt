@@ -29,6 +29,7 @@ package com.tencent.devops.common.service.utils
 import org.springframework.beans.BeansException
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware
+import org.springframework.core.env.get
 import org.springframework.stereotype.Component
 
 @Component
@@ -87,19 +88,18 @@ class SpringContextUtil : ApplicationContextAware {
 
         /**
          * 获取对象列表
-         * @param clazz 注解类名
-         * @param <T: Annotation> 注解
-         * @return 实例列表
-         * @throws BeansException 异常
          */
         @Throws(BeansException::class)
         fun <T : Annotation> getBeansWithAnnotation(clazz: Class<T>): List<Any> {
             return applicationContext!!.getBeansWithAnnotation(clazz).values.toList()
         }
 
-
         fun beanExistsWithName(beanName: String): Boolean {
             return applicationContext!!.containsBean(beanName)
+        }
+
+        fun getProperty(property: String): String? {
+            return applicationContext!!.environment[property]
         }
     }
 }

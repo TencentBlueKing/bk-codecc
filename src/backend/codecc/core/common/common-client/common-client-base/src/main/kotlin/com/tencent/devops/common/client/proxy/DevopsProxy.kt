@@ -11,7 +11,8 @@ import javax.ws.rs.QueryParam
 
 class DevopsProxy constructor(
     private val any: Any,
-    private val clz: Class<*>
+    private val clz: Class<*>,
+    private val autoTag: String = "auto"
 ) : InvocationHandler {
 
     companion object {
@@ -26,8 +27,10 @@ class DevopsProxy constructor(
         if (null != argIndex) {
             projectIdThreadLocal.set(args[argIndex])
         } else {
-            if (clz.simpleName.equals("ServicePublicScanResource") && method.name.equals("createCodeCCScanProject")) {
-                gatewayTagThreadLocal.set("auto")
+            if ((clz.simpleName.equals("ServicePublicScanResource") && method.name.equals("createCodeCCScanProject"))
+                    || clz.simpleName.equals("ServiceDockerImageResource")
+            ) {
+                gatewayTagThreadLocal.set(autoTag)
             }
 
             method.parameters.forEachIndexed { index, parameter ->
@@ -47,9 +50,9 @@ class DevopsProxy constructor(
 
         return  try {
             val result = method.invoke(any, *args)
-            //后置处理
+            // 后置处理
             val invokeHandlers = DevopsAfterInvokeHandlerFactory.SINGLETON?.getInvokeHandlers() ?: emptyList()
-            invokeHandlers.forEach{ invokeHandler ->
+            invokeHandlers.forEach { invokeHandler ->
                 try {
                     invokeHandler.handleAfterInvoke(method, args, result)
                 } catch (e: Exception) {

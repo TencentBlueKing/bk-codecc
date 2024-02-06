@@ -27,15 +27,12 @@
 package com.tencent.bk.codecc.defect.service;
 
 import com.tencent.bk.codecc.defect.component.ScmJsonComponent;
-import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildInfoRepository;
-import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
 import com.tencent.bk.codecc.defect.vo.UploadDefectVO;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
-import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.IBizService;
 import com.tencent.devops.common.util.CompressionUtils;

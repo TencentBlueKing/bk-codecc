@@ -27,10 +27,10 @@
 package com.tencent.bk.codecc.defect.resources;
 
 import com.tencent.bk.codecc.defect.api.ServiceReportDefectRestResource;
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildInfoRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.TaskLogRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ToolBuildInfoRepository;
 import com.tencent.bk.codecc.defect.service.CommonDefectMigrationService;
 import com.tencent.bk.codecc.defect.service.IUpdateDefectBizService;
 import com.tencent.bk.codecc.defect.service.impl.CommonQueryWarningBizServiceImpl;

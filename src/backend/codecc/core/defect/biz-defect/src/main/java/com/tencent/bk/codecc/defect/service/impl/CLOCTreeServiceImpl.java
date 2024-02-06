@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.tencent.bk.codecc.defect.common.CLOCTree;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCDefectRepository;
 import com.tencent.bk.codecc.defect.model.defect.CLOCDefectEntity;
 import com.tencent.bk.codecc.defect.service.TreeService;
 import com.tencent.bk.codecc.defect.vo.CLOCTreeNodeVO;
@@ -81,6 +81,7 @@ public class CLOCTreeServiceImpl implements TreeService {
             CLOCTreeNodeVO newRoot = new CLOCTreeNodeVO(String.format("%s%s",
                     System.currentTimeMillis(),
                     new Random().nextInt()), root.getName(), false);
+            newRoot.setFileNum(1);
             newRoot.setClocChildren(Collections.singletonList(root));
             return newRoot;
         }

@@ -12,21 +12,25 @@
 
 package com.tencent.bk.codecc.defect.consumer;
 
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_DATA_SEPARATION;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DATA_SEPARATION_COOL_DOWN;
+
 import com.alibaba.fastjson.JSONObject;
 import com.tencent.bk.codecc.defect.cache.ConcurrentDefectTracingConfigCache;
 import com.tencent.bk.codecc.defect.component.DefectConsumerRetryLimitComponent;
 import com.tencent.bk.codecc.defect.component.ScmJsonComponent;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoInfoRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildInfoRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildStackRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.TransferAuthorRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.ToolBuildInfoDao;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.TransferAuthorRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CodeRepoInfoRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ToolBuildInfoRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ToolBuildStackRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.ToolBuildInfoDao;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
 import com.tencent.bk.codecc.defect.model.defect.DefectEntity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoInfoEntity;
 import com.tencent.bk.codecc.defect.service.BuildService;
 import com.tencent.bk.codecc.defect.service.FilterPathService;
+import com.tencent.bk.codecc.defect.service.HotColdDataSeparationService;
 import com.tencent.bk.codecc.defect.service.ReallocateDefectAuthorService;
 import com.tencent.bk.codecc.defect.service.file.ScmFileInfoService;
 import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
@@ -35,10 +39,15 @@ import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
 import com.tencent.bk.codecc.defect.vo.customtool.RepoSubModuleVO;
 import com.tencent.bk.codecc.defect.vo.customtool.ScmBlameChangeRecordVO;
 import com.tencent.bk.codecc.defect.vo.customtool.ScmBlameVO;
+import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
+import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.auth.api.service.AuthTaskService;
+import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
 import com.tencent.devops.common.constant.ComConstants.DefectConsumerType;
+import com.tencent.devops.common.constant.ComConstants.TaskStatus;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.web.aop.annotation.EndReport;
@@ -46,6 +55,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -53,8 +63,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.amqp.rabbit.AsyncRabbitTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -104,6 +116,10 @@ public abstract class AbstractDefectCommitConsumer extends AbstractDefectCommitO
     private DefectConsumerRetryLimitComponent defectConsumerRetryLimitComponent;
     @Autowired
     private ReallocateDefectAuthorService reallocateDefectAuthorService;
+    @Autowired
+    private Client client;
+    @Autowired
+    private HotColdDataSeparationService hotColdDataSeparationService;
 
     /**
      * 告警提交
@@ -112,14 +128,31 @@ public abstract class AbstractDefectCommitConsumer extends AbstractDefectCommitO
      */
     @EndReport(isOpenSource = false)
     public void commitDefect(CommitDefectVO commitDefectVO) {
+        if (commitDefectVO == null) {
+            return;
+        }
+
+        long taskId = commitDefectVO.getTaskId();
         long beginTime = System.currentTimeMillis();
         log.info("commit defect! {}", commitDefectVO);
 
         boolean isReallocate = false;
         // 处理人重新分配分配中缓存，以便在任务运行op修改操作提示
         String redisKeyForAuthorReassign = String.format(
-                RedisKeyConstants.IS_REALLOCATE + ":%d:%s", commitDefectVO.getTaskId(), commitDefectVO.getToolName());
+                RedisKeyConstants.IS_REALLOCATE + ":%d:%s", taskId, commitDefectVO.getToolName());
         try {
+            boolean isBlock = isBlockByTaskId(taskId);
+            if (isBlock) {
+                uploadTaskLogForFail(commitDefectVO, "block by task id");
+                return;
+            }
+
+            boolean mustWarmUpColdData = hotColdDataSeparationService.warmUpColdDataIfNecessary(taskId);
+            if (mustWarmUpColdData) {
+                uploadTaskLogForFail(commitDefectVO, "cold data must warm up, please try again after 10~15 minutes");
+                return;
+            }
+
             // 若是首次出队，则发送开始提单的分析记录
             if (commitDefectVO.getRecommitTimes() == null) {
                 uploadTaskLog(
@@ -137,8 +170,7 @@ public abstract class AbstractDefectCommitConsumer extends AbstractDefectCommitO
             // 获取仓库信息
             Map<String, RepoSubModuleVO> codeRepoIdMap = getRepoInfo(commitDefectVO);
 
-            isReallocate = reallocateDefectAuthorService.isReallocate(commitDefectVO.getTaskId(),
-                    commitDefectVO.getToolName());
+            isReallocate = reallocateDefectAuthorService.isReallocate(taskId, commitDefectVO.getToolName());
 
             if (isReallocate) {
                 redisTemplate.opsForValue().setIfAbsent(
@@ -158,21 +190,73 @@ public abstract class AbstractDefectCommitConsumer extends AbstractDefectCommitO
                 );
                 // 更新工具是否重新分配状态
                 if (isReallocate) {
-                    reallocateDefectAuthorService.updateCurrentStatus(commitDefectVO.getTaskId(),
-                            commitDefectVO.getToolName());
+                    reallocateDefectAuthorService.updateCurrentStatus(taskId, commitDefectVO.getToolName());
                 }
             }
-            log.info("end commitDefect {}, {}", uploadSuccess, System.currentTimeMillis() - beginTime);
+            log.info("end commitDefect, uploadSuccess: {}, task id: {}, stream name: {}, build id: {}, cost: {}",
+                    uploadSuccess, taskId, commitDefectVO.getStreamName(),
+                    commitDefectVO.getBuildId(), System.currentTimeMillis() - beginTime);
         } catch (Throwable e) {
-            e.printStackTrace();
-            log.error("commit defect fail!", e);
-            // 发送提单失败的分析记录
-            uploadTaskLog(commitDefectVO, ComConstants.StepFlag.FAIL.value(), 0, System.currentTimeMillis(),
-                    e.getLocalizedMessage());
+            log.error("commit defect fail, task id: {}, stream name: {}, build id: {}", taskId,
+                    commitDefectVO.getStreamName(), commitDefectVO.getBuildId(), e);
+            uploadTaskLogForFail(commitDefectVO, e.getLocalizedMessage());
         } finally {
             if (isReallocate) {
                 redisTemplate.delete(redisKeyForAuthorReassign);
             }
+        }
+    }
+
+    /**
+     * 校验任务Id是否被屏蔽
+     *
+     * @param taskId
+     * @return true为屏蔽，不应执行提单操作
+     */
+    private boolean isBlockByTaskId(Long taskId) {
+        // taskId为null的非法数据直接block
+        if (taskId == null || taskId == 0L) {
+            return true;
+        }
+
+        try {
+            TaskDetailVO taskDetailVO = client.getWithoutRetry(ServiceTaskRestResource.class)
+                    .getTaskInfoWithoutToolsByTaskId(taskId)
+                    .getData();
+
+            // 校验黑名单列表
+            String taskIdStr = redisTemplate.opsForValue().get(RedisKeyConstants.COMMIT_DEFECT_TASK_ID_BLOCK_LIST);
+            if (StringUtils.isNotEmpty(taskIdStr)) {
+                Set<Long> blockSet = Stream.of(taskIdStr.split(","))
+                        .filter(StringUtils::isNotEmpty)
+                        .map(y -> Long.valueOf(y.trim()))
+                        .collect(Collectors.toSet());
+
+                if (blockSet.contains(taskId)) {
+                    return true;
+                }
+            }
+
+            // 任务停用的也block
+            return taskDetailVO == null;
+        } catch (Throwable t) {
+            log.error("isBlockByTaskId fail, task id: {}", taskId, t);
+
+            // 校验期间异常，默认放行
+            return false;
+        }
+    }
+
+    private void uploadTaskLogForFail(CommitDefectVO commitDefectVO, String failMessage) {
+        try {
+            // 发送提单失败的分析记录
+            uploadTaskLog(
+                    commitDefectVO, ComConstants.StepFlag.FAIL.value(),
+                    0, System.currentTimeMillis(), failMessage
+            );
+        } catch (Throwable t) {
+            // 上报失败信息，往往已经在上层的catch的逻辑里，不应再抛出异常
+            log.error("uploadTaskLogForFail fail, {}", commitDefectVO, t);
         }
     }
 

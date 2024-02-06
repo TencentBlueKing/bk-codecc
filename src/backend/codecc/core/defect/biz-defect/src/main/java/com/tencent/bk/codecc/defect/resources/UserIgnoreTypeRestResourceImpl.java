@@ -8,8 +8,12 @@ import com.tencent.bk.codecc.defect.vo.ignore.IgnoreTypeSysVO;
 import com.tencent.devops.common.api.annotation.I18NResponse;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
+import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
+import com.tencent.devops.common.auth.api.pojo.external.ResourceType;
 import com.tencent.devops.common.web.RestResource;
 import java.util.List;
+
+import com.tencent.devops.common.web.security.AuthMethod;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -24,11 +28,13 @@ public class UserIgnoreTypeRestResourceImpl implements UserIgnoreTypeRestResourc
     private AuthExPermissionApi authExPermissionApi;
 
     @Override
+    @AuthMethod(resourceType = ResourceType.PROJECT, permission = {CodeCCAuthAction.IGNORE_TYPE_MANAGE})
     public Result<Boolean> save(String projectId, String userName, IgnoreTypeProjectConfigVO projectConfig) {
         return new Result<>(iIgnoreTypeService.ignoreTypeProjectSave(projectId, userName, projectConfig));
     }
 
     @Override
+    @AuthMethod(resourceType = ResourceType.PROJECT, permission = {CodeCCAuthAction.IGNORE_TYPE_MANAGE})
     public Result<Boolean> updateStatus(String projectId, String userName, IgnoreTypeProjectConfigVO projectConfig) {
         return new Result<>(iIgnoreTypeService.updateIgnoreTypeProjectStatus(projectId, userName, projectConfig));
     }

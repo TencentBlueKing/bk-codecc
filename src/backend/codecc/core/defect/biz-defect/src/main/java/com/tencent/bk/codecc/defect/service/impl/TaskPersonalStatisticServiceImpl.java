@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.TaskPersonalStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.TaskPersonalStatisticRepository;
 import com.tencent.bk.codecc.defect.model.TaskPersonalStatisticEntity;
 import com.tencent.bk.codecc.defect.service.TaskPersonalStatisticService;
 import com.tencent.bk.codecc.defect.vo.TaskPersonalStatisticRefreshReq;
@@ -29,7 +29,11 @@ public class TaskPersonalStatisticServiceImpl implements TaskPersonalStatisticSe
 
     @Override
     public TaskPersonalStatisticwVO getPersonalStatistic(Long taskId, String username) {
-        TaskPersonalStatisticEntity entity = taskPersonalStatisticRepository.findFirstByTaskIdAndUsername(taskId, username);
+
+        taskId = taskId == null ? Long.valueOf(0L) : taskId;
+
+        TaskPersonalStatisticEntity entity =
+                taskPersonalStatisticRepository.findFirstByTaskIdAndUsername(taskId, username);
 
         if (entity == null) {
             refresh(taskId, "from user resources");

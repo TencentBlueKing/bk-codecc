@@ -5,8 +5,15 @@ import lombok.Data;
 
 import java.util.List;
 
+/**
+ * 输出对象类
+ * @author jimxzcai
+ */
 @Data
 public class OutputVO {
 
-    private List<SimpleDefectVO> defects; //告警列表
+    /**
+     * 告警列表
+     */
+    public List<SimpleDefectVO> defects;
 }

@@ -35,7 +35,7 @@ import org.springframework.beans.factory.annotation.Value
 import javax.annotation.PostConstruct
 
 class JerseySwaggerConfig constructor(
-        private val profile: Profile
+    private val profile: Profile
 ) : JerseyConfig() {
 
     @Value("\${spring.application.desc:#{null}}")
@@ -48,6 +48,7 @@ class JerseySwaggerConfig constructor(
     private val packageName: String? = null
 
     private val logger = LoggerFactory.getLogger(JerseySwaggerConfig::class.java)
+
     @PostConstruct
     fun init() {
         logger.info("configSwagger-start")
@@ -60,10 +61,10 @@ class JerseySwaggerConfig constructor(
     private fun configSwagger() {
         if (!packageName.isNullOrBlank()) {
             val appName =
-                    with(profile)
-                    {
-                        if (isLocal()) "" else "/${getApplicationName()}"
-                    }
+                with(profile)
+                {
+                    if (isLocal()) "" else "/${getServiceName()}"
+                }
             BeanConfig().apply {
                 title = applicationDesc
                 version = applicationVersion

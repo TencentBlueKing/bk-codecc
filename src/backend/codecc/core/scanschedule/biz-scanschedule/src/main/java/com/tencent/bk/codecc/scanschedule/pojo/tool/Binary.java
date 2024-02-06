@@ -12,26 +12,56 @@
 
 package com.tencent.bk.codecc.scanschedule.pojo.tool;
 
-
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.scanschedule.pojo.input.ToolEnv;
 import lombok.Data;
-
 import java.util.List;
 
 /**
  * 二进制数据结构
+ * @author jimxzcai
  * @version V1.0
  * @date 2022/8/18
  */
 @Data
 public class Binary {
-    private String winUrl = ""; //二进制windows版本下载路径
-    private String linuxUrl = ""; //二进制Linux版本下载路径
-    private String macUrl = ""; //二进制mac版本下载路径
-    private String binaryVersion = ""; //二进制版本
-    private String winCommand = ""; //二进制Windows运行命令
-    private String linuxCommand = ""; //二进制linux运行命令
-    private String macCommand = ""; //二进制mac运行命令
-    private List<ToolEnv> toolEnvs = Lists.newArrayList(); //二进制工具依赖环境
+
+    /**
+     * 二进制windows版本下载路径
+     */
+    private String winUrl = "";
+
+    /**
+     * 二进制Linux版本下载路径
+     */
+    private String linuxUrl = "";
+
+    /**
+     * 二进制mac版本下载路径
+     */
+    private String macUrl = "";
+
+    /**
+     * 二进制版本
+     */
+    private String binaryVersion = "";
+
+    /**
+     * 二进制Windows运行命令
+     */
+    private String winCommand = "";
+
+    /**
+     * 二进制linux运行命令
+     */
+    private String linuxCommand = "";
+
+    /**
+     * 二进制mac运行命令
+     */
+    private String macCommand = "";
+
+    /**
+     * 二进制工具依赖环境
+     */
+    private List<ToolEnv> toolEnvs = Lists.newArrayList();
 }

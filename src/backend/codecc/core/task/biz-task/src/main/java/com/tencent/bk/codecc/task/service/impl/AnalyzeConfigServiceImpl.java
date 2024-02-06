@@ -705,7 +705,7 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
             String toolV = ComConstants.ToolIntegratedStatus.P.name();
 
             // 查询是否灰度项目，并获取灰度状态
-            GrayToolProjectVO grayPro = grayToolProjectService.findGrayInfoByProjectId(projectId);
+            GrayToolProjectVO grayPro = grayToolProjectService.findByProjectIdAndToolName(projectId, toolName);
             if (grayPro != null) {
                 if (grayPro.getStatus() == ComConstants.ToolIntegratedStatus.G.value()) {
                     toolV = ComConstants.ToolIntegratedStatus.G.name();

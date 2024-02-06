@@ -5,6 +5,7 @@ import com.tencent.bk.codecc.scanschedule.vo.ContentVO;
 
 /**
  * 工具扫描
+ * @author jimxzcai
  */
 public interface ToolScanService {
 

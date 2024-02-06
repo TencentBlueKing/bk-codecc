@@ -28,14 +28,11 @@ package com.tencent.bk.codecc.task.service.impl
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.common.cache.CacheBuilder
-import com.google.common.cache.CacheLoader
 import com.tencent.bk.codecc.defect.api.ServiceReportTaskLogRestResource
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO
 import com.tencent.bk.codecc.task.constant.TaskConstants
 import com.tencent.bk.codecc.task.dao.mongorepository.BaseDataRepository
 import com.tencent.bk.codecc.task.dao.mongorepository.TaskRepository
-import com.tencent.bk.codecc.task.model.GongfengPublicProjEntity
 import com.tencent.bk.codecc.task.model.TaskInfoEntity
 import com.tencent.bk.codecc.task.pojo.ActiveProjParseModel
 import com.tencent.bk.codecc.task.service.MetaService
@@ -44,6 +41,7 @@ import com.tencent.bk.codecc.task.utils.PipelineUtils
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO
 import com.tencent.bk.codecc.task.vo.BatchRegisterVO
 import com.tencent.bk.codecc.task.vo.BuildEnvVO
+import com.tencent.bk.codecc.task.vo.PipelineBasicInfoVO
 import com.tencent.bk.codecc.task.vo.RepoInfoVO
 import com.tencent.bk.codecc.task.vo.checkerset.ToolCheckerSetVO
 import com.tencent.devops.common.api.enums.RepositoryType
@@ -54,33 +52,14 @@ import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.constant.CommonMessageCode
 import com.tencent.devops.common.pipeline.Model
-import com.tencent.devops.common.pipeline.NameAndValue
 import com.tencent.devops.common.pipeline.container.Container
 import com.tencent.devops.common.pipeline.container.Stage
 import com.tencent.devops.common.pipeline.container.TriggerContainer
 import com.tencent.devops.common.pipeline.container.VMBuildContainer
-import com.tencent.devops.common.pipeline.enums.BuildFormPropertyType
-import com.tencent.devops.common.pipeline.enums.BuildScriptType
 import com.tencent.devops.common.pipeline.enums.ChannelCode
-import com.tencent.devops.common.pipeline.enums.JobRunCondition
-import com.tencent.devops.common.pipeline.enums.VMBaseOS
-import com.tencent.devops.common.pipeline.option.JobControlOption
-import com.tencent.devops.common.pipeline.pojo.BuildFormProperty
 import com.tencent.devops.common.pipeline.pojo.element.Element
-import com.tencent.devops.common.pipeline.pojo.element.ElementAdditionalOptions
-import com.tencent.devops.common.pipeline.pojo.element.RunCondition
-import com.tencent.devops.common.pipeline.pojo.element.agent.LinuxCodeCCScriptElement
-import com.tencent.devops.common.pipeline.pojo.element.agent.LinuxPaasCodeCCScriptElement
-import com.tencent.devops.common.pipeline.pojo.element.agent.LinuxScriptElement
-import com.tencent.devops.common.pipeline.pojo.element.market.MarketBuildAtomElement
-import com.tencent.devops.common.pipeline.pojo.element.market.MarketBuildLessAtomElement
-import com.tencent.devops.common.pipeline.pojo.element.trigger.ManualTriggerElement
 import com.tencent.devops.common.pipeline.pojo.element.trigger.TimerTriggerElement
-import com.tencent.devops.common.pipeline.type.codecc.CodeCCDispatchType
 import com.tencent.devops.common.service.ToolMetaCacheService
-import com.tencent.devops.common.codecc.util.JsonUtil
-import com.tencent.devops.common.util.ObjectDynamicCreator
-import com.tencent.devops.plugin.codecc.pojo.coverity.ProjectLanguage
 import com.tencent.devops.process.api.service.ServiceBuildResource
 import com.tencent.devops.process.api.service.ServicePipelineResource
 import com.tencent.devops.repository.api.ServiceRepositoryResource
@@ -94,7 +73,6 @@ import com.tencent.devops.store.api.container.ServiceContainerAppResource
 import com.tencent.devops.store.pojo.atom.InstallAtomReq
 import lombok.extern.slf4j.Slf4j
 import net.sf.json.JSONArray
-import org.apache.commons.lang.StringUtils
 import org.slf4j.LoggerFactory
 import org.springframework.beans.BeanUtils
 import org.springframework.beans.factory.annotation.Autowired
@@ -102,7 +80,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.util.*
-import java.util.concurrent.TimeUnit
 import kotlin.collections.set
 
 /**
@@ -160,9 +137,6 @@ open class PipelineServiceImpl @Autowired constructor(
                                     relPath = ""
                                 )
                             )
-                        }
-                        pipelineUtils.isOldCodeCCElement(element) -> {
-                            pipelineUtils.transferOldCodeCCElementToNew()
                         }
                         else -> {
                             element
@@ -287,107 +261,14 @@ open class PipelineServiceImpl @Autowired constructor(
         }
     }
 
+
     override fun updatePipelineTools(
         userName: String, taskId: Long, toolList: List<String>, taskInfoEntity: TaskInfoEntity?,
         updateType: ComConstants.PipelineToolUpdateType, registerVO: BatchRegisterVO?, relPath: String?
     ): Set<String> {
-        var currentToolSet = mutableSetOf<String>()
-        if (null == taskInfoEntity) {
-            return currentToolSet
-        }
-
-        // 获取CodeCC原子
-        val codeElement = pipelineUtils.getOldCodeElement(registerVO, relPath)
-
-        val scriptType =
-            BuildScriptType.valueOf(if (registerVO?.projectBuildType.isNullOrBlank()) BuildScriptType.SHELL.name else registerVO!!.projectBuildType)
-        val script = if (registerVO?.projectBuildCommand.isNullOrBlank()) "echo" else registerVO?.projectBuildCommand
-        val osType =
-            if (registerVO != null && !registerVO.osType.isNullOrBlank()) VMBaseOS.valueOf(registerVO.osType) else null
-        val buildEnv = if (registerVO?.buildEnv != null) registerVO.buildEnv else null
-        updateCodeCCModel(
-            userName,
-            taskInfoEntity,
-            toolList,
-            updateType,
-            null,
-            scriptType,
-            script,
-            codeElement,
-            osType,
-            buildEnv
-        )
-        return currentToolSet
+        return mutableSetOf()
     }
 
-    /**
-     * 初始化老的服务型流水线的Params元素，以配合流水线支持触发单个工具
-     *
-     * @date 2019/6/27
-     * @version V4.0
-     */
-    private fun initParamsElementForStageOne(stage: Stage): Stage {
-        if ("stage-1" == stage.id) {
-            val containerList = mutableListOf<Container>()
-            stage.containers.forEachIndexed { index, container ->
-                val newContainer = if (index == 0) {
-                    val params = (container as TriggerContainer).params.toMutableList()
-                    val containParams = checkIsPipelineContainParams(params)
-                    //params肯定不会为空
-                    if (!containParams) {
-                        val param = BuildFormProperty(
-                            id = "_CODECC_FILTER_TOOLS",
-                            required = false,
-                            type = BuildFormPropertyType.STRING,
-                            defaultValue = "",
-                            options = null,
-                            desc = "",
-                            repoHashId = null,
-                            relativePath = null,
-                            scmType = null,
-                            containerType = null,
-                            glob = null,
-                            properties = mapOf()
-                        )
-                        params.add(param)
-                    }
-                    TriggerContainer(
-                        id = container.id,
-                        name = container.name,
-                        elements = container.elements,
-                        status = container.status,
-                        startEpoch = container.startEpoch,
-                        systemElapsed = container.systemElapsed,
-                        elementElapsed = container.elementElapsed,
-                        params = params,
-                        templateParams = container.templateParams,
-                        buildNo = container.buildNo,
-                        canRetry = container.canRetry,
-                        containerId = container.containerId,
-                        jobId = null
-                    )
-                } else {
-                    container
-                }
-                containerList.add(newContainer)
-            }
-            return Stage(containerList, stage.id)
-        }
-        return stage
-    }
-
-    /**
-     * 检查pipeline里面的params是否已经有值,有值返回true，否则返回false
-     *
-     * @param paramList
-     * @return
-     */
-    private fun checkIsPipelineContainParams(paramList: List<BuildFormProperty>): Boolean {
-        return if (paramList.isNullOrEmpty()) {
-            false
-        } else
-            paramList.any { it.id.isBlank() && "_CODECC_FILTER_TOOLS".equals(it.id, ignoreCase = true) }
-    }
 
     /**
      * 启动流水线
@@ -471,7 +352,7 @@ open class PipelineServiceImpl @Autowired constructor(
             logger.error("get repo list fail!")
             throw CodeCCException(CommonMessageCode.BLUE_SHIELD_INTERNAL_ERROR)
         }
-        return repoResult.data!!.map { (repositoryHashId, aliasName, url, type, _, _, _, authType) ->
+        return repoResult.data!!.map { (repositoryHashId, aliasName, url, type, _, _, _, _, authType) ->
             val repoInfoVO = RepoInfoVO()
             repoInfoVO.repoHashId = repositoryHashId
             repoInfoVO.url = url
@@ -480,6 +361,26 @@ open class PipelineServiceImpl @Autowired constructor(
             repoInfoVO.aliasName = aliasName
             repoInfoVO
         }
+    }
+
+    override fun getPipelineBasicInfo(projectId: String, pipelineIds: Set<String>): List<PipelineBasicInfoVO> {
+        val result = client.getDevopsService(ServicePipelineResource::class.java)
+            .getPipelineByIds(projectId, pipelineIds)
+        if (result.isNotOk() || null == result.data) {
+            logger.error("get pipeline names fail")
+            throw CodeCCException(CommonMessageCode.BLUE_SHIELD_INTERNAL_ERROR)
+        }
+
+        val ret = mutableListOf<PipelineBasicInfoVO>()
+        result.data!!.forEach {
+            val item = PipelineBasicInfoVO()
+            item.pipelineId = it.pipelineId
+            item.pipelineName = it.pipelineName
+            item.projectId = it.projectId
+            ret.add(item)
+        }
+
+        return ret
     }
 
     /**
@@ -585,7 +486,7 @@ open class PipelineServiceImpl @Autowired constructor(
         } else {
             ChannelCode.CODECC_EE
         }
-        val modelResult = client.getDevopsService(ServicePipelineResource::class.java)
+        val modelResult = client.getDevopsService(ServicePipelineResource::class.java, projectId)
             .get(userName, projectId, pipelineId, channelCode)
         if (modelResult.isNotOk() || null == modelResult.data) {
             logger.error("get pipeline info fail! bs project id: {}, bs pipeline id: {}", projectId, pipelineId)
@@ -836,184 +737,54 @@ open class PipelineServiceImpl @Autowired constructor(
         taskId: Long,
         checkerSets: List<ToolCheckerSetVO>
     ): Boolean {
-        var taskEntity = taskRepository.findFirstByTaskId(taskId)
-        updateCodeCCModel(userName, taskEntity, null, null, checkerSets, null, null, null, null, null)
-        return true
+       return true
     }
 
-    private fun updateCodeCCModel(
-        userName: String,
-        taskInfoEntity: TaskInfoEntity,
-        toolList: List<String>?,
-        toolUpdateType: ComConstants.PipelineToolUpdateType?,
-        checkerSets: List<ToolCheckerSetVO>?,
-        scriptType: BuildScriptType?,
-        script: String?,
-        codeElement: Element?,
-        osType: VMBaseOS?,
-        buildEnv: Map<String, String>?
-    ) {
-        val projectId = taskInfoEntity.projectId
-        val pipelineId = taskInfoEntity.pipelineId
-        val createFrom = taskInfoEntity.createFrom
-
-        var currentToolSet = mutableSetOf<String>()
-
-        //如果是从流水线创建的
-        val model = getPipelineModel(userName, projectId, pipelineId, createFrom, taskInfoEntity.nameEn)
-
-        val newModel = with(model)
-        {
-            val stageList = mutableListOf<Stage>()
-            stages.forEach { stage ->
-                val containerList = mutableListOf<Container>()
-                var newStage = stage
-                if (ComConstants.BsTaskCreateFrom.BS_PIPELINE.value() == createFrom) {
-                    newStage = initParamsElementForStageOne(stage)
-                }
-                newStage.containers.forEach { container ->
-
-                    val newContainer: Container =
-                        if (container is VMBuildContainer &&
-                            container.elements.any { it is LinuxCodeCCScriptElement || it is LinuxPaasCodeCCScriptElement }
+    override fun searchLostRelationPipelineIds(
+        pipelineIdSet: Set<String>,
+        projectId: String,
+        taskId: Long,
+        userName: String
+    ): Set<String> {
+        val result = mutableSetOf<String>()
+        pipelineIdSet.forEach p@{ pipelineId ->
+            val model = getPipelineModel(userName, projectId, pipelineId, ChannelCode.BS)
+            model.stages.forEach s@{ stage ->
+                stage.containers.forEach c@{ container ->
+                    container.elements.forEach e@{ element ->
+                        if (element.getAtomCode() != ComConstants.AtomCode.CODECC_V2.code() &&
+                            element.getAtomCode() != ComConstants.AtomCode.CODECC_V3.code()
                         ) {
-                            val elementList = mutableListOf<Element>()
-                            container.elements.forEach { element ->
-                                val newElement: Element =
-                                    if (element is LinuxCodeCCScriptElement && element.getClassType() == LinuxCodeCCScriptElement.classType) {
-                                        val tools = element.tools
-                                        if (!tools.isNullOrEmpty()) {
-                                            currentToolSet.addAll(tools)
-                                        }
-                                        if (toolUpdateType != null && toolList != null) {
-                                            when (toolUpdateType) {
-                                                ComConstants.PipelineToolUpdateType.ADD ->
-                                                    currentToolSet.addAll(toolList)
-                                                ComConstants.PipelineToolUpdateType.REMOVE ->
-                                                    currentToolSet.removeAll(toolList)
-                                                ComConstants.PipelineToolUpdateType.REPLACE ->
-                                                    currentToolSet = toolList.toMutableSet()
-                                                ComConstants.PipelineToolUpdateType.GET ->
-                                                    currentToolSet
-                                            }
-                                        }
-                                        LinuxCodeCCScriptElement(
-                                            name = element.name,
-                                            id = element.id,
-                                            status = element.status,
-                                            scriptType = scriptType ?: element.scriptType,
-                                            script = script ?: element.script,
-                                            codeCCTaskName = element.codeCCTaskName,
-                                            codeCCTaskCnName = element.codeCCTaskCnName,
-                                            languages = localConvertDevopsCodeLang(taskInfoEntity.codeLang).map { ProjectLanguage.valueOf(it) },
-                                            asynchronous = element.asynchronous,
-                                            scanType = element.scanType,
-                                            path = element.path,
-                                            compilePlat = element.compilePlat,
-                                            tools = if (currentToolSet.isNullOrEmpty()) element.tools else currentToolSet.toList(),
-                                            pyVersion = element.pyVersion,
-                                            eslintRc = element.eslintRc,
-                                            phpcsStandard = element.phpcsStandard,
-                                            goPath = element.goPath
-                                        )
-                                    } else if (element is LinuxPaasCodeCCScriptElement && element.getClassType() == LinuxPaasCodeCCScriptElement.classType) {
-                                        // 加入规则集
-                                        logger.info("update pipeline checkerSets: {}", JsonUtil.toJson(checkerSets))
-                                        if (!checkerSets.isNullOrEmpty()) {
-                                            var fieldMap = mutableMapOf<String, String>()
-                                            for (checkerSet in checkerSets) {
-                                                var fieldKey = checkerSet.toolName.toLowerCase() + "ToolSetId"
-                                                if (ComConstants.Tool.CHECKSTYLE.name == checkerSet.toolName) {
-                                                    fieldKey = "checkStyleToolSetId"
-                                                } else if (ComConstants.Tool.STYLECOP.name == checkerSet.toolName) {
-                                                    fieldKey = "styleCopToolSetId"
-                                                } else if (ComConstants.Tool.GOML.name == checkerSet.toolName) {
-                                                    fieldKey = "gometalinterToolSetId"
-                                                } else if (ComConstants.Tool.WOODPECKER_SENSITIVE.name == checkerSet.toolName) {
-                                                    fieldKey = "woodpeckerToolSetId"
-                                                }
-                                                val fieldValue = checkerSet.checkerSetId
-                                                fieldMap[fieldKey] = fieldValue
-                                            }
-                                            var elementWithCheckerSet: LinuxCodeCCScriptElement =
-                                                ObjectDynamicCreator.setFieldValue(
-                                                    fieldMap,
-                                                    LinuxCodeCCScriptElement::class.java
-                                                )
-                                            ObjectDynamicCreator.copyNonNullProperties(
-                                                elementWithCheckerSet, element,
-                                                LinuxCodeCCScriptElement::class.java, fieldMap.keys
-                                            )
-                                            logger.info("updated element: {}", JsonUtil.toJson(element))
-                                        }
-                                        element
-                                    } else if (null != codeElement && ComConstants.BsTaskCreateFrom.BS_PIPELINE.value() != createFrom
-                                        && (pipelineUtils.isOldCodeElement(element))
-                                    ) {
-                                        codeElement
-                                    } else {
-                                        element
-                                    }
-                                elementList.add(newElement)
-                            }
-                            VMBuildContainer(
-                                containerId = container.containerId,
-                                id = container.id,
-                                name = container.name,
-                                elements = elementList,
-                                status = container.status,
-                                startEpoch = container.startEpoch,
-                                systemElapsed = container.systemElapsed,
-                                elementElapsed = container.elementElapsed,
-                                baseOS = osType ?: container.baseOS,
-                                vmNames = container.vmNames,
-                                maxQueueMinutes = container.maxQueueMinutes,
-                                maxRunningMinutes = container.maxRunningMinutes,
-                                buildEnv = buildEnv ?: container.buildEnv,
-                                customBuildEnv = container.customBuildEnv,
-                                thirdPartyAgentId = container.thirdPartyAgentId,
-                                thirdPartyAgentEnvId = container.thirdPartyAgentEnvId,
-                                thirdPartyWorkspace = container.thirdPartyWorkspace,
-                                dockerBuildVersion = container.dockerBuildVersion,
-                                tstackAgentId = null,
-                                canRetry = container.canRetry,
-                                enableExternal = container.enableExternal,
-                                jobControlOption = container.jobControlOption,
-                                mutexGroup = container.mutexGroup,
-                                dispatchType = container.dispatchType
-                            )
-                        } else {
-                            container
+                            return@e
                         }
-                    containerList.add(newContainer)
+
+                        val asyncTaskId = pipelineUtils.getAsyncTaskIdFromElement(element)
+                        if (asyncTaskId != null && asyncTaskId == taskId) {
+                            return@p
+                        }
+                    }
                 }
-                stageList.add(Stage(containerList, newStage.id))
             }
-            Model(name, desc, stageList, labels, instanceFromTemplate, pipelineCreator)
+
+            result.add(pipelineId)
         }
 
-        val modifyResult = when (createFrom) {
-            ComConstants.BsTaskCreateFrom.BS_PIPELINE.value() ->
-                client.getDevopsService(ServicePipelineResource::class.java)
-                    .edit(userName, projectId, pipelineId, newModel, ChannelCode.BS)
-            ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value() ->
-                client.getDevopsService(ServicePipelineResource::class.java)
-                    .edit(userName, projectId, pipelineId, newModel, ChannelCode.GONGFENGSCAN)
-            else -> {
-                var channelCode = ChannelCode.CODECC_EE
-                if (taskInfoEntity.nameEn.startsWith(ComConstants.OLD_CODECC_ENNAME_PREFIX)) {
-                    channelCode = ChannelCode.CODECC
-                }
-                client.getDevopsService(ServicePipelineResource::class.java)
-                    .edit(userName, projectId, pipelineId, newModel, channelCode)
-            }
-        }
+        return result
+    }
 
-        if (modifyResult.isNotOk() || modifyResult.data != true) {
-            logger.error("mongotemplate bs pipeline info fail! bs project id: $projectId")
+    private fun getPipelineModel(
+        userName: String,
+        projectId: String,
+        pipelineId: String,
+        channelCode: ChannelCode
+    ): Model {
+        val result = client.getDevopsService(ServicePipelineResource::class.java)
+            .get(userName, projectId, pipelineId, channelCode)
+        if (result.isNotOk() || null == result.data) {
+            logger.error("get incremental info fail! bs project id: {}, bs incremental id: {}", projectId, pipelineId)
             throw CodeCCException(CommonMessageCode.BLUE_SHIELD_INTERNAL_ERROR)
         }
-        logger.info("update pipeline info successfully! project id: $projectId, pipeline id: $pipelineId")
+        return result.data as Model
     }
 
     private fun getPipelineModel(

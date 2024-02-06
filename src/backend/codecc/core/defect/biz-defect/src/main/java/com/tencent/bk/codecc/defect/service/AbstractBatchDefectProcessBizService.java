@@ -116,7 +116,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
                     break;
                 }
             }
-            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errorMsg.toString()});
+            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{errorMsg.toString()});
         }
     }
 

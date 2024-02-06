@@ -7,319 +7,375 @@
       <i class="bk-icon icon-close f22" @click="handleBanner"></i>
     </div>
     <component :is="layout">
-      <div style="height: 100%" v-bkloading="{ isLoading: mainContentLoading, opacity: 0.3 }">
-        <router-view v-if="isRouterAlive" class="main-content" :key="$route.fullPath" />
+      <div
+        style="height: 100%"
+        v-bkloading="{ isLoading: mainContentLoading, opacity: 0.3 }"
+      >
+        <router-view
+          v-if="isRouterAlive"
+          class="main-content"
+          :key="$route.fullPath"
+        />
       </div>
     </component>
     <app-auth ref="bkAuth"></app-auth>
-    <bk-dialog v-model="oauthDialogvisiable"
-               theme="primary"
-               :confirm-fn="goOauth"
-               :mask-close="false">
-      <p class="f18">{{$t('请先将工蜂OAuth授权给蓝盾')}}</p>
+    <bk-dialog
+      v-model="oauthDialogVisible"
+      theme="primary"
+      :confirm-fn="goOauth"
+    >
+      <p class="f18">{{ $t('请先将工蜂OAuth授权给蓝盾') }}</p>
     </bk-dialog>
     <!-- 添加权限 -->
-    <bk-dialog v-model="permissionDialogvisiable"
-               theme="primary"
-               :confirm-fn="comfirmPermission"
-               :mask-close="false">
-      <p class="f18">{{$t('暂无权限，请联系任务管理员添加权限。')}}</p>
+    <bk-dialog
+      v-model="permissionDialogVisible"
+      theme="primary"
+      :confirm-fn="confirmPermission"
+    >
+      <p class="f18">{{ $t('暂无权限，请联系任务管理员添加权限。') }}</p>
     </bk-dialog>
     <!-- 新版本更新 -->
-    <bk-dialog v-model="newVersionDialogVisible"
-               class="notice"
-               width="760"
-               :title="newVersionMes.noticeName">
+    <bk-dialog
+      v-model="newVersionDialogVisible"
+      class="notice"
+      width="760"
+      :title="newVersionMes.noticeName"
+    >
       <section class="notice-content new-version">
-        <div class="notice-newversion" v-for="(list, index) in newVersionList" :key="index">
-          <p class="notice-header">{{list[0]}}</p>
-          <span class="f14">{{list[1]}}</span>
+        <div
+          class="notice-newversion"
+          v-for="(list, index) in newVersionList"
+          :key="index"
+        >
+          <p class="notice-header">{{ list[0] }}</p>
+          <span class="f14">{{ list[1] }}</span>
         </div>
       </section>
       <div slot="footer" class="notice-footer">
         <bk-button theme="primary" @click="handleNotice('newVersionMes')">
-          <a v-if="newVersionMes.buttonHref" target="_blank" :href="newVersionMes.buttonHref">{{newVersionMes.buttonName || $t('确定')}}</a>
-          <span v-else>{{newVersionMes.buttonName || $t('确定')}}</span>
+          <a
+            v-if="newVersionMes.buttonHref"
+            target="_blank"
+            :href="newVersionMes.buttonHref"
+          >{{ newVersionMes.buttonName || $t('确定') }}</a
+          >
+          <span v-else>{{ newVersionMes.buttonName || $t('确定') }}</span>
         </bk-button>
       </div>
     </bk-dialog>
     <!-- 公告 -->
-    <bk-dialog v-model="noticeDialogVisible"
-               class="notice"
-               :title="noticeMes.noticeName"
-               width="760">
+    <bk-dialog
+      v-model="noticeDialogVisible"
+      class="notice"
+      :title="noticeMes.noticeName"
+      width="760"
+    >
       <section class="notice-content p20">
-        <div class="notice-list" v-for="(list, index) in noticeList" :key="index">
-          <span>{{list}}</span>
+        <div
+          class="notice-list"
+          v-for="(list, index) in noticeList"
+          :key="index"
+        >
+          <span>{{ list }}</span>
         </div>
       </section>
       <div slot="footer" class="notice-footer">
         <bk-button theme="primary" @click="handleNotice('noticeMes')">
-          <a v-if="noticeMes.buttonHref" target="_blank" :href="noticeMes.buttonHref">{{noticeMes.buttonName || $t('确定')}}</a>
-          <span v-else>{{noticeMes.buttonName || $t('确定')}}</span>
+          <a
+            v-if="noticeMes.buttonHref"
+            target="_blank"
+            :href="noticeMes.buttonHref"
+          >{{ noticeMes.buttonName || $t('确定') }}</a
+          >
+          <span v-else>{{ noticeMes.buttonName || $t('确定') }}</span>
         </bk-button>
       </div>
     </bk-dialog>
   </div>
 </template>
 <script>
-  import { mapGetters, mapState } from 'vuex'
-  import { bus } from './common/bus'
-  import { toggleLang } from './i18n'
-  import { getToolMeta, getToolList, getTaskList } from './common/preload'
-  import Aegis from 'aegis-web-sdk'
+import { mapGetters, mapState } from 'vuex';
+import { bus } from './common/bus';
+import { toggleLang } from './i18n';
+import { getToolMeta, getToolList, getTaskList } from './common/preload';
+import Aegis from 'aegis-web-sdk';
 
-  export default {
-    name: 'app',
-    data() {
-      return {
-        appLoading: false,
-        oauthDialogvisiable: false,
-        permissionDialogvisiable: false,
-        noticeMesVisiable: true,
-        newVersionMesVisiable: true,
-        isRouterAlive: true,
+export default {
+  name: 'App',
+  data() {
+    return {
+      appLoading: false,
+      oauthDialogVisible: false,
+      permissionDialogVisible: false,
+      noticeMesVisible: true,
+      newVersionMesVisible: true,
+      isRouterAlive: true,
+    };
+  },
+  provide() {
+    return {
+      reload: this.reload,
+    };
+  },
+  computed: {
+    ...mapGetters(['user']),
+    ...mapGetters(['mainContentLoading']),
+    ...mapState('task', {
+      status: 'status',
+    }),
+    ...mapGetters('op', {
+      isMaintainClose: 'isMaintainClose',
+    }),
+    ...mapState('op', {
+      maintainMes: 'maintain',
+      noticeMes: 'notice',
+      newVersionMes: 'newVersion',
+    }),
+    layout() {
+      return `layout-${this.$route.meta.layout}`;
+    },
+    projectId() {
+      return this.$route.params.projectId;
+    },
+    taskId() {
+      return this.$route.params.taskId;
+    },
+    newVersionDialogVisible() {
+      return (
+        !this.noticeDialogVisible
+        && this.newVersionMesVisible
+        && this.newVersionMes.noticeSerial
+        && !window.localStorage.getItem(`codecc-notice-${this.newVersionMes.noticeSerial}`)
+      );
+    },
+    noticeDialogVisible() {
+      return (
+        this.noticeMesVisible
+        && this.noticeMes.noticeSerial
+        && !window.localStorage.getItem(`codecc-notice-${this.noticeMes.noticeSerial}`)
+      );
+    },
+    newVersionList() {
+      if (!this.newVersionMes.noticeDesc) return [];
+      const contents = this.newVersionMes.noticeDesc.split(/\n{2,}/g, 4);
+      const list = contents.map(content => content.split(/\n/g, 2));
+      return list;
+    },
+    noticeList() {
+      if (!this.noticeMes.noticeDesc) return [];
+      return this.noticeMes.noticeDesc.split(/\n/g);
+    },
+  },
+  watch: {
+    async '$route.fullPath'(val) {
+      // 同步地址到蓝盾
+      if (window.self !== window.top) {
+        // iframe嵌入
+        devopsUtil.syncUrl(val.replace(/^\/codecc\//, '/')); // eslint-disable-line
       }
-    },
-    provide() {
-      return {
-        reload: this.reload,
+      // 进到具体项目页面，项目停用跳转到任务管理
+      if (this.taskId) {
+        const res = await this.$store.dispatch('task/status');
+        if (res.status === 1) {
+          this.$router.push({ name: 'task-settings-manage' });
+        }
+        if (!res.status.gongfengProjectId) {
+          // 工蜂开源项目少调一个接口
+          getTaskList();
+        }
       }
+      getToolMeta();
+      getToolList();
     },
-    computed: {
-      ...mapGetters(['user']),
-      ...mapGetters(['mainContentLoading']),
-      ...mapState('task', {
-        status: 'status',
-      }),
-      ...mapGetters('op', {
-        isMaintainClose: 'isMaintainClose',
-      }),
-      ...mapState('op', {
-        maintainMes: 'maintain',
-        noticeMes: 'notice',
-        newVersionMes: 'newVersion',
-      }),
-      layout() {
-        return `layout-${this.$route.meta.layout}`
-      },
-      projectId() {
-        return this.$route.params.projectId
-      },
-      taskId() {
-        return this.$route.params.taskId
-      },
-      newVersionDialogVisible() {
-        return !this.noticeDialogVisible && this.newVersionMesVisiable && this.newVersionMes.noticeSerial
-          && !window.localStorage.getItem(`codecc-notice-${this.newVersionMes.noticeSerial}`)
-      },
-      noticeDialogVisible() {
-        return this.noticeMesVisiable && this.noticeMes.noticeSerial
-          && !window.localStorage.getItem(`codecc-notice-${this.noticeMes.noticeSerial}`)
-      },
-      newVersionList() {
-        if (!this.newVersionMes.noticeDesc) return []
-        const contents = this.newVersionMes.noticeDesc.split(/\n{2,}/g, 4)
-        const list = contents.map(content => content.split(/\n/g, 2))
-        return list
-      },
-      noticeList() {
-        if (!this.noticeMes.noticeDesc) return []
-        return this.noticeMes.noticeDesc.split(/\n/g)
-      },
-    },
-    watch: {
-      async '$route.fullPath'(val) { // 同步地址到蓝盾
-        if (window.self !== window.top) { // iframe嵌入
-          devopsUtil.syncUrl(val.replace(/^\/codecc\//, '/')) // eslint-disable-line
-        }
-        // 进到具体项目页面，项目停用跳转到任务管理
-        if (this.taskId) {
-          const res = await this.$store.dispatch('task/status')
-          if (res.status === 1) {
-            this.$router.push({ name: 'task-settings-manage' })
-          }
-          if (!res.status.gongfengProjectId) { // 工蜂开源项目少调一个接口
-            getTaskList()
-          }
-        }
-        getToolMeta()
-        getToolList()
-      },
-    },
-    created() {
-      const aegis = new Aegis({
-        id: window.AEGISID, // 项目ID
-        uin: this.user.username, // 用户唯一 ID（可选）
-        reportApiSpeed: true, // 接口测速
-        reportAssetSpeed: true, // 静态资源测速
-      })
-      // 蓝盾切换项目
-      window.addEventListener('change::$currentProjectId', (data) => {
-        if (this.$route.params.projectId && this.$route.params.projectId !== data.detail.currentProjectId) {
-          this.goHome(data.detail.currentProjectId)
-          document.cookie = `X-DEVOPS-PROJECT-ID=${data.detail.currentProjectId};domain=${location.host};path=/`
-        }
-      })
-      // 蓝盾回到首页
-      window.addEventListener('order::backHome', (data) => {
-        if (this.$route.name !== 'task-list') {
-          this.goHome()
-        }
-      })
-    },
-    mounted() {
-      const self = this
-      bus.$on('show-login-modal', () => {
-        self.$refs.bkAuth.showLoginModal()
-      })
-      bus.$on('close-login-modal', () => {
-        self.$refs.bkAuth.hideLoginModal()
-        setTimeout(() => {
-          window.location.reload()
-        }, 0)
-      })
+  },
+  created() {
+    const aegis = new Aegis({
+      id: window.AEGISID, // 项目ID
+      uin: this.user.username, // 用户唯一 ID（可选）
+      reportApiSpeed: true, // 接口测速
+      reportAssetSpeed: true, // 静态资源测速
+    });
+    // 蓝盾切换项目
+    window.addEventListener('change::$currentProjectId', (data) => {
+      if (
+        this.$route.params.projectId
+        && this.$route.params.projectId !== data.detail.currentProjectId
+      ) {
+        this.goHome(data.detail.currentProjectId);
+        document.cookie = `X-DEVOPS-PROJECT-ID=${data.detail.currentProjectId};domain=${location.host};path=/`;
+      }
+    });
+    // 蓝盾回到首页
+    window.addEventListener('order::backHome', (data) => {
+      if (this.$route.name !== 'task-list') {
+        this.goHome();
+      }
+    });
+  },
+  mounted() {
+    const self = this;
+    bus.$on('show-login-modal', () => {
+      self.$refs.bkAuth.showLoginModal();
+    });
+    bus.$on('close-login-modal', () => {
+      self.$refs.bkAuth.hideLoginModal();
+      setTimeout(() => {
+        window.location.reload();
+      }, 0);
+    });
 
-      bus.$on('show-app-loading', () => {
-        self.appLoading = true
-      })
-      bus.$on('hide-app-loading', () => {
-        self.appLoading = false
-      })
+    bus.$on('show-app-loading', () => {
+      self.appLoading = true;
+    });
+    bus.$on('hide-app-loading', () => {
+      self.appLoading = false;
+    });
 
-      bus.$on('show-content-loading', () => {
-        this.$store.commit('setMainContentLoading', true, { root: true })
-      })
-      bus.$on('hide-content-loading', () => {
-        this.$store.commit('setMainContentLoading', false, { root: true })
-      })
+    bus.$on('show-content-loading', () => {
+      this.$store.commit('setMainContentLoading', true, { root: true });
+    });
+    bus.$on('hide-content-loading', () => {
+      this.$store.commit('setMainContentLoading', false, { root: true });
+    });
 
-      bus.$on('show-oauth-dialog', () => {
-        this.oauthDialogvisiable = true
-      })
-      bus.$on('show-permission-dialog', () => {
-        this.permissionDialogvisiable = true
-      })
+    bus.$on('show-oauth-dialog', () => {
+      this.oauthDialogVisible = true;
+    });
+    bus.$on('show-permission-dialog', () => {
+      this.permissionDialogVisible = true;
+    });
+  },
+  methods: {
+    /**
+     * router 跳转
+     *
+     * @param {string} idx 页面指示
+     */
+    goPage(idx) {
+      this.$router.push({
+        name: idx,
+      });
     },
-    methods: {
-      /**
-       * router 跳转
-       *
-       * @param {string} idx 页面指示
-       */
-      goPage(idx) {
-        this.$router.push({
-          name: idx,
-        })
-      },
-      handleToggleLang() {
-        toggleLang()
-      },
-      goHome(projectId) {
-        const params = projectId ? { projectId } : {}
-        this.$router.replace({
-          name: 'task-list',
-          params,
-        })
-      },
-      handleBanner() {
-        const localKey = `codecc-maintain-${this.maintainMes.noticeSerial}`
-        window.localStorage.setItem(localKey, true)
-        this.$store.commit('op/updateMaintainClose', true)
-      },
-      goOauth() {
-        this.oauthDialogvisiable = false
-        this.$store.dispatch('defect/oauthUrl', { toolName: this.$route.params.toolId }).then((res) => {
-          window.open(res, '_blank')
-        })
-      },
-      handleNotice(key) {
-        const localKey = `codecc-notice-${this[key].noticeSerial}`
-        window.localStorage.setItem(localKey, true)
-        this[`${key}Visiable`] = false
-      },
-      handleHttp(str) {
-        let newStr = str.replace(/>/g, '&gt;').replace(/</g, '&lt;')
-        const reg = /\[([^\]]+)\]\(([http:\\|https:\\]{1}[^)]+)\)/g
-        newStr = newStr.replace(reg, '<a target="_blank" href=\'$2\'>$1</a>')
-        return newStr
-      },
-      comfirmPermission() {
-        this.permissionDialogvisiable = false
-        this.$router.push({ name: 'task-settings-authority' })
-      },
-      reload() {
-        this.isRouterAlive = false
-        this.$nextTick(() => {
-          this.isRouterAlive = true
-        })
-      },
+    handleToggleLang() {
+      toggleLang();
     },
-  }
+    goHome(projectId) {
+      const params = projectId ? { projectId } : {};
+      this.$router.replace({
+        name: 'task-list',
+        params,
+      });
+    },
+    handleBanner() {
+      const localKey = `codecc-maintain-${this.maintainMes.noticeSerial}`;
+      window.localStorage.setItem(localKey, true);
+      this.$store.commit('op/updateMaintainClose', true);
+    },
+    goOauth() {
+      this.oauthDialogVisible = false;
+      this.$store
+        .dispatch('defect/oauthUrl', { toolName: this.$route.params.toolId })
+        .then((res) => {
+          window.open(res, '_blank');
+        });
+    },
+    handleNotice(key) {
+      const localKey = `codecc-notice-${this[key].noticeSerial}`;
+      window.localStorage.setItem(localKey, true);
+      this[`${key}Visible`] = false;
+    },
+    handleHttp(str) {
+      let newStr = str.replace(/>/g, '&gt;').replace(/</g, '&lt;');
+      const reg = /\[([^\]]+)\]\(([http:\\|https:\\]{1}[^)]+)\)/g;
+      newStr = newStr.replace(reg, '<a target="_blank" href=\'$2\'>$1</a>');
+      return newStr;
+    },
+    confirmPermission() {
+      this.permissionDialogVisible = false;
+      this.$router.push({ name: 'task-settings-authority' });
+    },
+    reload() {
+      this.isRouterAlive = false;
+      this.$nextTick(() => {
+        this.isRouterAlive = true;
+      });
+    },
+  },
+};
 </script>
 
 <style>
-    @import "./css/reset.css";
-    @import "./css/app.css";
+@import url('./css/reset.css');
+@import url('./css/app.css');
 
-    #app {
-      min-width: 1280px;
-      color: #737987;
-      > .bk-loading {
-        z-index: 999999;
-      }
-    }
+#app {
+  min-width: 1280px;
+  color: #737987;
+
+  > .bk-loading {
+    z-index: 999999;
+  }
+}
 </style>
 <style scoped lang="postcss">
-    .banner {
-      background-color: #fdf6e2;
-      border-bottom: 1px solid #d5dbe0;
-      color: #ec531d;
-      font-size: 14px;
-      height: 30px;
+.banner {
+  width: 100%;
+  height: 30px;
+  padding: 0 20px;
+  font-size: 14px;
+  line-height: 30px;
+  color: #ec531d;
+  text-align: center;
+  background-color: #fdf6e2;
+  border-bottom: 1px solid #d5dbe0;
+
+  .icon-close {
+    float: right;
+    line-height: 30px;
+    cursor: pointer;
+  }
+}
+
+.notice {
+  z-index: 9999;
+
+  .notice-content {
+    height: auto;
+    min-height: 200px;
+    margin-top: -20px;
+    font-size: 16px;
+
+    .notice-list {
       line-height: 30px;
-      padding: 0 20px;
-      text-align: center;
-      width: 100%;
-      .icon-close {
-        float: right;
-        line-height: 30px;
-        cursor: pointer;
+    }
+  }
+
+  .notice-newversion {
+    padding-left: 60px;
+
+    .notice-header {
+      font-size: 16px;
+      font-weight: bold;
+      line-height: 3;
+
+      &::before {
+        position: absolute;
+        left: 60px;
+        width: 15px;
+        height: 15px;
+        margin-top: 18px;
+        background: url('images/guide-txt.png') no-repeat;
+        content: '';
       }
     }
-    .notice {
-      z-index: 9999;
-      .notice-content {
-        min-height: 200px;
-        height: auto;
-        font-size: 16px;
-        margin-top: -20px;
-        .notice-list {
-          line-height: 30px;
-        }
-      }
-      .notice-newversion {
-        padding-left: 60px;
-        .notice-header {
-          font-size: 16px;
-          line-height: 3;
-          font-weight: bold;
-          &:before {
-            content: '';
-            background: url(images/guide-txt.png) no-repeat;
-            position: absolute;
-            width: 15px;
-            height: 15px;
-            left: 60px;
-            margin-top: 18px;
-          }
-        }
-      }
-      .notice-footer {
-        text-align: center;
-        a {
-          color: #fff;
-        }
-      }
+  }
+
+  .notice-footer {
+    text-align: center;
+
+    a {
+      color: #fff;
     }
+  }
+}
 </style>

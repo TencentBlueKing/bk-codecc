@@ -1,13 +1,13 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildDefectSummaryRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildDefectV2Repository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoInfoRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.BuildDefectSummaryDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.BuildDefectV2Dao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.ToolBuildInfoDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildDefectSummaryRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CodeRepoInfoRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.BuildDefectSummaryDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.BuildDefectV2Dao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.ToolBuildInfoDao;
 import com.tencent.bk.codecc.defect.model.BuildDefectSummaryEntity;
 import com.tencent.bk.codecc.defect.model.BuildDefectSummaryEntity.CodeRepo;
 import com.tencent.bk.codecc.defect.model.BuildDefectV2Entity;
@@ -22,6 +22,7 @@ import com.tencent.bk.codecc.defect.vo.common.BuildWithBranchVO;
 import com.tencent.devops.common.constant.ComConstants.DefectStatus;
 import com.tencent.devops.common.redis.lock.RedisLock;
 import com.tencent.devops.common.service.BaseDataCacheService;
+import com.tencent.devops.common.util.BeanUtils;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +30,6 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -144,8 +144,11 @@ public class BuildSnapshotServiceImpl implements BuildSnapshotService {
             List<LintDefectV2Entity> allNewDefectList,
             List<LintDefectV2Entity> allIgnoreDefectList
     ) {
+        int size = (CollectionUtils.isNotEmpty(allNewDefectList) ? allNewDefectList.size() : 0)
+                + (CollectionUtils.isNotEmpty(allIgnoreDefectList) ? allIgnoreDefectList.size() : 0);
+        List<BuildDefectV2Entity> insertList = Lists.newArrayListWithExpectedSize(size);
         if (CollectionUtils.isNotEmpty(allNewDefectList)) {
-            List<BuildDefectV2Entity> insertList = allNewDefectList.stream()
+            insertList.addAll(allNewDefectList.stream()
                     .filter(defect -> defect.getStatus() == DefectStatus.NEW.value())
                     .map(defect ->
                             constructBuildDefectV2Entity(taskId, toolName, buildEntity.getBuildId(),
@@ -153,15 +156,11 @@ public class BuildSnapshotServiceImpl implements BuildSnapshotService {
                                     defect.getBranch(), defect.getSubModule(), defect.getLineNum(),
                                     null, null
                             )
-                    ).collect(Collectors.toList());
-
-            buildDefectV2Dao.save(insertList);
-            insertList.clear();
-            insertList = null;
+                    ).collect(Collectors.toList()));
         }
 
         if (CollectionUtils.isNotEmpty(allIgnoreDefectList)) {
-            List<BuildDefectV2Entity> insertList = allIgnoreDefectList.stream()
+            insertList.addAll(allIgnoreDefectList.stream()
                     .filter(defect -> (defect.getStatus() & DefectStatus.IGNORE.value()) > 0
                             && (defect.getStatus() & DefectStatus.FIXED.value()) == 0)
                     .map(defect ->
@@ -170,8 +169,10 @@ public class BuildSnapshotServiceImpl implements BuildSnapshotService {
                                     defect.getBranch(), defect.getSubModule(), defect.getLineNum(),
                                     null, null
                             )
-                    ).collect(Collectors.toList());
+                    ).collect(Collectors.toList()));
+        }
 
+        if (CollectionUtils.isNotEmpty(insertList)) {
             buildDefectV2Dao.save(insertList);
             insertList.clear();
             insertList = null;
@@ -189,8 +190,12 @@ public class BuildSnapshotServiceImpl implements BuildSnapshotService {
             List<CCNDefectEntity> allNewDefectList,
             List<CCNDefectEntity> allIgnoreDefectList
     ) {
+        int size = (allNewDefectList != null ? allNewDefectList.size() : 0)
+                + (allIgnoreDefectList != null ? allIgnoreDefectList.size() : 0);
+        List<BuildDefectV2Entity> insertList = Lists.newArrayListWithExpectedSize(size);
+
         if (CollectionUtils.isNotEmpty(allNewDefectList)) {
-            List<BuildDefectV2Entity> insertList = allNewDefectList.stream()
+            insertList.addAll(allNewDefectList.stream()
                     .filter(defect -> defect.getStatus() == DefectStatus.NEW.value())
                     .map(defect ->
                             constructBuildDefectV2Entity(taskId, toolName, buildEntity.getBuildId(),
@@ -198,13 +203,12 @@ public class BuildSnapshotServiceImpl implements BuildSnapshotService {
                                     defect.getRevision(), defect.getBranch(), defect.getSubModule(), null,
                                     defect.getStartLines(), defect.getEndLines()
                             )
-                    ).collect(Collectors.toList());
-
-            buildDefectV2Dao.save(insertList);
+                    ).collect(Collectors.toList())
+            );
         }
 
         if (CollectionUtils.isNotEmpty(allIgnoreDefectList)) {
-            List<BuildDefectV2Entity> insertList = allIgnoreDefectList.stream()
+            insertList.addAll(allIgnoreDefectList.stream()
                     .filter(defect -> (defect.getStatus() & DefectStatus.IGNORE.value()) > 0
                             && (defect.getStatus() & DefectStatus.FIXED.value()) == 0)
                     .map(defect ->
@@ -213,10 +217,16 @@ public class BuildSnapshotServiceImpl implements BuildSnapshotService {
                                     defect.getRevision(), defect.getBranch(), defect.getSubModule(), null,
                                     defect.getStartLines(), defect.getEndLines()
                             )
-                    ).collect(Collectors.toList());
-
-            buildDefectV2Dao.save(insertList);
+                    ).collect(Collectors.toList())
+            );
         }
+
+        if (insertList.size() > 0) {
+            buildDefectV2Dao.save(insertList);
+            insertList.clear();
+            insertList = null;
+        }
+
         // 更新下次扫描告警快照基准构建号
         toolBuildInfoDao.updateDefectBaseBuildId(taskId, toolName, buildEntity.getBuildId());
     }
@@ -244,7 +254,7 @@ public class BuildSnapshotServiceImpl implements BuildSnapshotService {
         }
 
         if (CollectionUtils.isNotEmpty(allIgnoreDefectList)) {
-            List<BuildDefectV2Entity> insertList = allNewDefectList.stream()
+            List<BuildDefectV2Entity> insertList = allIgnoreDefectList.stream()
                     .filter(defect -> (defect.getStatus() & DefectStatus.IGNORE.value()) > 0
                             && (defect.getStatus() & DefectStatus.FIXED.value()) == 0)
                     .map(defect ->
@@ -365,22 +375,5 @@ public class BuildSnapshotServiceImpl implements BuildSnapshotService {
         entity.setEndLines(endLines);
 
         return entity;
-    }
-
-    /**
-     * 仅根据任务Id获取最后构建Id
-     *
-     * @param taskId
-     * @return
-     */
-    private String getLastBuildIdByTaskId(long taskId) {
-        List<BuildDefectSummaryEntity> buildDefectSummaryList =
-                buildDefectSummaryRepository.findByTaskIdOrderByBuildTimeDesc(taskId, PageRequest.of(0, 1));
-
-        if (CollectionUtils.isNotEmpty(buildDefectSummaryList)) {
-            return buildDefectSummaryList.get(0).getBuildId();
-        }
-
-        return "";
     }
 }

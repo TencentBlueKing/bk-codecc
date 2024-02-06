@@ -14,6 +14,7 @@ import com.tencent.devops.common.constant.ComConstants.ToolPattern;
 import com.tencent.devops.common.service.IConsumer;
 import com.tencent.devops.common.web.mq.ConstantsKt;
 import java.util.Collection;
+import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -99,13 +100,13 @@ public class CommonDefectMigrationConsumer extends AbstractDefectMigration imple
      * @see CommonAnalyzeTaskBizServiceImpl#postHandleDefectsAndStatistic(UploadTaskLogStepVO, TaskDetailVO)
      */
     private Pair<String, String> getDefectCommitBizMQInfo(CommitDefectVO vo) {
-        String toolName = vo.getToolName().toLowerCase();
+        String toolName = vo.getToolName().toLowerCase(Locale.ENGLISH);
         boolean isGongfengScan = BsTaskCreateFrom.GONGFENG_SCAN.value().equalsIgnoreCase(vo.getCreateFrom());
         String exchange;
         String routingKey;
 
         if (Tool.PINPOINT.name().equalsIgnoreCase(toolName)) {
-            String toolPattern = ToolPattern.PINPOINT.name().toLowerCase();
+            String toolPattern = ToolPattern.PINPOINT.name().toLowerCase(Locale.ENGLISH);
 
             if (isGongfengScan) {
                 exchange = String.format("%s%s.opensource", ConstantsKt.PREFIX_EXCHANGE_DEFECT_COMMIT, toolPattern);

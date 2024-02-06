@@ -12,6 +12,9 @@
 
 package com.tencent.bk.codecc.quartz.job;
 
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_CHECKER_DEFECT_STAT;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CHECKER_DEFECT_STAT;
+
 import com.tencent.bk.codecc.quartz.pojo.QuartzJobContext;
 import com.tencent.bk.codecc.task.pojo.RefreshCheckerDefectStatModel;
 import org.jetbrains.annotations.NotNull;
@@ -49,6 +52,6 @@ public class CheckerDefectStatTask implements IScheduleTask {
         RefreshCheckerDefectStatModel model = new RefreshCheckerDefectStatModel(dataFrom, statDate);
 
         logger.info("beginning checker defect statistics: {}.", dataFrom);
-        rabbitTemplate.convertAndSend("exchange.checker.defect.stat", "route.checker.defect.stat", model);
+        rabbitTemplate.convertAndSend(EXCHANGE_CHECKER_DEFECT_STAT, ROUTE_CHECKER_DEFECT_STAT, model);
     }
 }

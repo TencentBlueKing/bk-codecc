@@ -15,6 +15,7 @@ package com.tencent.bk.codecc.defect.aop
 import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity
 import com.tencent.bk.codecc.defect.service.statistic.ActiveStatisticService
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO
+import com.tencent.devops.common.constant.ComConstants.ScanStatType
 import com.tencent.devops.common.util.ThreadPoolUtil
 import org.aspectj.lang.annotation.After
 import org.aspectj.lang.annotation.Aspect
@@ -40,13 +41,12 @@ class ActiveStatisticAop @Autowired constructor(
         }
     }
 
-    @After("doPointcut()&&args(clocStatisticEntity)")
-    fun afterMethod(clocStatisticEntity: Collection<CLOCStatisticEntity>) {
+    @After("doPointcut()&&args(clocStatisticEntity,scanStatType)")
+    fun afterMethod(clocStatisticEntity: Collection<CLOCStatisticEntity>, scanStatType: ScanStatType) {
         if (!clocStatisticEntity.isNullOrEmpty()) {
             ThreadPoolUtil.addRunnableTask {
-                activeStatisticService.statCodeLineByCloc(clocStatisticEntity)
+                activeStatisticService.statCodeLineByCloc(clocStatisticEntity, scanStatType)
             }
         }
     }
-
 }

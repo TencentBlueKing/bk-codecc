@@ -29,8 +29,7 @@ import java.util.Set;
  */
 @Data
 @ApiModel("查询规则清单首页实体类")
-public class CheckerListQueryReq
-{
+public class CheckerListQueryReq {
     @ApiModelProperty("关键字")
     private String keyWord;
 
@@ -63,7 +62,4 @@ public class CheckerListQueryReq
 
     @ApiModelProperty("是否规则集选中")
     private Set<Boolean> checkerSetSelected;
-
-
-
 }

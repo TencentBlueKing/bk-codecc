@@ -19,9 +19,14 @@ public class ServiceGrayToolProjectResourceImpl implements ServiceGrayToolProjec
     @Autowired
     private GrayToolProjectService grayToolProjectService;
 
+//    @Override
+//    public Result<GrayToolProjectVO> getGrayToolProjectInfoByProjectId(String projectId) {
+//        return new Result<>(grayToolProjectService.findGrayInfoByProjectId(projectId));
+//    }
+
     @Override
-    public Result<GrayToolProjectVO> getGrayToolProjectInfoByProjectId(String projectId) {
-        return new Result<>(grayToolProjectService.findGrayInfoByProjectId(projectId));
+    public Result<List<GrayToolProjectVO>> getGrayToolProjectDetail(String projectId) {
+        return Result.success(grayToolProjectService.getGrayToolListByProjectId(projectId));
     }
 
     @Override
@@ -30,7 +35,8 @@ public class ServiceGrayToolProjectResourceImpl implements ServiceGrayToolProjec
     }
 
     @Override
-    public Result<Boolean> processGrayReport(Long taskId, String buildId, GrayTaskStatVO grayTaskStatVO) {
+    public Result<Boolean> processGrayReport(Long taskId, String buildId, String toolName,
+            GrayTaskStatVO grayTaskStatVO) {
         return new Result<>(true);
     }
 }

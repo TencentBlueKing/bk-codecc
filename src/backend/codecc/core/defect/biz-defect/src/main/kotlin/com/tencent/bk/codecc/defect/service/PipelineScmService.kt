@@ -37,7 +37,7 @@ interface PipelineScmService {
      * @version V4.0
      */
     fun getFileContent(taskId: Long, repoId: String?, filePath: String,
-        reversion: String?, branch: String?, subModule: String?, createFrom: String): String?
+        reversion: String?, branch: String?, subModule: String?, createFrom: String, url: String?): String?
 
     /**
      * 通过OAUTH方式获取文件详情
@@ -68,5 +68,14 @@ interface PipelineScmService {
         filePath: String,
         reversion: String?,
         branch: String?
+    ): String?
+
+    /**
+     * 从文件换成中获取
+     */
+    fun getFileContentFromFileCache(
+        taskId: Long,
+        buildId: String?,
+        filePath: String
     ): String?
 }

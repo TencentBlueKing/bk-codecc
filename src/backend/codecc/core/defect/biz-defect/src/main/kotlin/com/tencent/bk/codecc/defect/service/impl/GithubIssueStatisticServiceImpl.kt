@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.service.impl
 
 import com.fasterxml.jackson.core.type.TypeReference
-import com.tencent.bk.codecc.defect.dao.mongotemplate.GithubStatDefectDao
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.GithubStatDefectDao
 import com.tencent.bk.codecc.defect.model.defect.GithubIssueDefectEntity
 import com.tencent.devops.common.codecc.util.JsonUtil
 import com.tencent.devops.common.codecc.util.JsonUtil.to

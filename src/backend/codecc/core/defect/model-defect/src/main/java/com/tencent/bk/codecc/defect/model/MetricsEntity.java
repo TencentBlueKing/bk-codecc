@@ -1,8 +1,10 @@
 package com.tencent.bk.codecc.defect.model;
 
+import com.tencent.codecc.common.db.CommonEntity;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
@@ -12,6 +14,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.mapping.Sharded;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Document(collection = "t_metrics")
 @AllArgsConstructor
 @NoArgsConstructor
@@ -19,7 +22,7 @@ import org.springframework.data.mongodb.core.mapping.Sharded;
     @CompoundIndex(name = "taskid_buildid_idx_1", def = "{'task_id':1, 'build_id':1}", background = true)
 )
 @Sharded(shardKey = "task_id")
-public class MetricsEntity {
+public class MetricsEntity extends CommonEntity {
     public MetricsEntity(Long taskId, String buildId, double codeStyleScore, double codeSecurityScore, double codeMeasureScore, double rdIndicatorsScore) {
         this.taskId = taskId;
         this.buildId = buildId;

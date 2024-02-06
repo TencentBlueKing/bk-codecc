@@ -26,7 +26,7 @@
 
 package com.tencent.bk.codecc.defect.service.impl.pipelinereport;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.DUPCStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DUPCStatisticRepository;
 import com.tencent.bk.codecc.defect.model.statistic.DUPCStatisticEntity;
 import com.tencent.bk.codecc.defect.model.pipelinereport.DUPCSnapShotEntity;
 import com.tencent.bk.codecc.defect.model.pipelinereport.ToolSnapShotEntity;
@@ -46,8 +46,8 @@ import org.springframework.stereotype.Service;
  */
 @Service("DUPCCheckerReportBizService")
 @Slf4j
-public class DUPCCheckReportBizServiceImpl implements ICheckReportBizService
-{
+public class DUPCCheckReportBizServiceImpl implements ICheckReportBizService {
+
     @Autowired
     private DUPCStatisticRepository dupcStatisticRepository;
 
@@ -61,19 +61,19 @@ public class DUPCCheckReportBizServiceImpl implements ICheckReportBizService
     private String devopsSchemes;
 
     @Override
-    public ToolSnapShotEntity getReport(long taskId, String projectId, String toolName, String buildId)
-    {
+    public ToolSnapShotEntity getReport(long taskId, String projectId, String toolName, String buildId) {
         DUPCSnapShotEntity dupcSnapShotEntity = new DUPCSnapShotEntity();
         handleToolBaseInfo(dupcSnapShotEntity, taskId, toolName, projectId);
         DUPCStatisticEntity dupcStatistic = dupcStatisticRepository.findFirstByTaskIdAndBuildId(taskId, buildId);
-        if (dupcStatistic == null)
-        {
+        if (dupcStatistic == null) {
             return dupcSnapShotEntity;
         }
         dupcSnapShotEntity.setTotalDupfileCount(dupcStatistic.getDefectCount());
         dupcSnapShotEntity.setChangedDupfileCount(dupcStatistic.getDefectChange());
-        dupcSnapShotEntity.setCurrentDupRate(String.format("%s%s", String.format("%.2f", dupcStatistic.getDupRate()), "%"));
-        dupcSnapShotEntity.setChangedDupRate(String.format("%s%s", String.format("%.2f", dupcStatistic.getDupRateChange()), "%"));
+        dupcSnapShotEntity.setCurrentDupRate(
+                String.format("%s%s", String.format("%.2f", dupcStatistic.getDupRate()), "%"));
+        dupcSnapShotEntity.setChangedDupRate(
+                String.format("%s%s", String.format("%.2f", dupcStatistic.getDupRateChange()), "%"));
         dupcSnapShotEntity.setSuperHigh(dupcStatistic.getSuperHighCount());
         dupcSnapShotEntity.setHigh(dupcStatistic.getHighCount());
         dupcSnapShotEntity.setMedium(dupcStatistic.getMediumCount());
@@ -83,8 +83,8 @@ public class DUPCCheckReportBizServiceImpl implements ICheckReportBizService
     }
 
 
-    private void handleToolBaseInfo(DUPCSnapShotEntity dupcSnapShotEntity, long taskId, String toolName, String projectId)
-    {
+    private void handleToolBaseInfo(DUPCSnapShotEntity dupcSnapShotEntity, long taskId, String toolName,
+            String projectId) {
         //获取工具信息
         dupcSnapShotEntity.setToolNameCn(toolMetaCacheService.getToolDisplayName(toolName));
         dupcSnapShotEntity.setToolNameEn(toolName);

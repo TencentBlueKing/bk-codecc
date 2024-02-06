@@ -12,17 +12,22 @@
 
 package com.tencent.bk.codecc.codeccjob.consumer;
 
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_CHECKER_DEFECT_STAT;
+import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_CHECKER_DEFECT_STAT;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CHECKER_DEFECT_STAT;
+
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.codeccjob.dao.ToolMetaCacheServiceImpl;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.CheckerDefectStatRepository;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.CheckerMisreportStatRepository;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.CheckerRepository;
-import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.CheckerSetDao;
-import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.CheckerSetTaskRelationshipDao;
-import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.LintDefectV2Dao;
-import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.OperationHistoryDao;
+import com.tencent.bk.codecc.codeccjob.dao.core.mongorepository.CheckerRepository;
+import com.tencent.bk.codecc.codeccjob.dao.core.mongotemplate.CheckerSetDao;
+import com.tencent.bk.codecc.codeccjob.dao.core.mongotemplate.CheckerSetTaskRelationshipDao;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.CheckerDefectStatRepository;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.CheckerMisreportStatRepository;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongotemplate.OperationHistoryDao;
 import com.tencent.bk.codecc.defect.model.CheckerDefectStatEntity;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.CheckerMisreportStatEntity;
@@ -45,6 +50,17 @@ import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.ToolPattern;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.util.DateTimeUtils;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import com.tencent.devops.common.util.ThreadUtils;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -60,20 +76,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_CHECKER_DEFECT_STAT;
-import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_CHECKER_DEFECT_STAT;
-import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CHECKER_DEFECT_STAT;
-
 /**
  * 规则告警统计消费者
  *
@@ -84,6 +86,36 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CHECKER_DEFECT_
 @Component
 public class CheckerDefectStatConsumer {
 
+    /**
+     * 定义告警状态
+     */
+    public static final int EXIST = ComConstants.DefectStatus.NEW.value();
+    public static final int FIXED = EXIST | ComConstants.DefectStatus.FIXED.value();
+    public static final int FIXED2 = FIXED | ComConstants.DefectStatus.IGNORE.value();
+    public static final int FIXED3 = FIXED | ComConstants.DefectStatus.PATH_MASK.value();
+    public static final int FIXED4 = FIXED | ComConstants.DefectStatus.CHECKER_MASK.value();
+    public static final int IGNORE = EXIST | ComConstants.DefectStatus.IGNORE.value();
+    public static final int EXCLUDE = EXIST | ComConstants.DefectStatus.PATH_MASK.value();
+    public static final int EXCLUDE2 = EXIST | ComConstants.DefectStatus.CHECKER_MASK.value();
+    /**
+     * 规则误报base data的paramCode
+     */
+    private static final String CHECKER_MISREPORT = "CHECKER_MISREPORT";
+    /**
+     * 规则误报base data的paramType
+     */
+    private static final String OPERA_FUNC = "OPERA_FUNC";
+    /**
+     * 告警字段常量
+     */
+    private static final String FIELD_IGNORE_TIME = "ignore_time";
+    /**
+     * 定义除忽略以外的状态值
+     */
+    protected final Set<Integer> defectStatusSet =
+            Sets.newHashSet(EXIST, FIXED, FIXED2, FIXED3, FIXED4, EXCLUDE, EXCLUDE2);
+    @Autowired
+    protected CheckerMisreportStatRepository checkerMisreportStatRepo;
     @Autowired
     private Client client;
     @Autowired
@@ -102,55 +134,26 @@ public class CheckerDefectStatConsumer {
     private RedisTemplate<String, String> redisTemplate;
     @Autowired
     private OperationHistoryDao operationHistoryDao;
-    @Autowired
-    protected CheckerMisreportStatRepository checkerMisreportStatRepo;
-
-
-    /**
-     * 规则误报base data的paramCode
-     */
-    private static final String CHECKER_MISREPORT = "CHECKER_MISREPORT";
-
-    /**
-     * 规则误报base data的paramType
-     */
-    private static final String OPERA_FUNC = "OPERA_FUNC";
-
-    /**
-     * 告警字段常量
-     */
-    private static final String FIELD_IGNORE_TIME = "ignore_time";
-
-    /**
-     * 定义告警状态
-     */
-    public static final int EXIST = ComConstants.DefectStatus.NEW.value();
-    public static final int FIXED = EXIST | ComConstants.DefectStatus.FIXED.value();
-    public static final int FIXED2 = FIXED | ComConstants.DefectStatus.IGNORE.value();
-    public static final int FIXED3 = FIXED | ComConstants.DefectStatus.PATH_MASK.value();
-    public static final int FIXED4 = FIXED | ComConstants.DefectStatus.CHECKER_MASK.value();
-
-    public static final int IGNORE = EXIST | ComConstants.DefectStatus.IGNORE.value();
-    public static final int EXCLUDE = EXIST | ComConstants.DefectStatus.PATH_MASK.value();
-    public static final int EXCLUDE2 = EXIST | ComConstants.DefectStatus.CHECKER_MASK.value();
-
-    /**
-     * 定义除忽略以外的状态值
-     */
-    protected final Set<Integer> defectStatusSet =
-            Sets.newHashSet(EXIST, FIXED, FIXED2, FIXED3, FIXED4, EXCLUDE, EXCLUDE2);
 
     /**
      * 定时按规则统计各种状态的告警数
      *
      * @param model model
      */
-    @RabbitListener(bindings = @QueueBinding(key = ROUTE_CHECKER_DEFECT_STAT,
-            value = @Queue(value = QUEUE_CHECKER_DEFECT_STAT),
-            exchange = @Exchange(value = EXCHANGE_CHECKER_DEFECT_STAT, durable = "false")))
+    @RabbitListener(
+            bindings = @QueueBinding(key = ROUTE_CHECKER_DEFECT_STAT,
+                    value = @Queue(value = QUEUE_CHECKER_DEFECT_STAT),
+                    exchange = @Exchange(
+                            value = EXCHANGE_CHECKER_DEFECT_STAT,
+                            durable = "false")
+            ),
+            concurrency = "1"
+    )
     public void consumer(RefreshCheckerDefectStatModel model) {
         try {
+            log.info("CheckerDefectStatConsumer begin, mq obj: {}", model);
             businessCore(model);
+            log.info("CheckerDefectStatConsumer end, mq obj: {}", model);
         } catch (Throwable t) {
             log.error("CheckerDefectStatConsumer error, mq obj: {}", model, t);
         }
@@ -158,6 +161,12 @@ public class CheckerDefectStatConsumer {
 
     private void businessCore(RefreshCheckerDefectStatModel model) {
         Assert.notNull(model, "RefreshCheckerDefectStatModel must not be null!");
+
+        String stopFlag = redisTemplate.opsForValue().get("CHECKER_DEFECT_STAT_CONSUMER_STOP_FLAG");
+        if (StringUtils.isNotEmpty(stopFlag) && "1".equals(stopFlag)) {
+            log.info("CHECKER_DEFECT_STAT_CONSUMER_STOP_FLAG is open");
+            return;
+        }
 
         // 统计规则误报率
         try {
@@ -180,7 +189,6 @@ public class CheckerDefectStatConsumer {
         String toolOrderStr = client.get(ServiceToolRestResource.class).findToolOrder().getData();
         Assert.notNull(toolOrderStr, "tool data must not be null!");
         List<String> toolList = Lists.newArrayList(toolOrderStr.split(ComConstants.STRING_SPLIT));
-
 
         // 暂存所有工具的规则
         Map<String, Set<String>> toolCheckerInfoMap = Maps.newHashMap();
@@ -263,7 +271,6 @@ public class CheckerDefectStatConsumer {
                         Collectors.toMap(CheckerStatisticEntity::getId, CheckerStatisticEntity::getDefectCount));
                 Map<String, Integer> excludeCountMap = excludeStatEntities.stream().collect(
                         Collectors.toMap(CheckerStatisticEntity::getId, CheckerStatisticEntity::getDefectCount));
-
 
                 for (String checker : checkerKeySet) {
                     CheckerDefectStatEntity entity = defectStatEntityMap.get(toolName + checker);
@@ -367,13 +374,13 @@ public class CheckerDefectStatConsumer {
     /**
      * 组装生成规则告警统计实体
      *
-     * @param toolName        工具
-     * @param dataFrom        统计数据来源 enum DefectStatType
+     * @param toolName 工具
+     * @param dataFrom 统计数据来源 enum DefectStatType
      * @param checkerUsageMap 规则使用量
-     * @param checkers        规则列表
-     * @param existCountMap   待修复数
-     * @param fixedCountMap   已修复数
-     * @param ignoreCountMap  已忽略数
+     * @param checkers 规则列表
+     * @param existCountMap 待修复数
+     * @param fixedCountMap 已修复数
+     * @param ignoreCountMap 已忽略数
      * @param excludeCountMap 已屏蔽数
      * @param checkerCreateTimeMap 规则创建时间
      * @return list
@@ -600,7 +607,8 @@ public class CheckerDefectStatConsumer {
 
     /**
      * 把告警评论纳入统计
-     * @param timeCheckerTaskIdsMap    查询范围
+     *
+     * @param timeCheckerTaskIdsMap 查询范围
      * @param timeCheckerCommentIdsMap 各时间各规则评论数
      */
     private void statDefectByComment(long startTime, long endTime, String tool, Set<Long> taskIdSet,
@@ -638,8 +646,9 @@ public class CheckerDefectStatConsumer {
 
     /**
      * 纳入统计的告警
+     *
      * @param timeCheckerTaskIdsMap 统计数据关系映射
-     * @param defectV2EntityList    需纳入统计的告警
+     * @param defectV2EntityList 需纳入统计的告警
      */
     private void putDefectListIntoStatistics(Map<Long, Map<String, Set<Long>>> timeCheckerTaskIdsMap,
             List<LintDefectV2Entity> defectV2EntityList) {
@@ -673,6 +682,7 @@ public class CheckerDefectStatConsumer {
 
     /**
      * 给实体对象赋值
+     *
      * @param entity 实体对象
      * @param statusDefectCountMap 状态告警Map
      */
@@ -752,6 +762,7 @@ public class CheckerDefectStatConsumer {
 
     /**
      * 全量任务太多，仅统计有指定操作类型的任务
+     *
      * @return set
      */
     private Set<String> getOperaFuncIdSet() {

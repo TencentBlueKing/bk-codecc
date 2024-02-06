@@ -1,23 +1,57 @@
 <template>
   <div>
-    <bk-sideslider quick-close="true" :title="$t('操作记录')" width="776" :is-show.sync="visiable" @hidden="closeSlider">
+    <bk-sideslider
+      quick-close="true"
+      :title="$t('操作记录')"
+      width="776"
+      :is-show.sync="visible"
+      @hidden="closeSlider"
+    >
       <div class="slider-content" slot="content">
         <bk-table
-          style="margin-top: 15px;"
-          :data="operateRecords instanceof Array ? operateRecords.slice((pagination.current - 1) * pagination.limit, pagination.current * pagination.limit) : ''"
+          style="margin-top: 15px"
+          :data="
+            operateRecords instanceof Array
+              ? operateRecords.slice(
+                (pagination.current - 1) * pagination.limit,
+                pagination.current * pagination.limit
+              )
+              : ''
+          "
           :size="size"
         >
-          <bk-table-column type="index" :label="$t('序号')" align="center" width="70"></bk-table-column>
-          <bk-table-column :label="$t('操作人')" prop="operator" width="100"></bk-table-column>
-          <bk-table-column :label="$t('操作类型')" prop="operTypeName" width="125"></bk-table-column>
+          <bk-table-column
+            type="index"
+            :label="$t('序号')"
+            align="center"
+            width="70"
+          ></bk-table-column>
+          <bk-table-column
+            :label="$t('操作人')"
+            prop="operator"
+            width="100"
+          ></bk-table-column>
+          <bk-table-column
+            :label="$t('操作类型')"
+            prop="operTypeName"
+            width="125"
+          ></bk-table-column>
           <bk-table-column :label="$t('相关信息')" prop="operMsg">
-            <template slot-scope="props"> <span class="operMsg" :title="props.row.operMsg">{{ props.row.operMsg }}</span></template>
+            <template slot-scope="props">
+              <span class="operMsg" :title="props.row.operMsg">{{
+                props.row.operMsg
+              }}</span></template
+            >
           </bk-table-column>
-          <bk-table-column :label="$t('操作时间')" prop="time" width="200"></bk-table-column>
+          <bk-table-column
+            :label="$t('操作时间')"
+            prop="time"
+            width="200"
+          ></bk-table-column>
           <div slot="empty">
             <div class="codecc-table-empty-text">
-              <img src="../../images/empty.png" class="empty-img">
-              <div>{{$t('暂无操作记录')}}</div>
+              <img src="../../images/empty.png" class="empty-img" />
+              <div>{{ $t('暂无操作记录') }}</div>
             </div>
           </div>
         </bk-table>
@@ -37,93 +71,95 @@
   </div>
 </template>
 <script>
-  import { mapState } from 'vuex'
-  import { format } from 'date-fns'
-  export default {
-    props: {
-      data: {
-        type: Object,
-        default: {},
+import { mapState } from 'vuex';
+import { format } from 'date-fns';
+export default {
+  props: {
+    data: {
+      type: Object,
+      default: {},
+    },
+    visible: {
+      type: Boolean,
+      default: false,
+    },
+    funcId: {
+      type: Array,
+      default: [],
+    },
+  },
+  data() {
+    return {
+      pagination: {
+        current: 1,
+        count: 0,
+        limit: 10,
+        align: 'right',
       },
-      visiable: {
-        type: Boolean,
-        default: false,
-      },
-      funcId: {
-        type: Array,
-        default: [],
+    };
+  },
+  computed: {
+    ...mapState('defect', {
+      operateRecords: 'records',
+    }),
+  },
+  watch: {
+    visible: {
+      handler(newVal, oldVal) {
+        this.init();
       },
     },
-    data() {
-      return {
-        pagination: {
-          current: 1,
-          count: 0,
-          limit: 10,
-          align: 'right',
-        },
-      }
+  },
+  mounted() {},
+  created() {},
+  methods: {
+    closeSlider() {
+      this.$emit('update:visible', false);
     },
-    computed: {
-      ...mapState('defect', {
-        operateRecords: 'records',
-      }),
+    init() {
+      window.scrollTo(0, 0);
+      this.pagination = {
+        current: 1,
+        count: 0,
+        limit: 10,
+        align: 'right',
+      };
+      Object.values(this.operateRecords).forEach((value) => {
+        value.time = format(value.time, 'yyyy-MM-dd HH:mm:ss');
+      });
+      this.pagination.count = this.operateRecords.length;
     },
-    watch: {
-      visiable: {
-        handler(newVal, oldVal) {
-          this.init()
-        },
-      },
+    handlePageChange(page) {
+      this.pagination.current = page;
     },
-    mounted() {
+    limitChange(limit) {
+      this.pagination.limit = limit;
+      this.pagination.current = 1;
     },
-    created() {
-    },
-    methods: {
-      closeSlider() {
-        this.$emit('update:visiable', false)
-      },
-      init() {
-        window.scrollTo(0, 0)
-        this.pagination = {
-          current: 1,
-          count: 0,
-          limit: 10,
-          align: 'right',
-        }
-        Object.values(this.operateRecords).forEach((value) => {
-          value.time = format(value.time, 'YYYY-MM-DD HH:mm:ss')
-        })
-        this.pagination.count = this.operateRecords.length
-      },
-      handlePageChange(page) {
-        this.pagination.current = page
-      },
-      limitChange(limit) {
-        this.pagination.limit = limit
-        this.pagination.current = 1
-      },
-    },
-  }
+  },
+};
 </script>
 <style lang="postcss" scoped>
-    .slider-content {
-      height: auto;
-      padding: 30px;
-      .pagination {
-        padding-top: 10px;
-      }
-    }
-    .operMsg {
-      display: block;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .bk-sideslider-content div {
-    }
-    .bk-sideslider-content #logContainer,
-    .bk-sideslider-content div {
-    }
+.slider-content {
+  height: auto;
+  padding: 30px;
+
+  .pagination {
+    padding-top: 10px;
+  }
+}
+
+.operMsg {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bk-sideslider-content div {
+}
+
+.bk-sideslider-content #logContainer,
+.bk-sideslider-content div {
+}
 </style>

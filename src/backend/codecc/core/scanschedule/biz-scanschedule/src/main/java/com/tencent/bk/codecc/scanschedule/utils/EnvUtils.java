@@ -1,16 +1,18 @@
 package com.tencent.bk.codecc.scanschedule.utils;
 
 import com.tencent.devops.common.api.enums.OSType;
+import java.util.Objects;
+import java.util.Locale;
 
-import java.util.*;
-
+/**
+ * 环境操作公共类
+ * @author jimxzcai
+ */
 public class EnvUtils {
     private static OSType os = null;
 
     /**
      * 判断系统类型
-     *
-     * @return
      */
     public static OSType getOS() {
         if (Objects.isNull(os)) {

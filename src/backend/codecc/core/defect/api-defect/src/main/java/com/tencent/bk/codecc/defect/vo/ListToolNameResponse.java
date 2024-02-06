@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 @Data
 public class ListToolNameResponse extends ArrayList<ToolBase> {
 
+    private static final long serialVersionUID = 1L;
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor

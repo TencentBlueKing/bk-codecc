@@ -3,22 +3,24 @@
  * @author blueking
  */
 
-import webpack from 'webpack'
-import CopyWebpackPlugin from 'copy-webpack-plugin'
-import { VueLoaderPlugin } from 'vue-loader'
-import friendlyFormatter from 'eslint-friendly-formatter'
-import HardSourceWebpackPlugin from 'hard-source-webpack-plugin'
+import webpack from 'webpack';
+import CopyWebpackPlugin from 'copy-webpack-plugin';
+import { VueLoaderPlugin } from 'vue-loader';
+import friendlyFormatter from 'eslint-friendly-formatter';
+import HardSourceWebpackPlugin from 'hard-source-webpack-plugin';
 
-import { resolve, assetsPath, resolveAssetsPublicPath } from './util'
-import config from './config'
+import { resolve, assetsPath } from './util';
+import config from './config';
 
-const isProd = process.env.NODE_ENV === 'production'
+const isProd = process.env.NODE_ENV === 'production';
 
 export default {
   output: {
     path: isProd ? config.build.assetsRoot : config.dev.assetsRoot,
     filename: '[name].js',
-    publicPath: isProd ? config.build.assetsPublicPath : config.dev.assetsPublicPath,
+    publicPath: isProd
+      ? config.build.assetsPublicPath
+      : config.dev.assetsPublicPath,
   },
 
   resolve: {
@@ -66,18 +68,22 @@ export default {
       },
       {
         test: /\.js$/,
-        use: [{
-          loader: 'babel-loader',
-          options: {
-            // include: [resolve('src')],
-            include: [resolve('src'), resolve('node_modules/bk-magic-vue')],
-            cacheDirectory: './webpack_cache/',
-            // 确保 JS 的转译应用到 node_modules 的 Vue 单文件组件
-            exclude: file => (
-              /node_modules/.test(file) && !/\.vue\.js/.test(file)
-            ),
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              // include: [resolve('src')],
+              include: [
+                resolve('src'),
+                resolve('node_modules/bk-magic-vue'),
+              ],
+              cacheDirectory: './webpack_cache/',
+              // 确保 JS 的转译应用到 node_modules 的 Vue 单文件组件
+              exclude: (file) =>
+                /node_modules/.test(file) && !/\.vue\.js/.test(file),
+            },
           },
-        }],
+        ],
       },
       {
         test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
@@ -85,7 +91,6 @@ export default {
         options: {
           limit: 10000,
           name: assetsPath('images/[name].[hash:7].[ext]'),
-          // publicPath: resolveAssetsPublicPath,
         },
       },
       {
@@ -95,7 +100,6 @@ export default {
           options: {
             limit: 10000,
             name: assetsPath('media/[name].[hash:7].[ext]'),
-            publicPath: resolveAssetsPublicPath,
           },
         },
       },
@@ -106,7 +110,6 @@ export default {
           options: {
             limit: 10000,
             name: assetsPath('fonts/[name].[hash:7].[ext]'),
-            publicPath: resolveAssetsPublicPath,
           },
         },
       },
@@ -126,4 +129,4 @@ export default {
     ]),
     new HardSourceWebpackPlugin(),
   ],
-}
+};

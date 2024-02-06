@@ -20,7 +20,6 @@ import org.springframework.data.mongodb.core.mapping.Sharded;
 })
 @Sharded(shardKey = "task_id")
 public class ScmFileInfoCacheEntity {
-
     /**
      * 工具名称
      */

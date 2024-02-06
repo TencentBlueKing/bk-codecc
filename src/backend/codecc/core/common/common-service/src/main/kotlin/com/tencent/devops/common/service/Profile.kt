@@ -26,6 +26,7 @@
 
 package com.tencent.devops.common.service
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.env.Environment
 import org.springframework.stereotype.Component
 
@@ -39,6 +40,13 @@ class Profile(private val environment: Environment) {
         const val PROFILE_TEST = "test"
         const val PROFILE_EXP = "exp"
     }
+
+
+    @Value("\${service.prefix.codecc:#{null}}")
+    private val servicePrefix: String? = null
+
+    @Value("\${service.suffix.codecc:#{null}}")
+    private val serviceSuffix: String? = null
 
     private val activeProfiles = environment.activeProfiles
 
@@ -66,5 +74,14 @@ class Profile(private val environment: Environment) {
         return profileNames.any { activeProfiles.contains(it) }
     }
 
-    fun getApplicationName() = environment.getProperty("spring.application.name")
+    fun getServiceName(): String {
+        val serviceName = environment.getProperty("spring.application.name")
+        return if (servicePrefix.isNullOrBlank() && serviceSuffix.isNullOrBlank()) {
+            serviceName ?: ""
+        } else if (serviceSuffix.isNullOrBlank()) {
+            "$servicePrefix$serviceName"
+        } else {
+            "$serviceName$serviceSuffix"
+        }
+    }
 }

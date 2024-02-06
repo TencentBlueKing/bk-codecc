@@ -69,13 +69,4 @@ public interface IConfigCheckerPkgBizService
      * @return
      */
     Boolean configCheckerPkg(Long taskId, String toolName, ConfigCheckersPkgReqVO checker, String updatePipelineUser);
-
-    /**
-     * 开启/关闭 规则包 不加操作记录
-     * @param taskId
-     * @param toolName
-     * @param configCheckersPkgReq
-     * @return
-     */
-    Boolean syncConfigCheckerPkg(Long taskId, String toolName, ConfigCheckersPkgReqVO configCheckersPkgReq);
 }

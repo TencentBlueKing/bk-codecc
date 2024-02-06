@@ -16,9 +16,10 @@ import com.tencent.bk.codecc.defect.api.OpDefectRestResource;
 import com.tencent.bk.codecc.defect.service.CodeRepoService;
 import com.tencent.bk.codecc.defect.service.GetTaskLogService;
 import com.tencent.bk.codecc.defect.service.ICLOCQueryCodeLineService;
+import com.tencent.bk.codecc.defect.service.ICheckerSetManageBizService;
+import com.tencent.bk.codecc.defect.service.ICheckerSetQueryBizService;
 import com.tencent.bk.codecc.defect.service.IIgnoreTypeService;
 import com.tencent.bk.codecc.defect.service.IQueryWarningBizService;
-import com.tencent.bk.codecc.defect.service.IV3CheckerSetBizService;
 import com.tencent.bk.codecc.defect.service.RefreshCheckerScriptService;
 import com.tencent.bk.codecc.defect.service.ToolBuildInfoService;
 import com.tencent.bk.codecc.defect.vo.ToolBuildInfoReqVO;
@@ -41,7 +42,6 @@ import com.tencent.devops.common.web.RestResource;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Sort;
 
 /**
@@ -69,7 +69,9 @@ public class OpDefectRestResourceImpl implements OpDefectRestResource {
     private ICLOCQueryCodeLineService queryCodeLineService;
 
     @Autowired
-    private IV3CheckerSetBizService checkerSetBizService;
+    private ICheckerSetManageBizService checkerSetManageBizService;
+    @Autowired
+    private ICheckerSetQueryBizService checkerSetQueryBizService;
 
     @Autowired
     private CodeRepoService codeRepoService;
@@ -79,6 +81,7 @@ public class OpDefectRestResourceImpl implements OpDefectRestResource {
     @Autowired
     private IIgnoreTypeService iIgnoreTypeService;
 
+    @Autowired
     private OpAuthApi opAuthApi;
 
     @Override
@@ -138,12 +141,13 @@ public class OpDefectRestResourceImpl implements OpDefectRestResource {
         if (!opAuthApi.isOpAdminMember(userName)) {
             throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, new String[]{"op admin member"});
         }
-        return new Result<>(checkerSetBizService.updateCheckerSetBaseInfoByOp(userName, updateCheckerSetReqExtVO));
+        return new Result<>(
+                checkerSetManageBizService.updateCheckerSetBaseInfoByOp(userName, updateCheckerSetReqExtVO));
     }
 
     @Override
     public Result<CheckerSetParamsVO> getCheckerSetParams() {
-        return new Result<>(checkerSetBizService.getCheckerSetParams());
+        return new Result<>(checkerSetQueryBizService.getCheckerSetParams());
     }
 
     @Override
@@ -188,7 +192,7 @@ public class OpDefectRestResourceImpl implements OpDefectRestResource {
 
     @Override
     public Result<String> queryCheckerSetNameByCheckerSetId(String checkerSetId) {
-        return new Result<>(checkerSetBizService.queryCheckerSetNameByCheckerSetId(checkerSetId));
+        return new Result<>(checkerSetQueryBizService.queryCheckerSetNameByCheckerSetId(checkerSetId));
     }
 
     @Override

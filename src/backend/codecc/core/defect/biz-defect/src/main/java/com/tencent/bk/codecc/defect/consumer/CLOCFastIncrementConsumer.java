@@ -12,12 +12,13 @@
 
 package com.tencent.bk.codecc.defect.consumer;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CLOCStatisticsDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CLOCStatisticsDao;
 import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
+import com.tencent.devops.common.constant.ComConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,34 +34,36 @@ import java.util.List;
  */
 @Component
 @Slf4j
-public class CLOCFastIncrementConsumer extends AbstractFastIncrementConsumer
-{
+public class CLOCFastIncrementConsumer extends AbstractFastIncrementConsumer {
+
     @Autowired
     private CLOCStatisticRepository clocStatisticRepository;
     @Autowired
     private CLOCStatisticsDao clocStatisticsDao;
 
     @Override
-    protected void generateResult(AnalyzeConfigInfoVO analyzeConfigInfoVO)
-    {
+    protected void generateResult(AnalyzeConfigInfoVO analyzeConfigInfoVO) {
         long taskId = analyzeConfigInfoVO.getTaskId();
         String toolName = analyzeConfigInfoVO.getMultiToolType();
         String buildId = analyzeConfigInfoVO.getBuildId();
 
-        ToolBuildStackEntity toolBuildStackEntity = toolBuildStackRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
+        ToolBuildStackEntity toolBuildStackEntity = toolBuildStackRepository.findFirstByTaskIdAndToolNameAndBuildId(
+                taskId, toolName, buildId);
 
         // 因为代码没有变更，默认代码统计不变，所以直接取上一个分析的代码统计
         String baseBuildId;
-        if (toolBuildStackEntity == null)
-        {
-            ToolBuildInfoEntity toolBuildINfoEntity = toolBuildInfoRepository.findFirstByTaskIdAndToolName(taskId, toolName);
-            baseBuildId = toolBuildINfoEntity != null && StringUtils.isNotEmpty(toolBuildINfoEntity.getDefectBaseBuildId()) ? toolBuildINfoEntity.getDefectBaseBuildId() : "";
+        if (toolBuildStackEntity == null) {
+            ToolBuildInfoEntity toolBuildINfoEntity = toolBuildInfoRepository.findFirstByTaskIdAndToolName(taskId,
+                    toolName);
+            baseBuildId =
+                    toolBuildINfoEntity != null && StringUtils.isNotEmpty(toolBuildINfoEntity.getDefectBaseBuildId())
+                            ? toolBuildINfoEntity.getDefectBaseBuildId() : "";
+        } else {
+            baseBuildId = StringUtils.isNotEmpty(toolBuildStackEntity.getBaseBuildId())
+                    ? toolBuildStackEntity.getBaseBuildId() : "";
         }
-        else
-        {
-            baseBuildId = StringUtils.isNotEmpty(toolBuildStackEntity.getBaseBuildId()) ? toolBuildStackEntity.getBaseBuildId() : "";
-        }
-        List<CLOCStatisticEntity> lastClocStatisticEntityList = clocStatisticRepository.findByTaskIdAndToolNameAndBuildId(taskId, toolName, baseBuildId);
+        List<CLOCStatisticEntity> lastClocStatisticEntityList = clocStatisticRepository.findByTaskIdAndToolNameAndBuildId(
+                taskId, toolName, baseBuildId);
 
         long currentTime = System.currentTimeMillis();
         lastClocStatisticEntityList.forEach(clocStatisticEntity ->
@@ -74,7 +77,8 @@ public class CLOCFastIncrementConsumer extends AbstractFastIncrementConsumer
             clocStatisticEntity.setUpdatedDate(currentTime);
         });
 
-        clocStatisticsDao.batchUpsertCLOCStatistic(lastClocStatisticEntityList);
+        clocStatisticsDao.batchUpsertCLOCStatistic(lastClocStatisticEntityList,
+                ComConstants.ScanStatType.IS_FAST_INCREMENT);
 
         // 更新告警快照基准构建ID
         toolBuildInfoDao.updateDefectBaseBuildId(taskId, toolName, buildId);

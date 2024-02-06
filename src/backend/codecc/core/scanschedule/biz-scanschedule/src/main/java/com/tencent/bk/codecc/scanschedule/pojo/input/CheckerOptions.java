@@ -16,12 +16,20 @@ import lombok.Data;
 
 /**
  * 规则属性
+ * @author jimxzcai
  * @version V1.0
  * @date 2021/6/4
  */
 @Data
 public class CheckerOptions {
 
-    private String checkerOptionName; //规则子选项名称
-    private String checkerOptionValue; //规则子选项值
+    /**
+     * 规则子选项名称
+     */
+    public String checkerOptionName;
+
+    /**
+     * 规则子选项值
+     */
+    public String checkerOptionValue;
 }

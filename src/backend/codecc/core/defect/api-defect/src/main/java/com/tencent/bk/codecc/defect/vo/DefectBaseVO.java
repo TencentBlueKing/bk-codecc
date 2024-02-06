@@ -125,7 +125,7 @@ public class DefectBaseVO extends CommonVO {
     /**
      * 对应第三方缺陷管理系统的ID，这里声明为字符串可以有更好的兼容性
      */
-    private String extBugid;
+    private String extBugId;
 
     /*--------------添加代码库信息 start----------------*/
 
@@ -145,4 +145,5 @@ public class DefectBaseVO extends CommonVO {
     private String url;
 
     /*--------------添加代码库信息 end----------------*/
+
 }

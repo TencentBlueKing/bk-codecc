@@ -10,12 +10,13 @@
  *
  * Terms of the MIT License:
  * ---------------------------------------------------
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+ * Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
  * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -26,34 +27,15 @@
 
 package com.tencent.bk.codecc.defect.service;
 
-import com.tencent.bk.codecc.defect.vo.checkerset.*;
+import com.tencent.bk.codecc.defect.vo.checkerset.AddCheckerSet2TaskReqVO;
+import com.tencent.bk.codecc.defect.vo.checkerset.CheckerSetDifferenceVO;
+import com.tencent.bk.codecc.defect.vo.checkerset.UpdateCheckerSetReqVO;
+import com.tencent.bk.codecc.defect.vo.checkerset.UserCreatedCheckerSetsVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
-import com.tencent.devops.common.api.checkerset.CheckerSetVO;
-
 import java.util.List;
 
 public interface ICheckerSetBizService {
-
-    /**
-     * 查询规则集列表
-     *
-     * @param toolNames
-     * @param user
-     * @param projectId
-     * @return
-     */
-    UserCheckerSetsVO getCheckerSets(List<String> toolNames, String user, String projectId);
-
-    /**
-     * 查询规则集列表
-     *
-     * @param toolName
-     * @param user
-     * @param projectId
-     * @return
-     */
-    PipelineCheckerSetVO getPipelineCheckerSets(String toolName, String user, String projectId);
 
     /**
      * 更新规则集
@@ -66,7 +48,8 @@ public interface ICheckerSetBizService {
      * @param projectId
      * @return
      */
-    Boolean updateCheckerSet(Long taskId, String toolName, String checkerSetId, UpdateCheckerSetReqVO updateCheckerSetReqVO, String user, String projectId);
+    Boolean updateCheckerSet(Long taskId, String toolName, String checkerSetId,
+            UpdateCheckerSetReqVO updateCheckerSetReqVO, String user, String projectId);
 
     /**
      * 任务关联规则集
@@ -105,8 +88,9 @@ public interface ICheckerSetBizService {
      * @param checkerSetDifferenceVO
      * @return
      */
-    CheckerSetDifferenceVO getCheckerSetVersionDifference(String user, String projectId, String toolName, String checkerSetId,
-                                                          CheckerSetDifferenceVO checkerSetDifferenceVO);
+    CheckerSetDifferenceVO getCheckerSetVersionDifference(String user, String projectId, String toolName,
+            String checkerSetId,
+            CheckerSetDifferenceVO checkerSetDifferenceVO);
 
     /**
      * 清除任务关联的规则集
@@ -128,22 +112,6 @@ public interface ICheckerSetBizService {
      * @param needUpdatePipeline
      * @return
      */
-    Boolean clearTaskCheckerSets(TaskDetailVO taskDetail, List<String> toolNames, String user, boolean needUpdatePipeline);
-
-
-    /**
-     * 更新规则集参数
-     *
-     * @param checkerSetId
-     * @param version
-     * @param checkerName
-     * @param paramName
-     * @param displayName
-     * @param paramValue
-     * @return
-     */
-    Boolean updateCheckerSetConfigParam(String checkerSetId, Integer version, String checkerName,
-                                        String paramName, String displayName, String paramValue);
-
-
+    Boolean clearTaskCheckerSets(TaskDetailVO taskDetail, List<String> toolNames, String user,
+            boolean needUpdatePipeline);
 }

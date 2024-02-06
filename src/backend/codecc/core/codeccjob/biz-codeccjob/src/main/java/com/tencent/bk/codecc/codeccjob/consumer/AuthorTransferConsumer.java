@@ -26,12 +26,23 @@
 
 package com.tencent.bk.codecc.codeccjob.consumer;
 
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_AUTHOR_TRANS;
+import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_AUTHOR_TRANS;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_AUTHOR_TRANS;
+
+import com.tencent.bk.codecc.codeccjob.dao.core.mongorepository.TransferAuthorRepository;
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity;
 import com.tencent.bk.codecc.defect.vo.common.AuthorTransferVO;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.TransferAuthorRepository;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.service.BizServiceFactory;
 import com.tencent.devops.common.service.IBizService;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.amqp.rabbit.annotation.Exchange;
@@ -41,11 +52,6 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static com.tencent.devops.common.web.mq.ConstantsKt.*;
-
 /**
  * 多工具处理消息消费类
  *
@@ -54,8 +60,8 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.*;
  */
 @Component
 @Slf4j
-public class AuthorTransferConsumer
-{
+public class AuthorTransferConsumer {
+
     @Autowired
     private TransferAuthorRepository transferAuthorRepository;
 
@@ -70,26 +76,20 @@ public class AuthorTransferConsumer
     @RabbitListener(bindings = @QueueBinding(key = ROUTE_AUTHOR_TRANS,
             value = @Queue(value = QUEUE_AUTHOR_TRANS, durable = "true"),
             exchange = @Exchange(value = EXCHANGE_AUTHOR_TRANS, durable = "true", delayed = "true", type = "topic")))
-    public void batchAuthorTrans(AuthorTransferVO authorTransferVO)
-    {
+    public void batchAuthorTrans(AuthorTransferVO authorTransferVO) {
         log.info("begin to batch transfer author：{}", authorTransferVO);
-        try
-        {
+        try {
             transferAuthor(authorTransferVO);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             log.error("execute author transfer fail!\n{}", authorTransferVO);
         }
     }
 
-    public void transferAuthor(AuthorTransferVO authorTransferVO)
-    {
+    public void transferAuthor(AuthorTransferVO authorTransferVO) {
         // 保存作者转换关系
         List<AuthorTransferVO.TransferAuthorPair> needRefreshAuthorTransferPairs = saveTransferAuthor(authorTransferVO);
         log.info("needRefreshAuthorTransferPairs:{}", needRefreshAuthorTransferPairs);
-        if (CollectionUtils.isEmpty(needRefreshAuthorTransferPairs))
-        {
+        if (CollectionUtils.isEmpty(needRefreshAuthorTransferPairs)) {
             return;
         }
 
@@ -99,8 +99,7 @@ public class AuthorTransferConsumer
         tools.forEach(toolName ->
                 {
                     if (!ComConstants.Tool.DUPC.name().equals(toolName) && !ComConstants.Tool.CLOC.name().equals(toolName) &&
-                        !ComConstants.Tool.SCC.name().equalsIgnoreCase(toolName))
-                    {
+                            !ComConstants.Tool.SCC.name().equalsIgnoreCase(toolName)) {
                         log.info("toolName:{}", toolName);
                         authorTransferVO.setToolName(toolName);
                         IBizService bizService = bizServiceFactory
@@ -118,61 +117,57 @@ public class AuthorTransferConsumer
      * @param authorTransferVO
      * @return
      */
-    private List<AuthorTransferVO.TransferAuthorPair> saveTransferAuthor(AuthorTransferVO authorTransferVO)
-    {
-        TransferAuthorEntity transferAuthorEntity = transferAuthorRepository.findFirstByTaskId(authorTransferVO.getTaskId());
+    private List<AuthorTransferVO.TransferAuthorPair> saveTransferAuthor(AuthorTransferVO authorTransferVO) {
+        TransferAuthorEntity transferAuthorEntity = transferAuthorRepository.findFirstByTaskId(
+                authorTransferVO.getTaskId());
         Map<List<String>, List<String>> oldTransferAuthorPairMap = new HashMap<>();
-        if (transferAuthorEntity != null && CollectionUtils.isNotEmpty(transferAuthorEntity.getTransferAuthorList()))
-        {
+        if (transferAuthorEntity != null && CollectionUtils.isNotEmpty(transferAuthorEntity.getTransferAuthorList())) {
             List<TransferAuthorEntity.TransferAuthorPair> oldTransferAuthorList = transferAuthorEntity.getTransferAuthorList();
             oldTransferAuthorList.forEach(transferAuthorPair ->
             {
-                List<String> sourceAuthorList = Arrays.asList(transferAuthorPair.getSourceAuthor().split(ComConstants.SEMICOLON));
-                List<String> targetAuthorList = Arrays.asList(transferAuthorPair.getTargetAuthor().split(ComConstants.SEMICOLON));
+                List<String> sourceAuthorList = Arrays.asList(
+                        transferAuthorPair.getSourceAuthor().split(ComConstants.SEMICOLON));
+                List<String> targetAuthorList = Arrays.asList(
+                        transferAuthorPair.getTargetAuthor().split(ComConstants.SEMICOLON));
                 oldTransferAuthorPairMap.put(sourceAuthorList, targetAuthorList);
             });
         }
 
         List<AuthorTransferVO.TransferAuthorPair> needRefreshAuthorTransferPairs = new ArrayList<>();
         List<AuthorTransferVO.TransferAuthorPair> transferAuthorList = authorTransferVO.getTransferAuthorList();
-        if (CollectionUtils.isNotEmpty(transferAuthorList))
-        {
-            transferAuthorList.forEach(transferAuthorPair ->
-            {
-                List<String> newSourceAuthorList = Arrays.asList(transferAuthorPair.getSourceAuthor().split(ComConstants.SEMICOLON));
-                List<String> newTargetAuthorList = Arrays.asList(transferAuthorPair.getTargetAuthor().split(ComConstants.SEMICOLON));
+        if (CollectionUtils.isNotEmpty(transferAuthorList)) {
+            transferAuthorList.forEach(transferAuthorPair -> {
+                List<String> newSourceAuthorList = Arrays.asList(
+                        transferAuthorPair.getSourceAuthor().split(ComConstants.SEMICOLON));
+                List<String> newTargetAuthorList = Arrays.asList(
+                        transferAuthorPair.getTargetAuthor().split(ComConstants.SEMICOLON));
 
                 boolean needRefresh = true;
                 Set<Map.Entry<List<String>, List<String>>> entrySet = oldTransferAuthorPairMap.entrySet();
-                for (Map.Entry<List<String>, List<String>> entry : entrySet)
-                {
+                for (Map.Entry<List<String>, List<String>> entry : entrySet) {
                     List<String> oldSourceAuthorList = entry.getKey();
                     List<String> oldTargetAuthorList = entry.getValue();
 
                     // 如果转换关系是之前已经存在的，则不需要重新刷新数据
                     if (CollectionUtils.isEqualCollection(newSourceAuthorList, oldSourceAuthorList)
-                            && CollectionUtils.isEqualCollection(newTargetAuthorList, oldTargetAuthorList))
-                    {
+                            && CollectionUtils.isEqualCollection(newTargetAuthorList, oldTargetAuthorList)) {
                         needRefresh = false;
                         break;
                     }
                 }
-                if (needRefresh)
-                {
+                if (needRefresh) {
                     needRefreshAuthorTransferPairs.add(transferAuthorPair);
                 }
             });
         }
 
-        if (null == transferAuthorEntity)
-        {
+        if (null == transferAuthorEntity) {
             transferAuthorEntity = new TransferAuthorEntity();
             transferAuthorEntity.setTaskId(authorTransferVO.getTaskId());
         }
 
         List<TransferAuthorEntity.TransferAuthorPair> newTransferAuthorList = null;
-        if (CollectionUtils.isNotEmpty(transferAuthorList))
-        {
+        if (CollectionUtils.isNotEmpty(transferAuthorList)) {
             newTransferAuthorList = transferAuthorList.stream()
                     .map(authorPair ->
                     {
