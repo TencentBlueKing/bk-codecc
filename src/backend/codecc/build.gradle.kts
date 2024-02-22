@@ -2,7 +2,7 @@ import com.tencent.devops.utils.findPropertyOrEmpty
 import com.tencent.devops.enums.AssemblyMode
 
 plugins {
-    id("com.tencent.devops.boot") version "0.0.6"
+    id("com.tencent.devops.boot")
 }
 
 allprojects {
