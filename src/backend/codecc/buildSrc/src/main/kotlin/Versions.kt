@@ -59,4 +59,5 @@ object Versions {
     const val micrometerVersion = "1.6.6"
     const val opentelemetryVersion = "1.17.0"
     const val reflectasmVersion = "1.11.9"
+    const val devopsBootVersion = "0.0.6"
 }
