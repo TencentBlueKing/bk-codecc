@@ -2,7 +2,7 @@ import com.tencent.devops.utils.findPropertyOrEmpty
 import com.tencent.devops.enums.AssemblyMode
 
 plugins {
-    id("com.tencent.devops.boot") version "0.0.6"
+    id("com.tencent.devops.boot") version Versions.devopsBootVersion
 }
 
 allprojects {
@@ -178,6 +178,8 @@ allprojects {
             dependency("io.opentelemetry:opentelemetry-api:${Versions.opentelemetryVersion}")
 //            dependency("com.github.ben-manes.caffeine:caffeine:${Versions.caffeineVersion}")
             dependency("com.esotericsoftware:reflectasm:${Versions.reflectasmVersion}")
+            dependency("com.esotericsoftware:reflectasm:${Versions.reflectasmVersion}")
+            dependency("com.tencent.devops:devops-boot-dependencies:${Versions.devopsBootVersion}")
         }
     }
 

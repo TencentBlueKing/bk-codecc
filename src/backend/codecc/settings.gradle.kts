@@ -1,14 +1,3 @@
-pluginManagement {
-    resolutionStrategy {
-        eachPlugin {
-            if (requested.id.namespace == "com.tencent.devops.boot") {
-                useVersion("0.0.6")
-            }
-        }
-    }
-}
-
-
 rootProject.name = "codecc"
 
 
