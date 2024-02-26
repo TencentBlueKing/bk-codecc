@@ -9,3 +9,9 @@ repositories {
     mavenCentral()
     jcenter()
 }
+
+// 依赖插件
+dependencies {
+    implementation("nu.studer:gradle-jooq-plugin:5.2.1")
+    implementation("com.github.jengelman.gradle.plugins:shadow:6.1.0")
+}
