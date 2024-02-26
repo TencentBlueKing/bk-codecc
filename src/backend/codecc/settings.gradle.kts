@@ -71,7 +71,6 @@ include("core:schedule:model-schedule")
 include("core:schedule:biz-schedule")
 include("core:schedule:boot-schedule")
 
-include("ext")
 
 
 
