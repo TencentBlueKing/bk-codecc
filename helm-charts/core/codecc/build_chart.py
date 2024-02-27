@@ -111,13 +111,14 @@ for line in env_file:
 env_file.close()
 
 # 读取额外变量映射
-env_file = open(env_ext_properties_file, 'r', encoding='UTF-8')
-for line in env_file:
-    if line.startswith('BK_'):
-        datas = line.split("=")
-        key = datas[0]
-        replace_dict[key] = humps.camelize(key.lower())
-env_file.close()
+if os.path.isfile(env_ext_properties_file):
+    env_file = open(env_ext_properties_file, 'r', encoding='UTF-8')
+    for line in env_file:
+        if line.startswith('BK_'):
+            datas = line.split("=")
+            key = datas[0]
+            replace_dict[key] = humps.camelize(key.lower())
+    env_file.close()
 
 # 生成value.yaml
 image_host = sys.argv[1]
