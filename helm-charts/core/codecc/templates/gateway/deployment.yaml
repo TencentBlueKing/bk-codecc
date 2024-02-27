@@ -98,6 +98,12 @@ spec:
               value: {{ .Values.config.bkCiAuthProvider }}
             - name: BK_CODECC_GATEWAY_REGION_NAME
               value: {{ .Values.config.bkCodeccGatewayRegionName }}
+            - name: BK_CI_FQDN
+              value: {{ .Values.config.bkCiFqdn }}
+            - name: BK_PUBLIC_PATH_PREFIX
+              value: {{ .Values.config.bkPublicPathPrefix }}
+            - name: BK_CI_PUBLIC_PATH_PREFIX
+              value: {{ .Values.config.bkCiPublicPathPrefix }}
           ports:
             - name: http
               containerPort: 80

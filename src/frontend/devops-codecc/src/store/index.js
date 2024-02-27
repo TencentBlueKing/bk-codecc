@@ -12,7 +12,7 @@ import defect from './modules/defect';
 import tool from './modules/tool';
 import checker from './modules/checker';
 import checkerset from './modules/checkerset';
-import devops from './modules/devops';
+import log from './modules/log';
 import op from './modules/op';
 import ignore from './modules/ignore';
 import http from '@/api';
@@ -54,7 +54,7 @@ const store = new Vuex.Store({
     task,
     checker,
     checkerset,
-    devops,
+    log,
     op,
     ignore,
     preci,

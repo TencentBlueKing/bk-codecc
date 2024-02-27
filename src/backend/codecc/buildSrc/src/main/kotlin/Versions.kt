@@ -35,8 +35,7 @@ object Versions {
     const val lombokVersion = "1.18.16"
     const val tomcatEmbedCoreVersion = "9.0.39"
     const val commonCollection = "3.2.2"
-
-    //    const val commonPool2Version = "2.9.0"
+//    const val commonPool2Version = "2.9.0"
     const val lettuceVersion = "4.5.0.Final"
     const val jerseyValidationVersion = "2.34"
     const val commonsIOVersion = "2.8.0"
@@ -68,7 +67,8 @@ object Versions {
     const val jgit = "5.13.1.202206130422-r"
     const val bkRepoVersion = "1.0.1"
     const val ant = "1.10.5"
+    const val kotlinxVersion = "1.6.0"
     const val cosVersion = "5.6.185"
     const val xzVersion = "1.9"
-    const val disklrucacheVersion = "2.0.2"
+
 }

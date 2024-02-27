@@ -13,12 +13,7 @@ metadata:
 rules:
   - apiGroups: 
     - ""
-    resources: 
-    - configmaps
-    - services
-    - secrets
-    - endpoints
-    - persistentvolumeclaims
+    resources: ["*"]
     verbs: 
     - get
     - watch

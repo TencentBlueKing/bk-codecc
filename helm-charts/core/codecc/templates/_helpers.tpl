@@ -2,7 +2,10 @@
 Return the proper Docker Image Registry Secret Names
 */}}
 {{- define "codecc.imagePullSecrets" -}}
-{{- include "common.images.pullSecrets" (dict "images" (list .Values.task.image) "global" .Values.global) -}}
+{{- if .Values.imagePullSecrets -}}
+imagePullSecrets:
+  - name: {{- .Values.imagePullSecrets -}}
+{{- end -}}
 {{- end -}}
 
 {{/*

@@ -123,11 +123,9 @@
               </span>
               <div v-if="isOpenIde && checkerShow()">
                 <div v-if="openIdeDetail.data.length > 0 && openIdeDetail.success && !openIdeDetail.low">
-                  <div class="open-message open-message-bg-lv">
-                    <span style="padding-right: 10px;font-size: 16px">
-                      <bk-icon type="check-circle" style="color: #2DCB56;" /></span><span>{{$t("检测到您已安装")}}PreCI
-                    </span>
-                  </div>
+                  <bk-alert class="close-ide" type="success">
+                    <div slot="title">{{ $t('检测到您已安装PreCI') }}</div>
+                  </bk-alert>
                   <div class="open-ide-message">
                     <div>
                       <span>
@@ -155,19 +153,9 @@
                   </div>
                 </div>
                 <div v-else-if="openIdeDetail.data.length === 0 && openIdeDetail.success">
-                  <div
-                    class="open-message open-message-bg-ch"
-                    v-if="!openIdeDetail.initMessage"
-                    style="position:relative;">
-                    <span style="font-size: 16px">
-                      <bk-icon type="exclamation-circle" style="color: #FF9C01;" />
-                    </span>
-                    <span>{{$t("本地工程未初始化PreCI")}}</span>
-                    <span
-                      class="close-ide"
-                      v-bk-tooltips="openIdeDetail.closeMessageObj"
-                      @click="closeInitMessageFunc">x</span>
-                  </div>
+                  <bk-alert class="close-ide" type="warning" closable @close="closeMessageFunc">
+                    <div slot="title">{{ $t('本地工程未初始化PreCI') }}</div>
+                  </bk-alert>
                   <div class="open-ide-message">
                     <div>
                       <span>
@@ -184,16 +172,9 @@
                   </div>
                 </div>
                 <div v-else>
-                  <div class="open-message open-message-bg-ch" v-if="!openIdeDetail.closeMessage">
-                    <span style="font-size: 16px">
-                      <bk-icon type="exclamation-circle" style="color: #FF9C01;" />
-                    </span>
-                    <span>{{$t("PreCI尚未安装或版本过低")}}</span>
-                    <span
-                      class="close-ide"
-                      v-bk-tooltips="openIdeDetail.closeMessageObj"
-                      @click="closeMessageFunc">x</span>
-                  </div>
+                  <bk-alert class="close-ide" type="warning" closable @close="closeMessageFunc">
+                    <div slot="title">{{ $t('PreCI未安装或版本过低') }}</div>
+                  </bk-alert>
                   <div class="open-ide-message">
                     <div>
                       <span>
@@ -373,10 +354,10 @@
                 {{ currentFile.lineUpdateTime | formatDate }}
               </dd>
             </div>
-            <!-- <div class="item">
+            <div class="item">
               <dt>{{ $t('提交人') }}</dt>
               <dd>{{ currentFile.commitAuthor}}</dd>
-            </div> -->
+            </div>
           </div>
           <div class="block" v-if="currentFile.status & 4">
             <div class="item">
@@ -440,8 +421,8 @@
       <div style="margin-top: 10px">
         2、{{$t('更新JetBrains IDE版本到2022-1及以上。完成1后可使用Toolbox更新，更新后可做到一键打开相应工程的对应文件对应问题行，体验更佳。')}}
       </div>
-      <div style="width: 215px; margin: 20px auto">
-        <bk-button :theme="'primary'" :title="$t('已全部完成')" class="mr10" @click="installDialogConfirm">
+      <div style="margin: 20px auto">
+        <bk-button style="margin-left: 50px" :theme="'primary'" :title="$t('已全部完成')" class="mr10" @click="installDialogConfirm">
           {{ $t('已全部完成') }}
         </bk-button>
         <bk-button :theme="'default'" type="submit" :title="$t('等会再来')" @click="installDialogCancel" class="mr10">
@@ -465,6 +446,9 @@ import downloadImg from '@/images/download.png';
 import pushImg from '@/images/push.svg';
 import { openUrlWithInputTimeoutHack } from '@/common/open';
 import marked from 'marked';
+import Vue from 'vue';
+import AiSuggestion from './ai-suggestion.vue';
+import CheckerDetail from './checker-detail.vue';
 
 export default {
   components: {
@@ -625,6 +609,10 @@ export default {
       fileInfoMapStorage: {},
       checkerDetailMapStorage: {},
       hideDefectDetail: true,
+      aiSuggestionVisible: false,
+      aiSuggestionVM: null,
+      checkerDetailVisible: false,
+      checkerDetailVM: null,
     };
   },
   computed: {
@@ -672,6 +660,12 @@ export default {
         this.mainTraceId = this.currentTrace.id;
         this.currentTraceIndex = this.traceDataList.findIndex(item => item.id === this.currentTrace.id);
         this.updateCodeViewer();
+        this.aiSuggestionVM?.$destroy();
+        this.aiSuggestionVM = null;
+        this.aiSuggestionVisible = false;
+        this.checkerDetailVM?.$destroy();
+        this.checkerDetailVM = null;
+        this.checkerDetailVisible = false;
         // this.locateHint()
       },
       deep: true,
@@ -684,6 +678,16 @@ export default {
     },
     currentFile() {
       this.currentTrace = {};
+    },
+    aiSuggestionVisible() {
+      setTimeout(() => {
+        this.codeViewerInDialog?.refresh();
+      }, 600);
+    },
+    checkerDetailVisible() {
+      setTimeout(() => {
+        this.codeViewerInDialog?.refresh();
+      }, 600);
     },
   },
   async created() {
@@ -970,8 +974,9 @@ export default {
           this.operateDialogVisible = true;
         }
       }
+      this.currentDefectDetail.eventTimes += 1;
 
-      this.updateCodeViewer();
+      // this.updateCodeViewer();
     },
     // 代码展示相关
     async updateCodeViewer() {
@@ -990,6 +995,7 @@ export default {
         // eslint-disable-next-line prefer-destructuring
         fileMd5 = this.currentTrace.fileMd5;
       }
+      if (!fileInfoMap[fileMd5]) return;
       const { startLine, contents } = fileInfoMap[fileMd5];
       if (this.isGetFileInfo) return;
       const toolList = ['COVERITY', 'KLOCWORK', 'PINPOINT'];
@@ -1041,14 +1047,6 @@ export default {
       } = this;
       const { lintDefectDetailVO: detailVO } = this.lintDetail;
       let defectList = null;
-      // 规则详情
-      const { errExample, rightExample } = this.checkerDetailMapStorage[`${toolName}-${checker}`] || {};
-      const errExampleDom = errExample
-        ? `<span><span>${this.$t('错误示例：')}</span><pre class="detail-code">${errExample}</pre></span>`
-        : '';
-      const rightExampleDom = rightExample
-        ? `<span><span>${this.$t('正确示例：')}</span><pre class="detail-code">${rightExample}</pre></span>`
-        : '';
       // 有defectInstances的情况
       if (this.defectInstances.length) {
         const { id } = this.currentTrace;
@@ -1075,6 +1073,7 @@ export default {
         messageDom.innerHTML = marked.parse(newMessage);
         const hintId = `${lineNum}-${0}`;
         let mainClass = '';
+        const hasRedPoint = !localStorage.getItem('hasRedPoint');
         if (this.mainTraceId === defect.id || !this.defectInstances.length) {
           mainClass = 'main';
           // 评论
@@ -1100,21 +1099,10 @@ export default {
               </p>`;
             }
           }
-          const { checkerDetail } = detailVO;
-          const checkerDetailArr = checkerDetail.split('\n');
-          const newcheckerDetailArr = checkerDetailArr.map((item) => {
-            let detail = item.replace(/>/g, '&gt;').replace(/</g, '&lt;');
-            const reg = /\[([^\]]+)\]\(([http:\\|https:\\]{1}[^)]+)\)/g;
-            detail = detail.replace(
-              reg,
-              '<a target="_blank" href=\'$2\'>$1</a>',
-            );
-            return `<div>${detail}</div>`;
-          });
           hints.innerHTML = `
             <div class="lint-info">
                 <div class="lint-info-main">
-                    <i class="lint-icon bk-icon icon-right-shape"></i>
+                    <i class="lint-icon bk-icon icon-right-shape toggle-checker-detail curpt"></i>
                     <div class="lint-head">
                         ${messageDom.outerHTML}
                     </div>
@@ -1128,16 +1116,17 @@ export default {
 }
                             | ${defectSeverityDetailMap[detailVO.severity]}
                         </span>
+                        <span>
+                          <span class="toggle-checker-detail cc-link-primary pr-8 border-right">${this.$t('规则详情')}</span>
+                          <span class="ai-suggestion cc-link-primary pl-8">
+                            ${this.$t('AI 修复建议')}
+                            ${hasRedPoint ? '<span class="red-point"></span>' : ''}
+                          </span>
+                        </span>
                     </p>
                 </div>
-                <div class="checker-detail">
-                  <div>${newcheckerDetailArr.join('')}</div>
-                  <br />
-                  <span>
-                    ${errExampleDom}
-                    ${rightExampleDom}
-                  </span>
-                </div>
+                <div id="checker-detail" class="checker-detail"></div>
+                <div id="ai-suggestion" class="ai-suggestion-wrapper"></div>
                 ${
   checkerComment
     ? `<div class="checker-comment">${checkerComment}</div>`
@@ -1187,12 +1176,18 @@ export default {
     },
     codeViewerClick(event, eventSource) {
       const lintHints = getClosest(event.target, '.lint-hints');
-      const lintInfo = getClosest(event.target, '.icon-right-shape');
+      const lintInfo = getClosest(event.target, '.toggle-checker-detail');
       const headHandle = getClosest(event.target, '.btn');
       const editAuthor = getClosest(event.target, '.icon-edit2');
       // const commentCon = getClosest(event.target, '.checker-comment')
       const delHandle = getClosest(event.target, '.icon-delete');
       const checkerDetail = getClosest(event.target, '.checker-detail');
+      const suggestion = getClosest(event.target, '.ai-suggestion');
+
+      // AI修复建议
+      if (suggestion) {
+        this.getSuggestion();
+      }
 
       if (lintHints) {
         const { hintId } = lintHints.dataset;
@@ -1250,15 +1245,20 @@ export default {
       if (checkerDetail) {
         return;
       }
-      // 如果点击的是lint问题区域
+      // 点击规则详情
       if (lintInfo) {
-        // 触发watch
-        this.currentDefectDetail.hintId = lintHints.dataset.hintId;
-        this.currentDefectDetail.eventSource = eventSource;
-        this.currentDefectDetail.eventTimes += 1;
-        this.hideDefectDetail = hasClass(lintHints, 'active');
-        this.handleCodeFullScreen();
+        this.toggleCheckerDetail();
+        lintHints.classList.toggle('active', this.checkerDetailVisible);
       }
+      // 如果点击的是lint问题区域
+      // if (lintInfo) {
+      //   // 触发watch
+      //   this.currentDefectDetail.hintId = lintHints.dataset.hintId;
+      //   this.currentDefectDetail.eventSource = eventSource;
+      //   this.currentDefectDetail.eventTimes += 1;
+      //   this.hideDefectDetail = hasClass(lintHints, 'active');
+      //   this.handleCodeFullScreen();
+      // }
     },
     handleDefectListRowInDialogClick(row, event, column) {
       // if (!this.lintDetail.fileContent) return
@@ -1481,6 +1481,36 @@ export default {
     },
 
     /**
+     * 获取AI推荐详情
+     */
+    async getSuggestion() {
+      localStorage.setItem('hasRedPoint', true);
+      const { currentFile, aiSuggestionVisible } = this;
+      this.aiSuggestionVisible = !aiSuggestionVisible;
+
+      if (!this.aiSuggestionVM) {
+        this.aiSuggestionVM = new Vue({
+          el: '#ai-suggestion',
+          components: { AiSuggestion },
+          data: {
+            currentFile,
+            closeAiSuggestion: this.closeAiSuggestion,
+          },
+          store: this.$store,
+          i18n: this.$i18n,
+          router: this.$router,
+          template: '<AiSuggestion :current-file="currentFile" :close-ai-suggestion="closeAiSuggestion"></AiSuggestion>',
+        });
+      } else {
+        this.aiSuggestionVM.$children[0].isShow = !aiSuggestionVisible;
+      }
+    },
+
+    closeAiSuggestion() {
+      this.aiSuggestionVisible = false;
+    },
+
+    /**
      * 获取规则详情
      */
     async getCheckerDetail() {
@@ -1490,6 +1520,26 @@ export default {
           toolName,
           checkerKey: checker,
         });
+    },
+
+    // 规则详情展开收起
+    toggleCheckerDetail() {
+      const { checkerDetailVisible } = this;
+      this.checkerDetailVisible = !checkerDetailVisible;
+
+      if (!this.checkerDetailVM) {
+        this.checkerDetailVM = new Vue({
+          el: '#checker-detail',
+          components: { CheckerDetail },
+          data: {
+            checkerDetail: this.checkerDetailMapStorage[`${this.currentFile.toolName}-${this.currentFile.checker}`],
+          },
+          i18n: this.$i18n,
+          template: '<CheckerDetail :checker-detail="checkerDetail"></CheckerDetail>',
+        });
+      } else {
+        this.checkerDetailVM.$children[0].isShow = !checkerDetailVisible;
+      }
     },
   },
 };
@@ -1543,11 +1593,11 @@ export default {
 
 .open-button {
   display: block;
-  width: 190px;
-  height: 26px;
+  width: auto;
+  height: auto;
   margin: 0 auto;
   font-size: 12px;
-  line-height: 26px;
+  line-height: 18px;
   color: #3A84FF;
   text-align: center;
   background: #FFF;

@@ -376,3 +376,15 @@ a:hover {
   color: #c4c6cc;
   cursor: not-allowed;
 }
+
+.pr-8 {
+  padding-right: 8px;
+}
+
+.pl-8 {
+  padding-left: 8px;
+}
+
+.border-right {
+  border-right: 1px solid #dcdee5;
+}

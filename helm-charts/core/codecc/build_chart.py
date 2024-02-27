@@ -70,6 +70,7 @@ default_value_dict = {
     "bkCodeccRedisPort": "6379",
     "bkCodeccStorageType": "nfs",
     "bkCodeccNfsServerPath": "/data/workspace/nfs",
+    "bkCodeccLocalPath": "",
     "bkCodeccStorageBkrepoUsername": "",
     "bkCodeccStorageBkrepoPassword": "",
     "bkCodeccStorageBkrepoProject": "",
@@ -119,20 +120,26 @@ for line in env_file:
 env_file.close()
 
 # 生成value.yaml
-image_gateway_tag = sys.argv[1]
-image_backend_tag = sys.argv[2]
+image_host = sys.argv[1]
+image_path = sys.argv[2]
+image_gateway_tag = sys.argv[3]
+image_backend_tag = sys.argv[4]
 if os.path.exists(output_value_yaml):
     os.remove(output_value_yaml)
 value_file = open(output_value_yaml, 'w')
 for line in open(default_value_yaml, 'r', encoding='UTF-8'):
     line = line.replace("__image_gateway_tag__", image_gateway_tag)
     line = line.replace("__image_backend_tag__", image_backend_tag)
+    line = line.replace("__image_host__", image_host)
+    line = line.replace("__image_path__", image_path)
     value_file.write(line)
 value_file.write('\n')
 if os.path.isfile(default_ext_value_yaml):
     for line in open(default_ext_value_yaml, 'r', encoding='UTF-8'):
         line = line.replace("__image_gateway_tag__", image_gateway_tag)
         line = line.replace("__image_backend_tag__", image_backend_tag)
+        line = line.replace("__image_host__", image_host)
+        line = line.replace("__image_path__", image_path)
         value_file.write(line)
 
 value_file.write('\nconfig:\n')

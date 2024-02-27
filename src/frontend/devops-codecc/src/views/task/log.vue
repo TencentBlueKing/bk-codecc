@@ -625,7 +625,7 @@ export default {
     this.subscribeMsg();
   },
   methods: {
-    ...mapActions('devops', ['getInitLog', 'getAfterLog']),
+    ...mapActions('log', ['getInitLog', 'getAfterLog']),
     async init() {
       this.loading = true;
       const res = await this.$store.dispatch('task/taskLog', this.params);

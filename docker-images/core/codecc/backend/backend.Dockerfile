@@ -6,13 +6,14 @@ ENV CODECC_HOME=/data/workspace \
     CODECC_LOGS_DIR=/data/workspace/logs \
     SERVICE_PREFIX=codecc \
     CODECC_PROFILE=native \
-    SERVER_FULLNAME=codecc \
-    SERVER_COMMON_NAME=common
+    NAMESPACE=codecc \
+    MS_NAME=codecc \
+    SERVER_STORAGE_MOUNT_PATH=/data/workspace/nfs
 
 
-COPY ./ /data/workspace/
+COPY tmp/ /data/workspace/
 RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo 'Asia/Shanghai' > /etc/timezone && \
     chmod +x /data/workspace/startup.sh
 WORKDIR /data/workspace
-CMD /data/workspace/startup.sh
+ENTRYPOINT [ "sh", "/data/workspace/startup.sh" ]

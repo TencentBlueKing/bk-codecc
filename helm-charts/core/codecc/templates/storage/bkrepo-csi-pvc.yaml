@@ -1,0 +1,16 @@
+{{- if and (eq .Values.config.bkCodeccStorageType "bkrepo-csi") (.Values.pv.enabled) -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "common.names.fullname" . }}-csi-bkrepo-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  # You can specify the pv name manually or just let kubernetes to bind the pv and pvc.
+  volumeName: {{ include "common.names.fullname" . }}-csi-bkrepo-pv
+  #  only supports static provisioning, the StorageClass name should be empty.
+  storageClassName: "bkrepo-fs"
+{{- end -}}

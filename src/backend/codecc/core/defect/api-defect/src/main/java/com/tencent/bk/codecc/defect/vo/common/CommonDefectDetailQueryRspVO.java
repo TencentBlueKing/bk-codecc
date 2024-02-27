@@ -63,4 +63,7 @@ public class CommonDefectDetailQueryRspVO
 
     @ApiModelProperty("该告警在同分支的最后一次构建中是否已被修复")
     private Boolean defectIsFixedOnLastBuildNumOfSameBranch;
+
+    @ApiModelProperty("AI告警修复建议")
+    private String defectSuggestions;
 }
