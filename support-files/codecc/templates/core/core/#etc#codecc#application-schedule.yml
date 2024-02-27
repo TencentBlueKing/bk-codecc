@@ -1,0 +1,26 @@
+# 服务配置文件模板
+spring:
+  application:
+    name: schedule
+    desc: Schedule Service
+    packageName: com.tencent.bk.codecc.schedule
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  data:
+    mongodb:
+      uri: __BK_CODECC_MONGO_SCHEDULE_URL__&maxPoolSize=300
+
+server:
+  port: __BK_CODECC_SCHEDULE_API_PORT__ # 服务端口
+
+codecc:
+  file:
+    data:
+      path: __BK_CODECC_FILE_DATA_PATH__
+
+result:
+  log:
+    path: __BK_CODECC_RESULT_LOG_PATH__

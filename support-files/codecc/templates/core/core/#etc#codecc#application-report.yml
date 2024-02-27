@@ -1,0 +1,26 @@
+# 服务配置文件模板
+spring:
+  application:
+    name: report
+    desc: Report Service
+    packageName: com.tencent.bk.codecc.defect
+  data:
+    mongodb:
+      defect:
+        coredb:
+          uri: __BK_CODECC_MONGO_DEFECT_CORE_URL__&maxPoolSize=300
+        db:
+          uri: __BK_CODECC_MONGO_DEFECT_URL__&maxPoolSize=300
+
+server:
+  port: __BK_CODECC_REPORT_API_PORT__ # 服务端口
+
+github:
+  repo:
+    host: __BK_CODECC_GITHUB_REPO_HOST__
+    accessKey: __BK_CODECC_GITHUB_REPO_ACCESS_KEY__
+    secretKey: __BK_CODECC_GITHUB_REPO_SECRET_KEY__
+
+codecc:
+  paramJsonRelateCheckerSetTools: __BK_CODECC_PARAM_JSON_RELATE_CHECKER_SET_TOOLS__
+  codeLangRelateCheckerSetTools: __BK_CODECC_CODE_LANG_RELATE_CHECKER_SET_TOOLS__
