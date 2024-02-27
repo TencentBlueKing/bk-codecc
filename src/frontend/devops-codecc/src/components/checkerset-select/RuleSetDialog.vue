@@ -278,7 +278,7 @@ export default {
       return top > 0 ? top : 0;
     },
     isEn() {
-      return language === 'en-US';
+      return language === 'en';
     },
   },
   watch: {

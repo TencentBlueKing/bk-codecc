@@ -271,7 +271,7 @@ export default {
       return matchList;
     },
     isEn() {
-      return language === 'en-US';
+      return language === 'en';
     },
   },
   watch: {

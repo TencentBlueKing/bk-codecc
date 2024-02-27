@@ -914,9 +914,9 @@
                       `${lintDetail.fileName}:${currentLintFile.startLines}`
                     }}</b>
                     <span
-                      :title="$t('复制问题所在文件位置')"
-                      class="copy-icon"
-                      @click.stop="copy(`${lintDetail.fileName}:${currentLintFile.startLines}`)">
+                        :title="$t('复制问题所在文件位置')"
+                        class="copy-icon"
+                        @click.stop="copy(`${lintDetail.fileName}:${currentLintFile.startLines}`)">
                       <i class="codecc-icon icon-copy-line" style="font-size: 15px"></i>
                     </span>
                     <!-- <div class="filepath" :title="currentLintFile.filePath">{{$t('文件路径')}}：{{currentLintFile.filePath}}</div> -->
@@ -1195,30 +1195,6 @@
                           }}
                         </dd>
                       </div>
-                      <div class="item">
-                        <dt>
-                          {{ $t('处理人') }}
-                        </dt>
-                        <dd>
-                          {{ currentLintFile.author }}
-                          <span
-                            v-if="
-                              currentLintFile.status & 1 ||
-                                currentLintFile.status & 4
-                            "
-                            @click.stop="
-                              handleAuthor(
-                                1,
-                                currentLintFile.entityId,
-                                currentLintFile.author,
-                                currentLintFile.defectId
-                              )
-                            "
-                            class="curpt bk-icon icon-edit2 fs20"
-                          >
-                          </span>
-                        </dd>
-                      </div>
                       <div class="item" v-if="currentLintFile.status & 2">
                         <dt>{{ $t('修复时间') }}</dt>
                         <dd class="small">
@@ -1230,10 +1206,6 @@
                         <dd class="small">
                           {{ currentLintFile.latestDateTime | formatDate }}
                         </dd>
-                      </div>
-                      <div class="item">
-                        <dt>{{ $t('提交人') }}</dt>
-                        <dd>{{ currentLintFile.commitAuthor}}</dd>
                       </div>
                     </div>
                     <div class="block" v-if="currentLintFile.status & 4">
@@ -1260,6 +1232,32 @@
                               ? '：' + currentLintFile.ignoreReason
                               : ''
                           }}
+                        </dd>
+                      </div>
+                    </div>
+                    <div class="block">
+                      <div class="item">
+                        <dt>
+                          {{ $t('处理人') }}
+                        </dt>
+                        <dd>
+                          {{ currentLintFile.author }}
+                          <span
+                            v-if="
+                              currentLintFile.status & 1 ||
+                                currentLintFile.status & 4
+                            "
+                            @click.stop="
+                              handleAuthor(
+                                1,
+                                currentLintFile.entityId,
+                                currentLintFile.author,
+                                currentLintFile.defectId
+                              )
+                            "
+                            class="curpt bk-icon icon-edit2 fs20"
+                          >
+                          </span>
                         </dd>
                       </div>
                     </div>
@@ -1994,7 +1992,7 @@ export default {
       return config;
     },
     isEn() {
-      return language === 'en-US';
+      return language === 'en';
     },
     lineHeight() {
       return this.isEn ? 'line-height: 18px' : 'line-height: 22px';

@@ -373,27 +373,22 @@ class CodeScoringServiceImpl @Autowired constructor(
                     totalLines += (lines["Go"] ?: 0)
                     logger.info("Go: ${(lines["Go"] ?: 0)} $totalLines")
                 }
-
                 ComConstants.Tool.PYLINT.name -> {
                     totalLines += (lines["Python"] ?: 0)
                     logger.info("Python: ${(lines["Python"] ?: 0)} $totalLines")
                 }
-
                 ComConstants.Tool.ESLINT.name -> {
                     totalLines += (lines["JavaScript"] ?: 0)
                     logger.info("JavaScript: ${(lines["JavaScript"] ?: 0)} $totalLines")
                 }
-
                 ComConstants.Tool.STYLECOP.name -> {
                     totalLines += (lines["C#"] ?: 0)
                     logger.info("C#: ${(lines["C#"] ?: 0)} $totalLines")
                 }
-
                 ComConstants.Tool.CHECKSTYLE.name -> {
                     totalLines += (lines["Java"] ?: 0)
                     logger.info("Java: ${(lines["Java"] ?: 0)} $totalLines")
                 }
-
                 ComConstants.Tool.CPPLINT.name -> {
                     totalLines += (lines["C"] ?: 0) + (lines["C++"] ?: 0) + (lines["C/C++ Header"]
                         ?: 0)
@@ -404,7 +399,6 @@ class CodeScoringServiceImpl @Autowired constructor(
                         } $totalLines"
                     )
                 }
-
                 "BKCHECK-OC" -> {
                     totalLines += ((lines["Objective C"] ?: 0) +
                             (lines["Objective C++"] ?: 0))
@@ -415,7 +409,6 @@ class CodeScoringServiceImpl @Autowired constructor(
                         } $totalLines"
                     )
                 }
-
                 else -> {
                 }
             }
@@ -431,45 +424,37 @@ class CodeScoringServiceImpl @Autowired constructor(
                     languageWaringConfigCount = 0.1
                     totalLine = lines["Go"] ?: 0
                 }
-
                 ComConstants.Tool.PYLINT.name -> {
                     pyDefect += (tool.value.first * 1 + tool.value.second * 0.5)
                     hasPy = true
                     continue@loop
                 }
-
                 ComConstants.Tool.FLAKE8.name -> {
                     pyDefect += (tool.value.first * 1 + tool.value.second * 0.5)
                     hasPy = true
                     continue@loop
                 }
-
                 ComConstants.Tool.ESLINT.name -> {
                     languageWaringConfigCount = 7.toDouble()
                     totalLine = lines["JavaScript"] ?: 0
                 }
-
                 ComConstants.Tool.STYLECOP.name -> {
                     languageWaringConfigCount = 8.0
                     totalLine = lines["C#"] ?: 0
                 }
-
                 ComConstants.Tool.CHECKSTYLE.name -> {
                     languageWaringConfigCount = 6.0
                     totalLine = lines["Java"] ?: 0
                 }
-
                 ComConstants.Tool.CPPLINT.name -> {
                     languageWaringConfigCount = 7.0
                     totalLine = (lines["C"] ?: 0) + (lines["C++"] ?: 0) + (lines["C/C++ Header"] ?: 0)
                 }
-
                 "BKCHECK-OC" -> {
                     languageWaringConfigCount = 3.0
                     totalLine = ((lines["Objective C"] ?: 0) +
                             (lines["Objective C++"] ?: 0))
                 }
-
                 else -> {
                     otherDefect += (tool.value.first * 1 + tool.value.second * 0.5)
                     continue@loop
@@ -573,10 +558,6 @@ class CodeScoringServiceImpl @Autowired constructor(
             ComConstants.DefectStatus.NEW.value(),
             ComConstants.NORMAL
         )
-        logger.info(
-            "scoring config lang ${metricsEntity.taskId} ${metricsEntity.buildId} " +
-                    "$matchingTools $seriousCount $normalCount"
-        )
         // 计算行占比
         val totalDefect = seriousCount * 1.0 + normalCount * 0.5
         val currScore = calCodeStyleScore(
@@ -617,10 +598,6 @@ class CodeScoringServiceImpl @Autowired constructor(
             }
             // 计算行占比
             val linePercentage = line.toDouble() / totalLine.toDouble()
-            logger.info(
-                "cal code style $taskId $buildId $totalDefect $languageWaringConfigCount $line " +
-                        "$totalLine $hundredWaringCount $linePercentage"
-            )
             // 计算代码规范评分
             return BigDecimal(
                 100 * linePercentage * ((0.6.pow(1.toDouble() / languageWaringConfigCount)).pow(

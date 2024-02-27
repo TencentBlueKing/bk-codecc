@@ -4,14 +4,12 @@
  */
 
 import http from '@/api';
-import axios from 'axios';
 
 export default {
   namespaced: true,
   state: {
     list: [],
     visitable: null,
-    projectInfo: {},
   },
   getters: {},
   mutations: {
@@ -20,9 +18,6 @@ export default {
     },
     updateVisitable(state, status) {
       state.visitable = status;
-    },
-    updateProjectInfo(state, data) {
-      state.projectInfo = data;
     },
   },
   actions: {
@@ -51,21 +46,6 @@ export default {
           const status = res.data;
           commit('updateVisitable', status);
           return status;
-        })
-        .catch(e => e);
-    },
-    getProjectInfo({ commit, state, rootState }) {
-      if (!rootState.projectId) {
-        return;
-      }
-      axios.get(
-        `${window.DEVOPS_SITE_URL}/ms/project/api/user/projects/${rootState.projectId}`,
-        { withCredentials: true },
-      )
-        .then((res) => {
-          const data = res.data.data || {};
-          commit('updateProjectInfo', data);
-          return data;
         })
         .catch(e => e);
     },

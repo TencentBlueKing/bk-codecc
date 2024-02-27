@@ -389,7 +389,6 @@ export default {
             const { submitIssueList = [] } = res.data;
             this.$bkMessage({
               theme: 'success',
-              delay: 5000,
               message: h('p', {}, [
                 this.$t('待修复问题提单至'),
                 h(

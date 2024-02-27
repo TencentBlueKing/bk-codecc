@@ -505,7 +505,7 @@ export default {
       return props[0] && props[0].propValue;
     },
     isEn() {
-      return language === 'en-US';
+      return language === 'en';
     },
     projectId() {
       return this.$route.params.projectId;

@@ -106,42 +106,6 @@ export default {
           return e;
         });
     },
-    getSuggestion({ commit, state, dispatch }, params) {
-      return http
-        .post('defect/api/user/warn/defect/suggestion', params)
-        .then((res) => {
-          const detail = res.data || {};
-          return detail;
-        })
-        .catch((e) => {
-          console.error(e);
-          return e;
-        });
-    },
-    getEvaluate({ commit, state, dispatch }, params) {
-      return http
-        .get(`defect/api/user/warn/defect/suggestion/evaluate/defectId/${params.id}`)
-        .then((res) => {
-          const detail = res.data || {};
-          return detail;
-        })
-        .catch((e) => {
-          console.error(e);
-          return e;
-        });
-    },
-    postEvaluate({ commit, state, dispatch }, params) {
-      return http
-        .post('defect/api/user/warn/defect/suggestion/evaluate/defectId/handle', params)
-        .then((res) => {
-          const detail = res.data || {};
-          return detail;
-        })
-        .catch((e) => {
-          console.error(e);
-          return e;
-        });
-    },
     lintList({ commit, state, dispatch }, params, config = {}) {
       if (config.showLoading) {
         commit('setMainContentLoading', true, { root: true });

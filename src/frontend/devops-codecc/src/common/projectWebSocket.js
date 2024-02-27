@@ -1,5 +1,5 @@
 import SockJS from 'sockjs-client';
-import { Stomp } from 'stompjs/lib/stomp.js';
+const { Stomp } = require('stompjs/lib/stomp.js');
 
 class ProjectWebSocket {
   constructor() {

@@ -36,7 +36,6 @@
     "file-saver": "^2.0.5",
     "js-cookie": "^2.2.0",
     "marked": "^11.0.0",
-    "mavon-editor": "^2.10.4",
     "postcss": "~8.4.16",
     "postcss-import": "^15.0.0",
     "postcss-mixins": "^9.0.4",

@@ -249,7 +249,7 @@ export default {
       };
     },
     isEn() {
-      return language === 'en-US';
+      return language === 'en';
     },
   },
   watch: {

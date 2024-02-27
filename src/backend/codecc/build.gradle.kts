@@ -187,16 +187,10 @@ allprojects {
             dependency("com.esotericsoftware:reflectasm:${Versions.reflectasmVersion}")
             dependency("com.tencent.bk.sdk:iam-java-sdk:${Versions.iamSdkVersion}")
             dependency("com.tencent.bk.sdk:crypto-java-sdk:${Versions.cryptSdkVersion}")
-            dependencySet("org.jetbrains.kotlinx:${Versions.kotlinxVersion}") {
-                entry("kotlinx-coroutines-core-jvm")
-                entry("kotlinx-coroutines-core")
-                entry("kotlinx-coroutines-jdk8")
-                entry("kotlinx-coroutines-slf4j")
-                entry("kotlinx-coroutines-test")
-            }
-
             dependency("com.qcloud:cos_api:${Versions.cosVersion}")
             dependency("org.tukaani:xz:${Versions.xzVersion}")
+            dependency("org.json:json:${Versions.jsonVersion}")
+            dependency("com.jakewharton:disklrucache:${Versions.disklrucacheVersion}")
         }
     }
 

@@ -68,10 +68,4 @@ public class CommonDefectDetailQueryReqVO
 
     @ApiModelProperty(value = "构建Id")
     private String buildId;
-
-    @ApiModelProperty(value = "流模式响应")
-    private Boolean stream = false;
-
-    @ApiModelProperty(value = "是否刷新缓存")
-    private Boolean flushCache = false;
 }

@@ -190,7 +190,6 @@ export default {
       this.$store.dispatch('checkerset/categoryList').then((res) => {
         this.checkerset = res;
       });
-      this.$store.dispatch('project/getProjectInfo');
     },
     handleLangChange(newValue) {
       const [formItem0, formItem] = this.$refs.basicForm.formItems;
