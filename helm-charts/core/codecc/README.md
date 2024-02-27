@@ -1,6 +1,6 @@
 # CodeCC
 
-此Chart用于在Kubernetes集群中通过helm部署Codecc
+ CodeCC 是腾讯的代码分析平台。本文档内容为如何在 Kubernetes 集群上部署 CodeCC 服务。
 
 ## 环境要求
 - Kubernetes 1.12+
@@ -29,6 +29,9 @@ $ helm uninstall codecc
 ## Chart依赖
 - [bitnami/nginx-ingress-controller](https://github.com/bitnami/charts/tree/master/bitnami/nginx-ingress-controller)
 - [bitnami/mongodb](https://github.com/bitnami/charts/blob/master/bitnami/mongodb)
+- [bitnami/redis](https://github.com/bitnami/charts/blob/master/bitnami/redis)
+- [bitnami/common](https://github.com/bitnami/charts/blob/master/bitnami/common)
+- [bitnami/rabbitmq](https://github.com/bitnami/charts/blob/master/bitnami/rabbitmq)
 
 ## 配置说明
 下面展示了可配置的参数列表以及默认值
@@ -59,6 +62,10 @@ $ helm uninstall codecc
 - asyncreport
 - defect
 - report
+- quartz
+- codeccjob
+- schedule
+
 
 |参数|描述|默认值 |
 |---|---|---|
@@ -125,8 +132,39 @@ $ helm uninstall codecc
 | `mongodb.enabled` | 是否部署mognodb。如果需要使用外部数据库，设置为`false`并配置`externalMongodb` | `true` |
 | `externalMongodb.defectUrl` | 外部mongodb服务的连接地址。当`mongodb.enabled`配置为`false`时，codecc将使用此参数连接外部mongodb | `mongodb://codecc:codecc@localhost:27017/db_defect` |
 | `externalMongodb.taskUrl` | 外部mongodb服务的连接地址。当`mongodb.enabled`配置为`false`时，codecc将使用此参数连接外部mongodb | `mongodb://codecc:codecc@localhost:27017/db_task` |
+| `externalMongodb.quartzUrl` | 外部mongodb服务的连接地址。当`mongodb.enabled`配置为`false`时，codecc将使用此参数连接外部mongodb | `mongodb://codecc:codecc@localhost:27017/db_quartz` |
 
 > 如果需要持久化mongodb数据，请参考[bitnami/mongodb](https://github.com/bitnami/charts/blob/master/bitnami/mongodb)配置存储卷
+
+### redis 配置
+
+默认将部署`redis`，如果不需要可以关闭。
+相关配置请参考[bitnami/redis](https://github.com/bitnami/charts/tree/master/bitnami/reids)
+
+|参数|描述|默认值 |
+|---|---|---|
+| `redis.enabled` | 是否部署mognodb。如果需要使用外部数据库，设置为`false`并配置`externalRedis` | `true` |
+| `externalRedis.host` | 外部redis服务的连接地址。当`redis.enabled`配置为`false`时，codecc将使用此参数连接外部redis | `localhost` |
+| `externalRedis.port` | 外部redis服务的连接端口。当`redis.enabled`配置为`false`时，codecc将使用此参数连接外部redis | `6379` |
+| `externalRedis.password` | 外部redis服务的密码。当`redis.enabled`配置为`false`时，codecc将使用此参数连接外部redis | `codec` |
+
+> 如果需要持久化mongodb数据，请参考[bitnami/redis](https://github.com/bitnami/charts/blob/master/bitnami/redis)配置存储卷
+
+### rabbitmq 配置
+
+默认将部署`rabbitmq`，如果不需要可以关闭。
+相关配置请参考[bitnami/rabbitmq](https://github.com/bitnami/charts/tree/master/bitnami/rabbitmq)
+
+|参数|描述|默认值 |
+|---|---|---|
+| `rabbitmq.enabled` | 是否部署mognodb。如果需要使用外部数据库，设置为`false`并配置`externalRabbitmq` | `true` |
+| `externalRabbitmq.host` | 外部rabbitmq服务的连接地址。当`rabbitmq.enabled`配置为`false`时，codecc将使用此参数连接外部rabbitmq | `localhost` |
+| `externalRabbitmq.virtualhost` | 外部rabbitmq服务的连接地址。当`rabbitmq.enabled`配置为`false`时，codecc将使用此参数连接外部rabbitmq | `localhost` |
+| `externalRabbitmq.username` | 外部rabbitmq服务的用户名。当`rabbitmq.enabled`配置为`false`时，codecc将使用此参数连接外部rabbitmq | `codec` |
+| `externalRabbitmq.password` | 外部rabbitmq服务的密码。当`rabbitmq.enabled`配置为`false`时，codecc将使用此参数连接外部rabbitmq | `codec` |
+
+> 如果需要持久化mongodb数据，请参考[bitnami/rabbitmq](https://github.com/bitnami/charts/blob/master/bitnami/rabbitmq)配置存储卷
+
 
 ### 数据持久化配置
 
@@ -146,7 +184,6 @@ $ helm uninstall codecc
 
 |参数|描述|默认值 |
 |---|---|---|
-| `common.jvmOption` | jvm启动选项, 如-Xms1024M -Xmx1024M | `""` |
 | `common.springProfile` | SpringBoot active profile | `dev` |
 | `common.mountPath` | pod volume挂载路径 | `/data/storage` |
 
@@ -156,6 +193,10 @@ $ helm uninstall codecc
 |---|---|---|
 | `init.mongodb.enabled` | 是否初始化mongodb数据，支持幂等执行 | `true` |
 | `init.mongodb.image` | mongodb job镜像拉取相关配置 | Check `values.yaml` |
+| `init.entrance.enabled` | 是否初始化蓝盾入口数据，支持幂等执行 | `true` |
+| `init.entrance.image` | entrance job镜像拉取相关配置 | Check `values.yaml` |
+| `init.storage.enabled` | 是否初始化文件存储 | `true` |
+| `init.storage.image` | storage job镜像拉取相关配置 | Check `values.yaml` |
 
 
 ### 网关配置
@@ -168,35 +209,72 @@ $ helm uninstall codecc
 | `gateway.service.port` | 服务类型为`ClusterIP`时端口设置 | `80` |
 | `gateway.service.nodePort` | 服务类型为`NodePort`时端口设置 | `80` |
 | `gateway.dnsServer` | dns服务器地址，用于配置nginx resolver | `local=on`(openrestry语法，取本机`/etc/resolv.conf`配置) |
-| `gateway.authorization` | 网关访问微服务认证信息 | `"Platform MThiNjFjOWMtOTAxYi00ZWEzLTg5YzMtMWY3NGJlOTQ0YjY2OlVzOFpHRFhQcWs4NmN3TXVrWUFCUXFDWkxBa00zSw=="` |
 | `gateway.deployMode` | 部署模式，standalone: 独立模式，ci: 与ci搭配模式 | `standalone` |
 
 
 ### 公共配置项
-***配置是需要加入前缀config.  如："config.BK_CODECC_CONSUL_DISCOVERY_TAG"
+***配置是需要加入前缀config.  如："config.bkCodeccConsulDiscoveryTag"
+
 |参数|描述|默认值 |
 |---|---|---|
-|`BK_CODECC_CONSUL_DISCOVERY_TAG`|服务发现时的标签|codecc|
-|`bkCiPublicUrl`|CI的公开地址|devops.example.com|
-|`BK_CI_PRIVATE_URL`|CI的集群内地址|devops.example.com|
-|`BK_CODECC_PUBLIC_URL`|codecc为集群外访问提供的URL|codecc.example.com|
-|`BK_CODECC_PRIVATE_URL`|codecc为集群内访问提供的URL|codecc.example.com|
-|`BK_CI_AUTH_PROVIDER`|服务权限校验方式|sample|
-|`BK_IAM_PRIVATE_URL`||""|
-|`BK_CODECC_APP_CODE`|CodeCC在蓝鲸体系中的唯一ID|bk_codecc|
-|`BK_CODECC_APP_TOKEN`||""|
-|`BK_PAAS_PRIVATE_URL`||pass.example.com|
-|`BK_CI_IAM_CALLBACK_USER`||""|
-|`BK_CODECC_PIPELINE_IMAGE_NAME`||bkci/ci|
-|`BK_CODECC_PIPELINE_BUILD_TYPE`||""|
-|`BK_CODECC_PIPELINE_IMAGE_TAG`||latest|
-|`BK_CODECC_TASK_ENCRYPTOR_KEY`||yOB62XpuhiyWM|
-|`BK_CODECC_PIPELINE_ATOM_CODE`|蓝盾流水线中CodeCC插件的AtomCode|CodeCCCheckAtom|
-|`BK_CODECC_PIPELINE_ATOM_VERSION`|蓝盾流水线中CodeCC插件的版本|1.*|
-|`BK_CODECC_PIPELINE_IMAGE_TYPE`||THIRD|
-|`BK_CODECC_PIPELINE_SCM_IS_OLD_SVN`||true|
-|`BK_CODECC_PIPELINE_SCM_IS_OLD_GITHUB`||true|
-|`BK_CODECC_TASK_ANALYSIS_MAX_HOUR`|最大的分析时长|7|
+|`bkCodeccConsulDiscoveryTag`|服务发现时的标签|codecc|
+|`bkCiPublicUrl`|CI的公开地址|example.com|
+|`bkCiPublicSchema`|CI的公开地址Schemes |http|
+|`bkCiPrivateUrl`|CI的集群内地址|example.com|
+|`bkCodeccPublicUrl`|codecc为集群外访问提供的URL|example.com|
+|`bkCodeccPrivateUrl`|codecc为集群内访问提供的URL|example.com|
+|`bkCiProjectInnerUrl`|CI内部项目服务访问地址，用于注册CodeCC入口|example.com/project|
+|`bkCiAuthProvider`|服务权限校验方式|sample|
+|`bkIamPrivateUrl`|bkIam对内提供的访问URL|""|
+|`bkCodeccAppCode`|CodeCC在蓝鲸体系中的唯一ID|bk_codecc|
+|`bkCodeccAppToken`|唯一ID密钥|""|
+|`bkPaasPrivateUrl`|pass对内提供的访问URL|pass.example.com|
+|`bkCiIamCallbackUser`|bkIam回调地址|""|
+|`bkCodeccPipelineImageName`|流水线使用的镜像名称，用于CodeCC独立入口创建任务|bkci/ci|
+|`bkCodeccPipelineBuildType`|构建机类型，用于CodeCC独立入口创建任务|KUBERNETES|
+|`bkCodeccPipelineImageTag`|流水线使用的镜像版本，用于CodeCC独立入口创建任务|latest|
+|`bkCodeccTaskEncryptorKey`|插件密钥|abcde|
+|`bkCodeccPipelineAtomCode`|CodeCC插件Code，用于CodeCC独立入口创建任务|CodeCCCheckAtom|
+|`bkCodeccPipelineAtomVersion`|CodeCC插件版本，用于CodeCC独立入口创建任务|1.*|
+|`bkGitPipelineAtomCode`|Git插件Code，用于CodeCC独立入口创建任务|git|
+|`bkGitPipelineAtomVersion`|Git插件版本，用于CodeCC独立入口创建任务|1.*|
+|`bkGithubPipelineAtomCode`|Github插件Code，用于CodeCC独立入口创建任务|PullFromGithub|
+|`bkGithubPipelineAtomVersion`|Github插件版本，用于CodeCC独立入口创建任务|1.*|
+|`bkSvnPipelineAtomCode`|Svn插件Code，用于CodeCC独立入口创建任务|svnCodeRepo|
+|`bkSvnPipelineAtomVersion`|Svn插件版本，用于CodeCC独立入口创建任务|1.*|
+|`bkCodeccPipelineImageType`|镜像类型，用于CodeCC独立入口创建任务|THIRD|
+|`bkCodeccPipelineScmIsOldSvn`||true|
+|`bkCodeccPipelineScmIsOldGithub`||true|
+|`bkCodeccTaskAnalysisMaxHour`|最大的分析时长|7|
+|`bkCiEnv`|网关相关参数|dev|
+|`bkHttpSchema`|网关相关参数|http|
+|`bkPaasFqdn`|网关相关参数|""|
+|`bkPaasHttpsPort`|网关相关参数|80|
+|`bkCodeccPaasLoginUrl`|网关相关参数|""|
+|`bkCodeccGatewayCorsAllowList`|网关相关参数|""|
+|`bkCiIamEnv`|网关相关参数|staging|
+|`bkSsmHost`|网关相关参数|""|
+|`bkSsmPort`|网关相关参数|80|
+|`bkCiGatewaySsmTokenUrl`|网关相关参数|/oauth/token|
+|`bkCiAppCode`|网关相关参数|workbench|
+|`bkCiAppToken`|网关相关参数|""|
+|`bkCodeccGatewayRegionName`|网关相关参数|""|
+|`bkCodeccFileDataPath`|CodeCC告警文件存放地址|/data/workspace/nfs|
+|`bkCodeccNfsServer`|NFS服务地址，仅当bkCodeccStorageType=nfs是才需要|""|
+|`bkCodeccNfsServerPath`|NFS挂在地址，仅当bkCodeccStorageType=nfs是才需要，建议与bkCodeccFileDataPath一致|/data/workspace/nfs|
+|`bkCodeccStorageType`|文件存储类型|nfs|
+|`bkCodeccStorageExpired`|文件存储的过期时间，单位天，0表示不限制|0|
+|`bkCodeccStorageBkrepoAdminUsername`|Bkrepo的管理员帐号，用于storage job创建仓库、用户，仅当bkCodeccStorageType=bkrepo是才需要|bkrepo_admin|
+|`bkCodeccStorageBkrepoAdminPassword`|Bkrepo的管理员密码，用于storage job创建仓库、用户，仅当bkCodeccStorageType=bkrepo是才需要|password|
+|`bkCodeccStorageBkrepoUsername`|Bkrepo仓库的帐号，仅当bkCodeccStorageType=bkrepo是才需要|codecc|
+|`bkCodeccStorageBkrepoPassword`|Bkrepo仓库的密码，仅当bkCodeccStorageType=bkrepo是才需要|codecc|
+|`bkCodeccStorageBkrepoProject`|Bkrepo仓库的项目，仅当bkCodeccStorageType=bkrepo是才需要|codecc|
+|`bkCodeccStorageBkrepoRepo`|Bkrepo仓库，仅当bkCodeccStorageType=bkrepo是才需要|repo|
+|`bkCodeccStorageBkrepoHost`|Bkrepo地址，仅当bkCodeccStorageType=bkrepo是才需要|""|
+|`bkCodeccLogCollectEnable`|是否开启日志收集|false|
+|`bkCodeccServiceLogDataId`|服务日志收集的dataId，仅当bkCodeccLogCollectEnable=true才需要|""|
+|`bkCodeccGatewayLogDataId`|网关日志收集的dataId，仅当bkCodeccLogCollectEnable=true才需要|""|
+|`bkCodeccMonitorEnable`|是否开启监控|false|
 
 
 
@@ -226,6 +304,24 @@ $ helm uninstall codecc
 |参数|描述|默认值 |
 |---|---|---|
 | `report.enabled`       | 是否部署report     | `true`                          |
+
+### quartz服务配置
+
+|参数|描述|默认值 |
+|---|---|---|
+| `quartz.enabled`       | 是否部署quartz     | `false`                          |
+
+### codeccjob服务配置
+
+|参数|描述|默认值 |
+|---|---|---|
+| `codeccjob.enabled`       | 是否部署codeccjob    | `true`                          |
+
+### schedule服务配置
+
+|参数|描述|默认值 |
+|---|---|---|
+| `schedule.enabled`       | 是否部署schedule    | `true`                          |
 
 
 ###  使用默认的value.yaml文件部署即可部署

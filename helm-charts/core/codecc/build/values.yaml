@@ -20,7 +20,7 @@ commonAnnotations: {}
 ##
 rbac:
   cluster:
-    create: false
+    create: true
   create: true
 
 ## Specifies whether a ServiceAccount should be created
@@ -32,7 +32,12 @@ serviceAccount:
   ##
   name:
 
+# ipv6 开启为true
+ipv6:
+  enabled: false
 
+# 支持esb 开启为true
+bkEsbEnabled: false
 
 # metrics采集配置
 serviceMonitor:
@@ -70,23 +75,57 @@ mongodb:
   # 是否部署mongodb
   # 如果需要使用外部数据库，设置为false并配置externalMongodb
   enabled: false
+  useStatefulSet: true
+  # ipv6 开启
+  # enableIPv6: true
+  # arbiter:
+  #   enabled: false
   auth:
     enabled: true
     rootPassword: codecc
     password: codecc
     username: codecc
     database: db_task
+  resources:
+    requests:
+      cpu: 100m
+      memory: 1000Mi
+    limits:
+      cpu: 500m
+      memory: 1500Mi
   persistence:
     subPath: mongodb
     size: 10Gi
   initdbScripts:
+     # ipv6 时关闭
     create_admin_user.sh: |
-      $MONGODB_BIN_DIR/mongo admin --host 127.0.0.1 --port $MONGODB_PORT_NUMBER -u root -p $MONGODB_ROOT_PASSWORD << EOF
+      $MONGODB_BIN_DIR/mongo admin --host 127.0.0.1 --port $MONGODB_PORT_NUMBER -u $MONGODB_ROOT_USER -p $MONGODB_ROOT_PASSWORD << EOF
       use db_defect
-      db.createUser({ user: "$MONGODB_USERNAME" , pwd: "$MONGODB_PASSWORD" , roles: [{role: "dbOwner" , db:"db_defect"}]})
+      db.createUser({ user: "$MONGODB_EXTRA_USERNAMES" , pwd: "$MONGODB_EXTRA_PASSWORDS" , roles: [{role: "dbOwner" , db:"db_defect"}]})
       use db_quartz
-      db.createUser({ user: "$MONGODB_USERNAME" , pwd: "$MONGODB_PASSWORD" , roles: [{role: "dbOwner" , db:"db_quartz"}]})
+      db.createUser({ user: "$MONGODB_EXTRA_USERNAMES" , pwd: "$MONGODB_EXTRA_PASSWORDS" , roles: [{role: "dbOwner" , db:"db_quartz"}]})
       EOF
+     # ipv6 开启
+  #   create_admin_user.sh: |
+  #     $MONGODB_BIN_DIR/mongo --ipv6 admin --port $MONGODB_PORT_NUMBER -u  $MONGODB_ROOT_USER -p $MONGODB_ROOT_PASSWORD << EOF
+  #     use db_defect
+  #     db.createUser({ user: "$MONGODB_EXTRA_USERNAMES" , pwd: "$MONGODB_EXTRA_PASSWORDS" , roles: [{role: "dbOwner" , db:"db_defect"}]})
+  #     use db_quartz
+  #     db.createUser({ user: "$MONGODB_EXTRA_USERNAMES" , pwd: "$MONGODB_EXTRA_PASSWORDS" , roles: [{role: "dbOwner" , db:"db_quartz"}]})
+  #     EOF
+  # extraEnvVars:
+  # - name: MONGODB_CLIENT_EXTRA_FLAGS
+  #   value: "--ipv6"      
+ 
+## 如果mongodb.enabled为false，bkrepo将使用下面的参数连接外部mongodb
+externalMongodb:
+  ## mongodb 帐号密码与
+  host: localhost:27017
+  username: codecc
+  password: codecc
+  port: 27017
+  extraUrlParams: ""
+  authDB: admin
 
 redis:
   enabled: false
@@ -101,10 +140,23 @@ redis:
     persistence: 
       size: 10Gi
 
+externalRedis:
+  ## mongodb 标准连接字符串
+  host: localhost
+  port: 6379
+  password: codecc
+
 rabbitmq:
   enabled: false
   persistence:
     size: 10Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 1000Mi
+    limits:
+      cpu: 500m
+      memory: 1500Mi
   auth:
     enabled: true
     username: codecc
@@ -118,6 +170,34 @@ rabbitmq:
     default_permissions.configure = .*
     default_permissions.read = .*
     default_permissions.write = .*
+  # # ipv6环境开启
+  # initContainers:
+  # - name: ipv6-init
+  #   image: "docker.io/busybox:1.33.1"
+  #   imagePullPolicy: IfNotPresent
+  #   volumeMounts:
+  #   - name: ipv6-cfg
+  #     mountPath: /ipv6
+  #   command: ['sh', '-c', 'echo "{inet6, true}." > /ipv6/erl_inetrc']
+  # extraVolumes:
+  # - name: ipv6-cfg
+  #   emptyDir: {}
+  # extraVolumeMounts:
+  # - name: ipv6-cfg
+  #   mountPath: /ipv6
+  # extraEnvVars:
+  # - name: RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS
+  #   value: "-kernel inetrc '/ipv6/erl_inetrc' -proto_dist inet6_tcp"
+  # - name: RABBITMQ_CTL_ERL_ARGS
+  #   value: "-proto_dist inet6_tcp"
+
+
+externalRabbitmq:
+  ## mongodb 标准连接字符串
+  host: localhost
+  virtualhost: localhost
+  username: codecc
+  password: codecc
 
     
 ## 数据持久化配置, 当使用filesystem方式存储时需要配置
@@ -152,7 +232,7 @@ init:
       username: codecc
       password: codecc
     image:
-      registry: __image_repo__
+      registry: __image_host__
       repository: __image_path__/codecc-mongo-init
       tag: __image_backend_tag__
       pullPolicy: IfNotPresent
