@@ -13,19 +13,11 @@ allprojects {
 
     val mavenRepoUrl = project.findPropertyOrEmpty("MAVEN_REPO_URL")
     repositories {
-        mavenLocal()
         maven(url = mavenRepoUrl)
         if (System.getenv("GITHUB_WORKFLOW") == null) { // 普通环境
             maven(url = "https://mirrors.tencent.com/nexus/repository/maven-public")
             maven(url = "https://mirrors.tencent.com/nexus/repository/gradle-plugins/")
         } else { // GitHub Action 环境
-//            maven {
-//                name = "MavenSnapshot"
-//                url = java.net.URI("https://oss.sonatype.org/content/repositories/snapshots/")
-//                mavenContent {
-//                    snapshotsOnly()
-//                }
-//            }
             mavenCentral()
             gradlePluginPortal()
         }
@@ -60,7 +52,6 @@ allprojects {
             dependency("org.apache.tomcat.embed:tomcat-embed-core:${Versions.tomcatEmbedCoreVersion}")
             dependency("commons-collections:commons-collections:${Versions.commonCollection}")
             dependency("biz.paluch.redis:lettuce:${Versions.lettuceVersion}")
-//			dependency("org.springframework.data:spring-data-redis:${Versions.springRedisVersion}")
             dependency("org.glassfish.jersey.ext:jersey-bean-validation:${Versions.jerseyValidationVersion}")
             dependency("commons-io:commons-io:${Versions.commonsIOVersion}")
             dependency("org.apache.xmlrpc:xmlrpc-client:${Versions.xmlrpcVersion}")
