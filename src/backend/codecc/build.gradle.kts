@@ -36,6 +36,9 @@ allprojects {
     // 版本管理
     dependencyManagement {
         setApplyMavenExclusions(false)
+        imports{
+            mavenBom("com.tencent.devops:devops-boot-dependencies:${Versions.devopsBootVersion}")
+        }
         dependencies {
             dependency("org.hashids:hashids:${Versions.hashidsVersion}")
             dependency("javax.ws.rs:javax.ws.rs-api:${Versions.jaxrsVersion}")
@@ -179,7 +182,6 @@ allprojects {
 //            dependency("com.github.ben-manes.caffeine:caffeine:${Versions.caffeineVersion}")
             dependency("com.esotericsoftware:reflectasm:${Versions.reflectasmVersion}")
             dependency("com.esotericsoftware:reflectasm:${Versions.reflectasmVersion}")
-            dependency("com.tencent.devops:devops-boot-dependencies:${Versions.devopsBootVersion}")
         }
     }
 
