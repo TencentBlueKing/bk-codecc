@@ -23,7 +23,7 @@ jobs:
         working-directory: src/backend/codecc
         run: |
           chmod +x gradlew
-          ./gradlew clean copyToRelease
+          ./gradlew clean copyToRelease --refresh-dependencies
       - name: frontend
         id: codecc-frontend
         run: |
