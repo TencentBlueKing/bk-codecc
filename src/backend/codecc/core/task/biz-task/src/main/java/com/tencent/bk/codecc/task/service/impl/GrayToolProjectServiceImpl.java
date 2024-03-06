@@ -30,6 +30,7 @@
 package com.tencent.bk.codecc.task.service.impl;
 
 import com.tencent.bk.codecc.task.service.GrayToolProjectService;
+import com.tencent.bk.codecc.task.vo.GrayReportVO;
 import com.tencent.bk.codecc.task.vo.GrayToolProjectReqVO;
 import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
 import com.tencent.bk.codecc.task.vo.GrayToolReportVO;
@@ -55,9 +56,15 @@ import org.springframework.stereotype.Service;
 public class GrayToolProjectServiceImpl implements GrayToolProjectService {
 
     @Override
-    public GrayToolProjectVO findGrayInfoByProjectId(String projectId) {
+    public List<GrayToolProjectVO> getGrayToolListByProjectId(String projectId) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public GrayToolProjectVO findByProjectIdAndToolName(String projectId, String toolName) {
         GrayToolProjectVO projectVO = new GrayToolProjectVO();
         projectVO.setStatus(ToolIntegratedStatus.P.value());
+        projectVO.setToolName(toolName);
         return projectVO;
     }
 
@@ -99,6 +106,11 @@ public class GrayToolProjectServiceImpl implements GrayToolProjectService {
     }
 
     @Override
+    public GrayToolReportVO findGaryReportByToolNameAndCodeCCBuildIdAndBuildNum(GrayReportVO grayReportVO) {
+        return null;
+    }
+
+    @Override
     public List<GrayToolProjectVO> findGrayToolProjectByProjectIds(Set<String> projectIdSet) {
         return Collections.emptyList();
     }
@@ -106,5 +118,10 @@ public class GrayToolProjectServiceImpl implements GrayToolProjectService {
     @Override
     public Set<String> findAllGrayProjectIdSet() {
         return Collections.emptySet();
+    }
+
+    @Override
+    public Integer refreshGrayProjectAddTool(GrayToolProjectVO grayToolProjectVO) {
+        return null;
     }
 }

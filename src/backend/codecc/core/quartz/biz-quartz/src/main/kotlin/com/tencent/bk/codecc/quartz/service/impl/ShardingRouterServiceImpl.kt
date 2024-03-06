@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service
 class ShardingRouterServiceImpl @Autowired constructor(
     private val discoveryClient: DiscoveryClient,
     private val profile: Profile,
-    private val scheduler : Scheduler,
+    private val scheduler: Scheduler,
     private val jobManageService: JobManageService,
     private val discoveryUtils: DiscoveryUtils
 ) : ShardingRouterService {
@@ -35,7 +35,7 @@ class ShardingRouterServiceImpl @Autowired constructor(
      * 服务启动时初始化
      */
     override fun initSharding(enumShardingStrategy: EnumShardingStrategy): ShardingResult {
-        val serviceName = profile.getApplicationName()
+        val serviceName = profile.getServiceName()
         //取该服务名的所有服务实例
         val instances =
             discoveryClient.getInstances(serviceName)
@@ -87,7 +87,7 @@ class ShardingRouterServiceImpl @Autowired constructor(
         enumShardingStrategy: EnumShardingStrategy,
         enumRouterStrategy: EnumRouterStrategy
     ): JobInstancesChangeInfo {
-        val serviceName = profile.getApplicationName()
+        val serviceName = profile.getServiceName()
         //取该服务名的所有服务实例
         val instances =
             discoveryClient.getInstances(serviceName)
@@ -107,11 +107,12 @@ class ShardingRouterServiceImpl @Autowired constructor(
         oldShardingResult.shardList.forEach { oldShard ->
             val newQualifiedShard = newShardingResult.shardList.find { newShard -> newShard.tag == oldShard.tag }
             if (null == newQualifiedShard) {
-                if(totalJobInstances.isNullOrEmpty()){
+                if (totalJobInstances.isNullOrEmpty()) {
                     totalJobInstances = jobManageService.findCachedJobs()
                 }
-                if(currentJobInstances.isNullOrEmpty()){
-                    val currentJobList = scheduler.getJobKeys(GroupMatcher.groupEquals(CustomSchedulerManager.jobGroup)).map { it.name }
+                if (currentJobInstances.isNullOrEmpty()) {
+                    val currentJobList =
+                        scheduler.getJobKeys(GroupMatcher.groupEquals(CustomSchedulerManager.jobGroup)).map { it.name }
                     currentJobInstances = totalJobInstances.filter { currentJobList.contains(it.jobName) }
                 }
                 jobsNeedToAdd.addAll(
@@ -128,7 +129,7 @@ class ShardingRouterServiceImpl @Autowired constructor(
                 } else {
                     for (i in 0 until oldShard.nodeList.size) {
                         if (oldShard.nodeList[i].host != newQualifiedShard.nodeList[i].host ||
-                            oldShard.nodeList[i].port != newQualifiedShard.nodeList[i].port
+                                oldShard.nodeList[i].port != newQualifiedShard.nodeList[i].port
                         ) {
                             shardChangeFlag = 1
                             break
@@ -140,11 +141,12 @@ class ShardingRouterServiceImpl @Autowired constructor(
         //再算增加的
         newShardingResult.shardList.forEach { newShard ->
             if (null == oldShardingResult.shardList.find { oldShard -> oldShard.tag == newShard.tag }) {
-                if(totalJobInstances.isNullOrEmpty()){
+                if (totalJobInstances.isNullOrEmpty()) {
                     totalJobInstances = jobManageService.findCachedJobs()
                 }
-                if(currentJobInstances.isNullOrEmpty()){
-                    val currentJobList = scheduler.getJobKeys(GroupMatcher.groupEquals(CustomSchedulerManager.jobGroup)).map { it.name }
+                if (currentJobInstances.isNullOrEmpty()) {
+                    val currentJobList =
+                        scheduler.getJobKeys(GroupMatcher.groupEquals(CustomSchedulerManager.jobGroup)).map { it.name }
                     currentJobInstances = totalJobInstances.filter { currentJobList.contains(it.jobName) }
                 }
                 jobsNeedToRemove.addAll(

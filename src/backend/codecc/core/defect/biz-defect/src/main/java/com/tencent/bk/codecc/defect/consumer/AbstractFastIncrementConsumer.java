@@ -16,12 +16,12 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.component.DefectConsumerRetryLimitComponent;
 import com.tencent.bk.codecc.defect.component.ScmJsonComponent;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoInfoRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildInfoRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildStackRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.TransferAuthorRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.ToolBuildInfoDao;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.TransferAuthorRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CodeRepoInfoRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.TaskLogRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ToolBuildInfoRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ToolBuildStackRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.ToolBuildInfoDao;
 import com.tencent.bk.codecc.defect.model.TaskLogEntity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoInfoEntity;
@@ -266,41 +266,5 @@ public abstract class AbstractFastIncrementConsumer implements IConsumer<Analyze
             codeRepoInfo.setCreatedDate(currentTime);
             codeRepoRepository.save(codeRepoInfo);
         }
-    }
-
-    /**
-     * 获取比对用的基准构建Id
-     *
-     * @return
-     */
-    protected String getBaseBuildIdForFastIncr(ToolBuildStackEntity toolBuildStack,
-            Long taskId,
-            String toolName,
-            String curBuildId) {
-
-        ToolBuildInfoEntity toolBuildInfo = toolBuildInfoRepository.findFirstByTaskIdAndToolName(taskId, toolName);
-
-        // 覆盖场景：#1全量、#1重试触发超快增量
-        if (toolBuildInfo != null && curBuildId.equals(toolBuildInfo.getDefectBaseBuildId())) {
-            return curBuildId;
-        }
-
-        // 覆盖场景：#1全量、#2超快增量、#1重试触发超快增量
-        TaskLogEntity taskLog = taskLogRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, curBuildId);
-        if (taskLog != null && CollectionUtils.isNotEmpty(taskLog.getStepArray())) {
-            boolean isRebuild = taskLog.getStepArray().stream()
-                    .anyMatch(x -> x.getStepNum() == ComConstants.Step4MutliTool.COMMIT.value()
-                            && x.getFlag() == ComConstants.StepFlag.SUCC.value());
-
-            if (isRebuild) {
-                return curBuildId;
-            }
-        }
-
-        if (toolBuildStack != null) {
-            return toolBuildStack.getBaseBuildId();
-        }
-
-        return toolBuildInfo != null ? toolBuildInfo.getDefectBaseBuildId() : "";
     }
 }

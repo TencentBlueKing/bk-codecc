@@ -41,4 +41,8 @@ public class V3UpdateCheckerSetReqExtVO extends V3UpdateCheckerSetReqVO {
      */
     private String checkerSetSource;
 
+    /**
+     * 发布者
+     */
+    private String creator;
 }

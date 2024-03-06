@@ -42,13 +42,13 @@ import java.util.Set;
  */
 @Repository
 public interface GrayToolProjectRepository extends MongoRepository<GrayToolProjectEntity, String> {
+
     /**
-     * 根据项目id查询数据信息
-     *
-     * @param projectId
-     * @return
+     * 查询灰度项目下所有的工具清单
+     * @param projectId 项目id
+     * @return list
      */
-    GrayToolProjectEntity findFirstByProjectId(String projectId);
+    List<GrayToolProjectEntity> findByProjectId(String projectId);
 
     /**
      * 根据状态查询数据信息
@@ -72,5 +72,10 @@ public interface GrayToolProjectRepository extends MongoRepository<GrayToolProje
      * @return string
      */
     @Query(fields = "{'updated_by': 1}")
-    GrayToolProjectEntity findFirstUpdatedByProjectId(String projectId);
+    GrayToolProjectEntity findFirstUpdatedByProjectIdAndToolName(String projectId, String toolName);
+
+    /**
+     * 新增工具维度，项目id + 工具 = 唯一实体
+     */
+    GrayToolProjectEntity findFirstByProjectIdAndToolName(String projectId, String toolName);
 }

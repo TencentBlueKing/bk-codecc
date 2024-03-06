@@ -2,7 +2,7 @@
 curl -X PUT --header 'Content-Type: application/json' --header 'Accept: application/json' --header 'X-DEVOPS-UID: admin' -d "{    
    \"showProjectList\": true,   
    \"showNav\": true,   
-   \"status\": \"new\",
+   \"status\": \"ok\",   
    \"deleted\": false,          
    \"link\": \"/codecc/0\",                   
    \"linkNew\": \"/codecc/0\",   

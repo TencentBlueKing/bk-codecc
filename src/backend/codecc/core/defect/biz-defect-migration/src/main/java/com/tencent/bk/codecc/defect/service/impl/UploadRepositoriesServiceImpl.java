@@ -1,10 +1,10 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoInfoRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildInfoRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildStackRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.ToolBuildStackDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CodeRepoInfoRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ToolBuildInfoRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ToolBuildStackRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.ToolBuildStackDao;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoInfoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;

@@ -65,9 +65,9 @@ spec:
             - name: BK_CODECC_SERVICE_PREFIX
               value: {{ include "common.names.fullname" . }}-
             - name: BK_CODECC_HOST
-              value: http://{{ .Values.config.bkCodeccPublicUrl }}
+              value: {{ .Values.config.bkCodeccPublicSchema }}://{{ .Values.config.bkCodeccPublicUrl }}
             - name: BK_CI_PUBLIC_URL
-              value: http://{{ .Values.config.bkCiPublicUrl }}
+              value: {{ .Values.config.bkCiPublicSchema }}://{{ .Values.config.bkCiPublicUrl }}
             - name: BK_CODECC_GATEWAY_DNS_ADDR
               value: {{ .Values.gateway.dnsServer }}
             - name: BK_CODECC_CONSUL_IP
@@ -90,6 +90,10 @@ spec:
               value: {{ .Values.config.bkCiIamEnv }}
             - name: BK_SSM_HOST
               value: {{ .Values.config.bkSsmHost }}
+            - name: BK_SSM_PORT
+              value: {{ .Values.config.bkSsmPort | quote  }}
+            - name: BK_CI_GATEWAY_SSM_TOKEN_URL
+              value: {{ .Values.config.bkCiGatewaySsmTokenUrl }}
             - name: BK_CI_APP_CODE
               value: {{ .Values.config.bkCiAppCode }}
             - name: BK_CI_APP_TOKEN
@@ -98,6 +102,16 @@ spec:
               value: {{ .Values.config.bkCiAuthProvider }}
             - name: BK_CODECC_GATEWAY_REGION_NAME
               value: {{ .Values.config.bkCodeccGatewayRegionName }}
+            - name: BK_CI_FQDN
+              value: {{ .Values.config.bkCiFqdn }}
+            - name: BK_PUBLIC_PATH_PREFIX
+              value: {{ .Values.config.bkPublicPathPrefix }}
+            - name: BK_CI_PUBLIC_PATH_PREFIX
+              value: {{ .Values.config.bkCiPublicPathPrefix }}
+            - name: BK_ESB_ENABLED
+              value: {{ .Values.config.bkEsbEnable | quote  }}
+            - name: BK_ESB_HOST
+              value: {{ .Values.config.bkEsbHost }}
           ports:
             - name: http
               containerPort: 80

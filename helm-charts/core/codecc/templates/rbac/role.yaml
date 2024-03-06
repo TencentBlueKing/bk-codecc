@@ -14,15 +14,7 @@ rules:
   - apiGroups: 
     - ""
     - networking.k8s.io
-    resources: 
-    - configmaps
-    - services
-    - secrets
-    - endpoints
-    - persistentvolumeclaims
-    - pods
-    - namespaces
-    - ingresses
+    resources: ["*"]
     verbs: 
     - get
     - watch

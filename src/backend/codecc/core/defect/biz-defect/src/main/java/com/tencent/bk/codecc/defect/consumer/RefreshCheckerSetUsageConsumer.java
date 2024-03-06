@@ -12,22 +12,30 @@
 
 package com.tencent.bk.codecc.defect.consumer;
 
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CheckerSetDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CheckerSetTaskRelationshipDao;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_REFRESH_CHECKERSET_USAGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_REFRESH_CHECKERSET_USAGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_REFRESH_CHECKERSET_USAGE;
+
+import com.google.common.collect.Maps;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongotemplate.CheckerSetDao;
+import com.tencent.bk.codecc.defect.dao.core.mongotemplate.CheckerSetTaskRelationshipDao;
+import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetTaskCountEntity;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-
-import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_REFRESH_CHECKERSET_USAGE;
-import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_REFRESH_CHECKERSET_USAGE;
-import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_REFRESH_CHECKERSET_USAGE;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 
 /**
  * 刷新规则集使用量消息队列的消费者
@@ -38,26 +46,63 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_REFRESH_CHECKER
 @Component
 @Slf4j
 public class RefreshCheckerSetUsageConsumer {
+
     @Autowired
     private CheckerSetTaskRelationshipDao checkerSetTaskRelationshipDao;
 
     @Autowired
     private CheckerSetDao checkerSetDao;
 
-    @RabbitListener(bindings = @QueueBinding(key = ROUTE_REFRESH_CHECKERSET_USAGE,
-            value = @Queue(value = QUEUE_REFRESH_CHECKERSET_USAGE, durable = "true"),
-            exchange = @Exchange(value = EXCHANGE_REFRESH_CHECKERSET_USAGE, durable = "true", delayed = "true")))
-    public void refreshCheckerSetUsage() {
-        log.info("begin refreshCheckerSetUsage.");
+    @Autowired
+    private CheckerSetRepository checkerSetRepository;
 
+    @RabbitListener(
+            concurrency = "1",
+            bindings = @QueueBinding(
+                    key = ROUTE_REFRESH_CHECKERSET_USAGE,
+                    value = @Queue(value = QUEUE_REFRESH_CHECKERSET_USAGE, durable = "true"),
+                    exchange = @Exchange(value = EXCHANGE_REFRESH_CHECKERSET_USAGE, durable = "true", delayed = "true")
+            )
+    )
+    public void refreshCheckerSetUsage() {
         try {
-            List<CheckerSetTaskCountEntity> checkerSetTaskCountList =
-                    checkerSetTaskRelationshipDao.countCheckerSetGroupByCheckerSetId();
-            checkerSetDao.updateCheckerSetUsage(checkerSetTaskCountList);
-        } catch (Exception e) {
-            log.error("refreshCheckerSetUsage fail.", e);
+            log.info("RefreshCheckerSetUsageConsumer begin");
+            Map<String, Long> statisticsMap = getStatisticsMap();
+            checkerSetDao.updateCheckerSetUsage(statisticsMap);
+            log.info("RefreshCheckerSetUsageConsumer end");
+        } catch (Throwable t) {
+            log.error("RefreshCheckerSetUsageConsumer error", t);
         }
-        log.info("end refreshCheckerSetUsage.");
+    }
+
+    private Map<String, Long> getStatisticsMap() throws InterruptedException {
+        Map<String, Long> statisticsMap = Maps.newHashMap();
+        int page = 0;
+
+        while (true) {
+            // CheckerSetEntity中checkerSetId非唯一，存在多版本，应用层面幂等去重
+            PageRequest pageRequest = PageRequest.of(page++, 500);
+            List<CheckerSetEntity> checkerSetList = checkerSetRepository.findByCheckerSetIdIsNotNull(pageRequest);
+            if (CollectionUtils.isEmpty(checkerSetList)) {
+                break;
+            }
+
+            Set<String> checkerSetIds = checkerSetList.stream()
+                    .filter(x -> !ObjectUtils.isEmpty(x.getCheckerSetId())
+                            && !statisticsMap.containsKey(x.getCheckerSetId()))
+                    .map(CheckerSetEntity::getCheckerSetId)
+                    .collect(Collectors.toSet());
+            List<CheckerSetTaskCountEntity> checkerSetTaskCountList =
+                    checkerSetTaskRelationshipDao.countCheckerSetGroupByCheckerSetId(checkerSetIds);
+
+            for (CheckerSetTaskCountEntity entity : checkerSetTaskCountList) {
+                statisticsMap.put(entity.getCheckerSetId(), entity.getTaskInUseCount());
+            }
+
+            Thread.sleep(500);
+        }
+
+        return statisticsMap;
     }
 
 

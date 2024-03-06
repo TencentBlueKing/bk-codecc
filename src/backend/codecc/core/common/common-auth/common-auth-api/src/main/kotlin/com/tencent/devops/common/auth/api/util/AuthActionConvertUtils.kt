@@ -5,7 +5,6 @@ import com.tencent.devops.common.auth.api.pojo.external.PipelineAuthAction
 
 object AuthActionConvertUtils {
 
-
     fun covert(actions: List<CodeCCAuthAction>): List<PipelineAuthAction> {
         if (actions.isEmpty()) {
             return emptyList()
@@ -40,5 +39,4 @@ object AuthActionConvertUtils {
                 )
         }
     }
-
 }

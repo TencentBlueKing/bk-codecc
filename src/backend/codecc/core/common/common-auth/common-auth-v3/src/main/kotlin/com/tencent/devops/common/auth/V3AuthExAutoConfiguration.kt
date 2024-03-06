@@ -109,7 +109,7 @@ class V3AuthExAutoConfiguration {
     fun authHelper() = AuthHelper(tokenService(), policyService(), iamConfiguration())
 
     @Bean
-    fun iamConfiguration() = IamConfiguration(systemId, appCode, appSecret, iamBaseUrl, apigwBaseUrl)
+    fun iamConfiguration() = IamConfiguration(systemId, appCode, appSecret, iamBaseUrl, null)
 
     @Bean
     fun httpService() = DefaultHttpClientServiceImpl(iamConfiguration())

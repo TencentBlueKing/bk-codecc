@@ -13,10 +13,13 @@
 package com.tencent.bk.codecc.defect.resources;
 
 import com.tencent.bk.codecc.defect.api.ServiceBuildRestResource;
+import com.tencent.bk.codecc.defect.model.BuildEntity;
 import com.tencent.bk.codecc.defect.service.BuildService;
 import com.tencent.bk.codecc.defect.vo.common.BuildVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.web.RestResource;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -34,5 +37,24 @@ public class ServiceBuildRestResourceImpl implements ServiceBuildRestResource {
     public Result<Boolean> updateBuildInfo(BuildVO buildVO) {
         BuildVO resultBuildVO = buildService.upsertAndGetBuildInfo(buildVO);
         return new Result<>(null != resultBuildVO);
+    }
+
+    @Override
+    public Result<Integer> getBuildNum(String buildId) {
+        BuildEntity buildEntity = buildService.getBuildEntityByBuildId(buildId);
+        Integer buildNo = buildEntity != null && StringUtils.isNotBlank(buildEntity.getBuildNo())
+                && StringUtils.isNumeric(buildEntity.getBuildNo()) ? Integer.valueOf(buildEntity.getBuildNo()) : null;
+        return new Result<>(buildNo);
+    }
+
+    @Override
+    public Result<BuildVO> getBuildInfo(String buildId) {
+        BuildEntity buildEntity = buildService.getBuildEntityByBuildId(buildId);
+        if (buildEntity == null) {
+            return new Result<>(null);
+        }
+        BuildVO vo = new BuildVO();
+        BeanUtils.copyProperties(buildEntity, vo);
+        return new Result<>(vo);
     }
 }

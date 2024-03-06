@@ -1,4 +1,4 @@
-import { bus } from '@/common/bus'
+import { bus } from '@/common/bus';
 export default {
   props: {
     type: {
@@ -74,50 +74,50 @@ export default {
         4: this.$t('提示'),
       },
       hoverAuthorIndex: -1,
-    }
+    };
   },
   created() {
     bus.$on('handleNextGuide', () => {
       if (!localStorage.getItem('guide2End')) {
-        const index = this.list.findIndex(item => item.status === 1)
-        document.getElementsByClassName('guide-icon')[index]?.click()
+        const index = this.list.findIndex(item => item.status === 1);
+        document.getElementsByClassName('guide-icon')[index]?.click();
         setTimeout(() => {
-          document.getElementsByClassName('guide-flag')[0]?.click()
-        }, 200)
+          document.getElementsByClassName('guide-flag')[0]?.click();
+        }, 200);
       }
-    })
+    });
   },
   methods: {
     handleAuthorIndex(index) {
-      this.hoverAuthorIndex = index
+      this.hoverAuthorIndex = index;
     },
     handleRowClassName({ row, rowIndex }) {
-      let rowClass = 'list-row'
-      if (this.fileIndex === rowIndex) rowClass += ' current-row'
-      return rowClass
+      let rowClass = 'list-row';
+      if (this.fileIndex === rowIndex) rowClass += ' current-row';
+      return rowClass;
     },
     formatSeverity(list = []) {
-      const severityList = list.map(item => this.defectSeverityMap[item])
-      return severityList.join('、')
+      const severityList = list.map(item => this.defectSeverityMap[item]);
+      return severityList.join('、');
     },
     handleSelectable(row, index) {
-      return !(row.status & 2)
+      return !(row.status & 2);
     },
     handleTableSetReview() {
-      let prefix = `${location.host}`
+      let prefix = `${location.host}`;
       if (window.self !== window.top) {
-        prefix = `${window.DEVOPS_SITE_URL}/console`
+        prefix = `${window.DEVOPS_SITE_URL}/console`;
       }
       const route = this.$router.resolve({
         name: 'ignoreList',
-      })
-      window.open(prefix + route.href, '_blank')
-      document.body.click()
-      localStorage.setItem('guide2End', true)
+      });
+      window.open(prefix + route.href, '_blank');
+      document.body.click();
+      localStorage.setItem('guide2End', true);
     },
     handleTableGuideNextStep() {
-      document.body.click()
-      localStorage.setItem('guide2End', true)
+      document.body.click();
+      localStorage.setItem('guide2End', true);
     },
     goToTask(taskId) {
       this.$router.push({
@@ -125,7 +125,7 @@ export default {
         params: {
           taskId,
         },
-      })
+      });
     },
   },
-}
+};

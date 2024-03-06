@@ -9,7 +9,7 @@ import org.apache.commons.lang.StringUtils;
 @Slf4j
 public class TaskLogRepoInfoUtils {
 
-    public static boolean hasRepoInfo(String msg){
+    public static boolean hasRepoInfo(String msg) {
         return StringUtils.isNotBlank(msg) && (msg.contains("代码库：") || msg.contains("repository: "));
     }
 

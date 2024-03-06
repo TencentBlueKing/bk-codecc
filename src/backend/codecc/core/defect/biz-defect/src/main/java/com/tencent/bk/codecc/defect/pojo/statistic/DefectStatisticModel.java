@@ -39,7 +39,9 @@ public class DefectStatisticModel<T extends DefectEntity> {
             ToolBuildStackEntity toolBuildStackEntity,
             List<T> defectList,
             Map<String, String> riskConfigMap,
-            DUPCDefectJsonFileEntity<DUPCDefectEntity> defectJsonFileEntity) {
+            DUPCDefectJsonFileEntity<DUPCDefectEntity> defectJsonFileEntity,
+            Boolean fastIncrementFlag
+    ) {
         this.taskDetailVO = taskDetailVO;
         this.toolName = toolName;
         this.averageCcn = averageCcn;
@@ -48,6 +50,7 @@ public class DefectStatisticModel<T extends DefectEntity> {
         this.defectList = defectList;
         this.riskConfigMap = riskConfigMap;
         this.defectJsonFileEntity = defectJsonFileEntity;
+        this.fastIncrementFlag = fastIncrementFlag;
     }
 
     private TaskDetailVO taskDetailVO;
@@ -80,4 +83,9 @@ public class DefectStatisticModel<T extends DefectEntity> {
      * common or lint, 其他传null
      */
     private List<String> newCountCheckers;
+
+    /**
+     * 超快增量标识
+     */
+    private Boolean fastIncrementFlag;
 }

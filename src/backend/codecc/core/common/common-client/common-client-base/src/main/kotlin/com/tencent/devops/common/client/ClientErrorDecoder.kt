@@ -37,6 +37,7 @@ import feign.Response
 import feign.codec.ErrorDecoder
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import java.io.IOException
 
@@ -49,7 +50,10 @@ class ClientErrorDecoder @Autowired constructor(val objectMapper: ObjectMapper) 
 
     companion object {
         private val logger = LoggerFactory.getLogger(ClientErrorDecoder::class.java)
-        private val errorCodeMap = mapOf(FILE_CONTENT_TOO_LARGE.toInt() to FILE_CONTENT_TOO_LARGE)
+        private val errorCodeMap = mapOf(
+            FILE_CONTENT_TOO_LARGE.toInt() to FILE_CONTENT_TOO_LARGE,
+            HttpStatus.FORBIDDEN.value() to HttpStatus.FORBIDDEN.value().toString()
+        )
     }
 
     override fun decode(methodKey: String, response: Response): Exception {

@@ -35,8 +35,7 @@ import com.tencent.bk.codecc.defect.vo.common.SnapShotVO;
  * @version V1.0
  * @date 2019/6/28
  */
-public interface SnapShotService
-{
+public interface SnapShotService {
     /**
      * 保存快照信息
      *
@@ -62,12 +61,13 @@ public interface SnapShotService
 
     /**
      * 更新元数据上传状态
+     *
      * @param projectId
      * @param buildId
      * @param status
      * @return
      */
-    void updateMetadataReportStatus(String projectId, Long taskId, String buildId, boolean status, Long buildFlag);
+    void updateMetadataReportStatus(String projectId, String buildId, long taskId, boolean status);
 
     SnapShotVO getSnapShotVO(String projectId, Long taskId, String buildId);
 

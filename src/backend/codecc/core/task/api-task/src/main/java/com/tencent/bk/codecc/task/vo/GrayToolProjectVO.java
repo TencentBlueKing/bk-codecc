@@ -32,6 +32,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,6 +49,12 @@ public class GrayToolProjectVO extends CommonVO {
      */
     @ApiModelProperty(value = "项目Id", required = true)
     private String projectId;
+
+    @ApiModelProperty("工具id（存储状态）")
+    private String toolName;
+
+    @ApiModelProperty(value = "需灰度工具清单")
+    private List<String> toolNameList;
 
     /**
      * 项目灰度状态

@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.service.statistic;
 
 import com.google.common.collect.Maps;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
 import com.tencent.bk.codecc.defect.dao.redis.StatisticDao;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
@@ -58,13 +58,12 @@ public class CommonDefectStatisticServiceImpl
         DimensionStatisticModel dimensionStatistic = isMigrationSuccessful ? new DimensionStatisticModel() : null;
 
         return new CommonDefectStatisticModelBuilder()
+                .fastIncrementFlag(defectStatisticModel.getFastIncrementFlag())
                 .newCountCheckerList(defectStatisticModel.getNewCountCheckers())
                 .taskId(defectStatisticModel.getTaskDetailVO().getTaskId())
                 .toolName(defectStatisticModel.getToolName())
                 .createFrom(defectStatisticModel.getTaskDetailVO().getCreateFrom())
                 .buildId(defectStatisticModel.getBuildId())
-                .baseBuildId(defectStatisticModel.getToolBuildStackEntity() != null
-                        ? defectStatisticModel.getToolBuildStackEntity().getBuildId() : null)
                 .allDefectList(defectStatisticModel.getDefectList())
                 .migrationSuccessful(isMigrationSuccessful)
                 .checkerKeyToCategoryMap(checkerKeyToCategoryMap)

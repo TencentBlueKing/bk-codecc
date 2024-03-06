@@ -2,7 +2,7 @@ package com.tencent.bk.codecc.defect.consumer;
 
 import static java.util.stream.Collectors.toSet;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerSetTaskRelationshipRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetTaskRelationshipRepository;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetTaskRelationshipEntity;
 import com.tencent.bk.codecc.defect.service.AbstractCodeScoringService;
 import com.tencent.bk.codecc.defect.vo.CommitDefectVO;
@@ -10,7 +10,6 @@ import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.devops.common.api.OpenSourceCheckerSetVO;
-import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
@@ -20,7 +19,6 @@ import com.tencent.devops.common.service.IConsumer;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;

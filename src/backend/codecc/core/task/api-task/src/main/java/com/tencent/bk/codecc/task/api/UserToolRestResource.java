@@ -26,8 +26,11 @@
 
 package com.tencent.bk.codecc.task.api;
 
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TASK_ID;
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
+
 import com.tencent.bk.codecc.task.vo.BatchRegisterVO;
-import com.tencent.bk.codecc.task.vo.ParamJsonAndCheckerSetsVO;
 import com.tencent.bk.codecc.task.vo.RepoInfoVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigPlatformVO;
 import com.tencent.bk.codecc.task.vo.ToolStatusUpdateReqVO;
@@ -35,14 +38,20 @@ import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-
+import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import java.util.List;
-
-import static com.tencent.devops.common.api.auth.HeaderKt.*;
 
 /**
  * 工具管理接口
@@ -54,8 +63,7 @@ import static com.tencent.devops.common.api.auth.HeaderKt.*;
 @Path("/user/tool")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public interface UserToolRestResource
-{
+public interface UserToolRestResource {
 
     @ApiOperation("批量注册工具")
     @Path("/")
@@ -63,11 +71,11 @@ public interface UserToolRestResource
     Result<Boolean> registerTools(
             @ApiParam(value = "工具注册信息", required = true)
             @Valid
-                    BatchRegisterVO batchRegisterVO,
+            BatchRegisterVO batchRegisterVO,
             @ApiParam(value = "当前用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             @NotNull(message = "用户信息不能为空")
-                    String userName
+            String userName
     );
 
 
@@ -77,7 +85,7 @@ public interface UserToolRestResource
     Result<List<RepoInfoVO>> getRepoList(
             @ApiParam(value = "项目code", required = true)
             @PathParam("projCode")
-                    String projCode);
+            String projCode);
 
 
     @ApiOperation("获取代码库分支列表")
@@ -86,29 +94,27 @@ public interface UserToolRestResource
     Result<List<String>> listBranches(
             @ApiParam(value = "项目code", required = true)
             @QueryParam("projCode")
-                    String projCode,
+            String projCode,
             @ApiParam(value = "仓库地址", required = true)
             @QueryParam("url")
-                    String url,
+            String url,
             @ApiParam(value = "仓库类型", required = true)
             @QueryParam("type")
-                    String type
+            String type
     );
-
 
     @ApiOperation("工具启用停用")
     @Path("/status")
     @PUT
     Result<Boolean> updateToolStatus(
             @ApiParam(value = "工具名清单", required = true)
-                    ToolStatusUpdateReqVO toolStatusUpdateReqVO,
+            ToolStatusUpdateReqVO toolStatusUpdateReqVO,
             @ApiParam(value = "当前用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String userName,
+            String userName,
             @ApiParam(value = "任务id", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
-                    long taskId);
-
+            long taskId);
 
     @ApiOperation("停用流水线")
     @Path("/delete/pipeline")
@@ -116,29 +122,14 @@ public interface UserToolRestResource
     Result<Boolean> deletePipeline(
             @ApiParam(value = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
-                    Long taskId,
+            Long taskId,
             @ApiParam(value = "项目ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
-                    String projectId,
+            String projectId,
             @ApiParam(value = "当前用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String userName
+            String userName
     );
-
-    @ApiOperation("修改工具特殊参数和规则集")
-    @Path("/tasks/{taskId}/tools/paramJsonAndCheckerSets")
-    @PUT
-    Result<Boolean> updateParamJsonAndCheckerSets(
-            @ApiParam(value = "当前用户", required = true)
-            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String user,
-            @ApiParam(value = "任务ID", required = true)
-            @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
-                    Long taskId,
-            @ApiParam(value = "修改工具特殊参数和规则集请求体", required = true)
-                    ParamJsonAndCheckerSetsVO paramJsonAndCheckerSetsVO
-    );
-
 
     @ApiOperation("修改工具特殊配置")
     @Path("/toolConfig/update")
@@ -146,11 +137,11 @@ public interface UserToolRestResource
     Result<Boolean> updateToolPlatformInfo(
             @ApiParam(value = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
-                    Long taskId,
+            Long taskId,
             @ApiParam(value = "当前用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String userName,
+            String userName,
             @ApiParam(value = "请求体", required = true)
-                ToolConfigPlatformVO toolConfigPlatformVO
+            ToolConfigPlatformVO toolConfigPlatformVO
     );
 }

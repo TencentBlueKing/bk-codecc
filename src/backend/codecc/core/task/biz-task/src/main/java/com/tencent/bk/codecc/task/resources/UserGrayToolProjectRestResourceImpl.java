@@ -86,10 +86,10 @@ public class UserGrayToolProjectRestResourceImpl implements UserGrayToolProjectR
         return new Result<>(grayToolProjectService.updateGrayInfo(userId,grayToolProjectVO));
     }
 
-    @Override
-    public Result<GrayToolProjectVO> findByProjectId(String projectId) {
-        return new Result<>(grayToolProjectService.findGrayInfoByProjectId(projectId));
-    }
+//    @Override
+//    public Result<GrayToolProjectVO> findByProjectId(String projectId) {
+//        return new Result<>(grayToolProjectService.findGrayInfoByProjectId(projectId));
+//    }
 
     @Override
     public Result<Boolean> createGrayTaskPool(String toolName, String stage, String user)
@@ -104,9 +104,9 @@ public class UserGrayToolProjectRestResourceImpl implements UserGrayToolProjectR
         return new Result<>(grayToolProjectService.triggerGrayToolTasks(toolName, taskNum));
     }
 
-    @Override
-    public Result<GrayToolProjectVO> findGrayToolProjInfoByToolName(String toolName)
-    {
-        return new Result<>(grayToolProjectService.findGrayInfoByProjectId(toolName));
-    }
+//    @Override
+//    public Result<GrayToolProjectVO> findGrayToolProjInfoByToolName(String toolName)
+//    {
+//        return new Result<>(grayToolProjectService.findGrayInfoByProjectId(toolName));
+//    }
 }

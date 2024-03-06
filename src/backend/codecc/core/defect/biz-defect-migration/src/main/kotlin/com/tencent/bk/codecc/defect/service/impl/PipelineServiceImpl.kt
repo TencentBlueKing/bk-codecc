@@ -26,42 +26,30 @@
 
 package com.tencent.bk.codecc.defect.service.impl
 
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.common.collect.Lists
 import com.tencent.bk.codecc.defect.model.SnapShotEntity
 import com.tencent.bk.codecc.defect.model.TaskLogEntity
 import com.tencent.bk.codecc.defect.service.PipelineAfterCallBackOpsService
 import com.tencent.bk.codecc.defect.service.PipelineService
 import com.tencent.bk.codecc.defect.service.SnapShotService
-import com.tencent.bk.codecc.defect.service.impl.redline.CompileRedLineReportServiceImpl
-import com.tencent.bk.codecc.defect.service.impl.redline.RedLineReportServiceImpl
 import com.tencent.bk.codecc.defect.vo.TaskPersonalStatisticRefreshReq
 import com.tencent.bk.codecc.task.api.ServiceToolRestResource
 import com.tencent.bk.codecc.task.enums.EmailType
 import com.tencent.bk.codecc.task.pojo.EmailNotifyModel
 import com.tencent.bk.codecc.task.pojo.RtxNotifyModel
 import com.tencent.bk.codecc.task.vo.TaskDetailVO
-import com.tencent.devops.common.api.ToolMetaBaseVO
 import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.client.Client
-import com.tencent.devops.common.client.proxy.DevopsProxy
 import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.constant.CommonMessageCode
 import com.tencent.devops.common.pipeline.enums.ChannelCode
 import com.tencent.devops.common.redis.lock.RedisLock
-import com.tencent.devops.common.service.ToolMetaCacheService
 import com.tencent.devops.common.web.mq.EXCHANGE_CODECC_GENERAL_NOTIFY
 import com.tencent.devops.common.web.mq.EXCHANGE_TASK_PERSONAL
 import com.tencent.devops.common.web.mq.ROUTE_CODECC_EMAIL_NOTIFY
 import com.tencent.devops.common.web.mq.ROUTE_CODECC_RTX_NOTIFY
 import com.tencent.devops.common.web.mq.ROUTE_TASK_PERSONAL
-import com.tencent.devops.plugin.api.ExternalCodeccResource
-import com.tencent.devops.plugin.codecc.pojo.CodeccCallback
 import com.tencent.devops.process.api.service.ServiceBuildResource
-import com.tencent.devops.quality.api.v2.ExternalQualityResource
-import com.tencent.devops.quality.api.v2.pojo.enums.QualityDataType
-import com.tencent.devops.quality.api.v2.pojo.request.MetadataCallback
 import org.slf4j.LoggerFactory
 import org.springframework.amqp.core.Message
 import org.springframework.amqp.rabbit.core.RabbitTemplate
@@ -75,14 +63,10 @@ import java.util.concurrent.TimeUnit
 open class PipelineServiceImpl @Autowired constructor(
     private val client: Client,
     private val snapShotService: SnapShotService,
-    private val redLineReportServiceImpl: RedLineReportServiceImpl,
     private val rabbitTemplate: RabbitTemplate,
-    private val objectMapper: ObjectMapper,
     private val taskLogOverviewServiceImpl: TaskLogOverviewServiceImpl,
     private val redisTemplate: RedisTemplate<String, String>,
-    private var compileRedLineReportServiceImpl: CompileRedLineReportServiceImpl,
-    private var toolMetaCache: ToolMetaCacheService,
-    private val pipelineAfterCallBackOpsService : PipelineAfterCallBackOpsService
+    private val pipelineAfterCallBackOpsService: PipelineAfterCallBackOpsService
 ) : PipelineService {
 
     @Async("asyncTaskExecutor")
@@ -145,34 +129,6 @@ open class PipelineServiceImpl @Autowired constructor(
                     }
                 }
             }
-
-            // TODO 为了下架coverity工具后不会导致配制了coverity指标的质量红线被拦截，这里做个兼容，给coverity的指标都上报0
-            var hasCoverity = taskDetailVO.toolConfigInfoList.filter { toolConfigInfoVO ->
-                toolConfigInfoVO.followStatus != ComConstants.FOLLOW_STATUS.WITHDRAW.value()
-            }.any { toolConfigInfoVO ->
-                toolConfigInfoVO.toolName == ComConstants.Tool.COVERITY.name
-            }
-            if (hasCoverity) {
-                val toolMetaBase: ToolMetaBaseVO = toolMetaCache.getToolBaseMetaCache(ComConstants.Tool.COVERITY.name)
-                if (ComConstants.ToolIntegratedStatus.D.name == toolMetaBase.status) {
-                    logger.info("tool was removed: {}, {}", ComConstants.Tool.COVERITY.name, taskDetailVO.taskId)
-                    compileRedLineReportServiceImpl.saveRedLineData(
-                        taskDetailVO,
-                        ComConstants.Tool.COVERITY.name,
-                        buildId,
-                        Lists.newArrayList()
-                    )
-                }
-            }
-
-            // 刷新维度的红线数据
-            redLineReportServiceImpl.updateDimensionRedLineData(taskId, buildId)
-
-            // 上报红线指标数据
-            uploadRedLineIndicators(snapShotEntity, taskDetailVO, buildId)
-
-            // 发送产出物报告
-            uploadAnalyseSnapshot(snapShotEntity)
         }
 
         // 更新个人待处理信息
@@ -326,77 +282,6 @@ open class PipelineServiceImpl @Autowired constructor(
             throw CodeCCException(CommonMessageCode.BLUE_SHIELD_INTERNAL_ERROR)
         }
 //        updateTaskAbortStep(taskBaseVO.nameEn, toolName, taskLogVO, "任务被手动中断")
-    }
-
-    /**
-     * 发送产出物报告
-     */
-    private fun uploadAnalyseSnapshot(snapShotEntity: SnapShotEntity) {
-        try {
-            val codeccCallback = CodeccCallback(
-                projectId = snapShotEntity.projectId,
-                pipelineId = snapShotEntity.pipelineId,
-                taskId = snapShotEntity.taskId.toString(),
-                buildId = snapShotEntity.buildId,
-                toolSnapshotList = objectMapper.readValue(
-                    objectMapper.writeValueAsString(snapShotEntity.toolSnapshotList),
-                    object : TypeReference<List<Map<String, Any>>>() {})
-            )
-            DevopsProxy.projectIdThreadLocal.set(snapShotEntity.projectId)
-            val callbackResult = client.getDevopsService(ExternalCodeccResource::class.java).callback(codeccCallback)
-            logger.info("upload analyse snapshot result status is ok: ${callbackResult.isOk()}")
-        } catch (t: Throwable) {
-            logger.error("upload analyse snapshot error", t)
-        }
-    }
-
-    /**
-     * 上报红线质量数据
-     */
-    private fun uploadRedLineIndicators(
-        snapShotEntity: SnapShotEntity,
-        taskDetail: TaskDetailVO,
-        buildId: String
-    ) {
-        // 上报红线指标数据
-        val redLineIndicators = redLineReportServiceImpl.getPipelineCallback(taskDetail, buildId)
-        val metadataCallback = MetadataCallback(
-            elementType = redLineIndicators.elementType,
-            taskId = taskDetail.pipelineTaskId ?: "",
-            taskName = taskDetail.pipelineTaskName ?: "",
-            data = redLineIndicators.data.map {
-                MetadataCallback.CallbackHisMetadata(
-                    enName = it.enName,
-                    cnName = it.cnName,
-                    detail = it.detail,
-                    type = QualityDataType.valueOf(it.type.toUpperCase()),
-                    msg = it.msg,
-                    value = it.value,
-                    extra = it.extra
-                )
-            }
-        )
-
-        DevopsProxy.projectIdThreadLocal.set(snapShotEntity.projectId)
-        val callbackResult = client.getDevopsService(ExternalQualityResource::class.java).metadataCallback(
-            snapShotEntity.projectId, snapShotEntity.pipelineId,
-            snapShotEntity.buildId, metadataCallback
-        )
-        var status = false
-        if (callbackResult.isOk()) {
-            status = true
-            logger.info("upload red line indicators success!")
-        } else {
-            logger.info("upload red line indicators failed!")
-        }
-
-        snapShotService.updateMetadataReportStatus(
-            snapShotEntity.projectId,
-            taskDetail.taskId,
-            snapShotEntity.buildId,
-            status,
-            snapShotEntity.buildFlag
-        )
     }
 
     /**

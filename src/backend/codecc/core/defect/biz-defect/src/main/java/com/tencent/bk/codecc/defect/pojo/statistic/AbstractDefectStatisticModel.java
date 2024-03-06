@@ -38,4 +38,9 @@ public abstract class AbstractDefectStatisticModel {
      * 真实新增告警对应的规则列表
      */
     public List<String> newCountCheckerList;
+
+    /**
+     * 超快增量标识
+     */
+    private Boolean fastIncrementFlag;
 }

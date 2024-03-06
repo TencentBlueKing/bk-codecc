@@ -5,11 +5,10 @@ import com.tencent.bk.codecc.defect.model.CCNNotRepairedAuthorEntity;
 import com.tencent.bk.codecc.defect.model.ChartAverageEntity;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.model.statistic.CCNStatisticEntity;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 import java.util.List;
 import java.util.Map;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * 用于保存圈复杂度工具在统计流程中需要的初始化指标和计算出的中间结果和最终结果

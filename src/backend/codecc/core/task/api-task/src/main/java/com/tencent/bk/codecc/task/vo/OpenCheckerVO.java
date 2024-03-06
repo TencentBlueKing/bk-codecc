@@ -28,12 +28,10 @@ package com.tencent.bk.codecc.task.vo;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-
+import java.util.List;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
-import java.util.List;
+import lombok.Data;
 
 /**
  * 告警配置详情视图
@@ -50,6 +48,9 @@ public class OpenCheckerVO {
 
     @ApiModelProperty("是否为原生规则")
     private Boolean nativeChecker;
+
+    @ApiModelProperty("配置了改规则的语言")
+    private Long lang;
 
     @ApiModelProperty(value = "规则严重程度，1=>严重，2=>一般，3=>提示", required = true, allowableValues = "{1,2,3}")
     @Min(1)

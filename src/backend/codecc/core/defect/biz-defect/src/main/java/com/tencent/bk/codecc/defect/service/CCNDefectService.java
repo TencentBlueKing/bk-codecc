@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.service;
 
 import com.tencent.bk.codecc.defect.component.DefectIdGenerator;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNDefectRepository;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.devops.common.constant.ComConstants;
 import org.springframework.beans.factory.annotation.Autowired;

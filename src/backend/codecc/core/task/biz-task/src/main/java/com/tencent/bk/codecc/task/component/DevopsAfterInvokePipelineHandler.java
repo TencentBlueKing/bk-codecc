@@ -30,6 +30,7 @@ public class DevopsAfterInvokePipelineHandler implements DevopsAfterInvokeHandle
     private PipelineCallbackRegisterService pipelineCallbackRegisterService;
 
     @Override
+    @SuppressWarnings("unchecked")
     public void handleAfterInvoke(@NotNull Method method, @NotNull Object[] args, @Nullable Object result) {
         String className = method.getDeclaringClass().getName();
         String methodName = method.getName();

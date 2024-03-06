@@ -35,7 +35,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -146,6 +148,8 @@ public interface ComConstants {
     long COMMON_NUM_1000L = 1000L;
     long COMMON_NUM_1L = 1L;
     long COMMON_NUM_10L = 10L;
+
+    long COMMON_NUM_100L = 100L;
     long COMMON_NUM_0L = 0L;
     float COMMON_NUM_0F = 0F;
     double COMMON_NUM_0D = 0.0D;
@@ -198,6 +202,11 @@ public interface ComConstants {
     String STRING_NULL_ARRAY = "[]";
 
     String DEFECT_STATUS_CLOSED = "closed";
+
+    /**
+     * 灰度任务前缀
+     */
+    String GARY_TASK = "GRAY_TASK_POOL";
 
     /**
      * 日期常量
@@ -287,6 +296,11 @@ public interface ComConstants {
      * 分号
      */
     String SEMICOLON = ";";
+
+    /**
+     * 逗号
+     */
+    String COMMA = ",";
     /**
      * ------------------------操作历史记录操作类型------------------
      */
@@ -585,6 +599,61 @@ public interface ComConstants {
     int QUERY_LIMIT_ONE = 1;
 
     /**
+     * 公共的查询分页大小
+     */
+    int COMMON_PAGE_SIZE = 1000;
+
+    /**
+     * 公共的查询分页大小
+     */
+    int SMALL_PAGE_SIZE = 100;
+
+    /**
+     * 公共的查询分页大小
+     */
+    int COMMON_BATCH_PAGE_SIZE = 3_0000;
+
+    /**
+     * 重复率提单分页大小
+     */
+    int DUPC_DEFECT_COMMIT_BATCH_PAGE_SIZE = 2_5000;
+
+    /**
+     * 重复率block_list字段大小限制
+     */
+    int DUPC_DEFECT_BLOCK_LIST_LIMIT = 100;
+
+    int SCM_FILE_INFO_CACHE_BATCH_PAGE_SIZE = 5000;
+
+    /**
+     * 延迟消息的公共延迟时间（MS）
+     */
+    int COMMON_MSG_DELAY = 5_000;
+
+    /**
+     * 插件统计中查询任务列表分页大小
+     */
+    int COMMON_NUM_10000 = 10000;
+
+    String DEFAULT_LANDUN_WORKSPACE = "/data/landun/workspace";
+
+    /**
+     * 展示规则key字符多少长度
+     */
+    int SHOW_CHECKER_KEY_LENGTH = 200;
+
+    /**
+     * 冷热分离，降冷开关
+     */
+
+    String SWITCH_FOR_DATA_SEPARATION_COOL_DOWN = "SWITCH_FOR_DATA_SEPARATION_COOL_DOWN";
+
+    /**
+     * 冷热分离，加热开关
+     */
+    String SWITCH_FOR_DATA_SEPARATION_WARM_UP = "SWITCH_FOR_DATA_SEPARATION_WARM_UP";
+
+    /**
      * 业务类型
      */
     enum BusinessType {
@@ -735,7 +804,9 @@ public interface ComConstants {
         GITHUBSTATISTIC,
         SCC,
         BLACKDUCK,
-        WOODPECKER_COMMITSCAN;
+        WOODPECKER_COMMITSCAN,
+
+        BKCHECK;
     }
 
     /**
@@ -1015,6 +1086,34 @@ public interface ComConstants {
                 }
             }
             return null;
+        }
+
+        public static Set<String> getCodeLangAll(Long langValue) {
+            Set<String> set = new HashSet<>();
+            if (values() != null) {
+                for (CodeLang value : values()) {
+                    if (value.langValue > langValue) {
+                        break;
+                    }
+                    if ((value.langValue & langValue) > 0) {
+                        set.add(value.langName);
+                    }
+                }
+            }
+            return set;
+        }
+
+        public static List<Long> getCodeLangValueList(Long langValue) {
+            List<Long> list = new ArrayList<>();
+            for (CodeLang value : values()) {
+                if (value.langValue > langValue) {
+                    break;
+                }
+                if ((value.langValue & langValue) > 0) {
+                    list.add(value.langValue);
+                }
+            }
+            return list;
         }
 
         public Long langValue() {
@@ -1298,6 +1397,15 @@ public interface ComConstants {
             this.value = value;
         }
 
+        public static DefectStatus valueOf(int value) {
+            for (DefectStatus defectStatus : DefectStatus.values()) {
+                if (defectStatus.value() == value) {
+                    return defectStatus;
+                }
+            }
+            return null;
+        }
+
         public int value() {
             return value;
         }
@@ -1322,6 +1430,7 @@ public interface ComConstants {
      * 代码托管类型，包括SVN、GIT等
      */
     enum CodeHostingType {
+        PERFORCE,
         SVN,
         GIT,
         HTTP_DOWNLOAD,
@@ -1496,12 +1605,12 @@ public interface ComConstants {
 
     enum EmailReceiverType {
         /**
-         * 所有人
+         * 所有人(最新文案：所有权限角色（不含组织）)
          */
         TASK_MEMBER("0"),
 
         /**
-         * 仅管理员
+         * 仅管理员(最新文案：仅拥有者（不含组织）)
          */
         TASK_OWNER("1"),
 
@@ -1564,6 +1673,10 @@ public interface ComConstants {
         INDEPENDENT(-1L),
         //开源扫描集群
         OPENSOURCE(-2L),
+
+        //闭源扫描集群
+        CLOSEDSOURCE(-3L),
+
         //devcloud集群
         DEVCLOUD(-101L),
         //EPC 独立的DockerHost集群
@@ -2137,6 +2250,28 @@ public interface ComConstants {
 
     }
 
+
+    enum PreCiInstallType {
+
+        NO_LIMIT(-1), INSTALL(0), NO_INSATLL(1);
+
+        private Integer status;
+
+        PreCiInstallType(Integer status) {
+            this.status = status;
+        }
+
+        public Integer getStatus() {
+            return status;
+        }
+    }
+
+    enum ScoreRedLineEnum {
+        CODE_STANDARD_SCORE,
+        CODE_SECURITY_SCORE,
+        CODE_CCN_SCORE
+    }
+
     /**
      * 缺陷消费类型
      */
@@ -2152,6 +2287,74 @@ public interface ComConstants {
 
         public String getFlag() {
             return flag;
+        }
+    }
+
+
+    enum ColdDataArchivingType {
+        LINT,
+        DUPC,
+        CCN,
+        CLOC,
+        STAT
+    }
+
+    enum ColdDataPurgingType {
+        DEFECT,
+        SNAPSHOT,
+        STATISTIC,
+        FILE_CACHE,
+        SCM,
+        OTHERS
+    }
+
+    /**
+     * mock: TaskConstants.java
+     */
+    enum TaskStatus {
+        ENABLE(0),
+        DISABLE(1),
+        COLD(2);
+
+        private Integer value;
+
+        TaskStatus(Integer value) {
+            this.value = value;
+        }
+
+        public Integer value() {
+            return value;
+        }
+    }
+
+    /**
+     * 用户状态
+     */
+    enum UserStatusType {
+        /**
+         * 未识别（p_）
+         */
+        UNIDENTIFIED(-1),
+        /**
+         * 在职
+         */
+        EMPLOYED(1),
+        /**
+         * 离职
+         */
+        RESIGNED(2),
+        /**
+         * 试用
+         */
+        ON_PROBATION(3);
+
+        Integer id;
+        UserStatusType(Integer id) {
+            this.id = id;
+        }
+
+        public Integer getId() {
+            return id;
         }
     }
 }

@@ -300,7 +300,7 @@ public class ActiveStatisticConsumer {
         QueryTaskListReqVO reqVO = new QueryTaskListReqVO();
         // 传递参数 2 表示查询前一天的数据进行初始化
         reqVO.setInitDay(2);
-        Boolean isSuccess = client.get(OpDefectRestResource.class).initCodeRepoStatTrend(reqVO).getData();
+        Boolean isSuccess = client.getWithoutRetry(OpDefectRestResource.class).initCodeRepoStatTrend(reqVO).getData();
         if (!isSuccess) {
             log.error("query code repo stat daily fail!");
         }

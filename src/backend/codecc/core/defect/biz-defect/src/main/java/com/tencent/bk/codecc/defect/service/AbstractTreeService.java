@@ -27,8 +27,8 @@
 package com.tencent.bk.codecc.defect.service;
 
 import com.tencent.bk.codecc.defect.common.Tree;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CodeFileUrlRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoFromAnalyzeLogRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CodeFileUrlRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CodeRepoFromAnalyzeLogRepository;
 import com.tencent.bk.codecc.defect.model.CodeFileUrlEntity;
 import com.tencent.bk.codecc.defect.model.CodeRepoFromAnalyzeLogEntity;
 import com.tencent.bk.codecc.defect.vo.TreeNodeVO;
@@ -55,8 +55,8 @@ import java.util.stream.Stream;
  * @date 2019/5/14
  */
 @Slf4j
-public abstract class AbstractTreeService implements TreeService
-{
+public abstract class AbstractTreeService implements TreeService {
+
     @Autowired
     private Tree tree;
 
@@ -80,8 +80,7 @@ public abstract class AbstractTreeService implements TreeService
      * @return
      */
     @Override
-    public TreeNodeVO getTreeNode(Long taskId, List<String> toolNames)
-    {
+    public TreeNodeVO getTreeNode(Long taskId, List<String> toolNames) {
         // 获取文件集合
         Set<String> filePaths = new HashSet<>();
         toolNames.forEach(toolName ->
@@ -106,26 +105,20 @@ public abstract class AbstractTreeService implements TreeService
      * @return
      */
     @Override
-    public TreeNodeVO getTreeNode(Long taskId, Set<String> filePaths)
-    {
-        if (CollectionUtils.isEmpty(filePaths))
-        {
+    public TreeNodeVO getTreeNode(Long taskId, Set<String> filePaths) {
+        if (CollectionUtils.isEmpty(filePaths)) {
             return new TreeNodeVO();
         }
 
         Result<TaskDetailVO> taskBaseResult;
-        try
-        {
+        try {
             taskBaseResult = client.get(ServiceTaskRestResource.class).getTaskInfoById(taskId);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             log.error("get task info fail!, task id: {}", taskId);
             throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
         }
 
-        if (taskBaseResult.isNotOk() || Objects.isNull(taskBaseResult.getData()))
-        {
+        if (taskBaseResult.isNotOk() || Objects.isNull(taskBaseResult.getData())) {
             log.error("mongorepository task info fail! taskId is: {}, msg: {}", taskId, taskBaseResult.getMessage());
             throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
         }
@@ -136,8 +129,7 @@ public abstract class AbstractTreeService implements TreeService
 
 
     @Override
-    public Boolean support(String type)
-    {
+    public Boolean support(String type) {
         return Stream.of(ComConstants.Tool.values())
                 .anyMatch(tool -> tool.name().equals(type.toUpperCase()));
     }
@@ -149,28 +141,24 @@ public abstract class AbstractTreeService implements TreeService
      * @param taskId
      */
     @Override
-    public Map<String, String> getRelatePathMap(long taskId)
-    {
+    public Map<String, String> getRelatePathMap(long taskId) {
         List<CodeFileUrlEntity> codeFileUrlList = codeFileUrlRepository.findByTaskId(taskId);
         Map<String, String> relatePathMap = new HashMap<>(codeFileUrlList.size());
 
-        CodeRepoFromAnalyzeLogEntity codeRepoFromAnalyzeLogEntity = codeRepoFromAnalyzeLogRepository.findFirstByTaskId(taskId);
-        if (codeRepoFromAnalyzeLogEntity != null)
-        {
+        CodeRepoFromAnalyzeLogEntity codeRepoFromAnalyzeLogEntity = codeRepoFromAnalyzeLogRepository.findFirstByTaskId(
+                taskId);
+        if (codeRepoFromAnalyzeLogEntity != null) {
             Set<CodeRepoFromAnalyzeLogEntity.CodeRepo> codeRepoList = codeRepoFromAnalyzeLogEntity.getCodeRepoList();
             codeFileUrlList.forEach(codeFileUrlEntity ->
             {
                 String url = codeFileUrlEntity.getUrl();
                 String filePath = codeFileUrlEntity.getFile();
-                if (StringUtils.isNotEmpty(url) && StringUtils.isNotEmpty(filePath))
-                {
+                if (StringUtils.isNotEmpty(url) && StringUtils.isNotEmpty(filePath)) {
                     String relatePath = null;
-                    for (CodeRepoFromAnalyzeLogEntity.CodeRepo codeRepo : codeRepoList)
-                    {
+                    for (CodeRepoFromAnalyzeLogEntity.CodeRepo codeRepo : codeRepoList) {
                         String uploadUrl = codeRepo.getUrl();
                         int prefixIndex = url.indexOf(uploadUrl);
-                        if (prefixIndex != -1)
-                        {
+                        if (prefixIndex != -1) {
                             String[] uploadUrlPart = uploadUrl.split("/");
                             String uploadUrlRoot = uploadUrlPart[uploadUrlPart.length - 1];
                             int beginIndex = uploadUrl.lastIndexOf(uploadUrlRoot) - 1;
@@ -182,9 +170,7 @@ public abstract class AbstractTreeService implements TreeService
                 }
             });
 
-        }
-        else
-        {
+        } else {
             codeFileUrlList.forEach(codeFileUrlEntity ->
             {
                 String url = codeFileUrlEntity.getUrl();
@@ -193,19 +179,17 @@ public abstract class AbstractTreeService implements TreeService
                 String[] filePathSplitArr = filePath.split("/");
                 StringBuffer relatePath = new StringBuffer();
                 int k = urlSplitArr.length - 1;
-                for (int i = filePathSplitArr.length - 1; i >= 0; i--)
-                {
-                    if (!filePathSplitArr[i].equalsIgnoreCase(urlSplitArr[k]))
-                    {
+                for (int i = filePathSplitArr.length - 1; i >= 0; i--) {
+                    if (!filePathSplitArr[i].equalsIgnoreCase(urlSplitArr[k])) {
                         break;
                     }
                     k--;
                 }
-                for (; k < urlSplitArr.length; k++)
-                {
+                for (; k < urlSplitArr.length; k++) {
                     relatePath.append("/").append(urlSplitArr[k]);
                 }
-                relatePathMap.put(filePath.toLowerCase(), StringUtils.isEmpty(relatePath) ? filePath : relatePath.toString());
+                relatePathMap.put(filePath.toLowerCase(),
+                        StringUtils.isEmpty(relatePath) ? filePath : relatePath.toString());
             });
         }
 

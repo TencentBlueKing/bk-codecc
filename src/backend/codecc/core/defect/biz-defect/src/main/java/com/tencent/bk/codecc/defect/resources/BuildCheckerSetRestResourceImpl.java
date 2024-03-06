@@ -1,8 +1,10 @@
 package com.tencent.bk.codecc.defect.resources;
 
 import com.tencent.bk.codecc.defect.api.BuildCheckerSetRestResource;
+import com.tencent.bk.codecc.defect.service.CheckerService;
 import com.tencent.bk.codecc.defect.service.ICheckerSetIntegratedBizService;
-import com.tencent.bk.codecc.defect.service.IV3CheckerSetBizService;
+import com.tencent.bk.codecc.defect.service.ICheckerSetManageBizService;
+import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
 import com.tencent.bk.codecc.defect.vo.integrated.ToolCheckerSetToStatusVo;
 import com.tencent.devops.common.api.checkerset.CheckerSetRelationshipVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
@@ -18,21 +20,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class BuildCheckerSetRestResourceImpl implements BuildCheckerSetRestResource {
 
     @Autowired
-    private IV3CheckerSetBizService checkerSetBizService;
+    private ICheckerSetManageBizService checkerSetManageBizService;
 
     @Autowired
     private ICheckerSetIntegratedBizService checkerSetIntegratedBizService;
 
+    @Autowired
+    private CheckerService checkerService;
+
     @Override
     public Result<Boolean> setRelationships(String user, String type, String projectId, Long taskId,
-                                            List<CheckerSetVO> checkerSetVOList) {
+            List<CheckerSetVO> checkerSetVOList) {
         CheckerSetRelationshipVO checkerSetRelationshipVO = new CheckerSetRelationshipVO();
         checkerSetRelationshipVO.setType(type);
         checkerSetRelationshipVO.setTaskId(taskId);
         checkerSetRelationshipVO.setProjectId(projectId);
         checkerSetVOList.forEach(checkerSet -> {
             checkerSetRelationshipVO.setVersion(checkerSet.getVersion());
-            checkerSetBizService.setRelationships(checkerSet.getCheckerSetId(), user, checkerSetRelationshipVO);
+            checkerSetManageBizService.setRelationships(checkerSet.getCheckerSetId(), user, checkerSetRelationshipVO);
         });
         return new Result<>(true);
     }
@@ -61,10 +66,14 @@ public class BuildCheckerSetRestResourceImpl implements BuildCheckerSetRestResou
 
     @Override
     public Result<String> revertToolCheckerSetStatus(String user,
-                                                     String toolName,
-                                                     ComConstants.ToolIntegratedStatus status,
-                                                     Set<String> checkerSetIds) {
+            String toolName,
+            ComConstants.ToolIntegratedStatus status,
+            Set<String> checkerSetIds) {
         return new Result<>(checkerSetIntegratedBizService.revertStatus(toolName, status, user, checkerSetIds));
     }
 
+    @Override
+    public Result<List<CheckerDetailVO>> queryCheckerByToolName(String toolName) {
+        return new Result<>(checkerService.queryCheckerByTool(toolName));
+    }
 }

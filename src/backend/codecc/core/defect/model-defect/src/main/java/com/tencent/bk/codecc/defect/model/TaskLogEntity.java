@@ -48,7 +48,10 @@ import org.springframework.data.mongodb.core.mapping.Sharded;
 @EqualsAndHashCode(callSuper = true)
 @Document(collection = "t_task_log")
 @CompoundIndexes({
-        @CompoundIndex(name = "task_id_1_tool_name_1_build_id_1", def = "{'task_id': 1, 'tool_name': 1, 'build_id': 1}")
+        @CompoundIndex(name = "task_id_1_tool_name_1_build_id_1",
+                def = "{'task_id': 1, 'tool_name': 1, 'build_id': 1}"),
+        @CompoundIndex(name = "task_id_1_tool_name_1_start_time_1",
+                def = "{'task_id': 1, 'tool_name': 1, 'start_time': -1}")
 })
 @Sharded(shardKey = "task_id")
 public class TaskLogEntity extends CommonEntity {

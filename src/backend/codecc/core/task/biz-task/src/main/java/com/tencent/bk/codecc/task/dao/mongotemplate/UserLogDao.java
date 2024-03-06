@@ -52,9 +52,9 @@ public class UserLogDao {
      * @return list
      */
     public List<String> findDistinctUserName() {
-        List<String> distinct = mongoTemplate.findDistinct(new Query(),"user_name",
-                "t_user_log_info",String.class);
-        return CollectionUtils.isEmpty(distinct)? Collections.emptyList() : distinct;
+        List<String> distinct = mongoTemplate.findDistinct(new Query(), "user_name",
+                "t_user_log_info", String.class);
+        return CollectionUtils.isEmpty(distinct) ? Collections.emptyList() : distinct;
     }
 
 

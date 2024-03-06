@@ -81,12 +81,12 @@ public class CustomRedisMQListener implements CommandLineRunner {
                     log.debug("after clean, the processing queue size is {}", processingQueue.size());
 
                     // 每循环60000次（约1分钟）打印一次，表示线程存活
-                    if (loopCount > 60000) {
+                    if (loopCount > 600) {
                         log.info("************************ processing queue cleaner working ************************");
                         loopCount = 0;
                     }
 
-                    Thread.sleep(ComConstants.COMMON_NUM_1L);
+                    Thread.sleep(ComConstants.COMMON_NUM_100L);
                 } catch (Throwable t) {
                     log.error("processing queue cleaner error:", t);
                 } finally {
@@ -114,11 +114,11 @@ public class CustomRedisMQListener implements CommandLineRunner {
                     }
 
                     // 每循环6000次（约1分钟）打印一次，表示线程存活
-                    if (loopCount > 6000) {
+                    if (loopCount > 60) {
                         log.info("************************ custom redis mq listener working ************************");
                         loopCount = 0;
                     }
-                    Thread.sleep(ComConstants.COMMON_NUM_10L);
+                    Thread.sleep(ComConstants.COMMON_NUM_1000L);
                 } catch (Throwable t) {
                     log.error("CustomRedisMQListener error:", t);
                 } finally {

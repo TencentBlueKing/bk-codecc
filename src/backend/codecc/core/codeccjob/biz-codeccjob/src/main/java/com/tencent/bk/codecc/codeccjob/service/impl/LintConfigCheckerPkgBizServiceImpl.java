@@ -13,22 +13,21 @@
 package com.tencent.bk.codecc.codeccjob.service.impl;
 
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.LintDefectV2Repository;
-import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.vo.ConfigCheckersPkgReqVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.IBizService;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 
 /**
  * lint类工具的规则配置
@@ -38,27 +37,24 @@ import java.util.Set;
  */
 @Service("LINTConfigCheckerPkgBizService")
 @Slf4j
-public class LintConfigCheckerPkgBizServiceImpl implements IBizService<ConfigCheckersPkgReqVO>
-{
+public class LintConfigCheckerPkgBizServiceImpl implements IBizService<ConfigCheckersPkgReqVO> {
+
     @Autowired
     private LintDefectV2Dao lintDefectV2Dao;
     @Autowired
     private LintDefectV2Repository lintDefectV2Repository;
 
     @Override
-    public Result processBiz(ConfigCheckersPkgReqVO configCheckersPkgReqVO)
-    {
+    public Result processBiz(ConfigCheckersPkgReqVO configCheckersPkgReqVO) {
         Long taskId = configCheckersPkgReqVO.getTaskId();
         String toolName = configCheckersPkgReqVO.getToolName();
         List<String> closedCheckers = configCheckersPkgReqVO.getClosedCheckers();
         List<String> openCheckers = configCheckersPkgReqVO.getOpenedCheckers();
         Set<String> checkers = Sets.newHashSet();
-        if (CollectionUtils.isNotEmpty(closedCheckers))
-        {
+        if (CollectionUtils.isNotEmpty(closedCheckers)) {
             checkers.addAll(closedCheckers);
         }
-        if (CollectionUtils.isNotEmpty(openCheckers))
-        {
+        if (CollectionUtils.isNotEmpty(openCheckers)) {
             checkers.addAll(openCheckers);
         }
 
@@ -66,9 +62,9 @@ public class LintConfigCheckerPkgBizServiceImpl implements IBizService<ConfigChe
         Set<Integer> excludeStatusSet = Sets.newHashSet(ComConstants.DefectStatus.FIXED.value(),
                 ComConstants.DefectStatus.NEW.value() | ComConstants.DefectStatus.FIXED.value());
 
-        List<LintDefectV2Entity> defectList = lintDefectV2Repository.findDefectsByCheckers(taskId, toolName, excludeStatusSet, checkers);
-        if (CollectionUtils.isNotEmpty(defectList))
-        {
+        List<LintDefectV2Entity> defectList = lintDefectV2Repository.findDefectsByCheckers(taskId, toolName,
+                excludeStatusSet, checkers);
+        if (CollectionUtils.isNotEmpty(defectList)) {
             long currTime = System.currentTimeMillis();
             List<LintDefectV2Entity> needUpdateDefectList = new ArrayList<>();
             defectList.forEach(defect ->
@@ -77,29 +73,23 @@ public class LintConfigCheckerPkgBizServiceImpl implements IBizService<ConfigChe
                 int status = defect.getStatus();
 
                 // 命中关闭的规则
-                if (CollectionUtils.isNotEmpty(closedCheckers) && closedCheckers.contains(checkerName))
-                {
+                if (CollectionUtils.isNotEmpty(closedCheckers) && closedCheckers.contains(checkerName)) {
                     status = status | ComConstants.DefectStatus.CHECKER_MASK.value();
-                    if (defect.getExcludeTime() == null || defect.getExcludeTime() == 0)
-                    {
+                    if (defect.getExcludeTime() == null || defect.getExcludeTime() == 0) {
                         defect.setExcludeTime(currTime);
                     }
                 }
                 // 命中打开的规则
-                else if (CollectionUtils.isNotEmpty(openCheckers) && openCheckers.contains(checkerName))
-                {
-                    if ((status & ComConstants.DefectStatus.CHECKER_MASK.value()) > 0)
-                    {
+                else if (CollectionUtils.isNotEmpty(openCheckers) && openCheckers.contains(checkerName)) {
+                    if ((status & ComConstants.DefectStatus.CHECKER_MASK.value()) > 0) {
                         status = status - ComConstants.DefectStatus.CHECKER_MASK.value();
-                        if (status < ComConstants.DefectStatus.PATH_MASK.value())
-                        {
+                        if (status < ComConstants.DefectStatus.PATH_MASK.value()) {
                             defect.setExcludeTime(0L);
                         }
                     }
                 }
 
-                if (defect.getStatus() != status)
-                {
+                if (defect.getStatus() != status) {
                     defect.setStatus(status);
                     needUpdateDefectList.add(defect);
                 }

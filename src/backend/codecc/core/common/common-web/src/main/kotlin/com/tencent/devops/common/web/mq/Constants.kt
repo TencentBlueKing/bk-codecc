@@ -26,6 +26,11 @@
 
 package com.tencent.devops.common.web.mq
 
+const val CORE_LISTENER_CONTAINER_NAME = "rabbitListenerContainerFactory"
+const val CORE_CONNECTION_FACTORY_NAME = "connectionFactory"
+const val CORE_RABBIT_ADMIN_NAME = "rabbitAdmin"
+const val CORE_RABBIT_TEMPLATE_NAME = "rabbitTemplate"
+
 const val ROUTE_NOTIFY_MESSAGE = "route.notify.message"
 const val QUEUE_NOTIFY_MESSAGE = "queue.notify.message"
 const val EXCHANGE_NOTIFY_MESSAGE = "exchange.notify.message"
@@ -293,6 +298,7 @@ const val QUEUE_CHECKER_DEFECT_STAT = "queue.checker.defect.stat"
 const val EXCHANGE_ACTIVE_STAT = "exchange.active.stat"
 const val ROUTE_ACTIVE_STAT = "route.active.stat"
 const val QUEUE_ACTIVE_STAT = "queue.active.stat"
+const val QUEUE_ACTIVE_STAT_EXT = "queue.active.stat.ext"
 
 const val EXCHANGE_TASK_PERSONAL = "exchange.task.personal"
 const val ROUTE_TASK_PERSONAL = "route.task.personal"
@@ -313,6 +319,14 @@ const val QUEUE_LINE_CHART_STAT = "queue.line.chart.stat"
 const val EXCHANGE_PRECI_USER_STAT = "exchange.preci.user.stat"
 const val ROUTE_PRECI_USER_STAT = "route.preci.user.stat"
 const val QUEUE_PRECI_USER_STAT = "queue.preci.user.stat"
+
+const val EXCHANG_PRECI_CLOUD_DAY_STAT = "exchange.preci.cloud.day.stat"
+const val ROUTE_PRECI_CLOUD_DAY_STAT = "route.preci.cloud.day.stat"
+const val QUEUE_PRECI_CLOUD_DAY_STAT = "queue.preci.cloud.day.stat"
+
+const val EXCHANG_PRECI_CLOUD_WEEK_STAT = "exchange.preci.cloud.week.stat"
+const val ROUTE_PRECI_CLOUD_WEEK_STAT = "route.preci.cloud.week.stat"
+const val QUEUE_PRECI_CLOUD_WEEK_STAT = "queue.preci.cloud.week.stat"
 
 const val EXCHANGE_SMOKE_CHECK = "exchange.smoke.check"
 const val ROUTE_SMOKE_CHECK = "route.smoke.check"
@@ -376,3 +390,12 @@ const val EXCHANGE_SCANSCHEDULE_TOOL_SCAN = "exchange.scanschedule.tool.scan"
 const val ROUTE_SCANSCHEDULE_TOOL_SCAN = "route.scanschedule.tool.scan"
 const val QUEUE_SCANSCHEDULE_TOOL_SCAN = "queue.scanschedule.tool.scan"
 
+const val EXCHANGE_DATA_SEPARATION = "exchange.data.separation"
+const val ROUTE_DATA_SEPARATION_COOL_DOWN = "route.data.separation.cool.down"
+const val QUEUE_DATA_SEPARATION_COOL_DOWN = "queue.data.separation.cool.down"
+const val ROUTE_DATA_SEPARATION_WARM_UP = "route.data.separation.warm.up"
+const val QUEUE_DATA_SEPARATION_WARM_UP = "queue.data.separation.warm.up"
+const val ROUTE_DATA_SEPARATION_COOL_DOWN_TRIGGER = "route.data.separation.cool.down.trigger"
+const val QUEUE_DATA_SEPARATION_COOL_DOWN_TRIGGER = "queue.data.separation.cool.down.trigger"
+const val ROUTE_DATA_SEPARATION_FILE_CACHE_PURGING = "route.data.separation.file.cache.purging"
+const val QUEUE_DATA_SEPARATION_FILE_CACHE_PURGING = "queue.data.separation.file.cache.purging"

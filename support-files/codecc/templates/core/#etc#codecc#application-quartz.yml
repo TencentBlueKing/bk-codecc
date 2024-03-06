@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: quartz
+    desc: Quartz Service
+    packageName: com.tencent.bk.codecc.quartz
+  data:
+    mongodb:
+      uri: __BK_CODECC_MONGO_QUARTZ_URL__&maxPoolSize=300
+
+server:
+  port: __BK_CODECC_QUARTZ_API_PORT__ # 服务端口

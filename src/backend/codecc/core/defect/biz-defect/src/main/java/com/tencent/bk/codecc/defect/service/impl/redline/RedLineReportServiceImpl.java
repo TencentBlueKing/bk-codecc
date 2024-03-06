@@ -5,8 +5,7 @@ import static com.tencent.bk.codecc.defect.constant.DefectConstants.LINUX_PAAS_C
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.tencent.bk.codecc.defect.dao.mongorepository.RedLineRepository;
-import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.RedLineRepository;
 import com.tencent.bk.codecc.defect.model.defect.DefectEntity;
 import com.tencent.bk.codecc.defect.model.pipelinereport.RedLineEntity;
 import com.tencent.bk.codecc.defect.model.redline.RedLineExtraParams;
@@ -26,6 +25,7 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -121,7 +121,7 @@ public class RedLineReportServiceImpl extends AbstractRedLineReportService<Defec
 
                 String key = field.getAnnotation(org.springframework.data.mongodb.core.mapping.Field.class)
                         .value()
-                        .toUpperCase();
+                        .toUpperCase(Locale.ENGLISH);
                 Integer existVal = dimensionMap.getOrDefault(key, 0);
                 dimensionMap.put(key, existVal + val);
             }
@@ -143,7 +143,7 @@ public class RedLineReportServiceImpl extends AbstractRedLineReportService<Defec
             redLineEntity.setBuildId(buildId);
             redLineEntity.setTaskId(taskId);
             redLineEntity.setValue(String.valueOf(entry.getValue()));
-            redLineEntity.applyAuditInfo("system", "system");
+            redLineEntity.applyAuditInfoOnCreate();
             redLineEntityToSaveList.add(redLineEntity);
         }
 
@@ -230,7 +230,7 @@ public class RedLineReportServiceImpl extends AbstractRedLineReportService<Defec
                 redLineEntity.setBuildId(buildId);
                 redLineEntity.setTaskId(taskId);
                 redLineEntity.setValue("0");
-                redLineEntity.applyAuditInfo("system", "system");
+                redLineEntity.applyAuditInfoOnCreate();
             }
 
             // 同维度数据相加

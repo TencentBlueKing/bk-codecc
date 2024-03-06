@@ -1,33 +1,37 @@
 /* outer视图公共样式 */
 
 .main-content-outer {
-
-  margin: 0 auto;
   width: 1180px;
+  margin: 0 auto;
+
   a {
-    text-decoration: none;
     color: #63656e;
+    text-decoration: none;
   }
+
   a:hover {
     color: #3a84ff;
   }
+
   .main-title {
-    font-size: 24px;
     margin: 40px 0;
+    font-size: 24px;
+    font-weight: normal;
     color: #313238;
     text-align: center;
-    font-weight: normal;
   }
+
   .main-lang {
-    text-align: center;
-    margin-top: -30px;
     padding-bottom: 20px;
+    margin-top: -30px;
+    text-align: center;
+
     .rec-lan {
+      padding: 0 10px;
+      margin-left: 8px;
+      font-size: 14px;
       background: #f7f9fb;
       border: 1px solid #d9e2e8;
-      font-size: 14px;
-      margin-left: 8px;
-      padding: 0 10px;
     }
   }
 }

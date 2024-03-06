@@ -2,27 +2,27 @@ apiVersion: v2
 name: bk-codecc
 description: A Helm chart for CodeCC
 type: application
-version: 1.1.40
-appVersion: 1.1.40
+version: 3.1.0-alpha.1
+appVersion: 2.1.0-alpha.1
 home: "https://github.com/Tencent/bk-ci"
 
 dependencies:
 - name: common
   version: 1.4.1
-  repository: https://charts.bitnami.com/bitnami
+  repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
 - name: nginx-ingress-controller
   version: 7.4.8
-  repository: https://charts.bitnami.com/bitnami
+  repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
   condition: nginx-ingress-controller.enabled
 - name: mongodb
-  version: 10.10.2
-  repository: https://charts.bitnami.com/bitnami
+  version: 10.30.6
+  repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
   condition: mongodb.enabled
 - name: rabbitmq
-  version: 8.19.2
-  repository: https://charts.bitnami.com/bitnami
+  version: 8.20.1
+  repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
   condition: rabbitmq.enabled
 - name: redis
-  version: 14.8.8
-  repository: https://charts.bitnami.com/bitnami
+  version: 15.3.3
+  repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
   condition: redis.enabled

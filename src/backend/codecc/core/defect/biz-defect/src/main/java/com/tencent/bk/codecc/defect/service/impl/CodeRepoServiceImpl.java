@@ -14,11 +14,11 @@ package com.tencent.bk.codecc.defect.service.impl;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoFromAnalyzeLogRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoStatDailyRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CodeRepoStatDailyDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CodeRepoStatisticDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CodeRepoFromAnalyzeLogRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CodeRepoStatDailyRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CodeRepoStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CodeRepoStatDailyDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CodeRepoStatisticDao;
 import com.tencent.bk.codecc.defect.model.CodeRepoFromAnalyzeLogEntity;
 import com.tencent.bk.codecc.defect.model.CodeRepoStatDailyEntity;
 import com.tencent.bk.codecc.defect.model.CodeRepoStatisticEntity;
@@ -31,6 +31,9 @@ import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.service.utils.PageableUtils;
 import com.tencent.devops.common.util.DateTimeUtils;
+import com.tencent.devops.common.util.ThreadPoolUtil;
+import com.tencent.devops.common.util.ThreadUtils;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
@@ -208,6 +211,17 @@ public class CodeRepoServiceImpl implements CodeRepoService {
     @Override
     public Boolean initCodeRepoStatTrend(QueryTaskListReqVO reqVO) {
         log.info("op initCodeRepoStatTrend req: {}", reqVO);
+        ThreadPoolUtil.addRunnableTask(() -> initCodeRepoStatTrendCore(reqVO));
+
+        return true;
+    }
+
+    /**
+     * initCodeRepoStatTrend原逻辑拆分至线程池执行
+     *
+     * @param reqVO
+     */
+    private void initCodeRepoStatTrendCore(QueryTaskListReqVO reqVO) {
         List<String> createFromList = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(reqVO.getCreateFrom())) {
             createFromList = reqVO.getCreateFrom();
@@ -272,12 +286,14 @@ public class CodeRepoServiceImpl implements CodeRepoService {
                 yesterdayUrlCount = urlCount;
                 yesterdayBranchCount = branchCount;
                 isFirstDay = false;
+
+                // 定时作业发起的调用，实时性要求不高，适当休眠保护下DB
+                ThreadUtils.sleep(TimeUnit.SECONDS.toMillis(2));
             }
             log.info("initCodeRepoStatistic, codeRepoStatDailyEntityList.size:[{}]",
                     codeRepoStatDailyEntityList.size());
             codeRepoStatDailyRepository.saveAll(codeRepoStatDailyEntityList);
         }
-        return true;
     }
 
     /**

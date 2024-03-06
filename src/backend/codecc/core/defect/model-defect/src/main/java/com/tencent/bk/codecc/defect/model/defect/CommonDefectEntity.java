@@ -190,7 +190,7 @@ public class CommonDefectEntity extends DefectEntity {
      * 对应第三方缺陷管理系统的ID，这里声明为字符串可以有更好的兼容性
      */
     @Field("ext_bug_id")
-    private String extBugid;
+    private String extBugId;
 
     /**
      * 第三方平台的buildId

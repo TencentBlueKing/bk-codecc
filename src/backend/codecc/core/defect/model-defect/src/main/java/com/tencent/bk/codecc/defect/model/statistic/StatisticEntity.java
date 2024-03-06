@@ -28,6 +28,7 @@ package com.tencent.bk.codecc.defect.model.statistic;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -85,4 +86,16 @@ public class StatisticEntity
      */
     @Field("dimension_statistic")
     private DimensionStatisticEntity dimensionStatistic;
+
+    /**
+     * 标识是否超快增量
+     */
+    @Transient
+    private Boolean fastIncrementFlag;
+
+    /**
+     * 上一次构建Id
+     */
+    @Transient
+    private String baseBuildId;
 }

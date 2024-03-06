@@ -32,14 +32,21 @@ public class BkRepoApi {
 
 
     public String genericSimpleUpload(String filepath, File file) {
-        String url = String.format("%s/generic/%s/%s/%s", bkrepoHost, project, repo, filepath);
-        OkhttpUtils.INSTANCE.doFileStreamPut(url, file, getAuthHeaders());
+        String url = String.format("%s/generic/%s/%s/%s", bkrepoHost, project, repo, trimFilePath(filepath));
+        OkhttpUtils.INSTANCE.doFileStreamPut(url, file, getUploadHeaders());
+        return url + "?download=true";
+    }
+
+
+    public String genericSimpleUpload(String filepath, byte[] content) {
+        String url = String.format("%s/generic/%s/%s/%s", bkrepoHost, project, repo, trimFilePath(filepath));
+        OkhttpUtils.INSTANCE.doFileStreamPut(url, content, getUploadHeaders());
         return url + "?download=true";
     }
 
     public String startChunk(String filepath) throws Exception {
-        String url = String.format("%s/generic/block/%s/%s/%s", bkrepoHost, project, repo, filepath);
-        String resp = OkhttpUtils.INSTANCE.doHttpPost(url, "{}", getAuthHeaders());
+        String url = String.format("%s/generic/block/%s/%s/%s", bkrepoHost, project, repo, trimFilePath(filepath));
+        String resp = OkhttpUtils.INSTANCE.doHttpPost(url, "{}", getUploadHeaders());
         BkRepoResult<BkRepoStartChunkVo> result =
                 JsonUtil.INSTANCE.to(resp, new TypeReference<BkRepoResult<BkRepoStartChunkVo>>() {
                 });
@@ -52,8 +59,8 @@ public class BkRepoApi {
 
 
     public Boolean genericChunkUpload(String filepath, File file, Integer chunkNo, String uploadId) {
-        String url = String.format("%s/generic/%s/%s/%s", bkrepoHost, project, repo, filepath);
-        Map<String, String> headers = getAuthHeaders();
+        String url = String.format("%s/generic/%s/%s/%s", bkrepoHost, project, repo, trimFilePath(filepath));
+        Map<String, String> headers = getUploadHeaders();
         if (chunkNo != null) {
             headers.put("X-BKREPO-SEQUENCE", chunkNo.toString());
         }
@@ -65,14 +72,20 @@ public class BkRepoApi {
     }
 
     public String genericFinishChunk(String filepath, String uploadId) {
-        String url = String.format("%s/generic/block/%s/%s/%s", bkrepoHost, project, repo, filepath);
-        Map<String, String> headers = getAuthHeaders();
+        String url = String.format("%s/generic/block/%s/%s/%s", bkrepoHost, project, repo, trimFilePath(filepath));
+        Map<String, String> headers = getUploadHeaders();
         if (StringUtils.hasLength(uploadId)) {
             headers.put("X-BKREPO-UPLOAD-ID", uploadId);
         }
         OkhttpUtils.INSTANCE.doHttpPut(url, "{}", headers);
-        return String.format("%s/generic/%s/%s/%s", bkrepoHost, project, repo, filepath)
+        return String.format("%s/generic/%s/%s/%s", bkrepoHost, project, repo, trimFilePath(filepath))
                 + "?download=true";
+    }
+
+    private Map<String, String> getUploadHeaders() {
+        Map<String, String> headers = new HashMap<>(getAuthHeaders());
+        headers.put("X-BKREPO-OVERWRITE", "true");
+        return headers;
     }
 
     /**
@@ -104,5 +117,33 @@ public class BkRepoApi {
         return headers;
     }
 
+    public void download(String filePath, String localFilePath) {
+        Map<String, String> headers = getAuthHeaders();
+        String url = getDownloadUrl(filePath);
+        OkhttpUtils.INSTANCE.downloadFile(url, new File(localFilePath), headers);
+    }
+
+    public byte[] download(String filePath) {
+        Map<String, String> headers = getAuthHeaders();
+        String url = getDownloadUrl(filePath);
+        return OkhttpUtils.INSTANCE.download(url, headers);
+    }
+
+    public String delete(String filePath) {
+        String url = String.format("%s/generic/%s/%s/%s", bkrepoHost, project, repo, trimFilePath(filePath));
+        return OkhttpUtils.INSTANCE.doHttpDelete(url, "{}", getAuthHeaders());
+    }
+
+    private String getDownloadUrl(String filepath) {
+        return String.format("%s/generic/%s/%s/%s?download=true", bkrepoHost, project, repo,
+                trimFilePath(filepath));
+    }
+
+    private String trimFilePath(String filepath) {
+        if (filepath.startsWith("/")) {
+            return filepath.substring(1).trim();
+        }
+        return filepath.trim();
+    }
 
 }

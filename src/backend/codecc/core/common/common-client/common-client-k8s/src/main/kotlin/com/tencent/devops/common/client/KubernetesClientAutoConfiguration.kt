@@ -39,12 +39,12 @@ import com.tencent.devops.common.client.pojo.AllProperties
 import com.tencent.devops.common.client.proxy.DevopsAfterInvokeHandlerFactory
 import com.tencent.devops.common.client.proxy.DevopsProxy
 import com.tencent.devops.common.codecc.util.JsonUtil
-import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.service.Profile
 import com.tencent.devops.common.service.ServiceAutoConfiguration
 import com.tencent.devops.common.service.aop.AbstractI18NResponseAspect
 import com.tencent.devops.common.util.TraceBuildIdThreadCacheUtils
 import feign.RequestInterceptor
+import io.kubernetes.client.openapi.apis.CoreV1Api
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
@@ -52,7 +52,9 @@ import org.springframework.boot.autoconfigure.AutoConfigureOrder
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.client.loadbalancer.LoadBalancerAutoConfiguration
+import org.springframework.cloud.kubernetes.client.KubernetesClientPodUtils
 import org.springframework.cloud.kubernetes.client.discovery.KubernetesInformerDiscoveryClient
+import org.springframework.cloud.kubernetes.commons.KubernetesNamespaceProvider
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.PropertySource
@@ -119,6 +121,7 @@ class KubernetesClientAutoConfiguration {
                 requestTemplate.header(AUTH_HEADER_DEVOPS_PROJECT_ID, projectId)
             }
 
+            // 测试环境
             val gatewayTag = DevopsProxy.gatewayTagThreadLocal.get() as String?
             if (!gatewayTag.isNullOrBlank()) {
                 logger.info("match gateway tag: {}", gatewayTag)
@@ -147,13 +150,18 @@ class KubernetesClientAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(DiscoveryUtils::class)
     fun discoveryUtils(
+        @Autowired kubernetesNamespaceProvider: KubernetesNamespaceProvider,
+        @Autowired coreV1Api: CoreV1Api,
+        @Autowired kubernetesClientPodUtils: KubernetesClientPodUtils,
         @Autowired discoveryClient: DiscoveryClient,
         @Autowired profile: Profile
-    ) = KubernetesDiscoveryUtils(discoveryClient, profile)
+    ) = KubernetesDiscoveryUtils(
+        kubernetesNamespaceProvider.namespace, coreV1Api,
+        kubernetesClientPodUtils, discoveryClient, profile
+    )
 
     @Bean(name = ["devopsAfterInvokeHandlerFactory"])
     fun devopsAfterInvokeHandlerFactory(): DevopsAfterInvokeHandlerFactory {
         return DevopsAfterInvokeHandlerFactory()
     }
-
 }

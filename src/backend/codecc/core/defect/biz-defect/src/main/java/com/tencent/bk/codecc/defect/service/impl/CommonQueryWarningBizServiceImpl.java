@@ -17,20 +17,16 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.component.GongfengFilterPathComponent;
 import com.tencent.bk.codecc.defect.component.QueryWarningLogicComponent;
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildDefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerSetRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CodeFileUrlRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CommonStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.DefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.FirstAnalysisSuccessTimeRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.IgnoreCheckerRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.DefectDao;
-import com.tencent.bk.codecc.defect.model.BuildDefectEntity;
-import com.tencent.bk.codecc.defect.model.BuildDefectV2Entity;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.IgnoreCheckerRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CodeFileUrlRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CommonStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.FirstAnalysisSuccessTimeRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.DefectDao;
 import com.tencent.bk.codecc.defect.model.CodeFileUrlEntity;
-import com.tencent.bk.codecc.defect.model.checkerset.CheckerPropsEntity;
-import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.defect.pojo.CommonDefectIssueQueryMultiCond;
 import com.tencent.bk.codecc.defect.service.AbstractQueryWarningBizService;
@@ -42,9 +38,11 @@ import com.tencent.bk.codecc.defect.vo.CommonDefectGroupStatisticVO;
 import com.tencent.bk.codecc.defect.vo.DefectBaseVO;
 import com.tencent.bk.codecc.defect.vo.DefectDetailQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.DefectDetailVO;
+import com.tencent.bk.codecc.defect.vo.DefectFileContentSegmentQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.DefectFilesInfoVO;
 import com.tencent.bk.codecc.defect.vo.DefectInstanceVO;
 import com.tencent.bk.codecc.defect.vo.DefectQueryRspVO;
+import com.tencent.bk.codecc.defect.vo.QueryDefectFileContentSegmentReqVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectIdVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectPageVO;
@@ -61,9 +59,9 @@ import com.tencent.bk.codecc.defect.vo.openapi.TaskDefectVO;
 import com.tencent.bk.codecc.defect.vo.report.CommonChartAuthorVO;
 import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
+import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.Page;
-import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.service.AuthTaskService;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
@@ -71,6 +69,8 @@ import com.tencent.devops.common.constant.ComConstants.DefectStatus;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.service.BizServiceFactory;
+import com.tencent.devops.common.service.ToolMetaCacheService;
+import com.tencent.devops.common.service.utils.SpringContextUtil;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.DateTimeUtils;
 import com.tencent.devops.common.util.ListSortUtil;
@@ -165,7 +165,6 @@ public class CommonQueryWarningBizServiceImpl extends AbstractQueryWarningBizSer
     }
 
 
-
     protected Set<String> convertDefectPathsToRelatePath(Set<String> defectPaths, Map<String, String> relatePathMap) {
         Set<String> defectPathsSet = new HashSet<>();
         if (CollectionUtils.isEmpty(defectPaths)) {
@@ -183,6 +182,7 @@ public class CommonQueryWarningBizServiceImpl extends AbstractQueryWarningBizSer
 
     @Override
     public CommonDefectDetailQueryRspVO processQueryWarningDetailRequest(
+            String projectId,
             Long taskId,
             String userId,
             CommonDefectDetailQueryReqVO queryWarningDetailReq,
@@ -203,7 +203,7 @@ public class CommonQueryWarningBizServiceImpl extends AbstractQueryWarningBizSer
 
         // 修正快照查
         String buildId = queryWarningDetailReq.getBuildId();
-        if (StringUtils.isNotEmpty(buildId)) {
+        if (StringUtils.isNotBlank(buildId)) {
             List<CommonDefectEntity> postHandleDefectList =
                     queryWarningLogicComponent.postHandleCommonDefect(Lists.newArrayList(commonDefectEntity), buildId);
 
@@ -235,8 +235,25 @@ public class CommonQueryWarningBizServiceImpl extends AbstractQueryWarningBizSer
     }
 
     @Override
+    public CommonDefectDetailQueryRspVO processQueryDefectDetailWithoutFileContent(Long taskId, String userId,
+            CommonDefectDetailQueryReqVO queryWarningDetailReq, String sortField, Sort.Direction sortType) {
+        return new CommonDefectDetailQueryRspVO();
+    }
+
+    @Override
     public DefectDetailVO getFilesContent(DefectDetailVO defectDetailVO) {
         return commonQueryWarningContentService.getFilesContent(defectDetailVO);
+    }
+
+    @Override
+    public DefectFileContentSegmentQueryRspVO processQueryDefectFileContentSegment(String projectId, String userId,
+            QueryDefectFileContentSegmentReqVO request) {
+        return new DefectFileContentSegmentQueryRspVO();
+    }
+
+    @Override
+    public DefectDetailVO getFilesInfo(DefectDetailVO defectDetailVO) {
+        return commonQueryWarningContentService.getFilesInfo(defectDetailVO);
     }
 
     @Override
@@ -448,7 +465,14 @@ public class CommonQueryWarningBizServiceImpl extends AbstractQueryWarningBizSer
                 defectDetailVO.getFileInfoMap().put(md5, fileInfo);
             }
         }
-        defectDetailVO = getFilesContent(defectDetailVO);
+
+        // 判断工具是否已经下架，已下架的工具不能从platform获取告警详情
+        ToolMetaCacheService toolMetaCache = SpringContextUtil.Companion.getBean(ToolMetaCacheService.class);
+        ToolMetaBaseVO toolMetaBase = toolMetaCache.getToolBaseMetaCache(defectDetailVO.getToolName());
+        if (!ComConstants.ToolIntegratedStatus.D.name().equals(toolMetaBase.getStatus())) {
+            defectDetailVO = getFilesContent(defectDetailVO);
+        }
+
         return defectDetailVO;
     }
 
@@ -464,71 +488,6 @@ public class CommonQueryWarningBizServiceImpl extends AbstractQueryWarningBizSer
     public CommonDefectIssueQueryMultiCond getQueryMultiCond(long taskId, List<String> toolNameSet,
             DefectQueryReqVO defectQueryReqVO) {
         throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Status 筛选条件
-     *
-     * @param status
-     * @return
-     */
-    private Set<Integer> getStatusFilterSet(Set<String> status, String buildId) {
-        Set<Integer> condStatusList = CollectionUtils.isEmpty(status) ? Collections.emptySet() :
-                status.stream().map(Integer::valueOf).collect(Collectors.toSet());
-
-        if (CollectionUtils.isEmpty(condStatusList)) {
-            condStatusList = Sets.newHashSetWithExpectedSize(5);
-            condStatusList.add(DefectStatus.NEW.value());
-            condStatusList.add(DefectStatus.FIXED.value());
-            condStatusList.add(DefectStatus.IGNORE.value());
-            condStatusList.add(DefectStatus.PATH_MASK.value());
-        }
-
-        if (condStatusList.contains(DefectStatus.PATH_MASK.value())) {
-            condStatusList.add(DefectStatus.CHECKER_MASK.value());
-        }
-
-        // 快照查补偿处理
-        if (StringUtils.isNotEmpty(buildId)) {
-            if (condStatusList.contains(DefectStatus.NEW.value())) {
-                condStatusList.add(DefectStatus.NEW.value());
-                condStatusList.add(DefectStatus.FIXED.value());
-            } else {
-                // 快照查，不存在已修复
-                condStatusList.remove(DefectStatus.NEW.value());
-                condStatusList.remove(DefectStatus.FIXED.value());
-            }
-        }
-
-        return condStatusList.stream()
-                .map(it -> Integer.numberOfTrailingZeros(Integer.highestOneBit(it)))
-                .collect(Collectors.toSet());
-    }
-
-
-    private Set<String> getCheckerFilterSet(long taskId, List<String> toolNameSet, DefectQueryReqVO defectQueryReqVO) {
-        String condChecker = defectQueryReqVO.getChecker();
-        if (StringUtils.isBlank(condChecker) && defectQueryReqVO.getCheckerSet() == null) {
-            return null;
-        }
-        Set<String> pkgChecker = new HashSet<>();
-        if (StringUtils.isNotBlank(condChecker)) {
-            pkgChecker.add(condChecker);
-        }
-        if (defectQueryReqVO.getCheckerSet() != null) {
-            DefectQueryReqVO.CheckerSet queryCheckerSet = defectQueryReqVO.getCheckerSet();
-            CheckerSetEntity checkerSetItem = checkerSetRepository.findFirstByCheckerSetIdAndVersion(
-                    queryCheckerSet.getCheckerSetId(), queryCheckerSet.getVersion());
-            Set<String> allChecker = checkerSetItem.getCheckerProps().stream()
-                    .filter((it) -> toolNameSet.contains(it.getToolName()))
-                    .map(CheckerPropsEntity::getCheckerKey).collect(Collectors.toSet());
-
-            if (StringUtils.isEmpty(condChecker)) {
-                pkgChecker.addAll(allChecker);
-            }
-            log.info("get checker for task: {}, {}", taskId, pkgChecker.size());
-        }
-        return pkgChecker;
     }
 
 
@@ -592,6 +551,7 @@ public class CommonQueryWarningBizServiceImpl extends AbstractQueryWarningBizSer
         int maskCount = 0;
         int totalCount = 0;
         int newCount = 0;
+        // NOCC:VariableDeclarationUsageDistance(设计如此:)
         int historyCount = 0;
         Map<String, Integer> checkerMap = new TreeMap<>();
         Map<String, Integer> authorMap = new TreeMap<>();
@@ -721,32 +681,6 @@ public class CommonQueryWarningBizServiceImpl extends AbstractQueryWarningBizSer
         defectQueryRspVO.setCheckerMap(checkerMap);
         defectQueryRspVO.setAuthorMap(authorMap);
         return defectPaths;
-    }
-
-    private Set<String> getDefectIds(Long taskId, List<String> toolNameSet, String buildId) {
-        Set<String> defectIdSet = new HashSet<>();
-        Map<String, Boolean> resultMap = taskLogService.defectCommitSuccess(taskId, toolNameSet,
-                buildId, getSubmitStepNum());
-        List<String> successTools = resultMap.entrySet().stream().filter(Map.Entry::getValue)
-                .map(Map.Entry::getKey).collect(Collectors.toList());
-        List<BuildDefectV2Entity> buildDefectV2Entities =
-                buildDefectV2Repository.findByTaskIdAndBuildIdAndToolNameIn(taskId, buildId, successTools);
-        if (CollectionUtils.isNotEmpty(buildDefectV2Entities)) {
-            for (BuildDefectV2Entity buildDefectV2Entity : buildDefectV2Entities) {
-                defectIdSet.add(buildDefectV2Entity.getDefectId());
-            }
-        }
-        //如果新的快照查询不到，查询老的快照
-        if (defectIdSet.isEmpty()) {
-            List<BuildDefectEntity> buildFiles =
-                    buildDefectRepository.findByTaskIdAndToolNameInAndBuildId(taskId, successTools, buildId);
-            if (CollectionUtils.isNotEmpty(buildFiles)) {
-                for (BuildDefectEntity buildDefectEntity : buildFiles) {
-                    defectIdSet.add(buildDefectEntity.getDefectId());
-                }
-            }
-        }
-        return defectIdSet;
     }
 
     @Override

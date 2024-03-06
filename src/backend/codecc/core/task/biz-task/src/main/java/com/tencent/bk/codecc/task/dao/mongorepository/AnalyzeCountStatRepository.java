@@ -16,6 +16,9 @@ import com.tencent.bk.codecc.task.model.AnalyzeCountStatEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.Set;
+
 /**
  * 工具分析次数统计持久层
  *
@@ -25,5 +28,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AnalyzeCountStatRepository extends MongoRepository<AnalyzeCountStatEntity, String> {
-
+    List<AnalyzeCountStatEntity> findByDateAndDataFromInAndToolName(
+            String date, Set<String> createFrom, String toolName);
 }

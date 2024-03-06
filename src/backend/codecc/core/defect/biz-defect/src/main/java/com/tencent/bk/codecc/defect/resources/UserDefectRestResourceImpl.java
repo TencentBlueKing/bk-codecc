@@ -53,6 +53,7 @@ import com.tencent.bk.codecc.defect.vo.ListToolNameRequest;
 import com.tencent.bk.codecc.defect.vo.ListToolNameResponse;
 import com.tencent.bk.codecc.defect.vo.ListToolNameResponse.ToolBase;
 import com.tencent.bk.codecc.defect.vo.QueryCheckersAndAuthorsRequest;
+import com.tencent.bk.codecc.defect.vo.QueryDefectFileContentSegmentReqVO;
 import com.tencent.bk.codecc.defect.vo.QueryFileDefectGatherRequest;
 import com.tencent.bk.codecc.defect.vo.SingleCommentVO;
 import com.tencent.bk.codecc.defect.vo.StatDefectQueryRespVO;
@@ -280,6 +281,7 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
 
     @Override
     public Result<CommonDefectDetailQueryRspVO> queryDefectDetail(
+            String projectId,
             Long taskId,
             String userId,
             CommonDefectDetailQueryReqVO commonDefectDetailQueryReqVO,
@@ -295,27 +297,85 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
 
         return new Result<>(
                 service.processQueryWarningDetailRequest(
-                        taskId, userId, commonDefectDetailQueryReqVO, sortField, sortType
+                        projectId, taskId, userId, commonDefectDetailQueryReqVO, sortField, sortType
                 )
         );
     }
 
     @Override
-    public Result<CommonDefectDetailQueryRspVO> queryDefectDetailWithIssue(Long taskId, String userId,
-            CommonDefectDetailQueryReqVO commonDefectDetailQueryReqVO, String sortField, Direction sortType) {
-        return queryDefectDetail(taskId, userId, commonDefectDetailQueryReqVO, sortField, sortType);
+    public Result<CommonDefectDetailQueryRspVO> queryDefectDetailWithoutFileContent(
+            Long taskId,
+            String userId,
+            CommonDefectDetailQueryReqVO commonDefectDetailQueryReqVO,
+            String sortField,
+            Sort.Direction sortType
+    ) {
+        IQueryWarningBizService service = fileAndDefectQueryFactory.createBizService(
+                Lists.newArrayList(commonDefectDetailQueryReqVO.getToolName()),
+                Lists.newArrayList(commonDefectDetailQueryReqVO.getDimension()),
+                ComConstants.BusinessType.QUERY_WARNING.value(),
+                IQueryWarningBizService.class
+        );
+
+        return new Result<>(
+                service.processQueryDefectDetailWithoutFileContent(
+                        taskId, userId, commonDefectDetailQueryReqVO, sortField, sortType
+                )
+        );
     }
 
 
     @Override
-    public Result<CommonDefectDetailQueryRspVO> getFileContentSegment(long taskId, String userId,
+    public Result<CommonDefectDetailQueryRspVO> queryDefectDetailWithIssueWithoutFileContent(
+            Long taskId, String userId, CommonDefectDetailQueryReqVO commonDefectDetailQueryReqVO,
+            String sortField, Sort.Direction sortType) {
+        IQueryWarningBizService service = fileAndDefectQueryFactory.createBizService(
+                Lists.newArrayList(commonDefectDetailQueryReqVO.getToolName()),
+                Lists.newArrayList(commonDefectDetailQueryReqVO.getDimension()),
+                ComConstants.BusinessType.QUERY_WARNING.value(),
+                IQueryWarningBizService.class
+        );
+
+        return new Result<>(
+                service.processQueryDefectDetailWithoutFileContent(
+                        taskId, userId, commonDefectDetailQueryReqVO, sortField, sortType
+                )
+        );
+    }
+
+
+    @Override
+    public Result<CommonDefectDetailQueryRspVO> queryDefectFileContentSegment(String projectId, Long taskId,
+            String userId, QueryDefectFileContentSegmentReqVO request) {
+        IQueryWarningBizService service = fileAndDefectQueryFactory.createBizService(
+                Lists.newArrayList(request.getToolName()),
+                Lists.newArrayList(request.getDimension()),
+                ComConstants.BusinessType.QUERY_WARNING.value(),
+                IQueryWarningBizService.class
+        );
+
+        return new Result<>(
+                service.processQueryDefectFileContentSegment(projectId, userId, request)
+        );
+    }
+
+    @Override
+    public Result<CommonDefectDetailQueryRspVO> queryDefectDetailWithIssue(String projectId, Long taskId, String userId,
+            CommonDefectDetailQueryReqVO commonDefectDetailQueryReqVO, String sortField, Direction sortType) {
+        return queryDefectDetail(projectId, taskId, userId, commonDefectDetailQueryReqVO, sortField, sortType);
+    }
+
+
+    @Override
+    public Result<CommonDefectDetailQueryRspVO> getFileContentSegment(String projectId, long taskId, String userId,
             GetFileContentSegmentReqVO getFileContentSegmentReqVO) {
         IQueryWarningBizService queryWarningBizService = fileAndDefectQueryFactory
                 .createBizService(getFileContentSegmentReqVO.getToolName(),
                         getFileContentSegmentReqVO.getDimension(),
                         ComConstants.BusinessType.QUERY_WARNING.value(), IQueryWarningBizService.class);
         return new Result<>(
-                queryWarningBizService.processGetFileContentSegmentRequest(taskId, userId, getFileContentSegmentReqVO));
+                queryWarningBizService.processGetFileContentSegmentRequest(projectId, taskId, userId,
+                        getFileContentSegmentReqVO));
     }
 
 
@@ -393,8 +453,8 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
     }
 
     @Override
-    @OperationHistory(funcId = FUNC_CODE_COMMENT_ADD, operType = CODE_COMMENT_ADD)
     @AuthMethod(permission = {CodeCCAuthAction.DEFECT_MANAGE})
+    @OperationHistory(funcId = FUNC_CODE_COMMENT_ADD, operType = CODE_COMMENT_ADD)
     public Result<Boolean> addCodeComment(
             String defectId, String toolName, String commentId, String userName,
             SingleCommentVO singleCommentVO, String fileName, String nameCn,
@@ -422,8 +482,8 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
     }
 
     @Override
-    @OperationHistory(funcId = FUNC_CODE_COMMENT_DEL, operType = CODE_COMMENT_DEL)
     @AuthMethod(permission = {CodeCCAuthAction.DEFECT_MANAGE})
+    @OperationHistory(funcId = FUNC_CODE_COMMENT_DEL, operType = CODE_COMMENT_DEL)
     public Result<Boolean> deleteCodeComment(
             String commentId, String singleCommentId, String toolName,
             String userName, String entityId, String comment
@@ -578,24 +638,6 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
         return new Result<>(service.countNewDefectFile(request));
     }
 
-    private IQueryWarningBizService getServiceForQueryWarningBiz(DefectQueryReqVO vo) {
-        return fileAndDefectQueryFactory.createBizService(
-                vo.getToolNameList(),
-                vo.getDimensionList(),
-                ComConstants.BusinessType.QUERY_WARNING.value(),
-                IQueryWarningBizService.class
-        );
-    }
-
-    private IQueryWarningBizService getServiceForQueryWarningBiz(CommonDefectDetailQueryReqVO vo) {
-        return fileAndDefectQueryFactory.createBizService(
-                vo.getToolName(),
-                vo.getDimension(),
-                ComConstants.BusinessType.QUERY_WARNING.value(),
-                IQueryWarningBizService.class
-        );
-    }
-
     private IDefectOperateBizService getServiceForCodeCommentBiz(String toolName) {
         // 评论功能目前只有圈复杂度以及问题管理三大维度LINT
         if (StringUtils.isEmpty(toolName)) {
@@ -614,4 +656,5 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
             );
         }
     }
+
 }

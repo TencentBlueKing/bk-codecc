@@ -23,4 +23,9 @@ public class ServiceMetricsRestResourceImpl implements ServiceMetricsRestResourc
     public Result<List<MetricsVO>> getMetrics(List<Long> taskIds) {
         return new Result<>(metricsService.getMetrics(taskIds));
     }
+
+    @Override
+    public Result<MetricsVO> getLatestMetrics(Long taskId) {
+        return new Result<>(metricsService.getLatestMetrics(taskId));
+    }
 }

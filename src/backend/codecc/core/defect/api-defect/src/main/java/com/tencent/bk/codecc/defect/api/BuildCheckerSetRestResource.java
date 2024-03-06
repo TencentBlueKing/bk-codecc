@@ -29,6 +29,7 @@ package com.tencent.bk.codecc.defect.api;
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_BUILD_ID;
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
 
+import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
 import com.tencent.bk.codecc.defect.vo.integrated.ToolCheckerSetToStatusVo;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
@@ -40,6 +41,7 @@ import io.swagger.annotations.ApiParam;
 import java.util.List;
 import java.util.Set;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -110,5 +112,14 @@ public interface BuildCheckerSetRestResource {
             @QueryParam("status")
             ToolIntegratedStatus status,
             Set<String> checkerSetIds
+    );
+
+    @ApiOperation("获取工具中所有规则的详情")
+    @Path("/queryChecker/toolName/{toolName}")
+    @GET
+    Result<List<CheckerDetailVO>> queryCheckerByToolName(
+            @ApiParam(value = "工具名称", required = true)
+            @PathParam("toolName")
+            String toolName
     );
 }

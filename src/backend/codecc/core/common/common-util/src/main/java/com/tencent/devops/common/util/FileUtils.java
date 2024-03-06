@@ -43,21 +43,17 @@ public class FileUtils {
      */
     public static boolean saveContentToFile(String filePath, String content) {
         File file = new File(filePath);
-        if (file.getParent() != null) {
-            File parentPath = new File(file.getParent());
-            if (!parentPath.exists()) {
-                parentPath.mkdirs();
+        File parentPath = file.getParentFile();
+        if (parentPath != null && !parentPath.exists()) {
+            if (!parentPath.mkdirs()) {
+                logger.error("when save content to file, create directory failed {}", parentPath.getAbsolutePath());
+                return false;
             }
         }
-        /*
-         *  防护方法：判断用户输入文件名是否存在..，存在则可能导致跨目录
-         */
-        if (filePath.contains("..")) {
-            return false;
-        }
+
         try (BufferedWriter bw = new BufferedWriter(
                 new OutputStreamWriter(
-                        new FileOutputStream(filePath), StandardCharsets.UTF_8))) {
+                        new FileOutputStream(file.getCanonicalPath()), StandardCharsets.UTF_8))) {
             bw.write(new String(content.getBytes(), StandardCharsets.UTF_8));
             file.setExecutable(true, false);
         } catch (IOException e) {
@@ -83,28 +79,37 @@ public class FileUtils {
             logger.error("ZipFile {} ready failed: ", file, e);
             return false;
         }
-        if (Objects.nonNull(zipFile)) {
-            Enumeration<? extends ZipEntry> entries = zipFile.entries();
-            while (entries.hasMoreElements()) {
-                ZipEntry entry = entries.nextElement();
-                File entryDestination = new File(destDir, entry.getName());
-                if (entry.isDirectory()) {
+        Enumeration<? extends ZipEntry> entries = zipFile.entries();
+        while (entries.hasMoreElements()) {
+            ZipEntry entry = entries.nextElement();
+            File entryDestination = new File(destDir, entry.getName());
+            if (entry.isDirectory()) {
+                if (!entryDestination.exists()) {
                     entryDestination.mkdirs();
-                } else {
-                    if (entryDestination.getParentFile() != null) {
-                        entryDestination.getParentFile().mkdirs();
-                    }
-                    try (InputStream in = zipFile.getInputStream(entry);
-                         OutputStream out = new FileOutputStream(entryDestination)) {
-                        IOUtils.copy(in, out);
-                    } catch (IOException e) {
-                        logger.error("file {} unzip failed, it maybe is broken", file, e);
-                        return false;
-                    }
+                }
+            } else {
+                File parentDir = entryDestination.getParentFile();
+                if (!parentDir.exists()) {
+                    parentDir.mkdirs();
+                }
+                if (!unzip(zipFile, entry, entryDestination)) {
+                    return false;
                 }
             }
         }
         return true;
+    }
+
+    // 解压单个文件
+    private static boolean unzip(ZipFile zipFile, ZipEntry entry, File entryDestination) {
+        try (InputStream in = zipFile.getInputStream(entry);
+             OutputStream out = Files.newOutputStream(entryDestination.toPath())) {
+            IOUtils.copy(in, out);
+            return true;
+        } catch (IOException e) {
+            logger.error("file {} unzip failed, it maybe is broken", zipFile, e);
+            return false;
+        }
     }
 
     public static boolean chmodPath(String path, boolean readable, boolean writable, boolean executable) {

@@ -12,20 +12,19 @@
 
 package com.tencent.bk.codecc.codeccjob.service.impl;
 
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.CCNDefectRepository;
+import com.tencent.bk.codecc.codeccjob.service.AbstractAuthorTransBizService;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.vo.common.AuthorTransferVO;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.CCNDefectRepository;
-import com.tencent.bk.codecc.codeccjob.service.AbstractAuthorTransBizService;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * ccn类工具的作者转换
@@ -35,34 +34,31 @@ import java.util.List;
  */
 @Service("CCNAuthorTransBizService")
 @Slf4j
-public class CCNAuthorTransBizServiceImpl extends AbstractAuthorTransBizService
-{
+public class CCNAuthorTransBizServiceImpl extends AbstractAuthorTransBizService {
+
     @Autowired
     private CCNDefectRepository ccnDefectRepository;
 
     @Override
-    public Result processBiz(AuthorTransferVO authorTransferVO)
-    {
-        List<CCNDefectEntity> ccnDefectEntityList = ccnDefectRepository.findNotRepairedDefect(authorTransferVO.getTaskId(),
+    public Result processBiz(AuthorTransferVO authorTransferVO) {
+        List<CCNDefectEntity> ccnDefectEntityList = ccnDefectRepository.findNotRepairedDefect(
+                authorTransferVO.getTaskId(),
                 ComConstants.DEFECT_STATUS_CLOSED);
 
-        if (CollectionUtils.isNotEmpty(ccnDefectEntityList))
-        {
+        if (CollectionUtils.isNotEmpty(ccnDefectEntityList)) {
             List<CCNDefectEntity> needRefreshDefectList = new ArrayList<>();
             ccnDefectEntityList.forEach(ccnDefectEntity ->
                     {
                         String author = ccnDefectEntity.getAuthor();
                         String newAuthor = transferAuthor(authorTransferVO.getTransferAuthorList(), author);
-                        if (!newAuthor.equals(author))
-                        {
+                        if (!newAuthor.equals(author)) {
                             ccnDefectEntity.setAuthor(newAuthor);
                             needRefreshDefectList.add(ccnDefectEntity);
                         }
                     }
             );
 
-            if (CollectionUtils.isNotEmpty(needRefreshDefectList))
-            {
+            if (CollectionUtils.isNotEmpty(needRefreshDefectList)) {
                 ccnDefectRepository.saveAll(needRefreshDefectList);
             }
         }

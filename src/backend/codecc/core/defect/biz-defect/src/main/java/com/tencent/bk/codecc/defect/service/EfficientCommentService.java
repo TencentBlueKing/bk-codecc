@@ -1,6 +1,7 @@
 package com.tencent.bk.codecc.defect.service;
 
 import com.tencent.bk.codecc.defect.cache.DynamicConfigCache;
+import java.util.Locale;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -31,7 +32,7 @@ public class EfficientCommentService {
         if (CollectionUtils.isEmpty(filters) || StringUtils.isEmpty(lang)) {
             return true;
         }
-        return !filters.contains(lang.toLowerCase().trim());
+        return !filters.contains(lang.toLowerCase(Locale.ENGLISH).trim());
     }
 
 
@@ -41,7 +42,7 @@ public class EfficientCommentService {
         if (StringUtils.isEmpty(config)) {
             return Collections.emptyList();
         }
-        List<String> filters = Arrays.asList(config.toLowerCase().split(","));
+        List<String> filters = Arrays.asList(config.toLowerCase(Locale.ENGLISH).split(","));
         filters = filters.stream().map(String::trim).collect(Collectors.toList());
         return filters;
     }

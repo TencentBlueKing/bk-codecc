@@ -30,15 +30,15 @@ package com.tencent.bk.codecc.defect.service;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.tencent.bk.codecc.defect.component.ScmJsonComponent;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoFromAnalyzeLogRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoInfoRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.FirstAnalysisSuccessTimeRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildStackRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.ToolBuildInfoDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CodeRepoFromAnalyzeLogRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CodeRepoInfoRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.FirstAnalysisSuccessTimeRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.TaskLogRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ToolBuildStackRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.ToolBuildInfoDao;
 import com.tencent.bk.codecc.defect.dto.WebsocketDTO;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
 import com.tencent.bk.codecc.defect.model.CodeRepoFromAnalyzeLogEntity;
@@ -309,7 +309,7 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
                 }
             }
             client.get(ServiceGrayToolProjectResource.class).processGrayReport(taskLogEntity.getTaskId(),
-                    taskLogEntity.getBuildId(), grayTaskStatVO);
+                    taskLogEntity.getBuildId(), taskLogEntity.getToolName(), grayTaskStatVO);
         }
     }
 
@@ -496,6 +496,7 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
                         urlBranchEntityMap.put(codeRepoInfo.getUrl() + codeRepoInfo.getBranch(), codeRepoEntity);
                     }
                     codeRepoEntity.setCommitTime(commitTimeStr);
+                    codeRepoEntity.setTicketId(codeRepoInfo.getTicketId());
                 }
             }
             CodeRepoFromAnalyzeLogEntity codeRepoFromAnalyzeLogEntity = codeRepoFromAnalyzeLogRepository
@@ -807,7 +808,8 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
                 .get(taskLogEntity.getStepArray().size() - 1);
             if (lastTaskStep.getStepNum() == taskStep.getStepNum()) {
                 lastTaskStep.setFlag(taskStep.getFlag());
-                lastTaskStep.setEndTime(taskStep.getEndTime());
+                lastTaskStep.setEndTime(taskStep.getEndTime()
+                        == ComConstants.COMMON_NUM_0L ? taskStep.getStartTime() : taskStep.getEndTime());
                 lastTaskStep.setMsg(taskStep.getMsg());
                 lastTaskStep.setElapseTime(taskStep.getEndTime() - lastTaskStep.getStartTime());
                 lastTaskStep.setRecommitTimes(taskStep.getRecommitTimes());
@@ -876,7 +878,8 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
         if (taskStep.getFlag() == ComConstants.StepFlag.FAIL.value()
                 || (taskStep.getFlag() == ComConstants.StepFlag.SUCC.value()
                         && taskStep.getStepNum() == getSubmitStepNum())) {
-            taskLogEntity.setEndTime(taskStep.getEndTime());
+            taskLogEntity.setEndTime(taskStep.getEndTime()
+                    == ComConstants.COMMON_NUM_0L ? taskStep.getStartTime() : taskStep.getEndTime());
             taskLogEntity.setFlag(taskStep.getFlag());
             if (taskLogEntity.getStartTime() != ComConstants.COMMON_NUM_0L) {
                 taskLogEntity.setElapseTime(taskLogEntity.getEndTime() - taskLogEntity.getStartTime());

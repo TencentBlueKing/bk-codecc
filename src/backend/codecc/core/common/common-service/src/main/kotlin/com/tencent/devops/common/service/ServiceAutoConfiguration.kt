@@ -29,6 +29,7 @@ package com.tencent.devops.common.service
 import com.tencent.devops.common.service.gray.Gray
 import com.tencent.devops.common.service.prometheus.BkTimedAspect
 import com.tencent.devops.common.service.utils.GlobalMessageUtil
+import com.tencent.devops.common.service.utils.IPUtils
 import com.tencent.devops.common.service.utils.SpringContextUtil
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
@@ -51,6 +52,9 @@ class ServiceAutoConfiguration {
 
     @Bean
     fun springContextUtil() = SpringContextUtil()
+
+    @Bean
+    fun ipUtils(environment: Environment) = IPUtils(environment)
 
     @Bean
     fun globalMessageUtil() = GlobalMessageUtil()

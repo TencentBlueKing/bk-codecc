@@ -21,6 +21,9 @@ public class BeforeMessagePostProcessorRegister implements ApplicationContextAwa
      */
     @PostConstruct
     public void registerProcessor() {
+        if (applicationContext == null) {
+            return;
+        }
         Map<String, RabbitTemplate> nameToTemplateMap = applicationContext.getBeansOfType(
                 RabbitTemplate.class);
         if (nameToTemplateMap.isEmpty()) {

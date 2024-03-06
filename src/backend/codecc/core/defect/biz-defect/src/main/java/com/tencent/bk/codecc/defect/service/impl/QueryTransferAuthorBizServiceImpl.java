@@ -9,42 +9,38 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.TransferAuthorRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.TransferAuthorRepository;
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity;
 import com.tencent.bk.codecc.defect.service.IQueryTransferAuthorBizService;
 import com.tencent.bk.codecc.defect.vo.common.AuthorTransferVO;
-import lombok.extern.slf4j.Slf4j;
 import com.tencent.devops.common.util.BeanUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
  * 查询告警处理人转换关系表的实现类
- * 
- * @date 2019/12/3
+ *
  * @version V1.0
+ * @date 2019/12/3
  */
 @Service
 @Slf4j
-public class QueryTransferAuthorBizServiceImpl implements IQueryTransferAuthorBizService
-{
+public class QueryTransferAuthorBizServiceImpl implements IQueryTransferAuthorBizService {
+
     @Autowired
     private TransferAuthorRepository transferAuthorRepository;
 
     @Override
-    public AuthorTransferVO getAuthorTransfer(long taskId)
-    {
+    public AuthorTransferVO getAuthorTransfer(long taskId) {
         TransferAuthorEntity transferAuthorEntity = transferAuthorRepository.findFirstByTaskId(taskId);
         AuthorTransferVO authorTransferVO = new AuthorTransferVO();
-        if (transferAuthorEntity != null)
-        {
+        if (transferAuthorEntity != null) {
             BeanUtils.copyProperties(transferAuthorEntity, authorTransferVO);
-        }
-        else
-        {
+        } else {
             authorTransferVO.setTaskId(taskId);
         }
         return authorTransferVO;

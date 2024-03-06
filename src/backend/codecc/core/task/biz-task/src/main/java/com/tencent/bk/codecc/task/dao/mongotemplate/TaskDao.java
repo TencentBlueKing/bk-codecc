@@ -27,20 +27,23 @@
 package com.tencent.bk.codecc.task.dao.mongotemplate;
 
 import static com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
+import static com.tencent.devops.common.constant.ComConstants.COMMON_PAGE_SIZE;
 
 import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.task.constant.TaskConstants;
+import com.tencent.bk.codecc.task.model.DeletedTaskInfoEntity;
 import com.tencent.bk.codecc.task.model.TaskIdInfo;
-import com.tencent.bk.codecc.task.model.TaskIdToolInfoEntity;
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
 import com.tencent.bk.codecc.task.model.TaskOrgInfoEntity;
 import com.tencent.bk.codecc.task.model.UserLogInfoStatEntity;
 import com.tencent.bk.codecc.task.vo.FilterPathInputVO;
+import com.tencent.bk.codecc.task.vo.TaskProjectCountVO;
+import com.tencent.bk.codecc.task.vo.TaskStatisticVO;
 import com.tencent.bk.codecc.task.vo.TaskUpdateDeptInfoVO;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.Status;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -52,7 +55,9 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -61,6 +66,7 @@ import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.BulkOperations.BulkMode;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
 import org.springframework.data.mongodb.core.aggregation.LimitOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
@@ -76,7 +82,7 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 @Slf4j
-public class TaskDao {
+public class TaskDao implements CommonTaskDao {
 
     @Autowired
     private MongoTemplate mongoTemplate;
@@ -135,10 +141,11 @@ public class TaskDao {
      * @return
      */
     public Boolean updatePipelineTaskInfo(Long taskId, String pipelineTaskId, String pipelineTaskName,
-            String userName, Integer timeout) {
+            String userName, Integer timeout, Boolean fileCacheEnable) {
         Update update = Update.update("pipeline_task_id", pipelineTaskId)
                 .set("pipeline_task_name", pipelineTaskName)
                 .set("timeout", timeout)
+                .set("file_cache_enable", fileCacheEnable)
                 .set("updated_date", System.currentTimeMillis())
                 .set("updated_by", userName);
         Query query = new Query(Criteria.where("task_id").is(taskId));
@@ -173,6 +180,48 @@ public class TaskDao {
         return mongoTemplate.updateMulti(query, update, TaskInfoEntity.class).getModifiedCount() > 0;
     }
 
+    /**
+     * 删除 taskInfoEntity
+     *
+     * @param taskInfoEntity
+     * @param userName
+     * @return boolean
+     * @author victorljli
+     * @date 2023/10/31
+     */
+    public boolean deleteEntity(TaskInfoEntity taskInfoEntity, String userName) {
+        DeletedTaskInfoEntity deletedTaskInfoEntity = new DeletedTaskInfoEntity();
+        BeanUtils.copyProperties(taskInfoEntity, deletedTaskInfoEntity);
+        deletedTaskInfoEntity.setDeleteBy(userName);
+        deletedTaskInfoEntity.setDeleteDate(System.currentTimeMillis());
+        try {
+            mongoTemplate.save(deletedTaskInfoEntity);
+        } catch (DataAccessException e) {
+            log.error("error({}) happens when save data in t_deleted_task_detail(taskId: {})",
+                    e.getLocalizedMessage(), taskInfoEntity.getTaskId());
+            return false;
+        } catch (Exception e) {
+            log.error("unkown error happens when save data in t_deleted_task_detail(taskId: {}). message: {}, "
+                    + "stack trace: {}", taskInfoEntity.getTaskId(), e.getMessage(), e.getStackTrace());
+            return false;
+        }
+
+        Query query = new Query();
+        query.addCriteria(Criteria.where("task_id").is(taskInfoEntity.getTaskId()));
+        try {
+            mongoTemplate.remove(query, TaskInfoEntity.class);
+        } catch (DataAccessException e) {
+            log.error("error({}) happens when delete data from t_task_detail(taskId: {}).",
+                    e.getLocalizedMessage(), taskInfoEntity.getTaskId());
+            return false;
+        } catch (Exception e) {
+            log.error("unkown error happened when delete data from t_task_detail(taskId: {}). message: {}, "
+                    + "stack trace: {}", taskInfoEntity.getTaskId(), e.getMessage(), e.getStackTrace());
+            return false;
+        }
+
+        return true;
+    }
 
     public Boolean updateEntity(TaskInfoEntity taskInfoEntity, String userName) {
         Update update = new Update();
@@ -703,7 +752,7 @@ public class TaskDao {
      * 更新任务信息
      */
     public void upsertOwnerAndOrgInfo(long taskId, List<String> ownerList, Long bgId, Long deptId, Long centerId,
-                                      Long groupId) {
+            Long groupId) {
         Query query = new Query();
         query.addCriteria(Criteria.where("task_id").is(taskId));
 
@@ -735,7 +784,8 @@ public class TaskDao {
      */
     public List<TaskOrgInfoEntity> findByPage(Pageable pageable) {
         Query query = Query.query(Criteria.where("status").is(ComConstants.Status.ENABLE.value()));
-        query.fields().include("task_id", "task_owner", "created_by", "bg_id", "dept_id", "center_id", "group_id");
+        query.fields().include("task_id", "create_from", "project_id", "task_owner", "created_by", "bg_id", "dept_id",
+                "center_id", "group_id");
         if (pageable != null) {
             query.with(pageable);
         }
@@ -744,6 +794,7 @@ public class TaskDao {
 
     /**
      * 批量更新任务详情表的组织架构信息
+     *
      * @param needUpdateMap username, orgInfo
      */
     public void batchUpdateTaskOrgInfo(Map<Long, UserLogInfoStatEntity> needUpdateMap) {
@@ -767,5 +818,165 @@ public class TaskDao {
             }
             ops.execute();
         }
+    }
+
+    /**
+     * 根据projectId查询开源任务清单
+     */
+    public List<TaskInfoEntity> findByProjectId(String projectId, String createFrom, Pageable pageable) {
+        Query query = new Query(Criteria.where("project_id").is(projectId).and("create_from").is(createFrom));
+        query.fields().include("task_id", "name_cn");
+        if (pageable != null) {
+            query.with(pageable);
+        }
+        return mongoTemplate.find(query, TaskInfoEntity.class, "t_task_detail");
+    }
+
+    public Long findDataCount(List<Integer> bg,
+            List<Integer> dept,
+            List<Integer> center,
+            List<String> projectIdList,
+            List<String> createFrom) {
+        Query query = new Query();
+        int count = 0;
+        if (CollectionUtils.isNotEmpty(bg)) {
+            query.addCriteria(Criteria.where("bg_id").in(bg));
+            count++;
+        }
+        if (CollectionUtils.isNotEmpty(dept)) {
+            query.addCriteria(Criteria.where("dept_id").in(dept));
+            count++;
+        }
+        if (CollectionUtils.isNotEmpty(center)) {
+            query.addCriteria(Criteria.where("center_id").in(center));
+            count++;
+        }
+        if (CollectionUtils.isNotEmpty(projectIdList)) {
+            query.addCriteria(Criteria.where("project_id").in(projectIdList));
+            count++;
+        }
+        if (CollectionUtils.isNotEmpty(createFrom)) {
+            query.addCriteria(Criteria.where("create_from").in(createFrom));
+            count++;
+        }
+        if (count == 0) {
+            return -1L;
+        }
+        log.info("get task count sql: {}", query);
+        return mongoTemplate.count(query, "t_task_detail");
+    }
+
+    @Override
+    public List<Long> getTaskIdList(Long lastTaskId, Integer limit, String filterProjectId) {
+        Query query = new Query();
+        query.fields().include("task_id");
+        query.addCriteria(Criteria.where("task_id").gt(lastTaskId));
+        // 用来过滤机器自动创建任务
+        if (StringUtils.isNotEmpty(filterProjectId)) {
+            query.addCriteria(Criteria.where("project_id").ne(filterProjectId));
+        }
+        query.with(Sort.by(Direction.ASC, "task_id"));
+        query.limit(limit);
+        List<TaskIdInfo> taskIdInfoList = mongoTemplate.find(query, TaskIdInfo.class, "t_task_detail");
+        return CollectionUtils.isEmpty(taskIdInfoList) ? Collections.emptyList()
+                : taskIdInfoList.stream().map(TaskIdInfo::getTaskId).sorted().collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TaskProjectCountVO> getProjectCount(Set<Long> taskIds) {
+        MatchOperation match = Aggregation
+                .match(Criteria.where("task_id").in(taskIds));
+
+        GroupOperation group = Aggregation.group("project_id")
+                .first("project_id").as("projectId")
+                .count().as("projectCount");
+        Aggregation aggregation = Aggregation.newAggregation(match, group);
+        AggregationResults<TaskProjectCountVO> queryResults =
+                mongoTemplate.aggregate(aggregation, "t_task_detail", TaskProjectCountVO.class);
+        return queryResults.getMappedResults();
+    }
+
+    @Override
+    public List<TaskInfoEntity> getStopTask(Set<Long> taskIds, Long startTime, Long endTime) {
+        Query query = new Query(Criteria.where("task_id").in(taskIds)
+                .and("disable_time").gte(String.valueOf(startTime)).lte(String.valueOf(endTime))
+                .and("status").is(TaskConstants.TaskStatus.DISABLE.value()));
+        query.fields().include("task_id", "bg_id", "dept_id");
+        return mongoTemplate.find(query, TaskInfoEntity.class, "t_task_detail");
+    }
+
+    @Override
+    public List<TaskInfoEntity> getTaskByTaskIds(Set<Long> taskIds) {
+        Query query = new Query(Criteria.where("task_id").in(taskIds));
+        query.fields().include("task_id", "bg_id", "dept_id");
+        return mongoTemplate.find(query, TaskInfoEntity.class, "t_task_detail");
+    }
+
+    public void setStatus(long taskId, int status) {
+        Query query = new Query(Criteria.where("task_id").is(taskId));
+        Update update = Update.update("status", status);
+        mongoTemplate.updateFirst(query, update, TaskInfoEntity.class);
+    }
+
+    public List<TaskInfoEntity> getTaskIdListForHotColdDataSeparation(
+            long lastTaskId, List<String> createFromList, List<Integer> statusList, int limit
+    ) {
+        Document fieldsObj = new Document();
+        fieldsObj.put("task_id", true);
+
+        Query query = new BasicQuery(new Document(), fieldsObj);
+        query.addCriteria(Criteria.where("create_from").in(createFromList)
+                .and("status").in(statusList)
+                .and("task_id").gt(lastTaskId)
+        );
+        query.with(Sort.by(Direction.ASC, "task_id"));
+        query.limit(limit);
+
+        return mongoTemplate.find(query, TaskInfoEntity.class);
+    }
+
+    public void batchStopTask(List<Long> taskIds, String stopReason) {
+        List<List<Long>> taskIdLists = Lists.partition(taskIds, COMMON_PAGE_SIZE);
+        for (List<Long> taskIdList : taskIdLists) {
+            Query updateQuery = Query.query(Criteria.where("task_id").in(taskIdList));
+            Update update = Update.update("status", Status.DISABLE.value());
+            update.set("disable_time", System.currentTimeMillis());
+            update.set("disable_reason", stopReason);
+            mongoTemplate.updateMulti(updateQuery, update, TaskInfoEntity.class);
+        }
+    }
+
+    public void startTask(Long taskId) {
+        Query updateQuery = Query.query(Criteria.where("task_id").is(taskId));
+        Update update = Update.update("status", Status.ENABLE.value());
+        update.set("disable_time", null);
+        update.set("disable_reason", null);
+        mongoTemplate.updateMulti(updateQuery, update, TaskInfoEntity.class);
+    }
+
+    public List<TaskStatisticVO> findTaskStatisticByIds(List<Long> taskIds) {
+        MatchOperation match = Aggregation
+                .match(Criteria.where("task_id").in(taskIds));
+
+        GroupOperation group = Aggregation.group("bg_id", "dept_id")
+                .first("bg_id").as("bgId")
+                .first("dept_id").as("deptId")
+                .count().as("taskCount");
+        Aggregation aggregation = Aggregation.newAggregation(match, group);
+        AggregationResults<TaskStatisticVO> queryResults =
+                mongoTemplate.aggregate(aggregation, "t_task_detail", TaskStatisticVO.class);
+        return queryResults.getMappedResults();
+    }
+
+    public List<Long> findTaskIdProjectIdWithPage(String filterProjectId, Pageable pageable) {
+
+        Query query = new Query();
+        query.fields().include("task_id");
+        // 排除这些项目id的任务
+        query.addCriteria(Criteria.where("project_id").ne(filterProjectId).and("status").is(
+                ComConstants.Status.ENABLE.value()));
+        query.with(pageable);
+        return mongoTemplate.find(query, TaskIdInfo.class, "t_task_detail").stream().map(
+                TaskIdInfo::getTaskId).collect(Collectors.toList());
     }
 }

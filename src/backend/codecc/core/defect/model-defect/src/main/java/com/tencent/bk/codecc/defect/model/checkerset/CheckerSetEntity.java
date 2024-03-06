@@ -31,6 +31,7 @@ import com.tencent.devops.common.api.annotation.I18NFieldMarker;
 import com.tencent.devops.common.api.annotation.I18NModuleCode;
 import java.util.List;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
@@ -44,13 +45,13 @@ import org.springframework.data.mongodb.core.mapping.Field;
  * @version V4.0
  * @date 2019/10/29
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 @Document(collection = "t_checker_set")
 @CompoundIndexes({
         @CompoundIndex(name = "checker_set_id_1_version_1", def = "{'checker_set_id': 1, 'version': 1}")
 })
-public class CheckerSetEntity extends CommonEntity
-{
+public class CheckerSetEntity extends CommonEntity {
     /**
      * 规则集ID
      */
@@ -210,10 +211,9 @@ public class CheckerSetEntity extends CommonEntity
     private String paramJson;
 
     /**
-     * --------------已废弃-----------工具名称
+     * 工具名称，记录当前规则集含有灰度（测试）状态的工具规则，生产版本会为null
      */
     @Field("tool_name")
-    @Deprecated
     private String toolName;
 
     /**

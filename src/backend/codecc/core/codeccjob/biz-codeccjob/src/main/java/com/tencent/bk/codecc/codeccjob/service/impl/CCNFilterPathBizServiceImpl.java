@@ -13,22 +13,19 @@
 package com.tencent.bk.codecc.codeccjob.service.impl;
 
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.CCNDefectDao;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongotemplate.CCNDefectDao;
 import com.tencent.bk.codecc.codeccjob.service.AbstractFilterPathBizService;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.task.vo.FilterPathInputVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
-
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 /**
  * ccn类工具的路径屏蔽

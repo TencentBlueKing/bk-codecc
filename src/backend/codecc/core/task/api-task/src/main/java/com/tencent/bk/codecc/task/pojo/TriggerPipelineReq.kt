@@ -10,6 +10,10 @@ data class TriggerPipelineReq(
     val gitUrl: String?,
     @ApiModelProperty("分支")
     val branch: String?,
+    @ApiModelProperty("commitId")
+    val commitId: String?,
+    @ApiModelProperty("版本号")
+    val revision: String?,
     @ApiModelProperty("工蜂项目id")
     val gongfengProjectId: Int?,
     @ApiModelProperty("逻辑仓标识")
@@ -32,6 +36,10 @@ data class TriggerPipelineReq(
     val includePath: String?,
     @ApiModelProperty("扫描任务owner")
     val taskOwner: String? = null,
+    @ApiModelProperty("仓库 namespace owner")
+    val namespaceOwners:  String? = null,
+    @ApiModelProperty("仓库 project owner")
+    val projectOwners:  String? = null,
     @ApiModelProperty("一级部门ID")
     val bgId: Long? = null,
     @ApiModelProperty("二级部门ID")
@@ -41,7 +49,9 @@ data class TriggerPipelineReq(
     @ApiModelProperty("四级部门ID")
     val groupId: Long? = null,
     @ApiModelProperty("是否忽略分支参数来识别同一个任务")
-    val branchIgnore: Boolean? = null
+    val branchIgnore: Boolean? = null,
+    @ApiModelProperty("额外的仓库信息")
+    val extRepoInfo: Map<String,Any>? = null
 ) {
     constructor(
         gitUrl: String?,
@@ -58,6 +68,8 @@ data class TriggerPipelineReq(
     ): this (
         gitUrl,
         branch,
+        null,
+        null,
         gongfengProjectId,
         logicRepo,
         repoType,

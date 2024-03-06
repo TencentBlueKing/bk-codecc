@@ -10,12 +10,13 @@
  *
  * Terms of the MIT License:
  * ---------------------------------------------------
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+ * Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
  * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -30,24 +31,22 @@ import com.tencent.bk.codecc.task.api.UserToolRestResource;
 import com.tencent.bk.codecc.task.service.PipelineService;
 import com.tencent.bk.codecc.task.service.ToolService;
 import com.tencent.bk.codecc.task.vo.BatchRegisterVO;
-import com.tencent.bk.codecc.task.vo.ParamJsonAndCheckerSetsVO;
 import com.tencent.bk.codecc.task.vo.RepoInfoVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigPlatformVO;
 import com.tencent.bk.codecc.task.vo.ToolStatusUpdateReqVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
-import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.web.RestResource;
 import com.tencent.devops.common.web.security.AuthMethod;
+import java.util.List;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.List;
 
 /**
  * 工具管理接口实现类
@@ -56,8 +55,8 @@ import java.util.List;
  * @date 2019/5/7
  */
 @RestResource
-public class UserToolRestResourceImpl implements UserToolRestResource
-{
+public class UserToolRestResourceImpl implements UserToolRestResource {
+
     private static Logger logger = LoggerFactory.getLogger(UserToolRestResourceImpl.class);
 
     @Autowired
@@ -70,30 +69,26 @@ public class UserToolRestResourceImpl implements UserToolRestResource
     public Result<Boolean> registerTools(
             BatchRegisterVO batchRegisterVO,
             String userName
-    )
-    {
+    ) {
         logger.info("register tools: {}", JsonUtil.INSTANCE.toJson(batchRegisterVO));
         return toolService.registerTools(batchRegisterVO, null, userName);
     }
 
 
     @Override
-    public Result<List<RepoInfoVO>> getRepoList(String projCode)
-    {
+    public Result<List<RepoInfoVO>> getRepoList(String projCode) {
         return new Result<>(pipelineService.getRepositoryList(projCode));
     }
 
     @Override
-    public Result<List<String>> listBranches(String projCode, String url, String type)
-    {
+    public Result<List<String>> listBranches(String projCode, String url, String type) {
         return new Result<>(pipelineService.getRepositoryBranches(projCode, url, type));
     }
 
     @Override
     @AuthMethod(permission = {CodeCCAuthAction.TASK_MANAGE})
     public Result<Boolean> updateToolStatus(ToolStatusUpdateReqVO toolStatusUpdateReqVO,
-                                            String userName, long taskId)
-    {
+            String userName, long taskId) {
         checkToolUpdateParam(toolStatusUpdateReqVO, taskId);
         return new Result<>(toolService.toolStatusManage(toolStatusUpdateReqVO.getToolNameList(),
                 toolStatusUpdateReqVO.getManageType(), userName, taskId));
@@ -102,23 +97,14 @@ public class UserToolRestResourceImpl implements UserToolRestResource
 
     @Override
     @AuthMethod(permission = {CodeCCAuthAction.TASK_MANAGE})
-    public Result<Boolean> deletePipeline(Long taskId, String projectId, String userName)
-    {
+    public Result<Boolean> deletePipeline(Long taskId, String projectId, String userName) {
         return new Result<>(toolService.deletePipeline(taskId, projectId, userName));
-    }
-
-    @Override
-    @AuthMethod(permission = {CodeCCAuthAction.TASK_MANAGE})
-    public Result<Boolean> updateParamJsonAndCheckerSets(String user, Long taskId, ParamJsonAndCheckerSetsVO paramJsonAndCheckerSetsVO)
-    {
-        return new Result<>(toolService.updateParamJsonAndCheckerSets(user, taskId, paramJsonAndCheckerSetsVO));
     }
 
 
     @Override
     public Result<Boolean> updateToolPlatformInfo(Long taskId, String userName,
-            ToolConfigPlatformVO toolConfigPlatformVO)
-    {
+            ToolConfigPlatformVO toolConfigPlatformVO) {
         return new Result<>(toolService.updateToolPlatformInfo(taskId, userName, toolConfigPlatformVO));
     }
 
@@ -129,14 +115,12 @@ public class UserToolRestResourceImpl implements UserToolRestResource
      * @param toolStatusUpdateReqVO
      * @param taskId
      */
-    private void checkToolUpdateParam(ToolStatusUpdateReqVO toolStatusUpdateReqVO, long taskId)
-    {
-        if (ComConstants.CommonJudge.COMMON_N.value().equalsIgnoreCase(toolStatusUpdateReqVO.getManageType()))
-        {
-            if (StringUtils.isEmpty(toolStatusUpdateReqVO.getStopReason()))
-            {
+    private void checkToolUpdateParam(ToolStatusUpdateReqVO toolStatusUpdateReqVO, long taskId) {
+        if (ComConstants.CommonJudge.COMMON_N.value().equalsIgnoreCase(toolStatusUpdateReqVO.getManageType())) {
+            if (StringUtils.isEmpty(toolStatusUpdateReqVO.getStopReason())) {
                 logger.error("stop reason can not be empty when diable tool! task id: {}", taskId);
-                throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{String.valueOf(taskId)}, null);
+                throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{String.valueOf(taskId)},
+                        null);
             }
         }
     }

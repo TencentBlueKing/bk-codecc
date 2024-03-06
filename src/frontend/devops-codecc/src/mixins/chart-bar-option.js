@@ -20,7 +20,8 @@ export default {
           trigger: 'axis',
           // backgroundColor: '#fda85d',
           transitionDuration: 0,
-          axisPointer: { // 坐标轴指示器，坐标轴触发有效
+          axisPointer: {
+            // 坐标轴指示器，坐标轴触发有效
             type: 'shadow', // 默认为直线，可选为：'line' | 'shadow'
             shadowStyle: {
               // color: '#87c1e6',
@@ -37,13 +38,17 @@ export default {
             fontSize: 12,
           },
           selectedMode: false,
-          data: [{
-            name: this.$t('严重'),
-          }, {
-            name: this.$t('一般'),
-          }, {
-            name: this.$t('提示'),
-          }],
+          data: [
+            {
+              name: this.$t('严重'),
+            },
+            {
+              name: this.$t('一般'),
+            },
+            {
+              name: this.$t('提示'),
+            },
+          ],
         },
         xAxis: {
           type: 'category',
@@ -136,6 +141,6 @@ export default {
           },
         ],
       },
-    }
+    };
   },
-}
+};

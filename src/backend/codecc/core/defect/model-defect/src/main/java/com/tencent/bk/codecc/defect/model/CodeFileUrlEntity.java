@@ -34,7 +34,6 @@ import org.springframework.data.mongodb.core.mapping.Sharded;
 })
 @Sharded(shardKey = "task_id")
 public class CodeFileUrlEntity extends CommonEntity {
-
     /**
      * 任务ID
      */

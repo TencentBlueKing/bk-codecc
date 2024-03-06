@@ -57,4 +57,11 @@ data class Result<out T>(
     fun isNotOk(): Boolean {
         return (status != 0 || (null != code && code != CommonMessageCode.SUCCESS))
     }
+
+    companion object {
+        @JvmStatic
+        fun <T> success(data: T): Result<T> {
+            return Result<T>(0, CommonMessageCode.SUCCESS, null, data)
+        }
+    }
 }

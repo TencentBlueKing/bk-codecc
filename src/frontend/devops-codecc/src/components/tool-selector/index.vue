@@ -5,92 +5,96 @@
       :class="picked && picked.includes(item.id) ? 'active' : ''"
       @click="selectedItem(item.id)"
       class="settings-trigger-item"
-      :key="item.id">
-      <img class="item-pic" :src="item.logo">
-      <p :title="item.name">{{item.name}}</p>
+      :key="item.id"
+    >
+      <img class="item-pic" :src="item.logo" />
+      <p :title="item.name">{{ item.name }}</p>
     </li>
   </ul>
 </template>
 
 <script>
-  export default {
-    name: 'week-selector',
-    props: {
-      picked: {
-        type: Array,
-        default: () => ([]),
-      },
-      list: {
-        type: Array,
-        default: () => ([]),
-      },
+export default {
+  name: 'WeekSelector',
+  props: {
+    picked: {
+      type: Array,
+      default: () => [],
     },
-    data() {
-      return {
-      }
+    list: {
+      type: Array,
+      default: () => [],
     },
-    computed: {
+  },
+  data() {
+    return {};
+  },
+  computed: {},
+  methods: {
+    selectedItem(id) {
+      this.$emit('select', id);
     },
-    methods: {
-      selectedItem(id) {
-        this.$emit('select', id)
-      },
-    },
-  }
+  },
+};
 </script>
 
 <style lang="postcss" scoped>
-  @import "../../css/variable.css";
+@import url('../../css/variable.css');
 
-  .settings-trigger-item {
-    position: relative;
-    margin-right: 8px;
-    margin-bottom: 8px;
-    display: inline-block;
-    width: 89px;
-    height: 87px;
-    border-radius: 2px;
-    border: 1px solid #d9e2e8;
-    background-color: #f7f9fb;
-    cursor: pointer;
-    line-height: 12px;
-    text-align: center;
+.settings-trigger-item {
+  position: relative;
+  display: inline-block;
+  width: 89px;
+  height: 87px;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  line-height: 12px;
+  text-align: center;
+  cursor: pointer;
+  background-color: #f7f9fb;
+  border: 1px solid #d9e2e8;
+  border-radius: 2px;
+
+  .item-pic {
+    width: 64px;
+    height: 64px;
+  }
+
+  p {
+    height: 14px;
+    overflow: hidden;
+    font-size: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.active {
+  color: $goingColor;
+  border: 1px solid $goingColor;
+
+  &::before {
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 0;
+    height: 0;
+    border-color: transparent transparent #3a84ff;
+    border-style: solid;
+    border-width: 0 0 14px 20px;
+    content: '';
+  }
+
+  &::after {
+    position: absolute;
+    right: 0;
+    bottom: -2px;
+    font-family: bk-icons-linear !important;
     font-size: 12px;
-    .item-pic {
-      height: 64px;
-      width: 64px;
-    }
-    p {
-      font-size: 14px;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      height: 14px;
-    }
+    font-weight: bold;
+    color: #fff;
+    content: '\e977';
   }
-  .active {
-    border: 1px solid $goingColor;
-    color: $goingColor;
-    &::before {
-      content: "";
-      width: 0;
-      height: 0;
-      border-style: solid;
-      position: absolute;
-      right: -1px;
-      bottom: -1px;
-      border-width: 0 0 14px 20px;
-      border-color: transparent transparent #3a84ff transparent;
-    }
-    &::after {
-      content: "\e977";
-      color: #fff;
-      position: absolute;
-      right: 0;
-      bottom: -2px;
-      font-size: 12px;
-      font-weight: bold;
-      font-family: bk-icons-linear!important;
-    }
-  }
+}
 </style>

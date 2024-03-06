@@ -11,12 +11,16 @@ import lombok.Data;
  */
 @Data
 @ApiModel("规则集中规则与参数视图")
-public class CheckerPropVO
-{
+public class CheckerPropVO {
     /**
      * 工具名称
      */
     private String toolName;
+
+    /**
+     * 适用语言
+     */
+    private Long lang;
 
     /**
      * 规则

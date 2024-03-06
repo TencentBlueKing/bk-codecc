@@ -26,9 +26,8 @@
 
 package com.tencent.devops.common.auth.api.external
 
-import com.google.common.collect.Sets
+import com.tencent.devops.common.auth.api.pojo.external.AuthRoleType
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction
-import com.tencent.devops.common.auth.api.pojo.external.PipelineAuthAction
 import com.tencent.devops.common.auth.api.service.AuthTaskService
 import com.tencent.devops.common.auth.api.util.AuthActionConvertUtils
 import com.tencent.devops.common.auth.api.util.AuthApiUtils
@@ -149,15 +148,15 @@ abstract class AbstractAuthExPermissionApi @Autowired constructor(
         return false
     }
 
-    override fun validateUserRulesetPermission(
-        projectId: String,
-        userId: String,
-        action: String
-    ): Boolean {
-        return false
+    override fun queryTaskUsersGroupByRole(projectId: String, taskId: Long, roleType: AuthRoleType?): Set<String> {
+        return emptySet()
     }
 
-    override fun validateUserIgnoreTypePermission(
+    override fun queryPipelineUsersGroupByRole(projectId: String, taskId: Long, roleType: AuthRoleType?): Set<String> {
+        return emptySet()
+    }
+
+    override fun validateUserProjectPermission(
         projectId: String,
         userId: String,
         action: String

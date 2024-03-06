@@ -26,32 +26,29 @@
 
 package com.tencent.bk.codecc.task.resources;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.task.api.ServiceToolRestResource;
-import com.tencent.bk.codecc.task.dao.mongorepository.TaskRepository;
-import com.tencent.bk.codecc.task.model.TaskInfoEntity;
-import com.tencent.bk.codecc.task.model.ToolConfigInfoEntity;
 import com.tencent.bk.codecc.task.service.AnalyzeConfigService;
+import com.tencent.bk.codecc.task.service.AnalyzeCountStatService;
 import com.tencent.bk.codecc.task.service.MetaService;
-import com.tencent.bk.codecc.task.service.TaskService;
 import com.tencent.bk.codecc.task.service.ToolService;
-import com.tencent.bk.codecc.task.vo.*;
-import com.tencent.bk.codecc.task.vo.checkerset.UpdateCheckerSet2TaskReqVO;
+import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
+import com.tencent.bk.codecc.task.vo.BatchRegisterVO;
+import com.tencent.bk.codecc.task.vo.ToolConfigBaseVO;
+import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
+import com.tencent.bk.codecc.task.vo.ToolConfigInfoWithMetadataVO;
+import com.tencent.bk.codecc.task.vo.ToolTaskInfoVO;
 import com.tencent.bk.codecc.task.vo.checkerset.ClearTaskCheckerSetReqVO;
+import com.tencent.bk.codecc.task.vo.checkerset.UpdateCheckerSet2TaskReqVO;
 import com.tencent.bk.codecc.task.vo.pipeline.PipelineBuildInfoVO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
-import com.tencent.devops.common.util.List2StrUtil;
 import com.tencent.devops.common.web.RestResource;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.*;
 
 /**
  * 服务间调用的工具配置接口
@@ -61,8 +58,8 @@ import java.util.*;
  */
 @Slf4j
 @RestResource
-public class ServiceToolRestResourceImpl implements ServiceToolRestResource
-{
+public class ServiceToolRestResourceImpl implements ServiceToolRestResource {
+
     @Autowired
     private ToolService toolService;
 
@@ -73,70 +70,75 @@ public class ServiceToolRestResourceImpl implements ServiceToolRestResource
     private MetaService metaService;
 
     @Autowired
-    private TaskRepository taskRepository;
+    private AnalyzeCountStatService analyzeCountStatService;
 
     @Override
-    public Result updateToolStepStatus(ToolConfigBaseVO toolConfigBaseVO)
-    {
+    public Result updateToolStepStatus(ToolConfigBaseVO toolConfigBaseVO) {
         toolService.updateToolStepStatus(toolConfigBaseVO);
         return new Result(CommonMessageCode.SUCCESS, "mongotemplate tool config ok");
     }
 
 
     @Override
-    public Result<ToolConfigInfoVO> getToolByTaskIdAndName(long taskId, String toolName)
-    {
+    public Result<ToolConfigInfoVO> getToolByTaskIdAndName(long taskId, String toolName) {
         return new Result<>(toolService.getToolByTaskIdAndName(taskId, toolName));
     }
 
     @Override
-    public Result<ToolConfigInfoWithMetadataVO> getToolWithMetadataByTaskIdAndName(long taskId, String toolName)
-    {
+    public Result<ToolConfigInfoWithMetadataVO> getToolWithMetadataByTaskIdAndName(long taskId, String toolName) {
         return new Result<>(toolService.getToolWithMetadataByTaskIdAndName(taskId, toolName));
     }
 
-
     @Override
-    public Result<String> findToolOrder()
-    {
+    public Result<String> findToolOrder() {
         return new Result<>(metaService.getToolOrder());
     }
 
 
     @Override
-    public Result<Boolean> updatePipelineTool(Long taskId, String userName, List<String> toolList)
-    {
+    public Result<Boolean> updatePipelineTool(Long taskId, String userName, List<String> toolList) {
         return new Result<>(toolService.updatePipelineTool(taskId, toolList, userName));
     }
 
     @Override
-    public Result<Boolean> clearCheckerSet(Long taskId, ClearTaskCheckerSetReqVO clearTaskCheckerSetReqVO)
-    {
+    public Result<Boolean> clearCheckerSet(Long taskId, ClearTaskCheckerSetReqVO clearTaskCheckerSetReqVO) {
         return new Result<>(toolService.clearCheckerSet(taskId, clearTaskCheckerSetReqVO.getToolNames()));
     }
 
     @Override
-    public Result<Boolean> addCheckerSet2Task(Long taskId, UpdateCheckerSet2TaskReqVO addCheckerSet2TasklReqVO)
-    {
+    public Result<Boolean> addCheckerSet2Task(Long taskId, UpdateCheckerSet2TaskReqVO addCheckerSet2TasklReqVO) {
         return new Result<>(toolService.addCheckerSet2Task(taskId, addCheckerSet2TasklReqVO.getToolCheckerSets()));
     }
 
     @Override
-    public Result<AnalyzeConfigInfoVO> getAnalyzeConfig(String streamName, String toolName, PipelineBuildInfoVO pipelineBuildInfoVO)
-    {
+    public Result<AnalyzeConfigInfoVO> getAnalyzeConfig(String streamName, String toolName,
+            PipelineBuildInfoVO pipelineBuildInfoVO) {
         return new Result<>(analyzeConfigService.getAnalyzeConfig(streamName, toolName, pipelineBuildInfoVO));
     }
 
     @Override
-    public Result<Boolean> updateTools(Long taskId, String user, BatchRegisterVO batchRegisterVO)
-    {
+    public Result<Boolean> updateTools(Long taskId, String user, BatchRegisterVO batchRegisterVO) {
         return toolService.updateTools(taskId, user, batchRegisterVO);
     }
 
     @Override
-    public Result<List<ToolConfigInfoVO>> batchGetToolConfigList(QueryTaskListReqVO queryTaskListReqVO)
-    {
+    public Result<List<ToolConfigInfoVO>> batchGetToolConfigList(QueryTaskListReqVO queryTaskListReqVO) {
         return new Result<>(toolService.batchGetToolConfigList(queryTaskListReqVO));
     }
 
+    @Override
+    public Result<Map<Integer, List<Long>>> getToolFailedTaskIds(String toolName, Set<String> createFrom,
+            String detailTime) {
+        return new Result<>(analyzeCountStatService.getToolFailedTaskId(toolName, createFrom, detailTime));
+    }
+
+    @Override
+    public Result<ToolTaskInfoVO> getToolInfoConfigByToolName(String toolName, String detailTime) {
+        return new Result<>(toolService.getToolInfoConfigByToolName(toolName, detailTime));
+    }
+
+    @Override
+    public Result<List<Long>> getTaskInfoByToolNameAndTaskId(List<Long> taskIdList, String toolName) {
+        return new Result<>(toolService.getTaskInfoByToolNameAndTaskId(taskIdList, toolName));
+    }
 }

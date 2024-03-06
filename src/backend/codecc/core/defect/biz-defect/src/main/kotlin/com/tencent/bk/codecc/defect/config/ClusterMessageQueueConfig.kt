@@ -2,7 +2,7 @@ package com.tencent.bk.codecc.defect.config
 
 import com.tencent.bk.codecc.defect.component.DefectClusterComponent
 import com.tencent.bk.codecc.defect.condition.AsyncReportCondition
-import com.tencent.devops.common.util.IPUtils
+import com.tencent.devops.common.service.utils.IPUtils
 import com.tencent.devops.common.web.mq.EXCHANGE_CLUSTER_ALLOCATION
 import com.tencent.devops.common.web.mq.QUEUE_CLUSTER_ALLOCATION
 import com.tencent.devops.common.web.mq.QUEUE_REPLY_CLUSTER_ALLOCATION
@@ -20,7 +20,6 @@ import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
@@ -33,6 +32,11 @@ open class ClusterMessageQueueConfig {
     private val localPort: String? = null
 
     @Bean
+    fun rabbitAdmin(@Autowired connectionFactory: ConnectionFactory): RabbitAdmin {
+        return RabbitAdmin(connectionFactory)
+    }
+
+    @Bean
     open fun clusterExchange(): DirectExchange {
         return DirectExchange(EXCHANGE_CLUSTER_ALLOCATION, true, false)
     }
@@ -41,7 +45,9 @@ open class ClusterMessageQueueConfig {
     open fun clusterQueue() = Queue(QUEUE_CLUSTER_ALLOCATION, true, false, false)
 
     @Bean
-    open fun clusterReplyQueue() = Queue("$QUEUE_REPLY_CLUSTER_ALLOCATION.${IPUtils.getInnerIP().replace(".", "")}.$localPort")
+    open fun clusterReplyQueue(@Autowired ipUtils: IPUtils) =
+        Queue("$QUEUE_REPLY_CLUSTER_ALLOCATION.${ipUtils.getInnerIPOrHostName()
+            .replace(".", "")}.$localPort")
 
     @Bean
     open fun clusterQueueBind(

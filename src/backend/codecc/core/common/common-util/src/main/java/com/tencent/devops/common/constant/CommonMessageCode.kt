@@ -150,6 +150,16 @@ object CommonMessageCode {
     const val JSON_PARAM_IS_INVALID = "2300020"
 
     /**
+     * 提单失败
+     */
+    const val ISSUE_SUBMIT_ERROR = "2300021"
+
+    /**
+     * 任务提单没oauth授权
+     */
+    const val ISSUE_SUBMIT_NOT_OAUTH_ERROR = "2300022"
+
+    /**
      * 任务提单没oauth授权
      */
     const val REACH_LIMIT = "2300023"
@@ -167,4 +177,19 @@ object CommonMessageCode {
     const val REGULAR_EXP_INVALID = "2300029"
 
     const val UNAUTHORIZED_ACCESS_TO_RESOURCES = "2300030"
+
+    /**
+     * 项目告警数过多
+     */
+    const val PROJECT_DEFECT_TOO_MANY = "2300031"
+
+    /**
+     * 任务告警数过多
+     */
+    const val TASK_DEFECT_TOO_MANY = "2300032"
+
+    /**
+     * 不允许存在多个灰度工具的规则
+     */
+    const val NOT_ALLOW_MULTI_GRAY_TOOL_RULE = "2300033"
 }

@@ -28,7 +28,10 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ template "codecc.serviceAccountName" . }}
-      {{- include "codecc.imagePullSecrets" . | nindent 6 }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecrets }}
+      {{- end }}
       {{- if .Values.defect.hostAliases }}
       hostAliases: {{- include "common.tplvalues.render" (dict "value" .Values.defect.hostAliases "context" $) | nindent 8 }}
       {{- end }}
@@ -63,6 +66,10 @@ spec:
           resources: {{- toYaml .Values.defect.resources | nindent 12 }}
           {{- end }}
           env:
+            - name: MS_NAME
+              value: defect
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
             - name: JVM_XMS
               value: {{ .Values.defect.env.JVM_XMS }}
             - name: JVM_XMX
@@ -73,12 +80,10 @@ spec:
               value: {{ include "common.names.fullname" . }}-
             - name: SERVICE_SUFFIX
               value: {{ .Values.config.bkCodeccServiceSuffix }}
-            - name: SERVER_FULLNAME
-              value: {{ include "common.names.fullname" . }}-defect
-            - name: SERVER_COMMON_NAME
-              value: {{ include "common.names.fullname" . }}-common
             - name: CODECC_PROFILE
               value: {{ .Values.common.springProfile }}
+            - name: SERVER_STORAGE_MOUNT_PATH
+              value: {{ .Values.config.bkCodeccFileDataPath }}
           livenessProbe:
             httpGet:
               path: /management/health/liveness
@@ -104,8 +109,16 @@ spec:
           volumeMounts:
             - name: storage
               mountPath: {{ .Values.common.mountPath }}
+            {{- if eq .Values.config.bkCodeccStorageType "local" }}
+            - name: local-data
+              mountPath: {{ .Values.config.bkCodeccFileDataPath }}
+            {{- end }}
             {{- if eq .Values.config.bkCodeccStorageType "nfs" }}
             - name: nfs-data
+              mountPath: {{ .Values.config.bkCodeccFileDataPath }}
+            {{- end }}
+            {{- if eq .Values.config.bkCodeccStorageType "bkrepo-csi" }}
+            - name: bkrepo-csi-data
               mountPath: {{ .Values.config.bkCodeccFileDataPath }}
             {{- end }}
       volumes:
@@ -116,10 +129,20 @@ spec:
           {{- else }}
           emptyDir: {}
           {{- end }}
+        {{- if eq .Values.config.bkCodeccStorageType "local" }}
+        - name: local-data
+          hostPath:
+            path: {{ .Values.config.bkCodeccLocalPath }}
+        {{- end }}
         {{- if eq .Values.config.bkCodeccStorageType "nfs" }}
         - name: nfs-data
           nfs:
             server: {{ .Values.config.bkCodeccNfsServer }}
             path: {{ .Values.config.bkCodeccNfsServerPath }}
+        {{- end }}
+        {{- if eq .Values.config.bkCodeccStorageType "bkrepo-csi" }}
+        - name: bkrepo-csi-data
+          persistentVolumeClaim:
+            claimName: {{ include "common.names.fullname" . }}-csi-bkrepo-pvc
         {{- end }}
 {{- end }}

@@ -37,7 +37,7 @@ public class FreeMarkerUtils {
     ) {
         try {
             Path dir = Paths.get(targetFilePath).getParent();
-            if (!dir.toFile().exists()) {
+            if (dir != null && !dir.toFile().exists()) {
                 Files.createDirectories(dir);
             }
         } catch (IOException e) {

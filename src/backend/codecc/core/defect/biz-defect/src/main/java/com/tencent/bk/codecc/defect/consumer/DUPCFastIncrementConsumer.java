@@ -13,8 +13,8 @@
 package com.tencent.bk.codecc.defect.consumer;
 
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.defect.dao.mongorepository.DUPCDefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.DUPCStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DUPCDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DUPCStatisticRepository;
 import com.tencent.bk.codecc.defect.model.defect.DUPCDefectEntity;
 import com.tencent.bk.codecc.defect.model.statistic.DUPCStatisticEntity;
 import com.tencent.bk.codecc.defect.model.DupcChartTrendEntity;
@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 @Component
 @Slf4j
 public class DUPCFastIncrementConsumer extends AbstractFastIncrementConsumer {
+
     @Autowired
     private BizServiceFactory<IDataReportBizService> dataReportBizServiceBizServiceFactory;
     @Autowired
@@ -87,7 +88,8 @@ public class DUPCFastIncrementConsumer extends AbstractFastIncrementConsumer {
         // 因为代码没有变更，默认重复率不变，所以直接取上一个分析的统计信息
         String baseBuildId;
         if (toolBuildStackEntity == null) {
-            ToolBuildInfoEntity toolBuildINfoEntity = toolBuildInfoRepository.findFirstByTaskIdAndToolName(taskId, toolName);
+            ToolBuildInfoEntity toolBuildINfoEntity = toolBuildInfoRepository.findFirstByTaskIdAndToolName(taskId,
+                    toolName);
             baseBuildId = toolBuildINfoEntity != null && StringUtils.isNotEmpty(
                     toolBuildINfoEntity.getDefectBaseBuildId()) ? toolBuildINfoEntity.getDefectBaseBuildId() : "";
         } else {

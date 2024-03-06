@@ -1,11 +1,11 @@
 package com.tencent.bk.codecc.defect.service.impl
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository
-import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository
-import com.tencent.bk.codecc.defect.dao.mongorepository.CcnClusterStatisticRepository
-import com.tencent.bk.codecc.defect.dao.mongorepository.CommonStatisticRepository
-import com.tencent.bk.codecc.defect.dao.mongorepository.DUPCStatisticRepository
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CcnClusterStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CommonStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DUPCStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintStatisticRepository
 import com.tencent.bk.codecc.defect.model.CcnClusterStatisticEntity
 import com.tencent.bk.codecc.defect.model.statistic.StatisticEntity
 import com.tencent.devops.common.api.clusterresult.BaseClusterResultVO
@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
+import java.util.concurrent.TimeUnit
 
 @Service("CCN")
 class CcnClusterDefectServiceImpl @Autowired constructor(
@@ -57,8 +58,14 @@ class CcnClusterDefectServiceImpl @Autowired constructor(
             ccnBeyondThresholdSum += (clusterResultVO.ccnBeyondThresholdSum ?: 0)
         }
 
+        val beginTime = System.currentTimeMillis()
         val lastCcnClusterStatisticEntity: CcnClusterStatisticEntity? =
             ccnClusterStatisticRepository.findFirstByTaskIdOrderByTimeDesc(taskId)
+        val cost = System.currentTimeMillis() - beginTime
+        if (cost > TimeUnit.SECONDS.toMillis(1)) {
+            logger.warn("ccn cluster find in memory sort, task id: ${taskId}, cost: $cost")
+        }
+
         // 获取总行数计算千行平均告警数
         var clocList =
             clocStatisticRepository.findByTaskIdAndToolNameAndBuildId(taskId, ComConstants.Tool.SCC.name, buildId)

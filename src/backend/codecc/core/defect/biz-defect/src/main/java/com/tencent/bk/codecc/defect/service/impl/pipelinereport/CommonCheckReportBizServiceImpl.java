@@ -2,9 +2,9 @@ package com.tencent.bk.codecc.defect.service.impl.pipelinereport;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.DefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository;
 import com.tencent.bk.codecc.defect.mapping.DefectConverter;
 import com.tencent.bk.codecc.defect.model.NotRepairedAuthorEntity;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
@@ -39,8 +39,7 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service("CommonCheckerReportBizService")
-public class CommonCheckReportBizServiceImpl implements ICheckReportBizService
-{
+public class CommonCheckReportBizServiceImpl implements ICheckReportBizService {
     @Value("${bkci.public.url:#{null}}")
     private String DEVOPS_HOST;
 

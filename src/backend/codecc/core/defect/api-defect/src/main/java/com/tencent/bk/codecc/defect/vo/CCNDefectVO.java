@@ -253,4 +253,7 @@ public class CCNDefectVO extends CommonVO {
 
     @ApiModelProperty("所属任务名称")
     private String taskNameCn;
+
+    @ApiModelProperty("提交人")
+    private String commitAuthor;
 }

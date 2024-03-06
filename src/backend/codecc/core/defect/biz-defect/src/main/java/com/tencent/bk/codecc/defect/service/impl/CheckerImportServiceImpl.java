@@ -15,15 +15,15 @@ package com.tencent.bk.codecc.defect.service.impl;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerSetProjectRelationshipRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerSetRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetProjectRelationshipRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetRepository;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerPropsEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetProjectRelationshipEntity;
 import com.tencent.bk.codecc.defect.service.CheckerImportService;
-import com.tencent.bk.codecc.defect.service.IV3CheckerSetBizService;
+import com.tencent.bk.codecc.defect.service.ICheckerSetManageBizService;
 import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
 import com.tencent.bk.codecc.defect.vo.CheckerImportVO;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerCategory;
@@ -56,7 +56,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -80,7 +79,7 @@ public class CheckerImportServiceImpl implements CheckerImportService {
     @Autowired
     private CheckerSetRepository checkerSetRepository;
     @Autowired
-    private IV3CheckerSetBizService checkerSetBizService;
+    private ICheckerSetManageBizService checkerSetManageBizService;
     @Autowired
     private ToolMetaCacheService toolMetaCacheService;
     @Autowired
@@ -105,13 +104,18 @@ public class CheckerImportServiceImpl implements CheckerImportService {
         }
         List<BaseDataVO> codeLangParams = paramsResult.getData();
 
-        // 规则语言包含"ALL" 则将语言替换成所有语言
         for (CheckerDetailVO checkerDetailVO : checkerImportVO.getCheckerDetailVOList()) {
+            // 规则语言包含"ALL" 则将语言替换成所有语言
             if (CollectionUtils.isNotEmpty(checkerDetailVO.getCheckerLanguage())
                     && checkerDetailVO.getCheckerLanguage().contains(ALL_LANGUAGE_STRING)) {
                 Set<String> codeLangSet =
                         codeLangParams.stream().map(BaseDataVO::getLangFullKey).collect(Collectors.toSet());
                 checkerDetailVO.setCheckerLanguage(codeLangSet);
+            }
+
+            // 如果 publisher 字段为空，用 createdBy 字段填充
+            if (StringUtils.isBlank(checkerDetailVO.getPublisher())) {
+                checkerDetailVO.setPublisher(checkerDetailVO.getCreatedBy());
             }
         }
         log.info("do checker import checkerImportVO:{}", GsonUtils.toJson(checkerImportVO));
@@ -203,12 +207,12 @@ public class CheckerImportServiceImpl implements CheckerImportService {
             if (checkerSetMap.get(checkerSetId) == null) {
                 CreateCheckerSetReqVO createCheckerSetReqVO = createCheckerSetMap.get(checkerSetId);
                 createCheckerSetReqVO.setVersion(ComConstants.ToolIntegratedStatus.T.value());
-                checkerSetBizService.createCheckerSet(userName, projectId, createCheckerSetReqVO);
+                checkerSetManageBizService.createCheckerSet(userName, projectId, createCheckerSetReqVO);
             }
 
             // 更新规则集中的规则
-            checkerSetBizService.updateCheckersOfSet(checkerSetId, userName, checkerProps,
-                    ComConstants.ToolIntegratedStatus.T.value());
+            checkerSetManageBizService.updateCheckersOfSet(checkerSetId, userName, checkerProps,
+                    Pair.of(ComConstants.ToolIntegratedStatus.T.value(), toolName));
         });
 
         // 5.更新开源规则集
@@ -248,11 +252,12 @@ public class CheckerImportServiceImpl implements CheckerImportService {
             createCheckerSetReqVO.setVersion(ComConstants.ToolIntegratedStatus.T.value());
             createCheckerSetReqVO.setCodeLang(newCodeLang);
             createCheckerSetReqVO.setCatagories(Lists.newArrayList(CheckerSetCategory.FORMAT.name()));
-            checkerSetBizService.createCheckerSet(userName, projectId, createCheckerSetReqVO);
+            checkerSetManageBizService.createCheckerSet(userName, projectId, createCheckerSetReqVO);
 
             // 更新规则集中的规则
-            checkerSetBizService.updateCheckersOfSet(standardCheckerSetId, userName,
-                    standardCheckerSetVO.getCheckerProps(), ComConstants.ToolIntegratedStatus.T.value());
+            checkerSetManageBizService.updateCheckersOfSet(standardCheckerSetId, userName,
+                    standardCheckerSetVO.getCheckerProps(),
+                    Pair.of(ComConstants.ToolIntegratedStatus.T.value(), checkerImportVO.getToolName()));
         } else {
             CheckerSetEntity latestCheckerSet = standardCheckerSetList.stream()
                     .max(Comparator.comparing(CheckerSetEntity::getVersion)).get();
@@ -303,7 +308,7 @@ public class CheckerImportServiceImpl implements CheckerImportService {
                 // 如果是测试或灰度规则集，且项目是测试，则设置测试或灰度的项目为强制全量，且更新工具
                 CheckerSetEntity fromCheckerSet = new CheckerSetEntity();
                 fromCheckerSet.setCheckerProps(oldCheckerProps);
-                checkerSetBizService.updateTaskAfterChangeCheckerSet(testCheckerSet, fromCheckerSet,
+                checkerSetManageBizService.updateTaskAfterChangeCheckerSet(testCheckerSet, fromCheckerSet,
                         projectRelationships, userName);
             }
         }
@@ -482,18 +487,25 @@ public class CheckerImportServiceImpl implements CheckerImportService {
         checkerDetailEntity.setCheckerDescModel(checkerDetailVO.getCheckerDescModel());
         checkerDetailEntity.setCheckerLanguage(checkerDetailVO.getCheckerLanguage());
         checkerDetailEntity.setErrExample(checkerDetailVO.getErrExample());
-        checkerDetailEntity.setRightExample(checkerDetailVO.getRightExample());
+        checkerDetailEntity.setCodeExample(checkerDetailVO.getCodeExample());
+        checkerDetailEntity.setRightExample(checkerDetailVO.getCodeExample());
         checkerDetailEntity.setCheckerRecommend(checkerDetailVO.getCheckerRecommend());
         checkerDetailEntity.setCheckerTag(checkerDetailVO.getCheckerTag());
         checkerDetailEntity.setProps(CollectionUtils.isEmpty(checkerDetailVO.getCheckerProps()) ? null :
                 GsonUtils.toJson(checkerDetailVO.getCheckerProps()));
         checkerDetailEntity.setNativeChecker(true);
+        checkerDetailEntity.setPublisher(checkerDetailVO.getPublisher());
 
         if (checkerDetailVO.getEditable() != null) {
             checkerDetailEntity.setEditable(checkerDetailVO.getEditable());
         } else {
             checkerDetailEntity.setEditable(!CollectionUtils.isEmpty(checkerDetailVO.getCheckerProps()));
         }
+
+        if (checkerDetailVO.getCheckGranularity() != null) {
+            checkerDetailEntity.setCheckGranularity(checkerDetailVO.getCheckGranularity());
+        }
+
         return checkerDetailEntity;
     }
 

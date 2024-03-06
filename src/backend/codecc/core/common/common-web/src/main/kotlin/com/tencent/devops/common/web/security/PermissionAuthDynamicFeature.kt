@@ -54,14 +54,25 @@ class PermissionAuthDynamicFeature : DynamicFeature {
             method, AuthMethod::class.java
         )
         if (annotatedMethod != null) {
-            context.register(PermissionAuthFilter(annotatedMethod.permission.toList()))
+            with(annotatedMethod) {
+                context.register(
+                    PermissionAuthFilter(
+                        resourceType,
+                        permission.toList(),
+                        roles.toList(),
+                        extPassClassName.simpleName!!
+                    )
+                )
+            }
+
             return
         }
 
         // 子类优先，如果有则也对父类生效
         if (resourceInfo.resourceClass.isAnnotationPresent(AuthMethod::class.java)) {
             val annotation = resourceInfo.resourceClass.getAnnotation(AuthMethod::class.java)
-            context.register(PermissionAuthFilter(annotation.permission.toList()))
+            context.register(PermissionAuthFilter(annotation.resourceType, annotation.permission.toList(), annotation
+                .roles.toList(), annotation.extPassClassName.simpleName!!))
             return
         }
 
@@ -69,7 +80,8 @@ class PermissionAuthDynamicFeature : DynamicFeature {
         val clazz = resourceInfo.resourceMethod.declaringClass
         if (clazz.isAnnotationPresent(AuthMethod::class.java)) {
             val annotation = clazz.getAnnotation(AuthMethod::class.java)
-            context.register(PermissionAuthFilter(annotation.permission.toList()))
+            context.register(PermissionAuthFilter(annotation.resourceType, annotation.permission.toList(), annotation
+                .roles.toList(), annotation.extPassClassName.simpleName!!))
         }
     }
 }

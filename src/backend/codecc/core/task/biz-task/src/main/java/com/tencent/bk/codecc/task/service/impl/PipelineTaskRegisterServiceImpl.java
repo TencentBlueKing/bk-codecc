@@ -37,6 +37,7 @@ import com.tencent.bk.codecc.defect.api.ServiceCheckerSetRestResource;
 import com.tencent.bk.codecc.defect.api.ServiceToolBuildInfoResource;
 import com.tencent.bk.codecc.task.component.BaseDataCommonCache;
 import com.tencent.bk.codecc.task.constant.TaskConstants;
+import com.tencent.bk.codecc.task.constant.TaskConstants.TaskStatus;
 import com.tencent.bk.codecc.task.constant.TaskMessageCode;
 import com.tencent.bk.codecc.task.dao.mongorepository.BaseDataRepository;
 import com.tencent.bk.codecc.task.dao.mongotemplate.TaskDao;
@@ -69,6 +70,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -279,8 +281,11 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
      * @param userName
      */
     private void updateTaskInfo(TaskDetailVO taskDetailVO, TaskInfoEntity taskInfoEntity, String userName) {
-        taskInfoEntity.setStatus(TaskConstants.TaskStatus.ENABLE.value());
-        taskInfoEntity.setDisableTime("");
+        // 若是冷数据，则需要加热操作；不能直接跳过到ENABLE
+        if (!Objects.equals(TaskStatus.COLD.value(), taskInfoEntity.getStatus())) {
+            taskInfoEntity.setStatus(TaskConstants.TaskStatus.ENABLE.value());
+            taskInfoEntity.setDisableTime("");
+        }
 
         try {
             taskInfoEntity.setCodeLang(pipelineService.convertDevopsCodeLangToCodeCC(taskDetailVO.getDevopsCodeLang()));

@@ -1,7 +1,6 @@
 package com.tencent.bk.codecc.task.model;
 
 import lombok.Data;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.List;
@@ -15,6 +14,12 @@ public class TaskOrgInfoEntity {
     @Field("task_id")
     private Long taskId;
 
+    @Field("project_id")
+    private String projectId;
+
+    @Field("create_from")
+    private String createFrom;
+
     /**
      * 项目拥有者
      */
@@ -26,6 +31,9 @@ public class TaskOrgInfoEntity {
      */
     @Field("created_by")
     private String createdBy;
+
+    @Field("updated_by")
+    private String updatedBy;
 
     /**
      * 事业群id

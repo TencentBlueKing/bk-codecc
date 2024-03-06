@@ -12,7 +12,7 @@
 
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CodeCommentRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CodeCommentRepository;
 import com.tencent.bk.codecc.defect.model.CodeCommentEntity;
 import com.tencent.bk.codecc.defect.model.SingleCommentEntity;
 import com.tencent.bk.codecc.defect.service.IDefectOperateBizService;
@@ -47,6 +47,7 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 public abstract class AbstractDefectOperateBizService implements IDefectOperateBizService {
+
     @Autowired
     protected CodeCommentRepository codeCommentRepository;
 
@@ -88,7 +89,7 @@ public abstract class AbstractDefectOperateBizService implements IDefectOperateB
     public void deleteCodeComment(String commentId, String singleCommentId, String userName) {
         Boolean isAdmin = authExPermissionApi.isAdminMember(userName);
         Optional<CodeCommentEntity> optional = codeCommentRepository.findById(commentId);
-        if(!optional.isPresent()){
+        if (!optional.isPresent()) {
             return;
         }
         CodeCommentEntity codeCommentEntity = optional.get();
@@ -112,7 +113,7 @@ public abstract class AbstractDefectOperateBizService implements IDefectOperateB
 
     protected void saveCodeComment(String commentId, SingleCommentVO singleCommentVO) {
         Optional<CodeCommentEntity> optional = codeCommentRepository.findById(commentId);
-        if(!optional.isPresent()){
+        if (!optional.isPresent()) {
             return;
         }
         CodeCommentEntity codeCommentEntity = optional.get();
@@ -153,7 +154,8 @@ public abstract class AbstractDefectOperateBizService implements IDefectOperateB
 
             // 发送内容
             String substance =
-                    String.format("规则：%s\n查看详情：http://%s/codecc/%s/task/%s/defect/lint/%s/list?entityId=%s", checker,
+                    String.format("规则：%s\n查看详情：http://%s/codecc/%s/task/%s/defect/lint/%s/list?entityId=%s",
+                            checker,
                             codeccGateWay, projectId, taskId, toolName, defectId);
 
             String title = String.format("%s在 %s 的%s中@了你：%s", userName, nameCn, fileName, comment);

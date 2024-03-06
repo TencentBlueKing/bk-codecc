@@ -26,10 +26,10 @@
 
 package com.tencent.bk.codecc.codeccjob.service.impl;
 
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.AnalysisVersionRepository;
+import com.tencent.bk.codecc.codeccjob.service.AnalysisVersionService;
 import com.tencent.bk.codecc.defect.dto.AnalysisVersionDTO;
 import com.tencent.bk.codecc.defect.model.AnalysisVersionEntity;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.AnalysisVersionRepository;
-import com.tencent.bk.codecc.codeccjob.service.AnalysisVersionService;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,14 +42,13 @@ import org.springframework.stereotype.Service;
  * @date 2019/7/16
  */
 @Service
-public class AnalysisVersionServiceImpl implements AnalysisVersionService
-{
+public class AnalysisVersionServiceImpl implements AnalysisVersionService {
+
     @Autowired
     private AnalysisVersionRepository analysisVersionRepository;
 
     @Override
-    public void saveAnalysisVersion(AnalysisVersionDTO analysisVersionDTO)
-    {
+    public void saveAnalysisVersion(AnalysisVersionDTO analysisVersionDTO) {
         AnalysisVersionEntity analysisVersionEntity = new AnalysisVersionEntity();
         BeanUtils.copyProperties(analysisVersionDTO, analysisVersionEntity);
         long currentTime = System.currentTimeMillis();

@@ -15,6 +15,8 @@ package com.tencent.bk.codecc.defect.service;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
 import com.tencent.bk.codecc.defect.vo.common.BuildVO;
 
+import java.util.List;
+
 /**
  * 构建信息逻辑接口
  * 
@@ -42,4 +44,11 @@ public interface BuildService {
      * @return
      */
     BuildEntity getBuildEntityByBuildId(String buildId);
+
+    /**
+     * 通过 BuildId list 获取 BuildEntity list
+     * @param buildIds
+     * @return
+     */
+    List<BuildEntity> getBuildEntityInBuildIds(List<String> buildIds);
 }

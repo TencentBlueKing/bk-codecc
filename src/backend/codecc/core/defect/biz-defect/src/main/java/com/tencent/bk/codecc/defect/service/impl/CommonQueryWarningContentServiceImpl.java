@@ -6,8 +6,14 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class CommonQueryWarningContentServiceImpl implements CommonQueryWarningContentService {
+
     @Override
     public DefectDetailVO getFilesContent(DefectDetailVO defectDetailVO) {
+        return null;
+    }
+
+    @Override
+    public DefectDetailVO getFilesInfo(DefectDetailVO defectDetailVO) {
         return null;
     }
 }

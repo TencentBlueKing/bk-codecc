@@ -21,10 +21,18 @@ dependencies {
     api("commons-codec:commons-codec:1.9")
     api("org.projectlombok:lombok")
     api("org.glassfish.jersey.media:jersey-media-multipart")
-    api(group = "com.vdurmont", name = "emoji-java", version = "5.1.1")
-    api(group = "org.apache.commons", name = "commons-csv", version = "1.9.0")
-    api(group = "org.apache.lucene", name = "lucene-core", version = "8.6.0")
-    api(group = "com.perforce", name = "p4java", version = "2021.1.2163843")
-    api("com.github.taptap:pinyin-plus:1.0")
+
+    api("com.vdurmont:emoji-java")
+    api("org.apache.commons:commons-csv")
+    api("org.apache.lucene:lucene-core")
+    api("com.perforce:p4java")
+    api("com.github.taptap:pinyin-plus")
+    api("org.eclipse.jgit:org.eclipse.jgit.ssh.jsch")
+    api("org.apache.commons:commons-text")
+    api("com.tencent.bk.repo:api-generic")
+    api("com.tencent.bk.repo:api-repository")
+    api("com.tencent.bk.repo:api-webhook")
+    api("org.apache.ant:ant")
+
 }
 

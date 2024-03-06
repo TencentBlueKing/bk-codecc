@@ -26,14 +26,15 @@
 
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildStackRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ToolBuildStackRepository;
 import com.tencent.bk.codecc.defect.model.statistic.CCNStatisticEntity;
 import com.tencent.bk.codecc.defect.service.IQueryStatisticBizService;
 import com.tencent.devops.common.api.analysisresult.BaseLastAnalysisResultVO;
 import com.tencent.devops.common.api.analysisresult.CCNLastAnalysisResultVO;
 import com.tencent.devops.common.api.analysisresult.CCNNotRepairedAuthorVO;
 import com.tencent.devops.common.api.analysisresult.ToolLastAnalysisResultVO;
+import com.tencent.devops.common.api.clusterresult.BaseClusterResultVO;
 import com.tencent.devops.common.api.clusterresult.CcnClusterResultVO;
 import com.tencent.devops.common.constant.ComConstants;
 import org.apache.commons.collections.CollectionUtils;
@@ -115,16 +116,14 @@ public class CCNQueryStatisticBizServiceImpl implements IQueryStatisticBizServic
      * @param buildId
      */
     private void setAverageThousandDefect(CCNLastAnalysisResultVO lastAnalysisResultVO, long taskId, String buildId) {
-        CcnClusterResultVO clusterStatistic =
-                (CcnClusterResultVO) ccnClusterDefectService.getClusterStatistic(taskId, buildId);
-
-        if (clusterStatistic == null) {
+        BaseClusterResultVO clusterStatistic = ccnClusterDefectService.getClusterStatistic(taskId, buildId);
+        if (clusterStatistic instanceof CcnClusterResultVO) {
+            CcnClusterResultVO vo = (CcnClusterResultVO) clusterStatistic;
+            lastAnalysisResultVO.setAverageThousandDefect(vo.getAverageThousandDefect());
+            lastAnalysisResultVO.setAverageThousandDefectChange(vo.getAverageThousandDefectChange());
+        } else {
             lastAnalysisResultVO.setAverageThousandDefect(Double.valueOf(0));
             lastAnalysisResultVO.setAverageThousandDefectChange(Double.valueOf(0));
-            return;
         }
-
-        lastAnalysisResultVO.setAverageThousandDefect(clusterStatistic.getAverageThousandDefect());
-        lastAnalysisResultVO.setAverageThousandDefectChange(clusterStatistic.getAverageThousandDefectChange());
     }
 }

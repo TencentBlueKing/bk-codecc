@@ -30,23 +30,29 @@ import com.tencent.bk.codecc.defect.api.UserCheckerRestResource;
 import com.tencent.bk.codecc.defect.service.CheckerService;
 import com.tencent.bk.codecc.defect.service.ICheckerSetBizService;
 import com.tencent.bk.codecc.defect.service.IConfigCheckerPkgBizService;
-import com.tencent.bk.codecc.defect.vo.*;
-import com.tencent.bk.codecc.defect.vo.checkerset.*;
+import com.tencent.bk.codecc.defect.vo.CheckerCommonCountVO;
+import com.tencent.bk.codecc.defect.vo.CheckerDetailListQueryReqVO;
+import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
+import com.tencent.bk.codecc.defect.vo.CheckerListQueryReq;
+import com.tencent.bk.codecc.defect.vo.ConfigCheckersPkgReqVO;
+import com.tencent.bk.codecc.defect.vo.GetCheckerListRspVO;
+import com.tencent.bk.codecc.defect.vo.checkerset.AddCheckerSet2TaskReqVO;
+import com.tencent.bk.codecc.defect.vo.checkerset.CheckerSetDifferenceVO;
+import com.tencent.bk.codecc.defect.vo.checkerset.UpdateCheckerSetReqVO;
+import com.tencent.bk.codecc.defect.vo.checkerset.UserCreatedCheckerSetsVO;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerListSortType;
 import com.tencent.devops.common.api.annotation.I18NResponse;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.OpAuthApi;
-import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.web.RestResource;
 import com.tencent.devops.common.web.security.AuthMethod;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
-
-import java.util.List;
 
 /**
  * 配置规则包服务实现
@@ -68,9 +74,6 @@ public class UserCheckerRestResourceImpl implements UserCheckerRestResource {
     private CheckerService checkerService;
 
     @Autowired
-    private AuthExPermissionApi authExPermissionApi;
-
-    @Autowired
     private OpAuthApi opAuthApi;
 
     @Override
@@ -81,19 +84,24 @@ public class UserCheckerRestResourceImpl implements UserCheckerRestResource {
 
     @Override
     @AuthMethod(permission = {CodeCCAuthAction.TASK_MANAGE})
-    public Result<Boolean> configCheckerPkg(String user, Long taskId, String toolName, ConfigCheckersPkgReqVO packageVo) {
+    public Result<Boolean> configCheckerPkg(String user, Long taskId, String toolName,
+            ConfigCheckersPkgReqVO packageVo) {
         return new Result<>(configCheckerPkgBizService.configCheckerPkg(taskId, toolName, packageVo, user));
     }
 
     @Override
     @AuthMethod(permission = {CodeCCAuthAction.TASK_MANAGE})
-    public Result<Boolean> updateCheckerSet(Long taskId, String toolName, String checkerSetId, UpdateCheckerSetReqVO updateCheckerSetReqVO, String user,
-                                            String projectId) {
-        return new Result<>(checkerSetBizService.updateCheckerSet(taskId, toolName, checkerSetId, updateCheckerSetReqVO, user, projectId));
+    public Result<Boolean> updateCheckerSet(Long taskId, String toolName, String checkerSetId,
+            UpdateCheckerSetReqVO updateCheckerSetReqVO, String user,
+            String projectId) {
+        return new Result<>(
+                checkerSetBizService.updateCheckerSet(taskId, toolName, checkerSetId, updateCheckerSetReqVO, user,
+                        projectId));
     }
 
     @Override
-    public Result<Boolean> addCheckerSet2Task(String user, Long taskId, AddCheckerSet2TaskReqVO addCheckerSet2TaskReqVO) {
+    public Result<Boolean> addCheckerSet2Task(String user, Long taskId,
+            AddCheckerSet2TaskReqVO addCheckerSet2TaskReqVO) {
         addCheckerSet2TaskReqVO.setNeedUpdatePipeline(true);
         return new Result<>(checkerSetBizService.addCheckerSet2Task(user, taskId, addCheckerSet2TaskReqVO));
     }
@@ -104,13 +112,16 @@ public class UserCheckerRestResourceImpl implements UserCheckerRestResource {
     }
 
     @Override
-    public Result<CheckerSetDifferenceVO> getCheckerSetVersionDifference(String user, String projectId, String toolName, String checkerSetId,
-                                                                         CheckerSetDifferenceVO checkerSetDifferenceVO) {
-        return new Result<>(checkerSetBizService.getCheckerSetVersionDifference(user, projectId, toolName, checkerSetId, checkerSetDifferenceVO));
+    public Result<CheckerSetDifferenceVO> getCheckerSetVersionDifference(String user, String projectId, String toolName,
+            String checkerSetId,
+            CheckerSetDifferenceVO checkerSetDifferenceVO) {
+        return new Result<>(checkerSetBizService.getCheckerSetVersionDifference(user, projectId, toolName, checkerSetId,
+                checkerSetDifferenceVO));
     }
 
     @Override
-    public Result<Boolean> updateCheckerConfigParam(Long taskId, String toolName, String checkerName, String paramValue, String user) {
+    public Result<Boolean> updateCheckerConfigParam(Long taskId, String toolName, String checkerName, String paramValue,
+            String user) {
         return new Result<>(checkerService.updateCheckerConfigParam(taskId, toolName, checkerName, paramValue, user));
     }
 
@@ -137,7 +148,7 @@ public class UserCheckerRestResourceImpl implements UserCheckerRestResource {
 
     @Override
     public Result<List<CheckerCommonCountVO>> queryCheckerCountList(CheckerListQueryReq checkerListQueryReq,
-                                                                    String projectId) {
+            String projectId) {
         return new Result<>(checkerService.queryCheckerCountListNew(checkerListQueryReq, projectId));
     }
 
@@ -157,7 +168,8 @@ public class UserCheckerRestResourceImpl implements UserCheckerRestResource {
 
 
     @Override
-    public Result<List<CheckerDetailVO>> queryCheckerDetailListForPreCI(CheckerDetailListQueryReqVO checkerListQueryReq) {
+    public Result<List<CheckerDetailVO>> queryCheckerDetailListForPreCI(
+            CheckerDetailListQueryReqVO checkerListQueryReq) {
         return new Result<>(checkerService.queryCheckerDetailList(checkerListQueryReq));
     }
 }

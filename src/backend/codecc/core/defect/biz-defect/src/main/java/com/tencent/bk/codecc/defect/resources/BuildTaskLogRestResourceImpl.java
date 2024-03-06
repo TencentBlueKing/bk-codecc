@@ -28,6 +28,8 @@ package com.tencent.bk.codecc.defect.resources;
 
 import com.tencent.bk.codecc.defect.api.BuildTaskLogRestResource;
 import com.tencent.bk.codecc.defect.service.TaskLogService;
+import com.tencent.bk.codecc.defect.vo.GrayBuildNumAndTaskVO;
+import com.tencent.bk.codecc.defect.vo.GrayTaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
@@ -40,6 +42,8 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.List;
 
 /**
  * 分析任务构建机接口实现
@@ -89,4 +93,15 @@ public class BuildTaskLogRestResourceImpl implements BuildTaskLogRestResource {
         return new Result<>(taskLogService.getLastAnalyzeRepoInfo(taskId, toolName));
     }
 
+    @Override
+    public Result<List<GrayTaskLogRepoInfoVO>> getTaskLogInfoByBuildBumAndTaskId(
+            GrayBuildNumAndTaskVO grayBuildNumAndTaskVO
+    ) {
+        return new Result<>(taskLogService.getTaskLogInfoByBuildBumAndTaskId(grayBuildNumAndTaskVO));
+    }
+
+    @Override
+    public Result<List<TaskLogVO>> listBuildTaskLog(long taskId, String toolName, int range) {
+        return new Result<>(taskLogService.listBuildTaskLog(taskId, toolName, range));
+    }
 }

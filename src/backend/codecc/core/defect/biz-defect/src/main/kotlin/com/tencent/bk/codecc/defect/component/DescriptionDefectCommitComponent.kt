@@ -2,14 +2,16 @@ package com.tencent.bk.codecc.defect.component
 
 import com.tencent.bk.codecc.defect.cluster.ClusterDescriptionCompareProcess
 import com.tencent.bk.codecc.defect.cluster.ClusterLintCompareProcess
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository
 import com.tencent.bk.codecc.defect.model.BuildEntity
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectOutputModelV2
+import com.tencent.bk.codecc.defect.service.DefectFilePathClusterService
 import com.tencent.devops.common.constant.ComConstants
 import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 
 @Component
@@ -18,11 +20,15 @@ class DescriptionDefectCommitComponent(
     clusterLintCompareProcess: ClusterLintCompareProcess,
     newLintDefectTracingComponent: NewLintDefectTracingComponent,
     scmJsonComponent: ScmJsonComponent,
-    private val clusterDescriptionCompareProcess: ClusterDescriptionCompareProcess
+    defectFilePathClusterService: DefectFilePathClusterService,
+    private val clusterDescriptionCompareProcess: ClusterDescriptionCompareProcess,
+    private val redisTemplate: RedisTemplate<String,String>
 ) : LintDefectCommitComponent(
     lintDefectV2Repository,
     clusterLintCompareProcess,
     newLintDefectTracingComponent,
+    redisTemplate,
+    defectFilePathClusterService,
     scmJsonComponent
 ) {
 

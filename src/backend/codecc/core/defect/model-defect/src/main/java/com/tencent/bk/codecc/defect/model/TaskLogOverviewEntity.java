@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.List;
+import org.springframework.data.mongodb.core.mapping.Sharded;
 
 /**
  * 插件实际执行扫描工具记录的实体类
@@ -28,6 +29,7 @@ import java.util.List;
                 background = true),
         @CompoundIndex(name = "task_id_start_time", def = "{'task_id': 1, 'start_time': 1}", background = true)
 })
+@Sharded(shardKey = "task_id")
 public class TaskLogOverviewEntity {
 
     public TaskLogOverviewEntity(

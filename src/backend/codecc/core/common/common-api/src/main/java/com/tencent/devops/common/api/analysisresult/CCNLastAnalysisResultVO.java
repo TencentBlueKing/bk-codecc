@@ -90,5 +90,5 @@ public class CCNLastAnalysisResultVO extends BaseRiskAnalysisResultVO
      * 新增低风险告警数
      */
     @ApiModelProperty("新增低风险告警数")
-    private int newlowCount;
+    private int newLowCount;
 }

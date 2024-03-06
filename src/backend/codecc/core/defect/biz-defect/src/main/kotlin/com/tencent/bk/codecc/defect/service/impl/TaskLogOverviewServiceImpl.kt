@@ -1,11 +1,13 @@
 package com.tencent.bk.codecc.defect.service.impl
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildRepository
-import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogOverviewRepository
-import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CodeRepoInfoDao
-import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskLogDao
-import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskLogOverviewDao
+import com.google.common.collect.Lists
+import com.google.common.collect.Maps
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.TaskLogOverviewRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.TaskLogRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CodeRepoInfoDao
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.TaskLogDao
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.TaskLogOverviewDao
 import com.tencent.bk.codecc.defect.dto.WebsocketDTO
 import com.tencent.bk.codecc.defect.model.TaskLogEntity
 import com.tencent.bk.codecc.defect.model.TaskLogOverviewEntity
@@ -254,6 +256,12 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
         return entity2VO(taskLogOverviewEntity)
     }
 
+    override fun getTaskLogOverview(taskId: Long, buildId: String): TaskLogOverviewVO? {
+        val taskLogOverviewEntity =
+            taskLogOverviewRepository.findFirstByTaskIdAndBuildId(taskId, buildId) ?: return null
+        return entity2VO(taskLogOverviewEntity)
+    }
+
     /**
      * 批量获取当前任务构建记录
      * 用于任务分析就页面，需要带上工具分析记录一起展示
@@ -491,6 +499,30 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
         return resMap
     }
 
+    override fun getLastAnalyzeBuildIdMap(taskIdToBuildIds: Map<Long, Set<String>>): Map<Long, String> {
+        val taskIdToBuildIdsLists = mutableListOf<Map.Entry<Long, Set<String>>>()
+        // 将map转List，以便进行分割
+        taskIdToBuildIds.forEach {
+            taskIdToBuildIdsLists.add(it)
+        }
+        val overviews = mutableListOf<TaskLogOverviewEntity>()
+        // 每100个任务id聚合一次
+        val splitList = Lists.partition(taskIdToBuildIdsLists, ComConstants.SMALL_PAGE_SIZE)
+        splitList.forEach {
+            //  聚合查询最新的buildId
+            val overviewList = taskLogOverviewDao.findLastBuildIdWithTaskIdAndBuildId(it)
+            logger.info("overviewList ${overviewList.size}")
+            if (CollectionUtils.isNotEmpty(overviewList)) {
+                overviews.addAll(overviewList)
+            }
+        }
+        return if (CollectionUtils.isNotEmpty(overviews)) {
+            overviews.associate { Pair(it.taskId, it.buildId) }
+        } else {
+            Maps.newHashMap()
+        }
+    }
+
     /**
      * 工具确认执行状态
      * 当一个工具在上报完 工具状态 完后触发 AOP 进行 任务状态 计算
@@ -664,8 +696,8 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
                     taskLogOverviewEntity.taskId = taskId
                     taskLogOverviewEntity.buildId = buildId
                     taskLogOverviewEntity.buildNum = taskLogGroup.firstOrNull()?.buildNum
-                    taskLogOverviewEntity.startTime = taskLogGroup.map { it.startTime }.min()
-                    taskLogOverviewEntity.endTime = taskLogGroup.map { it.endTime }.max()
+                    taskLogOverviewEntity.startTime = taskLogGroup.minOf { it.startTime }
+                    taskLogOverviewEntity.endTime = taskLogGroup.maxOf { it.endTime }
                     taskLogOverviewEntity.taskLogEntityList = taskLogGroup
                     taskLogOverviewEntity.status = calTaskStatus(taskLogGroup)
                     taskLogOverviewEntityList.add(taskLogOverviewEntity)

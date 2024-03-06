@@ -2,14 +2,13 @@ package com.tencent.bk.codecc.defect.service.impl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CCNDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CCNDefectDao;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.service.AbstractBatchDefectProcessBizService;
 import com.tencent.bk.codecc.defect.utils.ParamUtils;
 import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
-import com.tencent.bk.codecc.defect.vo.CCNDefectQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
@@ -24,6 +23,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -83,6 +83,12 @@ public abstract class AbstractCCNBatchDefectProcessBizService extends AbstractBa
             }
         }
 
+        // 获取快照defectId列表
+        Set<String> defectIds = StringUtils.isNotEmpty(buildId)
+                ? ccnQueryWarningBizService.getDefectIdsByBuildId(taskIdList.get(0), toolNameList, buildId)
+                : Sets.newHashSet();
+
+
         Map<String, Boolean> filedMap = new HashMap<>();
         filedMap.put("_id", true);
         filedMap.put("status", true);
@@ -95,13 +101,13 @@ public abstract class AbstractCCNBatchDefectProcessBizService extends AbstractBa
             return ccnDefectDao.findDefectByCondition(taskIdList, request.getAuthor(),
                     CollectionUtils.isEmpty(request.getStatus()) ? Collections.emptySet() :
                             request.getStatus().stream().map(Integer::valueOf).collect(Collectors.toSet()),
-                    request.getFileList(), riskFactors, null, request.getBuildId(),
+                    request.getFileList(), riskFactors, defectIds, request.getBuildId(),
                     request.getStartCreateTime(), request.getEndCreateTime(), request.getIgnoreReasonTypes(), filedMap);
         } else {
             return ccnDefectDao.findDefectByConditionWithFilePathPage(taskIdList, request.getAuthor(),
                     CollectionUtils.isEmpty(request.getStatus()) ? Collections.emptySet() :
                             request.getStatus().stream().map(Integer::valueOf).collect(Collectors.toSet()),
-                    request.getFileList(), riskFactors, null, request.getBuildId(), request.getStartCreateTime(),
+                    request.getFileList(), riskFactors, defectIds, request.getBuildId(), request.getStartCreateTime(),
                     request.getEndCreateTime(), request.getIgnoreReasonTypes(), startFilePath, skip, pageSize,
                     filedMap);
         }

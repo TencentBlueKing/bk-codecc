@@ -33,13 +33,28 @@ import com.tencent.bk.codecc.task.vo.pipeline.PipelineBuildInfoVO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiModelProperty;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.models.auth.In;
+import org.springframework.boot.actuate.integration.IntegrationGraphEndpoint;
 
 import javax.validation.Valid;
-import javax.ws.rs.*;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TASK_ID;
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
@@ -161,6 +176,44 @@ public interface ServiceToolRestResource
     Result<List<ToolConfigInfoVO>> batchGetToolConfigList(
             @ApiParam(value = "任务批量查询模型", required = true)
                     QueryTaskListReqVO queryTaskListReqVO
+    );
+
+    @ApiOperation("获取失败工具的任务id")
+    @Path("/failedTaskIds")
+    @POST
+    Result<Map<Integer, List<Long>>> getToolFailedTaskIds(
+            @ApiParam(value = "工具名称")
+            @QueryParam("toolName")
+            String toolName,
+            @ApiParam(value = "创建来源")
+            @QueryParam("createFrom")
+            Set<String> createFrom,
+            @ApiParam(value = "查看详情传的日期")
+            @QueryParam("detailTime")
+            String detailTime
+    );
+
+    @ApiOperation("获取工具新增停用任务统计")
+    @Path("/addAndStop")
+    @POST
+    Result<ToolTaskInfoVO> getToolInfoConfigByToolName(
+            @ApiParam(value = "工具名称")
+            @QueryParam("toolName")
+            String toolName,
+            @ApiParam(value = "查看详情传的日期")
+            @QueryParam("detailTime")
+            String detailTime
+    );
+
+    @ApiOperation("根据工具查询任务信息分页")
+    @Path("/toolTaskIdList")
+    @POST
+    Result<List<Long>> getTaskInfoByToolNameAndTaskId(
+            @ApiParam(value = "任务id列表")
+            List<Long> taskIdList,
+            @ApiParam(value = "工具名称")
+            @QueryParam("toolName")
+            String toolName
     );
 
 }

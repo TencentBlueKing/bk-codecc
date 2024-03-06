@@ -12,8 +12,8 @@
  
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.BuildDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.BuildDao;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
 import com.tencent.bk.codecc.defect.service.BuildService;
 import com.tencent.bk.codecc.defect.vo.common.BuildVO;
@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * 构建逻辑实现层
@@ -71,5 +73,10 @@ public class BuildServiceImpl implements BuildService {
     @Override
     public BuildEntity getBuildEntityByBuildId(String buildId) {
         return buildRepository.findFirstByBuildId(buildId);
+    }
+
+    @Override
+    public List<BuildEntity> getBuildEntityInBuildIds(List<String> buildIds) {
+        return buildRepository.findByBuildIdIn(buildIds);
     }
 }

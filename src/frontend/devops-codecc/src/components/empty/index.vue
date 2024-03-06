@@ -1,8 +1,8 @@
 <template>
   <div :class="['empty', `empty-${size}`]">
-    <img src="../../images/empty.png" class="empty-img">
-    <div class="title">{{title}}</div>
-    <div class="desc" v-if="desc">{{desc}}</div>
+    <img src="../../images/empty.png" class="empty-img" />
+    <div class="title">{{ title }}</div>
+    <div class="desc" v-if="desc">{{ desc }}</div>
     <template v-if="$slots.action">
       <div class="action">
         <slot name="action"></slot>
@@ -15,75 +15,83 @@
 </template>
 
 <script>
-  export default {
-    name: 'empty',
-    props: {
-      title: {
-        type: String,
-        default: 'Empty',
-      },
-      desc: {
-        type: String,
-        default: '',
-      },
-      size: {
-        type: String,
-        default: 'normal',
-        validator(value) {
-          if (['normal', 'small'].indexOf(value) === -1) {
-            console.error(`size property is not valid: '${value}'`)
-            return false
-          }
-          return true
-        },
+export default {
+  name: 'Empty',
+  props: {
+    title: {
+      type: String,
+      default: 'Empty',
+    },
+    desc: {
+      type: String,
+      default: '',
+    },
+    size: {
+      type: String,
+      default: 'normal',
+      validator(value) {
+        if (['normal', 'small'].indexOf(value) === -1) {
+          console.error(`size property is not valid: '${value}'`);
+          return false;
+        }
+        return true;
       },
     },
-    data() {
-      return {}
-    },
-  }
+  },
+  data() {
+    return {};
+  },
+};
 </script>
 
 <style lang="postcss">
-    .empty {
-      text-align: center;
-      .icon {
-        background: url(../../images/empty.png) no-repeat 50% 0;
-        background-size: contain;
-        margin: 0 auto;
-      }
-      &.empty-normal {
-        .icon {
-          width: 91px;
-          height: 57px;
-        }
-      }
-      &.empty-small {
-        .icon {
-          width: 64px;
-          height: 40px;
-        }
-        .title {
-          font-size: 12px;
-          margin-top: 0;
-        }
-      }
-      .title {
-        font-size: 20px;
-        color: #333;
-        margin-top: 16px;
-      }
-      .desc {
-        font-size: 14px;
-        margin: 8px 0;
-      }
-      .action {
-        margin-top: 12px;
-      }
-      .empty-img {
-        width: 220px;
+.empty {
+  text-align: center;
 
-        /* height: 56px; */
-      }
+  .icon {
+    margin: 0 auto;
+    background: url('../../images/empty.png') no-repeat 50% 0;
+    background-size: contain;
+  }
+
+  &.empty-normal {
+    .icon {
+      width: 91px;
+      height: 57px;
     }
+  }
+
+  &.empty-small {
+    .icon {
+      width: 64px;
+      height: 40px;
+    }
+
+    .title {
+      margin-top: 0;
+      font-size: 12px;
+    }
+  }
+
+  .title {
+    margin-top: 16px;
+    font-size: 20px;
+    color: #333;
+  }
+
+  .desc {
+    margin: 8px 0;
+    font-size: 14px;
+  }
+
+  .action {
+    margin-top: 12px;
+  }
+
+  .empty-img {
+    width: 220px;
+
+    /* height: 56px; */
+  }
+}
 </style>

@@ -16,12 +16,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.component.DefectConsumerRetryLimitComponent;
 import com.tencent.bk.codecc.defect.component.RiskConfigCache;
-import com.tencent.bk.codecc.defect.dao.mongorepository.DUPCDefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.DUPCDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DUPCDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.DUPCDefectDao;
 import com.tencent.bk.codecc.defect.model.CodeBlockEntity;
 import com.tencent.bk.codecc.defect.model.DUPCDefectJsonFileEntity;
 import com.tencent.bk.codecc.defect.model.defect.DUPCDefectEntity;
 import com.tencent.bk.codecc.defect.pojo.statistic.DefectStatisticModel;
+import com.tencent.bk.codecc.defect.service.DefectFilePathClusterService;
 import com.tencent.bk.codecc.defect.service.impl.DUPCFilterPathBizServiceImpl;
 import com.tencent.bk.codecc.defect.service.impl.redline.DupcRedLineReportServiceImpl;
 import com.tencent.bk.codecc.defect.service.statistic.DupcDefectStatisticServiceImpl;
@@ -29,25 +30,31 @@ import com.tencent.bk.codecc.defect.vo.CommitDefectVO;
 import com.tencent.bk.codecc.defect.vo.customtool.RepoSubModuleVO;
 import com.tencent.bk.codecc.defect.vo.customtool.ScmBlameChangeRecordVO;
 import com.tencent.bk.codecc.defect.vo.customtool.ScmBlameVO;
+import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.vo.FilterPathInputVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
+import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.DefectStatus;
+import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.constant.ComConstants.ToolPattern;
 import com.tencent.devops.common.redis.lock.RedisLock;
 import com.tencent.devops.common.service.utils.ToolParamUtils;
 import com.tencent.devops.common.web.mq.ConstantsKt;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bson.BsonSerializationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,8 +70,6 @@ import org.springframework.stereotype.Component;
 @Component("dupcDefectCommitConsumer")
 @Slf4j
 public class DUPCDefectCommitConsumer extends AbstractDefectCommitConsumer {
-
-    private static final Integer BLOCK_LIST_LIMIT = 100;
     @Autowired
     private RiskConfigCache riskConfigCache;
     @Autowired
@@ -78,7 +83,11 @@ public class DUPCDefectCommitConsumer extends AbstractDefectCommitConsumer {
     @Autowired
     private DupcDefectStatisticServiceImpl dupcDefectStatisticService;
     @Autowired
-    private DefectConsumerRetryLimitComponent defectConsumerRetryLimitComponent;
+    private DefectFilePathClusterService defectFilePathClusterService;
+    @Autowired
+    private Client client;
+
+
 
     @Override
     protected boolean uploadDefects(
@@ -107,7 +116,7 @@ public class DUPCDefectCommitConsumer extends AbstractDefectCommitConsumer {
 
         long tryBeginTime = System.currentTimeMillis();
         RedisLock locker = null;
-        List<DUPCDefectEntity> allNewDefectList = Lists.newArrayList();
+        List<DUPCDefectEntity> allNewDefectList;
 
         try {
             // 非工蜂项目上锁提单过程
@@ -162,13 +171,17 @@ public class DUPCDefectCommitConsumer extends AbstractDefectCommitConsumer {
                 }
             }
 
+
+
             try {
                 //限制BLOCK_LIST大小
                 if (CollectionUtils.isNotEmpty(defectList)) {
                     for (DUPCDefectEntity entity : defectList) {
                         if (entity != null && CollectionUtils.isNotEmpty(entity.getBlockList())
-                                && entity.getBlockList().size() > BLOCK_LIST_LIMIT) {
-                            entity.setBlockList(entity.getBlockList().subList(0, BLOCK_LIST_LIMIT));
+                                && entity.getBlockList().size() > ComConstants.DUPC_DEFECT_BLOCK_LIST_LIMIT) {
+                            entity.setBlockList(
+                                    entity.getBlockList().subList(0, ComConstants.DUPC_DEFECT_BLOCK_LIST_LIMIT)
+                            );
                         }
                     }
                 }
@@ -192,16 +205,27 @@ public class DUPCDefectCommitConsumer extends AbstractDefectCommitConsumer {
             }
             dupcDefectDao.batchFixDefect(taskId, fixDefectList);
 
+            // 保存已修复与待修复的告警路径
+            List<DUPCDefectEntity> dupcDefectEntities = Lists.newArrayListWithCapacity(
+                    defectList.size() + fixDefectList.size());
+            dupcDefectEntities.addAll(defectList);
+            dupcDefectEntities.addAll(fixDefectList);
+            saveDefectPath(taskId, buildId, dupcDefectEntities);
+
             // 保存本次上报文件的告警数据统计数据
-            dupcDefectStatisticService.statistic(new DefectStatisticModel<>(
-                    taskVO,
-                    toolName,
-                    0,
-                    buildId,
-                    toolBuildStackRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId),
-                    defectList,
-                    riskConfigMap,
-                    defectJsonFileEntity));
+            dupcDefectStatisticService.statistic(
+                    new DefectStatisticModel<>(
+                            taskVO,
+                            toolName,
+                            0,
+                            buildId,
+                            toolBuildStackRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId),
+                            defectList,
+                            riskConfigMap,
+                            defectJsonFileEntity,
+                            false
+                    )
+            );
 
             allNewDefectList = dupcDefectRepository.getByTaskIdAndStatus(taskId, DefectStatus.NEW.value());
         } finally {
@@ -337,20 +361,18 @@ public class DUPCDefectCommitConsumer extends AbstractDefectCommitConsumer {
         if (CollectionUtils.isNotEmpty(blockList) && CollectionUtils.isNotEmpty(changeRecords)) {
             // 获取各文件代码行对应的作者信息映射
             Map<Integer, ScmBlameChangeRecordVO> lineAuthorMap = getLineAuthorMap(changeRecords);
-            if (null != lineAuthorMap) {
-                blockList.forEach(codeBlockEntity ->
-                {
-                    Long functionLastUpdateTime = 0L;
-                    for (long i = codeBlockEntity.getStartLines(); i <= codeBlockEntity.getEndLines(); i++) {
-                        ScmBlameChangeRecordVO recordVO = lineAuthorMap.get(Integer.valueOf(String.valueOf(i)));
-                        if (recordVO != null && recordVO.getLineUpdateTime() > functionLastUpdateTime) {
-                            functionLastUpdateTime = recordVO.getLineUpdateTime();
-                            codeBlockEntity.setAuthor(ToolParamUtils.trimUserName(recordVO.getAuthor()));
-                            codeBlockEntity.setLatestDatetime(recordVO.getLineUpdateTime());
-                        }
+            blockList.forEach(codeBlockEntity ->
+            {
+                long functionLastUpdateTime = 0L;
+                for (long i = codeBlockEntity.getStartLines(); i <= codeBlockEntity.getEndLines(); i++) {
+                    ScmBlameChangeRecordVO recordVO = lineAuthorMap.get(Integer.valueOf(String.valueOf(i)));
+                    if (recordVO != null && recordVO.getLineUpdateTime() > functionLastUpdateTime) {
+                        functionLastUpdateTime = recordVO.getLineUpdateTime();
+                        codeBlockEntity.setAuthor(ToolParamUtils.trimUserName(recordVO.getAuthor()));
+                        codeBlockEntity.setLatestDatetime(recordVO.getLineUpdateTime());
                     }
-                });
-            }
+                }
+            });
             //设置作者清单
             dupcDefectEntity.setAuthorList(blockList.stream().map(CodeBlockEntity::getAuthor).
                     filter(StringUtils::isNotBlank).distinct().reduce((o1, o2) -> String.format("%s;%s", o1, o2))
@@ -360,11 +382,63 @@ public class DUPCDefectCommitConsumer extends AbstractDefectCommitConsumer {
 
     @Override
     protected String getRecommitMQExchange(CommitDefectVO vo) {
-        return ConstantsKt.PREFIX_EXCHANGE_DEFECT_COMMIT + ToolPattern.DUPC.name().toLowerCase();
+        return ConstantsKt.PREFIX_EXCHANGE_DEFECT_COMMIT + ToolPattern.DUPC.name().toLowerCase(Locale.ENGLISH);
     }
 
     @Override
     protected String getRecommitMQRoutingKey(CommitDefectVO vo) {
-        return ConstantsKt.PREFIX_ROUTE_DEFECT_COMMIT + ToolPattern.DUPC.name().toLowerCase();
+        return ConstantsKt.PREFIX_ROUTE_DEFECT_COMMIT + ToolPattern.DUPC.name().toLowerCase(Locale.ENGLISH);
+    }
+
+    /**
+     * 保存告警路径
+     * @param taskId
+     * @param buildId
+     * @param upsertList
+     */
+    private void saveDefectPath(Long taskId, String buildId, List<DUPCDefectEntity> upsertList) {
+        if (taskId == null || StringUtils.isBlank(buildId) || CollectionUtils.isEmpty(upsertList)) {
+            return;
+        }
+        try {
+            TaskDetailVO taskInfo = client.get(ServiceTaskRestResource.class).getTaskInfoById(taskId).getData();
+            if (taskInfo == null || BooleanUtils.isFalse(taskInfo.getFileCacheEnable())) {
+                return;
+            }
+
+            Set<String> repeat = new HashSet<>();
+            List<Pair<String, String>> newDefectPaths = new ArrayList<>();
+            for (DUPCDefectEntity dupcDefectEntity : upsertList) {
+                if (dupcDefectEntity.getStatus() != DefectStatus.NEW.value()
+                        || repeat.contains(dupcDefectEntity.getFilePath())) {
+                    continue;
+                }
+                newDefectPaths.add(Pair.of(dupcDefectEntity.getFilePath(),
+                        StringUtils.isBlank(dupcDefectEntity.getRelPath()) ? "" : dupcDefectEntity.getRelPath()));
+                repeat.add(dupcDefectEntity.getFilePath());
+            }
+            if (CollectionUtils.isNotEmpty(newDefectPaths)) {
+                defectFilePathClusterService.saveBuildDefectFilePath(taskId, Tool.DUPC.name(), buildId,
+                        DefectStatus.NEW, newDefectPaths);
+            }
+
+            repeat.clear();
+            List<Pair<String, String>> fixedDefectPaths = new ArrayList<>();
+            for (DUPCDefectEntity dupcDefectEntity : upsertList) {
+                if ((dupcDefectEntity.getStatus() & DefectStatus.FIXED.value()) == 0
+                        || repeat.contains(dupcDefectEntity.getFilePath())) {
+                    continue;
+                }
+                newDefectPaths.add(Pair.of(dupcDefectEntity.getFilePath(),
+                        StringUtils.isBlank(dupcDefectEntity.getRelPath()) ? "" : dupcDefectEntity.getRelPath()));
+                repeat.add(dupcDefectEntity.getFilePath());
+            }
+            if (CollectionUtils.isNotEmpty(newDefectPaths)) {
+                defectFilePathClusterService.saveBuildDefectFilePath(taskId, Tool.DUPC.name(), buildId,
+                        DefectStatus.FIXED, fixedDefectPaths);
+            }
+        } catch (Exception e) {
+            log.error("saveDefectPaths error, taskId:" + taskId + ", toolName: DUPC, buildId:" + buildId, e);
+        }
     }
 }

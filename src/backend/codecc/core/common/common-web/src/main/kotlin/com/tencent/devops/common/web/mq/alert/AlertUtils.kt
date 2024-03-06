@@ -36,7 +36,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate
 object AlertUtils {
 
     fun doAlert(level: AlertLevel, title: String, message: String) {
-        val serviceName = SpringContextUtil.getBean(Profile::class.java).getApplicationName() ?: ""
+        val serviceName = SpringContextUtil.getBean(Profile::class.java).getServiceName() ?: ""
         doAlert(serviceName, level, title, message)
     }
 

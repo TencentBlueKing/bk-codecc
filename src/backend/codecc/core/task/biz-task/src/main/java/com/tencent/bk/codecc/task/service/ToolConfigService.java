@@ -5,8 +5,9 @@ import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
 import java.util.List;
 
 public interface ToolConfigService {
-    public List<ToolConfigInfoVO> getToolConfigByTaskId(long taskId);
+    List<ToolConfigInfoVO> getToolConfigByTaskId(long taskId);
 
+    List<ToolConfigInfoVO> getToolConfigByTaskIdAndToolName(List<Long> taskIds, String toolName);
 
-    public List<ToolConfigInfoVO> getToolConfigByTaskIdAndToolName(List<Long> taskIds, String toolName);
+    List<ToolConfigInfoVO> getToolConfigByTaskIdIn(List<Long> taskId);
 }

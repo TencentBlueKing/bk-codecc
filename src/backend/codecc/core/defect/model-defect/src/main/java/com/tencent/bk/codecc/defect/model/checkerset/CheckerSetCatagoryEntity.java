@@ -14,8 +14,8 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CheckerSetCatagoryEntity
-{
+public class CheckerSetCatagoryEntity {
+
     /**
      * 英文名称
      */

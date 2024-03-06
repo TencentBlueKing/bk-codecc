@@ -34,6 +34,7 @@ import com.tencent.bk.codecc.defect.vo.common.CommonDataReportRspVO;
 import com.tencent.devops.common.api.pojo.GlobalMessage;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.service.utils.GlobalMessageUtil;
+import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -98,6 +99,8 @@ public abstract class AbstractDataReportBizService implements IDataReportBizServ
         if (CollectionUtils.isNotEmpty(authorList))
         {
             // 按作者排序
+            authorList = authorList.stream().filter(Objects::nonNull)
+                    .filter(it -> it.getAuthorName() != null).collect(Collectors.toList());
             authorList.sort(Comparator.comparing(ChartAuthorBaseVO::getAuthorName));
             for (ChartAuthorBaseVO chartAuthor : authorList)
             {
@@ -193,34 +196,26 @@ public abstract class AbstractDataReportBizService implements IDataReportBizServ
      * @return
      */
     protected String setTips(LocalDate date, LocalDate todayDate, LocalDate lastDate,
-            Map<String, GlobalMessage> globalMessageMap, boolean dateRangeFlag)
-    {
+            Map<String, GlobalMessage> globalMessageMap, boolean dateRangeFlag) {
         // 获取这周的周一
         LocalDate mondayOfWeek = todayDate.with(DayOfWeek.MONDAY);
 
         String tips;
-        if (dateRangeFlag)
-        {
+        if (dateRangeFlag) {
             String dateStr = date.toString();
             tips = dateStr.substring(dateStr.indexOf("-") + 1);
-        }
-         else if (date.equals(todayDate))
-        {
-            tips = String.format("%s(%s)", date.format(DateTimeFormatter.ofPattern("MM-dd")), globalMessageUtil.getMessageByLocale(globalMessageMap.get(ComConstants.DATE_TODAY)));
-        }
-        else if (date.equals(lastDate))
-        {
-            if (date.equals(mondayOfWeek))
-            {
-                tips = String.format("%s(%s)", date.format(DateTimeFormatter.ofPattern("MM-dd")), globalMessageUtil.getMessageByLocale(globalMessageMap.get(ComConstants.DATE_MONDAY)));
+        } else if (date.equals(todayDate)) {
+            tips = String.format("%s(%s)", date.format(DateTimeFormatter.ofPattern("MM-dd")),
+                    globalMessageUtil.getMessageByLocale(globalMessageMap.get(ComConstants.DATE_TODAY)));
+        } else if (date.equals(lastDate)) {
+            if (date.equals(mondayOfWeek)) {
+                tips = String.format("%s(%s)", date.format(DateTimeFormatter.ofPattern("MM-dd")),
+                        globalMessageUtil.getMessageByLocale(globalMessageMap.get(ComConstants.DATE_MONDAY)));
+            } else {
+                tips = String.format("%s(%s)", date.format(DateTimeFormatter.ofPattern("MM-dd")),
+                        globalMessageUtil.getMessageByLocale(globalMessageMap.get(ComConstants.DATE_LAST_MONDAY)));
             }
-            else
-            {
-                tips = String.format("%s(%s)", date.format(DateTimeFormatter.ofPattern("MM-dd")), globalMessageUtil.getMessageByLocale(globalMessageMap.get(ComConstants.DATE_LAST_MONDAY)));
-            }
-        }
-        else
-        {
+        } else {
             String dateStr = date.toString();
             tips = dateStr.substring(dateStr.indexOf("-") + 1);
         }

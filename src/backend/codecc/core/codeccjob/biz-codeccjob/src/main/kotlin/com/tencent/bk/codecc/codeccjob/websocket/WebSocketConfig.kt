@@ -26,6 +26,7 @@
 
 package com.tencent.bk.codecc.codeccjob.websocket
 
+import com.google.common.collect.Sets
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_ACCESS_TOKEN
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_PROJECT_ID
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_TASK_ID
@@ -141,8 +142,14 @@ open class WebSocketConfig @Autowired constructor(
                         bkAuthExPermissionApi.validatePipelineBatchPermission(user,
                             taskId, projectId, mutableSetOf(PipelineAuthAction.VIEW.actionName))
                     } else {
-                        bkAuthExPermissionApi.validateTaskBatchPermission(user,
-                            taskId, projectId, mutableSetOf(CodeCCAuthAction.REPORT_VIEW.actionName))
+
+                        // 查询用户有权限的CodeCC任务
+                        val actions = if (bkAuthExPermissionApi.checkProjectIsRbacPermissionByCache(projectId, false)) {
+                            Sets.newHashSet(CodeCCAuthAction.LIST.actionName)
+                        } else {
+                            Sets.newHashSet(CodeCCAuthAction.REPORT_VIEW.actionName)
+                        }
+                        bkAuthExPermissionApi.validateTaskBatchPermission(user, taskId, projectId, actions)
                     }
                     if (result.isNullOrEmpty()) {
                         logger.error("empty validate result: $user")

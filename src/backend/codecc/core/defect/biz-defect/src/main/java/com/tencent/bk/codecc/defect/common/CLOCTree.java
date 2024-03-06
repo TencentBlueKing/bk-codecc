@@ -152,7 +152,7 @@ public class CLOCTree {
         //有效注释行
         Long efficientComment = null;
         if (efficientCommentService.checkIfShowEffectiveComment(step.getLanguage())) {
-            efficientComment = step.getEfficientComment() == null ? 0 : step.getEfficientComment();
+            efficientComment = step.getEfficientComment() == null ? Long.valueOf(0L) : step.getEfficientComment();
             //用于计算有效注释率-排除部分语言的行数
             child.addTotalForEfficient(total);
         }
@@ -161,6 +161,9 @@ public class CLOCTree {
         child.addComment(comment);
         child.addEfficientComment(efficientComment);
         child.addTotal(total);
+        child.addFileNum(1);
+
+
         //设置注释率
         child.setCommentRate(getCommentRate(child.getCommentLines(), child.getTotalLines(), false));
         //设置有效注释率
@@ -172,7 +175,7 @@ public class CLOCTree {
         if (totalLine == 0) {
             return null;
         }
-        if (comment != null && (totalLine == 0 || comment == 0)) {
+        if (comment != null && comment == 0) {
             return 0d;
         } else if (comment != null) {
             return new BigDecimal(comment)

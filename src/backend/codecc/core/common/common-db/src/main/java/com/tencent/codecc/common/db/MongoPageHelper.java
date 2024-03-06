@@ -124,7 +124,7 @@ public class MongoPageHelper
         if (timeout != null) {
             // 计算剩余可用的超时时间
             long availableTimeout = (beginTime + timeout.toMillis()) - System.currentTimeMillis();
-            if (availableTimeout <= 0) {
+            if (availableTimeout <= 0L) {
                 throw new CodeCCException(CommonMessageCode.DB_QUERY_TIME_OUT);
             }
 

@@ -2,13 +2,14 @@ package com.tencent.bk.codecc.defect.component
 
 import com.tencent.bk.codecc.defect.cluster.ClusterCommitIdCompareProcess
 import com.tencent.bk.codecc.defect.cluster.ClusterLintCompareProcess
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository
-import com.tencent.bk.codecc.defect.dao.mongorepository.ToolBuildStackRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ToolBuildStackRepository
 import com.tencent.bk.codecc.defect.model.BuildEntity
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectNewInputModel
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectOutputModelV2
 import com.tencent.bk.codecc.defect.pojo.DefectClusterDTO
+import com.tencent.bk.codecc.defect.service.DefectFilePathClusterService
 import com.tencent.bk.codecc.defect.service.impl.LintFilterPathBizServiceImpl
 import com.tencent.bk.codecc.defect.vo.CommitDefectVO
 import com.tencent.bk.codecc.task.vo.FilterPathInputVO
@@ -18,6 +19,7 @@ import org.apache.commons.lang.StringUtils
 import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicLong
@@ -30,13 +32,17 @@ class CommitIdDefectCommitComponent @Autowired constructor(
     private val clusterCommitIdCompareProcess: ClusterCommitIdCompareProcess,
     newLintDefectTracingComponent: NewLintDefectTracingComponent,
     scmJsonComponent: ScmJsonComponent,
+    defectFilePathClusterService: DefectFilePathClusterService,
     private val defectIdGenerator: DefectIdGenerator,
     private val toolBuildStackRepository: ToolBuildStackRepository,
-    private val lintFilterPathBizServiceImpl: LintFilterPathBizServiceImpl
+    private val lintFilterPathBizServiceImpl: LintFilterPathBizServiceImpl,
+    private val redisTemplate: RedisTemplate<String,String>
 ) : LintDefectCommitComponent(
     lintDefectV2Repository,
     clusterLintCompareProcess,
     newLintDefectTracingComponent,
+    redisTemplate,
+    defectFilePathClusterService,
     scmJsonComponent
 ) {
     override fun preHandleDefectList(

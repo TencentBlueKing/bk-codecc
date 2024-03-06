@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 @Data
 public class I18NMessageRequest extends ArrayList<BaseVO> {
 
+    private static final long serialVersionUID = 1L;
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor

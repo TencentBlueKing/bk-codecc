@@ -1,6 +1,6 @@
-import en from './en.json'
-import cn from './cn.json'
+import en from './en.json';
+import cn from './cn.json';
 export default {
-  en,
+  'en-US': en,
   'zh-CN': cn,
-}
+};

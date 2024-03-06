@@ -72,4 +72,9 @@ public class ScmInfoVO extends CommonVO
      * 子模块列表
      */
     private List<RepoSubModuleVO> subModules;
+
+    /**
+     * 凭证
+     */
+    private String ticketId;
 }

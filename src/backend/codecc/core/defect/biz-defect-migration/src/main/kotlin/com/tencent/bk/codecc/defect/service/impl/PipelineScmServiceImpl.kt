@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.service.impl
 
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CodeRepoInfoDao
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CodeRepoInfoDao
 import com.tencent.bk.codecc.defect.service.PipelineScmService
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
 import com.tencent.devops.common.api.CodeRepoVO
@@ -29,13 +29,14 @@ import java.net.URLEncoder
 
 @Service
 class PipelineScmServiceImpl @Autowired constructor(
-        private val codeRepoInfoDao: CodeRepoInfoDao,
-        private val client: Client
+    private val codeRepoInfoDao: CodeRepoInfoDao,
+    private val client: Client
 ) : PipelineScmService {
 
     companion object {
         private val logger = LoggerFactory.getLogger(PipelineScmServiceImpl::class.java)
         private val FILE_TOO_LARGE_CONTENT = "当前告警代码文件大小超过1M，不能在平台查看代码详情，可以根据告警行号在IDE查看";
+        private val P4_PROTOL = "p4javassl"
     }
 
     @Value("\${codecc.privatetoken:#{null}}")
@@ -49,9 +50,9 @@ class PipelineScmServiceImpl @Autowired constructor(
 
     override fun getFileContent(
             taskId: Long, repoId: String?, filePath: String,
-            reversion: String?, branch: String?, subModule: String?, createFrom: String
+            reversion: String?, branch: String?, subModule: String?, createFrom: String, url: String?
     ): String? {
-        logger.info("start to get file content: $taskId, $repoId, $filePath, $reversion, $branch, $subModule, $createFrom")
+        logger.info("start to get file content: $taskId, $repoId, $filePath, $reversion, $branch, $subModule, $createFrom, $url")
 
         val fileContentResult = if (ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value().equals(createFrom, true)) {
             return ""
@@ -59,7 +60,27 @@ class PipelineScmServiceImpl @Autowired constructor(
             if (reversion.isNullOrBlank()) {
                 return null
             }
-            var response = doGetFileContentV2(repoId!!, filePath, reversion, branch, subModule)
+            var response: com.tencent.devops.common.api.pojo.Result<String>
+
+            if (url?.isNotEmpty() == true && url.startsWith(P4_PROTOL)) {
+                // 支持Perforce代码文件内容获取
+                var list = url.split("//")
+                val newFilePath = "///${list.last()}$filePath"
+                response = doGetFileContentV2(repoId!!, newFilePath, reversion, branch, subModule)
+            } else {
+                // 支持Git或SVN代码文件内容获取
+                response = doGetFileContentV2(repoId!!, filePath, reversion, branch, subModule)
+            }
+
+            // 如果拿不到文件内容，使用上一级路径获取
+            if (response.data.isNullOrBlank() && url?.isNotEmpty() == true) {
+                val superiorPath =
+                    StringBuilder(
+                        url.replace(filePath, "").split("/").reversed()[0]
+                    ).append(filePath).toString()
+                logger.info("file content response data is empty, try use superior file path: $superiorPath")
+                response = doGetFileContentV2(repoId!!, superiorPath, reversion, branch, subModule)
+            }
 
             // svn路径变更可能拿不到文件内容,需要用最新的reversion
             if (response.data.isNullOrBlank() && branch.isNullOrBlank() && NumberUtils.isNumber(reversion)) {
@@ -210,7 +231,6 @@ class PipelineScmServiceImpl @Autowired constructor(
         return res
     }
 
-
     override fun getStreamFileContent(
         projectId: String,
         userId: String,
@@ -277,9 +297,11 @@ class PipelineScmServiceImpl @Autowired constructor(
         } finally {
             DevopsProxy.projectIdThreadLocal.remove()
         }
-
-
         return fileContent
+    }
+
+    override fun getFileContentFromFileCache(taskId: Long, buildId: String?, filePath: String): String? {
+        return null
     }
 
     /**

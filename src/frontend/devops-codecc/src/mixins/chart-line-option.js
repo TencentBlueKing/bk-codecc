@@ -36,7 +36,8 @@ export default {
             fontSize: 14,
           },
           trigger: 'axis',
-          axisPointer: { // 坐标轴指示器，坐标轴触发有效
+          axisPointer: {
+            // 坐标轴指示器，坐标轴触发有效
             type: 'shadow', // 默认为直线，可选为：'line' | 'shadow'
             shadowStyle: {
               // color: '#87c1e6',
@@ -83,21 +84,23 @@ export default {
             },
           },
         },
-        series: [{
-          type: 'line',
-          data: [],
-          itemStyle: {
-            normal: {
-              color: '#3a84ff',
+        series: [
+          {
+            type: 'line',
+            data: [],
+            itemStyle: {
+              normal: {
+                color: '#3a84ff',
+              },
+            },
+            lineStyle: {
+              normal: {
+                color: '#3a84ff',
+              },
             },
           },
-          lineStyle: {
-            normal: {
-              color: '#3a84ff',
-            },
-          },
-        }],
+        ],
       },
-    }
+    };
   },
-}
+};

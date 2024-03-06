@@ -19,9 +19,10 @@ import java.util.Set;
  * @version V1.0
  * @date 2019/11/15
  */
-public class ObjectDynamicCreator
-{
+public class ObjectDynamicCreator {
+
     private static Logger logger = LoggerFactory.getLogger(ObjectDynamicCreator.class);
+
     /**
      * 返回由Map的key对属性，value对应值组成的对应
      *
@@ -30,28 +31,23 @@ public class ObjectDynamicCreator
      * @return obj Object
      * @throws Exception
      */
-    public static <T> T setFieldValueBySetMethod(Map<String, String> map, Class<T> cls)
-    {
+    public static <T> T setFieldValueBySetMethod(Map<String, String> map, Class<T> cls) {
         Field[] fields = cls.getDeclaredFields();
         T obj = null;
-        try
-        {
+        try {
             obj = cls.newInstance();
-            for (Field field : fields)
-            {
+            for (Field field : fields) {
                 Class<?> clsType = field.getType();
                 String name = field.getName();
                 String strSet = "set" + name.substring(0, 1).toUpperCase() + name.substring(1, name.length());
                 Method methodSet = cls.getDeclaredMethod(strSet, clsType);
-                if (map.containsKey(name))
-                {
+                if (map.containsKey(name)) {
                     Object objValue = typeConversion(clsType, map.get(name));
                     methodSet.invoke(obj, objValue);
                 }
             }
-        }
-        catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e)
-        {
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException
+                 | InstantiationException e) {
             String errMsg = String.format("set map to class field failed! map: %s", JsonUtil.INSTANCE.toJson(map));
             logger.error(errMsg);
             throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL, new String[]{errMsg}, e);
@@ -67,27 +63,21 @@ public class ObjectDynamicCreator
      * @return obj Object
      * @throws Exception
      */
-    public static <T> T setFieldValue(Map<String, String> map, Class<T> cls)
-    {
+    public static <T> T setFieldValue(Map<String, String> map, Class<T> cls) {
         Field[] fields = cls.getDeclaredFields();
         T obj;
-        try
-        {
+        try {
             obj = cls.newInstance();
-            for (Field field : fields)
-            {
+            for (Field field : fields) {
                 Class<?> clsType = field.getType();
                 String name = field.getName();
-                if (map.containsKey(name))
-                {
+                if (map.containsKey(name)) {
                     field.setAccessible(true);
                     Object objValue = typeConversion(clsType, map.get(name));
                     field.set(obj, objValue);
                 }
             }
-        }
-        catch (IllegalAccessException | InstantiationException e)
-        {
+        } catch (IllegalAccessException | InstantiationException e) {
             String errMsg = String.format("set map to class field failed! map: %s", JsonUtil.INSTANCE.toJson(map));
             logger.error(errMsg);
             throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL, new String[]{errMsg}, e);
@@ -103,13 +93,10 @@ public class ObjectDynamicCreator
      * @param dest
      * @param cls
      */
-    public static void copyNonNullPropertiesBySetMethod(Object src, Object dest, Class<?> cls)
-    {
+    public static void copyNonNullPropertiesBySetMethod(Object src, Object dest, Class<?> cls) {
         Field[] fields = cls.getDeclaredFields();
-        try
-        {
-            for (Field field : fields)
-            {
+        try {
+            for (Field field : fields) {
                 Class<?> clsType = field.getType();
                 String name = field.getName();
                 String strSet = "set" + name.substring(0, 1).toUpperCase() + name.substring(1, name.length());
@@ -117,15 +104,13 @@ public class ObjectDynamicCreator
                 Method methodGet = cls.getDeclaredMethod(strGet);
                 Method methodSet = cls.getDeclaredMethod(strSet, clsType);
                 Object getResult = methodGet.invoke(src);
-                if (getResult != null)
-                {
+                if (getResult != null) {
                     methodSet.invoke(dest, getResult);
                 }
             }
-        }
-        catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e)
-        {
-            String errMsg = String.format("copy non null properties failed! src: %s, dest: %s", JsonUtil.INSTANCE.toJson(src), JsonUtil.INSTANCE.toJson(dest));
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            String errMsg = String.format("copy non null properties failed! src: %s, dest: %s",
+                    JsonUtil.INSTANCE.toJson(src), JsonUtil.INSTANCE.toJson(dest));
             logger.error(errMsg);
             throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL, new String[]{errMsg}, e);
         }
@@ -138,80 +123,62 @@ public class ObjectDynamicCreator
      * @param dest
      * @param cls
      */
-    public static void copyNonNullProperties(Object src, Object dest, Class<?> cls, Set<String> fieldNames)
-    {
+    public static void copyNonNullProperties(Object src, Object dest, Class<?> cls, Set<String> fieldNames) {
         Field[] fields = cls.getDeclaredFields();
-        try
-        {
-            for (Field field : fields)
-            {
+        try {
+            for (Field field : fields) {
                 field.setAccessible(true);
                 Object getResult = field.get(src);
-                if (fieldNames.contains(field.getName()) && getResult != null)
-                {
+                if (fieldNames.contains(field.getName()) && getResult != null) {
                     field.set(dest, getResult);
                 }
             }
-        }
-        catch (IllegalAccessException e)
-        {
-            String errMsg = String.format("copy non null properties failed! src: %s, dest: %s", JsonUtil.INSTANCE.toJson(src), JsonUtil.INSTANCE.toJson(dest));
+        } catch (IllegalAccessException e) {
+            String errMsg = String.format("copy non null properties failed! src: %s, dest: %s",
+                    JsonUtil.INSTANCE.toJson(src), JsonUtil.INSTANCE.toJson(dest));
             logger.error(errMsg);
             throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL, new String[]{errMsg}, e);
         }
     }
 
-    public static Object typeConversion(Class<?> cls, String str)
-    {
+    public static Object typeConversion(Class<?> cls, String str) {
         Object obj = null;
         String nameType = cls.getSimpleName();
 
-        if ("String".equals(nameType))
-        {
+        if ("String".equals(nameType)) {
             obj = str;
         }
 
-        if ("Character".equals(nameType))
-        {
+        if ("Character".equals(nameType)) {
             obj = str.charAt(1);
         }
 
-        if (StringUtils.isNotEmpty(str))
-        {
-            if ("int".equals(nameType))
-            {
+        if (StringUtils.isNotEmpty(str)) {
+            if ("int".equals(nameType)) {
                 nameType = "Integer";
-            }
-            else if ("long".equals(nameType))
-            {
+            } else if ("long".equals(nameType)) {
                 nameType = "Long";
             }
 
-            if ("Integer".equals(nameType))
-            {
+            if ("Integer".equals(nameType)) {
                 obj = Integer.valueOf(str);
             }
 
-            if ("Float".equals(nameType))
-            {
+            if ("Float".equals(nameType)) {
                 obj = Float.valueOf(str);
             }
-            if ("Double".equals(nameType))
-            {
+            if ("Double".equals(nameType)) {
                 obj = Double.valueOf(str);
             }
 
-            if ("Boolean".equals(nameType))
-            {
+            if ("Boolean".equals(nameType)) {
                 obj = Boolean.valueOf(str);
             }
-            if ("Long".equals(nameType))
-            {
+            if ("Long".equals(nameType)) {
                 obj = Long.valueOf(str);
             }
 
-            if ("Short".equals(nameType))
-            {
+            if ("Short".equals(nameType)) {
                 obj = Short.valueOf(str);
             }
         }

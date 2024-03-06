@@ -26,6 +26,9 @@
 
 package com.tencent.bk.codecc.defect.service;
 
+import com.tencent.bk.codecc.defect.vo.BatchTaskLogQueryVO;
+import com.tencent.bk.codecc.defect.vo.GrayBuildNumAndTaskVO;
+import com.tencent.bk.codecc.defect.vo.GrayTaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
@@ -45,8 +48,7 @@ import java.util.Set;
  * @version V1.0
  * @date 2019/5/5
  */
-public interface TaskLogService
-{
+public interface TaskLogService {
 
     /**
      * 查询最新任务分析记录
@@ -58,11 +60,18 @@ public interface TaskLogService
 
     /**
      * 批量查询任务记录，不包含分析结果
-     * @param taskId
-     * @param toolSet
+     * @param queryVO
      * @return
      */
-    List<ToolLastAnalysisResultVO> getLastTaskLogResult(long taskId, Set<String> toolSet);
+    List<ToolLastAnalysisResultVO> getLastTaskLogResult(BatchTaskLogQueryVO queryVO);
+
+
+    /**
+     * 批量查询任务记录，不包含分析结果
+     * @param queryVOS
+     * @return
+     */
+    List<ToolLastAnalysisResultVO> getLastTaskLogResult(List<BatchTaskLogQueryVO> queryVOS);
 
     /**
      * 批量查询最新任务分析记录
@@ -119,6 +128,7 @@ public interface TaskLogService
 
     /**
      * 停止正在运行的任务
+     *
      * @param projectId
      * @param pipelineId
      * @param streamName
@@ -127,10 +137,12 @@ public interface TaskLogService
      * @param userName
      * @return
      */
-    Boolean stopRunningTask(String projectId, String pipelineId, String streamName, long taskId, Set<String> toolSet, String userName);
+    Boolean stopRunningTask(String projectId, String pipelineId, String streamName, long taskId, Set<String> toolSet,
+            String userName);
 
     /**
      * 获取当前构建的分析记录
+     *
      * @param taskId
      * @param toolName
      * @param buildId
@@ -140,6 +152,7 @@ public interface TaskLogService
 
     /**
      * 获取当前构建的分析记录
+     *
      * @param taskId
      * @param toolNameSet
      * @param buildId
@@ -149,6 +162,7 @@ public interface TaskLogService
 
     /**
      * 上传分析记录
+     *
      * @param uploadTaskLogStepVO
      * @return
      */
@@ -156,6 +170,7 @@ public interface TaskLogService
 
     /**
      * 流水线运行失败调用接口
+     *
      * @param taskId
      * @param toolNames
      * @return
@@ -173,7 +188,7 @@ public interface TaskLogService
     /**
      * 批量获取任务的工具最新分析记录
      *
-     * @param taskIds  任务ID集合
+     * @param taskIds 任务ID集合
      * @param toolName 工具名
      * @return list
      */
@@ -184,7 +199,7 @@ public interface TaskLogService
      *
      * @param taskIdSet 任务ID集合
      * @param startTime 分析开始时间
-     * @param endTime   分析结束时间
+     * @param endTime 分析结束时间
      * @return list
      */
     List<TaskLogVO> batchTaskLogListByTime(Set<Long> taskIdSet, Long startTime, Long endTime);
@@ -214,7 +229,6 @@ public interface TaskLogService
 
     /**
      * 获取本次构建执行情况
-     *
      */
     List<TaskLogVO> getCurrBuildInfo(long taskId, String buildId);
 
@@ -222,9 +236,14 @@ public interface TaskLogService
 
     /**
      * 根据taskId和toolName获取上一次执行成功的分析记录
+     *
      * @param taskId
      * @param toolName
      * @return
      */
     TaskLogVO getLastTaskLogByTaskIdAndToolName(long taskId, String toolName);
+
+    List<GrayTaskLogRepoInfoVO> getTaskLogInfoByBuildBumAndTaskId(GrayBuildNumAndTaskVO grayBuildNumAndTaskVO);
+
+    List<TaskLogVO> listBuildTaskLog(long taskId, String toolName, int range);
 }

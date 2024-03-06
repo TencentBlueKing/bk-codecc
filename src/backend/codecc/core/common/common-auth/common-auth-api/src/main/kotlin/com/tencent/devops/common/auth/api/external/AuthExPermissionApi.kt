@@ -1,5 +1,6 @@
 package com.tencent.devops.common.auth.api.external
 
+import com.tencent.devops.common.auth.api.pojo.external.AuthRoleType
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction
 import com.tencent.devops.common.auth.api.pojo.external.model.BkAuthExResourceActionModel
 
@@ -114,18 +115,19 @@ interface AuthExPermissionApi {
     fun checkProjectIsRbacPermissionByCache(projectId: String, needRefresh: Boolean? = false): Boolean
 
     /**
-     * 校验用户是否有项目维度的规则集的操作权限
+     * 查询扫描服务创建的任务角色成员清单
      */
-    fun validateUserRulesetPermission(
-        projectId: String,
-        userId: String,
-        action: String
-    ): Boolean
+    fun queryTaskUsersGroupByRole(projectId: String, taskId: Long, roleType: AuthRoleType?): Set<String>
 
     /**
-     * 校验用户是否有项目维度的忽略类型的操作权限
+     * 查询流水线创建的任务角色成员清单
      */
-    fun validateUserIgnoreTypePermission(
+    fun queryPipelineUsersGroupByRole(projectId: String, taskId: Long, roleType: AuthRoleType?): Set<String>
+
+    /**
+     * 校验用户是否有项目维度的资源操作权限
+     */
+    fun validateUserProjectPermission(
         projectId: String,
         userId: String,
         action: String

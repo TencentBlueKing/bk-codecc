@@ -57,4 +57,10 @@ public class UserLogInfoStatEntity extends CommonEntity {
 
     @Field("group_id")
     private Integer groupId;
+
+    /**
+     * 用户状态：1：在职  2：离职  3：试用
+     */
+    @Field
+    private Integer status;
 }

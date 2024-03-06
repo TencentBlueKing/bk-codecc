@@ -3,9 +3,9 @@
  * @author blueking
  */
 
-import path from 'path'
-import prodEnv, { cfgInHtml as cfgInHtmlProd } from './prod.env'
-import devEnv, { cfgInHtml as cfgInHtmlDev } from './dev.env'
+import path from 'path';
+import prodEnv, { cfgInHtml as cfgInHtmlProd } from './prod.env';
+import devEnv, { cfgInHtml as cfgInHtmlDev } from './dev.env';
 
 export default {
   build: {
@@ -29,4 +29,4 @@ export default {
     cssSourceMap: false,
     autoOpenBrowser: false,
   },
-}
+};

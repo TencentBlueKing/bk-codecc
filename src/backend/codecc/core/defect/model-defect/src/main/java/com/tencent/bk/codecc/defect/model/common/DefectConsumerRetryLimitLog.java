@@ -3,6 +3,7 @@ package com.tencent.bk.codecc.defect.model.common;
 import com.tencent.codecc.common.db.CommonEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
@@ -13,6 +14,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
  * 记录消费多次后被放弃的提单信息
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @Document(collection = "t_defect_consumer_retry_limit_log")

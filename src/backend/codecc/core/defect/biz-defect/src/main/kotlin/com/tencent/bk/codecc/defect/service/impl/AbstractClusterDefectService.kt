@@ -1,6 +1,10 @@
 package com.tencent.bk.codecc.defect.service.impl
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.*
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CommonStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DUPCStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintStatisticRepository
 import com.tencent.bk.codecc.defect.service.ClusterDefectService
 import com.tencent.devops.common.api.clusterresult.BaseClusterResultVO
 import com.tencent.devops.common.service.annotation.CCN
@@ -9,11 +13,11 @@ import com.tencent.devops.common.service.annotation.tool_pattern.LINT
 import org.slf4j.LoggerFactory
 
 abstract class AbstractClusterDefectService constructor(
-        private val lintStatisticRepository: LintStatisticRepository,
-        private val commonStatisticRepository: CommonStatisticRepository,
-        private val dupcStatisticRepository: DUPCStatisticRepository,
-        private val ccnStatisticRepository: CCNStatisticRepository,
-        private val clocStatisticRepository: CLOCStatisticRepository
+    private val lintStatisticRepository: LintStatisticRepository,
+    private val commonStatisticRepository: CommonStatisticRepository,
+    private val dupcStatisticRepository: DUPCStatisticRepository,
+    private val ccnStatisticRepository: CCNStatisticRepository,
+    private val clocStatisticRepository: CLOCStatisticRepository
 ): ClusterDefectService {
     /**
      * 获取指定工具告警信息

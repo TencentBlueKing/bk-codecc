@@ -26,14 +26,13 @@
 
 package com.tencent.bk.codecc.task.api;
 
-import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
+import com.tencent.bk.codecc.task.vo.GrayReportVO;
 import com.tencent.bk.codecc.task.vo.GrayToolReportVO;
 import com.tencent.bk.codecc.task.vo.TriggerGrayToolVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -44,10 +43,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import java.util.List;
 import java.util.Set;
 
-import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
 
 /**
@@ -87,6 +84,14 @@ public interface BuildGrayToolProjectRestResource {
         @ApiParam(value = "codecc构建id", required = true)
         @PathParam("codeccBuildId")
             String codeccBuildId);
+
+    @ApiOperation("根据构建号查询灰度报告")
+    @Path("/report/byBuildNum")
+    @POST
+    Result<GrayToolReportVO> findGaryReportByToolNameAndCodeCCBuildIdAndBuildNum(
+        @ApiParam(value = "报告信息", required = true)
+        GrayReportVO grayReportVO
+    );
 
     @ApiOperation("查询任务清单")
     @Path("/task/list/toolName/{toolName}")

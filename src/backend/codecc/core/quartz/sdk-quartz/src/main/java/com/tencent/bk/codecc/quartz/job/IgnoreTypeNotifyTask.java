@@ -72,7 +72,7 @@ public class IgnoreTypeNotifyTask implements IScheduleTask {
                     client.getWithSpecialTag(ServiceIgnoreTypeRestResource.class, serviceTag)
                             .detail(triggerModel.getProjectId(), "CodeCC", triggerModel.getIgnoreTypeId());
 
-            if (result.isNotOk() || result.getData() == null) {
+            if (result == null || result.isNotOk() || result.getData() == null) {
                 logger.error(
                         "IgnoreTypeNotifyTask job param : {} get IgnoreTypeProjectConfigVO Fail Or Null. Result:{}",
                         JSONObject.toJSONString(triggerModel), JSONObject.toJSONString(result));

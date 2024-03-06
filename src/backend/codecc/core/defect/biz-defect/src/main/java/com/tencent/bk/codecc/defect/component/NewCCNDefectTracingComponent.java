@@ -13,7 +13,7 @@
 package com.tencent.bk.codecc.defect.component;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNDefectRepository;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity;

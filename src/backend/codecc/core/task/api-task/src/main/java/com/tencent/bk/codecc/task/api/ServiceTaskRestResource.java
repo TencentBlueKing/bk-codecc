@@ -32,17 +32,21 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PRO
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
 
 import com.tencent.bk.codecc.task.vo.FilterPathOutVO;
-import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigRequest;
-import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse;
+import com.tencent.bk.codecc.task.vo.GetLatestBuildIdMapRequest;
+import com.tencent.bk.codecc.task.vo.GetTaskStatusAndCreateFromResponse;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.TaskIdVO;
+import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigRequest;
+import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse;
 import com.tencent.bk.codecc.task.vo.TaskListVO;
+import com.tencent.bk.codecc.task.vo.TaskStatisticVO;
 import com.tencent.bk.codecc.task.vo.checkerset.UpdateCheckerSet2TaskReqVO;
 import com.tencent.bk.codecc.task.vo.pipeline.PipelineTaskVO;
 import com.tencent.bk.codecc.task.vo.scanconfiguration.ScanConfigurationVO;
 import com.tencent.bk.codecc.task.vo.tianyi.QueryMyTasksReqVO;
 import com.tencent.bk.codecc.task.vo.tianyi.TaskInfoVO;
+import com.tencent.bk.sdk.iam.dto.callback.request.CallbackRequestDTO;
 import com.tencent.devops.common.api.CommonPageVO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.StatisticTaskCodeLineToolVO;
@@ -123,6 +127,13 @@ public interface ServiceTaskRestResource {
     @Path("/list")
     @POST
     Result<List<TaskBaseVO>> getTaskInfosByIds(
+            @ApiParam(value = "任务ID清单", required = true)
+            List<Long> taskIds);
+
+    @ApiOperation("批量获取任务信息")
+    @Path("/taskInfoByIdsWithDelete")
+    @POST
+    Result<List<TaskDetailVO>> getTaskDetailListByIdsWithDelete(
             @ApiParam(value = "任务ID清单", required = true)
             List<Long> taskIds);
 
@@ -460,7 +471,7 @@ public interface ServiceTaskRestResource {
     Result<List<TaskBaseVO>> getTaskListByProjectId(
             @ApiParam(value = "批量查询参数", required = true)
             @PathParam("projectId")
-                    String projectId
+            String projectId
     );
 
 
@@ -484,7 +495,7 @@ public interface ServiceTaskRestResource {
     Result<List<Long>> queryTaskIdPageByProjectId(
             @ApiParam(value = "项目id", required = true)
             @PathParam("projectId")
-                    String projectId,
+            String projectId,
             @ApiParam(value = "页码，从1开始算")
             @QueryParam("pageNum")
             Integer pageNum,
@@ -519,8 +530,102 @@ public interface ServiceTaskRestResource {
             @ApiParam(value = "任务Id，锚点", required = true)
             @QueryParam("lastTaskId")
             Long lastTaskId,
-            @ApiParam(value = "往后取多少条", readOnly = false)
+            @ApiParam(value = "往后取多少条")
             @QueryParam("limit")
             Integer limit
     );
+
+    @ApiOperation("特定资源列表")
+    @Path("/instances/list")
+    @POST
+    Result<String> resourceList(
+            @ApiParam(value = "回调信息", required = true) CallbackRequestDTO callBackInfo
+    );
+
+    @ApiOperation("获取最后一次构建Id")
+    @Path("/getLatestBuildId")
+    @GET
+    Result<String> getLatestBuildId(
+            @ApiParam(value = "任务Id", required = true)
+            @QueryParam("taskId")
+            Long taskId
+    );
+
+    @ApiOperation("获取最后一次构建Id")
+    @Path("/latestBuildIdMap")
+    @POST
+    Result<Map<Long, String>> latestBuildIdMap(
+            @ApiParam(value = "任务Id", required = true)
+            GetLatestBuildIdMapRequest request
+    );
+
+    @ApiOperation("设置任务状态为冷")
+    @Path("/setTaskToColdFlag")
+    @POST
+    Result<Boolean> setTaskToColdFlag(
+            @ApiParam(value = "任务Id", required = true)
+            @QueryParam("taskId")
+            Long taskId
+    );
+
+    @ApiOperation("设置任务状态为正常")
+    @Path("/setTaskToEnableFlag")
+    @POST
+    Result<Boolean> setTaskToEnableFlag(
+            @ApiParam(value = "任务Id", required = true)
+            @QueryParam("taskId")
+            Long taskId
+    );
+
+    @ApiOperation("获取任务Id，冷热分离专用")
+    @Path("/getTaskIdListForHotColdDataSeparation")
+    @GET
+    Result<List<Long>> getTaskIdListForHotColdDataSeparation(
+            @ApiParam(value = "任务Id，锚点", required = true)
+            @QueryParam("lastTaskId")
+            Long lastTaskId,
+            @ApiParam(value = "往后取多少条")
+            @QueryParam("limit")
+            Integer limit
+    );
+
+    @ApiOperation("获取任务的工具名称列表")
+    @Path("/getTaskToolList")
+    @GET
+    Result<List<String>> getTaskToolNameList(
+            @ApiParam(value = "任务Id", required = true)
+            @QueryParam("taskId")
+            Long taskId
+    );
+
+    @ApiOperation("获取任务状态")
+    @Path("/getTaskStatus")
+    @GET
+    Result<GetTaskStatusAndCreateFromResponse> getTaskStatusAndCreateFrom(
+            @ApiParam(value = "任务Id", required = true)
+            @QueryParam("taskId")
+            Long taskId
+    );
+
+    @ApiOperation("根据bgId和deptId对任务信息进行分组统计")
+    @Path("/taskStatisticWithBgIdAndDeptId")
+    @POST
+    Result<List<TaskStatisticVO>> getTaskStatisticByIds(
+            @ApiParam(value = "任务ID清单", required = true)
+            List<Long> taskIds);
+
+
+    @ApiOperation("根据bgId和deptId对任务信息进行分组统计")
+    @Path("/taskIdNeProjectIdWithPage")
+    @POST
+    Result<List<Long>> getTaskIdNeProjectIdWithPage(
+            @ApiParam(value = "过滤的项目id", required = true)
+            @QueryParam("filterProjectId")
+            String filterProjectId,
+            @ApiParam(value = "页码")
+            @QueryParam("pageNum")
+            Integer pageNum,
+            @ApiParam(value = "每页数量")
+            @QueryParam("pageSize")
+            Integer pageSize);
 }

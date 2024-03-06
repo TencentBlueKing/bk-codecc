@@ -41,9 +41,9 @@ const fieldMixin = {
   },
   watch: {
     value(value, oldValue) {
-      value !== oldValue && this.$emit('input', value)
+      value !== oldValue && this.$emit('input', value);
     },
   },
-}
+};
 
-export default fieldMixin
+export default fieldMixin;

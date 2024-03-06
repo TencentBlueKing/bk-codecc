@@ -51,6 +51,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -283,5 +284,41 @@ public class ToolDao {
         }
 
         return mongoTemplate.find(query, TaskIdToolInfoEntity.class, "t_tool_config");
+    }
+
+
+    public List<ToolConfigInfoEntity> findByTaskIdsAndToolNameAndTime(Set<Long> taskIdList, String toolName,
+                                                                     Long startTime, Long endTime) {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("task_id").in(taskIdList)
+                .and("tool_name").is(toolName).and("create_date").gte(startTime).lte(endTime));
+        return mongoTemplate.find(query, ToolConfigInfoEntity.class, "t_tool_config");
+
+    }
+
+    public List<ToolConfigInfoEntity> findStopByTaskIdsAndToolNameAndTime(Set<Long> taskIdList, String toolName,
+                                                                      Long startTime, Long endTime) {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("task_id").in(taskIdList)
+                .and("tool_name").is(toolName)
+                .and("follow_status").is(ComConstants.FOLLOW_STATUS.WITHDRAW.value())
+                .and("updated_date").gte(startTime).lte(endTime));
+        return mongoTemplate.find(query, ToolConfigInfoEntity.class, "t_tool_config");
+    }
+
+    public List<ToolConfigInfoEntity> findUseByTaskIdAndToolName(Set<Long> taskIdList, String toolName) {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("task_id").in(taskIdList)
+                .and("tool_name").is(toolName)
+                .and("follow_status").nin(new ArrayList<>(ComConstants.FOLLOW_STATUS.WITHDRAW.value())));
+        return mongoTemplate.find(query, ToolConfigInfoEntity.class, "t_tool_config");
+    }
+
+    public List<ToolConfigInfoEntity> findByTaskIdsAndToolName(List<Long> taskIdList, String toolName) {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("task_id").in(taskIdList)
+                .and("tool_name").is(toolName)
+                .and("follow_status").ne(ComConstants.FOLLOW_STATUS.WITHDRAW.value()));
+        return mongoTemplate.find(query, ToolConfigInfoEntity.class, "t_tool_config");
     }
 }

@@ -31,11 +31,11 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.constant.DefectMessageCode;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerConfigRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerSetRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.IgnoreCheckerRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CheckerDetailDao;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerConfigRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.IgnoreCheckerRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongotemplate.CheckerDetailDao;
 import com.tencent.bk.codecc.defect.model.CheckerConfigEntity;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.IgnoreCheckerEntity;
@@ -43,7 +43,7 @@ import com.tencent.bk.codecc.defect.model.checkerset.CheckerPropsEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
 import com.tencent.bk.codecc.defect.service.CheckerService;
 import com.tencent.bk.codecc.defect.service.ICheckerSetBizService;
-import com.tencent.bk.codecc.defect.service.IV3CheckerSetBizService;
+import com.tencent.bk.codecc.defect.service.ICheckerSetQueryBizService;
 import com.tencent.bk.codecc.defect.service.ToolBuildInfoService;
 import com.tencent.bk.codecc.defect.vo.CheckerCommonCountVO;
 import com.tencent.bk.codecc.defect.vo.CheckerCountListVO;
@@ -80,7 +80,6 @@ import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.service.ToolMetaCacheService;
-import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.service.aop.AbstractI18NResponseAspect;
 import com.tencent.devops.common.service.utils.SpringContextUtil;
 import com.tencent.devops.common.util.BeanUtils;
@@ -98,8 +97,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -141,13 +138,7 @@ public class CheckerServiceImpl implements CheckerService {
     private IgnoreCheckerRepository ignoreCheckerRepository;
 
     @Autowired
-    private ICheckerSetBizService checkerSetBizService;
-
-    @Autowired
     private ToolBuildInfoService toolBuildInfoService;
-
-    @Autowired
-    private CheckerService checkerService;
 
     @Autowired
     private CheckerDetailDao checkerDetailDao;
@@ -159,7 +150,7 @@ public class CheckerServiceImpl implements CheckerService {
     private CheckerSetRepository checkerSetRepository;
 
     @Autowired
-    private IV3CheckerSetBizService iv3CheckerSetBizService;
+    private ICheckerSetQueryBizService checkerSetQueryBizService;
 
     @Autowired
     private Client client;
@@ -172,20 +163,17 @@ public class CheckerServiceImpl implements CheckerService {
         return queryAllChecker(Lists.newArrayList(toolName), null, false);
     }
 
-    @I18NResponse
     @Override
-    public List<CheckerDetailVO> queryAllCheckerI18NWrapper(
-            List<String> toolNameSet,
-            String checkerSet,
-            boolean returnOnlyMapCheckerKeyAndType
-    ) {
-        Map<String, CheckerDetailVO> map = queryAllChecker(toolNameSet, checkerSet, returnOnlyMapCheckerKeyAndType);
-
-        if (MapUtils.isEmpty(map)) {
-            return Lists.newArrayList();
+    public List<CheckerDetailVO> queryAllChecker(long taskId, String toolName, String paramJson, long codeLang) {
+        if (StringUtils.isNotEmpty(paramJson)) {
+            paramJson.trim();
         }
+        List<CheckerDetailEntity> checkerDetailEntities = checkerRepository.findByToolName(toolName);
 
-        return Lists.newArrayList(map.values());
+        List<CheckerDetailVO> checkerDetailVOList = filterCheckerDetailByCodeLangAndParamJson(toolName, paramJson,
+                codeLang, checkerDetailEntities);
+
+        return getCheckerConfigParams(taskId, toolName, checkerDetailVOList);
     }
 
     /**
@@ -226,19 +214,20 @@ public class CheckerServiceImpl implements CheckerService {
                 .collect(Collectors.toMap(CheckerDetailVO::getCheckerKey, Function.identity(), (k, v) -> v));
     }
 
-
-
+    @I18NResponse
     @Override
-    public List<CheckerDetailVO> queryAllChecker(long taskId, String toolName, String paramJson, long codeLang) {
-        if (StringUtils.isNotEmpty(paramJson)) {
-            paramJson.trim();
+    public List<CheckerDetailVO> queryAllCheckerI18NWrapper(
+            List<String> toolNameSet,
+            String checkerSet,
+            boolean returnOnlyMapCheckerKeyAndType
+    ) {
+        Map<String, CheckerDetailVO> map = queryAllChecker(toolNameSet, checkerSet, returnOnlyMapCheckerKeyAndType);
+
+        if (MapUtils.isEmpty(map)) {
+            return Lists.newArrayList();
         }
-        List<CheckerDetailEntity> checkerDetailEntities = checkerRepository.findByToolName(toolName);
 
-        List<CheckerDetailVO> checkerDetailVOList = filterCheckerDetailByCodeLangAndParamJson(toolName, paramJson,
-                codeLang, checkerDetailEntities);
-
-        return getCheckerConfigParams(taskId, toolName, checkerDetailVOList);
+        return Lists.newArrayList(map.values());
     }
 
     @Override
@@ -286,11 +275,12 @@ public class CheckerServiceImpl implements CheckerService {
         if (StringUtils.isNotEmpty(pkgId)) {
             Set<String> upperToolNameSet = toolNameSet.stream().map(String::toUpperCase).collect(Collectors.toSet());
             ToolConfigInfoVO toolConfigInfoVO = taskDetailVO.getToolConfigInfoList().stream()
-                    .filter(toolConfigInfoVO1 -> upperToolNameSet.contains(
-                            toolConfigInfoVO1.getToolName().toUpperCase())).findFirst()
+                    .filter(toolConfigInfoVO1 ->
+                            upperToolNameSet.contains(toolConfigInfoVO1.getToolName().toUpperCase())).findFirst()
                     .orElseThrow(() -> new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL));
             Map<String, CheckerDetailVO> allCheckers = queryOpenCheckers(toolConfigInfoVO.getTaskId(),
-                    toolConfigInfoVO.getToolName(), toolConfigInfoVO.getParamJson(), taskDetailVO.getCodeLang());
+                    toolConfigInfoVO.getToolName(),
+                    toolConfigInfoVO.getParamJson(), taskDetailVO.getCodeLang());
             if (MapUtils.isNotEmpty(allCheckers)) {
                 allCheckers.forEach((s, checkerDetailVO) -> {
                     if (pkgId.equals(checkerDetailVO.getPkgKind())) {
@@ -303,6 +293,7 @@ public class CheckerServiceImpl implements CheckerService {
     }
 
     @Override
+
     public List<CheckerDetailVO> queryCheckerByTool(String toolName) {
         List<CheckerDetailEntity> checkerDetailEntities = checkerRepository.findByToolName(toolName);
 
@@ -312,39 +303,42 @@ public class CheckerServiceImpl implements CheckerService {
     @NotNull
     protected List<CheckerDetailVO> filterCheckerDetailByCodeLangAndParamJson(String toolName, String paramJson,
             Long codeLang, List<CheckerDetailEntity> checkerDetailEntities) {
-        List<CheckerDetailEntity> list = checkerDetailEntities.stream().filter(checkerDetailEntity -> {
-            if (checkerDetailEntity.getStatus() == 1) {
-                return false;
-            }
-            JSONObject parseObj = StringUtils.isBlank(paramJson) ? new JSONObject() : JSONObject.fromObject(paramJson);
-            if (ComConstants.Tool.ESLINT.name().equals(toolName)) {
-                if (parseObj.containsKey("eslint_rc")) {
-                    String eslintRc = parseObj.getString("eslint_rc");
-                    if (ComConstants.EslintFrameworkType.standard.name().equals(eslintRc)) {
-                        return ComConstants.EslintFrameworkType.standard.name()
-                                .equals(checkerDetailEntity.getFrameworkType());
-                    } else if (ComConstants.EslintFrameworkType.vue.name().equals(eslintRc)) {
-                        return !ComConstants.EslintFrameworkType.react.name()
-                                .equals(checkerDetailEntity.getFrameworkType());
-                    } else if (ComConstants.EslintFrameworkType.react.name().equals(eslintRc)) {
-                        return !ComConstants.EslintFrameworkType.vue.name()
-                                .equals(checkerDetailEntity.getFrameworkType());
+        List<CheckerDetailEntity> list = checkerDetailEntities.stream().
+                filter(checkerDetailEntity ->
+                {
+                    if (checkerDetailEntity.getStatus() == 1) {
+                        return false;
                     }
-                }
-            } else if (ComConstants.Tool.PHPCS.name().equals(toolName)) {
-                if (parseObj.containsKey("phpcs_standard")) {
-                    String phpcsStandard = parseObj.getString("phpcs_standard");
-                    if (StringUtils.isNotBlank(phpcsStandard)) {
-                        int standCode = ComConstants.PHPCSStandardCode.valueOf(phpcsStandard).code();
-                        return (standCode & checkerDetailEntity.getStandard()) != 0;
+                    JSONObject parseObj =
+                            StringUtils.isBlank(paramJson) ? new JSONObject() : JSONObject.fromObject(paramJson);
+                    if (ComConstants.Tool.ESLINT.name().equals(toolName)) {
+                        if (parseObj.containsKey("eslint_rc")) {
+                            String eslintRc = parseObj.getString("eslint_rc");
+                            if (ComConstants.EslintFrameworkType.standard.name().equals(eslintRc)) {
+                                return ComConstants.EslintFrameworkType.standard.name()
+                                        .equals(checkerDetailEntity.getFrameworkType());
+                            } else if (ComConstants.EslintFrameworkType.vue.name().equals(eslintRc)) {
+                                return !ComConstants.EslintFrameworkType.react.name()
+                                        .equals(checkerDetailEntity.getFrameworkType());
+                            } else if (ComConstants.EslintFrameworkType.react.name().equals(eslintRc)) {
+                                return !ComConstants.EslintFrameworkType.vue.name()
+                                        .equals(checkerDetailEntity.getFrameworkType());
+                            }
+                        }
+                    } else if (ComConstants.Tool.PHPCS.name().equals(toolName)) {
+                        if (parseObj.containsKey("phpcs_standard")) {
+                            String phpcsStandard = parseObj.getString("phpcs_standard");
+                            if (StringUtils.isNotBlank(phpcsStandard)) {
+                                int standCode = ComConstants.PHPCSStandardCode.valueOf(phpcsStandard).code();
+                                return (standCode & checkerDetailEntity.getStandard()) != 0;
+                            }
+                        }
+                    } else if (ComConstants.Tool.COVERITY.name().equals(toolName) || ComConstants.Tool.KLOCWORK.name()
+                            .equals(toolName)) {
+                        return ((null == codeLang ? 0L : codeLang) & checkerDetailEntity.getLanguage()) != 0;
                     }
-                }
-            } else if (ComConstants.Tool.COVERITY.name().equals(toolName) || ComConstants.Tool.KLOCWORK.name()
-                    .equals(toolName)) {
-                return ((null == codeLang ? 0L : codeLang) & checkerDetailEntity.getLanguage()) != 0;
-            }
-            return true;
-        }).collect(Collectors.toList());
+                    return true;
+                }).collect(Collectors.toList());
         return generateCheckerDetailVo(list);
     }
 
@@ -354,7 +348,8 @@ public class CheckerServiceImpl implements CheckerService {
             BeanUtils.copyProperties(checkerDetailEntity, checkerDetailVO);
             if (CollectionUtils.isNotEmpty(checkerDetailEntity.getCovSubcategory())) {
                 checkerDetailVO.setCovSubcategory(
-                        checkerDetailEntity.getCovSubcategory().stream().map(covSubcategoryEntity -> {
+                        checkerDetailEntity.getCovSubcategory().stream().map(covSubcategoryEntity ->
+                        {
                             CovSubcategoryVO covSubcategoryVO = new CovSubcategoryVO();
                             BeanUtils.copyProperties(covSubcategoryEntity, covSubcategoryVO);
                             return covSubcategoryVO;
@@ -426,7 +421,8 @@ public class CheckerServiceImpl implements CheckerService {
                 taskId, toolName, checkerKey);
         if (Objects.nonNull(checkerConfigEntity) && (paramValue.equals(checkerConfigEntity.getParamValue()))) {
             log.info(
-                    "The checker parameter configuration is the same and cannot be modified repeatedly, taskId: {}, checkerKey: {}",
+                    "The checker parameter configuration is the same and cannot be modified repeatedly, "
+                            + "taskId: {}, checkerKey: {}",
                     taskId, checkerKey);
             return true;
         }
@@ -479,12 +475,14 @@ public class CheckerServiceImpl implements CheckerService {
         }
 
         // 查询已打开规则
-        Map<String, CheckerDetailVO> openCheckerMap = checkerService.queryOpenCheckers(taskId, toolName, paramJson,
+        Map<String, CheckerDetailVO> openCheckerMap = queryOpenCheckers(taskId, toolName, paramJson,
                 taskDetailVO.getCodeLang());
 
         // 如果修改的是已打开的规则参数，则需要清除规则集并设置强制全量扫描标志
         if (MapUtils.isNotEmpty(openCheckerMap) && openCheckerMap.get(checkerKey) != null) {
             // 清除已绑定的规则集
+            ICheckerSetBizService checkerSetBizService =
+                    SpringContextUtil.Companion.getBean(ICheckerSetBizService.class);
             checkerSetBizService.clearTaskCheckerSets(taskDetailVO, Lists.newArrayList(toolName), user, true);
 
             // 设置强制全量扫描标志
@@ -515,6 +513,11 @@ public class CheckerServiceImpl implements CheckerService {
                     checkerDetailVO.setCodeExample(codeExample);
                 }
             }
+
+            // 如果 publisher 字段为空，用 createdBy 字段填充
+            if (StringUtils.isBlank(checkerDetailVO.getPublisher())) {
+                checkerDetailVO.setPublisher(checkerDetailVO.getCreatedBy());
+            }
         } else {
             checkerDetailVO.setToolName(toolName);
             checkerDetailVO.setCheckerKey(checkerKey);
@@ -541,9 +544,25 @@ public class CheckerServiceImpl implements CheckerService {
         return checkerDetailVO;
     }
 
+    @NotNull
+    private Map<String, Integer> getToolStatusMap(List<GrayToolProjectVO> grayToolProjectVOS) {
+        // 按工具维度来映射 ToolIntegratedStatus
+        Map<String, Integer> toolStatusMap = Maps.newHashMap();
+        if (CollectionUtils.isEmpty(grayToolProjectVOS)) {
+            return toolStatusMap;
+        }
+        for (GrayToolProjectVO vo : grayToolProjectVOS) {
+            if (StringUtils.isNotBlank(vo.getToolName())) {
+                toolStatusMap.put(vo.getToolName(), vo.getStatus());
+            }
+        }
+        return toolStatusMap;
+    }
+
     @Override
     public List<CheckerDetailVO> queryCheckerDetailList(CheckerListQueryReq checkerListQueryReq, String projectId,
-            Integer pageNum, Integer pageSize, Sort.Direction sortType, CheckerListSortType sortField) {
+            Integer pageNum,
+            Integer pageSize, Sort.Direction sortType, CheckerListSortType sortField) {
         //处理规则集的选中问题
         Set<String> checkerKeySet;
         //单个规则集关联
@@ -553,13 +572,13 @@ public class CheckerServiceImpl implements CheckerService {
             checkerKeySet = getCheckerSetKeys(projectId);
         }
 
-        Result<GrayToolProjectVO> result = client.get(ServiceGrayToolProjectResource.class)
-                .getGrayToolProjectInfoByProjectId(projectId);
+        Result<List<GrayToolProjectVO>> listResult =
+                client.get(ServiceGrayToolProjectResource.class).getGrayToolProjectDetail(projectId);
 
-        if (result.isNotOk() || result.getData() == null) {
+        if (listResult.isNotOk() || listResult.getData() == null) {
             throw new CodeCCException(CommonMessageCode.SYSTEM_ERROR);
         }
-        int toolIntegratedStatus = result.getData().getStatus();
+        Map<String, Integer> toolStatusMap = getToolStatusMap(listResult.getData());
 
         //封装分页类
         List<CheckerDetailEntity> checkerDetailEntityList = checkerDetailDao.findByComplexCheckerCondition(
@@ -567,7 +586,7 @@ public class CheckerServiceImpl implements CheckerService {
                 checkerListQueryReq.getCheckerCategory(), checkerListQueryReq.getToolName(),
                 checkerListQueryReq.getTag(), checkerListQueryReq.getSeverity(), checkerListQueryReq.getEditable(),
                 checkerListQueryReq.getCheckerRecommend(), checkerKeySet, checkerListQueryReq.getCheckerSetSelected(),
-                pageNum, pageSize, sortType, sortField, ToolIntegratedStatus.getInstance(toolIntegratedStatus));
+                pageNum, pageSize, sortType, sortField, toolStatusMap);
 
         // 获取所有语言
         List<String> langList = Arrays.asList(
@@ -621,19 +640,19 @@ public class CheckerServiceImpl implements CheckerService {
     @Override
     public List<CheckerCommonCountVO> queryCheckerCountListNew(CheckerListQueryReq checkerListQueryReq,
             String projectId) {
-        Result<GrayToolProjectVO> result = client.get(ServiceGrayToolProjectResource.class)
-                .getGrayToolProjectInfoByProjectId(projectId);
+        Result<List<GrayToolProjectVO>> listResult =
+                client.get(ServiceGrayToolProjectResource.class).getGrayToolProjectDetail(projectId);
 
-        if (result.isNotOk() || result.getData() == null) {
+        if (listResult.isNotOk() || listResult.getData() == null) {
             throw new CodeCCException(CommonMessageCode.SYSTEM_ERROR);
         }
 
-        int toolIntegratedStatus = result.getData().getStatus();
+        Map<String, Integer> toolStatusMap = getToolStatusMap(listResult.getData());
 
         // NOCC:VariableDeclarationUsageDistance(设计如此:)
         List<CheckerDetailEntity> checkerDetailEntityList = checkerDetailDao.findByComplexCheckerCondition(
                 checkerListQueryReq.getKeyWord(), null, null, null, null, null, null, null, null, null, null, null,
-                null, null, ToolIntegratedStatus.getInstance(toolIntegratedStatus));
+                null, null, toolStatusMap);
         // NOCC:VariableDeclarationUsageDistance(设计如此:)
         List<CheckerCommonCountVO> checkerCommonCountVOList = new ArrayList<>();
         //1. 语言数量map
@@ -654,7 +673,13 @@ public class CheckerServiceImpl implements CheckerService {
         List<String> toolOrder = Arrays.asList(
                 redisTemplate.opsForValue().get(RedisKeyConstants.KEY_TOOL_ORDER).split(","));
         for (String tool : toolOrder) {
-            ToolMetaBaseVO toolMeta = toolMetaCacheService.getToolBaseMetaCache(tool);
+            ToolMetaBaseVO toolMeta;
+            try {
+                toolMeta = toolMetaCacheService.getToolBaseMetaCache(tool);
+            } catch (CodeCCException e) {
+                log.error(e.getMessage());
+                continue;
+            }
             List<ToolVersionVO> toolVersionList = toolMeta.getToolVersions();
             List<String> versionList = Collections.singletonList(String.valueOf(ToolIntegratedStatus.P.value()));
             if (CollectionUtils.isNotEmpty(toolVersionList)) {
@@ -666,8 +691,9 @@ public class CheckerServiceImpl implements CheckerService {
                 continue;
             }
 
-            if (toolIntegratedStatus != ToolIntegratedStatus.P.value() && versionList.contains(
-                    String.valueOf(toolIntegratedStatus))) {
+            Integer version = toolStatusMap.get(tool);
+            if (null != version && version != ToolIntegratedStatus.P.value() && versionList.contains(
+                    String.valueOf(version))) {
                 toolMap.put(tool, 0);
             }
         }
@@ -719,17 +745,22 @@ public class CheckerServiceImpl implements CheckerService {
             if (judgeQualifiedChecker(null, checkerListQueryReq.getCheckerCategory(), checkerListQueryReq.getToolName(),
                     checkerListQueryReq.getTag(), checkerListQueryReq.getSeverity(), checkerListQueryReq.getEditable(),
                     checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(),
+
                     checkerKeySet, checkerDetailEntity) && CollectionUtils.isNotEmpty(
                     checkerDetailEntity.getCheckerLanguage())) {
-                checkerDetailEntity.getCheckerLanguage().stream().filter(Objects::nonNull)
-                        .forEach(checkerLanguage -> langMap.compute(checkerLanguage, (k, v) -> {
-                            if (null == v) {
-                                return 1;
-                            } else {
-                                v++;
-                                return v;
-                            }
-                        }));
+                checkerDetailEntity.getCheckerLanguage()
+                        .stream()
+                        .filter(Objects::nonNull)
+                        .forEach(checkerLanguage ->
+                                langMap.compute(checkerLanguage, (k, v) -> {
+                                    if (null == v) {
+                                        return 1;
+                                    } else {
+                                        v++;
+                                        return v;
+                                    }
+                                })
+                        );
             }
 
             //2. 计算规则数量
@@ -738,7 +769,6 @@ public class CheckerServiceImpl implements CheckerService {
                     checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(),
                     checkerKeySet, checkerDetailEntity) && StringUtils.isNotEmpty(
                     checkerDetailEntity.getCheckerCategory())) {
-
                 categoryMap.compute(checkerDetailEntity.getCheckerCategory(), (k, v) -> {
                     if (null == v) {
                         return 1;
@@ -755,7 +785,6 @@ public class CheckerServiceImpl implements CheckerService {
                     checkerListQueryReq.getSeverity(), checkerListQueryReq.getEditable(),
                     checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(),
                     checkerKeySet, checkerDetailEntity) && StringUtils.isNotEmpty(checkerDetailEntity.getToolName())) {
-
                 toolMap.compute(checkerDetailEntity.getToolName(), (k, v) -> {
                     if (null == v) {
                         return 1;
@@ -815,9 +844,9 @@ public class CheckerServiceImpl implements CheckerService {
                     checkerListQueryReq.getTag(), null, checkerListQueryReq.getEditable(),
                     checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(),
                     checkerKeySet, checkerDetailEntity) && 0 != checkerDetailEntity.getSeverity()) {
-
                 severityMap.compute(ComConstants.PROMPT_IN_DB == checkerDetailEntity.getSeverity() ? ComConstants.PROMPT
                         : checkerDetailEntity.getSeverity(), (k, v) -> {
+
                     if (null == v) {
                         return 1;
                     } else {
@@ -833,10 +862,10 @@ public class CheckerServiceImpl implements CheckerService {
                     checkerListQueryReq.getTag(), checkerListQueryReq.getSeverity(), null,
                     checkerListQueryReq.getCheckerRecommend(), checkerListQueryReq.getCheckerSetSelected(),
                     checkerKeySet, checkerDetailEntity)) {
-
                 editableMap.compute(
                         null == checkerDetailEntity.getEditable() ? Boolean.FALSE : checkerDetailEntity.getEditable(),
-                        (k, v) -> {
+                        (k, v) ->
+                        {
                             if (null == v) {
                                 return 1;
                             } else {
@@ -852,7 +881,6 @@ public class CheckerServiceImpl implements CheckerService {
                     checkerListQueryReq.getTag(), checkerListQueryReq.getSeverity(), checkerListQueryReq.getEditable(),
                     null, checkerListQueryReq.getCheckerSetSelected(), checkerKeySet, checkerDetailEntity)
                     && StringUtils.isNotEmpty(checkerDetailEntity.getCheckerRecommend())) {
-
                 recommendMap.compute(checkerDetailEntity.getCheckerRecommend(), (k, v) -> {
                     if (null == v) {
                         return 1;
@@ -868,8 +896,8 @@ public class CheckerServiceImpl implements CheckerService {
                     checkerListQueryReq.getCheckerCategory(), checkerListQueryReq.getToolName(),
                     checkerListQueryReq.getTag(), checkerListQueryReq.getSeverity(), checkerListQueryReq.getEditable(),
                     checkerListQueryReq.getCheckerRecommend(), null, null, checkerDetailEntity)) {
-
                 selectMap.compute(checkerKeySet.contains(checkerDetailEntity.getCheckerKey()), (k, v) -> {
+
                     if (null == v) {
                         return 1;
                     } else {
@@ -913,11 +941,12 @@ public class CheckerServiceImpl implements CheckerService {
                 .collect(Collectors.toList());
 
         //按照工具的排序
-        List<CheckerCountListVO> checkerToolCountVOList = toolMap.entrySet().stream().filter(stringIntegerEntry -> stringIntegerEntry.getValue() > 0).
+        List<CheckerCountListVO> checkerToolCountVOList = toolMap.entrySet().stream()
+                .filter(stringIntegerEntry -> stringIntegerEntry.getValue() > 0).
                 map(entry ->
                         new CheckerCountListVO(entry.getKey(), null, entry.getValue())
                 ).sorted(Comparator.comparingInt(o -> toolOrder.contains(o.getKey())
-                ? toolOrder.indexOf(o.getKey()) : Integer.MAX_VALUE)).collect(Collectors.toList());
+                        ? toolOrder.indexOf(o.getKey()) : Integer.MAX_VALUE)).collect(Collectors.toList());
         List<CheckerCountListVO> checkerTagCountVOList = tagMap.entrySet().stream().map(entry -> {
                     // 前端优先读name，没有name则展示key
                     String key = entry.getKey();
@@ -1005,7 +1034,7 @@ public class CheckerServiceImpl implements CheckerService {
                 analyzeConfigInfoVO.getMultiToolType());
         long taskId = analyzeConfigInfoVO.getTaskId();
         String toolName = analyzeConfigInfoVO.getMultiToolType();
-        List<CheckerSetVO> checkerSetVOList = iv3CheckerSetBizService.getCheckerSetsByTaskId(taskId);
+        List<CheckerSetVO> checkerSetVOList = checkerSetQueryBizService.getCheckerSetsByTaskId(taskId);
 
         if (CollectionUtils.isEmpty(checkerSetVOList)) {
             log.info("task {} checker set is empty.", taskId);
@@ -1193,8 +1222,11 @@ public class CheckerServiceImpl implements CheckerService {
         preMergeTaskCheckers.forEach((checkerKey, checkerSetVOCheckerPropVOMap) -> {
             CheckerPropVO chooseCheckerPropVO = null;
             boolean hasRecommended = false;
+            Long mergeCodeLang = 0L;
             for (Map.Entry<CheckerSetVO, CheckerPropVO> preMergeEntry : checkerSetVOCheckerPropVOMap.entrySet()) {
                 CheckerSetVO checkerSetVO = preMergeEntry.getKey();
+                Long codeLang = checkerSetVO.getCodeLang();
+                mergeCodeLang = mergeCodeLang | codeLang;
                 CheckerPropVO checkerPropVO = preMergeEntry.getValue();
                 if (null != checkerSetVO.getDefaultCheckerSet() && checkerSetVO.getDefaultCheckerSet()) {
                     chooseCheckerPropVO = checkerPropVO;
@@ -1207,6 +1239,7 @@ public class CheckerServiceImpl implements CheckerService {
                     chooseCheckerPropVO = checkerPropVO;
                 }
             }
+            chooseCheckerPropVO.setLang(mergeCodeLang);
             mergeTaskCheckers.put(checkerKey, chooseCheckerPropVO);
         });
         return mergeTaskCheckers;
@@ -1224,6 +1257,7 @@ public class CheckerServiceImpl implements CheckerService {
             AnalyzeConfigInfoVO analyzeConfigInfoVO) {
         OpenCheckerVO openChecker = new OpenCheckerVO();
         openChecker.setCheckerName(checker);
+        openChecker.setLang(checkerProp == null ? null : checkerProp.getLang());
         openChecker.setNativeChecker(
                 Objects.isNull(checkerDetail.getNativeChecker()) ? false : checkerDetail.getNativeChecker());
         openChecker.setSeverity(checkerDetail.getSeverity());
@@ -1274,15 +1308,15 @@ public class CheckerServiceImpl implements CheckerService {
 
 
     private Set<String> getCheckerSetKeys(String projectId) {
-        List<CheckerSetEntity> checkerSetEntityList = iv3CheckerSetBizService.findAvailableCheckerSetsByProject(
-                projectId, Arrays.asList(true, false), ToolIntegratedStatus.P.value());
+        List<CheckerSetEntity> checkerSetEntityList = checkerSetQueryBizService.findAvailableCheckerSetsByProject(
+                projectId, Arrays.asList(true, false));
         if (CollectionUtils.isNotEmpty(checkerSetEntityList)) {
             return checkerSetEntityList.stream()
                     .filter(checkerSetEntity -> CollectionUtils.isNotEmpty(checkerSetEntity.getCheckerProps()))
                     .map(CheckerSetEntity::getCheckerProps).flatMap(Collection::stream)
-                    .filter(checkerPropsEntity -> null != checkerPropsEntity && StringUtils.isNotBlank(
-                            checkerPropsEntity.getCheckerKey())).map(CheckerPropsEntity::getCheckerKey).distinct()
-                    .collect(Collectors.toSet());
+                    .filter(checkerPropsEntity -> null != checkerPropsEntity &&
+                            StringUtils.isNotBlank(checkerPropsEntity.getCheckerKey())).
+                    map(CheckerPropsEntity::getCheckerKey).distinct().collect(Collectors.toSet());
         } else {
             return new HashSet<>();
         }
@@ -1294,7 +1328,7 @@ public class CheckerServiceImpl implements CheckerService {
             Set<CheckerRecommendType> checkerRecommendType, Set<Boolean> checkerSelected,
             Set<String> checkerSelectedKey, CheckerDetailEntity checkerDetailEntity) {
         if (CollectionUtils.isNotEmpty(checkerLanguage) && checkerLanguage.stream()
-                .noneMatch(languange -> checkerDetailEntity.getCheckerLanguage().contains(languange))) {
+                .noneMatch(language -> checkerDetailEntity.getCheckerLanguage().contains(language))) {
             return false;
         }
         if (CollectionUtils.isNotEmpty(checkerCategory) && !checkerCategory.contains(
@@ -1318,7 +1352,8 @@ public class CheckerServiceImpl implements CheckerService {
             }
         }
         if (CollectionUtils.isNotEmpty(editable) && !editable.contains(
-                null == checkerDetailEntity.getEditable() ? false : checkerDetailEntity.getEditable())) {
+                null == checkerDetailEntity.getEditable() ? false :
+                        checkerDetailEntity.getEditable())) {
             return false;
         }
         if (CollectionUtils.isNotEmpty(checkerRecommendType) && !checkerRecommendType.contains(
@@ -1326,163 +1361,12 @@ public class CheckerServiceImpl implements CheckerService {
             return false;
         }
         if (CollectionUtils.isNotEmpty(checkerSelected) && CollectionUtils.isNotEmpty(checkerSelectedKey)
-                && checkerSelected.stream().noneMatch(checkerSelect -> checkerSelect.equals(
-                checkerSelectedKey.contains(checkerDetailEntity.getCheckerKey())))) {
+                && checkerSelected.stream().noneMatch(checkerSelect ->
+                checkerSelect.equals(checkerSelectedKey.contains(checkerDetailEntity.getCheckerKey()))
+        )) {
             return false;
         }
         return true;
-    }
-
-
-    @Override
-    public List<CheckerCommonCountVO> queryCheckerCountList(CheckerListQueryReq checkerListQueryReq) {
-        List<CheckerDetailEntity> checkerDetailEntityList = checkerDetailDao.findByComplexCheckerCondition(
-                checkerListQueryReq.getKeyWord(), checkerListQueryReq.getCheckerLanguage(),
-                checkerListQueryReq.getCheckerCategory(), checkerListQueryReq.getToolName(),
-                checkerListQueryReq.getTag(), checkerListQueryReq.getSeverity(), checkerListQueryReq.getEditable(),
-                checkerListQueryReq.getCheckerRecommend(), null, null, null, null, null, null, ToolIntegratedStatus.P);
-        List<CheckerCommonCountVO> checkerCommonCountVOList = new ArrayList<>();
-        //1. 语言数量map
-        Map<String, AtomicInteger> langMap = new ConcurrentHashMap<>();
-        //2. 规则数量map(数量不变，初始化就把所有规则放上去)
-        CheckerCategory[] checkerCategories = CheckerCategory.values();
-        Map<String, AtomicInteger> categoryMap = new ConcurrentHashMap<>();
-        for (CheckerCategory checkerCategory : checkerCategories) {
-            categoryMap.put(checkerCategory.name(), new AtomicInteger(0));
-        }
-        //3. 规则工具数量map
-        Map<String, AtomicInteger> toolMap = new ConcurrentHashMap<>();
-        //4. 规则标签
-        Map<String, AtomicInteger> tagMap = new ConcurrentHashMap<>();
-        //5. 规则严重级别数量(数量不变，初始化就把所有规则放上去)
-        Map<Integer, AtomicInteger> severityMap = new ConcurrentHashMap<Integer, AtomicInteger>() {{
-            put(ComConstants.PROMPT_IN_DB, new AtomicInteger(0));
-            put(ComConstants.NORMAL, new AtomicInteger(0));
-            put(ComConstants.SERIOUS, new AtomicInteger(0));
-        }};
-        //6. 可修改参数数量
-        Map<Boolean, AtomicInteger> editableMap = new ConcurrentHashMap<Boolean, AtomicInteger>() {{
-            put(Boolean.TRUE, new AtomicInteger(0));
-            put(Boolean.FALSE, new AtomicInteger(0));
-        }};
-        //7. 系统推荐数量
-        Map<String, AtomicInteger> recommendMap = new ConcurrentHashMap<>();
-        CheckerRecommendType[] checkerRecommendTypes = CheckerRecommendType.values();
-        for (CheckerRecommendType checkerRecommendType : checkerRecommendTypes) {
-            recommendMap.put(checkerRecommendType.name(), new AtomicInteger(0));
-        }
-
-        if (CollectionUtils.isNotEmpty(checkerDetailEntityList)) {
-            checkerDetailEntityList.forEach(checkerDetailEntity -> {
-                //1. 计算语言数量
-                if (CollectionUtils.isNotEmpty(checkerDetailEntity.getCheckerLanguage())) {
-                    checkerDetailEntity.getCheckerLanguage().forEach(checkerLanguage -> {
-
-                        AtomicInteger langCount = langMap.putIfAbsent(checkerLanguage, new AtomicInteger(1));
-                        if (null != langCount) {
-                            langCount.incrementAndGet();
-                        }
-                    });
-                }
-
-                //2.计算规则类型数量
-                categoryMap.computeIfPresent(checkerDetailEntity.getCheckerCategory(), (k, v) -> {
-                    v.incrementAndGet();
-                    return v;
-                });
-
-                //3.规则工具数量
-                AtomicInteger toolCount = toolMap.putIfAbsent(checkerDetailEntity.getToolName(), new AtomicInteger(1));
-                if (null != toolCount) {
-                    toolCount.incrementAndGet();
-                }
-
-                //4.规则标签数量
-                if (CollectionUtils.isNotEmpty(checkerDetailEntity.getCheckerTag())) {
-                    checkerDetailEntity.getCheckerTag().forEach(checkerTag -> {
-                        AtomicInteger tagCount = tagMap.putIfAbsent(checkerTag, new AtomicInteger(1));
-                        if (null != tagCount) {
-                            tagCount.incrementAndGet();
-                        }
-                    });
-                }
-
-                //5.规则严重级别数量
-                severityMap.computeIfPresent(checkerDetailEntity.getSeverity(), (k, v) -> {
-                    v.incrementAndGet();
-                    return v;
-                });
-
-                //6. 可修改参数数量
-                editableMap.computeIfPresent(
-                        null == checkerDetailEntity.getEditable() ? false : checkerDetailEntity.getEditable(),
-                        (k, v) -> {
-                            v.incrementAndGet();
-                            return v;
-                        });
-
-                //7. 系统推荐数量
-                recommendMap.computeIfPresent(checkerDetailEntity.getCheckerRecommend(), (k, v) -> {
-                    v.incrementAndGet();
-                    return v;
-                });
-            });
-        }
-
-        //按照语言顺序
-        String langOrderStr = redisTemplate.opsForValue().get(RedisKeyConstants.KEY_LANG_ORDER);
-        List<String> langOrder = Arrays.asList(langOrderStr.split(","));
-        List<CheckerCountListVO> checkerLangCountVOList = langMap.entrySet().stream()
-                .map(entry -> new CheckerCountListVO(entry.getKey(), null, entry.getValue().intValue()))
-                .sorted(Comparator.comparingInt(
-                        o -> langOrder.contains(o.getKey()) ? langOrder.indexOf(o.getKey()) : Integer.MAX_VALUE))
-                .collect(Collectors.toList());
-        //按照枚举中的排序
-        List<CheckerCategory> categoryOrder = Arrays.asList(CheckerCategory.values());
-        List<CheckerCountListVO> checkerCateCountVOList = categoryMap.entrySet().stream()
-                .map(entry -> new CheckerCountListVO(CheckerCategory.valueOf(entry.getKey()).name(),
-                        CheckerCategory.valueOf(entry.getKey()).getName(), entry.getValue().intValue()))
-                .sorted(Comparator.comparingInt(o -> categoryOrder.indexOf(CheckerCategory.valueOf(o.getKey()))))
-                .collect(Collectors.toList());
-
-        //按照工具的排序
-        String toolOrderStr = redisTemplate.opsForValue().get(RedisKeyConstants.KEY_TOOL_ORDER);
-        List<String> toolOrder = Arrays.asList(toolOrderStr.split(","));
-        List<CheckerCountListVO> checkerToolCountVOList = toolMap.entrySet().stream()
-                .map(entry -> new CheckerCountListVO(entry.getKey(), null, entry.getValue().intValue()))
-                .sorted(Comparator.comparingInt(
-                        o -> toolOrder.contains(o.getKey()) ? toolOrder.indexOf(o.getKey()) : Integer.MAX_VALUE))
-                .collect(Collectors.toList());
-        List<CheckerCountListVO> checkerTagCountVOList = tagMap.entrySet().stream()
-                .map(entry -> new CheckerCountListVO(entry.getKey(), null, entry.getValue().intValue()))
-                .collect(Collectors.toList());
-        List<CheckerCountListVO> checkerSeverityCountVOList = severityMap.entrySet().stream()
-                .map(entry -> new CheckerCountListVO(String.valueOf(entry.getKey()), null, entry.getValue().intValue()))
-                .collect(Collectors.toList());
-        List<CheckerCountListVO> checkerEditableCountVOList = editableMap.entrySet().stream()
-                .map(entry -> new CheckerCountListVO(String.valueOf(entry.getKey()), null, entry.getValue().intValue()))
-                .collect(Collectors.toList());
-
-        //按照枚举中排序
-        List<CheckerRecommendType> recommendOrder = Arrays.asList(CheckerRecommendType.values());
-        List<CheckerCountListVO> checkerRecommendCountVOList = recommendMap.entrySet().stream()
-                .map(entry -> new CheckerCountListVO(CheckerRecommendType.valueOf(entry.getKey()).name(),
-                        CheckerRecommendType.valueOf(entry.getKey()).getName(), entry.getValue().intValue()))
-                .sorted(Comparator.comparingInt(o -> recommendOrder.indexOf(CheckerRecommendType.valueOf(o.getKey()))))
-                .collect(Collectors.toList());
-        List<CheckerCountListVO> checkerTotalCountVOList = Arrays.asList(
-                new CheckerCountListVO("total", null, checkerDetailEntityList.size()));
-
-        checkerCommonCountVOList.add(new CheckerCommonCountVO("checkerLanguage", checkerLangCountVOList));
-        checkerCommonCountVOList.add(new CheckerCommonCountVO("checkerCategory", checkerCateCountVOList));
-        checkerCommonCountVOList.add(new CheckerCommonCountVO("toolName", checkerToolCountVOList));
-        checkerCommonCountVOList.add(new CheckerCommonCountVO("tag", checkerTagCountVOList));
-        checkerCommonCountVOList.add(new CheckerCommonCountVO("severity", checkerSeverityCountVOList));
-        checkerCommonCountVOList.add(new CheckerCommonCountVO("editable", checkerEditableCountVOList));
-        checkerCommonCountVOList.add(new CheckerCommonCountVO("checkerRecommend", checkerRecommendCountVOList));
-        checkerCommonCountVOList.add(new CheckerCommonCountVO("total", checkerTotalCountVOList));
-
-        return checkerCommonCountVOList;
     }
 
     /**
@@ -1558,7 +1442,7 @@ public class CheckerServiceImpl implements CheckerService {
 
     @Override
     public List<String> queryTaskCheckerDimension(List<Long> taskIdList, String projectId, List<String> toolNameList) {
-        List<String> checkerKeyList = iv3CheckerSetBizService.getTaskCheckerSetsCore(projectId, taskIdList,
+        List<String> checkerKeyList = checkerSetQueryBizService.getTaskCheckerSetsCore(projectId, taskIdList,
                         toolNameList, true).stream()
                 .flatMap(x -> x.getCheckerProps() == null ? Stream.of() : x.getCheckerProps().stream())
                 .map(y -> y.getCheckerKey()).collect(Collectors.toList());

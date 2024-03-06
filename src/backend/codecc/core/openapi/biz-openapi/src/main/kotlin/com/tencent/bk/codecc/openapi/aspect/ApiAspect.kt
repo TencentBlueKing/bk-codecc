@@ -2,7 +2,6 @@ package com.tencent.bk.codecc.openapi.aspect
 
 import com.tencent.bk.codecc.openapi.exception.PermissionForbiddenException
 import com.tencent.bk.codecc.openapi.service.AppCodeService
-import com.tencent.bk.codecc.openapi.filter.ApiFilter
 import org.aspectj.lang.JoinPoint
 import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.annotation.Before
@@ -18,7 +17,7 @@ class ApiAspect(
 ) {
 
     companion object {
-        private val logger = LoggerFactory.getLogger(ApiFilter::class.java)
+        private val logger = LoggerFactory.getLogger(ApiAspect::class.java)
     }
 
     /**
@@ -27,7 +26,7 @@ class ApiAspect(
      * @param jp
      */
     @Before(
-        "execution(* com.tencent.bk.codecc.openapi.resources.*.*(..))"
+        "execution(* com.tencent.bk.codecc.openapi.resources.Apigw*.*(..))"
     ) // 所有controller包下面的所有方法的所有参数
     fun beforeMethod(jp: JoinPoint) {
 

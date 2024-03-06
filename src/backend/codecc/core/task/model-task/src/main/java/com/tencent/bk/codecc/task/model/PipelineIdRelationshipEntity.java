@@ -22,6 +22,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 
 /**
  * 流水线维度流水表
@@ -32,11 +33,11 @@ import java.time.LocalDate;
 @Data
 @Document(collection = "t_pipeline_id_relationship")
 @CompoundIndexes({
-        @CompoundIndex(name = "triggerdate_1_pipeline_1", def = "{'trigger_date': 1, 'pipeline_id' : 1}", background = true)
+        @CompoundIndex(name = "triggerdate_1_pipeline_1", def = "{'trigger_date': 1, 'pipeline_id' : 1}",
+                background = true)
 })
 @AllArgsConstructor
-public class PipelineIdRelationshipEntity extends CommonEntity
-{
+public class PipelineIdRelationshipEntity extends CommonEntity {
     @Field("task_id")
     private Long taskId;
 

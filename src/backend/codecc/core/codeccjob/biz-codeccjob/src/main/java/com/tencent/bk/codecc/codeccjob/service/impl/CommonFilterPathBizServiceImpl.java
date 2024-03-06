@@ -13,8 +13,8 @@
 package com.tencent.bk.codecc.codeccjob.service.impl;
 
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.DefectDao;
-import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongotemplate.DefectDao;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.codeccjob.service.AbstractFilterPathBizService;
 import com.tencent.bk.codecc.defect.api.ServiceDefectRestResource;
 import com.tencent.bk.codecc.defect.mapping.DefectConverter;
@@ -41,8 +41,8 @@ import org.springframework.stereotype.Service;
  */
 @Service("CommonFilterPathBizService")
 @Slf4j
-public class CommonFilterPathBizServiceImpl extends AbstractFilterPathBizService
-{
+public class CommonFilterPathBizServiceImpl extends AbstractFilterPathBizService {
+
     @Autowired
     private DefectDao defectDao;
     @Autowired
@@ -53,8 +53,7 @@ public class CommonFilterPathBizServiceImpl extends AbstractFilterPathBizService
     private DefectConverter defectConverter;
 
     @Override
-    public Result processBiz(FilterPathInputVO filterPathInputVO)
-    {
+    public Result processBiz(FilterPathInputVO filterPathInputVO) {
         Long taskId = filterPathInputVO.getTaskId();
         String toolName = filterPathInputVO.getToolName();
 
@@ -136,8 +135,7 @@ public class CommonFilterPathBizServiceImpl extends AbstractFilterPathBizService
         );
     }
 
-    protected Boolean checkIfMaskByPath(CommonDefectEntity defectEntity, Set<String> filterPaths)
-    {
+    protected Boolean checkIfMaskByPath(CommonDefectEntity defectEntity, Set<String> filterPaths) {
         Pair<Boolean, String> pair = PathUtils.checkIfMaskByPath(defectEntity.getFilePath(), filterPaths);
         if (pair.getFirst()) {
             defectEntity.setMaskPath(pair.getSecond());

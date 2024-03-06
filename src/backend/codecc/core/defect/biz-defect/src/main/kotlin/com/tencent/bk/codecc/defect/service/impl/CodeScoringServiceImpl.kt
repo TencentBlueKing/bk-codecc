@@ -2,13 +2,23 @@ package com.tencent.bk.codecc.defect.service.impl
 
 import com.tencent.bk.codecc.defect.constant.DefectConstants
 import com.tencent.bk.codecc.defect.dao.ToolMetaCacheServiceImpl
-import com.tencent.bk.codecc.defect.dao.mongorepository.*
-import com.tencent.bk.codecc.defect.model.statistic.LintStatisticEntity
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetProjectRelationshipRepository
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetRepository
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.RedLineMetaRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DefectRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.RedLineRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.TaskLogRepository
 import com.tencent.bk.codecc.defect.model.MetricsEntity
 import com.tencent.bk.codecc.defect.model.TaskLogEntity
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerPropsEntity
+import com.tencent.bk.codecc.defect.model.statistic.LintStatisticEntity
 import com.tencent.bk.codecc.defect.pojo.StandardScoringConfig
 import com.tencent.bk.codecc.defect.service.AbstractCodeScoringService
+import com.tencent.bk.codecc.defect.service.MetricsService
 import com.tencent.bk.codecc.defect.utils.CommonKafkaClient
 import com.tencent.bk.codecc.task.vo.GrayTaskStatVO
 import com.tencent.bk.codecc.task.vo.TaskDetailVO
@@ -32,22 +42,26 @@ import kotlin.math.pow
  */
 @Service("TStandard")
 class CodeScoringServiceImpl @Autowired constructor(
-        private val taskLogRepository: TaskLogRepository,
-        private val ccnStatisticRepository: CCNStatisticRepository,
-        private val lintStatisticRepository: LintStatisticRepository,
-        private val defectRepository: DefectRepository,
-        private val metricsRepository: MetricsRepository,
-        private val lintDefectV2Repository: LintDefectV2Repository,
-        private val toolMetaCacheServiceImpl: ToolMetaCacheServiceImpl,
-        private val checkerSetProjectRelationshipRepository: CheckerSetProjectRelationshipRepository,
-        private val checkerSetRepository: CheckerSetRepository,
-        redisTemplate: RedisTemplate<String, String>,
-        commonKafkaClient: CommonKafkaClient,
-        clocStatisticRepository: CLOCStatisticRepository
-): AbstractCodeScoringService(
+    private val taskLogRepository: TaskLogRepository,
+    private val ccnStatisticRepository: CCNStatisticRepository,
+    private val lintStatisticRepository: LintStatisticRepository,
+    private val defectRepository: DefectRepository,
+    private val lintDefectV2Repository: LintDefectV2Repository,
+    private val toolMetaCacheServiceImpl: ToolMetaCacheServiceImpl,
+    private val checkerSetProjectRelationshipRepository: CheckerSetProjectRelationshipRepository,
+    private val checkerSetRepository: CheckerSetRepository,
+    private val metricsService: MetricsService,
+    redisTemplate: RedisTemplate<String, String>,
+    commonKafkaClient: CommonKafkaClient,
+    clocStatisticRepository: CLOCStatisticRepository,
+    redLineRepository: RedLineRepository,
+    redLineMetaRepository: RedLineMetaRepository,
+) : AbstractCodeScoringService(
     redisTemplate,
     commonKafkaClient,
-    clocStatisticRepository
+    clocStatisticRepository,
+    redLineRepository,
+    redLineMetaRepository
 ) {
 
     companion object {
@@ -76,9 +90,9 @@ class CodeScoringServiceImpl @Autowired constructor(
     override fun scoring(taskDetailVO: TaskDetailVO, buildId: String): MetricsEntity? {
         val taskId = taskDetailVO.taskId
         val taskLogList: MutableList<TaskLogEntity> =
-                taskLogRepository.findByTaskIdAndBuildId(taskId, buildId)
-                        .filter { it.toolName != ComConstants.Tool.CLOC.name }.toMutableList()
-        var lines = mutableMapOf<String, Long>()
+            taskLogRepository.findByTaskIdAndBuildId(taskId, buildId)
+                    .filter { it.toolName != ComConstants.Tool.CLOC.name }.toMutableList()
+        var languageToLineMap = mutableMapOf<String, Long>()
         val tools = mutableMapOf<String, Pair<Double, Double>>()
         var totalCcnExceedNum = 0.0
         var totalSeriousRiskCount = 0
@@ -93,18 +107,18 @@ class CodeScoringServiceImpl @Autowired constructor(
         var covExists = false
         // 没有CLOC工具的任务不合法，无法计算分数
         val isLegal = taskLogList.stream()
-            .anyMatch { taskLog -> taskLog.toolName == ComConstants.Tool.SCC.name }
+                .anyMatch { taskLog -> taskLog.toolName == ComConstants.Tool.SCC.name }
         if (!isLegal) {
-            logger.error("fail to scoring: task {} no match CLOC", taskId)
+            logger.error("fail to scoring, no match scc, $taskId, $buildId")
             return null
         }
 
         for (taskLog in taskLogList) {
             val tool = toolMetaCacheServiceImpl.getToolBaseMetaCache(taskLog.toolName)
-            logger.info("scoring toolName: {} {}", tool.name, tool.type)
+            // logger.info("scoring toolName: {} {}", tool.name, tool.type)
             if (taskLog.toolName == ComConstants.Tool.SCC.name) {
                 // 代码行工具
-                lines = getCLOCDefectNum(taskId, taskLog.toolName, taskLog.buildId)
+                languageToLineMap = getCLOCDefectNum(taskId, taskLog.toolName, taskLog.buildId)
             } else if (taskLog.toolName == ComConstants.Tool.CCN.name) {
                 // 圈复杂度工具
                 totalCcnExceedNum = getCCNDefectNum(taskId, taskLog.buildId).first
@@ -132,7 +146,7 @@ class CodeScoringServiceImpl @Autowired constructor(
                 totalSeriousRiskCount += (pair?.first?.toInt() ?: 0)
                 securityExists = true
             } else if (tool.name != ComConstants.Tool.IP_CHECK.name
-                && tool.type == ComConstants.ToolType.STANDARD.name
+                    && tool.type == ComConstants.ToolType.STANDARD.name
             ) {
                 // 代码格式工具
                 tools[taskLog.toolName] = getLintDefectNum(
@@ -144,13 +158,13 @@ class CodeScoringServiceImpl @Autowired constructor(
             }
         }
 
-        val totalLine = lines.values.stream().mapToLong { line -> line }.sum()
+        val totalLine = languageToLineMap.values.stream().mapToLong { line -> line }.sum()
         val metricsEntity = MetricsEntity()
         metricsEntity.taskId = taskId
         metricsEntity.buildId = buildId
         metricsEntity.isOpenScan = true
         // 代码规范得分
-        val scoringConfigs = initScoringConfigs(taskDetailVO, lines)
+        val scoringConfigs = initScoringConfigs(taskDetailVO, languageToLineMap)
         if (scoringConfigs.isNullOrEmpty() || !styleExists) {
             metricsEntity.codeStyleScore = 100.toDouble()
         } else {
@@ -161,7 +175,9 @@ class CodeScoringServiceImpl @Autowired constructor(
         metricsEntity.codeSecurityScore = if (securityExists) {
             calCodeSecurityScore(
                 totalSeriousRiskCount = totalSeriousRiskCount,
-                totalNormalRiskCount = totalNormalRiskCount
+                totalNormalRiskCount = totalNormalRiskCount,
+                taskId,
+                buildId
             )
         } else {
             100.toDouble()
@@ -222,8 +238,8 @@ class CodeScoringServiceImpl @Autowired constructor(
             BigDecimal.ZERO
         } else {
             BigDecimal(
-                    1000.toDouble() *
-                            (codeDefectNormalDefectCount.toDouble() / totalLine.toDouble())
+                1000.toDouble() *
+                        (codeDefectNormalDefectCount.toDouble() / totalLine.toDouble())
             )
         }.setScale(2, BigDecimal.ROUND_HALF_UP)
                 .toDouble()
@@ -231,13 +247,15 @@ class CodeScoringServiceImpl @Autowired constructor(
             BigDecimal.ZERO
         } else {
             BigDecimal(
-                    1000.toDouble() *
-                            (codeDefectSeriousDefectCount.toDouble() / totalLine.toDouble())
+                1000.toDouble() *
+                        (codeDefectSeriousDefectCount.toDouble() / totalLine.toDouble())
             )
         }.setScale(2, BigDecimal.ROUND_HALF_UP)
                 .toDouble()
 
-        metricsRepository.save(metricsEntity)
+        metricsService.updateMetricsByTaskIdAndBuildId(metricsEntity)
+        // 保存分数到质量红线
+        saveScoreRedLine(metricsEntity)
         return metricsEntity
     }
 
@@ -247,7 +265,7 @@ class CodeScoringServiceImpl @Autowired constructor(
      * @param buildId
      */
     private fun getCCNDefectNum(taskId: Long, buildId: String): Pair<Double, Double> {
-        val res = ccnStatisticRepository.findFirstByTaskIdAndBuildId(taskId, buildId)
+        val res = ccnStatisticRepository.findFirstByTaskIdAndBuildIdOrderByTimeDesc(taskId, buildId)
         return Pair(res.ccnBeyondThresholdSum.toDouble(), 0.toDouble())
     }
 
@@ -257,7 +275,7 @@ class CodeScoringServiceImpl @Autowired constructor(
      * @param buildId
      */
     private fun getSecurityDefectNum(taskId: Long, buildId: String, toolName: String): Pair<Double, Double>? {
-        val res = lintStatisticRepository.findFirstByTaskIdAndToolNameAndBuildId(
+        val res = lintStatisticRepository.findFirstByTaskIdAndToolNameAndBuildIdOrderByTimeDesc(
             taskId,
             toolName,
             buildId
@@ -272,7 +290,7 @@ class CodeScoringServiceImpl @Autowired constructor(
      * @param buildId
      */
     private fun getLintDefectNum(toolName: String, taskId: Long, buildId: String): Pair<Double, Double> {
-        val res: LintStatisticEntity? = lintStatisticRepository.findFirstByTaskIdAndToolNameAndBuildId(
+        val res: LintStatisticEntity? = lintStatisticRepository.findFirstByTaskIdAndToolNameAndBuildIdOrderByTimeDesc(
             taskId,
             toolName,
             buildId
@@ -303,30 +321,31 @@ class CodeScoringServiceImpl @Autowired constructor(
         val checkerSetProj = checkerSetProjectRelationshipRepository.findByProjectId(projectId)
         val peckerCheckerSet = mutableSetOf<CheckerPropsEntity>()
         checkerSetProj.filter { it.checkerSetId.matches(Regex("^pecker_.*_no_coverity")) }
-            .forEach {
-                val checkerSetEntity = checkerSetRepository.findFirstByCheckerSetIdAndVersion(it.checkerSetId, it.version)
-                peckerCheckerSet.addAll(checkerSetEntity.checkerProps)
-            }
+                .forEach {
+                    val checkerSetEntity =
+                        checkerSetRepository.findFirstByCheckerSetIdAndVersion(it.checkerSetId, it.version)
+                    peckerCheckerSet.addAll(checkerSetEntity.checkerProps)
+                }
 
         val checkerNameList = peckerCheckerSet.filter { it.toolName == ComConstants.Tool.COVERITY.name }
-            .map { it.checkerName }
-            .toList()
+                .map { it.checkerName }
+                .toList()
 
         val securitySeriousCount = defectList.filter {
             checkerNameList.contains(it.checker)
-                && it.severity == DefectConstants.DefectSeverity.SERIOUS.value()
+                    && it.severity == DefectConstants.DefectSeverity.SERIOUS.value()
         }.count()
 
         val securityNormalCount = defectList.filter {
             checkerNameList.contains(it.checker)
-                && it.severity == DefectConstants.DefectSeverity.NORMAL.value()
+                    && it.severity == DefectConstants.DefectSeverity.NORMAL.value()
         }.count()
 
         val seriousCount = defectList.filter { it.severity == DefectConstants.DefectSeverity.SERIOUS.value() }
-            .count() - securitySeriousCount
+                .count() - securitySeriousCount
 
         val normalCount = defectList.filter { it.severity == DefectConstants.DefectSeverity.NORMAL.value() }
-            .count() - securityNormalCount
+                .count() - securityNormalCount
 
         return Pair(Pair(securitySeriousCount, securityNormalCount), Pair(seriousCount, normalCount))
     }
@@ -374,16 +393,20 @@ class CodeScoringServiceImpl @Autowired constructor(
                     totalLines += (lines["C"] ?: 0) + (lines["C++"] ?: 0) + (lines["C/C++ Header"]
                         ?: 0)
                     logger.info(
-                        "CPPLINT: ${(lines["C"] ?: 0) + (lines["C++"] ?: 0) + (lines["C/C++ Header"]
-                            ?: 0)} $totalLines"
+                        "CPPLINT: ${
+                            (lines["C"] ?: 0) + (lines["C++"] ?: 0) + (lines["C/C++ Header"]
+                                ?: 0)
+                        } $totalLines"
                     )
                 }
                 "BKCHECK-OC" -> {
                     totalLines += ((lines["Objective C"] ?: 0) +
-                        (lines["Objective C++"] ?: 0))
+                            (lines["Objective C++"] ?: 0))
                     logger.info(
-                        "Objective: ${((lines["Objective C"] ?: 0) +
-                            (lines["Objective C++"] ?: 0))} $totalLines"
+                        "Objective: ${
+                            ((lines["Objective C"] ?: 0) +
+                                    (lines["Objective C++"] ?: 0))
+                        } $totalLines"
                     )
                 }
                 else -> {
@@ -430,7 +453,7 @@ class CodeScoringServiceImpl @Autowired constructor(
                 "BKCHECK-OC" -> {
                     languageWaringConfigCount = 3.0
                     totalLine = ((lines["Objective C"] ?: 0) +
-                        (lines["Objective C++"] ?: 0))
+                            (lines["Objective C++"] ?: 0))
                 }
                 else -> {
                     otherDefect += (tool.value.first * 1 + tool.value.second * 0.5)
@@ -444,7 +467,9 @@ class CodeScoringServiceImpl @Autowired constructor(
             // 计算百行告警数，百行告警数=（严重告警数*1+一般告警数*0.5）/代码行数*100
             val totalDefect = (tool.value.first * 1 + tool.value.second * 0.5)
             // logger.info("cal ${tool.key} code style score, totalDefect: $totalDefect | line: $totalLine | totalLine: $totalLines")
-            val sc = calCodeStyleScore(totalDefect, languageWaringConfigCount, totalLine, totalLines)
+            // 父级已Deprecated
+            // val sc = calCodeStyleScore(totalDefect, languageWaringConfigCount, totalLine, totalLines)
+            val sc = 0
             if (sc >= 0) {
                 score += sc
             }
@@ -454,7 +479,9 @@ class CodeScoringServiceImpl @Autowired constructor(
         // 单独计算 python 的规范分数
         if (hasPy) {
             // logger.info("cal python code style score, totalDefect: $pyDefect | line: ${lines["Python"] ?: 0} | totalLine: $totalLines")
-            val scc = calCodeStyleScore(pyDefect, 4.toDouble(), lines["Python"] ?: 0, totalLines)
+            // 父级已Deprecated
+            // val scc = calCodeStyleScore(pyDefect, 4.toDouble(), lines["Python"] ?: 0, totalLines)
+            val scc = 0
             if (scc >= 0) {
                 score += scc
             }
@@ -468,12 +495,14 @@ class CodeScoringServiceImpl @Autowired constructor(
     }
 
     fun newScoringStandard(
-            metricsEntity: MetricsEntity,
-            actualExeTools: MutableList<String>,
-            scoringConfigs: MutableMap<ComConstants.CodeLang, StandardScoringConfig>
+        metricsEntity: MetricsEntity,
+        actualExeTools: MutableList<String>,
+        scoringConfigs: MutableMap<ComConstants.CodeLang, StandardScoringConfig>
     ) {
+        val taskId = metricsEntity.taskId
+        val buildId = metricsEntity.buildId
         val totalLine = scoringConfigs.filter {
-                it.key != ComConstants.CodeLang.OTHERS
+            it.key != ComConstants.CodeLang.OTHERS
         }.map { it.value.lineCount }.sum()
         scoringConfigs.filter {
             it.key != ComConstants.CodeLang.OTHERS
@@ -482,62 +511,63 @@ class CodeScoringServiceImpl @Autowired constructor(
                 lang.langValue().and(toolMetaCacheServiceImpl.getToolBaseMetaCache(it).lang) > 0
             }.toMutableList()
             if (matchingTools.isEmpty()) {
-                logger.info("${lang.langName()} has not install standard tool")
+                logger.info("newScoringStandard not install standard tool, $taskId, $buildId, ${lang.langName()}")
                 return@forEach
             }
             scoringConfigLangStandard(
-                    metricsEntity,
-                    matchingTools,
-                    config,
-                    totalLine
+                metricsEntity,
+                matchingTools,
+                config,
+                totalLine
             )
         }
 
         if (totalLine > 0) {
             metricsEntity.averageSeriousStandardThousandDefect =
-                    BigDecimal(1000 * metricsEntity.codeStyleSeriousDefectCount.toDouble()
-                            / totalLine.toDouble())
-                            .setScale(2, RoundingMode.HALF_UP)
-                            .toDouble()
+                BigDecimal(
+                    1000 * metricsEntity.codeStyleSeriousDefectCount.toDouble()
+                            / totalLine.toDouble()
+                )
+                        .setScale(2, RoundingMode.HALF_UP)
+                        .toDouble()
             metricsEntity.averageNormalStandardThousandDefect =
-                    BigDecimal(1000 * metricsEntity.codeStyleNormalDefectCount.toDouble()
-                            / totalLine.toDouble())
-                            .setScale(2, RoundingMode.HALF_UP)
-                            .toDouble()
+                BigDecimal(
+                    1000 * metricsEntity.codeStyleNormalDefectCount.toDouble()
+                            / totalLine.toDouble()
+                )
+                        .setScale(2, RoundingMode.HALF_UP)
+                        .toDouble()
         }
-        logger.info("final scoring result: $metricsEntity")
     }
 
     fun scoringConfigLangStandard(
-            metricsEntity: MetricsEntity,
-            matchingTools: MutableList<String>,
-            config: StandardScoringConfig,
-            totalLine: Long
+        metricsEntity: MetricsEntity,
+        matchingTools: MutableList<String>,
+        config: StandardScoringConfig,
+        totalLine: Long
     ) {
         val seriousCount = lintDefectV2Repository.countByTaskIdAndToolNameInAndStatusAndSeverity(
-                metricsEntity.taskId,
-                matchingTools,
-                ComConstants.DefectStatus.NEW.value(),
-                ComConstants.SERIOUS
+            metricsEntity.taskId,
+            matchingTools,
+            ComConstants.DefectStatus.NEW.value(),
+            ComConstants.SERIOUS
         )
         val normalCount = lintDefectV2Repository.countByTaskIdAndToolNameInAndStatusAndSeverity(
-                metricsEntity.taskId,
-                matchingTools,
-                ComConstants.DefectStatus.NEW.value(),
-                ComConstants.NORMAL
+            metricsEntity.taskId,
+            matchingTools,
+            ComConstants.DefectStatus.NEW.value(),
+            ComConstants.NORMAL
         )
         // 计算行占比
         val totalDefect = seriousCount * 1.0 + normalCount * 0.5
-        logger.info("cal ${config.clocLanguage} code style score, totalDefect: $totalDefect " +
-                "| line: ${config.lineCount} | totalLine: $totalLine")
         val currScore = calCodeStyleScore(
-                totalDefect,
-                config.coefficient,
-                config.lineCount,
-                totalLine
+            totalDefect,
+            config.coefficient,
+            config.lineCount,
+            totalLine,
+            metricsEntity.taskId,
+            metricsEntity.buildId
         ) + metricsEntity.codeStyleScore
-        logger.info("cal ${config.clocLanguage} code style score, totalDefect: $totalDefect " +
-                "| line: ${config.lineCount} | totalLine: $totalLine | score: $currScore")
         metricsEntity.codeStyleScore = currScore
         metricsEntity.codeStyleSeriousDefectCount += seriousCount
         metricsEntity.codeStyleNormalDefectCount += normalCount
@@ -549,12 +579,16 @@ class CodeScoringServiceImpl @Autowired constructor(
      * @param line
      * @param totalLine
      * @param languageWaringConfigCount
+     * @param taskId
+     * @param buildId
      */
     private fun calCodeStyleScore(
         totalDefect: Double,
         languageWaringConfigCount: Double,
         line: Long,
-        totalLine: Long
+        totalLine: Long,
+        taskId: Long? = null,
+        buildId: String? = null
     ): Double {
         try {
             val hundredWaringCount = if (line == 0L) {
@@ -564,7 +598,6 @@ class CodeScoringServiceImpl @Autowired constructor(
             }
             // 计算行占比
             val linePercentage = line.toDouble() / totalLine.toDouble()
-            logger.info("cal style score, hundred: $hundredWaringCount linepercent: $linePercentage")
             // 计算代码规范评分
             return BigDecimal(
                 100 * linePercentage * ((0.6.pow(1.toDouble() / languageWaringConfigCount)).pow(
@@ -572,7 +605,11 @@ class CodeScoringServiceImpl @Autowired constructor(
                 ))
             ).setScale(2, BigDecimal.ROUND_HALF_UP).toDouble()
         } catch (e: Exception) {
-            logger.error("cal code style score fail: ", e)
+            logger.error(
+                "calCodeStyleScore fail, task id: $taskId, build id: $buildId, " +
+                        "$totalDefect, $languageWaringConfigCount, $line, $totalLine", e
+            )
+
             return 0.toDouble()
         }
     }
@@ -582,7 +619,12 @@ class CodeScoringServiceImpl @Autowired constructor(
      * @param totalSeriousRiskCount 总严重风险数
      * @param totalNormalRiskCount 总一般风险数
      */
-    private fun calCodeSecurityScore(totalSeriousRiskCount: Int, totalNormalRiskCount: Int): Double {
+    private fun calCodeSecurityScore(
+        totalSeriousRiskCount: Int,
+        totalNormalRiskCount: Int,
+        taskId: Long,
+        buildId: String
+    ): Double {
         val score = if (totalSeriousRiskCount > 0) {
             0
         } else if (totalSeriousRiskCount == 0 && totalNormalRiskCount > 0) {
@@ -591,15 +633,15 @@ class CodeScoringServiceImpl @Autowired constructor(
             100
         } else {
             logger.error(
-                "error CodeSecurity defect num, serious: {} | normal {}",
-                totalSeriousRiskCount,
-                totalNormalRiskCount
+                "calCodeSecurityScore zero defect count, task id: $taskId, build id: $buildId, " +
+                        "serious: $totalSeriousRiskCount, normal: $totalNormalRiskCount",
             )
             -1
         }
+
         return BigDecimal(score.toDouble())
-            .setScale(2, BigDecimal.ROUND_HALF_UP)
-            .toDouble()
+                .setScale(2, BigDecimal.ROUND_HALF_UP)
+                .toDouble()
     }
 
     /**
@@ -681,8 +723,8 @@ class CodeScoringServiceImpl @Autowired constructor(
             (60 - 40 * (thousandCoverityNormalWaringCount - 0.035) / (0.035 - 0))
         }
         return BigDecimal(0.8 * coveritySeriousWaringScore + 0.2 * coverityNormalWaringScore)
-            .setScale(2, BigDecimal.ROUND_HALF_UP)
-            .toDouble()
+                .setScale(2, BigDecimal.ROUND_HALF_UP)
+                .toDouble()
     }
 
     /**
@@ -706,8 +748,8 @@ class CodeScoringServiceImpl @Autowired constructor(
             60 - 40 * (thousandCcnCount - 3) / (3 - 0)
         }
         return BigDecimal(ccnScore)
-            .setScale(2, BigDecimal.ROUND_HALF_UP)
-            .toDouble()
+                .setScale(2, BigDecimal.ROUND_HALF_UP)
+                .toDouble()
     }
 
     /**
@@ -730,7 +772,8 @@ class CodeScoringServiceImpl @Autowired constructor(
      * 获取特定构建的告警信息
      */
     fun getLintStatInfo(taskId: Long, toolName: String, buildId: String): GrayTaskStatVO? {
-        val lintStatisticEntity = lintStatisticRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId)
+        val lintStatisticEntity =
+            lintStatisticRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId)
         return if (null == lintStatisticEntity || lintStatisticEntity.entityId.isNullOrBlank()) {
             null
         } else {

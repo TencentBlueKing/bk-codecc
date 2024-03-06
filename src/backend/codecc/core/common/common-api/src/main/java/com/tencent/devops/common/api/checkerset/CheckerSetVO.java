@@ -21,8 +21,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ApiModel("规则集视图")
-public class CheckerSetVO extends CommonVO
-{
+public class CheckerSetVO extends CommonVO {
     /**
      * 规则集ID
      */
@@ -197,9 +196,8 @@ public class CheckerSetVO extends CommonVO
     private String checkerSetSource;
 
     /**
-     * --------------已废弃-----------工具名称
+     * 工具名称，记录当前规则集含有灰度 (测试)状态的工具规则，生产版本会为null
      */
-    @JsonIgnore
     private String toolName;
 
     /**

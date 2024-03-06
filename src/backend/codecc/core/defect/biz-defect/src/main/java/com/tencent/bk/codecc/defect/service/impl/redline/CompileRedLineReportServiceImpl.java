@@ -4,7 +4,7 @@ import static com.tencent.bk.codecc.defect.constant.DefectConstants.FORBIDDEN_CO
 import static com.tencent.bk.codecc.defect.constant.DefectConstants.PASS_COUNT;
 
 import com.google.common.collect.Maps;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerPackageRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerPackageRepository;
 import com.tencent.bk.codecc.defect.model.CheckerPackageEntity;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.defect.model.redline.RedLineExtraParams;

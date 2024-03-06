@@ -96,6 +96,7 @@ class KubernetesClient constructor(
     }
 
     override fun getServiceNodeNum(serviceName: String): Int {
-        return discoveryClient.getInstances(serviceName).size
+        // namespace隔离
+        return discoveryClient.getInstances(getServiceNameWithPrefix(serviceName)).size
     }
 }

@@ -2,9 +2,11 @@ package com.tencent.bk.codecc.defect.resources;
 
 import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.api.UserCheckerSetRestResource;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerSetRepository;
+import com.tencent.bk.codecc.defect.auth.CheckerSetExtAuth;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetRepository;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
-import com.tencent.bk.codecc.defect.service.IV3CheckerSetBizService;
+import com.tencent.bk.codecc.defect.service.ICheckerSetManageBizService;
+import com.tencent.bk.codecc.defect.service.ICheckerSetQueryBizService;
 import com.tencent.bk.codecc.defect.utils.ParamUtils;
 import com.tencent.bk.codecc.defect.vo.CheckerCommonCountVO;
 import com.tencent.bk.codecc.defect.vo.CheckerSetListQueryReq;
@@ -26,19 +28,19 @@ import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
+import com.tencent.devops.common.auth.api.pojo.external.ResourceType;
+import com.tencent.devops.common.auth.api.pojo.external.UserGroupRole;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.web.RestResource;
+import com.tencent.devops.common.web.security.AuthMethod;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import com.tencent.devops.common.web.security.AuthMethod;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -57,7 +59,9 @@ import org.springframework.data.util.Pair;
 public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResource {
 
     @Autowired
-    private IV3CheckerSetBizService checkerSetBizService;
+    private ICheckerSetManageBizService checkerSetManageBizService;
+    @Autowired
+    private ICheckerSetQueryBizService checkerSetQueryBizService;
 
     @Autowired
     private AuthExPermissionApi authExPermissionApi;
@@ -67,35 +71,28 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
 
     @Override
     public Result<CheckerSetParamsVO> getParams(String projectId) {
-        return new Result<>(checkerSetBizService.getParams(projectId));
+        return new Result<>(checkerSetQueryBizService.getParams(projectId));
     }
 
     @Override
+    @AuthMethod(resourceType = ResourceType.PROJECT, permission = {CodeCCAuthAction.RULESET_CREATE})
     public Result<Boolean> createCheckerSet(String user, String projectId,
             CreateCheckerSetReqVO createCheckerSetReqVO) {
-        if (!authExPermissionApi.validateUserRulesetPermission(projectId, user,
-                CodeCCAuthAction.RULESET_CREATE.getActionName())) {
-            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{projectId});
-        }
-        checkerSetBizService.createCheckerSet(user, projectId, createCheckerSetReqVO);
+        checkerSetManageBizService.createCheckerSet(user, projectId, createCheckerSetReqVO);
         return new Result<>(true);
     }
 
+    /**
+     * 此处更新规则集鉴权方式：是项目manager or 是规则集创建者
+     * 因此permission传空
+     */
     @Override
-    public Result<Boolean> updateCheckersOfSet(
-            String checkerSetId, String projectId, String user,
+    @AuthMethod(resourceType = ResourceType.PROJECT, permission = {}, roles = UserGroupRole.MANAGER,
+            extPassClassName = CheckerSetExtAuth.class)
+    public Result<Boolean> updateCheckersOfSet(String checkerSetId, String projectId, String user,
             UpdateCheckersOfSetReqVO updateCheckersOfSetReq
     ) {
-        // 获取最新版本的
         List<CheckerSetEntity> checkerSetEntities = checkerSetRepository.findByCheckerSetId(checkerSetId);
-        CheckerSetEntity latestVersion = checkerSetEntities.stream().filter(it -> it.getVersion() != null)
-                .max(Comparator.comparing(CheckerSetEntity::getVersion)).orElse(null);
-        // 有权限 或者 是规则集的创建者
-        if (!authExPermissionApi.validateUserRulesetPermission(projectId, user,
-                CodeCCAuthAction.RULESET_CREATE.getActionName())
-                && (latestVersion == null || !latestVersion.getCreator().equals(user))) {
-            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{projectId});
-        }
         if (CollectionUtils.isNotEmpty(checkerSetEntities)) {
             if (!checkerSetEntities.get(0).getProjectId().equals(projectId)) {
                 String errMsg = "只可以更新本项目内的规则集！";
@@ -103,22 +100,24 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
                 throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg}, null);
             }
         }
-        checkerSetBizService.updateCheckersOfSet(checkerSetId, user, updateCheckersOfSetReq.getCheckerProps(), null);
-        return new Result<>(true);
+        checkerSetManageBizService.updateCheckersOfSet(checkerSetId, user, updateCheckersOfSetReq.getCheckerProps(),
+                null);
+        return Result.success(true);
     }
 
     @Override
     public Result<Boolean> updateCheckersOfSetForAll(String user, UpdateAllCheckerReq updateAllCheckerReq) {
-        return new Result<>(checkerSetBizService.updateCheckersOfSetForAll(user, updateAllCheckerReq));
+        return new Result<>(checkerSetManageBizService.updateCheckersOfSetForAll(user, updateAllCheckerReq));
     }
 
     @Override
     @I18NResponse
+    @AuthMethod(resourceType = ResourceType.PROJECT, permission = {CodeCCAuthAction.RULESET_LIST})
     public Result<List<CheckerSetVO>> getCheckerSets(CheckerSetListQueryReq queryCheckerSetReq) {
         if (queryCheckerSetReq.getTaskId() != null) {
-            return new Result<>(checkerSetBizService.getCheckerSetsOfTask(queryCheckerSetReq));
+            return new Result<>(checkerSetQueryBizService.getCheckerSetsOfTask(queryCheckerSetReq));
         } else {
-            return new Result<>(checkerSetBizService.getCheckerSetsOfProject(queryCheckerSetReq));
+            return new Result<>(checkerSetQueryBizService.getCheckerSetsOfProject(queryCheckerSetReq));
         }
     }
 
@@ -165,7 +164,7 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
                 .distinct()
                 .collect(Collectors.toList());
 
-        List<CheckerSetVO> checkerSets = checkerSetBizService.getTaskCheckerSets(
+        List<CheckerSetVO> checkerSets = checkerSetQueryBizService.getTaskCheckerSets(
                 projectId,
                 taskIdList,
                 toolNameList
@@ -182,9 +181,9 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
     @I18NResponse
     public Result<Page<CheckerSetVO>> getCheckerSetsPageable(CheckerSetListQueryReq queryCheckerSetReq) {
         if (queryCheckerSetReq.getTaskId() != null) {
-            return new Result<>(checkerSetBizService.getCheckerSetsOfTaskPage(queryCheckerSetReq));
+            return new Result<>(checkerSetQueryBizService.getCheckerSetsOfTaskPage(queryCheckerSetReq));
         } else {
-            return new Result<>(checkerSetBizService.getCheckerSetsOfProjectPage(queryCheckerSetReq));
+            return new Result<>(checkerSetQueryBizService.getCheckerSetsOfProjectPage(queryCheckerSetReq));
         }
     }
 
@@ -192,44 +191,43 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
     @I18NResponse
     public Result<Page<CheckerSetVO>> getOtherCheckerSets(String projectId,
             OtherCheckerSetListQueryReq queryCheckerSetReq) {
-        return new Result<>(checkerSetBizService.getOtherCheckerSets(projectId, queryCheckerSetReq));
+        return new Result<>(checkerSetQueryBizService.getOtherCheckerSets(projectId, queryCheckerSetReq));
     }
 
     @Override
     public Result<List<CheckerCommonCountVO>> queryCheckerSetCountList(CheckerSetListQueryReq checkerSetListQueryReq) {
-        return new Result<>(checkerSetBizService.queryCheckerSetCountList(checkerSetListQueryReq));
+        return new Result<>(checkerSetQueryBizService.queryCheckerSetCountList(checkerSetListQueryReq));
     }
 
     @Override
     @I18NResponse
     public Result<CheckerSetVO> getCheckerSetDetail(String checkerSetId, Integer version) {
-        return new Result<>(checkerSetBizService.getCheckerSetDetail(checkerSetId, version));
+        return new Result<>(checkerSetQueryBizService.getCheckerSetDetail(checkerSetId, version));
     }
 
     @Override
     public Result<Boolean> updateCheckerSetBaseInfo(String checkerSetId, String projectId,
             V3UpdateCheckerSetReqVO updateCheckerSetReq) {
-        checkerSetBizService.updateCheckerSetBaseInfo(checkerSetId, projectId, updateCheckerSetReq);
+        checkerSetManageBizService.updateCheckerSetBaseInfo(checkerSetId, projectId, updateCheckerSetReq);
         return new Result<>(true);
     }
 
+    /**
+     * 此处更新规则集鉴权方式：是项目manager or 是拥有任务setting权限
+     */
     @Override
-    @AuthMethod(permission = {CodeCCAuthAction.ANALYZE})
+    @AuthMethod(permission = {CodeCCAuthAction.SETTING}, roles = UserGroupRole.MANAGER)
     public Result<Boolean> setRelationships(String checkerSetId, String user,
             CheckerSetRelationshipVO checkerSetRelationshipVO) {
-        checkerSetBizService.setRelationships(checkerSetId, user, checkerSetRelationshipVO);
+        checkerSetManageBizService.setRelationships(checkerSetId, user, checkerSetRelationshipVO);
         return new Result<>(true);
     }
 
     @Override
-    public Result<Boolean> setRelationshipsOnce(
-            String user,
-            String projectId,
-            long taskId,
-            String toolName
-    ) {
+    public Result<Boolean> setRelationshipsOnce(String user, String projectId, long taskId, String toolName) {
         try {
-            Pair<Boolean, String> pair = checkerSetBizService.setRelationshipsOnce(user, projectId, taskId, toolName);
+            Pair<Boolean, String> pair = checkerSetManageBizService.setRelationshipsOnce(user, projectId, taskId,
+                    toolName);
             boolean success = Boolean.TRUE.equals(pair.getFirst());
             String errorMsg = pair.getSecond();
             if (success) {
@@ -247,13 +245,13 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
     @Override
     public Result<Boolean> management(String user, String checkerSetId,
             CheckerSetManagementReqVO checkerSetManagementReqVO) {
-        checkerSetBizService.management(user, checkerSetId, checkerSetManagementReqVO);
+        checkerSetManageBizService.management(user, checkerSetId, checkerSetManagementReqVO);
         return new Result<>(true);
     }
 
     @Override
     public Result<Map<String, List<CheckerSetVO>>> getCheckerSetListByCategory(String projectId) {
-        return new Result<>(checkerSetBizService.getAvailableCheckerSetsOfProject(projectId));
+        return new Result<>(checkerSetQueryBizService.getAvailableCheckerSetsOfProject(projectId));
     }
 
     @Override
@@ -282,6 +280,6 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
 
     @Override
     public Result<List<CheckerSetVO>> getCheckerSetsForPreCI() {
-        return new Result<>(checkerSetBizService.queryCheckerDetailForPreCI());
+        return new Result<>(checkerSetQueryBizService.queryCheckerDetailForPreCI());
     }
 }

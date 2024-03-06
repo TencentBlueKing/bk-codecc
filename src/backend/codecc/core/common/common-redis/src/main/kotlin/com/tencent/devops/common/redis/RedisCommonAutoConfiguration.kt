@@ -39,6 +39,7 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.data.redis.serializer.GenericToStringSerializer
+import org.springframework.data.redis.serializer.StringRedisSerializer
 import java.net.UnknownHostException
 
 @Configuration
@@ -52,8 +53,8 @@ class RedisCommonAutoConfiguration {
     fun redisTemplate(@Autowired jedisConnectionFactory: JedisConnectionFactory): RedisTemplate<String, String> {
         val redisTemplate = RedisTemplate<String, String>()
         redisTemplate.setConnectionFactory(jedisConnectionFactory)
-        redisTemplate.setDefaultSerializer(GenericToStringSerializer(String::class.java))
-        redisTemplate.keySerializer = GenericToStringSerializer(String::class.java)
+        redisTemplate.setDefaultSerializer(StringRedisSerializer())
+        redisTemplate.keySerializer = StringRedisSerializer()
         GenericToStringSerializer(String::class.java).also { redisTemplate.valueSerializer = it }
         return redisTemplate
     }

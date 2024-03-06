@@ -26,14 +26,22 @@
 
 package com.tencent.bk.codecc.defect.service.impl;
 
+import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_PREFIX_OPERATION_TYPE;
+import static com.tencent.devops.common.constant.RedisKeyConstants.PREFIX_OPERATION_HISTORY_MSG;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tencent.bk.codecc.defect.dao.mongorepository.OperationHistoryRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.OperationHistoryRepository;
 import com.tencent.bk.codecc.defect.model.OperationHistoryEntity;
 import com.tencent.bk.codecc.defect.service.OperationHistoryService;
 import com.tencent.bk.codecc.defect.vo.OperationHistoryVO;
 import com.tencent.devops.common.api.pojo.GlobalMessage;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.service.utils.GlobalMessageUtil;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -41,15 +49,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_PREFIX_OPERATION_TYPE;
-import static com.tencent.devops.common.constant.RedisKeyConstants.PREFIX_OPERATION_HISTORY_MSG;
 
 /**
  * 操作记录历史服务实现类
@@ -59,6 +58,7 @@ import static com.tencent.devops.common.constant.RedisKeyConstants.PREFIX_OPERAT
  */
 @Service
 public class OperationHistoryServiceImpl implements OperationHistoryService {
+
     private static final Logger logger = LoggerFactory.getLogger(OperationHistoryServiceImpl.class);
 
     @Autowired
@@ -79,7 +79,8 @@ public class OperationHistoryServiceImpl implements OperationHistoryService {
         Map<String, GlobalMessage> operMsgDetail = globalMessageUtil.getGlobalByList(convertionKey(funcId));
 
         //2.获取操作类型的国际化信息
-        Map<String, GlobalMessage> operTypeDetailMap = globalMessageUtil.getGlobalMessageMap(GLOBAL_PREFIX_OPERATION_TYPE);
+        Map<String, GlobalMessage> operTypeDetailMap = globalMessageUtil.getGlobalMessageMap(
+                GLOBAL_PREFIX_OPERATION_TYPE);
         String locale = globalMessageUtil.getLocalLan();
 
         List<OperationHistoryEntity> operationHistoryEntityList =
@@ -97,24 +98,25 @@ public class OperationHistoryServiceImpl implements OperationHistoryService {
             return new ArrayList<>();
         }
         return operationHistoryEntityList.stream()
-            .map(operationHistoryEntity -> {
-                OperationHistoryVO operationHistoryVO = new OperationHistoryVO();
-                operationHistoryVO.setTaskId(operationHistoryEntity.getTaskId());
-                operationHistoryVO.setFuncId(operationHistoryEntity.getFuncId());
-                operationHistoryVO.setOperType(operationHistoryEntity.getOperType());
-                operationHistoryVO.setToolName(operationHistoryEntity.getToolName());
-                operationHistoryVO.setOperator(operationHistoryEntity.getOperator());
-                operationHistoryVO.setOperTypeName(globalMessageUtil.getMessageByLocale(
-                    operTypeDetailMap.get(operationHistoryEntity.getOperType()),
-                    locale
-                ));
-                String str = String.format("%s%s", PREFIX_OPERATION_HISTORY_MSG, operationHistoryEntity.getFuncId());
-                operationHistoryVO.setOperMsg(
-                    MessageFormat.format(globalMessageUtil.getMessageByLocale(operMsgDetail.get(str), locale),
-                        (Object[]) operationHistoryEntity.getParamArray()));
-                operationHistoryVO.setTime(operationHistoryEntity.getTime());
-                return operationHistoryVO;
-            }).collect(Collectors.toList());
+                .map(operationHistoryEntity -> {
+                    OperationHistoryVO operationHistoryVO = new OperationHistoryVO();
+                    operationHistoryVO.setTaskId(operationHistoryEntity.getTaskId());
+                    operationHistoryVO.setFuncId(operationHistoryEntity.getFuncId());
+                    operationHistoryVO.setOperType(operationHistoryEntity.getOperType());
+                    operationHistoryVO.setToolName(operationHistoryEntity.getToolName());
+                    operationHistoryVO.setOperator(operationHistoryEntity.getOperator());
+                    operationHistoryVO.setOperTypeName(globalMessageUtil.getMessageByLocale(
+                            operTypeDetailMap.get(operationHistoryEntity.getOperType()),
+                            locale
+                    ));
+                    String str = String.format("%s%s", PREFIX_OPERATION_HISTORY_MSG,
+                            operationHistoryEntity.getFuncId());
+                    operationHistoryVO.setOperMsg(
+                            MessageFormat.format(globalMessageUtil.getMessageByLocale(operMsgDetail.get(str), locale),
+                                    (Object[]) operationHistoryEntity.getParamArray()));
+                    operationHistoryVO.setTime(operationHistoryEntity.getTime());
+                    return operationHistoryVO;
+                }).collect(Collectors.toList());
     }
 
 
@@ -136,8 +138,8 @@ public class OperationHistoryServiceImpl implements OperationHistoryService {
      * 设置codeCC任务用户权限操作记录
      *
      * @param reqVOList 请求参数
-     * @param userId    用户名
-     * @param taskId    任务ID
+     * @param userId 用户名
+     * @param taskId 任务ID
      * @return boolean
      */
     @Override

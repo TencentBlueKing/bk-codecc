@@ -12,36 +12,41 @@
 
 package com.tencent.bk.codecc.defect.service.statistic
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ScanCodeSummaryRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.TaskLogRepository
+import com.tencent.bk.codecc.defect.model.ScanCodeSummaryEntity
 import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity
 import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO
 import com.tencent.devops.common.auth.api.pojo.external.KEY_CREATE_FROM
 import com.tencent.devops.common.auth.api.pojo.external.PREFIX_TASK_INFO
 import com.tencent.devops.common.constant.ComConstants
+import com.tencent.devops.common.constant.ComConstants.ScanStatType
 import com.tencent.devops.common.constant.ComConstants.TOTAL_BLANK
 import com.tencent.devops.common.constant.ComConstants.TOTAL_CODE
 import com.tencent.devops.common.constant.ComConstants.TOTAL_COMMENT
 import com.tencent.devops.common.constant.RedisKeyConstants
+import com.tencent.devops.common.redis.lock.RedisLock
 import com.tencent.devops.common.util.DateTimeUtils
 import org.slf4j.LoggerFactory
-import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
+import java.util.concurrent.TimeUnit
 
 @Component
 class ActiveStatisticService @Autowired constructor(
-        private val rabbitTemplate: RabbitTemplate,
-        private val taskLogRepository: TaskLogRepository,
-        private val thirdPartySystemCaller: ThirdPartySystemCaller,
-        private val redisTemplate: RedisTemplate<String, String>
+    private val taskLogRepository: TaskLogRepository,
+    private val scanCodeSummaryRepository: ScanCodeSummaryRepository,
+    private val thirdPartySystemCaller: ThirdPartySystemCaller,
+    private val redisTemplate: RedisTemplate<String, String>
 ) {
 
     companion object {
         private val logger = LoggerFactory.getLogger(ActiveStatisticService::class.java)
         private val COMMON_TOOLS = mutableListOf(ComConstants.Tool.COVERITY.name, ComConstants.Tool.KLOCWORK.name,
                 ComConstants.Tool.PINPOINT.name)
+        private const val REDIS_LOCK_KEY_PREFIX = "LOCK_KEY"
     }
 
     /**
@@ -107,15 +112,17 @@ class ActiveStatisticService @Autowired constructor(
                 // 记录已统计标记
                 redisTemplate.opsForSet().add(toolBuildIdKey, voBuildId)
 
-                val analyzeFailKey = "${RedisKeyConstants.PREFIX_ANALYZE_FAIL_COUNT}$dateStr:$createFrom:$voToolName"
+                val analyzeFailKey =
+                    "${RedisKeyConstants.PREFIX_ANALYZE_FAIL_COUNT}$dateStr:$createFrom:$voToolName"
                 redisTemplate.opsForList().rightPush(analyzeFailKey, taskId)
 
                 // 记录每天各工具分析失败次数(按是否超快)
                 val analyzeFailToolKey =
-                        "${RedisKeyConstants.PREFIX_ANALYZE_FAIL_TOOL}$dateStr:$createFrom:$scanStatTypeStr"
+                    "${RedisKeyConstants.PREFIX_ANALYZE_FAIL_TOOL}$dateStr:$createFrom:$scanStatTypeStr"
                 redisTemplate.opsForHash<String, String>().increment(analyzeFailToolKey, voToolName, 1)
                 logger.info("analyze fail statistic save.")
             }
+
         }
 
         // 统计分析成功次数 1
@@ -160,7 +167,7 @@ class ActiveStatisticService @Autowired constructor(
     /**
      * 统计代码行
      */
-    fun statCodeLineByCloc(clocStatisticEntity: Collection<CLOCStatisticEntity>) {
+    fun statCodeLineByCloc(clocStatisticEntity: Collection<CLOCStatisticEntity>, scanStatType: ScanStatType) {
         logger.info("active statistic after upload -> size: {}", clocStatisticEntity.size)
         val taskId = clocStatisticEntity.iterator().next().taskId
         var createFrom = redisTemplate.opsForHash<String, String>().get(PREFIX_TASK_INFO + taskId, KEY_CREATE_FROM)
@@ -197,6 +204,57 @@ class ActiveStatisticService @Autowired constructor(
         redisTemplate.opsForHash<String, String>().putAll(key, currentMap)
 
         logger.info("statistic code line finish.")
+
+        scanCodeSummaryStatAndSave(
+            taskId = taskId,
+            scanStatType = scanStatType,
+            clocStatisticEntity = clocStatisticEntity
+        )
     }
 
+    /**
+     * 扫描代码行汇总统计并保存
+     */
+    private fun scanCodeSummaryStatAndSave(
+        taskId: Long,
+        scanStatType: ScanStatType,
+        clocStatisticEntity: Collection<CLOCStatisticEntity>
+    ) {
+        val buildId = clocStatisticEntity.first().buildId
+        val taskDetailVO = thirdPartySystemCaller.getTaskInfoWithoutToolsByTaskId(taskId)
+
+        val lock = RedisLock(redisTemplate, "$REDIS_LOCK_KEY_PREFIX:$taskId:$buildId", TimeUnit.SECONDS.toSeconds(3))
+        try {
+            // 集群只消费1次，锁期间的后来者当重复直接丢弃
+            if (!lock.tryLock()) {
+                logger.info("scanCodeSummaryStatAndSave, get lock fail, drop this record: $taskId, $buildId")
+                return
+            }
+
+            val totalBlank = clocStatisticEntity.sumOf { if (it.sumBlank > 0) it.sumBlank else 0 }
+            val totalComment = clocStatisticEntity.sumOf { if (it.sumComment > 0) it.sumComment else 0 }
+            val totalCode = clocStatisticEntity.sumOf { if (it.sumCode > 0) it.sumCode else 0 }
+            val entity = ScanCodeSummaryEntity().apply {
+                this.taskId = taskId
+                this.buildId = buildId
+                this.scanType = scanStatType.value
+                this.totalBlank = totalBlank
+                this.totalComment = totalComment
+                this.totalCode = totalCode
+                this.totalLine = totalBlank + totalComment + totalCode
+                this.scanFinishTime = clocStatisticEntity.first().updatedDate
+                this.projectId = taskDetailVO.projectId
+                this.bgId = taskDetailVO.bgId
+                this.createFrom = taskDetailVO.createFrom
+            }.also { it.applyAuditInfoOnCreate() }
+
+            scanCodeSummaryRepository.save(entity)
+        } catch (t: Throwable) {
+            logger.error("summary code line error: $taskId, $buildId", t)
+        } finally {
+            if (lock.isLocked()) {
+                lock.unlock()
+            }
+        }
+    }
 }

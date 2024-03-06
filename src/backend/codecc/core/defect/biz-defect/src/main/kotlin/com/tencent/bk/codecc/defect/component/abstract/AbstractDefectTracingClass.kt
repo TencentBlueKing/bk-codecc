@@ -65,7 +65,7 @@ abstract class AbstractDefectTracingClass<T : CommonEntity>(
             resultHandlerMap.forEach { (t, u) ->
                 try {
                     logger.info("for each return value")
-                    if (u.get()) {
+                    if (u.get() == true) {
                         outputDefectList.addAll(getFileContent(t) ?: mutableListOf())
                         logger.info("return value is true")
                     } else {
