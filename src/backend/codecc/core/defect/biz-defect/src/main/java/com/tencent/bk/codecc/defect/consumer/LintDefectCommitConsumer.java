@@ -12,17 +12,19 @@
 
 package com.tencent.bk.codecc.defect.consumer;
 
+import static com.tencent.devops.common.constant.CommonMessageCode.RECORD_NOT_EXITS;
+
 import com.alibaba.fastjson.JSONReader;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.component.NewLintDefectTracingComponent;
 import com.tencent.bk.codecc.defect.constant.DefectMessageCode;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.FileDefectGatherRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.FileDefectGatherDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.FileDefectGatherRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.FileDefectGatherDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.FileDefectGatherEntity;
@@ -36,7 +38,7 @@ import com.tencent.bk.codecc.defect.model.redline.RedLineExtraParams;
 import com.tencent.bk.codecc.defect.pojo.DefectClusterDTO;
 import com.tencent.bk.codecc.defect.pojo.statistic.DefectStatisticModel;
 import com.tencent.bk.codecc.defect.service.BuildSnapshotService;
-import com.tencent.bk.codecc.defect.service.IV3CheckerSetBizService;
+import com.tencent.bk.codecc.defect.service.ICheckerSetQueryBizService;
 import com.tencent.bk.codecc.defect.service.git.GitRepoApiService;
 import com.tencent.bk.codecc.defect.service.impl.redline.LintRedLineReportServiceImpl;
 import com.tencent.bk.codecc.defect.service.statistic.LintDefectStatisticServiceImpl;
@@ -50,6 +52,7 @@ import com.tencent.devops.common.api.checkerset.CheckerPropVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.ScanType;
 import com.tencent.devops.common.constant.ComConstants.ToolPattern;
 import com.tencent.devops.common.redis.lock.RedisLock;
 import com.tencent.devops.common.service.BaseDataCacheService;
@@ -66,6 +69,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -112,7 +116,7 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
     @Autowired
     private LintDefectStatisticServiceImpl lintDefectStatisticServiceImpl;
     @Autowired
-    private IV3CheckerSetBizService iv3CheckerSetBizService;
+    private ICheckerSetQueryBizService checkerSetQueryBizService;
     @Autowired
     private LintRedLineReportServiceImpl lintRedLineReportServiceImpl;
     @Autowired
@@ -134,6 +138,9 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
         TaskDetailVO taskVO = thirdPartySystemCaller.getTaskInfo(streamName);
         String createFrom = taskVO.getCreateFrom();
         BuildEntity buildEntity = buildService.getBuildEntityByBuildId(buildId);
+        if (buildEntity == null) {
+            throw new CodeCCException(RECORD_NOT_EXITS, new String[]{"buildEntity", buildId});
+        }
 
         // 判断本次是增量还是全量扫描
         ToolBuildStackEntity toolBuildStackEntity =
@@ -157,7 +164,7 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
 
         // 1.1 获取规则列表
         // 获取当前任务规则集列表
-        List<CheckerSetVO> checkerSetsOfTask = iv3CheckerSetBizService.getTaskCheckerSets(taskVO.getProjectId(),
+        List<CheckerSetVO> checkerSetsOfTask = checkerSetQueryBizService.getTaskCheckerSets(taskVO.getProjectId(),
                 taskId,
                 toolName,
                 "",
@@ -187,8 +194,9 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
         beginTime = System.currentTimeMillis();
 
         RedisLock locker = null;
-        List<LintDefectV2Entity> allNewDefectList = Lists.newArrayList();
-        Set<String> currentFileSet = Sets.newHashSet();
+        List<LintDefectV2Entity> allNewDefectList;
+        List<LintDefectV2Entity> allIgnoreDefectList;
+        Set<String> currentFileSet;
         long tryBeginTime = System.currentTimeMillis();
 
         try {
@@ -251,6 +259,21 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
             );
             log.info("update lint file list cost: {}, {}, {}, {}",
                     System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
+
+            // 查询所有的已忽略告警-存量告警
+            beginTime = System.currentTimeMillis();
+            Integer historyIgnoreType = baseDataCacheService.getHistoryIgnoreType();
+            allIgnoreDefectList = lintDefectV2Dao.findIgnoreDefect(
+                    taskId,
+                    toolName,
+                    buildId,
+                    historyIgnoreType,
+                    isFilterPathPath(taskVO)
+            );
+            log.info("get ignore defect list cost: {}, {}, {}, {}",
+                    System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
+
+
         } finally {
             if (locker != null && locker.isLocked()) {
                 locker.unlock();
@@ -267,7 +290,7 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
                 ? Lists.newArrayList()
                 : allNewDefectList.stream()
                         .filter(x -> buildNum.equals(x.getCreateBuildNumber()))
-                        .map(y -> y.getChecker())
+                        .map(LintDefectV2Entity::getChecker)
                         .collect(Collectors.toList());
 
         // 4.统计本次扫描的告警
@@ -282,20 +305,13 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
                         allNewDefectList,
                         null,
                         null,
-                        newCountCheckerList
+                        newCountCheckerList,
+                        false
                 )
         );
         log.info("statistic cost: {}, {}, {}, {}", System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
 
         // 5.更新构建告警快照
-        // 查询所有的已忽略告警
-        Integer historyIgnoreType = baseDataCacheService.getHistoryIgnoreType();
-        List<LintDefectV2Entity> allIgnoreDefectList = lintDefectV2Dao.findIgnoreDefect(
-                taskId,
-                toolName,
-                buildId,
-                historyIgnoreType
-        );
         beginTime = System.currentTimeMillis();
         buildSnapshotService.saveLintBuildDefect(taskId, toolName, buildEntity, allNewDefectList, allIgnoreDefectList);
         log.info("saveBuildDefect cost: {}, {}, {}, {}", System.currentTimeMillis() - beginTime, taskId, toolName,
@@ -316,6 +332,19 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
                 System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
 
         return true;
+    }
+
+    /**
+     * MR 等Diff模式 忽略只关注相关的文件
+     *
+     * @param taskVO
+     * @return
+     */
+    private boolean isFilterPathPath(TaskDetailVO taskVO) {
+        return taskVO != null && taskVO.getScanType() != null
+                && (taskVO.getScanType().equals(ScanType.DIFF_MODE.code)
+                || taskVO.getScanType().equals(ScanType.FILE_DIFF_MODE.code)
+                || taskVO.getScanType().equals(ScanType.BRANCH_DIFF_MODE.code));
     }
 
     /**
@@ -901,18 +930,21 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
         defectEntity.setRelPath(fileLineAuthorInfo.getFileRelPath());
         defectEntity.setBranch(fileLineAuthorInfo.getBranch());
         if (MapUtils.isNotEmpty(codeRepoIdMap)) {
-            //如果是svn用rootUrl关联
-            if (ComConstants.CodeHostingType.SVN.name().equalsIgnoreCase(fileLineAuthorInfo.getScmType())) {
-                if (codeRepoIdMap.get(fileLineAuthorInfo.getRootUrl()) != null) {
-                    defectEntity.setRepoId(codeRepoIdMap.get(fileLineAuthorInfo.getRootUrl()).getRepoId());
-                }
-            } else { //其他用url关联
-                if (codeRepoIdMap.get(defectEntity.getUrl()) != null) {
-                    RepoSubModuleVO repoSubModuleVO = codeRepoIdMap.get(defectEntity.getUrl());
-                    defectEntity.setRepoId(repoSubModuleVO.getRepoId());
-                    if (StringUtils.isNotEmpty(repoSubModuleVO.getSubModule())) {
-                        defectEntity.setSubModule(repoSubModuleVO.getSubModule());
-                    }
+            RepoSubModuleVO repoSubModuleVO = null;
+            String url = null;
+            if (ComConstants.CodeHostingType.SVN.name().equalsIgnoreCase(fileLineAuthorInfo.getScmType())
+                    || ComConstants.CodeHostingType.PERFORCE.name().equalsIgnoreCase(fileLineAuthorInfo.getScmType())) {
+                //如果是svn或perforce用rootUrl关联
+                url = fileLineAuthorInfo.getRootUrl();
+            } else {
+                url = defectEntity.getUrl();
+            }
+            repoSubModuleVO = codeRepoIdMap.get(url);
+
+            if (repoSubModuleVO != null) {
+                defectEntity.setRepoId(repoSubModuleVO.getRepoId());
+                if (StringUtils.isNotEmpty(repoSubModuleVO.getSubModule())) {
+                    defectEntity.setSubModule(repoSubModuleVO.getSubModule());
                 }
             }
         }
@@ -961,11 +993,11 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
 
     @Override
     protected String getRecommitMQExchange(CommitDefectVO vo) {
-        return ConstantsKt.PREFIX_EXCHANGE_DEFECT_COMMIT + ToolPattern.LINT.name().toLowerCase();
+        return ConstantsKt.PREFIX_EXCHANGE_DEFECT_COMMIT + ToolPattern.LINT.name().toLowerCase(Locale.ENGLISH);
     }
 
     @Override
     protected String getRecommitMQRoutingKey(CommitDefectVO vo) {
-        return ConstantsKt.PREFIX_ROUTE_DEFECT_COMMIT + ToolPattern.LINT.name().toLowerCase();
+        return ConstantsKt.PREFIX_ROUTE_DEFECT_COMMIT + ToolPattern.LINT.name().toLowerCase(Locale.ENGLISH);
     }
 }

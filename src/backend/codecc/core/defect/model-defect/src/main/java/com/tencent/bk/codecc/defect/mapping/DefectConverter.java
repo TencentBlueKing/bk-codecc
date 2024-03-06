@@ -42,7 +42,7 @@ public class DefectConverter {
         lint.setDisplayType(common.getDisplayType());
         lint.setExcludeTime(common.getExcludeTime());
         // new: ext_bug_id
-        lint.setExtBugId(common.getExtBugid());
+        lint.setExtBugId(common.getExtBugId());
         lint.setFileMd5(common.getFileMd5());
         lint.setFileName(common.getFileName());
         // file_path_name == file_path
@@ -126,7 +126,7 @@ public class DefectConverter {
         common.setDisplayCategory(lint.getDisplayCategory());
         common.setDisplayType(lint.getDisplayType());
         common.setExcludeTime(Optional.ofNullable(lint.getExcludeTime()).orElse(0L));
-        common.setExtBugid(lint.getExtBugId());
+        common.setExtBugId(lint.getExtBugId());
         common.setFileMd5(lint.getFileMd5());
         common.setFileName(lint.getFileName());
         common.setFilePath(lint.getFilePath());

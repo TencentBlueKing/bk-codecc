@@ -13,13 +13,7 @@ dependencies {
     api(group = "com.tencent.bk.devops.ci.process", name = "api-process"){
         isChanging = true
     }
-    api(group= "com.tencent.bk.devops.ci.repository", name = "api-repository"){
-        isChanging = true
-    }
-    api(group = "com.tencent.bk.devops.ci.plugin", name="api-plugin"){
-        isChanging = true
-    }
-    api(group = "com.tencent.bk.devops.ci.plugin", name="api-codecc"){
-        isChanging = true
-    }
+//    api(group = "com.tencent.bk.devops.ci.plugin", name="api-codecc"){
+//        isChanging = true
+//    }
 }

@@ -19,14 +19,16 @@ include("core:common:common-auth:common-auth-api")
 include("core:common:common-auth:common-auth-mock")
 include("core:common:common-auth:common-auth-v3")
 include("core:common:common-auth:common-auth-github")
-include("core:common:common-auth:common-auth-rbac")
 include("core:common:common-auth:common-auth-op")
+include("core:common:common-auth:common-auth-rbac")
 include("core:common:common-redis")
 include("core:common:common-code-generator")
-include( "core:common:common-storage")
-include( "core:common:common-storage:common-storage-core")
-include( "core:common:common-storage:common-storage-nfs")
-include( "core:common:common-storage:common-storage-bkrepo")
+include("core:common:common-storage")
+include("core:common:common-storage:common-storage-core")
+include("core:common:common-storage:common-storage-local")
+include("core:common:common-storage:common-storage-nfs")
+include("core:common:common-storage:common-storage-bkrepo")
+include("core:common:common-storage:common-storage-cos")
 
 include("core:defect")
 include("core:defect:api-defect")
@@ -35,6 +37,7 @@ include("core:defect:biz-defect-migration")
 include("core:defect:model-defect")
 include("core:defect:boot-defect")
 include("core:defect:biz-defect-base")
+include("core:defect:biz-defect-bkcheck")
 
 include("core:task")
 include("core:task:api-task")
@@ -68,9 +71,18 @@ include("core:schedule:model-schedule")
 include("core:schedule:biz-schedule")
 include("core:schedule:boot-schedule")
 
-include("core:scanschedule")
-include("core:scanschedule:api-scanschedule")
-include("core:scanschedule:biz-scanschedule")
-include("core:scanschedule:boot-scanschedule")
-include("core:scanschedule:model-scanschedule")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

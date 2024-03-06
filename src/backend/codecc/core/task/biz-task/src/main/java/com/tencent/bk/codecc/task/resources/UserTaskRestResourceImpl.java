@@ -44,6 +44,7 @@ import com.tencent.bk.codecc.task.vo.ListTaskNameCnResponse;
 import com.tencent.bk.codecc.task.vo.ListTaskToolDimensionRequest;
 import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.bk.codecc.task.vo.NotifyCustomVO;
+import com.tencent.bk.codecc.task.vo.PipelineBasicInfoVO;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
 import com.tencent.bk.codecc.task.vo.TaskCodeLibraryVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
@@ -62,17 +63,18 @@ import com.tencent.devops.common.api.RtxNotifyVO;
 import com.tencent.devops.common.api.annotation.I18NResponse;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
+import com.tencent.devops.common.auth.api.pojo.external.ResourceType;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.web.RestResource;
 import com.tencent.devops.common.web.condition.CommunityCondition;
 import com.tencent.devops.common.web.security.AuthMethod;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Conditional;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 任务清单资源实现
@@ -100,7 +102,9 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
     private Client client;
 
     @Override
-    public Result<TaskListVO> getTaskList(String projectId, String user, TaskSortType taskSortType, TaskListReqVO taskListReqVO) {
+    @AuthMethod(permission = {CodeCCAuthAction.LIST})
+    public Result<TaskListVO> getTaskList(String projectId, String user, TaskSortType taskSortType,
+            TaskListReqVO taskListReqVO) {
         return new Result<>(taskService.getTaskList(projectId, user, taskSortType, taskListReqVO));
     }
 
@@ -149,6 +153,7 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
 
 
     @Override
+    @AuthMethod(resourceType = ResourceType.PROJECT, permission = {CodeCCAuthAction.CREATE})
     public Result<TaskIdVO> registerDevopsTask(TaskDetailVO taskDetailVO, String projectId, String userName) {
         taskDetailVO.setProjectId(projectId);
         return new Result<>(taskRegisterService.registerTask(taskDetailVO, userName));
@@ -200,11 +205,22 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
         return new Result<>(taskService.getTaskStatus(taskId));
     }
 
-
     @Override
     @AuthMethod(permission = {CodeCCAuthAction.TASK_MANAGE})
     public Result<Boolean> stopTask(Long taskId, String disabledReason, String userName) {
         return new Result<>(taskService.stopTask(taskId, disabledReason, userName));
+    }
+
+    @Override
+    @AuthMethod(permission = {CodeCCAuthAction.TASK_MANAGE})
+    public Result<Boolean> deleteTask(String projectId, Long taskId, String userName) {
+        return new Result<>(taskService.deleteTask(projectId, taskId, userName));
+    }
+
+    @Override
+    public Result<List<PipelineBasicInfoVO>> getRelatedPipelinesByTaskId(String projectId, Long taskId,
+            String userName) {
+        return new Result<>(taskService.getRelatedPipelinesByTaskId(projectId, taskId, userName));
     }
 
     @Override

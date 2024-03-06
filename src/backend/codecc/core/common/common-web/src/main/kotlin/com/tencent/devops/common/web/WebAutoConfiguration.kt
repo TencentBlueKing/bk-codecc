@@ -27,6 +27,8 @@
 package com.tencent.devops.common.web
 
 import com.tencent.devops.common.codecc.util.JsonUtil
+import com.tencent.devops.common.web.actuator.LivenessIndicator
+import com.tencent.devops.common.web.actuator.ReadinessIndicator
 import com.tencent.devops.common.web.filter.BuildIdHeaderCacheEnterFilter
 import com.tencent.devops.common.web.filter.BuildIdHeaderCacheExitFilter
 import com.tencent.devops.common.web.filter.TraceIdRequestFilter
@@ -38,6 +40,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureOrder
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
 import org.springframework.boot.autoconfigure.jersey.JerseyAutoConfiguration
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration
+import org.springframework.boot.availability.ApplicationAvailability
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -88,4 +91,15 @@ class WebAutoConfiguration @Autowired constructor(private val profile: com.tence
 
     @Bean(name = ["buildIdHeaderCacheEnterFilter"])
     fun buildIdHeaderCacheEnterFilter() = BuildIdHeaderCacheEnterFilter()
+
+    /**
+     * 健康检查
+     */
+    @Bean(name = ["livenessIndicator"])
+    fun livenessIndicator(@Autowired applicationAvailability: ApplicationAvailability) =
+        LivenessIndicator(applicationAvailability)
+
+    @Bean(name = ["readinessIndicator"])
+    fun readinessIndicator(@Autowired applicationAvailability: ApplicationAvailability) =
+        ReadinessIndicator(applicationAvailability)
 }

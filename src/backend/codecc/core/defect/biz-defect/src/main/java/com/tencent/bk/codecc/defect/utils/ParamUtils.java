@@ -8,9 +8,9 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CCNDefectDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CheckerDetailDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.defect.dao.core.mongotemplate.CheckerDetailDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CCNDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.model.BuildDefectSummaryEntity;
 import com.tencent.bk.codecc.defect.service.BuildSnapshotService;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerCategory;
@@ -40,6 +40,8 @@ import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import com.tencent.devops.common.service.utils.SpringContextUtil;
 import com.tencent.devops.common.util.List2StrUtil;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -421,10 +423,12 @@ public class ParamUtils {
             String taskIdsJoinStr = taskIdList.stream().map(Object::toString).collect(Collectors.joining(", "));
             log.error("get tool config fail: {}, {}", taskIdsJoinStr, resp.getMessage());
 
-            return null;
+            return Lists.newArrayList();
         }
 
-        return resp.getData().getTaskBaseList();
+        List<TaskBase> retList = resp.getData().getTaskBaseList();
+
+        return retList == null ? Lists.newArrayList() : retList;
     }
 
     /**
@@ -613,7 +617,9 @@ public class ParamUtils {
             BuildSnapshotService buildSnapshotService = SpringContextUtil.Companion.getBean(BuildSnapshotService.class);
             BuildDefectSummaryEntity summary = buildSnapshotService.getSummary(taskBase.getTaskId(), buildId);
             // 所有配置过的工具与快照当时的交集
-            toolNameList.retainAll(summary.getToolList());
+            if (summary != null && summary.getToolList() != null) {
+                toolNameList.retainAll(summary.getToolList());
+            }
 
             if (CollectionUtils.isNotEmpty(toolNameList)) {
                 retMap.put(taskBase.getTaskId(), toolNameList);
@@ -630,10 +636,48 @@ public class ParamUtils {
 
         Client client = SpringContextUtil.Companion.getBean(Client.class);
         String toolOrderStr = client.get(ServiceToolRestResource.class).findToolOrder().getData();
+        if (StringUtils.isEmpty(toolOrderStr)) {
+            return Comparator.naturalOrder();
+        }
+
         List<String> toolOrderList = Arrays.asList(toolOrderStr.split(ComConstants.STRING_SPLIT));
         TOOL_ORDER_COMPARATOR_CACHE =
                 Comparator.comparing(x -> toolOrderList.contains(x) ? toolOrderList.indexOf(x) : Integer.MAX_VALUE);
 
         return TOOL_ORDER_COMPARATOR_CACHE;
+    }
+
+    /**
+     * 不同阶段的工具，能看到的规则版本不同
+     */
+    public static List<Integer> getCheckerVersionListByToolStatus(int toolStatus) {
+        List<Integer> versionList;
+        // 正式项目  toolIntegratedStatus只能筛选比自己value()更大的version
+        if (toolStatus == ToolIntegratedStatus.P.value()) {
+            versionList = Arrays.asList(
+                    ToolIntegratedStatus.P.value(),
+                    null);
+        } else if (toolStatus == ToolIntegratedStatus.T.value()) {
+            // 测试项目应该可以看到测试、灰度、预发布、发布的规则并进行配置
+            versionList =  Arrays.asList(
+                    ToolIntegratedStatus.T.value(),
+                    ToolIntegratedStatus.G.value(),
+                    ToolIntegratedStatus.PRE_PROD.value(),
+                    ToolIntegratedStatus.P.value(),
+                    null);
+        } else if (toolStatus == ToolIntegratedStatus.G.value()) {
+            // 灰度项目应该可以看到灰度、预发布、发布的规则并进行配置
+            versionList = Arrays.asList(
+                    ToolIntegratedStatus.G.value(),
+                    ToolIntegratedStatus.PRE_PROD.value(),
+                    ToolIntegratedStatus.P.value(),
+                    null);
+        } else {
+            versionList = new ArrayList<>(Sets.newHashSet(
+                    toolStatus,
+                    ToolIntegratedStatus.P.value(),
+                    null));
+        }
+        return versionList;
     }
 }

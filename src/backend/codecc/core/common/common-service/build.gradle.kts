@@ -11,6 +11,7 @@ dependencies {
     api("org.springframework.boot:spring-boot-starter-actuator")
     api("org.springframework.boot:spring-boot-starter-log4j2")
     api("org.springframework.cloud:spring-cloud-commons")
+    api("org.springframework.cloud:spring-cloud-starter-bootstrap")
     api("io.github.openfeign:feign-okhttp")
     api("org.jolokia:jolokia-core")
     api("org.projectlombok:lombok")

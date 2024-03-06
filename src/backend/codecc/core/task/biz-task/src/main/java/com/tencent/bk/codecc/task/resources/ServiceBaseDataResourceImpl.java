@@ -74,8 +74,7 @@ public class ServiceBaseDataResourceImpl implements ServiceBaseDataResource
     }
 
     @Override
-    public Result<List<BaseDataVO>> getInfoByTypeAndCodeList(String paramType, List<String> paramCodeList)
-    {
+    public Result<List<BaseDataVO>> getInfoByTypeAndCodeList(String paramType, List<String> paramCodeList) {
         return new Result<>(baseDataService.findBaseDataInfoByTypeAndCodeList(paramType, paramCodeList));
     }
 

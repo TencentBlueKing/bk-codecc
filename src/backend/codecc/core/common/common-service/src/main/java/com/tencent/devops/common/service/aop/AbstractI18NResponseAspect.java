@@ -32,6 +32,8 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @Slf4j
 public abstract class AbstractI18NResponseAspect {
 
+    private static final Locale DEFAULT_LOCALE = I18NUtils.CN;
+
     /**
      * 反射缓存
      *
@@ -71,7 +73,7 @@ public abstract class AbstractI18NResponseAspect {
 
         if (unwrapReturning instanceof Page<?>) {
             List<?> pageObj = ((Page<?>) unwrapReturning).getContent();
-            if (pageObj == null || pageObj.size() == 0) {
+            if (pageObj.size() == 0) {
                 return originReturning;
             }
 
@@ -79,7 +81,7 @@ public abstract class AbstractI18NResponseAspect {
             isPageGeneric = true;
         } else if (unwrapReturning instanceof List<?>) {
             List<?> listObj = (List<?>) unwrapReturning;
-            if (listObj == null || listObj.size() == 0) {
+            if (listObj.size() == 0) {
                 return originReturning;
             }
 
@@ -128,9 +130,10 @@ public abstract class AbstractI18NResponseAspect {
         ServletRequestAttributes requestAttributes =
                 (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
 
+        // 走默认
         if (requestAttributes == null) {
             log.info("servlet request is null, return default locale");
-            return I18NUtils.EN;
+            return DEFAULT_LOCALE;
         }
 
         String cookieVal = "";
@@ -150,16 +153,17 @@ public abstract class AbstractI18NResponseAspect {
 
         // (http:accept-language:zh-cn) => (java:zh_CN)
         String acceptLanguageHeader = requestAttributes.getRequest().getHeader("accept-language");
+        // 走默认
         if (ObjectUtils.isEmpty(acceptLanguageHeader)) {
             log.info("accept language header is null, return default locale");
-            return I18NUtils.EN;
+            return DEFAULT_LOCALE;
         } else {
             Locale locale = LocaleContextHolder.getLocale();
             log.info("get locale from accept language: {}", locale);
 
             // 中英均不是，则返回默认
             if (!"en".equalsIgnoreCase(locale.getLanguage()) && !"zh".equalsIgnoreCase(locale.getLanguage())) {
-                return I18NUtils.EN;
+                return DEFAULT_LOCALE;
             }
 
             return locale;
@@ -307,7 +311,7 @@ public abstract class AbstractI18NResponseAspect {
             return word;
         }
 
-        return word.substring(0, 1).toUpperCase() + word.substring(1);
+        return word.substring(0, 1).toUpperCase(Locale.ENGLISH) + word.substring(1);
     }
 
     private List<Field> getAllFields(List<Field> fieldList, Class<?> clazz) {

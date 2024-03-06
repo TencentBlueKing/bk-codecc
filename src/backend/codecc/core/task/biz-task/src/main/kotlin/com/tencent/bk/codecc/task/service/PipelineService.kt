@@ -26,12 +26,12 @@
 
 package com.tencent.bk.codecc.task.service
 
-import com.tencent.bk.codecc.task.model.GongfengPublicProjEntity
 import com.tencent.bk.codecc.task.model.TaskInfoEntity
 import com.tencent.bk.codecc.task.pojo.ActiveProjParseModel
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO
 import com.tencent.bk.codecc.task.vo.BatchRegisterVO
 import com.tencent.bk.codecc.task.vo.BuildEnvVO
+import com.tencent.bk.codecc.task.vo.PipelineBasicInfoVO
 import com.tencent.bk.codecc.task.vo.RepoInfoVO
 import com.tencent.bk.codecc.task.vo.checkerset.ToolCheckerSetVO
 import com.tencent.devops.common.api.exception.StreamException
@@ -60,7 +60,7 @@ interface PipelineService {
 
     /**
      * 更新流水线工具配置
-     *
+     * @TODO 删除
      * @param userName
      * @param taskId
      * @param toolList
@@ -145,6 +145,11 @@ interface PipelineService {
     fun getRepositoryList(projCode: String): List<RepoInfoVO>
 
     /**
+     * 根据 pipeline id list 获取 pipeline name list
+     */
+    fun getPipelineBasicInfo(projectId: String, pipelineIds: Set<String>): List<PipelineBasicInfoVO>
+
+    /**
      * 获取代码库分支
      *
      * @param projCode
@@ -215,7 +220,15 @@ interface PipelineService {
         checkerSets: List<ToolCheckerSetVO>
     ): Boolean
 
-
+    /**
+     * 搜索 pipelineIdSet 中有哪些流水线跟异步任务 (taskId) 已经失去联系
+     */
+    fun searchLostRelationPipelineIds(
+        pipelineIdSet: Set<String>,
+        projectId: String,
+        taskId: Long,
+        userName: String
+    ): Set<String>
 
     /**
      * 更新流水线代码库配置

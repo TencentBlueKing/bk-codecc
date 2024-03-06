@@ -60,7 +60,7 @@ public class CcnDefectStatisticModelBuilder
         ccnStatisticEntity.setNewSuperHighCount(defectStatisticModel.getNewSuperHighCount());
         ccnStatisticEntity.setNewHighCount(defectStatisticModel.getNewHighCount());
         ccnStatisticEntity.setNewMediumCount(defectStatisticModel.getNewMediumCount());
-        ccnStatisticEntity.setNewlowCount(defectStatisticModel.getNewLowCount());
+        ccnStatisticEntity.setNewLowCount(defectStatisticModel.getNewLowCount());
         ccnStatisticEntity.setAverageList(defectStatisticModel.getAverageList());
         ccnStatisticEntity.setLastAverageCCN(defectStatisticModel.getLastAverageCcn());
         ccnStatisticEntity.setLastDefectCount(defectStatisticModel.getLastDefectCount());

@@ -12,7 +12,7 @@ import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.CommonMessageCode;
-import com.tencent.devops.common.storage.StorageService;
+import com.tencent.devops.common.storage.ScanFileStorageService;
 import com.tencent.devops.common.storage.constant.StorageType;
 import java.io.BufferedReader;
 import java.io.File;
@@ -77,7 +77,7 @@ public class ScmJsonComponent {
     private Client client;
 
     @Autowired
-    private StorageService storageService;
+    private ScanFileStorageService scanFileStorageService;
 
     /**
      * 读取文件内容
@@ -134,15 +134,15 @@ public class ScmJsonComponent {
             log.error("upload {} file not exist!", localFilePath);
         }
         try {
-            if (storageService.getStorageType().equals(StorageType.NFS.code())) {
+            if (StorageType.isMountType(scanFileStorageService.getStorageType())) {
                 return true;
             }
             //上传文件
-            String url = storageService.upload(localFilePath, fileName, type);
+            String url = scanFileStorageService.upload(localFilePath, fileName, type);
             //更新索引
             Result<FileIndexVO> result = client.get(ServiceFSRestResource.class)
                     .updateUploadInfo(new FileIndexVO(fileName, null, type,
-                            storageService.getStorageType(), url, 1));
+                            scanFileStorageService.getStorageType(), url, 1));
             if (result.isNotOk() || result.getData() == null) {
                 log.error("upload {} file fail!", localFilePath);
                 return false;
@@ -165,7 +165,7 @@ public class ScmJsonComponent {
         //获取风险系数值
         Result<FileIndexVO> result = client.get(ServiceFSRestResource.class).index(fileName, type);
 
-        if (result.isNotOk() || null == result.getData()) {
+        if (result == null || result.isNotOk() || null == result.getData()) {
             log.error("get file {} index fail: {}", fileName, result);
             throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL, new String[]{fileName}, null);
         }
@@ -184,7 +184,7 @@ public class ScmJsonComponent {
         //获取风险系数值
         Result<FileIndexVO> result = client.get(ServiceFSRestResource.class).index(fileName, type);
 
-        if (result.isNotOk() || null == result.getData()) {
+        if (result == null || result.isNotOk() || null == result.getData()) {
             return "";
         }
         FileIndexVO fileIndex = result.getData();
@@ -238,8 +238,8 @@ public class ScmJsonComponent {
         //判断文件是否在本地存在，否则下载文件
         String localFilePath = String.format("%s/%s", fileIndex.getFileFolder(), fileIndex.getFileName());
         if (!Files.exists(Paths.get(localFilePath))
-                && storageService.ifNeedAndCanDownload(fileIndex.getStoreType(), fileIndex.getDownloadUrl())) {
-            storageService.download(localFilePath, fileIndex.getStoreType(), fileIndex.getDownloadUrl());
+                && scanFileStorageService.ifNeedAndCanDownload(fileIndex.getStoreType(), fileIndex.getDownloadUrl())) {
+            scanFileStorageService.download(localFilePath, fileIndex.getStoreType(), fileIndex.getDownloadUrl());
         }
         return localFilePath;
     }
@@ -278,7 +278,6 @@ public class ScmJsonComponent {
                 scmBlameMap.put(it.getFilePath(), it);
             });
         }
-
         return new ArrayList<>(scmBlameMap.values());
     }
 

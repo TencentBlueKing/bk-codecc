@@ -132,6 +132,24 @@ public interface BuildTaskRestResource {
             String userName
     );
 
+    @ApiOperation("将自建任务 id 和异步执行该自建任务的流水线 id 建立联系")
+    @Path("/add/relationship/pipelineId/{pipelineId}")
+    @POST
+    Result<Boolean> addRelationshipBetweenTaskAndPipeline(
+            @ApiParam(value = "任务ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
+            Long taskId,
+            @ApiParam(value = "用户ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userName,
+            @ApiParam(value = "项目ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId,
+            @ApiParam(value = "流水线ID", required = true)
+            @PathParam(value = "pipelineId")
+            String pipelineId
+    );
+
     @ApiOperation("停用任务")
     @Path("/{taskId}")
     @DELETE

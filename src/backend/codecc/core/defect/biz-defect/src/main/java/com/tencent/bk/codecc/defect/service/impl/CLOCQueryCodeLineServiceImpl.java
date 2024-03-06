@@ -12,15 +12,13 @@
  
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CLOCDefectDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CLOCStatisticsDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskLogOverviewDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.ToolBuildInfoDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CLOCDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CLOCStatisticsDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.ToolBuildInfoDao;
 import com.tencent.bk.codecc.defect.dto.CodeLineModel;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
 import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
-import com.tencent.bk.codecc.defect.model.TaskLogOverviewEntity;
 import com.tencent.bk.codecc.defect.service.ICLOCQueryCodeLineService;
 import com.tencent.bk.codecc.defect.vo.CLOCDefectQueryRspInfoVO;
 import com.tencent.bk.codecc.defect.vo.ToolClocRspVO;

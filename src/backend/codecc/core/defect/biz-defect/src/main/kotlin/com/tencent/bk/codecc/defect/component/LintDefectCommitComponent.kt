@@ -1,25 +1,32 @@
 package com.tencent.bk.codecc.defect.component
 
+import com.alibaba.fastjson.JSONObject
 import com.fasterxml.jackson.core.type.TypeReference
 import com.tencent.bk.codecc.defect.cluster.ClusterLintCompareProcess
 import com.tencent.bk.codecc.defect.component.abstract.AbstractDefectCommitComponent
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository
 import com.tencent.bk.codecc.defect.model.BuildEntity
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity
-import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectNewInputModel
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectOutputModelV2
 import com.tencent.bk.codecc.defect.pojo.DefectClusterDTO
+import com.tencent.bk.codecc.defect.service.DefectFilePathClusterService
 import com.tencent.bk.codecc.defect.vo.CommitDefectVO
 import com.tencent.devops.common.api.codecc.util.JsonUtil
 import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.api.util.UUIDUtil
 import com.tencent.devops.common.constant.ComConstants
+import com.tencent.devops.common.constant.ComConstants.DefectStatus
 import com.tencent.devops.common.constant.CommonMessageCode
+import com.tencent.devops.common.constant.RedisKeyConstants
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.data.util.Pair
 import org.springframework.stereotype.Component
+import org.springframework.util.CollectionUtils
+import org.springframework.util.StringUtils
 import java.io.File
 
 @Component("LINTDefectCommitComponent")
@@ -27,6 +34,8 @@ class LintDefectCommitComponent @Autowired constructor(
     protected val lintDefectV2Repository: LintDefectV2Repository,
     private val clusterLintCompareProcess: ClusterLintCompareProcess,
     protected val newLintDefectTracingComponent: NewLintDefectTracingComponent,
+    private val redisTemplate: RedisTemplate<String, String>,
+    private val defectFilePathClusterService: DefectFilePathClusterService,
     private val scmJsonComponent: ScmJsonComponent
 ) : AbstractDefectCommitComponent<LintDefectV2Entity>(scmJsonComponent) {
     companion object {
@@ -47,7 +56,7 @@ class LintDefectCommitComponent @Autowired constructor(
                 "[lint cluster process] cluster process begin! $commonlog, defect cluster info: $defectClusterDTO"
             )
 
-            //1. 从nfs中读取本次上报告警清单
+            // 1. 从nfs中读取本次上报告警清单
             val aggregateDefectNewInputModel = getCurrentDefectList(inputFilePath)
             val inputDefects = aggregateDefectNewInputModel.defectList
             val relPathSet = aggregateDefectNewInputModel.relPathSet
@@ -57,7 +66,7 @@ class LintDefectCommitComponent @Autowired constructor(
                         "rel path set size: ${relPathSet?.size}, file path set size: ${filePathSet?.size}"
             )
 
-            //2. 获取原有告警清单
+            // 2. 获取原有告警清单
             var queryOrSaveBeginTime = System.currentTimeMillis()
             val preDefectList = getPreDefectList(this, relPathSet, filePathSet)
             queryListCost = System.currentTimeMillis() - queryOrSaveBeginTime
@@ -65,9 +74,9 @@ class LintDefectCommitComponent @Autowired constructor(
                 "[lint cluster process] get pre defect list, $commonlog, size: ${preDefectList.size}"
             )
 
-            //3.声明判断md5是否一致的映射，用于比较时简化流程
+            // 3.声明判断md5是否一致的映射，用于比较时简化流程
             val md5SameMap = mutableMapOf<String, Boolean>()
-            //4.组装聚类入参
+            // 4.组装聚类入参
             val inputDefectList = preHandleDefectList(
                 streamName = commitDefectVO.streamName,
                 toolName = commitDefectVO.toolName,
@@ -80,21 +89,25 @@ class LintDefectCommitComponent @Autowired constructor(
                 "[lint cluster process] pre handle result, $commonlog, input defect size: ${inputDefectList.size}"
             )
 
-            //5. 聚类得到结果
+            // 5. 聚类得到结果
             val outputDefectList = clusterMethod(inputDefectList, md5SameMap)
             logger.info(
                 "[lint cluster process] cluster result, $commonlog, output group size: ${outputDefectList.size}"
             )
 
-            //6. 对于聚类结果进行后处理
+            // 6. 对于聚类结果进行后处理
             val upsertDefectList = postHandleDefectList(
-                outputDefectList, buildEntity, transferAuthorList, commitDefectVO.isReallocate)
+                outputDefectList, buildEntity, transferAuthorList, commitDefectVO.isReallocate
+            )
             logger.info(
                 "[lint cluster process] post handle result, $commonlog, result defect size: ${upsertDefectList.size}"
             )
 
+            // 7. 保存文件路径聚合 需要开启缓存
+            saveDefectPathCluster(taskId, toolName, buildEntity, upsertDefectList)
+
             queryOrSaveBeginTime = System.currentTimeMillis()
-            //7. 分批保存告警
+            // 8. 分批保存告警
             saveDefectFile(
                 commitDefectVO,
                 aggregateDefectNewInputModel,
@@ -215,6 +228,19 @@ class LintDefectCommitComponent @Autowired constructor(
         return finalDefects
     }
 
+    private fun postHandleDefectListDebugEnabled(buildEntity: BuildEntity?): Boolean {
+        if (buildEntity == null || buildEntity.buildId.isNullOrEmpty()) {
+            return false
+        }
+        val check = try {
+            redisTemplate.opsForSet().isMember(RedisKeyConstants.DEBUG_BUILD_ID_SET_KEY, buildEntity.buildId) ?: false
+        } catch (e: Exception) {
+            logger.error("postHandleDefectListDebugEnabled cause error. ${buildEntity.buildId}", e)
+            return false
+        }
+        return check
+    }
+
     override fun postHandleDefectList(
         outputDefectList: List<AggregateDefectOutputModelV2<LintDefectV2Entity>>,
         buildEntity: BuildEntity?,
@@ -225,12 +251,48 @@ class LintDefectCommitComponent @Autowired constructor(
             logger.info("output defect list is empty! build id: ${buildEntity?.buildId}")
             return emptyList()
         }
+
+        // 是否开启日志调试
+        if (postHandleDefectListDebugEnabled(buildEntity)) {
+            logger.info("postHandleDefectList outputDefectList:{}", JSONObject.toJSONString(outputDefectList))
+        }
+
+
         val upsertDefectList = mutableListOf<LintDefectV2Entity>()
         outputDefectList.forEach {
             //将每一组的告警分为新告警和老告警
             val partitionedDefects = it.defects.partition { defect -> defect.newDefect }
             val newDefects = partitionedDefects.first
-            val oldDefects = partitionedDefects.second
+
+            // 判断是否走优化逻辑
+            val deduplicate = canDeduplicate(partitionedDefects.first)
+            val oldDefects = if (deduplicate) {
+                // 折叠相同hash与行号的告警，去重
+                partitionedDefects.second.groupBy { it.lineNum to it.pinpointHash }
+                        .mapValues { (_, group) ->
+                            // 优先取已忽略的告警
+                            group.sortedByDescending {
+                                it.status and ComConstants.DefectStatus.IGNORE.value() > 0
+                            }.first()
+                        }.values.toList()
+            } else {
+                partitionedDefects.second
+            }
+
+            val sameOldDefectMap = if (deduplicate) {
+                // 将被去重的告警取出，用于后续统一处理
+                oldDefects.associateBy(keySelector = { oldDefect -> oldDefect.entityId },
+                    valueTransform = { oldDefect ->
+                        partitionedDefects.second.filter { originalOldDefect ->
+                            oldDefect.pinpointHash == originalOldDefect.pinpointHash
+                                    && oldDefect.lineNum == originalOldDefect.lineNum
+                                    && oldDefect != originalOldDefect
+                        }
+                    }).filterValues { sameDefects -> sameDefects.isNotEmpty() }
+            } else {
+                emptyMap()
+            }
+
             val groupId = UUIDUtil.generate()
             /**
              * 如果聚类分组中只有老告警
@@ -245,12 +307,45 @@ class LintDefectCommitComponent @Autowired constructor(
                         oldDefect.pinpointHashGroup = groupId
                         upsertDefectList.add(oldDefect)
                     }
+                    processSameOldDefect(oldDefect, sameOldDefectMap, upsertDefectList, buildEntity)
                     // 判断是否配置了处理人重新分配
                     if (true == isReallocate) {
                         transferAuthor(oldDefect, transferAuthorList)
                     }
                 }
             } else {
+
+                val priorityIgnoreDefectMap = if (deduplicate) {
+                    /**
+                     * 已忽略告警需要优先匹配，如果行号与Hash相同，应该直接匹配上, 优先处理
+                     */
+                    newDefects.filter { newDefect ->
+                        oldDefects.any { oldDefect ->
+                            oldDefect.pinpointHash == newDefect.pinpointHash &&
+                                    oldDefect.lineNum == newDefect.lineNum &&
+                                    oldDefect.status and ComConstants.DefectStatus.IGNORE.value() > 0 &&
+                                    (oldDefect.ignoreCommentDefect == null || !oldDefect.ignoreCommentDefect)
+                        }
+                    }.associateWith { newDefect ->
+                        oldDefects.first { oldDefect ->
+                            oldDefect.pinpointHash == newDefect.pinpointHash &&
+                                    oldDefect.lineNum == newDefect.lineNum
+                        }
+                    }
+                } else {
+                    emptyMap()
+                }
+
+                if (priorityIgnoreDefectMap.isNotEmpty()) {
+                    priorityIgnoreDefectMap.forEach { entry ->
+                        updateOldDefectInfo(entry.value, entry.key, transferAuthorList, buildEntity, isReallocate)
+                        entry.value.pinpointHashGroup = groupId
+                        upsertDefectList.add(entry.value)
+                        // 查看是否有需要处理的相同旧告警
+                        processSameOldDefect(entry.value, sameOldDefectMap, upsertDefectList, buildEntity)
+                    }
+                }
+
                 /**
                  * 如果聚类分组中新老告警都有
                  * 1.有对应老告警：
@@ -265,8 +360,17 @@ class LintDefectCommitComponent @Autowired constructor(
                  *   3.1 将状态是NEW的老告警变成已修复
                  *   3.2 老告警是其他状态，则不变更直接上报
                  */
-                val sortedNewDefects = newDefects.sortedBy { newDefect -> newDefect.lineNum }
-                val sortedOldDefects = oldDefects.sortedBy { oldDefect -> oldDefect.lineNum }
+                val sortedNewDefects = newDefects.filter { newDefect ->
+                    priorityIgnoreDefectMap.keys.none { ignoreNewDefect ->
+                        newDefect.lineNum == ignoreNewDefect.lineNum
+                                && newDefect.pinpointHash == ignoreNewDefect.pinpointHash
+                    }
+                }.sortedBy { newDefect -> newDefect.lineNum }
+                val sortedOldDefects = oldDefects.filter { oldDefect ->
+                    priorityIgnoreDefectMap.values.none { ignoreOldDefect ->
+                        oldDefect.entityId == ignoreOldDefect.entityId
+                    }
+                }.sortedBy { oldDefect -> oldDefect.lineNum }
                 sortedNewDefects.forEachIndexed { index, newDefect ->
                     var selectedOldDefect = if (!sortedOldDefects.isNullOrEmpty() && sortedOldDefects.size > index) {
                         sortedOldDefects[index]
@@ -326,6 +430,8 @@ class LintDefectCommitComponent @Autowired constructor(
                     }
                     selectedOldDefect.pinpointHashGroup = groupId
                     upsertDefectList.add(selectedOldDefect)
+                    // 查看是否有需要处理的相同旧告警
+                    processSameOldDefect(selectedOldDefect, sameOldDefectMap, upsertDefectList, buildEntity)
                 }
                 //老告警比新告警多出来的那部分告警变成已修复
                 if (!sortedOldDefects.isNullOrEmpty() && sortedOldDefects.size > sortedNewDefects.size) {
@@ -337,6 +443,8 @@ class LintDefectCommitComponent @Autowired constructor(
                             closeDefect.pinpointHashGroup = groupId
                             upsertDefectList.add(closeDefect)
                         }
+                        // 查看是否有需要处理的相同旧告警
+                        processSameOldDefect(closeDefect, sameOldDefectMap, upsertDefectList, buildEntity)
                     }
                 }
             }
@@ -345,12 +453,107 @@ class LintDefectCommitComponent @Autowired constructor(
         return upsertDefectList
     }
 
+    /**
+     * 是否可以去重处理
+     */
+    private fun canDeduplicate(newDefects: List<LintDefectV2Entity>): Boolean {
+        if (newDefects.isEmpty()) {
+            return true
+        }
+        // 判断是否有重复的项
+        val duplicateKeys = newDefects.map { it.lineNum.toString() + ":" + it.pinpointHash }.toSet()
+        return duplicateKeys.size == newDefects.size
+    }
+
+    /**
+     * 处理与oldDefect相同的告警（pinpoint hash 与 行号都相同）
+     */
+    private fun processSameOldDefect(
+        oldDefect: LintDefectV2Entity,
+        sameOldDefectMap: Map<String, List<LintDefectV2Entity>>,
+        upsertDefectList: MutableList<LintDefectV2Entity>,
+        buildEntity: BuildEntity?
+    ) {
+        if (!sameOldDefectMap.containsKey(oldDefect.entityId)
+                || sameOldDefectMap[oldDefect.entityId] == null
+                || sameOldDefectMap[oldDefect.entityId]!!.isEmpty()
+        ) {
+            return
+        }
+        // 直接置为修复, 同步pinpoint hash 与 line num
+        val sameOldDefects = sameOldDefectMap[oldDefect.entityId]
+        sameOldDefects!!.forEach {
+            it.pinpointHash = oldDefect.pinpointHash
+            it.pinpointHashGroup = oldDefect.pinpointHashGroup
+            it.lineNum = oldDefect.lineNum
+            if (it.status == ComConstants.DefectStatus.NEW.value()) {
+                it.status = it.status or ComConstants.DefectStatus.FIXED.value()
+                it.fixedTime = System.currentTimeMillis()
+                if (null != buildEntity) {
+                    it.fixedBuildNumber = buildEntity.buildNo
+                }
+            }
+            upsertDefectList.add(it)
+        }
+    }
+
     @ExperimentalUnsignedTypes
     fun clusterMethod(
         inputDefectList: List<LintDefectV2Entity>,
         md5SameMap: MutableMap<String, Boolean>
     ): List<AggregateDefectOutputModelV2<LintDefectV2Entity>> {
         return clusterLintCompareProcess.clusterMethod(inputDefectList, md5SameMap)
+    }
+
+    /**
+     * 保存告警待修复与已修复的文件路径列表
+     */
+    fun saveDefectPathCluster(
+        taskId: Long, toolName: String, buildEntity: BuildEntity?, upsertDefectList: List<LintDefectV2Entity>
+    ) {
+        if (!StringUtils.hasLength(toolName) || buildEntity == null || !StringUtils.hasLength(buildEntity.buildId) ||
+                CollectionUtils.isEmpty(upsertDefectList)
+        ) {
+            return
+        }
+        try {
+            if (!isFileCacheEnable(taskId)) {
+                return
+            }
+            val startTime = System.currentTimeMillis()
+            logger.info("saveDefectPathCluster start. $taskId, $toolName, ${buildEntity.buildId}")
+            // 取出待修复的项
+            val newDefectPaths = upsertDefectList.filter { it.status == DefectStatus.NEW.value() }
+                    .distinctBy { it.filePath }.map { Pair.of(it.filePath, it.relPath ?: "") }.toList()
+            if (!CollectionUtils.isEmpty(newDefectPaths)) {
+                defectFilePathClusterService.saveBuildDefectFilePath(
+                    taskId,
+                    toolName,
+                    buildEntity.buildId,
+                    DefectStatus.NEW,
+                    newDefectPaths
+                )
+            }
+
+            // 取出已修复的项
+            val fixedDefectPaths = upsertDefectList.filter { it.status and DefectStatus.FIXED.value() > 0 }
+                    .distinctBy { it.filePath }.map { Pair.of(it.filePath, it.relPath ?: "") }.toList()
+            if (!CollectionUtils.isEmpty(fixedDefectPaths)) {
+                defectFilePathClusterService.saveBuildDefectFilePath(
+                    taskId,
+                    toolName,
+                    buildEntity.buildId,
+                    DefectStatus.FIXED,
+                    fixedDefectPaths
+                )
+            }
+            logger.info(
+                "saveDefectPathCluster end. $taskId, $toolName, ${buildEntity.buildId} cost: " +
+                        "${System.currentTimeMillis() - startTime} ms"
+            )
+        } catch (e: Exception) {
+            logger.error("saveDefectPathCluster cause error. $taskId, $toolName, ${buildEntity.buildId}", e)
+        }
     }
 
     fun saveDefectFile(
@@ -417,8 +620,8 @@ class LintDefectCommitComponent @Autowired constructor(
                 transferAuthor(this, transferAuthorList)
             }
             defectInstances = newDefect.defectInstances
-            if (status and ComConstants.DefectStatus.IGNORE.value() > 0
-                    && status and ComConstants.DefectStatus.FIXED.value() == 0
+            if (status and ComConstants.DefectStatus.IGNORE.value() > 0 &&
+                    status and ComConstants.DefectStatus.FIXED.value() == 0
             ) {
                 ignoreBuildId = buildEntity?.buildId
             }

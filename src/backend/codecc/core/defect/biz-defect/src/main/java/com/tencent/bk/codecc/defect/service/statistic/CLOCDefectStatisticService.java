@@ -1,13 +1,14 @@
 package com.tencent.bk.codecc.defect.service.statistic;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CLOCStatisticsDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CLOCStatisticsDao;
 import com.tencent.bk.codecc.defect.model.defect.CLOCDefectEntity;
 import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
 import com.tencent.bk.codecc.defect.utils.CommonKafkaClient;
 import com.tencent.bk.codecc.defect.vo.CLOCLanguageVO;
 import com.tencent.bk.codecc.defect.vo.UploadCLOCStatisticVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.constant.ComConstants.ScanStatType;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import java.util.Collections;
@@ -153,7 +154,7 @@ public class CLOCDefectStatisticService {
         log.info("start to upload new cloc statistic info, task id: {}, build id: {}",
                 taskId, buildId);
 
-        clocStatisticsDao.batchUpsertCLOCStatistic(currStatisticMap.values());
+        clocStatisticsDao.batchUpsertCLOCStatistic(currStatisticMap.values(), ScanStatType.NOT_FAST_INCREMENT);
 
         //如果本次为首次上报，且上报语言内容为空，则插入一条其他语言的记录
         if (MapUtils.isEmpty(currStatisticMap)

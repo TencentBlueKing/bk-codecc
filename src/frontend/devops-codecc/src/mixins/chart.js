@@ -1,12 +1,12 @@
-import chartBarOption from '@/mixins/chart-bar-option'
-import chartLineOption from '@/mixins/chart-line-option'
-import echarts from 'echarts/lib/echarts'
-import 'echarts/lib/chart/bar'
-import 'echarts/lib/chart/line'
-import 'echarts/lib/component/tooltip'
-import 'echarts/lib/component/title'
-import 'echarts/lib/component/legend'
-import { mapState } from 'vuex'
+import chartBarOption from '@/mixins/chart-bar-option';
+import chartLineOption from '@/mixins/chart-line-option';
+import echarts from 'echarts/lib/echarts';
+import 'echarts/lib/chart/bar';
+import 'echarts/lib/chart/line';
+import 'echarts/lib/component/tooltip';
+import 'echarts/lib/component/title';
+import 'echarts/lib/component/legend';
+import { mapState } from 'vuex';
 
 export default {
   mixins: [chartBarOption, chartLineOption],
@@ -14,7 +14,7 @@ export default {
     return {
       toolId: this.$route.params.toolId,
       active: 'report',
-    }
+    };
   },
   computed: {
     ...mapState('tool', {
@@ -23,42 +23,47 @@ export default {
     ...mapState('task', {
       taskDetail: 'detail',
     }),
-    ...mapState([
-      'toolMeta',
-    ]),
+    ...mapState(['toolMeta']),
     toolList() {
-      const toolType = this.toolMeta.TOOL_TYPE
-        .filter(item => item.key !== 'CCN' && item.key !== 'DUPC'
-        && item.key !== 'CLOC' && item.key !== 'STAT' && item.key !== 'SCC')
-      const enTooList = this.taskDetail.enableToolList
-        .filter(item => item.toolName !== 'CCN' && item.toolName !== 'DUPC'
-        && item.toolName !== 'CLOC' && item.toolName !== 'STAT' && item.toolName !== 'SCC')
+      const toolType = this.toolMeta.TOOL_TYPE.filter(item => item.key !== 'CCN'
+          && item.key !== 'DUPC'
+          && item.key !== 'CLOC'
+          && item.key !== 'STAT'
+          && item.key !== 'SCC');
+      const enTooList = this.taskDetail.enableToolList.filter(item => item.toolName !== 'CCN'
+          && item.toolName !== 'DUPC'
+          && item.toolName !== 'CLOC'
+          && item.toolName !== 'STAT'
+          && item.toolName !== 'SCC');
       if (this.toolMap) {
         toolType.forEach((item) => {
-          item.toolList = []
+          item.toolList = [];
           enTooList.forEach((i) => {
-            if (this.toolMap[i.toolName] && this.toolMap[i.toolName].type === item.key) {
-              item.toolList.push(i)
+            if (
+              this.toolMap[i.toolName]
+              && this.toolMap[i.toolName].type === item.key
+            ) {
+              item.toolList.push(i);
             }
-          })
-        })
+          });
+        });
       }
-      return toolType
+      return toolType;
     },
   },
   methods: {
     handleInitAuthor(authorTypeMap, authorType, list = {}) {
-      const elemList = list.authorList || [{}]
+      const elemList = list.authorList || [{}];
 
-      const authorName = elemList.map(item => item.authorName || '')
-      const serious = elemList.map(item => item.serious || 0)
-      const normal = elemList.map(item => item.normal || 0)
-      const prompt = elemList.map(item => item.prompt || 0)
+      const authorName = elemList.map(item => item.authorName || '');
+      const serious = elemList.map(item => item.serious || 0);
+      const normal = elemList.map(item => item.normal || 0);
+      const prompt = elemList.map(item => item.prompt || 0);
 
-      elemList.push(list.totalAuthor)
-      this[authorTypeMap[authorType].data] = elemList
+      elemList.push(list.totalAuthor);
+      this[authorTypeMap[authorType].data] = elemList;
       if (elemList.length === 1 && !elemList[0].authorName) {
-        this[authorTypeMap[authorType].data] = []
+        this[authorTypeMap[authorType].data] = [];
       }
 
       const option = {
@@ -89,24 +94,28 @@ export default {
             cursor: 'default',
           },
         ],
-      }
-      this.handleChartOption(authorTypeMap[authorType].chart, option, 'chartBarOption')
+      };
+      this.handleChartOption(
+        authorTypeMap[authorType].chart,
+        option,
+        'chartBarOption',
+      );
     },
     handleChartOption(chartName, option, optionType) {
-      this[chartName] && this[chartName].clear()
-      this[chartName] = echarts.init(this.$refs[chartName])
+      this[chartName] && this[chartName].clear();
+      this[chartName] = echarts.init(this.$refs[chartName]);
 
-      this[chartName].setOption(this[optionType])
-      this[chartName].setOption(option)
+      this[chartName].setOption(this[optionType]);
+      this[chartName].setOption(option);
       window.addEventListener('resize', () => {
-        this[chartName].resize()
-      })
+        this[chartName].resize();
+      });
     },
     resolveHref(name, query) {
       this.$router.push({
         name,
         query,
-      })
+      });
       // const resolved = this.$router.resolve({
       //     name,
       //     params: this.$route.params,
@@ -116,28 +125,28 @@ export default {
       // window.open(href, '_blank')
     },
     handleSelectTool(toolName) {
-      const tool = this.taskDetail.enableToolList.find(item => item.toolName === toolName)
-      const toolPattern = tool.toolPattern.toLocaleLowerCase()
+      const tool = this.taskDetail.enableToolList.find(item => item.toolName === toolName);
+      const toolPattern = tool.toolPattern.toLocaleLowerCase();
       this.$router.push({
         name: `defect-${toolPattern}-charts`,
         params: { ...this.$route.params, toolId: toolName },
-      })
+      });
     },
     handleTableChange(value) {
-      const toolName = this.toolId
-      const toolPattern = this.toolMap[toolName].pattern.toLocaleLowerCase()
-      const params = { ...this.$route.params, toolId: toolName }
+      const toolName = this.toolId;
+      const toolPattern = this.toolMap[toolName].pattern.toLocaleLowerCase();
+      const params = { ...this.$route.params, toolId: toolName };
       if (value === 'defect') {
         this.$router.push({
           name: `defect-${toolPattern}-list`,
           params,
-        })
+        });
       } else {
         this.$router.push({
           name: `defect-${toolPattern}-charts`,
           params,
-        })
+        });
       }
     },
   },
-}
+};

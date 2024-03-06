@@ -1,0 +1,56 @@
+# 服务配置文件模板
+spring:
+  application:
+    name: task
+    desc: Task Service
+    packageName: com.tencent.bk.codecc.task
+  data:
+    mongodb:
+      uri: __BK_CODECC_MONGO_TASK_URL__&maxPoolSize=300
+
+server:
+  port: __BK_CODECC_TASK_API_PORT__ # 服务端口
+
+
+time:
+  analysis:
+    maxhour: __BK_CODECC_TASK_ANALYSIS_MAX_HOUR__
+
+aes:
+  encryptor:
+    key: __BK_CODECC_TASK_ENCRYPTOR_KEY__
+
+pipeline:
+  atomCode:
+    codecc: __BK_CODECC_PIPELINE_ATOM_CODE__
+    codeccVersion: __BK_CODECC_PIPELINE_ATOM_VERSION__
+    git: __BK_CODECC_GIT_ATOM_CODE__
+    gitVersion: __BK_CODECC_PIPELINE_GIT_ATOM_VERSION__
+  imageType: __BK_CODECC_PIPELINE_IMAGE_TYPE__
+  scmType: 
+    svn: 
+      old: __BK_CODECC_PIPELINE_SCM_IS_OLD_SVN__
+    github: 
+      old: __BK_CODECC_PIPELINE_SCM_IS_OLD_GITHUB__
+
+devops:
+  retry:
+    attempt: __BK_CODECC_PIPELINE_RETRY_ATTEMPT__
+    interval: __BK_CODECC_PIPELINE_RETRY_INTERVAL__
+  imageName: __BK_CODECC_PIPELINE_IMAGE_NAME__
+  dispatch:
+    imageName: __BK_CODECC_PIPELINE_IMAGE_NAME__
+    buildType: __BK_CODECC_PIPELINE_BUILD_TYPE__
+    imageVersion: __BK_CODECC_PIPELINE_IMAGE_TAG__
+
+codecc:
+  public:
+    account: __BK_CODECC_PUBLISH_ACCOUNT__
+    password: __BK_CODECC_PUBLISH_PASSWORD__
+
+
+git:
+  workcopy:
+    host: __BK_CODECC_GIT_WORKCOPY_HOST__
+    code: __BK_CODECC_GIT_WORKCOPY_CODE__
+    token: __BK_CODECC_GIT_WORKCOPY_TOKEN__

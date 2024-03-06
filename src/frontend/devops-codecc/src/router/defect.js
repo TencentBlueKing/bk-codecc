@@ -1,15 +1,16 @@
-const DefectList = () => import(/* webpackChunkName: 'defect-list' */'../views/defect/defect-list')
-const DefectCoverityList = () => import(/* webpackChunkName: 'defect-list' */'../views/defect/coverity-list')
-const DefectCoverityCharts = () => import(/* webpackChunkName: 'defect-charts' */'../views/defect/coverity-charts')
-const DefectDupcList = () => import(/* webpackChunkName: 'defect-list' */'../views/defect/dupc-list')
-const DefectDupcDetail = () => import(/* webpackChunkName: 'dupc-detail' */'../views/defect/dupc-detail')
-const DefectDupcCharts = () => import(/* webpackChunkName: 'defect-charts' */'../views/defect/dupc-charts')
-const DefectCcnList = () => import(/* webpackChunkName: 'defect-list' */'../views/defect/ccn-list')
-const DefectCcnCharts = () => import(/* webpackChunkName: 'defect-charts' */'../views/defect/ccn-charts')
-const DefectClocList = () => import(/* webpackChunkName: 'defect-list' */'../views/defect/cloc-list')
-const DefectClocLang = () => import(/* webpackChunkName: 'defect-list' */'../views/defect/cloc-lang')
+const DefectList = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/defect-list');
+const DefectCoverityList = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/coverity-list');
+const DefectCoverityCharts = () => import(
+  /* webpackChunkName: 'defect-charts' */ '../views/defect/coverity-charts');
+const DefectDupcList = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/dupc-list');
+const DefectDupcDetail = () => import(/* webpackChunkName: 'dupc-detail' */ '../views/defect/dupc-detail');
+const DefectDupcCharts = () => import(/* webpackChunkName: 'defect-charts' */ '../views/defect/dupc-charts');
+const DefectCcnList = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/ccn-list');
+const DefectCcnCharts = () => import(/* webpackChunkName: 'defect-charts' */ '../views/defect/ccn-charts');
+const DefectClocList = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/cloc-list');
+const DefectClocLang = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/cloc-lang');
 // const DefectLintList = () => import(/* webpackChunkName: 'defect-list' */'../views/defect/lint-list')
-const DefectLintCharts = () => import(/* webpackChunkName: 'defect-charts' */'../views/defect/lint-charts')
+const DefectLintCharts = () => import(/* webpackChunkName: 'defect-charts' */ '../views/defect/lint-charts');
 
 const routes = [
   {
@@ -207,6 +208,6 @@ const routes = [
       breadcrumb: 'inside',
     },
   },
-]
+];
 
-export default routes
+export default routes;

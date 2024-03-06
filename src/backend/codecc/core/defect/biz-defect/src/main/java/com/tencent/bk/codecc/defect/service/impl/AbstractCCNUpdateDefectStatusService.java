@@ -1,11 +1,9 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNDefectRepository;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
-import com.tencent.bk.codecc.defect.model.defect.DefectEntity;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
-import com.tencent.devops.common.constant.ComConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;

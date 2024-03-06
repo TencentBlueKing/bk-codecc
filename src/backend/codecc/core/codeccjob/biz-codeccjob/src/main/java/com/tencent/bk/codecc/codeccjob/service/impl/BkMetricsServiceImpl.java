@@ -1,10 +1,12 @@
 package com.tencent.bk.codecc.codeccjob.service.impl;
 
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_BK_METRICS_DAILY_FANOUT;
+
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.DefectDao;
-import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.LintDefectV2Dao;
-import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.MetricsDao;
-import com.tencent.bk.codecc.codeccjob.dao.mongotemplate.ToolBuildInfoDao;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongotemplate.DefectDao;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongotemplate.MetricsDao;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongotemplate.ToolBuildInfoDao;
 import com.tencent.bk.codecc.codeccjob.pojo.BkMetricsMessage;
 import com.tencent.bk.codecc.codeccjob.service.BkMetricsService;
 import com.tencent.bk.codecc.defect.model.MetricsEntity;
@@ -16,6 +18,13 @@ import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.util.DateTimeUtils;
 import com.tencent.devops.common.util.ThreadPoolUtil;
+import com.tencent.devops.common.util.ThreadUtils;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -28,14 +37,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_BK_METRICS_DAILY_FANOUT;
-
 /**
  * 蓝盾度量服务实现类
  *
@@ -45,6 +46,8 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_BK_METRICS_D
 @Service
 public class BkMetricsServiceImpl implements BkMetricsService {
 
+    private static final int FIXED_STATUS =
+            ComConstants.DefectStatus.FIXED.value() | ComConstants.DefectStatus.NEW.value();
     @Autowired
     @Qualifier("devopsRabbitTemplate")
     private RabbitTemplate rabbitTemplate;
@@ -59,18 +62,13 @@ public class BkMetricsServiceImpl implements BkMetricsService {
     @Autowired
     private MetricsDao metricsDao;
 
-
-    private static final int FIXED_STATUS =
-            ComConstants.DefectStatus.FIXED.value() | ComConstants.DefectStatus.NEW.value();
-
-
     /**
      * 触发蓝盾度量统计
      *
-     * @param statisticsTime      统计日期，格式yyyy-MM-dd
-     * @param projectId           项目ID
-     * @param repoCodeccAvgScore  代码库扫描平均分，精确二位小数
-     * @param resolvedDefectNum   已解决缺陷数量
+     * @param statisticsTime 统计日期，格式yyyy-MM-dd
+     * @param projectId 项目ID
+     * @param repoCodeccAvgScore 代码库扫描平均分，精确二位小数
+     * @param resolvedDefectNum 已解决缺陷数量
      * @return boolean
      */
     @Override
@@ -94,6 +92,7 @@ public class BkMetricsServiceImpl implements BkMetricsService {
 
     /**
      * 推送消息
+     *
      * @param bkMetricsMessage msg
      */
     private void convertAndSendMessage(BkMetricsMessage bkMetricsMessage) {
@@ -114,6 +113,7 @@ public class BkMetricsServiceImpl implements BkMetricsService {
      */
     @Override
     public void statistic(String statisticsDate) {
+        log.info("BkMetricsServiceImpl statistic begin, param obj: {}", statisticsDate);
         // 生成统计时间戳
         if (StringUtils.isBlank(statisticsDate)) {
             statisticsDate = DateTimeUtils.getDateByDiff(-1);
@@ -169,14 +169,15 @@ public class BkMetricsServiceImpl implements BkMetricsService {
                         continue;
                     }
                     log.warn("query statistic result is null! projectId: {}", projectId);
-                } catch (Exception e) {
-                    log.error(e.getMessage() + projectId, e);
+                } catch (Throwable t) {
+                    log.error("statTaskByProjectId error, project id: {}", projectId, t);
                 }
             }
 
             pageNum++;
         } while (dataSize >= pageSize);
-        log.info("statistic finish!");
+
+        log.info("BkMetricsServiceImpl statistic finish");
     }
 
     /**
@@ -193,7 +194,7 @@ public class BkMetricsServiceImpl implements BkMetricsService {
 
         int dataSize = 0;
         int pageNum = 1;
-        int pageSize = 200;
+        int pageSize = 100;
         // 定义重试次数
         int retryCount = 5;
         do {
@@ -226,15 +227,24 @@ public class BkMetricsServiceImpl implements BkMetricsService {
             }
             dataSize = taskIdList.size();
 
+            long beginTime = System.currentTimeMillis();
             // 累计修复数
-            fixedDefectCount += this.statDefectByTaskId(taskIdList, startTime, endTime);
             fixedDefectCount += this.statLintDefectByTaskId(taskIdList, startTime, endTime);
+            final long costMillis = System.currentTimeMillis() - beginTime;
+
             // 累计指标分数，任务有分数才纳入计算
             double[] resArr = this.sumCurrentRdIndicatorsScore(taskIdList);
             repoCodeccTotalScore += resArr[0];
             taskTotalCount += resArr[1];
-
             pageNum++;
+
+            if (costMillis > TimeUnit.SECONDS.toMillis(2)) {
+                ThreadUtils.sleep(TimeUnit.SECONDS.toMillis(1));
+                log.info("statLintDefectByTaskId cost: {}, task size: {}, detail: {}",
+                        costMillis, dataSize, taskIdList);
+            } else {
+                ThreadUtils.sleep(TimeUnit.MILLISECONDS.toMillis(200));
+            }
         } while (dataSize >= pageSize);
 
         // 计算项目维度指标平均分
@@ -247,13 +257,6 @@ public class BkMetricsServiceImpl implements BkMetricsService {
     }
 
     /**
-     * 统计告警数
-     */
-    private Long statDefectByTaskId(List<Long> taskIds, long startTime, long endTime) {
-        return defectDao.countCommonDefectByStatus(taskIds, null, FIXED_STATUS, "fixed_time", startTime, endTime);
-    }
-
-    /**
      * 统计已修复规范问题数
      */
     private Long statLintDefectByTaskId(List<Long> taskIds, long startTime, long endTime) {
@@ -262,6 +265,7 @@ public class BkMetricsServiceImpl implements BkMetricsService {
 
     /**
      * 统计总分
+     *
      * @param taskIds 任务id清单
      * @return score
      */
@@ -273,8 +277,10 @@ public class BkMetricsServiceImpl implements BkMetricsService {
 
         // 拿到最新build id
         List<ToolBuildInfoEntity> buildInfoEntityList = toolBuildInfoDao.findLatestBuildIdByTaskIdSet(taskIds);
-        Map<Long, String> taskLatestBuildIdMap = buildInfoEntityList.stream().collect(Collectors
-                .toMap(ToolBuildInfoEntity::getTaskId, ToolBuildInfoEntity::getDefectBaseBuildId, (k, v) -> v));
+        Map<Long, String> taskLatestBuildIdMap = buildInfoEntityList.stream()
+                .filter(it -> StringUtils.isNotEmpty(it.getDefectBaseBuildId()))
+                .collect(Collectors.toMap(ToolBuildInfoEntity::getTaskId,
+                        ToolBuildInfoEntity::getDefectBaseBuildId, (k, v) -> v));
         if (taskLatestBuildIdMap.isEmpty()) {
             return new double[]{0.0, 0};
         }

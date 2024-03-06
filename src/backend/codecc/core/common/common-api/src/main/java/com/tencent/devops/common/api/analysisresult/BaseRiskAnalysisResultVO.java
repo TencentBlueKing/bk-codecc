@@ -2,11 +2,13 @@ package com.tencent.devops.common.api.analysisresult;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * 风险等级类分析基类
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class BaseRiskAnalysisResultVO extends BaseLastAnalysisResultVO {
     /**
      * 新增极高风险告警数

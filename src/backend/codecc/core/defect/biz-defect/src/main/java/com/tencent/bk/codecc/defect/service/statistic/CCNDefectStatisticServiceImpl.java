@@ -18,7 +18,7 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CLOSE_DEFECT_ST
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CLOSE_DEFECT_STATISTIC_CCN_OPENSOURCE;
 
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNStatisticRepository;
 import com.tencent.bk.codecc.defect.model.CCNNotRepairedAuthorEntity;
 import com.tencent.bk.codecc.defect.model.ChartAverageEntity;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
@@ -38,7 +38,6 @@ import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.BizServiceFactory;
-import com.tencent.devops.common.util.DateTimeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import com.tencent.devops.common.util.BeanUtils;
@@ -116,9 +115,8 @@ public class CCNDefectStatisticServiceImpl
                 .toolName(defectStatisticModel.getToolName())
                 .createFrom(defectStatisticModel.getTaskDetailVO().getCreateFrom())
                 .buildId(defectStatisticModel.getBuildId())
-                .baseBuildId(defectStatisticModel.getToolBuildStackEntity() != null
-                        ? defectStatisticModel.getToolBuildStackEntity().getBuildId() : null)
                 .allDefectList(defectStatisticModel.getDefectList())
+                .fastIncrementFlag(defectStatisticModel.getFastIncrementFlag())
                 .build();
     }
 
@@ -320,12 +318,16 @@ public class CCNDefectStatisticServiceImpl
      */
     @Override
     public void asyncStatisticDefect(CcnDefectStatisticModel statisticModel) {
+        CCNStatisticEntity mqObj = statisticModel.getCcnStatisticEntity();
+        mqObj.setFastIncrementFlag(statisticModel.getFastIncrementFlag());
+        mqObj.setBaseBuildId(statisticModel.getBaseBuildId());
+
         if (ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value().equalsIgnoreCase(statisticModel.getCreateFrom())) {
             rabbitTemplate.convertAndSend(EXCHANGE_CLOSE_DEFECT_STATISTIC_CCN_OPENSOURCE,
-                    ROUTE_CLOSE_DEFECT_STATISTIC_CCN_OPENSOURCE, statisticModel.getCcnStatisticEntity());
+                    ROUTE_CLOSE_DEFECT_STATISTIC_CCN_OPENSOURCE, mqObj);
         } else {
             rabbitTemplate.convertAndSend(EXCHANGE_CLOSE_DEFECT_STATISTIC_CCN, ROUTE_CLOSE_DEFECT_STATISTIC_CCN,
-                    statisticModel.getCcnStatisticEntity());
+                    mqObj);
         }
     }
 

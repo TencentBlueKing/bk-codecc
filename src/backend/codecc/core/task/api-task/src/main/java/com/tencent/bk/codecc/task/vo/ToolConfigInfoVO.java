@@ -33,9 +33,6 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.util.List;
-import java.util.Map;
-
 /**
  * 工具配置信息
  *
@@ -108,7 +105,7 @@ public class ToolConfigInfoVO extends CommonVO
     @ApiModelProperty("最新一次构建号")
     private String latestBuildNo;
 
-    @ApiModelProperty("当前构件号")
+    @ApiModelProperty("当前构建id")
     private String currentBuildId;
 
 }

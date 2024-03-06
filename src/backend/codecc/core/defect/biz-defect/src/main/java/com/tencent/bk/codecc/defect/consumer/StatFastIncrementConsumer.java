@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.consumer;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.StatStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.StatStatisticsDao;
 import com.tencent.bk.codecc.defect.model.statistic.StatStatisticEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
@@ -16,10 +16,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class StatFastIncrementConsumer extends AbstractFastIncrementConsumer {
 
-    @Autowired
-    private StatStatisticRepository statStatisticRepository;
 
-    @Override protected void generateResult(AnalyzeConfigInfoVO analyzeConfigInfoVO) {
+    @Autowired
+    private StatStatisticsDao statStatisticsDao;
+
+    @Override
+    protected void generateResult(AnalyzeConfigInfoVO analyzeConfigInfoVO) {
         long taskId = analyzeConfigInfoVO.getTaskId();
         String toolName = analyzeConfigInfoVO.getMultiToolType();
         String buildId = analyzeConfigInfoVO.getBuildId();
@@ -32,7 +34,8 @@ public class StatFastIncrementConsumer extends AbstractFastIncrementConsumer {
         if (toolBuildStackEntity == null) {
             log.info("last success stat task build is null, taskId {} | buildId | {} | toolName {}", taskId, buildId,
                     toolName);
-            ToolBuildInfoEntity toolBuildINfoEntity = toolBuildInfoRepository.findFirstByTaskIdAndToolName(taskId, toolName);
+            ToolBuildInfoEntity toolBuildINfoEntity = toolBuildInfoRepository.findFirstByTaskIdAndToolName(taskId,
+                    toolName);
             baseBuildId =
                     toolBuildINfoEntity != null && StringUtils.isNotEmpty(toolBuildINfoEntity.getDefectBaseBuildId())
                             ? toolBuildINfoEntity.getDefectBaseBuildId() : "";
@@ -42,7 +45,7 @@ public class StatFastIncrementConsumer extends AbstractFastIncrementConsumer {
             baseBuildId = StringUtils.isNotEmpty(toolBuildStackEntity.getBaseBuildId()) ? toolBuildStackEntity
                     .getBaseBuildId() : "";
         }
-        List<StatStatisticEntity> lastStatStatisticEntityList = statStatisticRepository
+        List<StatStatisticEntity> lastStatStatisticEntityList = statStatisticsDao
                 .findByTaskIdAndBuildIdAndToolName(taskId, baseBuildId, toolName);
 
         lastStatStatisticEntityList.forEach(statStatisticEntity -> {
@@ -50,7 +53,7 @@ public class StatFastIncrementConsumer extends AbstractFastIncrementConsumer {
             statStatisticEntity.setBuildId(buildId);
         });
 
-        statStatisticRepository.saveAll(lastStatStatisticEntityList);
+        statStatisticsDao.saveAll(lastStatStatisticEntityList);
 
         // 更新告警快照基准构建ID
         toolBuildInfoDao.updateDefectBaseBuildId(taskId, toolName, buildId);

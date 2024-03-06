@@ -18,8 +18,8 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CLOSE_DEFECT_ST
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CLOSE_DEFECT_STATISTIC_LINT_OPENSOURCE;
 
 import com.google.common.collect.Maps;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintStatisticRepository;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.CheckerStatisticEntity;
 import com.tencent.bk.codecc.defect.model.NotRepairedAuthorEntity;
@@ -84,13 +84,12 @@ public class LintDefectStatisticServiceImpl
         DimensionStatisticModel dimensionStatistic = isMigrationSuccessful ? new DimensionStatisticModel() : null;
 
         return new LintDefectStatisticModelBuilder()
+                .fastIncrementFlag(defectStatisticModel.getFastIncrementFlag())
                 .newCountCheckerList(defectStatisticModel.getNewCountCheckers())
                 .taskId(defectStatisticModel.getTaskDetailVO().getTaskId())
                 .toolName(defectStatisticModel.getToolName())
                 .createFrom(defectStatisticModel.getTaskDetailVO().getCreateFrom())
                 .buildId(defectStatisticModel.getBuildId())
-                .baseBuildId(defectStatisticModel.getToolBuildStackEntity() != null
-                        ? defectStatisticModel.getToolBuildStackEntity().getBuildId() : null)
                 .allDefectList(defectStatisticModel.getDefectList())
                 .migrationSuccessful(isMigrationSuccessful)
                 .checkerKeyToCategoryMap(checkerKeyToCategoryMap)
@@ -213,12 +212,16 @@ public class LintDefectStatisticServiceImpl
      */
     @Override
     public void statisticDefectChange(LintDefectStatisticModel statisticModel) {
+        log.info("lint statistic defect change, cur: {}, base: {}", statisticModel.getBuildId(),
+                statisticModel.getBaseBuildId());
+
         int defectChange;
         int fileChange;
         int fileCount = statisticModel.getFilePathSet().size();
         int defectCount = statisticModel.getAllNewDefects().size();
         LintStatisticEntity lastLintStatisticEntity = lintStatisticRepository.findFirstByTaskIdAndToolNameAndBuildId(
                 statisticModel.getTaskId(), statisticModel.getToolName(), statisticModel.getBaseBuildId());
+
 
         if (lastLintStatisticEntity == null) {
             defectChange = defectCount;
@@ -322,13 +325,17 @@ public class LintDefectStatisticServiceImpl
      */
     @Override
     public void asyncStatisticDefect(LintDefectStatisticModel statisticModel) {
+        LintStatisticEntity mqObj = statisticModel.getLintStatisticEntity();
+        mqObj.setFastIncrementFlag(statisticModel.getFastIncrementFlag());
+        mqObj.setBaseBuildId(statisticModel.getBaseBuildId());
+
         // 异步统计非new状态的告警数
         if (ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value().equalsIgnoreCase(statisticModel.getCreateFrom())) {
             rabbitTemplate.convertAndSend(EXCHANGE_CLOSE_DEFECT_STATISTIC_LINT_OPENSOURCE,
-                    ROUTE_CLOSE_DEFECT_STATISTIC_LINT_OPENSOURCE, statisticModel.getLintStatisticEntity());
+                    ROUTE_CLOSE_DEFECT_STATISTIC_LINT_OPENSOURCE, mqObj);
         } else {
             rabbitTemplate.convertAndSend(EXCHANGE_CLOSE_DEFECT_STATISTIC_LINT,
-                    ROUTE_CLOSE_DEFECT_STATISTIC_LINT, statisticModel.getLintStatisticEntity());
+                    ROUTE_CLOSE_DEFECT_STATISTIC_LINT, mqObj);
         }
     }
 

@@ -13,7 +13,7 @@
 // 如果这里定义的是 VART: JSON.stringify('abcde') 那么这段代码会替换为 if (a === 'abcde')
 // 如果这里定义的是 VART: 'abcde' 那么这段代码会替换为 if (a === abcde) 会报错
 
-const NODE_ENV = JSON.stringify(process.env.NODE_ENV)
+const NODE_ENV = JSON.stringify(process.env.NODE_ENV);
 
 export default {
   'process.env': {
@@ -21,4 +21,4 @@ export default {
   },
   staticUrl: '/static',
   NODE_ENV,
-}
+};

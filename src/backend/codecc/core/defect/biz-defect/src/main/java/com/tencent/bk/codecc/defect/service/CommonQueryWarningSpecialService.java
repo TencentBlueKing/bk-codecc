@@ -14,4 +14,14 @@ public interface CommonQueryWarningSpecialService {
      * @return
      */
     DefectDetailVO getFilesContent(DefectDetailVO defectDetailVO);
+
+    /**
+     * 获取告警文件信息
+     *
+     * @author victorljli
+     * @date 2023/6/13
+     * @param defectDetailVO
+     * @return
+     */
+    DefectDetailVO getFilesInfo(DefectDetailVO defectDetailVO);
 }

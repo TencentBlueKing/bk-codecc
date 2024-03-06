@@ -1,57 +1,88 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <!-- <meta http-equiv="Pragma" content="no-cache" /> -->
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <link rel="icon" href="__BK_PUBLIC_PATH_PREFIX__/static/images/favicon.ico" type="image/x-icon" />
-        <link rel="shortcut icon" href="__BK_PUBLIC_PATH_PREFIX__/static/images/favicon.ico" type="image/x-icon" />
-        <meta charset="utf-8">
-        <title>CodeCC</title>
-    </head>
-    <body>
-        <div id="app"></div>
-        <script>
-            var projectId = document.location.pathname.match(/^\/codecc\/([\w-]+)\/?/)?.[1] || ''
-            var projectIdInCookie = document.cookie.replace(/(?:(?:^|.*;\s*)X-DEVOPS-PROJECT-ID\s*\=\s*([^;]*).*$)|^.*$/, "$1");
-            if (projectId !== projectIdInCookie) {
-                document.cookie = 'X-DEVOPS-PROJECT-ID=' + projectId + ';domain=' + location.host + ';path=/'
-                document.location.reload()
-            }
-        </script>
-        <script>
-            var PAAS_SERVICE_URL = 'http://__PAAS_SERVICE_URL__'
-            var AJAX_URL_PREFIX = '//' + location.host + '/ms'
-            var DEVOPS_SITE_URL = '__BK_CI_PUBLIC_URL__'
-            var DEVOPS_API_URL = '__BK_CI_PUBLIC_URL__/ms'
-            var JUMP_SITE_URL = window.self === window.top ? CODECC_SITE_URL : DEVOPS_SITE_URL + '/console'
-            var STREAM_SITE_URL = '__BK_STREAM_PUBLIC_URL__'
-            var CODECC_OP_SITE_URL = '__BK_CODECC_OP_PUBLIC_URL__'
-            var PUBLIC_URL_PREFIX = "__BK_PUBLIC_PATH_PREFIX__"
+  <head>
+    <!-- <meta http-equiv="Pragma" content="no-cache" /> -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="icon" href="__BK_PUBLIC_PATH_PREFIX__/static/images/favicon.ico" type="image/x-icon" />
+    <link
+      rel="shortcut icon"
+      href="__BK_PUBLIC_PATH_PREFIX__/static/images/favicon.ico"
+      type="image/x-icon"
+    />
+    <meta charset="utf-8" />
+    <title>CodeCC</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      var PAAS_SERVICE_URL = '<%= process.env.BK_PAAS_SERVICE_URL %>';
+      var AJAX_URL_PREFIX =
+        '<%= process.env.NODE_ENV %>' === 'development'
+          ? '<%= process.env.BK_AJAX_URL_PREFIX %>'
+          : '//' + location.host + '/ms';
+      var OP_AJAX_URL_PREFIX = '<%= process.env.BK_CODECC_OP_SITE_URL %>';
+      var DEVOPS_SITE_URL = '<%= process.env.BK_DEVOPS_SITE_URL %>';
+      var DEVOPS_API_URL = DEVOPS_SITE_URL + '/ms';
+      var STREAM_SITE_URL = '<%= process.env.BK_STREAM_SITE_URL %>';
+      var PRECI_URL = '<%= process.env.BK_PRECI_URL %>';
+      // 链接
+      var IWIKI_SITE_URL = '<%= process.env.BK_IWIKI_SITE_URL %>';
+      var IWIKI_CODECC_HOME = IWIKI_SITE_URL + '/15107691';
+      var IWIKI_CODECC_TOOL = IWIKI_SITE_URL + '/15107684';
+      var IWIKI_MRPR_SCAN = IWIKI_SITE_URL + '/219399148';
+      var IWIKI_PROHIBIT = IWIKI_SITE_URL + '/881538122';
+      var IWIKI_OPEN_SCORE = IWIKI_SITE_URL + '/1756231675';
+      var IWIKI_ROBOT_DESC = IWIKI_SITE_URL + '/79242724';
+      var DOWNLOAD_JD_PRECI_URL = IWIKI_SITE_URL + '/188803999';
+      var DOWNLOAD_VS_PRECI_URL = IWIKI_SITE_URL + '/188803879';
+      var PRECI_INIT_PROJECT_URL = IWIKI_SITE_URL + '/4008544941'
 
-            // 链接
-            var IWIKI_CODECC_HOME = 'https://__IWIKI_CODECC_HOME__'
-            var IWIKI_CODECC_TOOL = 'https://__IWIKI_CODECC_TOOL__'
-            var ROBOT_DESC = 'https://__ROBOT_DESC__'
-            var IWIKI_OPEN_SCORE = 'https://__IWIKI_OPEN_SCORE__'
-            var TECHMAP_REPORT = 'https://__TECHMAP_REPORT__'
-            var IWIKI_MRPR_SCAN = 'https://__IWIKI_MRPR_SCAN__'
-            var IWIKI_PROHIBIT = 'https://__IWIKI_PROHIBIT__'
-            var IWIKI_SITE_URL = 'https://__IWIKI_SITE_URL__'
+      var TECHMAP_REPORT = '<%= process.env.BK_TECHMAP_REPORT %>';
+      var BK_IAM_URL_PREFIX = '<%= process.env.BK_IAM_URL_PREFIX %>';
 
-            // aegis监控
-            var AEGISID = '__AEGISID__'
-        </script>
-        <script>
-            (function(){
-                var prefix = '__BK_CI_PUBLIC_PATH_PREFIX__' ? '__BK_CI_PUBLIC_PATH_PREFIX__' : DEVOPS_SITE_URL
-                if (window.self !== window.top) { // iframe嵌入
-                    var script = document.createElement('script')
-                    script.type = 'text/javascript'
-                    script.src = prefix + '/console/static/devops-utils.js'
-                    document.getElementsByTagName('head')[0].appendChild(script)
-                }
-            })()
-        </script>
-    </body>
+      // aegis监控
+      var AEGISID = '<%= process.env.BK_AEGISID %>';
+
+      var BK_STATIC_URL = '<%= process.env.BK_STATIC_URL %>'
+      var IS_ENV_TAI = Boolean(location.host === '<%= process.env.BK_CODECC_HOST_TAI_URL %>')
+
+      // 太湖环境
+      if (IS_ENV_TAI) {
+        DEVOPS_SITE_URL = '<%= process.env.BK_DEVOPS_SITE_TAI_URL %>';
+        DEVOPS_API_URL = DEVOPS_SITE_URL + '/ms';
+        PAAS_SERVICE_URL = '<%= process.env.BK_PAAS_SERVICE_TAI_URL %>';
+      }
+    </script>
+    <script>
+      (function () {
+        if (window.self !== window.top) {
+          // iframe嵌入
+          var prefix = '__BK_CI_PUBLIC_PATH_PREFIX__' ? '__BK_CI_PUBLIC_PATH_PREFIX__' : DEVOPS_SITE_URL
+          var script = document.createElement('script');
+          script.type = 'text/javascript';
+          script.src = prefix + '/console/static/devops-utils.js';
+          document.getElementsByTagName('head')[0].appendChild(script);
+        }
+        if ('<%= process.env.NODE_ENV %>' !== 'development') {
+          var projectId =
+            document.location.pathname.match(/^\/codecc\/([\w-]+)\/?/)?.[1] ||
+            '';
+          var projectIdInCookie = document.cookie.replace(
+            /(?:(?:^|.*;\s*)X-DEVOPS-PROJECT-ID\s*\=\s*([^;]*).*$)|^.*$/,
+            '$1'
+          );
+          if (projectId !== projectIdInCookie) {
+            document.cookie =
+              'X-DEVOPS-PROJECT-ID=' +
+              projectId +
+              ';domain=' +
+              location.host +
+              ';path=/';
+            document.location.reload();
+          }
+        }
+      })();
+    </script>
+  </body>
 </html>

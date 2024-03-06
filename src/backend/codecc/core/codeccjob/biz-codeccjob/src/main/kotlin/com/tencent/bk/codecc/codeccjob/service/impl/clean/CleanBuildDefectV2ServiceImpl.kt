@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.codeccjob.service.impl.clean
 
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.BuildDefectV2Repository
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.BuildDefectV2Repository
 import com.tencent.bk.codecc.codeccjob.service.ICleanMongoDataService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired

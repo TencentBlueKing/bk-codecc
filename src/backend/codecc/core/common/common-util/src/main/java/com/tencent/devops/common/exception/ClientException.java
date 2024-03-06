@@ -28,8 +28,10 @@ public class ClientException extends Exception {
         CACHE_MISSING;
 
         static String getName(int errorCode) {
-            if ((values()).length >= errorCode)
+            if ((values()).length >= errorCode) {
                 return values()[errorCode].name();
+            }
+
             return "UNKNOWN ERROR CODE";
         }
     }
@@ -57,7 +59,8 @@ public class ClientException extends Exception {
     }
 
     public ClientException(int errorCode, String message, Throwable chainedException) {
-        super((message == null && errorCode != 0) ? (", code=" + errorCode + "->" + ErrorType.getName(errorCode)) : message, chainedException);
+        super((message == null && errorCode != 0) ? (", code=" + errorCode + "->" + ErrorType.getName(errorCode))
+                : message, chainedException);
         this.errorCode = errorCode;
         this.message = message;
     }
@@ -73,7 +76,8 @@ public class ClientException extends Exception {
     }
 
     public ClientException(ErrorType error, String message, Throwable chainedException) {
-        super((message == null && error.ordinal() != 0) ? (", code=" + error.ordinal() + "->" + error.name()) : message, chainedException);
+        super((message == null && error.ordinal() != 0) ? (", code=" + error.ordinal() + "->" + error.name()) : message,
+                chainedException);
         this.errorCode = error.ordinal();
         this.message = message;
         this.errorType = error;
@@ -116,11 +120,12 @@ public class ClientException extends Exception {
         Field[] flds = clazz.getDeclaredFields();
         for (int i = 0; i < flds.length; i++) {
             int mods = flds[i].getModifiers();
-            if (Modifier.isFinal(mods) && Modifier.isStatic(mods) && Modifier.isPublic(mods))
+            if (Modifier.isFinal(mods) && Modifier.isStatic(mods) && Modifier.isPublic(mods)) {
                 try {
                     map.put(flds[i].get(null), flds[i].getName());
                 } catch (Throwable throwable) {
                 }
+            }
         }
         return map;
     }

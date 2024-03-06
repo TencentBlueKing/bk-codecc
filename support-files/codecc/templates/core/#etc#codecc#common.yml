@@ -1,0 +1,158 @@
+# Common config Template 重复的通用的配置抽离在到
+spring:
+  application:
+    version: 4.0.0
+  jmx:
+    enabled: true
+  # consul config do not need to change
+  redis:
+    host: __BK_CODECC_REDIS_HOST__
+    password: __BK_CODECC_REDIS_PASSWORD__
+    port: __BK_CODECC_REDIS_PORT__
+    database: __BK_CODECC_REDIS_DB__
+    jedis:
+      pool:
+        max-active: __BK_CODECC_REDIS_POOL_ACTIVE__
+        max-wait: -1
+        max-idle: __BK_CODECC_REDIS_POOL_IDLE__
+        min-idle: 0
+    connect-timeout: 5000
+    client-type: jedis
+  rabbitmq:
+    virtual-host: __BK_CODECC_RABBITMQ_VHOST__
+    username: __BK_CODECC_RABBITMQ_USER__
+    password: __BK_CODECC_RABBITMQ_PASSWORD__
+    addresses: __BK_CODECC_RABBITMQ_ADDR__
+    listener:
+      simple:
+        concurrency: 10
+        acknowledge-mode: auto
+        prefetch: 1
+      prefetch: 1
+    core:
+      virtual-host: __BK_CODECC_RABBITMQ_VHOST__
+      username: __BK_CODECC_RABBITMQ_USER__
+      password: __BK_CODECC_RABBITMQ_PASSWORD__
+      addresses: __BK_CODECC_RABBITMQ_ADDR__
+    extend:
+      virtual-host: __BK_CODECC_RABBITMQ_VHOST__
+      username: __BK_CODECC_RABBITMQ_USER__
+      password: __BK_CODECC_RABBITMQ_PASSWORD__
+      addresses: __BK_CODECC_RABBITMQ_ADDR__
+  cloud:
+    consul:
+      discovery:
+        tags: __BK_CODECC_CONSUL_DISCOVERY_TAG__
+        health-check-path: /management/health
+        heartbeat:
+          enabled: true
+        query-passing: true
+        preferIpAddress: true
+        instance-id: ${spring.application.name}-${server.port}
+      port: __BK_CODECC_CONSUL_HTTP_PORT__
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  metrics:
+    servo:
+      enabled: false
+
+endpoints:
+  metrics:
+    filter:
+      enabled: false
+
+# http concurrency
+server:
+  servlet-path: /
+  undertow:
+    worker-threads: 100
+
+cluster:
+  tag: __BK_CODECC_CLUSTER_TAG__
+
+
+# monitor path config
+management: 
+  endpoints:
+    web:
+      base-path: /management
+      exposure:
+        include: '*'
+  security:
+    enabled: false
+  endpoint:
+    health:
+      show-details: always
+      group:
+        readiness:
+          include: readinessState, readinessIndicator
+        liveness:
+          include: livenessState, livenessIndicator
+
+bkci:
+  public:
+    url: __BK_CI_PUBLIC_URL__
+  private:
+    url: __BK_CI_PRIVATE_URL__
+  token: __BK_CI_TOKEN__
+
+codecc:
+  public:
+    url: __BK_CODECC_PUBLIC_URL__
+  privatetoken: __BK_CODECC_PRIVATE_TOKEN__
+  quartz:
+    tag: __BK_CODECC_CONSUL_DISCOVERY_TAG__
+  common:
+    envType: __BK_CODECC_COMMON_ENV_TYPE__
+
+service:
+  prefix:
+    codecc: __BK_CODECC_SERVICE_PERFIX__
+  suffix:
+    codecc: __BK_CODECC_SERVICE_SUFFIX__
+
+auth:
+  # idProvider为权限中心对接方式，sample(开源默认实现无鉴权)/ bk_login（蓝鲸登录) / client
+  # 选择sample后以下配置无效
+  idProvider: __BK_CI_AUTH_PROVIDER__
+  rbacResourceType: __BK_CODECC_AUTH_RBAC_RESOURCE_TYPE__
+  # grantType: rization_code
+  # principalType: user
+  # envName: prod
+  #  开发时需要配置Host解析到iam.service.consul
+  url: __BK_CODECC_AUTH_URL__
+  appCode: __BK_CODECC_APP_CODE__
+  appSecret: __BK_CODECC_APP_TOKEN__
+  # bkloginUrl: __BK_PAAS_PRIVATE_URL__/login/api/v2
+  # iamCallBackUser: __BK_CI_IAM_CALLBACK_USER__
+  rbac:
+    pipelineResourceType: __BK_CODECC_AUTH_RBAC_PIPELINE_RESOURCE_TYPE__
+    token: __BK_CODECC_AUTH_RBAC_TOKEN__
+    resourceType: __BK_CODECC_AUTH_RBAC_RESOURCE_TYPE__
+  github:
+    token: __BK_CODECC_AUTH_GITHUB_TOKEN__
+
+# esb:
+#   code: __BK_CODECC_APP_CODE__
+#   secret: __BK_CODECC_APP_TOKEN__
+
+storage:
+  type: __BK_CODECC_STORAGE_TYPE__
+  #  选择storage.type=bkrepo后需要配置storage.bkrepo
+  bkrepo:
+    username: __BK_CODECC_STORAGE_BKREPO_USERNAME__
+    password: __BK_CODECC_STORAGE_BKREPO_PASSWORD__
+    project: __BK_CODECC_STORAGE_BKREPO_PROJECT__
+    repo: __BK_CODECC_STORAGE_BKREPO_REPO__
+    host: __BK_CODECC_STORAGE_BKREPO_HOST__
+
+project:
+  gray:
+    v2: __BK_CODECC_PROJECT_GRAY__
+cos:
+  secretId: __BK_CODECC_COS_SECRET_ID__
+  secretKey: __BK_CODECC_COS_SECRET_KEY__
+  bucket: __BK_CODECC_COS_BUCKET__

@@ -19,7 +19,7 @@ object AuthActionUtil {
     )
 
     /**
-     * 获取权限操作id
+     * 获取权限操作id，若没批配到（新的action）则取本身
      */
     fun getRbacAction(codeCCAuthActionName: String): List<String> {
         return ActionMapping[codeCCAuthActionName] ?: listOf(codeCCAuthActionName)

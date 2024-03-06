@@ -1,8 +1,7 @@
 package com.tencent.bk.codecc.defect.consumer;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskLogDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskLogOverviewDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.TaskLogRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.TaskLogOverviewDao;
 import com.tencent.bk.codecc.defect.dto.ScanTaskTriggerDTO;
 import com.tencent.bk.codecc.defect.model.TaskLogEntity;
 import com.tencent.bk.codecc.defect.model.TaskLogOverviewEntity;
@@ -16,7 +15,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.jvnet.hk2.annotations.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

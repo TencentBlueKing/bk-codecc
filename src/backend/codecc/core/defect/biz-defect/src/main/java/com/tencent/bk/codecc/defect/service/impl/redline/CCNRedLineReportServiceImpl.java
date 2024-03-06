@@ -5,10 +5,8 @@ import static com.tencent.bk.codecc.defect.constant.DefectConstants.FORBIDDEN_CO
 import static com.tencent.bk.codecc.defect.constant.DefectConstants.PASS_COUNT;
 import static com.tencent.bk.codecc.defect.constant.DefectConstants.PASS_COUNT_D;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CCNDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCStatisticRepository;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.model.redline.RedLineExtraParams;
 import com.tencent.bk.codecc.defect.model.statistic.CCNStatisticEntity;
@@ -22,11 +20,7 @@ import com.tencent.bk.codecc.defect.vo.redline.RedLineVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
-import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.constant.ComConstants;
-import com.tencent.devops.common.constant.CommonMessageCode;
-import com.tencent.devops.common.service.BaseDataCacheService;
-import com.tencent.devops.common.util.DateTimeUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -358,9 +352,12 @@ public class CCNRedLineReportServiceImpl extends AbstractRedLineReportService<CC
                                               List<CCNDefectEntity> ignoreDefectList) {
         CCNStatisticEntity ccnStatistic =
                 ccnStatisticRepository.findFirstByTaskIdAndToolNameOrderByTimeDesc(taskId, toolName);
-        ccnDupcDefect.setAverage(Double.parseDouble(String.format("%.4f", ccnStatistic.getAverageCCN() == null
-                ? 0.0F
-                : ccnStatistic.getAverageCCN())));
+
+        if (ccnStatistic.getAverageCCN() == null) {
+            ccnDupcDefect.setAverage(0.0d);
+        } else {
+            ccnDupcDefect.setAverage(Math.round(ccnStatistic.getAverageCCN() * 10000.0) / 10000.0);
+        }
 
         int stockExtreme = 0;
         int stockHigh = 0;

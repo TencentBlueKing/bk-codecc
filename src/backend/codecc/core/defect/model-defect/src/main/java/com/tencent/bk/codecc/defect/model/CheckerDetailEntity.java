@@ -28,6 +28,7 @@ package com.tencent.bk.codecc.defect.model;
 
 import com.tencent.codecc.common.db.CommonEntity;
 import com.tencent.devops.common.constant.ComConstants;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.Transient;
@@ -47,8 +48,7 @@ import java.util.Set;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Document(collection = "t_checker_detail")
-public class CheckerDetailEntity extends CommonEntity
-{
+public class CheckerDetailEntity extends CommonEntity {
     /**
      * 工具名
      */
@@ -221,4 +221,16 @@ public class CheckerDetailEntity extends CommonEntity
      */
     @Field("checker_version")
     private int checkerVersion;
+
+    /**
+     * 规则的扫描粒度
+     */
+    @Field("check_granularity")
+    private String checkGranularity;
+
+    /**
+     * 规则发布者
+     */
+    @Field("publisher")
+    private String publisher;
 }

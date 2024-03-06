@@ -27,8 +27,8 @@
 package com.tencent.bk.codecc.defect.service.impl.pipelinereport;
 
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CCNDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CCNDefectDao;
 import com.tencent.bk.codecc.defect.model.statistic.CCNStatisticEntity;
 import com.tencent.bk.codecc.defect.model.pipelinereport.CCNSnapShotEntity;
 import com.tencent.bk.codecc.defect.model.pipelinereport.ToolSnapShotEntity;
@@ -49,8 +49,8 @@ import org.springframework.stereotype.Service;
  */
 @Service("CCNCheckerReportBizService")
 @Slf4j
-public class CCNCheckReportBizServiceImpl implements ICheckReportBizService
-{
+public class CCNCheckReportBizServiceImpl implements ICheckReportBizService {
+
     @Autowired
     private ToolMetaCacheService toolMetaCacheService;
 
@@ -69,26 +69,30 @@ public class CCNCheckReportBizServiceImpl implements ICheckReportBizService
     private ThirdPartySystemCaller thirdPartySystemCaller;
 
     @Override
-    public ToolSnapShotEntity getReport(long taskId, String projectId, String toolName, String buildId)
-    {
+    public ToolSnapShotEntity getReport(long taskId, String projectId, String toolName, String buildId) {
         CCNSnapShotEntity ccnSnapShotEntity = new CCNSnapShotEntity();
 
         handleToolBaseInfo(ccnSnapShotEntity, taskId, toolName, projectId, buildId);
 
-        CCNStatisticEntity ccnStatistic = ccnStatisticRepository.findFirstByTaskIdAndBuildIdOrderByTimeDesc(taskId, buildId);
-        if (ccnStatistic == null)
-        {
+        CCNStatisticEntity ccnStatistic = ccnStatisticRepository.findFirstByTaskIdAndBuildIdOrderByTimeDesc(taskId,
+                buildId);
+        if (ccnStatistic == null) {
             return ccnSnapShotEntity;
         }
-        ccnSnapShotEntity.setTotalRiskFuncCount(ccnStatistic.getDefectCount() == null ? 0 : ccnStatistic.getDefectCount());
-        ccnSnapShotEntity.setChangeedRiskFuncCount(ccnStatistic.getDefectChange() == null ? 0 : ccnStatistic.getDefectChange());
-        ccnSnapShotEntity.setAverageCcn(String.format("%.2f", ccnStatistic.getAverageCCN() == null ? 0.0F : ccnStatistic.getAverageCCN()));
-        ccnSnapShotEntity.setChangedCcn(String.format("%.2f", ccnStatistic.getAverageCCNChange() == null ? 0.0F : ccnStatistic.getAverageCCNChange()));
+        ccnSnapShotEntity.setTotalRiskFuncCount(
+                ccnStatistic.getDefectCount() == null ? 0 : ccnStatistic.getDefectCount());
+        ccnSnapShotEntity.setChangeedRiskFuncCount(
+                ccnStatistic.getDefectChange() == null ? 0 : ccnStatistic.getDefectChange());
+        ccnSnapShotEntity.setAverageCcn(
+                String.format("%.2f", ccnStatistic.getAverageCCN() == null ? 0.0F : ccnStatistic.getAverageCCN()));
+        ccnSnapShotEntity.setChangedCcn(String.format("%.2f",
+                ccnStatistic.getAverageCCNChange() == null ? 0.0F : ccnStatistic.getAverageCCNChange()));
         ccnSnapShotEntity.setSuperHigh(ccnStatistic.getSuperHighCount() == null ? 0 : ccnStatistic.getSuperHighCount());
         ccnSnapShotEntity.setHigh(ccnStatistic.getHighCount() == null ? 0 : ccnStatistic.getHighCount());
         ccnSnapShotEntity.setMedium(ccnStatistic.getMediumCount() == null ? 0 : ccnStatistic.getMediumCount());
         ccnSnapShotEntity.setLow(ccnStatistic.getLowCount() == null ? 0 : ccnStatistic.getLowCount());
-        ccnSnapShotEntity.setAverageCcnChart(ccnStatistic.getAverageList() == null ? Lists.newArrayList() : ccnStatistic.getAverageList());
+        ccnSnapShotEntity.setAverageCcnChart(
+                ccnStatistic.getAverageList() == null ? Lists.newArrayList() : ccnStatistic.getAverageList());
         ccnSnapShotEntity.setCcnBeyondThresholdSum(ccnStatistic.getCcnBeyondThresholdSum() == null
                 ? 0 : ccnStatistic.getCcnBeyondThresholdSum());
 
@@ -96,8 +100,8 @@ public class CCNCheckReportBizServiceImpl implements ICheckReportBizService
     }
 
 
-    private void handleToolBaseInfo(CCNSnapShotEntity ccnSnapShotEntity, long taskId, String toolName, String projectId, String buildId)
-    {
+    private void handleToolBaseInfo(CCNSnapShotEntity ccnSnapShotEntity, long taskId, String toolName, String projectId,
+            String buildId) {
         //获取工具信息
         ccnSnapShotEntity.setToolNameCn(toolMetaCacheService.getToolDisplayName(toolName));
         ccnSnapShotEntity.setToolNameEn(toolName);

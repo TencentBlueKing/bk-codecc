@@ -54,20 +54,18 @@ public interface TaskConstants
     /**
      * 任务状态，0-启用，1-停用
      */
-    enum TaskStatus
-    {
+    enum TaskStatus {
         ENABLE(0),
-        DISABLE(1);
+        DISABLE(1),
+        COLD(2);
 
         private Integer value;
 
-        TaskStatus(Integer value)
-        {
+        TaskStatus(Integer value) {
             this.value = value;
         }
 
-        public Integer value()
-        {
+        public Integer value() {
             return value;
         }
     }
@@ -152,6 +150,4 @@ public interface TaskConstants
         SCHEDULE_TASK,
         CUSTOM_TRIGGER_TASK
     }
-
-
 }

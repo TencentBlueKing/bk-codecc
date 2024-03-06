@@ -28,7 +28,7 @@ import com.tencent.bk.codecc.schedule.vo.GetFileSizeVO;
 import com.tencent.bk.codecc.schedule.vo.UploadVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.constant.CommonMessageCode;
-import com.tencent.devops.common.storage.StorageService;
+import com.tencent.devops.common.storage.ScanFileStorageService;
 import com.tencent.devops.common.storage.constant.StorageType;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.MD5Utils;
@@ -81,7 +81,7 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
     private FileIndexRepository fileIndexRepository;
 
     @Autowired
-    private StorageService storageService;
+    private ScanFileStorageService scanFileStorageService;
 
     @Value("${codecc.file.data.path:/data/bkce/codecc/nfs}")
     private String codeccFileDataPath = "";
@@ -93,52 +93,52 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
                         + "/nfs2/result_upload;"
                         + "/nfs3/result_upload;"
                         + "/nfs4/result_upload;"
-                        + "/nfs5/result_upload;"
-                        + "/nfs6/result_upload;"
-                        + "/nfs7/result_upload;"
-                        + "/nfs8/result_upload;"
+//                        + "/nfs5/result_upload;"
+//                        + "/nfs6/result_upload;"
+//                        + "/nfs7/result_upload;"
+//                        + "/nfs8/result_upload;"
                         + "/nfs9/result_upload;"
                         + "/nfs10/result_upload;"
                         + "/nfs11/result_upload;"
-                        + "/nfs12/result_upload;"
-                        + "/nfs13/result_upload;"
-                        + "/nfs14/result_upload;"
-                        + "/nfs15/result_upload;"
-                        + "/nfs16/result_upload");
+                        + "/nfs12/result_upload;");
+//                        + "/nfs13/result_upload;"
+//                        + "/nfs14/result_upload;"
+//                        + "/nfs15/result_upload;"
+//                        + "/nfs16/result_upload");
         folderMap.put(ScheduleConstants.UploadType.FAIL_RESULT.name(),
                 "/nfs1/fail_result_upload;"
                         + "/nfs2/fail_result_upload;"
                         + "/nfs3/fail_result_upload;"
                         + "/nfs4/fail_result_upload;"
-                        + "/nfs5/fail_result_upload;"
-                        + "/nfs6/fail_result_upload;"
-                        + "/nfs7/fail_result_upload;"
-                        + "/nfs8/fail_result_upload;"
+//                        + "/nfs5/fail_result_upload;"
+//                        + "/nfs6/fail_result_upload;"
+//                        + "/nfs7/fail_result_upload;"
+//                        + "/nfs8/fail_result_upload;"
                         + "/nfs9/fail_result_upload;"
                         + "/nfs10/fail_result_upload;"
                         + "/nfs11/fail_result_upload;"
-                        + "/nfs12/fail_result_upload;"
-                        + "/nfs13/fail_result_upload;"
-                        + "/nfs14/fail_result_upload;"
-                        + "/nfs15/fail_result_upload;"
-                        + "/nfs16/fail_result_upload");
+                        + "/nfs12/fail_result_upload;");
+//                        + "/nfs13/fail_result_upload;"
+//                        + "/nfs14/fail_result_upload;"
+//                        + "/nfs15/fail_result_upload;"
+//                        + "/nfs16/fail_result_upload");
         folderMap.put(ScheduleConstants.UploadType.SCM_JSON.name(),
                 "/nfs1/scm;"
                         + "/nfs2/scm;"
                         + "/nfs3/scm;"
                         + "/nfs4/scm;"
-                        + "/nfs5/scm;"
-                        + "/nfs6/scm;"
-                        + "/nfs7/scm;"
-                        + "/nfs8/scm;"
+//                        + "/nfs5/scm;"
+//                        + "/nfs6/scm;"
+//                        + "/nfs7/scm;"
+//                        + "/nfs8/scm;"
                         + "/nfs9/scm;"
                         + "/nfs10/scm;"
                         + "/nfs11/scm;"
-                        + "/nfs12/scm;"
-                        + "/nfs13/scm;"
-                        + "/nfs14/scm;"
-                        + "/nfs15/scm;"
-                        + "/nfs16/scm");
+                        + "/nfs12/scm;");
+//                        + "/nfs13/scm;"
+//                        + "/nfs14/scm;"
+//                        + "/nfs15/scm;"
+//                        + "/nfs16/scm");
         folderMap.put(ScheduleConstants.DownloadType.TOOL_CLIENT.name(),
                 "/download/tool_client_download");
         folderMap.put(ScheduleConstants.DownloadType.BUILD_SCRIPT.name(),
@@ -152,18 +152,35 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
                         + "/nfs2/aggregate;"
                         + "/nfs3/aggregate;"
                         + "/nfs4/aggregate;"
-                        + "/nfs5/aggregate;"
-                        + "/nfs6/aggregate;"
-                        + "/nfs7/aggregate;"
-                        + "/nfs8/aggregate;"
+//                        + "/nfs5/aggregate;"
+//                        + "/nfs6/aggregate;"
+//                        + "/nfs7/aggregate;"
+//                        + "/nfs8/aggregate;"
                         + "/nfs9/aggregate;"
                         + "/nfs10/aggregate;"
                         + "/nfs11/aggregate;"
-                        + "/nfs12/aggregate;"
-                        + "/nfs13/aggregate;"
-                        + "/nfs14/aggregate;"
-                        + "/nfs15/aggregate;"
-                        + "/nfs16/aggregate");
+                        + "/nfs12/aggregate;");
+//                        + "/nfs13/aggregate;"
+//                        + "/nfs14/aggregate;"
+//                        + "/nfs15/aggregate;"
+//                        + "/nfs16/aggregate");
+        folderMap.put(ScheduleConstants.UploadType.FILE_CACHE.name(),
+                "/nfs1/file_cache;"
+                        + "/nfs2/file_cache;"
+                        + "/nfs3/file_cache;"
+                        + "/nfs4/file_cache;"
+//                        + "/nfs5/file_cache;"
+//                        + "/nfs6/file_cache;"
+//                        + "/nfs7/file_cache;"
+//                        + "/nfs8/file_cache;"
+                        + "/nfs9/file_cache;"
+                        + "/nfs10/file_cache;"
+                        + "/nfs11/file_cache;"
+                        + "/nfs12/file_cache;");
+//                        + "/nfs13/file_cache;"
+//                        + "/nfs14/file_cache;"
+//                        + "/nfs15/file_cache;"
+//                        + "/nfs16/file_cache");
         folderMap.put(ScheduleConstants.DownloadType.GATHER.name(), "/download/gather");
         folderMap.put(ScheduleConstants.DownloadType.OP_EXCEL.name(), "/download/op_excel");
         return folderMap;
@@ -235,7 +252,7 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
         FileIndexVO fileIndexVO = getFileIndex(fileBaseName, fileChunksMergeVO.getUploadType());
         String uploadFolder = fileIndexVO.getFileFolder();
 
-        if (!storageService.ifNeedLocalMerge(fileIndexVO.getUploadType())) {
+        if (!scanFileStorageService.ifNeedLocalMerge(fileIndexVO.getStoreType())) {
             finishChunkToStorage(fileIndexVO.getFileName());
             return true;
         }
@@ -456,6 +473,7 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
             fileIndexEntity.setFileName(fileName);
             fileIndexEntity.setFileFolder(fileFolder);
             fileIndexEntity.setUploadType(type);
+            fileIndexEntity.setStoreType(scanFileStorageService.getStorageType());
             fileIndexEntity.setCreatedDate(System.currentTimeMillis());
             fileIndexEntity.setUpdatedDate(System.currentTimeMillis());
 
@@ -683,18 +701,18 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
      */
     private void uploadToStorage(String fileName) {
         FileIndexEntity index = fileIndexRepository.findFirstByFileName(fileName);
-        if (index == null || storageService.getStorageType().equals(StorageType.NFS.code())) {
+        if (index == null || StorageType.isMountType(scanFileStorageService.getStorageType())) {
             return;
         }
         String localFilePath = Paths.get(index.getFileFolder(), index.getFileName()).toString();
         try {
-            String url = storageService.upload(localFilePath, index.getUploadType(), index.getFileName());
-            index.setStoreType(storageService.getStorageType());
+            String url = scanFileStorageService.upload(localFilePath, index.getUploadType(), index.getFileName());
+            index.setStoreType(scanFileStorageService.getStorageType());
             index.setDownloadUrl(url);
             fileIndexRepository.save(index);
         } catch (Exception e) {
             log.error("uploadToStorage filename:" + fileName + " storage:"
-                    + storageService.getStorageType() + " fail!", e);
+                    + scanFileStorageService.getStorageType() + " fail!", e);
         }
     }
 
@@ -706,23 +724,23 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
      */
     private void uploadChunkToStorage(String fileName, Integer chunkNo, File file) {
         FileIndexEntity index = fileIndexRepository.findFirstByFileName(fileName);
-        if (index == null || storageService.getStorageType().equals(StorageType.NFS.code())) {
+        if (index == null || scanFileStorageService.ifNeedLocalMerge(index.getStoreType())) {
             return;
         }
         try {
             if (chunkNo == 1) {
                 //初次上传，初始化
-                String uploadId = storageService.startChunk(index.getUploadType(), index.getFileName());
-                index.setStoreType(storageService.getStorageType());
+                String uploadId = scanFileStorageService.startChunk(index.getUploadType(), index.getFileName());
+                index.setStoreType(scanFileStorageService.getStorageType());
                 index.setUploadId(uploadId);
                 fileIndexRepository.save(index);
             }
             String chunkFileName = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("/") + 1);
-            storageService.chunkUpload(file.getAbsolutePath(), index.getUploadType(), chunkFileName,
+            scanFileStorageService.chunkUpload(file.getAbsolutePath(), index.getUploadType(), chunkFileName,
                     chunkNo, index.getUploadId());
         } catch (Exception e) {
             log.error("uploadToStorage filename:" + fileName + " storage:"
-                    + storageService.getStorageType() + " fail!", e);
+                    + scanFileStorageService.getStorageType() + " fail!", e);
         }
     }
 
@@ -733,16 +751,17 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
      */
     private void finishChunkToStorage(String fileName) {
         FileIndexEntity index = fileIndexRepository.findFirstByFileName(fileName);
-        if (index == null || storageService.getStorageType().equals(StorageType.NFS.code())) {
+        if (index == null || StorageType.isMountType(scanFileStorageService.getStorageType())) {
             return;
         }
         try {
-            String url = storageService.finishChunk(index.getUploadType(), index.getFileName(), index.getUploadId());
+            String url =
+                    scanFileStorageService.finishChunk(index.getUploadType(), index.getFileName(), index.getUploadId());
             index.setDownloadUrl(url);
             fileIndexRepository.save(index);
         } catch (Exception e) {
             log.error("finishChunkToStorage filename:" + fileName + " storage:"
-                    + storageService.getStorageType() + " fail!", e);
+                    + scanFileStorageService.getStorageType() + " fail!", e);
         }
     }
 
@@ -756,14 +775,14 @@ public class UploadDownloadServiceImpl implements UploadDownloadService {
         FileIndexEntity index = fileIndexRepository.findFirstByFileName(fileName);
         Path localFilePath = Paths.get(downloadFolder, fileName);
         if (Files.exists(localFilePath) || index == null || index.getStoreType() == null
-                || index.getStoreType().equals(StorageType.NFS.code())) {
+                || StorageType.isMountType(index.getStoreType())) {
             return;
         }
         try {
-            storageService.download(localFilePath.toString(), index.getStoreType(), index.getDownloadUrl());
+            scanFileStorageService.download(localFilePath.toString(), index.getStoreType(), index.getDownloadUrl());
         } catch (Exception e) {
             log.error("downloadFromToStorage filename:" + fileName + " storage:"
-                    + storageService.getStorageType() + " fail!", e);
+                    + scanFileStorageService.getStorageType() + " fail!", e);
         }
     }
 

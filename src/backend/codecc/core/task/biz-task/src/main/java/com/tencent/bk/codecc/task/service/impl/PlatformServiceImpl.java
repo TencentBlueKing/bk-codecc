@@ -174,12 +174,12 @@ public class PlatformServiceImpl implements PlatformService {
         for (ToolConfigInfoEntity toolConfigEntity : toolConfigEntities) {
             taskIdSet.add(toolConfigEntity.getTaskId());
             toolConfigEntity.setPlatformIp(targetIp);
-            toolConfigEntity.applyAuditInfo(userName);
+            toolConfigEntity.applyAuditInfoOnUpdate(userName);
         }
         toolRepository.saveAll(toolConfigEntities);
 
         PlatformMigrateLogEntity logEntity = new PlatformMigrateLogEntity();
-        logEntity.applyAuditInfo(userName, userName);
+        logEntity.applyAuditInfoOnCreate(userName);
         logEntity.migrateLog(toolName, sourceIp, targetIp);
         logEntity.setMigratedTaskIdSet(taskIdSet);
         logEntity.setMigrateTaskCount(taskIdSet.size());

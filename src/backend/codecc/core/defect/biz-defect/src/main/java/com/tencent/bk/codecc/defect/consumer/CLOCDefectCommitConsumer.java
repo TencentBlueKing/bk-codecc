@@ -15,8 +15,8 @@ package com.tencent.bk.codecc.defect.consumer;
 import com.alibaba.fastjson.JSONReader;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.tencent.bk.codecc.defect.constant.DefectMessageCode;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCDefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CLOCDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CLOCDefectDao;
 import com.tencent.bk.codecc.defect.model.DefectJsonFileEntity;
 import com.tencent.bk.codecc.defect.model.HeadFileEntity;
 import com.tencent.bk.codecc.defect.model.defect.CLOCDefectEntity;
@@ -39,6 +39,7 @@ import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.constant.ComConstants.ToolPattern;
 import com.tencent.devops.common.util.PathUtils;
+import com.tencent.devops.common.util.ThreadUtils;
 import com.tencent.devops.common.web.mq.ConstantsKt;
 import java.io.File;
 import java.io.FileInputStream;
@@ -52,6 +53,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -192,6 +194,7 @@ public class CLOCDefectCommitConsumer extends AbstractDefectCommitConsumer {
                             fillDefectInfo(clocDefectEntityList, filePathMap, true);
                             batchUpsertClocInfo(taskId, toolName, streamName, clocDefectEntityList);
                             clocDefectEntityList = new LinkedList<>();
+                            ThreadUtils.sleep(100);
                         }
                     }
                     if (clocDefectEntityList.size() > 0) {
@@ -465,11 +468,11 @@ public class CLOCDefectCommitConsumer extends AbstractDefectCommitConsumer {
 
     @Override
     protected String getRecommitMQExchange(CommitDefectVO vo) {
-        return ConstantsKt.PREFIX_EXCHANGE_DEFECT_COMMIT + ToolPattern.CLOC.name().toLowerCase();
+        return ConstantsKt.PREFIX_EXCHANGE_DEFECT_COMMIT + ToolPattern.CLOC.name().toLowerCase(Locale.ENGLISH);
     }
 
     @Override
     protected String getRecommitMQRoutingKey(CommitDefectVO vo) {
-        return ConstantsKt.PREFIX_ROUTE_DEFECT_COMMIT + ToolPattern.CLOC.name().toLowerCase();
+        return ConstantsKt.PREFIX_ROUTE_DEFECT_COMMIT + ToolPattern.CLOC.name().toLowerCase(Locale.ENGLISH);
     }
 }

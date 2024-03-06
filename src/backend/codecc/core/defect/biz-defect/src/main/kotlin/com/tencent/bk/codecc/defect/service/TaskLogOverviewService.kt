@@ -56,6 +56,15 @@ interface TaskLogOverviewService {
     fun getTaskLogOverview(taskId: Long, buildId: String?, status: Int?): TaskLogOverviewVO?
 
     /**
+     * 获取任务维度分析记录
+     *
+     * @param taskId
+     * @param buildId
+     * @param status
+     */
+    fun getTaskLogOverview(taskId: Long, buildId: String): TaskLogOverviewVO?
+
+    /**
      * 批量获取当前任务构建记录
      * 用于任务分析就页面，需要带上工具分析记录一起展示
      *
@@ -100,4 +109,9 @@ interface TaskLogOverviewService {
      * @param taskIdList
      */
     fun batchGetRepoInfo(taskIdList: List<Long>): Map<Long, Map<String, TaskLogRepoInfoVO>>
+
+    /**
+     * 通过任务ID获取最后的构建id
+     */
+    fun getLastAnalyzeBuildIdMap(taskIdToBuildIds: Map<Long, Set<String>>): Map<Long, String>
 }

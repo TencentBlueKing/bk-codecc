@@ -1,2 +1,6 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-com.tencent.devops.common.storage.BkRepoStorageService
+com.tencent.devops.common.storage.BkRepoScanFileStorageService,\
+com.tencent.devops.common.storage.BkRepoCSIScanFileStorageService,\
+com.tencent.devops.common.storage.BkRepoStorageAutoConfiguration
+
+

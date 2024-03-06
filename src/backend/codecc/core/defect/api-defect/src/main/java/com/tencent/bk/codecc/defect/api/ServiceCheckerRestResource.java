@@ -26,26 +26,16 @@
 
 package com.tencent.bk.codecc.defect.api;
 
-import com.tencent.bk.codecc.defect.vo.CheckerPkgRspVO;
-import com.tencent.bk.codecc.defect.vo.ConfigCheckersPkgReqVO;
 import com.tencent.bk.codecc.defect.vo.QueryTaskCheckerDimensionRequest;
-import com.tencent.bk.codecc.defect.vo.checkerset.AddCheckerSet2TaskReqVO;
-import com.tencent.bk.codecc.defect.vo.checkerset.GetCheckerSetsReqVO;
-import com.tencent.bk.codecc.defect.vo.checkerset.PipelineCheckerSetVO;
-import com.tencent.bk.codecc.defect.vo.checkerset.UserCheckerSetsVO;
-import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
-import com.tencent.bk.codecc.task.vo.checkerset.ClearTaskCheckerSetReqVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
 import java.util.List;
-
-import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
-import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 
 /**
  * 多工具规则接口
@@ -57,91 +47,7 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
 @Path("/service/checker")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public interface ServiceCheckerRestResource
-{
-
-    @ApiOperation("获取打开的规则")
-    @Path("/tasks/{taskId}/tools/{toolName}/configuration")
-    @POST
-    Result<List<CheckerPkgRspVO>> queryCheckerConfiguration(
-            @ApiParam(value = "任务ID", required = true)
-            @PathParam(value = "taskId")
-                    Long taskId,
-            @ApiParam(value = "工具名称", required = true)
-            @PathParam(value = "toolName")
-                    String toolName,
-            @ApiParam(value = "项目语言")
-            @QueryParam(value = "codeLang")
-                    Long codeLang,
-            @ApiParam(value = "工具配置信息", required = true)
-                    ToolConfigInfoVO toolConfig);
-
-
-    @ApiOperation("打开或者关闭配置规则包")
-    @Path("/tasks/{taskId}/toolName/{toolName}/checkers/configuration")
-    @POST
-    Result<Boolean> configCheckerPkg(
-            @ApiParam(value = "任务Id", required = true)
-            @PathParam("taskId")
-                    Long taskId,
-            @ApiParam(value = "工具名称", required = true)
-            @PathParam("toolName")
-                    String toolName,
-            @ApiParam(value = "配置规则包参数", required = true)
-                    ConfigCheckersPkgReqVO packageVo
-    );
-
-    @ApiOperation("任务关联规则集")
-    @Path("/tasks/{taskId}/checkerSets/relationship")
-    @POST
-    Result<Boolean> addCheckerSet2Task(
-            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String user,
-            @ApiParam(value = "任务Id", required = true)
-            @PathParam("taskId")
-                    Long taskId,
-            @ApiParam(value = "任务关联规则集请求参数", required = true)
-                    AddCheckerSet2TaskReqVO addCheckerSet2TaskReqVO
-    );
-
-    @ApiOperation("查询规则集列表")
-    @Path("/tasks/{taskId}/checkerSets")
-    @POST
-    Result<UserCheckerSetsVO> getCheckerSets(
-            @ApiParam(value = "查询规则集列表请求参数", required = true)
-                    GetCheckerSetsReqVO getCheckerSetsReqVO,
-            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String user,
-            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
-                    String projectId
-    );
-
-    @ApiOperation("查询规则集列表")
-    @Path("/tools/{toolName}/pipelineCheckerSets")
-    @GET
-    Result<PipelineCheckerSetVO> getPipelineCheckerSets(
-            @ApiParam(value = "工具名称", required = true)
-            @PathParam("toolName")
-                    String toolName,
-            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String user,
-            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
-                    String projectId
-    );
-
-    @ApiOperation("清除任务和工具关联的规则集")
-    @Path("/tasks/{taskId}/checkerSets/relationships")
-    @DELETE
-    Result<Boolean> clearCheckerSet(
-            @ApiParam(value = "任务id", required = true)
-            @PathParam("taskId")
-                    Long taskId,
-            @ApiParam(value = "清除规则集ID请求体", required = true)
-                    ClearTaskCheckerSetReqVO clearTaskCheckerSetReqVO,
-            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String user
-    );
-
+public interface ServiceCheckerRestResource {
     @ApiOperation("根据任务关联工具以及其关联规则获取维度信息")
     @Path("/listDimensionByToolAndChecker")
     @POST

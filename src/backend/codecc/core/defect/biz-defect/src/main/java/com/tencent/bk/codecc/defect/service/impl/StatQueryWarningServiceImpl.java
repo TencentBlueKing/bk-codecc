@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongotemplate.StatDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.StatDefectDao;
 import com.tencent.bk.codecc.defect.model.defect.StatDefectEntity;
 import com.tencent.bk.codecc.defect.service.IStatQueryWarningService;
 import com.tencent.bk.codecc.defect.vo.StatDefectQueryRespVO;
@@ -59,6 +59,6 @@ public class StatQueryWarningServiceImpl implements IStatQueryWarningService {
             return 0L;
         }
 
-        return Long.parseLong(lastDefectList.get(0).getString("time_stamp"));
+        return Long.parseLong(lastDefectList.get(0).getTimeStamp());
     }
 }

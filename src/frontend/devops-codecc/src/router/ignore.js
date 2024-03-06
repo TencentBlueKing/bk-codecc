@@ -1,5 +1,6 @@
-const ignoreList = () => import(/* webpackChunkName: 'defect-list' */'../views/ignore/list')
-const ignoreOperation = () => import(/* webpackChunkName: 'defect-list' */'../views/ignore/ignore-operation')
+const ignoreList = () => import(/* webpackChunkName: 'defect-list' */ '../views/ignore/list');
+const ignoreOperation = () => import(
+  /* webpackChunkName: 'defect-list' */ '../views/ignore/ignore-operation');
 
 const routes = [
   {
@@ -19,6 +20,6 @@ const routes = [
       layout: 'outer',
     },
   },
-]
+];
 
-export default routes
+export default routes;

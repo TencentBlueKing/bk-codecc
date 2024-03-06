@@ -52,7 +52,8 @@ open class CustomSchedulerManager @Autowired constructor(
     private val scheduler: Scheduler,
     private val shardingListener: ShardingListener,
     private val redisTemplate: RedisTemplate<String, String>,
-    private val rabbitTemplate: RabbitTemplate
+    private val rabbitTemplate: RabbitTemplate,
+    private val clusterTag: String?
 ) {
 
     private val groovyClassLoader = GroovyClassLoader()
@@ -96,18 +97,30 @@ open class CustomSchedulerManager @Autowired constructor(
      * 查询并执行补偿
      */
     private fun queryAndExecuteCompensate() {
-        val redisLock = RedisLock(
-            redisTemplate,
+        val redisLockKey = if (clusterTag.isNullOrBlank()) {
             "quartz:cluster:compensate:${
-                shardingStrategy.getShardingStrategy().getShardingResult()!!.currentShard.tag
-            }",
-            20
-        )
+                shardingStrategy.getShardingStrategy()
+                        .getShardingResult()!!.currentShard.tag
+            }"
+        } else {
+            "quartz:cluster:$clusterTag:compensate:${
+                shardingStrategy.getShardingStrategy()
+                        .getShardingResult()!!.currentShard.tag
+            }"
+        }
+        val redisLock = RedisLock(redisTemplate, redisLockKey, 20)
         if (redisLock.tryLock()) {
-            val hashKey =
+            val hashKey = if (clusterTag.isNullOrBlank()) {
                 "${RedisKeyConstants.BK_JOB_CLUSTER_RECORD}${
-                    CustomSchedulerManager.shardingStrategy.getShardingStrategy().getShardingResult()!!.currentShard.tag
+                    shardingStrategy.getShardingStrategy()
+                            .getShardingResult()!!.currentShard.tag
                 }"
+            } else {
+                "${RedisKeyConstants.BK_JOB_CLUSTER_RECORD}$clusterTag${
+                    shardingStrategy.getShardingStrategy()
+                            .getShardingResult()!!.currentShard.tag
+                }"
+            }
             val jobCompensateInfo = redisTemplate.opsForHash<String, String>().entries(hashKey)
             if (jobCompensateInfo.isNotEmpty()) {
                 jobCompensateInfo.forEach { t, _ ->
@@ -141,18 +154,30 @@ open class CustomSchedulerManager @Autowired constructor(
             logger.info("shard info not initialized yet!")
             return
         }
-        val redisLock = RedisLock(
-            redisTemplate,
+        val redisLockKey = if (clusterTag.isNullOrBlank()) {
             "quartz:cluster:compensate:${
                 shardingStrategy.getShardingStrategy().getShardingResult()!!.currentShard.tag
-            }",
+            }"
+        } else {
+            "quartz:cluster:compensate:$clusterTag:${
+                shardingStrategy.getShardingStrategy().getShardingResult()!!.currentShard.tag
+            }"
+        }
+        val redisLock = RedisLock(
+            redisTemplate,
+            redisLockKey,
             20
         )
         if (redisLock.tryLock()) {
-            val hashKey =
+            val hashKey = if (clusterTag.isNullOrBlank()) {
                 "${RedisKeyConstants.BK_JOB_CLUSTER_RECORD}${
                     shardingStrategy.getShardingStrategy().getShardingResult()!!.currentShard.tag
                 }"
+            } else {
+                "${RedisKeyConstants.BK_JOB_CLUSTER_RECORD}$clusterTag${
+                    shardingStrategy.getShardingStrategy().getShardingResult()!!.currentShard.tag
+                }"
+            }
             val jobCompensateInfo = redisTemplate.opsForHash<String, String>().entries(hashKey)
             if (null != jobCompensateInfo && jobCompensateInfo.isNotEmpty()) {
                 jobCompensateInfo.forEach { t, _ ->
@@ -239,10 +264,12 @@ open class CustomSchedulerManager @Autowired constructor(
                         jobManageService.saveJob(jobInstanceEntity)
                     }
                 }
+
                 OperationType.REMOVE -> {
                     if (shardingRouterService.judgeCurrentShardJob(jobInstanceEntity, shardingStrategy, routerStrategy))
                         deleteJob(jobInstanceEntity)
                 }
+
                 OperationType.RESCHEDULE -> {
                     if (shardingRouterService.judgeCurrentShardJob(
                                 jobInstanceEntity,
@@ -253,6 +280,7 @@ open class CustomSchedulerManager @Autowired constructor(
                         rescheduleJob(jobInstanceEntity)
                     }
                 }
+
                 OperationType.PARSE -> {
                     if (shardingRouterService.judgeCurrentShardJob(
                                 jobInstanceEntity,
@@ -263,6 +291,7 @@ open class CustomSchedulerManager @Autowired constructor(
                         parseJob(jobInstanceEntity)
                     }
                 }
+
                 OperationType.RESUME -> {
                     if (shardingRouterService.judgeCurrentShardJob(
                                 jobInstanceEntity,

@@ -9,15 +9,15 @@ export default {
       intervalId: null,
       // 预加载定时器列表
       intervalIdList: [],
-    }
+    };
   },
   watch: {
     intervalId(newVal, oldValue) {
-      clearInterval(oldValue)
+      clearInterval(oldValue);
     },
   },
   beforeDestroy() {
-    this.clear()
+    this.clear();
   },
   methods: {
     initCacheConfig(userConfig) {
@@ -34,81 +34,87 @@ export default {
         forward: true,
         // 强制每次都更新
         forceUpdate: false,
-      }
-      return Object.assign(defaultConfig, userConfig)
+      };
+      return Object.assign(defaultConfig, userConfig);
     },
     preloadCache(list = [], userConfig = {}) {
-      const { cacheKey, index, length, interval, forward, forceUpdate } = this.initCacheConfig(userConfig)
-      const vm = this
-      let curForward = forward
-      let count = 0
-      let step = 0
-      let currentIndex = index
+      const { cacheKey, index, length, interval, forward, forceUpdate } = this.initCacheConfig(userConfig);
+      const vm = this;
+      let curForward = forward;
+      let count = 0;
+      let step = 0;
+      let currentIndex = index;
       if (length) {
-        this.intervalId = setInterval(handleCurrentCache, interval)
-        this.intervalIdList.push(this.intervalId)
+        this.intervalId = setInterval(handleCurrentCache, interval);
+        this.intervalIdList.push(this.intervalId);
       }
       function handleCurrentCache() {
         if (count < length && count < list.length) {
           if (curForward) {
-            curForward = !curForward
-            currentIndex = index + step
-            const defect = list[currentIndex]
+            curForward = !curForward;
+            currentIndex = index + step;
+            const defect = list[currentIndex];
             if (currentIndex < list.length) {
-              step += 1
-              count += 1
+              step += 1;
+              count += 1;
               if (vm.defectCache[defect[cacheKey]] && !forceUpdate) {
-                handleCurrentCache()
+                handleCurrentCache();
               } else {
-                const params = { entityId: list[currentIndex].entityId, defectId: list[currentIndex].defectId }
-                vm.fetchAndCache(params, length)
+                const params = {
+                  entityId: list[currentIndex].entityId,
+                  defectId: list[currentIndex].defectId,
+                };
+                vm.fetchAndCache(params, length);
               }
             } else {
-              handleCurrentCache()
+              handleCurrentCache();
             }
           } else {
-            curForward = !curForward
-            currentIndex = index - step
-            const defect = list[currentIndex]
+            curForward = !curForward;
+            currentIndex = index - step;
+            const defect = list[currentIndex];
             if (currentIndex < 0) {
-              handleCurrentCache()
+              handleCurrentCache();
             } else {
-              count += 1
+              count += 1;
               if (!vm.defectCache[defect[cacheKey]] || forceUpdate) {
-                const params = { entityId: list[currentIndex].entityId, defectId: list[currentIndex].defectId }
-                vm.fetchAndCache(params, length)
+                const params = {
+                  entityId: list[currentIndex].entityId,
+                  defectId: list[currentIndex].defectId,
+                };
+                vm.fetchAndCache(params, length);
               } else {
-                handleCurrentCache()
+                handleCurrentCache();
               }
             }
           }
         } else {
-          vm.clearAllInterval()
+          vm.clearAllInterval();
         }
       }
     },
     async fetchAndCache(params, length) {
-      await this.fetchLintDetail('', params)
+      await this.fetchLintDetail('', params);
 
       // 因为按文件和按告警是两个表格，所以缓存两倍数量
       if (this.defectCacheKeyList.length > 2 * length) {
-        const firstCacheKey = this.defectCacheKeyList.shift()
-        delete this.defectCache[firstCacheKey]
+        const firstCacheKey = this.defectCacheKeyList.shift();
+        delete this.defectCache[firstCacheKey];
       }
     },
     updateCache(newKey, newValue) {
-      if (!this.defectCacheKeyList.includes(newKey)) this.defectCacheKeyList.push(newKey)
-      this.defectCache[newKey] = newValue
+      if (!this.defectCacheKeyList.includes(newKey)) this.defectCacheKeyList.push(newKey);
+      this.defectCache[newKey] = newValue;
     },
     clearAllInterval() {
       this.intervalIdList.forEach((id) => {
-        clearInterval(id)
-      })
-      this.intervalId = null
+        clearInterval(id);
+      });
+      this.intervalId = null;
     },
     clear() {
-      this.clearAllInterval()
-      this.defectCache = {}
+      this.clearAllInterval();
+      this.defectCache = {};
     },
   },
-}
+};

@@ -51,8 +51,7 @@ import java.util.Set;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ApiModel("规则详情视图实体类")
-public class CheckerDetailVO extends CommonVO
-{
+public class CheckerDetailVO extends CommonVO {
 
     @ApiModelProperty(value = "工具名", required = true)
     private String toolName;
@@ -175,4 +174,13 @@ public class CheckerDetailVO extends CommonVO
 
     @ApiModelProperty(value = "规则参数列表，规则导入时接口传入")
     private List<CheckerProps> checkerProps;
+
+    @ApiModelProperty(value = "规则的扫描粒度")
+    private String checkGranularity;
+
+    @ApiModelProperty("规则版本")
+    private Integer checkerVersion;
+
+    @ApiModelProperty("规则发布者")
+    private String publisher;
 }

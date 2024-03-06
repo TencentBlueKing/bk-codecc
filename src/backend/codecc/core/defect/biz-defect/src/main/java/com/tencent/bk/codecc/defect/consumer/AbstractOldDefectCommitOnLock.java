@@ -6,6 +6,7 @@ import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.redis.lock.RedisLock;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import com.tencent.devops.common.web.mq.ConstantsKt;
+import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -46,7 +47,7 @@ public abstract class AbstractOldDefectCommitOnLock {
         String buildId = originVO.getBuildId();
 
         long fileSize = scmJsonComponent.getDefectFileSize(streamName, toolName, buildId);
-        String toolPattern = toolMetaCacheService.getToolPattern(toolName).toLowerCase();
+        String toolPattern = toolMetaCacheService.getToolPattern(toolName).toLowerCase(Locale.ENGLISH);
         String exchange;
         String routingKey;
 

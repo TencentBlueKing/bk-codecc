@@ -13,10 +13,10 @@
 package com.tencent.bk.codecc.defect.consumer;
 
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildDefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildDefectV2Repository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.model.BuildDefectEntity;
 import com.tencent.bk.codecc.defect.model.BuildDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
@@ -25,11 +25,13 @@ import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
 import com.tencent.bk.codecc.defect.model.redline.RedLineExtraParams;
 import com.tencent.bk.codecc.defect.pojo.statistic.DefectStatisticModel;
 import com.tencent.bk.codecc.defect.service.BuildSnapshotService;
+import com.tencent.bk.codecc.defect.service.ToolBuildInfoService;
 import com.tencent.bk.codecc.defect.service.impl.redline.LintRedLineReportServiceImpl;
 import com.tencent.bk.codecc.defect.service.statistic.LintDefectStatisticServiceImpl;
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.constant.ComConstants.DefectStatus;
+import com.tencent.devops.common.service.BaseDataCacheService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -68,6 +70,10 @@ public class LintFastIncrementConsumer extends AbstractFastIncrementConsumer {
     private BuildDefectV2Repository buildDefectV2Repository;
     @Autowired
     private BuildDefectRepository buildDefectRepository;
+    @Autowired
+    private BaseDataCacheService baseDataCacheService;
+    @Autowired
+    private ToolBuildInfoService toolBuildInfoService;
 
     @Override
     protected void generateResult(AnalyzeConfigInfoVO analyzeConfigInfoVO) {
@@ -79,7 +85,10 @@ public class LintFastIncrementConsumer extends AbstractFastIncrementConsumer {
         TaskDetailVO taskVO = thirdPartySystemCaller.getTaskInfo(streamName);
         ToolBuildStackEntity toolBuildStackEntity =
                 toolBuildStackRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
-        String baseBuildId = getBaseBuildIdForFastIncr(toolBuildStackEntity, taskId, toolName, buildId);
+        String baseBuildId = toolBuildInfoService.getBaseBuildIdWhenDefectCommit(
+                toolBuildStackEntity, taskId,
+                toolName, buildId,true
+        );
         List<LintDefectV2Entity> allNewDefectList;
         List<LintDefectV2Entity> allIgnoreDefectList;
 
@@ -133,7 +142,8 @@ public class LintFastIncrementConsumer extends AbstractFastIncrementConsumer {
                         allNewDefectList,
                         null,
                         null,
-                        Lists.newArrayList()
+                        Lists.newArrayList(),
+                        true
                 )
         );
 
@@ -151,9 +161,11 @@ public class LintFastIncrementConsumer extends AbstractFastIncrementConsumer {
      * @param baseBuildId
      * @return
      */
-    private Pair<List<LintDefectV2Entity>,
-            List<LintDefectV2Entity>> getDefectListFromSnapshot(Long taskId, String toolName,
-                                                                      String baseBuildId) {
+    private Pair<List<LintDefectV2Entity>, List<LintDefectV2Entity>> getDefectListFromSnapshot(
+            Long taskId,
+            String toolName,
+            String baseBuildId
+    ) {
         List<BuildDefectV2Entity> buildDefectList =
                 buildDefectV2Repository.findByTaskIdAndBuildIdAndToolName(taskId, baseBuildId, toolName);
 
@@ -167,12 +179,14 @@ public class LintFastIncrementConsumer extends AbstractFastIncrementConsumer {
         Map<String, BuildDefectV2Entity> buildDefectMap = buildDefectList.stream()
                 .collect(Collectors.toMap(BuildDefectV2Entity::getDefectId, Function.identity(), (k1, k2) -> k1));
         buildDefectList.clear();
+        // NOCC:DLS-DEAD-LOCAL-STORE-OF-NULL(设计如此:)
         buildDefectList = null;
 
         Pair<List<LintDefectV2Entity>, List<LintDefectV2Entity>> lintDefectList =
                 getNewAndIgnoreDefectList(taskId, toolName, defectIdSet);
         List<LintDefectV2Entity> newLintDefectList = lintDefectList.getFirst();
         defectIdSet.clear();
+        // NOCC:DLS-DEAD-LOCAL-STORE-OF-NULL(设计如此:)
         defectIdSet = null;
 
         for (LintDefectV2Entity defect : newLintDefectList) {
@@ -219,6 +233,7 @@ public class LintFastIncrementConsumer extends AbstractFastIncrementConsumer {
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
         buildDefectEntityList.clear();
+        // NOCC:DLS-DEAD-LOCAL-STORE-OF-NULL(设计如此:)
         buildDefectEntityList = null;
 
         List<LintDefectV2Entity> allNewDefectList = getAllNewDefectList(taskId, toolName, defectIdSet);
@@ -277,7 +292,9 @@ public class LintFastIncrementConsumer extends AbstractFastIncrementConsumer {
          * 忽略告警处理
          */
         beginTime = System.currentTimeMillis();
-        byStatusDefectList = lintDefectV2Dao.findAllIgnoreDefectForSnapshot(taskId, toolName);
+        // 需要过滤忽略类型变更的告警，如果已经不是存量告警，就不再统计
+        Integer historyIgnoreType = baseDataCacheService.getHistoryIgnoreType();
+        byStatusDefectList = lintDefectV2Dao.findAllIgnoreDefectForSnapshot(taskId, toolName, historyIgnoreType);
         log.info("lint fast incr, ignore defect query by task and tool and status cost: {}, {}, {}",
                 taskId, toolName,
                 System.currentTimeMillis() - beginTime);
@@ -367,6 +384,7 @@ public class LintFastIncrementConsumer extends AbstractFastIncrementConsumer {
         }
 
         byStatusDefectList.clear();
+        // NOCC:DLS-DEAD-LOCAL-STORE-OF-NULL(设计如此:)
         byStatusDefectList = null;
 
         if (lastSnapshotDefectIdSet.size() == 0) {

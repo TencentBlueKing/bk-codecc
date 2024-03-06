@@ -19,10 +19,10 @@ import java.util.List;
 import static org.springframework.beans.BeanUtils.getPropertyDescriptor;
 import static org.springframework.beans.BeanUtils.getPropertyDescriptors;
 
-
 /**
  * 封装common-beanutils
  */
+
 /**
  * Static convenience methods for JavaBeans: for instantiating beans,
  * checking bean property types, copying bean properties, etc.
@@ -46,6 +46,7 @@ public abstract class BeanUtils {
      * source bean exposes but the target bean does not will silently be ignored.
      * <p>This is just a convenience method. For more complex transfer needs,
      * consider using a full BeanWrapper.
+     *
      * @param source the source bean
      * @param target the target bean
      * @throws BeansException if the copying failed
@@ -63,6 +64,7 @@ public abstract class BeanUtils {
      * source bean exposes but the target bean does not will silently be ignored.
      * <p>This is just a convenience method. For more complex transfer needs,
      * consider using a full BeanWrapper.
+     *
      * @param source the source bean
      * @param target the target bean
      * @param editable the class (or interface) to restrict property setting to
@@ -81,6 +83,7 @@ public abstract class BeanUtils {
      * source bean exposes but the target bean does not will silently be ignored.
      * <p>This is just a convenience method. For more complex transfer needs,
      * consider using a full BeanWrapper.
+     *
      * @param source the source bean
      * @param target the target bean
      * @param ignoreProperties array of property names to ignore
@@ -98,6 +101,7 @@ public abstract class BeanUtils {
      * source bean exposes but the target bean does not will silently be ignored.
      * <p>As of Spring Framework 5.3, this method honors generic type information
      * when matching properties in the source and target objects.
+     *
      * @param source the source bean
      * @param target the target bean
      * @param editable the class (or interface) to restrict property setting to
@@ -106,7 +110,7 @@ public abstract class BeanUtils {
      * @see BeanWrapper
      */
     private static void copyProperties(Object source, Object target, @Nullable Class<?> editable,
-                                       @Nullable String... ignoreProperties) throws BeansException {
+            @Nullable String... ignoreProperties) throws BeansException {
 
         Assert.notNull(source, "Source must not be null");
         Assert.notNull(target, "Target must not be null");
@@ -114,8 +118,8 @@ public abstract class BeanUtils {
         Class<?> actualEditable = target.getClass();
         if (editable != null) {
             if (!editable.isInstance(target)) {
-                throw new IllegalArgumentException("Target class [" + target.getClass().getName() +
-                        "] not assignable to Editable class [" + editable.getName() + "]");
+                throw new IllegalArgumentException("Target class [" + target.getClass().getName()
+                        + "] not assignable to Editable class [" + editable.getName() + "]");
             }
             actualEditable = editable;
         }
@@ -129,12 +133,10 @@ public abstract class BeanUtils {
                 if (sourcePd != null) {
                     Method readMethod = sourcePd.getReadMethod();
                     if (readMethod != null) {
-                        ResolvableType sourceResolvableType = ResolvableType.forMethodReturnType(readMethod);
-                        ResolvableType targetResolvableType = ResolvableType.forMethodParameter(writeMethod, 0);
 
                         // Ignore generic types in assignable check if either ResolvableType has unresolvable generics.
-                        boolean isAssignable = readMethod != null &&
-                                ClassUtils.isAssignable(writeMethod.getParameterTypes()[0], readMethod.getReturnType());
+                        boolean isAssignable = ClassUtils.isAssignable(writeMethod.getParameterTypes()[0],
+                                readMethod.getReturnType());
 
                         if (isAssignable) {
                             try {
@@ -146,10 +148,10 @@ public abstract class BeanUtils {
                                     writeMethod.setAccessible(true);
                                 }
                                 writeMethod.invoke(target, value);
-                            }
-                            catch (Throwable ex) {
+                            } catch (Throwable ex) {
                                 throw new FatalBeanException(
-                                        "Could not copy property '" + targetPd.getName() + "' from source to target", ex);
+                                        "Could not copy property '" + targetPd.getName() + "' from source to target",
+                                        ex);
                             }
                         }
                     }

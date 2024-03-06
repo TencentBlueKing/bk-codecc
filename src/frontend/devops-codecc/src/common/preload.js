@@ -3,20 +3,25 @@
  * @author blueking
  */
 
-import store from '@/store'
+import store from '@/store';
 
 const config = {
   fromCache: false,
   cancelWhenRouteChange: false,
-}
+};
 
 /**
  * 获取 user 信息
  *
  * @return {Promise} promise 对象
  */
-function getUser () { // eslint-disable-line
-  return store.dispatch('userInfo', config)
+function getUser() {
+  // eslint-disable-line
+  return store.dispatch('userInfo', config);
+}
+
+export function getRbacPermission() {
+  return store.dispatch('getRbacPermission');
 }
 
 /**
@@ -25,7 +30,7 @@ function getUser () { // eslint-disable-line
  * @returns {Object}
  */
 export function getToolMeta() {
-  return store.dispatch('getToolMeta', config)
+  return store.dispatch('getToolMeta', config);
 }
 
 /**
@@ -34,7 +39,7 @@ export function getToolMeta() {
  * @returns {Object}
  */
 export function getToolList() {
-  return store.dispatch('tool/list', config)
+  return store.dispatch('tool/list', config);
 }
 
 /**
@@ -43,7 +48,7 @@ export function getToolList() {
  * @returns {Object}
  */
 export function getTaskList() {
-  return store.dispatch('task/basicList', config)
+  return store.dispatch('task/basicList', config);
 }
 
 /**
@@ -52,7 +57,7 @@ export function getTaskList() {
  * @returns {Object}
  */
 export function getTaskDetail() {
-  return store.dispatch('task/detail', config)
+  return store.dispatch('task/detail', config);
 }
 
 /**
@@ -61,7 +66,7 @@ export function getTaskDetail() {
  * @returns {Object}
  */
 export function getProjectList() {
-  return store.dispatch('project/list', config)
+  return store.dispatch('project/list', config);
 }
 
 /**
@@ -70,7 +75,7 @@ export function getProjectList() {
  * @returns {Object}
  */
 export function getTaskStatus() {
-  return store.dispatch('task/status', config)
+  return store.dispatch('task/status', config);
 }
 
 /**
@@ -78,16 +83,16 @@ export function getTaskStatus() {
  * noticeType 1(维护通知，小黄条), 2(公告通知，弹窗), 3(新功能弹窗)
  */
 export function getNotice() {
-  store.dispatch('op/notice', { noticeType: '1' })
-  store.dispatch('op/notice', { noticeType: '2' })
-  store.dispatch('op/notice', { noticeType: '3' })
+  store.dispatch('op/notice', { noticeType: '1' });
+  store.dispatch('op/notice', { noticeType: '2' });
+  store.dispatch('op/notice', { noticeType: '3' });
 }
 
 export default function () {
   if (store.state.task.status.status === 1) {
-    return false
+    return false;
   }
-  return true
+  return true;
   // if (store.state.task.status.gongfengProjectId) {
   //     return Promise.all([
   //         getToolMeta(),

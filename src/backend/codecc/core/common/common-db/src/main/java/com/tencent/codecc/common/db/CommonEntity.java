@@ -27,7 +27,6 @@
 package com.tencent.codecc.common.db;
 
 import lombok.Data;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -39,6 +38,8 @@ import org.springframework.data.mongodb.core.mapping.Field;
  */
 @Data
 public class CommonEntity {
+
+    private static final String DEFAULT_USER = "system";
 
     @Id
     private String entityId;
@@ -71,20 +72,17 @@ public class CommonEntity {
      * 填充审计信息
      *
      * @param createdBy
-     * @param updatedBy
      */
-    public void applyAuditInfo(String createdBy, String updatedBy) {
+    public void applyAuditInfoOnCreate(String createdBy) {
         long now = System.currentTimeMillis();
+        this.createdBy = createdBy;
+        this.createdDate = now;
+        this.updatedBy = createdBy;
+        this.updatedDate = now;
+    }
 
-        if (StringUtils.isNotEmpty(createdBy)) {
-            this.createdBy = createdBy;
-            this.createdDate = now;
-        }
-
-        if (StringUtils.isNotEmpty(updatedBy)) {
-            this.updatedBy = updatedBy;
-            this.updatedDate = now;
-        }
+    public void applyAuditInfoOnCreate() {
+        applyAuditInfoOnCreate(DEFAULT_USER);
     }
 
     /**
@@ -92,7 +90,12 @@ public class CommonEntity {
      *
      * @param updatedBy
      */
-    public void applyAuditInfo(String updatedBy) {
-        this.applyAuditInfo(null, updatedBy);
+    public void applyAuditInfoOnUpdate(String updatedBy) {
+        this.updatedBy = updatedBy;
+        this.updatedDate = System.currentTimeMillis();
+    }
+
+    public void applyAuditInfoOnUpdate() {
+        applyAuditInfoOnUpdate(DEFAULT_USER);
     }
 }

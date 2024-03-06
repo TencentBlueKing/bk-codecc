@@ -17,10 +17,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.component.NewCCNDefectTracingComponent;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.FileCCNRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CCNDefectDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.FileCCNDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.FileCCNRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CCNDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.FileCCNDao;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
 import com.tencent.bk.codecc.defect.model.CCNDefectJsonFileEntity;
 import com.tencent.bk.codecc.defect.model.FileCCNEntity;
@@ -43,6 +43,7 @@ import com.tencent.bk.codecc.defect.vo.customtool.ScmBlameVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.ScanType;
 import com.tencent.devops.common.constant.ComConstants.ToolPattern;
 import com.tencent.devops.common.redis.lock.RedisLock;
 import com.tencent.devops.common.service.BaseDataCacheService;
@@ -53,6 +54,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -142,8 +144,9 @@ public class CCNDefectCommitConsumer extends AbstractDefectCommitConsumer {
         long beginTime = System.currentTimeMillis();
         long tryBeginTime = System.currentTimeMillis();
         RedisLock locker = null;
-        List<CCNDefectEntity> allNewDefectList = Lists.newArrayList();
-        Set<String> currentFileSet = Sets.newHashSet();
+        List<CCNDefectEntity> allNewDefectList;
+        List<CCNDefectEntity> allIgnoreDefectList;
+        Set<String> currentFileSet;
 
         try {
             if (!ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value().equals(createFrom) && !lockModeIsClosed()) {
@@ -182,6 +185,14 @@ public class CCNDefectCommitConsumer extends AbstractDefectCommitConsumer {
             updateDefectEntityStatus(allNewDefectList, currentFileSet, deleteFiles, isFullScan, buildEntity);
             log.info("updateDefectEntityStatus cost: {}, {}, {}, {}", System.currentTimeMillis() - beginTime, taskId,
                     toolName, buildId);
+
+            beginTime = System.currentTimeMillis();
+            Integer historyIgnoreType = baseDataCacheService.getHistoryIgnoreType();
+            allIgnoreDefectList = ccnDefectDao.findIgnoreDefect(taskId, buildId, historyIgnoreType,
+                    isFilterPathPath(taskVO));
+            log.info("get ignore defect list cost: {}, {}, {}, {}",
+                    System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
+
         } finally {
             if (locker != null && locker.isLocked()) {
                 locker.unlock();
@@ -207,21 +218,25 @@ public class CCNDefectCommitConsumer extends AbstractDefectCommitConsumer {
 
         // 5.统计本次扫描的告警
         beginTime = System.currentTimeMillis();
-        ccnDefectStatisticService.statistic(new DefectStatisticModel<>(taskVO,
-                toolName,
-                averageCCN,
-                buildId,
-                toolBuildStackEntity,
-                allNewDefectList,
-                null,
-                null));
+        ccnDefectStatisticService.statistic(
+                new DefectStatisticModel<>(
+                        taskVO,
+                        toolName,
+                        averageCCN,
+                        buildId,
+                        toolBuildStackEntity,
+                        allNewDefectList,
+                        null,
+                        null,
+                        false
+                )
+        );
         log.info("statistic cost: {}, {}, {}, {}", System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
 
         // 6.更新构建告警快照
         beginTime = System.currentTimeMillis();
         // 查询存量告警类型的的已忽略告警
-        Integer historyIgnoreType = baseDataCacheService.getHistoryIgnoreType();
-        List<CCNDefectEntity> allIgnoreDefectList = ccnDefectDao.findIgnoreDefect(taskId, buildId, historyIgnoreType);
+
         buildSnapshotService.saveCCNBuildDefect(taskId, toolName, buildEntity, allNewDefectList, allIgnoreDefectList);
         log.info("buildSnapshotService.saveCCNBuildDefect cost: {}, {}, {}, {}",
                 System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
@@ -242,6 +257,18 @@ public class CCNDefectCommitConsumer extends AbstractDefectCommitConsumer {
                 System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
 
         return true;
+    }
+
+    /**
+     * MR 等Diff模式 忽略只关注相关的文件
+     * @param taskVO
+     * @return
+     */
+    private boolean isFilterPathPath(TaskDetailVO taskVO) {
+        return taskVO != null && taskVO.getScanType() != null
+                && (taskVO.getScanType().equals(ScanType.DIFF_MODE.code)
+                || taskVO.getScanType().equals(ScanType.FILE_DIFF_MODE.code)
+                || taskVO.getScanType().equals(ScanType.BRANCH_DIFF_MODE.code));
     }
 
     /**
@@ -590,11 +617,11 @@ public class CCNDefectCommitConsumer extends AbstractDefectCommitConsumer {
 
     @Override
     protected String getRecommitMQExchange(CommitDefectVO vo) {
-        return ConstantsKt.PREFIX_EXCHANGE_DEFECT_COMMIT + ToolPattern.CCN.name().toLowerCase();
+        return ConstantsKt.PREFIX_EXCHANGE_DEFECT_COMMIT + ToolPattern.CCN.name().toLowerCase(Locale.ENGLISH);
     }
 
     @Override
     protected String getRecommitMQRoutingKey(CommitDefectVO vo) {
-        return ConstantsKt.PREFIX_ROUTE_DEFECT_COMMIT + ToolPattern.CCN.name().toLowerCase();
+        return ConstantsKt.PREFIX_ROUTE_DEFECT_COMMIT + ToolPattern.CCN.name().toLowerCase(Locale.ENGLISH);
     }
 }

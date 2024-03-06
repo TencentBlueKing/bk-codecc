@@ -1,13 +1,13 @@
 package com.tencent.bk.codecc.defect.service.impl
 
 import com.tencent.bk.codecc.defect.dao.ToolMetaCacheServiceImpl
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CommonStatisticDao
-import com.tencent.bk.codecc.defect.dao.mongotemplate.LintStatisticDao
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CommonStatisticDao
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintStatisticDao
 import com.tencent.bk.codecc.defect.model.statistic.StatisticEntity
 import com.tencent.bk.codecc.defect.service.ClusterDefectService
 import com.tencent.bk.codecc.defect.service.CommonDefectMigrationService
-import com.tencent.bk.codecc.defect.service.IV3CheckerSetBizService
+import com.tencent.bk.codecc.defect.service.ICheckerSetQueryBizService
 import com.tencent.bk.codecc.defect.service.TaskLogService
 import com.tencent.bk.codecc.defect.vo.enums.CheckerCategory
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
@@ -27,7 +27,7 @@ class ClusterDefectServiceImpl @Autowired constructor(
     private val client: Client,
     private val taskLogService: TaskLogService,
     private val toolMetaCacheServiceImpl: ToolMetaCacheServiceImpl,
-    private val v3CheckerSetBizService: IV3CheckerSetBizService,
+    private val checkerSetQueryBizService: ICheckerSetQueryBizService,
     private val checkerRepository: CheckerRepository,
     private val lintStatisticDao: LintStatisticDao,
     private val commonStatisticDao: CommonStatisticDao,
@@ -97,7 +97,7 @@ class ClusterDefectServiceImpl @Autowired constructor(
             return mapOf()
         }
 
-        val checkerKeyList = v3CheckerSetBizService.getTaskCheckerSets(projectId, taskId, toolNameList)
+        val checkerKeyList = checkerSetQueryBizService.getTaskCheckerSets(projectId, taskId, toolNameList)
                 ?.flatMap { x -> (x.checkerProps ?: listOf()).map { y -> y.checkerKey } }
 
         return checkerRepository.findClusterFieldByToolNameInAndCheckerKeyIn(toolNameList, checkerKeyList)

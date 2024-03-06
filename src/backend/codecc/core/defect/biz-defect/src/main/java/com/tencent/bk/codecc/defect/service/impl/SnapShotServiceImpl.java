@@ -30,8 +30,8 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.defect.dao.mongorepository.SnapShotRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.SnapShotDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.SnapShotRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.SnapShotDao;
 import com.tencent.bk.codecc.defect.model.NotRepairedAuthorEntity;
 import com.tencent.bk.codecc.defect.model.SnapShotEntity;
 import com.tencent.bk.codecc.defect.model.pipelinereport.LintSnapShotEntity;
@@ -40,10 +40,8 @@ import com.tencent.bk.codecc.defect.service.ICheckReportBizService;
 import com.tencent.bk.codecc.defect.service.SnapShotService;
 import com.tencent.bk.codecc.defect.vo.common.SnapShotVO;
 import com.tencent.bk.codecc.task.api.ServiceToolRestResource;
-import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
-import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.redis.lock.RedisLock;
 import com.tencent.devops.common.service.BizServiceFactory;
 import com.tencent.devops.common.util.BeanUtils;
@@ -143,11 +141,6 @@ public class SnapShotServiceImpl implements SnapShotService {
         } finally {
             lock.unlock();
         }
-        if (snapShotEntity == null) {
-            String errMsg = String.format("get tool analysis snapshot fail! taskId: %d, buildId: %s", taskId, buildId);
-            log.error(errMsg);
-            throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL, new String[]{errMsg}, null);
-        }
 
         return snapShotEntity;
     }
@@ -176,16 +169,10 @@ public class SnapShotServiceImpl implements SnapShotService {
     }
 
     @Override
-    public void updateMetadataReportStatus(
-            String projectId,
-            Long taskId,
-            String buildId,
-            boolean status,
-            Long buildFlag
-    ) {
-        snapShotDao.updateMetadataReportStatus(projectId, taskId, buildId, status, buildFlag);
-        log.info("update metadata_report projectId: {}, taskId: {}, buildId: {}, status: {}, build flag: {}",
-                projectId, taskId, buildId, status, buildFlag);
+    public void updateMetadataReportStatus(String projectId, String buildId, long taskId, boolean status) {
+        snapShotDao.updateMetadataReportStatus(projectId, taskId, buildId, status, null);
+        log.info("update metadata_report projectId: {}, taskId: {}, buildId: {}, status: {}",
+                projectId, taskId, buildId, status);
     }
 
     @Override

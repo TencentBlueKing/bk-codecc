@@ -1,8 +1,8 @@
 package com.tencent.bk.codecc.defect.component
 
 import com.tencent.bk.codecc.defect.api.ServiceReportTaskLogRestResource
-import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskLogDao
-import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskLogOverviewDao
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.TaskLogDao
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.TaskLogOverviewDao
 import com.tencent.bk.codecc.defect.model.TaskLogEntity
 import com.tencent.bk.codecc.defect.service.impl.ScanFinishEventService
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO

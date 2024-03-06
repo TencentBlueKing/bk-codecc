@@ -55,14 +55,6 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
 @Consumes(MediaType.APPLICATION_JSON)
 public interface ServiceCheckerSetRestResource
 {
-    @ApiOperation("根据分类获取规则集清单")
-    @Path("/categoryList")
-    @GET
-    Result<Map<String, List<CheckerSetVO>>> getCheckerSetListByCategory(
-            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
-                    String projectId
-    );
-
     @ApiOperation("任务关联规则集")
     @Path("/project/{projectId}/tasks/{taskId}/checkerSets/relationship")
     @POST

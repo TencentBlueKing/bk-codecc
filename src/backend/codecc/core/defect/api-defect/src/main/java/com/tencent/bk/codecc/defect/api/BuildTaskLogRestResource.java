@@ -26,6 +26,8 @@
 
 package com.tencent.bk.codecc.defect.api;
 
+import com.tencent.bk.codecc.defect.vo.GrayBuildNumAndTaskVO;
+import com.tencent.bk.codecc.defect.vo.GrayTaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
@@ -37,6 +39,7 @@ import io.swagger.annotations.ApiParam;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -93,4 +96,24 @@ public interface BuildTaskLogRestResource
             @ApiParam(value = "工具名称", required = true)
             @PathParam("toolName")
                     String toolName);
+
+    @ApiOperation("根据构建号和taskId获取tasklog集合")
+    @POST
+    @Path("/getTaskLogByBuildNumAndTaskId")
+    Result<List<GrayTaskLogRepoInfoVO>> getTaskLogInfoByBuildBumAndTaskId(GrayBuildNumAndTaskVO grayBuildNumAndTaskVO);
+
+    @ApiOperation("获取最近N次工具构建成功的分析记录")
+    @Path("/taskId/{taskId}/toolName/{toolName}")
+    @GET
+    Result<List<TaskLogVO>> listBuildTaskLog(
+            @ApiParam(value = "任务id", required = true)
+            @PathParam("taskId")
+            long taskId,
+            @ApiParam(value = "工具名称", required = true)
+            @PathParam("toolName")
+            String toolName,
+            @ApiParam(value = "最近N次")
+            @QueryParam("range")
+            int range
+    );
 }

@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.component
 
 import com.alibaba.fastjson.JSONObject
-import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskLogOverviewDao
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.TaskLogOverviewDao
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
 import com.tencent.bk.codecc.task.vo.PipelineCallbackVo
 import com.tencent.devops.common.client.Client

@@ -5,7 +5,7 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_DEFECT_MIGRA
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_DEFECT_MIGRATION_TRIGGER_BATCH;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DEFECT_MIGRATION_TRIGGER_BATCH;
 
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.CommonDefectMigrationRepository;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.CommonDefectMigrationRepository;
 import com.tencent.bk.codecc.defect.model.CommonDefectMigrationEntity;
 import com.tencent.bk.codecc.defect.vo.CommitDefectVO;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;

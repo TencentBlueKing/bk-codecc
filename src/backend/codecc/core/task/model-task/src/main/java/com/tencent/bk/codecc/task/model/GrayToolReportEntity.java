@@ -36,8 +36,7 @@ import java.util.List;
         @CompoundIndex(name = "project_id_1_codecc_build_id_1", def = "{'project_id': 1, 'codecc_build_id': 1}",
                 background = true)
 })
-public class GrayToolReportEntity extends CommonEntity
-{
+public class GrayToolReportEntity extends CommonEntity {
     //蓝盾项目id
     @Field("project_id")
     private String projectId;

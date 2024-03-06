@@ -27,16 +27,26 @@
 package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.bk.codecc.defect.vo.coderepository.UploadRepositoriesVO;
+import com.tencent.bk.codecc.defect.vo.common.CommonDefectQueryRspVO;
+import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.springframework.data.domain.Sort;
 
+import javax.validation.Valid;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TASK_ID;
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
 
 /**
  * 工具侧告警上报服务
@@ -56,4 +66,30 @@ public interface BuildDefectRestResource
     Result uploadRepositories(
             @ApiParam(value = "工具侧上报代码仓库信息", required = true)
                     UploadRepositoriesVO uploadRepositoriesVO);
+
+
+    @ApiOperation("查询告警清单(带提单信息)")
+    @Path("/issue/list")
+    @POST
+    Result<CommonDefectQueryRspVO> queryDefectListWithIssue(
+        @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+        String userId,
+        @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+        String projectId,
+        @ApiParam(value = "查询参数详情", required = true)
+        @Valid
+        DefectQueryReqVO defectQueryReqVO,
+        @ApiParam(value = "页数")
+        @QueryParam(value = "pageNum")
+        int pageNum,
+        @ApiParam(value = "页面大小")
+        @QueryParam(value = "pageSize")
+        int pageSize,
+        @ApiParam(value = "排序字段")
+        @QueryParam(value = "sortField")
+        String sortField,
+        @ApiParam(value = "排序方式")
+        @QueryParam(value = "sortType")
+        Sort.Direction sortType
+    );
 }

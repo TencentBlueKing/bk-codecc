@@ -9,4 +9,7 @@ public class AllProjectsOverviewReqVO {
 
     private String userName;
     private String gitUrl;
+    private String ide;
+    private String ideVersion;
+    private String preCiVersion;
 }

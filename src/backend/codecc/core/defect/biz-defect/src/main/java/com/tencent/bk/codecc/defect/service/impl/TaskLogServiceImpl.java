@@ -28,15 +28,18 @@ package com.tencent.bk.codecc.defect.service.impl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskLogDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.TaskLogRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.TaskLogDao;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
 import com.tencent.bk.codecc.defect.model.TaskLogEntity;
 import com.tencent.bk.codecc.defect.model.TaskLogGroupEntity;
 import com.tencent.bk.codecc.defect.service.IQueryStatisticBizService;
 import com.tencent.bk.codecc.defect.service.PipelineTaskService;
 import com.tencent.bk.codecc.defect.service.TaskLogService;
+import com.tencent.bk.codecc.defect.vo.BatchTaskLogQueryVO;
+import com.tencent.bk.codecc.defect.vo.GrayBuildNumAndTaskVO;
+import com.tencent.bk.codecc.defect.vo.GrayTaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.utils.TaskLogRepoInfoUtils;
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
@@ -83,6 +86,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class TaskLogServiceImpl implements TaskLogService {
+
     private static Logger logger = LoggerFactory.getLogger(TaskLogServiceImpl.class);
 
     @Autowired
@@ -111,14 +115,17 @@ public class TaskLogServiceImpl implements TaskLogService {
 
     @Override
     public TaskLogVO getLatestTaskLog(long taskId, String toolName) {
-        TaskLogEntity taskLogEntity = taskLogRepository.findFirstByTaskIdAndToolNameOrderByStartTimeDesc(taskId, toolName);
+        TaskLogEntity taskLogEntity = taskLogRepository.findFirstByTaskIdAndToolNameOrderByStartTimeDesc(taskId,
+                toolName);
         TaskLogVO taskLogVO = new TaskLogVO();
         BeanUtils.copyProperties(taskLogEntity, taskLogVO);
         return taskLogVO;
     }
 
     @Override
-    public List<ToolLastAnalysisResultVO> getLastTaskLogResult(long taskId, Set<String> toolSet) {
+    public List<ToolLastAnalysisResultVO> getLastTaskLogResult(BatchTaskLogQueryVO queryVO) {
+        long taskId = queryVO.getTaskId() == null ? 0L : queryVO.getTaskId().longValue();
+        Set<String> toolSet = queryVO.getToolSet();
         List<ToolLastAnalysisResultVO> toolLastAnalysisResultVOList = new ArrayList<>();
         if (CollectionUtils.isEmpty(toolSet)) {
             return toolLastAnalysisResultVOList;
@@ -129,6 +136,27 @@ public class TaskLogServiceImpl implements TaskLogService {
                 ToolLastAnalysisResultVO toolLastAnalysisResultVO = new ToolLastAnalysisResultVO();
                 BeanUtils.copyProperties(taskLogGroupEntity, toolLastAnalysisResultVO);
                 toolLastAnalysisResultVOList.add(toolLastAnalysisResultVO);
+            }
+        }
+        return toolLastAnalysisResultVOList;
+    }
+
+    @Override
+    public List<ToolLastAnalysisResultVO> getLastTaskLogResult(List<BatchTaskLogQueryVO> queryVOS) {
+        if (CollectionUtils.isEmpty(queryVOS)) {
+            return Collections.emptyList();
+        }
+        List<ToolLastAnalysisResultVO> toolLastAnalysisResultVOList = new ArrayList<>();
+        List<List<BatchTaskLogQueryVO>> partition = Lists.partition(queryVOS, ComConstants.SMALL_PAGE_SIZE);
+        for (List<BatchTaskLogQueryVO> batchTaskLogQueryVOS : partition) {
+            List<TaskLogGroupEntity> taskLogGroupEntities =
+                    taskLogDao.findFirstByTaskIdAndToolNameInOrderByStartTime(batchTaskLogQueryVOS);
+            if (CollectionUtils.isNotEmpty(taskLogGroupEntities)) {
+                for (TaskLogGroupEntity taskLogGroupEntity : taskLogGroupEntities) {
+                    ToolLastAnalysisResultVO toolLastAnalysisResultVO = new ToolLastAnalysisResultVO();
+                    BeanUtils.copyProperties(taskLogGroupEntity, toolLastAnalysisResultVO);
+                    toolLastAnalysisResultVOList.add(toolLastAnalysisResultVO);
+                }
             }
         }
         return toolLastAnalysisResultVOList;
@@ -156,7 +184,8 @@ public class TaskLogServiceImpl implements TaskLogService {
         return toolLastAnalysisResultVOList;
     }
 
-    @Override public List<ToolLastAnalysisResultVO> getAnalysisResultsByBuildId(long taskId, String buildId) {
+    @Override
+    public List<ToolLastAnalysisResultVO> getAnalysisResultsByBuildId(long taskId, String buildId) {
         List<ToolLastAnalysisResultVO> toolLastAnalysisResultVOList = new ArrayList<>();
 
         List<TaskLogEntity> taskLogEntityList = taskLogRepository.findByTaskIdAndBuildId(taskId, buildId);
@@ -205,7 +234,7 @@ public class TaskLogServiceImpl implements TaskLogService {
      */
     @Override
     public BaseLastAnalysisResultVO getLastAnalysisResult(ToolLastAnalysisResultVO toolLastAnalysisResultVO,
-                                                          String toolName) {
+            String toolName) {
         logger.info("begin to query last analysis result, task id: {}, tool name : {}",
                 toolLastAnalysisResultVO.getTaskId(),
                 toolLastAnalysisResultVO.getToolName());
@@ -224,7 +253,7 @@ public class TaskLogServiceImpl implements TaskLogService {
      */
     @Override
     public BaseLastAnalysisResultVO getAnalysisResult(ToolLastAnalysisResultVO toolLastAnalysisResultVO,
-                                                      String toolName) {
+            String toolName) {
         logger.info("begin to query analysis result, task id: {}, tool name : {}, build num: {}",
                 toolLastAnalysisResultVO.getTaskId(),
                 toolLastAnalysisResultVO.getToolName(), toolLastAnalysisResultVO.getBuildNum());
@@ -253,7 +282,8 @@ public class TaskLogServiceImpl implements TaskLogService {
     }
 
     @Override
-    public Boolean stopRunningTask(String projectId, String pipelineId, String streamName, long taskId, Set<String> toolSet, String userName) {
+    public Boolean stopRunningTask(String projectId, String pipelineId, String streamName, long taskId,
+            Set<String> toolSet, String userName) {
         List<TaskLogGroupEntity> taskLogGroupEntityList = taskLogDao.findFirstByTaskIdOrderByStartTime(taskId, toolSet);
         if (CollectionUtils.isNotEmpty(taskLogGroupEntityList)) {
             //1. 选取buildid停止流水线运行
@@ -269,14 +299,17 @@ public class TaskLogServiceImpl implements TaskLogService {
                 filteredTaskLogList.forEach(filteredTaskLog ->
                         {
                             Boolean stopFlag;
-                            if (!buildIdSet.contains(filteredTaskLog.getBuildId()) && StringUtils.isNotEmpty(filteredTaskLog.getBuildId())) {
+                            if (!buildIdSet.contains(filteredTaskLog.getBuildId()) && StringUtils.isNotEmpty(
+                                    filteredTaskLog.getBuildId())) {
                                 logger.info("current build id: {}", filteredTaskLog.getBuildId());
                                 stopFlag = true;
                                 buildIdSet.add(filteredTaskLog.getBuildId());
                             } else {
                                 stopFlag = false;
                             }
-                            asyncResultList.add(pipelineTaskService.handleStopTask(projectId, pipelineId, taskId, filteredTaskLog, userName, stopFlag, streamName));
+                            asyncResultList.add(
+                                    pipelineTaskService.handleStopTask(projectId, pipelineId, taskId,
+                                            filteredTaskLog, userName, stopFlag, streamName));
                         }
                 );
                 asyncResultList.forEach(asyncResult ->
@@ -300,7 +333,8 @@ public class TaskLogServiceImpl implements TaskLogService {
         logger.info("begin getBuildTaskLog: {}, {}, {}", taskId, toolName, buildId);
         TaskLogVO taskLogVO = new TaskLogVO();
         List<TaskLogVO.TaskUnit> taskUnits = Lists.newArrayList();
-        TaskLogEntity taskLogEntity = taskLogRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
+        TaskLogEntity taskLogEntity = taskLogRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName,
+                buildId);
         if (taskLogEntity != null) {
             if (CollectionUtils.isNotEmpty(taskLogEntity.getStepArray())) {
                 for (TaskLogEntity.TaskUnit taskEntityUnit : taskLogEntity.getStepArray()) {
@@ -324,7 +358,8 @@ public class TaskLogServiceImpl implements TaskLogService {
     @Override
     public List<TaskLogVO> getBuildTaskLog(long taskId, List<String> toolNameSet, String buildId) {
         logger.info("begin getBuildTaskLog: {}, {}, {}", taskId, toolNameSet, buildId);
-        List<TaskLogEntity> taskLogEntityList = taskLogRepository.findByTaskIdAndToolNameInAndBuildId(taskId, toolNameSet, buildId);
+        List<TaskLogEntity> taskLogEntityList = taskLogRepository.findByTaskIdAndToolNameInAndBuildId(taskId,
+                toolNameSet, buildId);
 
         Map<String, TaskLogVO> taskLogVOMap = new HashMap<>();
         toolNameSet.forEach((it) -> {
@@ -358,7 +393,8 @@ public class TaskLogServiceImpl implements TaskLogService {
     @Override
     public Result uploadTaskLog(UploadTaskLogStepVO uploadTaskLogStepVO) {
         logger.info("recv a task step, step: {}, flag: {}, start: {}, end: {}",
-                uploadTaskLogStepVO.getStepNum(), uploadTaskLogStepVO.getFlag(), uploadTaskLogStepVO.getStartTime(), uploadTaskLogStepVO.getEndTime());
+                uploadTaskLogStepVO.getStepNum(), uploadTaskLogStepVO.getFlag(), uploadTaskLogStepVO.getStartTime(),
+                uploadTaskLogStepVO.getEndTime());
         IBizService taskLogService = bizServiceFactory.createBizService(uploadTaskLogStepVO.getToolName(),
                 ComConstants.BusinessType.ANALYZE_TASK.value(), IBizService.class);
         return taskLogService.processBiz(uploadTaskLogStepVO);
@@ -407,7 +443,8 @@ public class TaskLogServiceImpl implements TaskLogService {
     public List<BuildVO> getTaskBuildInfos(long taskId) {
         List<TaskLogEntity> taskLogEntities = taskLogRepository.findByTaskId(taskId);
         int limit = baseDataCacheService.getMaxBuildListSize();
-        Map<String, BuildVO> buildVOMap = Maps.newTreeMap(((o1, o2) -> Integer.valueOf(o2).compareTo(Integer.valueOf(o1))));
+        Map<String, BuildVO> buildVOMap = Maps.newTreeMap(
+                ((o1, o2) -> Integer.valueOf(o2).compareTo(Integer.valueOf(o1))));
         if (CollectionUtils.isNotEmpty(taskLogEntities)) {
             for (TaskLogEntity taskLogEntity : taskLogEntities) {
                 String taskBuildNum = taskLogEntity.getBuildNum();
@@ -485,18 +522,18 @@ public class TaskLogServiceImpl implements TaskLogService {
                     List<String> msgList = Arrays.asList(msgs);
                     msgList.stream()
                             .filter(StringUtils::isNotBlank)
-                            .forEach(s -> {
+                            .forEach(msgLine -> {
                                 try {
-                                    String repoUrl = TaskLogRepoInfoUtils.getRepoUrl(msg);
-                                    String revision = TaskLogRepoInfoUtils.getRevision(msg);
-                                    String commitTime = TaskLogRepoInfoUtils.getCommitTime(msg);
-                                    String commitUser = TaskLogRepoInfoUtils.getCommitUser(msg);
-                                    String branch = TaskLogRepoInfoUtils.getBranch(msg);
+                                    String repoUrl = TaskLogRepoInfoUtils.getRepoUrl(msgLine);
+                                    String revision = TaskLogRepoInfoUtils.getRevision(msgLine);
+                                    String commitTime = TaskLogRepoInfoUtils.getCommitTime(msgLine);
+                                    String commitUser = TaskLogRepoInfoUtils.getCommitUser(msgLine);
+                                    String branch = TaskLogRepoInfoUtils.getBranch(msgLine);
                                     TaskLogRepoInfoVO taskLogRepoInfoVO =
                                             new TaskLogRepoInfoVO(repoUrl, revision, commitTime, commitUser, branch);
                                     repoInfo.put(repoUrl, taskLogRepoInfoVO);
                                 } catch (Throwable e) {
-                                    logger.error("代码库信息截取失败: {}", msg);
+                                    logger.error("代码库信息截取失败: {}", msgLine);
                                     logger.error("", e);
                                 }
                             });
@@ -589,15 +626,14 @@ public class TaskLogServiceImpl implements TaskLogService {
     }
 
     @Override
-    public Map<String, Boolean> defectCommitSuccess(long taskId, List<String> toolNameSet, String buildId, int stepNum)
-    {
+    public Map<String, Boolean> defectCommitSuccess(long taskId, List<String> toolNameSet, String buildId,
+            int stepNum) {
         Map<String, Boolean> resultMap = new HashMap<>();
         toolNameSet.forEach(it -> resultMap.put(it, false));
 
         List<TaskLogVO> taskLogVOList = getBuildTaskLog(taskId, toolNameSet, buildId);
         taskLogVOList.forEach(taskLogVO -> {
-            if (CollectionUtils.isNotEmpty(taskLogVO.getStepArray()))
-            {
+            if (CollectionUtils.isNotEmpty(taskLogVO.getStepArray())) {
                 boolean matchResult = taskLogVO.getStepArray().stream().anyMatch(taskUnit ->
                         stepNum == taskUnit.getStepNum() && StepFlag.SUCC.value() == taskUnit.getFlag());
                 resultMap.put(taskLogVO.getToolName(), matchResult);
@@ -614,5 +650,33 @@ public class TaskLogServiceImpl implements TaskLogService {
             BeanUtils.copyProperties(taskLogEntity, taskLogVO);
         }
         return taskLogVO;
+    }
+
+    @Override
+    public List<GrayTaskLogRepoInfoVO> getTaskLogInfoByBuildBumAndTaskId(GrayBuildNumAndTaskVO grayBuildNumAndTaskVO) {
+        List<TaskLogEntity> taskLogInfo =
+                taskLogDao.getTaskLogInfoByBuildBumAndTaskId(grayBuildNumAndTaskVO.getBuildNum(),
+                        grayBuildNumAndTaskVO.getTaskList());
+        List<GrayTaskLogRepoInfoVO> list = new ArrayList<>();
+        for (TaskLogEntity taskLogEntity : taskLogInfo) {
+            GrayTaskLogRepoInfoVO grayTaskLogRepoInfoVO = new GrayTaskLogRepoInfoVO();
+            BeanUtils.copyProperties(taskLogEntity, grayTaskLogRepoInfoVO);
+            list.add(grayTaskLogRepoInfoVO);
+        }
+        return list;
+    }
+
+    @Override
+    public List<TaskLogVO> listBuildTaskLog(long taskId, String toolName, int range) {
+        List<TaskLogVO> taskLogVOList = new ArrayList<>();
+        List<TaskLogEntity> taskLogEntityList = taskLogDao.findTaskLogByTaskIdAndToolName(taskId, toolName, range);
+        if (null != taskLogEntityList) {
+            for (TaskLogEntity taskLogEntity : taskLogEntityList) {
+                TaskLogVO taskLogVO = new TaskLogVO();
+                BeanUtils.copyProperties(taskLogEntity, taskLogVO);
+                taskLogVOList.add(taskLogVO);
+            }
+        }
+        return taskLogVOList;
     }
 }

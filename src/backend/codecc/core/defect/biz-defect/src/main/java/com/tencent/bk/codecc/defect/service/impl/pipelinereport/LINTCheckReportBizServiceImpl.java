@@ -23,14 +23,16 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+
 package com.tencent.bk.codecc.defect.service.impl.pipelinereport;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintStatisticRepository;
 import com.tencent.bk.codecc.defect.model.statistic.LintStatisticEntity;
 import com.tencent.bk.codecc.defect.model.pipelinereport.LintSnapShotEntity;
 import com.tencent.bk.codecc.defect.model.pipelinereport.ToolSnapShotEntity;
 import com.tencent.bk.codecc.defect.service.ICheckReportBizService;
 import com.tencent.devops.common.service.ToolMetaCacheService;
+import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,8 +47,8 @@ import org.springframework.stereotype.Service;
  */
 @Service("LINTCheckerReportBizService")
 @Slf4j
-public class LINTCheckReportBizServiceImpl implements ICheckReportBizService
-{
+public class LINTCheckReportBizServiceImpl implements ICheckReportBizService {
+
     @Autowired
     private ToolMetaCacheService toolMetaCacheService;
 
@@ -60,18 +62,17 @@ public class LINTCheckReportBizServiceImpl implements ICheckReportBizService
     private String devopsSchemes;
 
     @Override
-    public ToolSnapShotEntity getReport(long taskId, String projectId, String toolName, String buildId)
-    {
+    public ToolSnapShotEntity getReport(long taskId, String projectId, String toolName, String buildId) {
         LintSnapShotEntity lintSnapShotEntity = new LintSnapShotEntity();
 
         handleToolBaseInfo(lintSnapShotEntity, taskId, toolName, projectId, buildId);
 
         // 最近一次分析概要信息（重试时需获取最后一次为准）
         LintStatisticEntity lintStatisticEntity =
-                lintStatisticRepository.findFirstByTaskIdAndToolNameAndBuildIdOrderByTimeDesc(taskId, toolName, buildId);
+                lintStatisticRepository.findFirstByTaskIdAndToolNameAndBuildIdOrderByTimeDesc(taskId, toolName,
+                        buildId);
 
-        if (lintStatisticEntity == null)
-        {
+        if (lintStatisticEntity == null) {
             log.info("no analysis result found! task id: {}, tool name: {}", taskId, toolName);
             return lintSnapShotEntity;
         }
@@ -95,20 +96,20 @@ public class LINTCheckReportBizServiceImpl implements ICheckReportBizService
         return lintSnapShotEntity;
     }
 
-    private void handleToolBaseInfo(LintSnapShotEntity lintSnapShotEntity, long taskId, String toolName, String projectId, String buildId)
-    {
+    private void handleToolBaseInfo(LintSnapShotEntity lintSnapShotEntity, long taskId, String toolName,
+            String projectId, String buildId) {
         //获取工具信息
         lintSnapShotEntity.setToolNameCn(toolMetaCacheService.getToolDisplayName(toolName));
         lintSnapShotEntity.setToolNameEn(toolName);
         if (StringUtils.isNotEmpty(projectId)) {
             String defectDetailUrl = String.format(
                     "%s://%s/console/codecc/%s/task/%d/defect/lint/%s/list?buildId=%s",
-                    devopsSchemes, devopsHost, projectId, taskId, toolName.toUpperCase(), buildId
+                    devopsSchemes, devopsHost, projectId, taskId, toolName.toUpperCase(Locale.ENGLISH), buildId
             );
 
             String defectReportUrl = String.format(
                     "%s://%s/console/codecc/%s/task/%d/defect/lint/%s/charts",
-                    devopsSchemes, devopsHost, projectId, taskId, toolName.toUpperCase()
+                    devopsSchemes, devopsHost, projectId, taskId, toolName.toUpperCase(Locale.ENGLISH)
             );
 
             lintSnapShotEntity.setDefectDetailUrl(defectDetailUrl);

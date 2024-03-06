@@ -13,6 +13,7 @@
 package com.tencent.bk.codecc.task.service.impl;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.gson.reflect.TypeToken;
 import com.tencent.bk.codecc.task.constant.TaskConstants.ToolPattern;
 import com.tencent.bk.codecc.task.dao.ToolMetaCacheServiceImpl;
@@ -35,27 +36,27 @@ import com.tencent.devops.common.api.ToolMetaDetailVO;
 import com.tencent.devops.common.api.ToolVersionVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.client.Client;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.util.AESUtil;
+import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.GsonUtils;
-import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.web.mq.ConstantsKt;
 import com.tencent.devops.image.api.ServiceDockerImageResource;
 import com.tencent.devops.image.pojo.CheckDockerImageRequest;
 import com.tencent.devops.image.pojo.CheckDockerImageResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -302,6 +303,8 @@ public class ToolMetaServiceImpl implements ToolMetaService {
 
         //工具版本，T-测试版本，G-灰度版本，P-正式发布版本
         String toolV = ToolIntegratedStatus.P.name();
+        Map<String, String> finalToolVersionMap = Maps.newHashMap();
+        boolean hasToolVersionMap = false;
 
         // 是否预发布
         TaskInfoEntity taskDetail = null;
@@ -314,22 +317,24 @@ public class ToolMetaServiceImpl implements ToolMetaService {
             toolV = ToolIntegratedStatus.PRE_PROD.name();
             log.info("get tool meta from pre prod: {}", taskId);
         } else {
-            //查询是否灰度项目，并获取灰度状态
-            GrayToolProjectVO grayPro = grayToolProjectService.findGrayInfoByProjectId(projectId);
-            if (grayPro != null) {
-                if (grayPro.getStatus() == ToolIntegratedStatus.G.value()) {
-                    toolV = ToolIntegratedStatus.G.name();
-                } else if (grayPro.getStatus() == ToolIntegratedStatus.T.value()) {
-                    toolV = ToolIntegratedStatus.T.name();
-                }
-            }
+            hasToolVersionMap = true;
+            List<GrayToolProjectVO> grayToolProjectList =
+                    grayToolProjectService.getGrayToolListByProjectId(projectId);
+            finalToolVersionMap = grayToolProjectList.stream().collect(Collectors.toMap(GrayToolProjectVO::getToolName,
+                    vo -> ToolIntegratedStatus.getInstance(vo.getStatus()).name(), (a, b) -> b));
         }
 
         List<ToolMetaDetailVO> toolMetaDetailVOList = new ArrayList<>(toolMetaDetailVOMap.size());
         String finalToolV = toolV;
-        toolMetaDetailVOMap.forEach((toolName, tool) -> {
 
+        for (Map.Entry<String, ToolMetaBaseVO> entry : toolMetaDetailVOMap.entrySet()) {
+            String toolName = entry.getKey();
+            ToolMetaBaseVO tool = entry.getValue();
             boolean match = false;
+            // 如果不是任务预发布状态，优先取灰度项目的工具状态，没有则默认生产
+            if (hasToolVersionMap) {
+                finalToolV = finalToolVersionMap.getOrDefault(toolName, ToolIntegratedStatus.P.name());
+            }
 
             ToolMetaDetailVO toolMetaDetailVO = (ToolMetaDetailVO) tool;
             toolMetaDetailVO.setGraphicDetails(null);
@@ -358,7 +363,7 @@ public class ToolMetaServiceImpl implements ToolMetaService {
             }
 
             toolMetaDetailVOList.add(toolMetaDetailVO);
-        });
+        }
 
         return toolMetaDetailVOList;
     }

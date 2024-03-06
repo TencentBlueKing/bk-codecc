@@ -26,7 +26,7 @@
 
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintStatisticRepository;
 import com.tencent.bk.codecc.defect.model.statistic.LintStatisticEntity;
 import com.tencent.bk.codecc.defect.service.IQueryStatisticBizService;
 import com.tencent.devops.common.api.analysisresult.BaseLastAnalysisResultVO;

@@ -51,6 +51,12 @@ public class GrayToolProjectEntity extends CommonEntity {
     private String projectId;
 
     /**
+     * 工具id
+     */
+    @Field("tool_name")
+    private String toolName;
+
+    /**
      * 项目状态：-1：为灰度，-2：为测试，0：生产
      */
     @Field("status")

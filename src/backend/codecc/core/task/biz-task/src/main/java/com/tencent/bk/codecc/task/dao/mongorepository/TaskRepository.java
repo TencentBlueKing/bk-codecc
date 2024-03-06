@@ -169,6 +169,9 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String>
      */
     List<TaskInfoEntity> findByBgId(Integer bgId);
 
+    @Query(fields = "{'task_id': 1}")
+    List<TaskInfoEntity> findByBgIdAndStatus(Integer bgId, int status, Pageable pageable);
+
     /**
      * 通过task id清单
      * @param taskIds
@@ -176,8 +179,9 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String>
      */
     List<TaskInfoEntity> findByTaskIdIn(List<Long> taskIds);
 
-    @Query(value = "{'task_id': {'$in': ?0}}", fields = "{'task_id': 1, 'alias_name': 1, 'branch': 1, 'name_en': 1, 'name_cn': 1, 'project_id': 1, 'project_name': 1}")
+    @Query(value = "{'task_id': {'$in': ?0}}", fields = "{'task_id': 1, 'alias_name': 1, 'branch': 1, 'name_en': 1, 'name_cn': 1, 'project_id': 1, 'project_name': 1, 'code_lang': 1}")
     List<TaskInfoEntity> findFieldsByTaskIdIn(List<Long> taskIds);
+
 
 
     /**
@@ -351,4 +355,7 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String>
             String projectId, List<String> createFromList,
             Integer status, Pageable pageable
     );
+
+    @Query(fields = "{'task_id': 1, 'status': 1, 'create_from': 1}")
+    TaskInfoEntity findStatusAndCreateFromByTaskId(Long taskId);
 }

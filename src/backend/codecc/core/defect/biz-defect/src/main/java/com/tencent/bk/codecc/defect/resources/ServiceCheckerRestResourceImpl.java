@@ -28,22 +28,11 @@ package com.tencent.bk.codecc.defect.resources;
 
 import com.tencent.bk.codecc.defect.api.ServiceCheckerRestResource;
 import com.tencent.bk.codecc.defect.service.CheckerService;
-import com.tencent.bk.codecc.defect.service.ICheckerSetBizService;
-import com.tencent.bk.codecc.defect.service.IConfigCheckerPkgBizService;
-import com.tencent.bk.codecc.defect.vo.CheckerPkgRspVO;
-import com.tencent.bk.codecc.defect.vo.ConfigCheckersPkgReqVO;
 import com.tencent.bk.codecc.defect.vo.QueryTaskCheckerDimensionRequest;
-import com.tencent.bk.codecc.defect.vo.checkerset.AddCheckerSet2TaskReqVO;
-import com.tencent.bk.codecc.defect.vo.checkerset.GetCheckerSetsReqVO;
-import com.tencent.bk.codecc.defect.vo.checkerset.PipelineCheckerSetVO;
-import com.tencent.bk.codecc.defect.vo.checkerset.UserCheckerSetsVO;
-import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
-import com.tencent.bk.codecc.task.vo.checkerset.ClearTaskCheckerSetReqVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.web.RestResource;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * 多工具规则接口实现
@@ -52,56 +41,10 @@ import java.util.List;
  * @date 2019/5/23
  */
 @RestResource
-public class ServiceCheckerRestResourceImpl implements ServiceCheckerRestResource
-{
-    @Autowired
-    private IConfigCheckerPkgBizService iConfigCheckerPkgBizService;
-
-    @Autowired
-    private IConfigCheckerPkgBizService configCheckerPkgBizService;
-
-    @Autowired
-    private ICheckerSetBizService checkerSetBizService;
+public class ServiceCheckerRestResourceImpl implements ServiceCheckerRestResource {
 
     @Autowired
     private CheckerService checkerService;
-
-    @Override
-    public Result<List<CheckerPkgRspVO>> queryCheckerConfiguration(Long taskId, String toolName, Long codeLang, ToolConfigInfoVO toolConfig)
-    {
-        return new Result<>(iConfigCheckerPkgBizService.getConfigCheckerPkg(taskId, toolName, codeLang, toolConfig).getCheckerPackages());
-    }
-
-    @Override
-    public Result<Boolean> configCheckerPkg(Long taskId, String toolName, ConfigCheckersPkgReqVO packageVo)
-    {
-        return new Result<>(configCheckerPkgBizService.syncConfigCheckerPkg(taskId, toolName, packageVo));
-    }
-
-    @Override
-    public Result<Boolean> addCheckerSet2Task(String user, Long taskId, AddCheckerSet2TaskReqVO addCheckerSet2TaskReqVO)
-    {
-        return new Result<>(checkerSetBizService.addCheckerSet2Task(user, taskId, addCheckerSet2TaskReqVO));
-    }
-
-    @Override
-    public Result<UserCheckerSetsVO> getCheckerSets(GetCheckerSetsReqVO getCheckerSetsReqVO, String user, String projectId)
-    {
-        return new Result<>(checkerSetBizService.getCheckerSets(getCheckerSetsReqVO.getToolNames(), user, projectId));
-    }
-
-    @Override
-    public Result<PipelineCheckerSetVO> getPipelineCheckerSets(String toolName, String user, String projectId)
-    {
-        return new Result<>(checkerSetBizService.getPipelineCheckerSets(toolName, user, projectId));
-    }
-
-    @Override
-    public Result<Boolean> clearCheckerSet(Long taskId, ClearTaskCheckerSetReqVO clearTaskCheckerSetReqVO, String user)
-    {
-        return new Result<>(checkerSetBizService.clearTaskCheckerSets(taskId, clearTaskCheckerSetReqVO.getToolNames(), user,
-                clearTaskCheckerSetReqVO.getNeedUpdatePipeline()));
-    }
 
     @Override
     public Result<List<String>> queryDimensionByToolChecker(

@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerHisRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerHisRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.CheckerDetailHisEntity;
 import com.tencent.bk.codecc.defect.service.ICheckerIntegratedBizService;

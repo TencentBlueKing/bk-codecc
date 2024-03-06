@@ -13,14 +13,13 @@
 package com.tencent.bk.codecc.defect.consumer;
 
 import com.google.common.collect.Maps;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
 import com.tencent.bk.codecc.defect.mapping.DefectConverter;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CommonStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.DefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CommonStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
-import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.statistic.CommonStatisticEntity;
 import com.tencent.bk.codecc.defect.model.statistic.DimensionStatisticEntity;
 import com.tencent.bk.codecc.defect.service.CommonDefectMigrationService;

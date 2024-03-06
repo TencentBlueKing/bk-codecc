@@ -20,6 +20,25 @@ public class ToolConfigServiceImpl implements ToolConfigService {
     private ToolConfigRepository toolConfigRepository;
 
     @Override
+    public List<ToolConfigInfoVO> getToolConfigByTaskIdIn(List<Long> taskIds) {
+        List<ToolConfigInfoEntity> toolConfigInfoEntityList = toolConfigRepository.findByTaskIdIn(taskIds);
+        if (toolConfigInfoEntityList == null || toolConfigInfoEntityList.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<ToolConfigInfoVO> result = new ArrayList<>();
+        toolConfigInfoEntityList.forEach(it -> {
+            if (it != null) {
+                ToolConfigInfoVO toolConfigInfoVO = new ToolConfigInfoVO();
+                BeanUtils.copyProperties(it, toolConfigInfoVO);
+                result.add(toolConfigInfoVO);
+            }
+        });
+
+        return result;
+    }
+
+    @Override
     public List<ToolConfigInfoVO> getToolConfigByTaskId(long taskId) {
         List<ToolConfigInfoEntity> toolConfigInfoEntityList = toolConfigRepository.findByTaskId(taskId);
         if (toolConfigInfoEntityList.isEmpty()) {

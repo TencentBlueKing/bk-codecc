@@ -3,26 +3,21 @@
  * @author blueking
  */
 
-import path from 'path'
-import webpack from 'webpack'
-import TerserPlugin from 'terser-webpack-plugin'
-import chalk from 'chalk'
-import glob from 'glob'
-import ora from 'ora'
-import HtmlWebpackPlugin from 'html-webpack-plugin'
+import path from 'path';
+import webpack from 'webpack';
+import TerserPlugin from 'terser-webpack-plugin';
+import chalk from 'chalk';
+import glob from 'glob';
+import ora from 'ora';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
 
-import config from './config'
+import config from './config';
 
-const ret = glob.sync('../static/lib**', { mark: true, cwd: __dirname })
+const ret = glob.sync('../static/lib**', { mark: true, cwd: __dirname });
 
 if (!ret.length) {
   // 需要打包到一起的 js 文件
-  const vendors = [
-    'vue/dist/vue.esm.js',
-    'vuex',
-    'vue-router',
-    'axios',
-  ]
+  const vendors = ['vue/dist/vue.esm.js', 'vuex', 'vue-router', 'axios'];
 
   const dllConf = {
     mode: 'production',
@@ -49,7 +44,6 @@ if (!ret.length) {
       new HtmlWebpackPlugin({
         filename: path.join(__dirname, '..', 'index-bundle.html'),
         template: 'index.html',
-        publicPath: '__BK_PUBLIC_PATH_PREFIX__/static/',
         inject: true,
       }),
 
@@ -101,29 +95,31 @@ if (!ret.length) {
       }),
       new webpack.optimize.OccurrenceOrderPlugin(),
     ],
-  }
+  };
 
-  const spinner = ora('building dll...')
-  spinner.start()
+  const spinner = ora('building dll...');
+  spinner.start();
 
   webpack(dllConf, (err, stats) => {
-    spinner.stop()
+    spinner.stop();
     if (err) {
-      throw err
+      throw err;
     }
-    process.stdout.write(`${stats.toString({
-      colors: true,
-      modules: false,
-      children: false,
-      chunks: false,
-      chunkModules: false,
-    })}\n\n`)
+    process.stdout.write(
+      `${stats.toString({
+        colors: true,
+        modules: false,
+        children: false,
+        chunks: false,
+        chunkModules: false,
+      })}\n\n`
+    );
 
     if (stats.hasErrors()) {
-      console.log(chalk.red('  Build failed with errors.\n'))
-      process.exit(1)
+      console.log(chalk.red('  Build failed with errors.\n'));
+      process.exit(1);
     }
 
-    console.log(chalk.cyan('  DLL Build complete.\n'))
-  })
+    console.log(chalk.cyan('  DLL Build complete.\n'));
+  });
 }

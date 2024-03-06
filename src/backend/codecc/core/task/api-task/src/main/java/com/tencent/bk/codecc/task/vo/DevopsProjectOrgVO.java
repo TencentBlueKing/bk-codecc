@@ -39,4 +39,6 @@ public class DevopsProjectOrgVO {
     @ApiModelProperty("中心ID")
     private Integer centerId;
 
+    @ApiModelProperty("项目组ID")
+    private Integer groupId;
 }

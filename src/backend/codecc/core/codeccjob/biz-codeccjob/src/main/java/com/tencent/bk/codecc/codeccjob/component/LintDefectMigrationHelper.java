@@ -26,29 +26,28 @@
 
 package com.tencent.bk.codecc.codeccjob.component;
 
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.LintDefectV2Repository;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.LintFileQueryRepository;
-import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
+import static java.util.concurrent.TimeUnit.DAYS;
+
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.LintFileQueryRepository;
 import com.tencent.bk.codecc.defect.model.LintFileEntity;
+import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.RedisKeyConstants;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
-import org.bson.types.ObjectId;
 import com.tencent.devops.common.util.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-
-import static java.util.concurrent.TimeUnit.DAYS;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
+import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 /**
  * lint告警表迁移
@@ -58,8 +57,8 @@ import static java.util.concurrent.TimeUnit.DAYS;
  */
 @Component
 @Slf4j
-public class LintDefectMigrationHelper
-{
+public class LintDefectMigrationHelper {
+
     @Autowired
     private RedisTemplate redisTemplate;
     @Autowired
@@ -69,36 +68,31 @@ public class LintDefectMigrationHelper
     @Autowired
     private LintDefectV2Repository lintDefectV2Repository;
 
-    public Object getMigration(long taskId, String toolName)
-    {
-        Object res = redisTemplate.opsForValue().get(String.format("%s%d:%s", RedisKeyConstants.KEY_MIGRATION_FLAG, taskId, toolName));
+    public Object getMigration(long taskId, String toolName) {
+        Object res = redisTemplate.opsForValue()
+                .get(String.format("%s%d:%s", RedisKeyConstants.KEY_MIGRATION_FLAG, taskId, toolName));
         return res;
     }
 
-    public void setMigrationFlag(long taskId, String toolName, String status)
-    {
-        redisTemplate.opsForValue().set(String.format("%s%d:%s", RedisKeyConstants.KEY_MIGRATION_FLAG, taskId, toolName), status, 60L, DAYS);
+    public void setMigrationFlag(long taskId, String toolName, String status) {
+        redisTemplate.opsForValue()
+                .set(String.format("%s%d:%s", RedisKeyConstants.KEY_MIGRATION_FLAG, taskId, toolName), status, 60L,
+                        DAYS);
     }
 
-    public void delMigrationFlag(long taskId, String toolName)
-    {
+    public void delMigrationFlag(long taskId, String toolName) {
         redisTemplate.delete(String.format("%s%d:%s", RedisKeyConstants.KEY_MIGRATION_FLAG, taskId, toolName));
     }
 
-    public void migration(long taskId, String toolName)
-    {
+    public void migration(long taskId, String toolName) {
         Object migrationFlag = getMigration(taskId, toolName);
-        if (migrationFlag == null)
-        {
+        if (migrationFlag == null) {
             // 标志开始数据迁移doing
             setMigrationFlag(taskId, toolName, "D");
 
-            try
-            {
+            try {
                 doMigration(taskId, toolName);
-            }
-            catch (Throwable t)
-            {
+            } catch (Throwable t) {
                 // 清除迁移标志
                 log.error("migration lint defect error, taskId:{}, toolName: {}", taskId, toolName, t);
                 delMigrationFlag(taskId, toolName);
@@ -106,35 +100,27 @@ public class LintDefectMigrationHelper
 
             // 标志数据已经迁移成功 true
             setMigrationFlag(taskId, toolName, "T");
-        }
-        else if (migrationFlag != null && "D".equals(migrationFlag.toString()))
-        {
-            do
-            {
-                try
-                {
+        } else if (migrationFlag != null && "D".equals(migrationFlag.toString())) {
+            do {
+                try {
                     Thread.sleep(1000L);
-                }
-                catch (InterruptedException e)
-                {
+                } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 migrationFlag = getMigration(taskId, toolName);
             }
-            while("D".equals(migrationFlag.toString()));
+            while ("D".equals(migrationFlag.toString()));
         }
     }
 
-    protected void doMigration(long taskId, String toolName)
-    {
+    protected void doMigration(long taskId, String toolName) {
         List<LintDefectV2Entity> allDefects = new ArrayList<>();
         Set<String> ids = new HashSet<>();
         List<LintFileEntity> allFileEntityList = lintDefectRepository.findByTaskIdAndToolName(taskId, toolName);
         allFileEntityList.forEach(file ->
         {
             if (StringUtils.isNotEmpty(file.getFilePath()) && file.getTaskId() != 0L
-                    && StringUtils.isNotEmpty(file.getToolName()) && !CollectionUtils.isEmpty(file.getDefectList()))
-            {
+                    && StringUtils.isNotEmpty(file.getToolName()) && !CollectionUtils.isEmpty(file.getDefectList())) {
                 int increment = file.getDefectList().size();
                 Long currMaxId = defectIdGenerator.generateDefectId(file.getTaskId(), file.getToolName(), increment);
                 AtomicLong currMinIdAtom = new AtomicLong(currMaxId - increment + 1);
@@ -142,8 +128,7 @@ public class LintDefectMigrationHelper
                         .map(oldDefect ->
                         {
                             String entityId = oldDefect.getDefectId();
-                            if (StringUtils.isEmpty(entityId) || ids.contains(entityId))
-                            {
+                            if (StringUtils.isEmpty(entityId) || ids.contains(entityId)) {
                                 entityId = ObjectId.get().toString();
                             }
                             ids.add(entityId);
@@ -164,14 +149,12 @@ public class LintDefectMigrationHelper
                             defectV2Entity.setFileMd5(file.getMd5());
                             String filePath = defectV2Entity.getFilePath();
                             int fileNameIndex = filePath.lastIndexOf("/");
-                            if (fileNameIndex == -1)
-                            {
+                            if (fileNameIndex == -1) {
                                 fileNameIndex = filePath.lastIndexOf("\\");
                             }
                             defectV2Entity.setFileName(filePath.substring(fileNameIndex + 1));
                             if ((oldDefect.getStatus() & ComConstants.DefectStatus.FIXED.value()) > 0
-                                    && StringUtils.isNotEmpty(oldDefect.getFixedBranch()))
-                            {
+                                    && StringUtils.isNotEmpty(oldDefect.getFixedBranch())) {
                                 defectV2Entity.setRepoId(oldDefect.getFixedRepoId());
                                 defectV2Entity.setRevision(oldDefect.getFixedRevision());
                                 defectV2Entity.setBranch(oldDefect.getFixedBranch());
@@ -182,10 +165,10 @@ public class LintDefectMigrationHelper
             }
         });
 
-        if (!CollectionUtils.isEmpty(allDefects))
-        {
+        if (!CollectionUtils.isEmpty(allDefects)) {
             lintDefectV2Repository.saveAll(allDefects);
         }
-        log.info("success migration lint defect, taskId: {}, toolName:{}, defectCount: {}", taskId, toolName, allDefects.size());
+        log.info("success migration lint defect, taskId: {}, toolName:{}, defectCount: {}", taskId, toolName,
+                allDefects.size());
     }
 }

@@ -127,12 +127,12 @@ public class CommonDefectEntityTracking extends CommonDefectEntity {
 
 
     @Override
-    public void setExtBugid(java.lang.String val) {
-        if (!Objects.equals(getExtBugid(), val)) {
+    public void setExtBugId(java.lang.String val) {
+        if (!Objects.equals(getExtBugId(), val)) {
             mapEntityChanges("ext_bug_id", val);
         }
 
-        super.setExtBugid(val);
+        super.setExtBugId(val);
     }
 
 

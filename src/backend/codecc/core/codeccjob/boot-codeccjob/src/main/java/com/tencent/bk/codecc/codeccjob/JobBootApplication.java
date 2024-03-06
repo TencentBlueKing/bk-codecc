@@ -28,10 +28,16 @@ package com.tencent.bk.codecc.codeccjob;
 
 import com.tencent.devops.common.service.MicroService;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 
 @EntityScan(value = "com.tencent.bk.codecc.defect.model")
-@MicroService
+@SpringBootApplication(exclude = {
+        MongoAutoConfiguration.class,
+        MongoDataAutoConfiguration.class
+})
 public class JobBootApplication {
 
     public static void main(String[] args) {

@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CodeRepoFromAnalyzeLogRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CodeRepoFromAnalyzeLogRepository;
 import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
 import com.tencent.bk.codecc.defect.service.AbstractQueryWarningBizService;
 import com.tencent.bk.codecc.defect.service.EfficientCommentService;
@@ -12,6 +12,8 @@ import com.tencent.bk.codecc.defect.vo.CLOCDefectQueryRspInfoVO;
 import com.tencent.bk.codecc.defect.vo.CLOCDefectQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.CLOCDefectTreeRespVO;
 import com.tencent.bk.codecc.defect.vo.CLOCTreeNodeVO;
+import com.tencent.bk.codecc.defect.vo.DefectFileContentSegmentQueryRspVO;
+import com.tencent.bk.codecc.defect.vo.QueryDefectFileContentSegmentReqVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogOverviewVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.common.CommonDefectDetailQueryReqVO;
@@ -98,10 +100,8 @@ public class CLOCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
     }
 
     @Override
-    public CommonDefectDetailQueryRspVO processQueryWarningDetailRequest(Long taskId, String userId,
-            CommonDefectDetailQueryReqVO queryWarningDetailReq,
-            String sortField, Sort.Direction sortType
-    ) {
+    public CommonDefectDetailQueryRspVO processQueryWarningDetailRequest(String projectId, Long taskId, String userId,
+            CommonDefectDetailQueryReqVO queryWarningDetailReq, String sortField, Sort.Direction sortType) {
         return new CommonDefectDetailQueryRspVO();
     }
 
@@ -119,6 +119,19 @@ public class CLOCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             boolean isMultiTaskQuery
     ) {
         return new QueryWarningPageInitRspVO();
+    }
+
+    @Override
+    public CommonDefectDetailQueryRspVO processQueryDefectDetailWithoutFileContent(Long taskId, String userId,
+            CommonDefectDetailQueryReqVO queryWarningDetailReq, String sortField, Sort.Direction sortType) {
+        return new CommonDefectDetailQueryRspVO();
+    }
+
+
+    @Override
+    public DefectFileContentSegmentQueryRspVO processQueryDefectFileContentSegment(String projectId, String userId,
+            QueryDefectFileContentSegmentReqVO request) {
+        return new DefectFileContentSegmentQueryRspVO();
     }
 
 
@@ -160,6 +173,7 @@ public class CLOCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         long totalEfficientComment = 0;
         //用于计算有效注释率
         long totalLinesForEfficient = 0;
+        long totalFileNum = 0;
         List<String> effectiveFilters = efficientCommentService.getDisableLangList();
 
         for (CLOCStatisticEntity clocStatisticEntity : clocStatisticEntities) {
@@ -175,6 +189,8 @@ public class CLOCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             } else if (clocStatisticEntity.getSumEfficientComment() != null) {
                 clocStatisticEntity.setSumEfficientComment(null);
             }
+
+            totalFileNum += clocStatisticEntity.getFileNum();
         }
 
         long totalLines = totalBlank + totalCode + totalComment;
@@ -190,6 +206,7 @@ public class CLOCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         totalInfo.setCommentRate(getCommentRate(totalLines, totalComment));
         totalInfo.setEfficientCommentRate(getEffectCommentRate(totalLinesForEfficient, totalEfficientComment));
         totalInfo.setProportion(100);
+        totalInfo.setSumFileNum(totalFileNum);
         clocDefectQueryRspVO.setTotalInfo(totalInfo);
 
         // 计算其他小比例语言统计信息
@@ -199,6 +216,7 @@ public class CLOCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         AtomicLong otherSumEfficientComment = new AtomicLong();
         AtomicLong otherSumLines = new AtomicLong();
         AtomicLong otherSumLinesForEfficient = new AtomicLong();
+        AtomicLong otherSumFileNum = new AtomicLong();
         int otherProPortion = 0;
 
         List<CLOCDefectQueryRspInfoVO> losts = new LinkedList<>();
@@ -212,6 +230,7 @@ public class CLOCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             long sumComment = clocStatisticEntity.getSumComment();
             Long sumEfficientComment = clocStatisticEntity.getSumEfficientComment();
             long sumLines = sumBlank + sumCode + sumComment;
+            long sumFileNum = clocStatisticEntity.getFileNum();
             double proportion = (((double) sumLines / (double) totalLines)) * 100;
 
             // 四舍五入精度丢失记录
@@ -228,6 +247,7 @@ public class CLOCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                     otherSumLinesForEfficient.addAndGet(sumLines);
                 }
                 otherSumLines.addAndGet(sumLines);
+                otherSumFileNum.addAndGet(sumFileNum);
             } else {
                 clocDefectQueryRspInfoVO.setSumBlank(sumBlank);
                 clocDefectQueryRspInfoVO.setSumCode(sumCode);
@@ -237,6 +257,7 @@ public class CLOCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                 clocDefectQueryRspInfoVO.setCommentRate(getCommentRate(sumLines, sumComment));
                 clocDefectQueryRspInfoVO.setEfficientCommentRate(getEffectCommentRate(sumLines, sumEfficientComment));
                 clocDefectQueryRspInfoVO.setProportion((int) proportion);
+                clocDefectQueryRspInfoVO.setSumFileNum(sumFileNum);
                 finalClocDefectQueryRspInfoVOS.add(clocDefectQueryRspInfoVO);
             }
         });
@@ -268,6 +289,7 @@ public class CLOCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         otherInfo.setEfficientCommentRate(getEffectCommentRate(otherSumLinesForEfficient.get(),
                 otherSumEfficientComment.get()));
         otherInfo.setProportion(otherProPortion);
+        otherInfo.setSumFileNum(otherSumFileNum.get());
         clocDefectQueryRspVO.setOtherInfo(otherInfo);
 
         clocDefectQueryRspVO.setTaskId(taskId);

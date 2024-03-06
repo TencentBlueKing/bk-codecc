@@ -28,9 +28,9 @@ package com.tencent.bk.codecc.defect.model.statistic;
 
 import com.tencent.bk.codecc.defect.model.CCNNotRepairedAuthorEntity;
 import com.tencent.bk.codecc.defect.model.ChartAverageEntity;
-import com.tencent.bk.codecc.defect.model.statistic.StatisticEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -186,5 +186,5 @@ public class CCNStatisticEntity extends StatisticEntity {
      * 新增低风险告警数
      */
     @Field("new_low_count")
-    private int newlowCount;
+    private int newLowCount;
 }

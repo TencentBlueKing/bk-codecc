@@ -28,6 +28,9 @@
 
 package com.tencent.bk.codecc.task.service;
 
+import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.KEY_CREATE_FROM;
+import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.PREFIX_TASK_INFO;
+
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.api.ServiceCheckerSetRestResource;
 import com.tencent.bk.codecc.task.constant.TaskConstants;
@@ -45,6 +48,7 @@ import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.CheckerSetType;
 import com.tencent.devops.common.constant.ComConstants.Tool;
@@ -52,19 +56,9 @@ import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.redis.lock.RedisLock;
 import com.tencent.devops.common.service.ToolMetaCacheService;
+import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.List2StrUtil;
 import com.tencent.devops.common.util.MD5Utils;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.StringUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import com.tencent.devops.common.util.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -77,9 +71,15 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.KEY_CREATE_FROM;
-import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.PREFIX_TASK_INFO;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.StringUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 /**
  * 任务注册抽象类
@@ -89,41 +89,31 @@ import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt
  */
 @Slf4j
 public abstract class AbstractTaskRegisterService implements TaskRegisterService {
-    @Autowired
-    private ToolMetaCacheService toolMetaCache;
 
     @Autowired
     protected TaskRepository taskRepository;
-
     @Autowired
     protected StringRedisTemplate redisTemplate;
-
     @Autowired
     protected PipelineService pipelineService;
-
     @Autowired
     protected ToolService toolService;
-
-    @Autowired
-    private TaskService taskService;
-
     @Autowired
     protected PathFilterService pathFilterService;
-
     @Autowired
     protected ToolRepository toolRepository;
-
     @Autowired
     protected SpecialParamUtil specialParamUtil;
-
     @Autowired
     protected ToolDao toolDao;
-
     @Autowired
     protected Client client;
-
     @Autowired
     protected PipelineCallbackRegisterService pipelineCallbackRegisterService;
+    @Autowired
+    private ToolMetaCacheService toolMetaCache;
+    @Autowired
+    private TaskService taskService;
 
     @Override
     public Boolean checkeIsStreamRegistered(String nameEn) {
@@ -398,7 +388,7 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
      * @param forceFullScanTools
      */
     protected void upsert(TaskDetailVO taskDetailVO, TaskInfoEntity taskInfoEntity, String userName,
-                          List<String> forceFullScanTools) {
+            List<String> forceFullScanTools) {
         String lockKey = String.format("lock:task:upsert_tool_config:%s", taskInfoEntity.getTaskId());
         RedisLock redisLock = new RedisLock(redisTemplate, lockKey, 5);
 
@@ -421,7 +411,7 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
      * @param forceFullScanTools
      */
     private void upsertCore(TaskDetailVO taskDetailVO, TaskInfoEntity taskInfoEntity, String userName,
-                            List<String> forceFullScanTools) {
+            List<String> forceFullScanTools) {
         TaskInfoEntity refreshTaskInfo = taskRepository.findFirstByTaskId(taskInfoEntity.getTaskId());
         if (refreshTaskInfo != null) {
             taskInfoEntity.setToolConfigInfoList(refreshTaskInfo.getToolConfigInfoList());
@@ -452,13 +442,17 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
             String toolName = reqTool.getToolName();
             ToolConfigInfoEntity toolConfigInfoEntity = oldToolMap.get(toolName);
             if (toolConfigInfoEntity == null) {
-                try {
-                    toolConfigInfoEntity = toolService.registerTool(reqTool, taskInfoEntity, userName);
-                    toolConfigInfoEntityList.add(toolConfigInfoEntity);
-                    log.info("add task {} tool {}", taskId, toolName);
-                    forceFullScanTools.add(toolName);
-                } catch (Exception e) {
-                    log.error("add task {} tool {} fail!", taskId, toolName, e);
+
+                // 工具没有停用才允许注册
+                if (!taskService.checkToolRemoved(toolName, taskInfoEntity)) {
+                    try {
+                        toolConfigInfoEntity = toolService.registerTool(reqTool, taskInfoEntity, userName);
+                        toolConfigInfoEntityList.add(toolConfigInfoEntity);
+                        log.info("add task {} tool {}", taskId, toolName);
+                        forceFullScanTools.add(toolName);
+                    } catch (Exception e) {
+                        log.error("add task {} tool {} fail!", taskId, toolName, e);
+                    }
                 }
             } else {
                 // 重新启用工具
@@ -516,6 +510,11 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
                 && CollectionUtils.isNotEmpty(toolConfigInfoEntityList)
                 && toolNameList.size() != toolConfigInfoEntityList.size()) {
             log.info("sort out tool names field, task id: {}, before: {}", taskId, taskInfoEntity.getToolNames());
+            for (ToolConfigInfoEntity toolConfigInfoEntity : toolConfigInfoEntityList) {
+                if (toolConfigInfoEntity != null && toolConfigInfoEntity.getCreatedDate() == null) {
+                    toolConfigInfoEntity.setCreatedDate(0L);
+                }
+            }
             Collections.sort(toolConfigInfoEntityList, Comparator.comparingLong(ToolConfigInfoEntity::getCreatedDate));
             Set<String> newToolNames = Sets.newLinkedHashSet(
                     toolConfigInfoEntityList.stream().map(ToolConfigInfoEntity::getToolName)

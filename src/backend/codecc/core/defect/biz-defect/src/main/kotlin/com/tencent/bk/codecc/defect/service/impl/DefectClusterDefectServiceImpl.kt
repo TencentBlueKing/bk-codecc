@@ -1,11 +1,11 @@
 package com.tencent.bk.codecc.defect.service.impl
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository
-import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository
-import com.tencent.bk.codecc.defect.dao.mongorepository.CommonStatisticRepository
-import com.tencent.bk.codecc.defect.dao.mongorepository.DUPCStatisticRepository
-import com.tencent.bk.codecc.defect.dao.mongorepository.DefectClusterStatisticRepository
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CommonStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DUPCStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DefectClusterStatisticRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintStatisticRepository
 import com.tencent.bk.codecc.defect.model.DefectClusterStatisticEntity
 import com.tencent.bk.codecc.defect.model.statistic.StatisticEntity
 import com.tencent.devops.common.api.clusterresult.BaseClusterResultVO

@@ -12,19 +12,19 @@
 
 package com.tencent.bk.codecc.codeccjob.service.impl;
 
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.DefectRepository;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.defect.vo.ConfigCheckersPkgReqVO;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.DefectRepository;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.IBizService;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.*;
 
 /**
  * lint类工具的规则配置
@@ -34,17 +34,16 @@ import java.util.*;
  */
 @Service("CommonConfigCheckerPkgBizService")
 @Slf4j
-public class CommonConfigCheckerPkgBizServiceImpl implements IBizService<ConfigCheckersPkgReqVO>
-{
+public class CommonConfigCheckerPkgBizServiceImpl implements IBizService<ConfigCheckersPkgReqVO> {
+
     @Autowired
     private DefectRepository defectRepository;
 
     @Override
-    public Result processBiz(ConfigCheckersPkgReqVO configCheckersPkgReqVO)
-    {
-        List<CommonDefectEntity> defectList = defectRepository.findByTaskIdAndToolName(configCheckersPkgReqVO.getTaskId(), configCheckersPkgReqVO.getToolName());
-        if (CollectionUtils.isNotEmpty(defectList))
-        {
+    public Result processBiz(ConfigCheckersPkgReqVO configCheckersPkgReqVO) {
+        List<CommonDefectEntity> defectList = defectRepository.findByTaskIdAndToolName(
+                configCheckersPkgReqVO.getTaskId(), configCheckersPkgReqVO.getToolName());
+        if (CollectionUtils.isNotEmpty(defectList)) {
             long currTime = System.currentTimeMillis();
             List<String> closedCheckers = configCheckersPkgReqVO.getClosedCheckers();
             List<String> openCheckers = configCheckersPkgReqVO.getOpenedCheckers();
@@ -56,33 +55,26 @@ public class CommonConfigCheckerPkgBizServiceImpl implements IBizService<ConfigC
                 int status = defectEntity.getStatus();
 
                 // 告警未被修复
-                if ((status & ComConstants.DefectStatus.FIXED.value()) == 0)
-                {
+                if ((status & ComConstants.DefectStatus.FIXED.value()) == 0) {
                     // 命中将关闭的规则
-                    if (CollectionUtils.isNotEmpty(closedCheckers) && closedCheckers.contains(checkerName))
-                    {
+                    if (CollectionUtils.isNotEmpty(closedCheckers) && closedCheckers.contains(checkerName)) {
                         status = status | ComConstants.DefectStatus.CHECKER_MASK.value();
-                        if (defectEntity.getExcludeTime() == 0)
-                        {
+                        if (defectEntity.getExcludeTime() == 0) {
                             defectEntity.setExcludeTime(currTime);
                         }
                     }
                     // 命中将打开的规则
-                    else if (CollectionUtils.isNotEmpty(openCheckers) && openCheckers.contains(checkerName))
-                    {
-                        if ((status & ComConstants.DefectStatus.CHECKER_MASK.value()) > 0)
-                        {
+                    else if (CollectionUtils.isNotEmpty(openCheckers) && openCheckers.contains(checkerName)) {
+                        if ((status & ComConstants.DefectStatus.CHECKER_MASK.value()) > 0) {
                             status = status - ComConstants.DefectStatus.CHECKER_MASK.value();
-                            if (status < ComConstants.DefectStatus.PATH_MASK.value())
-                            {
+                            if (status < ComConstants.DefectStatus.PATH_MASK.value()) {
                                 defectEntity.setExcludeTime(0);
                             }
                         }
                     }
                 }
 
-                if (defectEntity.getStatus() != status)
-                {
+                if (defectEntity.getStatus() != status) {
                     defectEntity.setStatus(status);
                     needUpdateDefectList.add(defectEntity);
                 }

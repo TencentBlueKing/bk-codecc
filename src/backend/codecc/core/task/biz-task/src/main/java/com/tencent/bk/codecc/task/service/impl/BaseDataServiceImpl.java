@@ -755,7 +755,7 @@ public class BaseDataServiceImpl implements BaseDataService {
             baseDataEntity.setParamExtend1(prodTime);
         }
 
-        baseDataEntity.applyAuditInfo(userName);
+        baseDataEntity.applyAuditInfoOnUpdate(userName);
 
         baseDataRepository.save(baseDataEntity);
         return true;
@@ -1009,9 +1009,9 @@ public class BaseDataServiceImpl implements BaseDataService {
             baseDataEntity.setParamType(ComConstants.KEY_PIPELINE_TASK_LIMIT);
             baseDataEntity.setParamName(ComConstants.KEY_PIPELINE_TASK_LIMIT);
             baseDataEntity.setParamCode(pipelineId);
-            baseDataEntity.applyAuditInfo(reqVO.getUpdatedBy(), reqVO.getUpdatedBy());
+            baseDataEntity.applyAuditInfoOnCreate(reqVO.getUpdatedBy());
         } else {
-            baseDataEntity.applyAuditInfo(reqVO.getUpdatedBy());
+            baseDataEntity.applyAuditInfoOnUpdate(reqVO.getUpdatedBy());
         }
 
         baseDataEntity.setParamValue(

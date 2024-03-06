@@ -21,4 +21,10 @@ dependencies {
     api(group = "com.tencent.bk.devops.ci.process", name = "api-process") {
         isChanging = true
     }
+    api(group = "com.tencent.bk.devops.ci.repository", name = "api-repository"){
+        isChanging=true
+    }
+    api(group = "com.tencent.bk.devops.ci.common", name = "common-scm"){
+        isChanging=true
+    }
 }

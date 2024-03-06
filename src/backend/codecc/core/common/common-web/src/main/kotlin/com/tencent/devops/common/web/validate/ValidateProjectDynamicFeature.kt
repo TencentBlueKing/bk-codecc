@@ -1,7 +1,5 @@
 package com.tencent.devops.common.web.validate
 
-import com.tencent.devops.common.web.security.AuthMethod
-import com.tencent.devops.common.web.security.filter.PermissionAuthFilter
 import com.tencent.devops.common.web.validate.filter.ValidateProjectFilter
 import javax.ws.rs.container.DynamicFeature
 import javax.ws.rs.container.ResourceInfo

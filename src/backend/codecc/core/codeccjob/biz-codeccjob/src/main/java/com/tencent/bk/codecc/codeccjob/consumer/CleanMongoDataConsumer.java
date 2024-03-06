@@ -1,9 +1,13 @@
 package com.tencent.bk.codecc.codeccjob.consumer;
 
+import static com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom.API_TRIGGER;
+import static com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom.TIMING_SCAN;
+import static com.tencent.devops.common.constant.ComConstants.CLEAN_TASK_WHITE_LIST;
+
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.CleanMongoDataFailTaskRepository;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.CleanMongoDataLogRepository;
-import com.tencent.bk.codecc.codeccjob.dao.mongorepository.TaskLogOverviewRepository;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.CleanMongoDataFailTaskRepository;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.CleanMongoDataLogRepository;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.TaskLogOverviewRepository;
 import com.tencent.bk.codecc.codeccjob.service.ICleanMongoDataService;
 import com.tencent.bk.codecc.defect.model.CleanMongoDataLogEntity;
 import com.tencent.bk.codecc.defect.model.CleanMongoFailTaskEntity;
@@ -20,19 +24,9 @@ import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
-import com.tencent.devops.common.util.IPUtils;
+import com.tencent.devops.common.redis.lock.RedisLock;
+import com.tencent.devops.common.service.utils.IPUtils;
 import com.tencent.devops.common.util.ThreadPoolUtil;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.exception.ExceptionUtils;
-import org.joda.time.LocalDateTime;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Component;
-
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -41,11 +35,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom.API_TRIGGER;
-import static com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom.TIMING_SCAN;
-import static com.tencent.devops.common.constant.ComConstants.CLEAN_TASK_WHITE_LIST;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
+import org.joda.time.LocalDateTime;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
 
 /**
  * 定时清理 defect 服务 mongo 数据，涉及：
@@ -64,6 +66,7 @@ import static com.tencent.devops.common.constant.ComConstants.CLEAN_TASK_WHITE_L
  * t_build
  * t_build_defect_snapshott
  * t_metrics
+ * t_scan_code_summary
  *
  * 按照 build_id 为组清理
  */
@@ -87,6 +90,9 @@ public class CleanMongoDataConsumer implements ApplicationContextAware {
     private CleanMongoDataFailTaskRepository cleanMongoDataFailTaskRepository;
 
     private Map<String, ICleanMongoDataService> cleanServiceMap;
+
+    @Value("${cluster.tag:#{null}}")
+    private String clusterTag;
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -127,6 +133,7 @@ public class CleanMongoDataConsumer implements ApplicationContextAware {
 
     /**
      * 清理任务主线逻辑
+     *
      * @param threadId 当前线程ID
      * @param parallelNum 每个节点并发数
      */
@@ -174,10 +181,18 @@ public class CleanMongoDataConsumer implements ApplicationContextAware {
                     if (StringUtils.isBlank(projectId)) {
                         continue;
                     }
+
                     if (now >= endTime) {
                         log.info("clean mongo data time out: clean taskId: {}", taskDetailVO);
                         break;
                     }
+
+                    // 应急开关
+                    String flag = redisTemplate.opsForValue().get("CLEAN_MONGO_DATA_STOP_FLAG");
+                    if (StringUtils.isNotEmpty(flag) && "1".equals(flag)) {
+                        break;
+                    }
+
                     List<String> obsoleteBuildIdList = getObsoleteBuildIdList(taskDetailVO, indexMap);
                     if (!obsoleteBuildIdList.isEmpty()) {
                         List<String> taskToolList = getTaskTools(taskId);
@@ -214,6 +229,7 @@ public class CleanMongoDataConsumer implements ApplicationContextAware {
 
     /**
      * 分段清理历史数据
+     *
      * @param taskId
      * @param obsoleteBuildIdList
      * @param taskToolList
@@ -229,12 +245,13 @@ public class CleanMongoDataConsumer implements ApplicationContextAware {
 
     /**
      * 初始化清理日志记录，记录当前节点IP、开始时间
+     *
      * @param threadId
      */
     private CleanMongoDataLogEntity initCleanLog(int threadId) {
         log.info("init clean log: {}", threadId);
         Integer cleanDate = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
-        String nodeIp = IPUtils.INSTANCE.getInnerIP();
+        String nodeIp = IPUtils.Companion.getInnerIP();
         CleanMongoDataLogEntity cleanMongoDataLogEntity = new CleanMongoDataLogEntity();
         cleanMongoDataLogEntity.setCleanDate(cleanDate);
         cleanMongoDataLogEntity.setNodeIp(nodeIp);
@@ -304,18 +321,17 @@ public class CleanMongoDataConsumer implements ApplicationContextAware {
     private List<TaskDetailVO> getTaskList(CleanMongoDataLogEntity cleanMongoDataLogEntity, int parallelNum) {
         // 拿最大 taskid，然后拿分段，清理制定分段的 task 信息
         long nodeNum = client.getServiceNodeNum("codeccjob");
-        Result<Long> taskSizeResult = client.get(ServiceTaskRestResource.class).countTaskSize();
-        if (taskSizeResult.isNotOk() || taskSizeResult.getData() == null || taskSizeResult.getData() == 0L) {
-            throw new CodeCCException(CommonMessageCode.SYSTEM_ERROR, "get task size fail");
-        }
-
         long partition = nodeNum * parallelNum;
-        long totalSize = taskSizeResult.getData();
+        long totalSize = getTaskTotalSize();
         long currSize = totalSize / partition;
         if (currSize * partition < totalSize) {
             currSize += 1;
         }
-        long index = redisTemplate.opsForValue().increment(RedisKeyConstants.CLEAN_DATA_TASK_LIST, 1);
+        String taskIndexKey = RedisKeyConstants.CLEAN_DATA_TASK_LIST;
+        if (StringUtils.isNotBlank(clusterTag)) {
+            taskIndexKey = taskIndexKey + "_" + clusterTag;
+        }
+        long index = redisTemplate.opsForValue().increment(taskIndexKey, 1);
         log.info("clean data node index: {}, totalSize: {}, currSize: {}, nodeNum: {}, partition: {}",
                 index, totalSize, currSize, nodeNum, partition);
         Result<List<TaskDetailVO>> taskIsListResult = client.get(ServiceTaskRestResource.class)
@@ -326,25 +342,53 @@ public class CleanMongoDataConsumer implements ApplicationContextAware {
 
         List<TaskDetailVO> taskDetailVOList = taskIsListResult.getData();
         if (index >= partition) {
-            redisTemplate.opsForValue().set(RedisKeyConstants.CLEAN_DATA_TASK_LIST, "0");
+            redisTemplate.opsForValue().set(taskIndexKey, "0");
         }
 
         recordCleanDetail(cleanMongoDataLogEntity, taskDetailVOList, (int) index, nodeNum, partition);
         return taskDetailVOList;
     }
 
+    private long getTaskTotalSize() {
+        Integer cleanDate = Integer.parseInt(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+        String redisKeyForCount = String.format("CLEAN_MONGO_DATA_CONSUMER:GET_TASK_TOTAL:COUNTER:%d", cleanDate);
+        String redisKeyForLock = "CLEAN_MONGO_DATA_CONSUMER:GET_TASK_TOTAL:LOCKER";
+
+        try (RedisLock redisLock = new RedisLock(redisTemplate, redisKeyForLock, 30)) {
+            redisLock.lock();
+            String totalStr = redisTemplate.opsForValue().get(redisKeyForCount);
+            if (StringUtils.isNotEmpty(totalStr)) {
+                return Long.parseLong(totalStr);
+            }
+
+            Result<Long> taskSizeResult = client.get(ServiceTaskRestResource.class).countTaskSize();
+            if (taskSizeResult == null
+                    || taskSizeResult.isNotOk()
+                    || taskSizeResult.getData() == null
+                    || taskSizeResult.getData() == 0L) {
+                throw new CodeCCException(CommonMessageCode.SYSTEM_ERROR, "get task size fail");
+            }
+
+            long total = taskSizeResult.getData();
+            redisTemplate.opsForValue().set(redisKeyForCount, String.valueOf(total), 12, TimeUnit.HOURS);
+
+            return total;
+        }
+    }
+
     /**
      * 记录清理数据当前节点信息
+     *
      * @param cleanMongoDataLogEntity
      * @param taskDetailVOList
      * @param index
      * @param nodeNum
      */
     private void recordCleanDetail(CleanMongoDataLogEntity cleanMongoDataLogEntity,
-                                   List<TaskDetailVO> taskDetailVOList,
-                                   int index,
-                                   long nodeNum,
-                                   long partition) {
+            List<TaskDetailVO> taskDetailVOList,
+            int index,
+            long nodeNum,
+            long partition) {
         cleanMongoDataLogEntity.setNodeIndex(index);
         cleanMongoDataLogEntity.setNodeNum(nodeNum);
         cleanMongoDataLogEntity.setPartition(partition);
@@ -353,6 +397,7 @@ public class CleanMongoDataConsumer implements ApplicationContextAware {
 
     /**
      * 记录清理失败的任务信息、失败原因、节点信息等
+     *
      * @param taskId
      * @param stackTrace
      * @param message

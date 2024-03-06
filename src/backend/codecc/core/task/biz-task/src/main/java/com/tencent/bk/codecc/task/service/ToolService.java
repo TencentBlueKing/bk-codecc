@@ -28,14 +28,17 @@ package com.tencent.bk.codecc.task.service;
 
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
 import com.tencent.bk.codecc.task.model.ToolConfigInfoEntity;
-import com.tencent.bk.codecc.task.vo.*;
+import com.tencent.bk.codecc.task.vo.BatchRegisterVO;
+import com.tencent.bk.codecc.task.vo.ToolConfigBaseVO;
+import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
+import com.tencent.bk.codecc.task.vo.ToolConfigInfoWithMetadataVO;
+import com.tencent.bk.codecc.task.vo.ToolConfigPlatformVO;
+import com.tencent.bk.codecc.task.vo.ToolTaskInfoVO;
 import com.tencent.bk.codecc.task.vo.checkerset.ToolCheckerSetVO;
-import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
-import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-
 import java.util.List;
+import java.util.Set;
 
 /**
  * 工具管理服务接口
@@ -43,8 +46,7 @@ import java.util.List;
  * @version V1.0
  * @date 2019/4/25
  */
-public interface ToolService
-{
+public interface ToolService {
 
     /**
      * 蓝盾批量注册工具
@@ -58,7 +60,8 @@ public interface ToolService
 
     /**
      * 注册工具
-     *  @param toolConfigInfo
+     *
+     * @param toolConfigInfo
      * @param user
      * @return
      */
@@ -156,19 +159,9 @@ public interface ToolService
     Boolean addCheckerSet2Task(Long taskId, List<ToolCheckerSetVO> toolCheckerSets);
 
     /**
-     * 修改工具特殊参数和规则集
-     *
-     * @param user
-     * @param taskId
-     * @param paramJsonAndCheckerSetsVO
-     * @return
-     */
-    Boolean updateParamJsonAndCheckerSets(String user, Long taskId, ParamJsonAndCheckerSetsVO paramJsonAndCheckerSetsVO);
-
-    /**
      * 获取工具platform配置信息
      *
-     * @param taskId   任务ID
+     * @param taskId 任务ID
      * @param toolName 工具名
      * @return vo
      */
@@ -177,8 +170,8 @@ public interface ToolService
     /**
      * 更新工具配置特殊参数
      *
-     * @param taskId               任务ID
-     * @param userName             变更人
+     * @param taskId 任务ID
+     * @param userName 变更人
      * @param toolConfigPlatformVO 变更内容
      * @return boolean
      */
@@ -205,6 +198,7 @@ public interface ToolService
 
     /**
      * 批量更新工具跟进状态：非停用任务中未跟进状态(0,1)且已成功分析一次的工具
+     *
      * @return boolean
      */
     Boolean batchUpdateToolFollowStatus(Integer pageSize);
@@ -213,7 +207,7 @@ public interface ToolService
      * 根据taskId集合刷新工具的跟进状态
      *
      * @param userName 用户名
-     * @param reqVO    请求体
+     * @param reqVO 请求体
      * @return boolean
      */
     Boolean refreshToolFollowStatusByTaskIds(String userName, QueryTaskListReqVO reqVO);
@@ -225,4 +219,20 @@ public interface ToolService
      * @return
      */
     Boolean initToolCountScript(Integer day);
+
+    /***
+     * 查询工具在指定时间当天的工具新增和停用情况
+     * @param toolName 工具名称
+     * @param detailTime 某一天时间
+     * @return
+     */
+    ToolTaskInfoVO getToolInfoConfigByToolName(String toolName, String detailTime);
+
+    /**
+     * 根据任务id查询是否接入某个工具
+     * @param taskIdList 任务id列表
+     * @param toolName 工具名称
+     * @return 任务id列表
+     */
+    List<Long> getTaskInfoByToolNameAndTaskId(List<Long> taskIdList, String toolName);
 }

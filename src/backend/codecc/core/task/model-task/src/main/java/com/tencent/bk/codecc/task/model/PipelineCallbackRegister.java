@@ -3,6 +3,7 @@ package com.tencent.bk.codecc.task.model;
 import com.tencent.codecc.common.db.CommonEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
@@ -13,6 +14,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 
 @Document(collection = "t_pipeline_callback_register")
 @Data
+@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @CompoundIndexes({

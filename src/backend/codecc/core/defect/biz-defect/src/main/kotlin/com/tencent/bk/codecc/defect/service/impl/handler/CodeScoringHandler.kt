@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.service.impl.handler
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerSetTaskRelationshipRepository
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetTaskRelationshipRepository
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetTaskRelationshipEntity
 import com.tencent.bk.codecc.defect.pojo.HandlerDTO
 import com.tencent.bk.codecc.defect.service.AbstractCodeScoringService
@@ -61,7 +61,7 @@ class CodeScoringHandler @Autowired constructor(
     }
 
     private fun getScoringServiceName(taskDetailVO: TaskDetailVO): String {
-        val isOpenScan = isOpenScan(taskDetailVO.taskId, taskDetailVO.codeLang)
+        val isOpenScan = isOpenScan(taskDetailVO.taskId, taskDetailVO.codeLang ?: 0L)
         return if (ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value()
                         .equals(taskDetailVO.createFrom, ignoreCase = true) || isOpenScan
         ) {

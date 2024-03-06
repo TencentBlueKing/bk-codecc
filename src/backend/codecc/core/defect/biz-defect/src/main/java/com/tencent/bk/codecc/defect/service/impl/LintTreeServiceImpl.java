@@ -26,7 +26,7 @@
 
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongotemplate.LintDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectDao;
 import com.tencent.bk.codecc.defect.model.LintFileEntity;
 import com.tencent.bk.codecc.defect.service.AbstractTreeService;
 import com.tencent.devops.common.util.PathUtils;

@@ -28,6 +28,8 @@ package com.tencent.bk.codecc.defect.api;
 
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
 
+import com.tencent.bk.codecc.defect.vo.GrayBuildNumAndTaskVO;
+import com.tencent.bk.codecc.defect.vo.GrayDefectStaticVO;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectIdVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectPageVO;
@@ -133,4 +135,9 @@ public interface ServiceDefectRestResource {
             @PathParam("taskId")
             long taskId
     );
+
+    @ApiOperation("根据构建号和任务id获取static库中的数据")
+    @Path("/getDefectStaticList")
+    @POST
+    Result<List<GrayDefectStaticVO>> getGaryDefectStaticList(GrayBuildNumAndTaskVO grayBuildNumAndTaskVO);
 }

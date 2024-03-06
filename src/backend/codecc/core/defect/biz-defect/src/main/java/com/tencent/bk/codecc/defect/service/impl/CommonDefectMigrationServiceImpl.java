@@ -4,9 +4,8 @@ import static com.tencent.devops.common.constant.ComConstants.DATA_MIGRATION_SWI
 import static com.tencent.devops.common.constant.ComConstants.DATA_MIGRATION_SWITCH_SINGLE_MODE;
 
 import com.google.common.collect.ImmutableSet;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CommonDefectMigrationRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.DefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CommonDefectMigrationRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DefectRepository;
 import com.tencent.bk.codecc.defect.mapping.DefectConverter;
 import com.tencent.bk.codecc.defect.model.CommonDefectMigrationEntity;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
@@ -16,6 +15,7 @@ import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.DataMigrationStatus;
 import com.tencent.devops.common.constant.ComConstants.ToolPattern;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -38,7 +38,7 @@ public class CommonDefectMigrationServiceImpl implements CommonDefectMigrationSe
     @Autowired
     private CommonDefectMigrationRepository commonDefectMigrationRepository;
     @Autowired
-    private MongoTemplate mongoTemplate;
+    private MongoTemplate defectMongoTemplate;
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
     @Autowired
@@ -47,9 +47,9 @@ public class CommonDefectMigrationServiceImpl implements CommonDefectMigrationSe
     private DefectConverter defectConverter;
 
     private static final Set<String> COMMON_DEFECT_TOOL_SET = new ImmutableSet.Builder()
-            .add(ToolPattern.COVERITY.name().toUpperCase())
-            .add(ToolPattern.KLOCWORK.name().toUpperCase())
-            .add(ToolPattern.PINPOINT.name().toUpperCase())
+            .add(ToolPattern.COVERITY.name().toUpperCase(Locale.ENGLISH))
+            .add(ToolPattern.KLOCWORK.name().toUpperCase(Locale.ENGLISH))
+            .add(ToolPattern.PINPOINT.name().toUpperCase(Locale.ENGLISH))
             .build();
 
     @Override
@@ -87,7 +87,7 @@ public class CommonDefectMigrationServiceImpl implements CommonDefectMigrationSe
             migrationRecord.setTaskId(taskId);
             migrationRecord.setToolName(toolName);
             migrationRecord.setStatus(DataMigrationStatus.PROCESSING.value());
-            migrationRecord.applyAuditInfo(triggerUser, triggerUser);
+            migrationRecord.applyAuditInfoOnCreate(triggerUser);
             // count-300W数据量约5秒，单任务common类告警远少于300W
             Integer totalCount = defectRepository.countByTaskIdAndToolName(taskId, toolName);
             migrationRecord.setTotalCount(totalCount);
@@ -131,7 +131,7 @@ public class CommonDefectMigrationServiceImpl implements CommonDefectMigrationSe
             migrationRecord.setCostTimeMS(System.currentTimeMillis() - beginTime);
             migrationRecord.setSuccessCount(successDefectCount);
             migrationRecord.setErrorStackTrace(errorStackTrace);
-            migrationRecord.applyAuditInfo(triggerUser);
+            migrationRecord.applyAuditInfoOnUpdate(triggerUser);
             commonDefectMigrationRepository.save(migrationRecord);
         }
     }
@@ -192,7 +192,7 @@ public class CommonDefectMigrationServiceImpl implements CommonDefectMigrationSe
             return;
         }
 
-        mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, LintDefectV2Entity.class)
+        defectMongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, LintDefectV2Entity.class)
                 .insert(insertList)
                 .execute();
     }

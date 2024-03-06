@@ -12,6 +12,9 @@
 
 package com.tencent.bk.codecc.quartz.job;
 
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_ACTIVE_STAT;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_ACTIVE_STAT;
+
 import com.tencent.bk.codecc.quartz.pojo.QuartzJobContext;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -37,6 +40,6 @@ public class ActiveStatisticScheduleTask implements IScheduleTask {
     @Override
     public void executeTask(@NotNull QuartzJobContext quartzJobContext) {
         logger.info("beginning execute ActiveStatistic task.");
-        rabbitTemplate.convertAndSend("exchange.active.stat", "route.active.stat", "");
+        rabbitTemplate.convertAndSend(EXCHANGE_ACTIVE_STAT, ROUTE_ACTIVE_STAT, "");
     }
 }

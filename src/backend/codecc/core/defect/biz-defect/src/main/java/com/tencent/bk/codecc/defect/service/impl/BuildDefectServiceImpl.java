@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongotemplate.BuildDefectDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.ToolBuildInfoDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.BuildDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.ToolBuildInfoDao;
 import com.tencent.bk.codecc.defect.model.*;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;

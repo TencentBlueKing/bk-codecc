@@ -8,9 +8,9 @@ import static com.tencent.devops.common.constant.ComConstants.DefectStatus.PATH_
 import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_DATA_REPORT_DATE;
 
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.defect.dao.mongorepository.DefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.DefectDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.DefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.mapping.DefectConverter;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.defect.service.AbstractDataReportBizService;

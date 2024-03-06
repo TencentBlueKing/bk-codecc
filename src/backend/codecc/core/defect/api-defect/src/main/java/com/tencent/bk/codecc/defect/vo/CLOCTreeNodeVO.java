@@ -9,6 +9,9 @@ import java.util.List;
 @Data
 @ApiModel("CLOC工具文件树")
 public class CLOCTreeNodeVO extends TreeNodeVO {
+    @ApiModelProperty("文件数")
+    private long fileNum;
+
     @ApiModelProperty("代码行数")
     private long codeLines;
 
@@ -80,6 +83,10 @@ public class CLOCTreeNodeVO extends TreeNodeVO {
 
     public void addTotal(long totalLines) {
         this.totalLines += totalLines;
+    }
+
+    public void addFileNum(long fileNum) {
+        this.fileNum += fileNum;
     }
 
     public void addTotalForEfficient(long totalLines) {

@@ -11,6 +11,9 @@ dependencies {
     api(group = "com.tencent.bk.devops.ci.repository", name = "api-repository"){
         isChanging=true
     }
+    api(group = "com.tencent.bk.devops.ci.common", name = "common-scm"){
+        isChanging=true
+    }
     api(group = "com.tencent.bk.devops.ci.project", name = "api-project"){
         isChanging=true
         exclude(group="com.tencent.bk.devops.ci.project", module = "model-project")
@@ -23,10 +26,7 @@ dependencies {
     api(group = "com.tencent.bk.devops.ci.notify", name = "api-notify"){
         isChanging=true
     }
-    api(group = "com.tencent.bk.devops.ci.plugin", name = "common-codecc"){
-        isChanging=true
-    }
-    api(group = "com.tencent.bk.devops.ci.plugin", name = "api-codecc"){
+    api(group = "com.tencent.bk.devops.ci.common", name = "common-codecc"){
         isChanging=true
     }
     api(group = "com.tencent.bk.devops.ci.common", name = "common-pipeline"){

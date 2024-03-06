@@ -26,6 +26,7 @@
 
 package com.tencent.bk.codecc.task.service;
 
+import com.tencent.bk.codecc.task.vo.GrayReportVO;
 import com.tencent.bk.codecc.task.vo.GrayToolProjectReqVO;
 import com.tencent.bk.codecc.task.vo.TriggerGrayToolVO;
 import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
@@ -42,14 +43,18 @@ import java.util.Set;
  * @date 2020/12/29
  */
 public interface GrayToolProjectService {
-    /**
-     * 根据项目ID查询信息
-     *
-     * @param projectId
-     * @return
-     */
-    GrayToolProjectVO findGrayInfoByProjectId(String projectId);
 
+    /**
+     * 根据项目ID查询灰度工具清单
+     * @param projectId 项目id
+     * @return list
+     */
+    List<GrayToolProjectVO> getGrayToolListByProjectId(String projectId);
+
+    /**
+     * 根据项目ID和工具名称查询信息
+     */
+    GrayToolProjectVO findByProjectIdAndToolName(String projectId, String toolName);
 
     /**
      * 更新项目灰度信息
@@ -104,6 +109,14 @@ public interface GrayToolProjectService {
     GrayToolReportVO findGrayToolReportByToolNameAndBuildId(String toolName, String codeccBuildId);
 
     /**
+     * 根据构建号查询灰度报告
+     * @param grayReportVO
+     * @return
+     */
+    GrayToolReportVO findGaryReportByToolNameAndCodeCCBuildIdAndBuildNum(GrayReportVO grayReportVO);
+
+
+    /**
      * 根据项目id查找灰度项目
      * @param projectIdSet
      * @return
@@ -116,4 +129,9 @@ public interface GrayToolProjectService {
      * @return list
      */
     Set<String> findAllGrayProjectIdSet();
+
+    /**
+     * 刷新存量灰度项目数据，增加对应工具字段
+     */
+    Integer refreshGrayProjectAddTool(GrayToolProjectVO grayToolProjectVO);
 }

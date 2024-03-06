@@ -23,14 +23,12 @@ import com.tencent.devops.common.pipeline.pojo.element.agent.CodeGitElement
 import com.tencent.devops.common.pipeline.pojo.element.agent.CodeGitlabElement
 import com.tencent.devops.common.pipeline.pojo.element.agent.CodeSvnElement
 import com.tencent.devops.common.pipeline.pojo.element.agent.GithubElement
-import com.tencent.devops.common.pipeline.pojo.element.agent.LinuxCodeCCScriptElement
 import com.tencent.devops.common.pipeline.pojo.element.market.MarketBuildAtomElement
 import com.tencent.devops.common.pipeline.pojo.element.trigger.ManualTriggerElement
 import com.tencent.devops.common.pipeline.pojo.git.GitPullMode
 import com.tencent.devops.common.pipeline.type.DispatchType
 import com.tencent.devops.common.pipeline.type.docker.DockerDispatchType
 import com.tencent.devops.common.pipeline.type.docker.ImageType
-import net.sf.json.JSONArray
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -83,6 +81,25 @@ class PipelineUtils {
 
     @Value("\${pipeline.imageType:BKSTORE}")
     public var PIPELINE_IMAGE_TYPE: ImageType = ImageType.BKSTORE
+
+    fun getAsyncTaskIdFromElement(element: Element): Long? {
+        return if (element is MarketBuildAtomElement) {
+            val data = element.data
+            if (!data.containsKey("input")) {
+                null
+            } else {
+                val inputTerm = data["input"] as Map<String, Any>
+
+                if (inputTerm.containsKey("asyncTask") && inputTerm.containsKey("asyncTaskId")) {
+                    (inputTerm["asyncTaskId"] as Number).toLong()
+                } else {
+                    null
+                }
+            }
+        } else {
+            null
+        }
+    }
 
     /**
      * 创建流水线
@@ -465,8 +482,6 @@ class PipelineUtils {
 
     fun isNewCodeElement(element: Element) = element is MarketBuildAtomElement &&
         (element.getAtomCode() in listOf(GIT_ATOM_CODE, GITHUB_ATOM_CODE, GITLAB_ATOM_CODE, SVN_ATOM_CODE))
-
-    fun isOldCodeCCElement(element: Element) = element is LinuxCodeCCScriptElement
 
     fun getDevopsChannelCode(createFrom: String, nameEn: String) = when (createFrom) {
         ComConstants.BsTaskCreateFrom.BS_PIPELINE.value() -> ChannelCode.BS

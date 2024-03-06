@@ -29,25 +29,29 @@ package com.tencent.bk.codecc.defect.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.TransferAuthorRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.TransferAuthorRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.TaskLogRepository;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.TaskLogEntity;
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
 import com.tencent.bk.codecc.defect.vo.UploadDefectVO;
+import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
 import com.tencent.bk.codecc.task.vo.OpenCheckerVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.checkerset.CheckerPropVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.codecc.util.JsonUtil;
+import com.tencent.devops.common.constant.ComConstants.DefectStatus;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.util.FileUtils;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,13 +59,13 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import jodd.cli.Cli;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.util.Pair;
 
 /**
  * 告警上报抽象类
@@ -70,39 +74,52 @@ import org.springframework.data.redis.core.RedisTemplate;
  * @date 2019/5/5
  */
 @Slf4j
-public abstract class AbstractPlatformUploadDefectBizService extends AbstractUploadDefectBizService
-{
+public abstract class AbstractPlatformUploadDefectBizService extends AbstractUploadDefectBizService {
+
+    @Autowired
+    protected CheckerService checkerService;
+    @Autowired
+    protected RedisTemplate<String, String> redisTemplate;
     @Autowired
     private TaskLogRepository taskLogRepository;
     @Autowired
     private TransferAuthorRepository transferAuthorRepository;
     @Autowired
-    protected CheckerService checkerService;
-    @Autowired
     private ThirdPartySystemCaller thirdPartySystemCaller;
     @Autowired
     private FilterPathService filterPathService;
     @Autowired
-    private IV3CheckerSetBizService iv3CheckerSetBizService;
+    private ICheckerSetQueryBizService checkerSetQueryBizService;
     @Autowired
     private CheckerRepository checkerRepository;
-
-    @Autowired
-    protected RedisTemplate<String, String> redisTemplate;
     @Autowired
     private ReallocateDefectAuthorService reallocateDefectAuthorService;
 
+    @Autowired
+    private DefectFilePathClusterService defectFilePathClusterService;
+
+    @Autowired
+    private Client client;
+
+    /**
+     * 检查告警是否应该被屏蔽，返回true表示要屏蔽，否则不屏蔽
+     *
+     * @param ruleKey
+     * @param openCheckers
+     * @return
+     */
+    protected static boolean checkIfMaskByChecker(String ruleKey, Map<String, OpenCheckerVO> openCheckers) {
+        return !openCheckers.containsKey(ruleKey);
+    }
+
     @Override
-    public Result processBiz(UploadDefectVO uploadDefectVO)
-    {
+    public Result processBiz(UploadDefectVO uploadDefectVO) {
         String defectListJson = decompressDefects(uploadDefectVO.getDefectsCompress());
         List<CommonDefectEntity> defectList = JsonUtil.INSTANCE.to(
-                defectListJson, new TypeReference<List<CommonDefectEntity>>()
-        {
-        });
+                defectListJson, new TypeReference<List<CommonDefectEntity>>() {
+                });
         uploadDefectVO.setDefectsCompress(null);
-        if (CollectionUtils.isEmpty(defectList))
-        {
+        if (CollectionUtils.isEmpty(defectList)) {
             log.error("defect list is empty.");
             return new Result(CommonMessageCode.SUCCESS, "defect list is empty.");
         }
@@ -118,15 +135,15 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
         String toolName = uploadDefectVO.getToolName();
         String buildId = uploadDefectVO.getBuildId();
 
-        TaskLogEntity taskLogEntity = taskLogRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
+        TaskLogEntity taskLogEntity = taskLogRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName,
+                buildId);
         String buildNum = taskLogEntity.getBuildNum();
 
         TaskDetailVO taskDetailVO = thirdPartySystemCaller.getTaskInfoWithoutToolsByTaskId(taskId);
         Set<String> filterPathSet = filterPathService.getFilterPaths(taskDetailVO, toolName);
         TransferAuthorEntity transferAuthorEntity = transferAuthorRepository.findFirstByTaskId(taskId);
         List<TransferAuthorEntity.TransferAuthorPair> transferAuthorList = null;
-        if (transferAuthorEntity != null)
-        {
+        if (transferAuthorEntity != null) {
             transferAuthorList = transferAuthorEntity.getTransferAuthorList();
         }
 
@@ -193,13 +210,13 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
 
     /**
      * 获取打开规则映射
+     *
      * @param taskId
      * @param toolName
      * @param taskDetailVO
      * @return
      */
-    protected Map<String, OpenCheckerVO> getOpenCheckerMap(Long taskId, String toolName, TaskDetailVO taskDetailVO)
-    {
+    protected Map<String, OpenCheckerVO> getOpenCheckerMap(Long taskId, String toolName, TaskDetailVO taskDetailVO) {
         //查询打开的规则
         AnalyzeConfigInfoVO analyzeConfigInfoVO = new AnalyzeConfigInfoVO();
         analyzeConfigInfoVO.setTaskId(taskId);
@@ -212,26 +229,13 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
 
         Map<String, OpenCheckerVO> openCheckerMap = Maps.newHashMap();
 
-        if(CollectionUtils.isNotEmpty(openCheckers))
-        {
-            openCheckerMap = openCheckers.stream().filter(openCheckerVO -> StringUtils.isNotBlank(openCheckerVO.getCheckerName())).
+        if (CollectionUtils.isNotEmpty(openCheckers)) {
+            openCheckerMap = openCheckers.stream()
+                    .filter(openCheckerVO -> StringUtils.isNotBlank(openCheckerVO.getCheckerName())).
                     collect(Collectors.toMap(OpenCheckerVO::getCheckerName, Function.identity(), (k, v) -> v));
         }
         return openCheckerMap;
     }
-
-    /**
-     * 检查告警是否应该被屏蔽，返回true表示要屏蔽，否则不屏蔽
-     *
-     * @param rule_key
-     * @param openCheckers
-     * @return
-     */
-    protected static boolean checkIfMaskByChecker(String rule_key, Map<String, OpenCheckerVO> openCheckers)
-    {
-        return !openCheckers.containsKey(rule_key);
-    }
-
 
     protected void refreshDefectInfo(CommonDefectEntity oldDefect, CommonDefectEntity commonDefectEntity) {
         oldDefect.setLineNum(commonDefectEntity.getLineNum());
@@ -263,7 +267,7 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
             return Sets.newHashSet();
         }
 
-        List<CheckerSetVO> checkers = iv3CheckerSetBizService.getTaskCheckerSets(taskDetailVO.getProjectId(),
+        List<CheckerSetVO> checkers = checkerSetQueryBizService.getTaskCheckerSets(taskDetailVO.getProjectId(),
                 taskDetailVO.getTaskId(), toolName, "", true);
 
         // 配置的规则
@@ -279,5 +283,50 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
                 .stream()
                 .map(CheckerDetailEntity::getCheckerKey)
                 .collect(Collectors.toSet());
+    }
+
+    protected void saveDefectPaths(Long taskId, String toolName, String buildId,
+            List<CommonDefectEntity> entities) {
+
+        if (taskId == null || StringUtils.isBlank(buildId) || StringUtils.isBlank(toolName)
+                || CollectionUtils.isEmpty(entities)) {
+            return;
+        }
+
+        try {
+            TaskDetailVO taskInfo = client.get(ServiceTaskRestResource.class).getTaskInfoById(taskId).getData();
+            if (taskInfo == null || BooleanUtils.isFalse(taskInfo.getFileCacheEnable())) {
+                return;
+            }
+
+            Set<String> newRepeat = new HashSet<>();
+            Set<String> fixRepeat = new HashSet<>();
+            List<Pair<String, String>> newDefectPaths = new ArrayList<>();
+            List<Pair<String, String>> fixedDefectPaths = new ArrayList<>();
+            for (CommonDefectEntity entity : entities) {
+                if (!newRepeat.contains(entity.getFilePath()) && entity.getStatus() == DefectStatus.NEW.value()) {
+                    newDefectPaths.add(Pair.of(entity.getFilePath(),
+                            StringUtils.isBlank(entity.getRelPath()) ? "" : entity.getRelPath()));
+                    newRepeat.add(entity.getFilePath());
+                }
+                if (!fixRepeat.contains(entity.getFilePath())
+                        && (entity.getStatus() & DefectStatus.FIXED.value()) != 0) {
+                    fixedDefectPaths.add(Pair.of(entity.getFilePath(),
+                            StringUtils.isBlank(entity.getRelPath()) ? "" : entity.getRelPath()));
+                    fixRepeat.add(entity.getFilePath());
+                }
+
+            }
+            if (CollectionUtils.isNotEmpty(newDefectPaths)) {
+                defectFilePathClusterService.saveBuildDefectFilePath(taskId, toolName, buildId,
+                        DefectStatus.NEW, newDefectPaths);
+            }
+            if (CollectionUtils.isNotEmpty(fixedDefectPaths)) {
+                defectFilePathClusterService.saveBuildDefectFilePath(taskId, toolName, buildId,
+                        DefectStatus.FIXED, fixedDefectPaths);
+            }
+        } catch (Exception e) {
+            log.error("saveDefectPaths error, taskId:" + taskId + ", toolName:" + toolName + ", buildId:" + buildId, e);
+        }
     }
 }

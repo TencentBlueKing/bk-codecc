@@ -46,8 +46,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @date 2020/8/8
  */
 @RestResource
-public class ServiceToolMetaRestResourceImpl implements ServiceToolMetaRestResource
-{
+public class ServiceToolMetaRestResourceImpl implements ServiceToolMetaRestResource {
+
     @Autowired
     private ToolMetaService toolMetaService;
 

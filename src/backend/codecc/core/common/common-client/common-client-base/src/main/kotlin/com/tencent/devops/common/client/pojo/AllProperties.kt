@@ -33,6 +33,10 @@ import org.springframework.stereotype.Component
 class AllProperties {
     @Value("\${bkci.private.url:#{null}}")
     val devopsDevUrl: String? = null
+
+    @Value("\${bkci.auto.tag:auto}")
+    val devopsAutoTag: String = "auto"
+
     @Value("\${bkci.token:devops}")
     val devopsToken: String? = null
 }

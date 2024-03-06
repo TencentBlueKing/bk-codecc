@@ -130,7 +130,7 @@ abstract class Client constructor(
                             ?: ""
                     )
                 )
-        val devopsProxy = DevopsProxy(feignProxy, clz)
+        val devopsProxy = DevopsProxy(feignProxy, clz, allProperties.devopsAutoTag)
         return clz.cast(
             Proxy.newProxyInstance(
                 feignProxy.javaClass.classLoader,
@@ -156,7 +156,7 @@ abstract class Client constructor(
                     )
                 ) // 获取为feign定义的拦截器
                 .target(ThirdServiceTarget(findThridServiceName(clz.kotlin), clz, rootPath))
-        val devopsProxy = DevopsProxy(feignProxy, clz)
+        val devopsProxy = DevopsProxy(feignProxy, clz, allProperties.devopsAutoTag)
         return clz.cast(
             Proxy.newProxyInstance(
                 feignProxy.javaClass.classLoader,
@@ -187,7 +187,7 @@ abstract class Client constructor(
                             ?: ""
                     )
                 )
-        val devopsProxy = DevopsProxy(feignProxy, clz)
+        val devopsProxy = DevopsProxy(feignProxy, clz, allProperties.devopsAutoTag)
         return clz.cast(
             Proxy.newProxyInstance(feignProxy.javaClass.classLoader, feignProxy.javaClass.interfaces, devopsProxy)
         )
@@ -218,7 +218,7 @@ abstract class Client constructor(
                             ?: ""
                     )
                 )
-        val devopsProxy = DevopsProxy(feignProxy, clz)
+        val devopsProxy = DevopsProxy(feignProxy, clz, allProperties.devopsAutoTag)
         return clz.cast(
             Proxy.newProxyInstance(
                 feignProxy.javaClass.classLoader,
@@ -272,7 +272,14 @@ abstract class Client constructor(
         if (serviceName == SERVICE_NAME_DEFECT && StringUtils.hasLength(traceBuildId)) {
             serviceName = SERVICE_NAME_REPORT
         }
+        return getServiceNameWithPrefix(serviceName, prefix, suffix)
+    }
 
+    protected fun getServiceNameWithPrefix(serviceName: String): String {
+        return getServiceNameWithPrefix(serviceName, servicePrefix, serviceSuffix)
+    }
+
+    private fun getServiceNameWithPrefix(serviceName: String, prefix: String?, suffix: String?): String {
         return if (prefix.isNullOrBlank() && suffix.isNullOrBlank()) {
             serviceName
         } else if (suffix.isNullOrBlank()) {

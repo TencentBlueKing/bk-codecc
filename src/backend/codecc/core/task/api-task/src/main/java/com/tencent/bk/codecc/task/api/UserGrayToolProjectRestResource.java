@@ -96,14 +96,14 @@ public interface UserGrayToolProjectRestResource {
                     GrayToolProjectVO grayToolProjectVO
     );
 
-    @ApiOperation("灰度项目数据查询")
-    @Path("/projects/findByProjectId")
-    @GET
-    Result<GrayToolProjectVO> findByProjectId(
-            @ApiParam(value = "灰度项目ID", required = true)
-            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
-                    String projectId
-    );
+//    @ApiOperation("灰度项目数据查询")
+//    @Path("/projects/findByProjectId")
+//    @GET
+//    Result<GrayToolProjectVO> findByProjectId(
+//            @ApiParam(value = "灰度项目ID", required = true)
+//            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+//                    String projectId
+//    );
 
     @ApiOperation("创建灰度池")
     @Path("/task/pool/toolName/{toolName}/stage/{stage}")
@@ -121,11 +121,11 @@ public interface UserGrayToolProjectRestResource {
             @ApiParam(value = "执行任务数", required = false) @QueryParam("taskNum") String taskNum
     );
 
-    @ApiOperation("根据工具名查询灰度项目信息")
-    @Path("/project/toolName/{toolName}")
-    @GET
-    Result<GrayToolProjectVO> findGrayToolProjInfoByToolName(
-            @ApiParam(value = "工具名", required = true)
-            @PathParam("toolName")
-                    String toolName);
+//    @ApiOperation("根据工具名查询灰度项目信息")
+//    @Path("/project/toolName/{toolName}")
+//    @GET
+//    Result<GrayToolProjectVO> findGrayToolProjInfoByToolName(
+//            @ApiParam(value = "工具名", required = true)
+//            @PathParam("toolName")
+//                    String toolName);
 }

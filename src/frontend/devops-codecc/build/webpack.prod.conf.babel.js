@@ -3,25 +3,25 @@
  * @author blueking
  */
 
-import { resolve, join, sep } from 'path'
-import webpack from 'webpack'
-import merge from 'webpack-merge'
-import MiniCssExtractPlugin from 'mini-css-extract-plugin'
-import TerserPlugin from 'terser-webpack-plugin'
-import OptimizeCSSPlugin from 'optimize-css-assets-webpack-plugin'
-import HtmlWebpackPlugin from 'html-webpack-plugin'
-import CopyWebpackPlugin from 'copy-webpack-plugin'
-import bundleAnalyzer from 'webpack-bundle-analyzer'
+import { resolve, join, sep } from 'path';
+import webpack from 'webpack';
+import merge from 'webpack-merge';
+import MiniCssExtractPlugin from 'mini-css-extract-plugin';
+import TerserPlugin from 'terser-webpack-plugin';
+import OptimizeCSSPlugin from 'optimize-css-assets-webpack-plugin';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import CopyWebpackPlugin from 'copy-webpack-plugin';
+import bundleAnalyzer from 'webpack-bundle-analyzer';
 
-import config from './config'
-import { assetsPath } from './util'
-import baseConf from './webpack.base.conf.babel'
-import manifest from '../static/lib-manifest.json'
+import config from './config';
+import { assetsPath } from './util';
+import baseConf from './webpack.base.conf.babel';
+import manifest from '../static/lib-manifest.json';
 
 const prodConf = merge(baseConf, {
   mode: 'production',
   entry: {
-    main: './src/entry.js',
+    main: './src/main.js',
   },
   output: {
     filename: assetsPath('js/[name].[chunkhash].js'),
@@ -84,7 +84,7 @@ const prodConf = merge(baseConf, {
           // 表示是否使用已有的 chunk，如果为 true 则表示如果当前的 chunk 包含的模块已经被提取出去了，那么将不会重新生成新的。
           reuseExistingChunk: true,
           // test: /[\/]node_modules[\/]\@tencent[\/]bk-magic-vue[\/]/
-          test: module => /bk-magic-vue/.test(module.context),
+          test: (module) => /bk-magic-vue/.test(module.context),
         },
         // 所有 node_modules 的模块被不同的 chunk 引入超过 1 次的提取为 twice
         // 如果去掉 test 那么提取的就是所有模块被不同的 chunk 引入超过 1 次的
@@ -141,10 +141,12 @@ const prodConf = merge(baseConf, {
     }),
 
     new HtmlWebpackPlugin({
-      filename: `${resolve(config.build.assetsRoot + sep + config.build.assetsSubDirectory, '..')}/index.html`,
+      filename: `${resolve(
+        config.build.assetsRoot + sep + config.build.assetsSubDirectory,
+        '..'
+      )}/index.html`,
       template: 'index-bundle.html',
       inject: true,
-      publicPath: '__BK_PUBLIC_PATH_PREFIX__',
       minify: {
         removeComments: true,
         collapseWhitespace: true,
@@ -170,44 +172,47 @@ const prodConf = merge(baseConf, {
       },
     ]),
   ],
-})
+});
 
 if (config.build.bundleAnalyzerReport) {
-  const { BundleAnalyzerPlugin } = bundleAnalyzer
-  prodConf.plugins.push(new BundleAnalyzerPlugin({
-    analyzerPort: 7777,
-  },
-    // {
-    //     //  可以是`server`，`static`或`disabled`。
-    //     //  在`server`模式下，分析器将启动HTTP服务器来显示软件包报告。
-    //     //  在“静态”模式下，会生成带有报告的单个HTML文件。
-    //     //  在`disabled`模式下，你可以使用这个插件来将`generateStatsFile`设置为`true`来生成Webpack Stats JSON文件。
-    //     analyzerMode: 'server',
-    //     //  将在“服务器”模式下使用的主机启动HTTP服务器。
-    //     analyzerHost: '127.0.0.1',
-    //     //  将在“服务器”模式下使用的端口启动HTTP服务器。
-    //     analyzerPort: 8888,
-    //     //  路径捆绑，将在`static`模式下生成的报告文件。
-    //     //  相对于捆绑输出目录。
-    //     reportFilename: 'report.html',
-    //     //  模块大小默认显示在报告中。
-    //     //  应该是`stat`，`parsed`或者`gzip`中的一个。
-    //     //  有关更多信息，请参见“定义”一节。
-    //     defaultSizes: 'parsed',
-    //     //  在默认浏览器中自动打开报告
-    //     openAnalyzer: true,
-    //     //  如果为true，则Webpack Stats JSON文件将在bundle输出目录中生成
-    //     generateStatsFile: false,
-    //     //  如果`generateStatsFile`为`true`，将会生成Webpack Stats JSON文件的名字。
-    //     //  相对于捆绑输出目录。
-    //     statsFilename: 'stats.json',
-    //     //  stats.toJson（）方法的选项。
-    //     //  例如，您可以使用`source：false`选项排除统计文件中模块的来源。
-    //     //  在这里查看更多选项：https：  //github.com/webpack/webpack/blob/webpack-1/lib/Stats.js#L21
-    //     statsOptions: null,
-    //     logLevel: 'info' //日志级别。可以是'信息'，'警告'，'错误'或'沉默'。
-    // }
-  ))
+  const { BundleAnalyzerPlugin } = bundleAnalyzer;
+  prodConf.plugins.push(
+    new BundleAnalyzerPlugin(
+      {
+        analyzerPort: 7777,
+      }
+      // {
+      //     //  可以是`server`，`static`或`disabled`。
+      //     //  在`server`模式下，分析器将启动HTTP服务器来显示软件包报告。
+      //     //  在“静态”模式下，会生成带有报告的单个HTML文件。
+      //     //  在`disabled`模式下，你可以使用这个插件来将`generateStatsFile`设置为`true`来生成Webpack Stats JSON文件。
+      //     analyzerMode: 'server',
+      //     //  将在“服务器”模式下使用的主机启动HTTP服务器。
+      //     analyzerHost: '127.0.0.1',
+      //     //  将在“服务器”模式下使用的端口启动HTTP服务器。
+      //     analyzerPort: 8888,
+      //     //  路径捆绑，将在`static`模式下生成的报告文件。
+      //     //  相对于捆绑输出目录。
+      //     reportFilename: 'report.html',
+      //     //  模块大小默认显示在报告中。
+      //     //  应该是`stat`，`parsed`或者`gzip`中的一个。
+      //     //  有关更多信息，请参见“定义”一节。
+      //     defaultSizes: 'parsed',
+      //     //  在默认浏览器中自动打开报告
+      //     openAnalyzer: true,
+      //     //  如果为true，则Webpack Stats JSON文件将在bundle输出目录中生成
+      //     generateStatsFile: false,
+      //     //  如果`generateStatsFile`为`true`，将会生成Webpack Stats JSON文件的名字。
+      //     //  相对于捆绑输出目录。
+      //     statsFilename: 'stats.json',
+      //     //  stats.toJson（）方法的选项。
+      //     //  例如，您可以使用`source：false`选项排除统计文件中模块的来源。
+      //     //  在这里查看更多选项：https：  //github.com/webpack/webpack/blob/webpack-1/lib/Stats.js#L21
+      //     statsOptions: null,
+      //     logLevel: 'info' //日志级别。可以是'信息'，'警告'，'错误'或'沉默'。
+      // }
+    )
+  );
 }
 
-export default prodConf
+export default prodConf;

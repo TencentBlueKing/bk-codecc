@@ -35,11 +35,10 @@ import com.tencent.bk.codecc.defect.vo.enums.CheckerListSortType;
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
-import org.springframework.data.domain.Sort;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.data.domain.Sort;
 
 /**
  * 多工具规则服务层代码
@@ -67,20 +66,6 @@ public interface CheckerService {
      * @param returnOnlyMapCheckerKeyAndType false返回的vo是全字段，true返回的vo只包含checkerKey和checkerType
      * @return
      */
-    List<CheckerDetailVO> queryAllCheckerI18NWrapper(
-            List<String> toolNameSet,
-            String checkerSet,
-            boolean returnOnlyMapCheckerKeyAndType
-    );
-
-    /**
-     * 多工具查询单个工具的所有规则信息详情
-     *
-     * @param toolNameSet
-     * @param checkerSet
-     * @param returnOnlyMapCheckerKeyAndType false返回的vo是全字段，true返回的vo只包含checkerKey和checkerType
-     * @return
-     */
     Map<String, CheckerDetailVO> queryAllChecker(
             List<String> toolNameSet,
             String checkerSet,
@@ -97,6 +82,20 @@ public interface CheckerService {
      * @return
      */
     List<CheckerDetailVO> queryAllChecker(long taskId, String toolName, String paramJson, long codeLang);
+
+    /**
+     * 多工具查询单个工具的所有规则信息详情
+     *
+     * @param toolNameSet
+     * @param checkerSet
+     * @param returnOnlyMapCheckerKeyAndType false返回的vo是全字段，true返回的vo只包含checkerKey和checkerType
+     * @return
+     */
+    List<CheckerDetailVO> queryAllCheckerI18NWrapper(
+            List<String> toolNameSet,
+            String checkerSet,
+            boolean returnOnlyMapCheckerKeyAndType
+    );
 
     /**
      * 根据工具查询对应的规则列表
@@ -169,18 +168,11 @@ public interface CheckerService {
      * @param checkerListQueryReq
      * @return
      */
-    List<CheckerDetailVO> queryCheckerDetailList(CheckerListQueryReq checkerListQueryReq, String projectId, Integer pageNum,
-                                                 Integer pageSize, Sort.Direction sortType, CheckerListSortType sortField);
+    List<CheckerDetailVO> queryCheckerDetailList(CheckerListQueryReq checkerListQueryReq, String projectId,
+            Integer pageNum,
+            Integer pageSize, Sort.Direction sortType, CheckerListSortType sortField);
 
     List<CheckerDetailVO> queryCheckerDetailList(CheckerDetailListQueryReqVO checkerListQueryReq);
-
-    /**
-     * 查询规则相应数量集
-     *
-     * @param checkerListQueryReq
-     * @return
-     */
-    List<CheckerCommonCountVO> queryCheckerCountList(CheckerListQueryReq checkerListQueryReq);
 
     /**
      * 查询规则相应数量集（新）

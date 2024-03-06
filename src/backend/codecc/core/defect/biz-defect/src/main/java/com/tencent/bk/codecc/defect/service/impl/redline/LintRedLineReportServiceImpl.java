@@ -4,8 +4,8 @@ import static com.tencent.bk.codecc.defect.constant.DefectConstants.FORBIDDEN_CO
 import static com.tencent.bk.codecc.defect.constant.DefectConstants.PASS_COUNT;
 
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.redline.RedLineExtraParams;

@@ -465,4 +465,10 @@ public class TaskInfoEntity extends CommonEntity {
      */
     @Transient
     private List<String> codeLanguages;
+
+    /**
+     * 是否开启缓存
+     */
+    @Field("file_cache_enable")
+    private Boolean fileCacheEnable;
 }

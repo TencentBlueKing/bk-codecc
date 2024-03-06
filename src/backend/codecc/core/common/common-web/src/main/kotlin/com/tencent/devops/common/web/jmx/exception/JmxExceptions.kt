@@ -53,15 +53,17 @@ object JmxExceptions {
                 bean = exceptions[className]
                 if (bean == null) {
                     bean = ExceptionBean(className)
-                    val serviceName = SpringContextUtil.getBean(Profile::class.java).getApplicationName()
+                    val serviceName = SpringContextUtil.getBean(Profile::class.java).getServiceName()
                     if (serviceName.isNullOrBlank()) {
                         logger.warn("Fail to get the service name, ignore the mbean")
                         return null
                     }
                     val name = "com.tencent.devops.$serviceName:type=exceptions,name=$className"
                     logger.info("Register exception $className mbean")
-                    SpringContextUtil.getBean(MBeanExporter::class.java).registerManagedResource(bean!!,
-                        ObjectName(name))
+                    SpringContextUtil.getBean(MBeanExporter::class.java).registerManagedResource(
+                        bean!!,
+                        ObjectName(name)
+                    )
                     exceptions.put(className, bean!!)
                 }
             }

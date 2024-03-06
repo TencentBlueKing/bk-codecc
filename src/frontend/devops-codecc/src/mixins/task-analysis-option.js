@@ -38,20 +38,22 @@ export default {
             show: false,
           },
         },
-        series: [{
-          data: [820, 932, 901, 934, 1290, 1330, 1320],
-          type: 'line',
-          symbol: 'none',
-          areaStyle: {
-            // color: '#e4f1fd'
-            color: '#f5f7fa',
+        series: [
+          {
+            data: [820, 932, 901, 934, 1290, 1330, 1320],
+            type: 'line',
+            symbol: 'none',
+            areaStyle: {
+              // color: '#e4f1fd'
+              color: '#f5f7fa',
+            },
+            lineStyle: {
+              color: '#e4f1fd',
+              width: 0,
+            },
           },
-          lineStyle: {
-            color: '#e4f1fd',
-            width: 0,
-          },
-        }],
+        ],
       },
-    }
+    };
   },
-}
+};

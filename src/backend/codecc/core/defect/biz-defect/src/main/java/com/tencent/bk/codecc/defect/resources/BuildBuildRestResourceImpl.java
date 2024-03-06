@@ -9,11 +9,12 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package com.tencent.bk.codecc.defect.resources;
 
 import com.tencent.bk.codecc.defect.api.BuildBuildRestResource;
 import com.tencent.bk.codecc.defect.service.BuildService;
+import com.tencent.bk.codecc.defect.service.HotColdDataSeparationService;
 import com.tencent.bk.codecc.defect.service.SnapShotService;
 import com.tencent.bk.codecc.defect.vo.common.BuildVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
@@ -24,18 +25,20 @@ import org.springframework.util.StringUtils;
 
 /**
  * 构建信息build接口
- * 
- * @date 2021/11/19
+ *
  * @version V1.0
+ * @date 2021/11/19
  */
 @RestResource
 @Slf4j
 public class BuildBuildRestResourceImpl implements BuildBuildRestResource {
-    @Autowired
-    private BuildService buildService;
 
     @Autowired
+    private BuildService buildService;
+    @Autowired
     private SnapShotService snapShotService;
+    @Autowired
+    private HotColdDataSeparationService hotColdDataSeparationService;
 
     @Override
     public Result<Boolean> updateBuildInfo(BuildVO buildVO) {
@@ -55,6 +58,8 @@ public class BuildBuildRestResourceImpl implements BuildBuildRestResource {
         } else {
             log.info("codecc plugin may be old, build id: {}", buildVO.getBuildId());
         }
+
+        hotColdDataSeparationService.warmUpColdDataIfNecessary(buildVO.getTaskId());
 
         return new Result<>(null != resultBuildVO);
     }

@@ -1,5 +1,5 @@
-const CheckersetList = () => import(/* webpackChunkName: 'checkerset' */'../views/checkerset/list')
-const CheckersetManage = () => import(/* webpackChunkName: 'checkerset' */'../views/checkerset/manage')
+const CheckersetList = () => import(/* webpackChunkName: 'checkerset' */ '../views/checkerset/list');
+const CheckersetManage = () => import(/* webpackChunkName: 'checkerset' */ '../views/checkerset/manage');
 
 const routes = [
   {
@@ -18,6 +18,6 @@ const routes = [
       layout: 'outer',
     },
   },
-]
+];
 
-export default routes
+export default routes;

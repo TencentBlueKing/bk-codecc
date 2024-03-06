@@ -27,7 +27,11 @@
 package com.tencent.bk.codecc.defect.service;
 
 import com.tencent.bk.codecc.defect.vo.CountDefectFileRequest;
+import com.tencent.bk.codecc.defect.vo.DefectFileContentSegmentQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.GetFileContentSegmentReqVO;
+import com.tencent.bk.codecc.defect.vo.GrayBuildNumAndTaskVO;
+import com.tencent.bk.codecc.defect.vo.GrayDefectStaticVO;
+import com.tencent.bk.codecc.defect.vo.QueryDefectFileContentSegmentReqVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectIdVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectPageVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectRspVO;
@@ -67,10 +71,38 @@ public interface IQueryWarningBizService {
      * @param queryWarningDetailReq
      * @return
      */
-    CommonDefectDetailQueryRspVO processQueryWarningDetailRequest(Long taskId, String userId,
-            CommonDefectDetailQueryReqVO queryWarningDetailReq,
-            String sortField, Sort.Direction sortType);
+    CommonDefectDetailQueryRspVO processQueryWarningDetailRequest(String projectId, Long taskId, String userId,
+            CommonDefectDetailQueryReqVO queryWarningDetailReq, String sortField, Sort.Direction sortType);
 
+    /**
+     * 多工具告警详情查询(不带代码片段)
+     *
+     * @param taskId
+     * @param userId
+     * @param queryWarningDetailReq
+     * @param sortField
+     * @param sortType
+     * @return CommonDefectDetailQueryRspVO
+     */
+    CommonDefectDetailQueryRspVO processQueryDefectDetailWithoutFileContent(
+            Long taskId,
+            String userId,
+            CommonDefectDetailQueryReqVO queryWarningDetailReq,
+            String sortField,
+            Sort.Direction sortType);
+
+    /**
+     * 获取文件内容片段极简接口
+     *
+     * @author victorljli
+     * @date 2023/6/30
+     * @param projectId
+     * @param userId
+     * @param request
+     * @return com.tencent.bk.codecc.defect.vo.common.CommonDefectDetailQueryRspVO
+     */
+    DefectFileContentSegmentQueryRspVO processQueryDefectFileContentSegment(String projectId, String userId,
+            QueryDefectFileContentSegmentReqVO request);
 
     /**
      * 查询某项目的所有的缺陷类型，用于初始化多工具告警管理页面的缺陷类型下拉列表控件
@@ -104,11 +136,13 @@ public interface IQueryWarningBizService {
     /**
      * 获取文件内容片段接口
      *
+     * @param projectId
      * @param taskId
+     * @param userId
      * @param reqModel
      * @return
      */
-    CommonDefectDetailQueryRspVO processGetFileContentSegmentRequest(long taskId, String userId,
+    CommonDefectDetailQueryRspVO processGetFileContentSegmentRequest(String projectId, long taskId, String userId,
             GetFileContentSegmentReqVO reqModel);
 
     /**
@@ -167,4 +201,6 @@ public interface IQueryWarningBizService {
      * @return
      */
     Long countNewDefectFile(CountDefectFileRequest request);
+
+    List<GrayDefectStaticVO> getGaryDefectStaticList(GrayBuildNumAndTaskVO grayBuildNumAndTaskVO);
 }

@@ -12,8 +12,8 @@
  
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCDefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCStatisticRepository;
 import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
 import com.tencent.bk.codecc.defect.service.IQueryStatisticBizService;
 import com.tencent.devops.common.api.analysisresult.BaseLastAnalysisResultVO;

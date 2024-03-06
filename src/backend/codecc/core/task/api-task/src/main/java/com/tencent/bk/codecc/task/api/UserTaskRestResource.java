@@ -36,6 +36,7 @@ import com.tencent.bk.codecc.task.vo.ListTaskNameCnResponse;
 import com.tencent.bk.codecc.task.vo.ListTaskToolDimensionRequest;
 import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.bk.codecc.task.vo.NotifyCustomVO;
+import com.tencent.bk.codecc.task.vo.PipelineBasicInfoVO;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
 import com.tencent.bk.codecc.task.vo.TaskCodeLibraryVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
@@ -295,6 +296,35 @@ public interface UserTaskRestResource {
                     String userName
     );
 
+    @ApiOperation("删除任务")
+    @Path("/delete")
+    @PUT
+    Result<Boolean> deleteTask(
+            @ApiParam(value = "项目ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId,
+            @ApiParam(value = "任务ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
+            Long taskId,
+            @ApiParam(value = "当前用户", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userName
+    );
+
+    @ApiOperation("获取用到该 CodeCC 任务的流水线")
+    @Path("/related/pipelines")
+    @GET
+    Result<List<PipelineBasicInfoVO>> getRelatedPipelinesByTaskId(
+            @ApiParam(value = "项目ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId,
+            @ApiParam(value = "任务ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
+            Long taskId,
+            @ApiParam(value = "用户ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userName
+    );
 
     @ApiOperation("获取代码库配置信息")
     @Path("/code/lib")

@@ -46,6 +46,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_ACCESS_TOKEN;
@@ -95,29 +96,33 @@ public class UserManageServiceImpl implements UserManageService {
     @Override
     public DevopsProjectOrgVO getDevopsProjectOrg(String projectId) {
         DevopsProjectOrgVO projectOrgVO = new DevopsProjectOrgVO();
-        com.tencent.devops.project.pojo.Result<ProjectVO> projectResult =
-                client.getShortRunDevopsService(ServiceProjectResource.class).get(projectId);
+        try {
+            com.tencent.devops.project.pojo.Result<ProjectVO> projectResult =
+                    client.getShortRunDevopsService(ServiceProjectResource.class).get(projectId);
+            if (projectResult.isNotOk() || projectResult.getData() == null) {
+                log.error("getDevopsProject fail! [{}]", projectId);
+                return projectOrgVO;
+            }
 
-        if (projectResult.isNotOk() || projectResult.getData() == null) {
-            log.error("getDevopsProject fail! [{}]", projectId);
+            ProjectVO projectVO = projectResult.getData();
+            String bgId = projectVO.getBgId();
+            String deptId = projectVO.getDeptId();
+            String centerId = projectVO.getCenterId();
+
+            if (StringUtils.isBlank(bgId) || "0".equals(bgId)) {
+                log.error("getDevopsProject bgId is empty: [{}]", projectId);
+                return projectOrgVO;
+            }
+
+            projectOrgVO.setBgId(Integer.parseInt(Objects.requireNonNull(bgId)));
+            projectOrgVO.setDeptId(Integer.parseInt(StringUtils.isBlank(deptId) ? "0" : deptId));
+            projectOrgVO.setCenterId(Integer.parseInt(StringUtils.isBlank(centerId) ? "0" : centerId));
+
+            return projectOrgVO;
+        } catch (Exception e) {
+            log.error("projectId:" + projectId + " getDevopsProjectOrg error: {}", e.getMessage());
             return projectOrgVO;
         }
-
-        ProjectVO projectVO = projectResult.getData();
-        String bgId = projectVO.getBgId();
-        String deptId = projectVO.getDeptId();
-        String centerId = projectVO.getCenterId();
-
-        if (StringUtils.isBlank(bgId)) {
-            log.error("getDevopsProject bgId is empty: [{}]", projectId);
-            return projectOrgVO;
-        }
-
-        projectOrgVO.setBgId(Integer.parseInt(bgId));
-        projectOrgVO.setDeptId(Integer.parseInt(StringUtils.isBlank(deptId) ? "0" : deptId));
-        projectOrgVO.setCenterId(Integer.parseInt(StringUtils.isBlank(centerId) ? "0" : centerId));
-
-        return projectOrgVO;
     }
 
     /**

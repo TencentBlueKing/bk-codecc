@@ -32,10 +32,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.defect.dao.mongorepository.TaskLogRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskLogDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.TaskLogOverviewDao;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.ToolBuildInfoDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.TaskLogRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.TaskLogDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.TaskLogOverviewDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.ToolBuildInfoDao;
 import com.tencent.bk.codecc.defect.model.TaskLogEntity;
 import com.tencent.bk.codecc.defect.model.TaskLogOverviewEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
@@ -285,8 +285,7 @@ public class GetTaskLogServiceImpl implements GetTaskLogService {
             Map<String, String> deptInfo =
                     (Map<String, String>) redisTemplate.opsForHash().entries(RedisKeyConstants.KEY_DEPT_INFOS);
 
-            activeTaskList = taskDetailVoList.stream().map(taskDetailVO ->
-            {
+            activeTaskList = taskDetailVoList.stream().map(taskDetailVO -> {
                 ActiveTaskStatisticsVO activeTaskVO = new ActiveTaskStatisticsVO();
                 BeanUtils.copyProperties(taskDetailVO, activeTaskVO);
 
@@ -370,8 +369,14 @@ public class GetTaskLogServiceImpl implements GetTaskLogService {
             result = bkAuthExPermissionApi.validatePipelineBatchPermission(userName,
                     String.valueOf(taskId), projectId, Sets.newHashSet(PipelineAuthAction.VIEW.getActionName()));
         } else {
+            Set<String> actions;
+            if (bkAuthExPermissionApi.checkProjectIsRbacPermissionByCache(projectId, false)) {
+                actions = Sets.newHashSet(CodeCCAuthAction.LIST.getActionName());
+            } else {
+                actions = Sets.newHashSet(CodeCCAuthAction.REPORT_VIEW.getActionName());
+            }
             result = bkAuthExPermissionApi.validateTaskBatchPermission(userName,
-                    String.valueOf(taskId), projectId, Sets.newHashSet(CodeCCAuthAction.REPORT_VIEW.getActionName()));
+                    String.valueOf(taskId), projectId, actions);
         }
         if (CollectionUtils.isEmpty(result)) {
             logger.error("empty validate result: {}", userName);
@@ -379,7 +384,7 @@ public class GetTaskLogServiceImpl implements GetTaskLogService {
         }
 
         for (BkAuthExResourceActionModel auth : result) {
-            if (Objects.nonNull(auth) && auth.isPass()) {
+            if (Objects.nonNull(auth) && Boolean.TRUE.equals(auth.isPass())) {
                 return;
             }
         }

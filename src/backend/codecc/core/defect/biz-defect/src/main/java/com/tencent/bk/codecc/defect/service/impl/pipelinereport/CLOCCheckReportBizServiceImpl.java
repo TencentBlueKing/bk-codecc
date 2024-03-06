@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.service.impl.pipelinereport;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CLOCStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCStatisticRepository;
 import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
 import com.tencent.bk.codecc.defect.model.pipelinereport.ClocSnapShotEntity;
 import com.tencent.bk.codecc.defect.model.pipelinereport.ToolSnapShotEntity;

@@ -3,16 +3,16 @@
  * @author blueking
  */
 
-import path from 'path'
+import path from 'path';
 
-import webpack from 'webpack'
-import merge from 'webpack-merge'
-import HtmlWebpackPlugin from 'html-webpack-plugin'
-import FriendlyErrorsPlugin from 'friendly-errors-webpack-plugin'
+import webpack from 'webpack';
+import merge from 'webpack-merge';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import FriendlyErrorsPlugin from 'friendly-errors-webpack-plugin';
 
-import config from './config'
-import baseConf from './webpack.base.conf.babel'
-import manifest from '../static/lib-manifest.json'
+import config from './config';
+import baseConf from './webpack.base.conf.babel';
+import manifest from '../static/lib-manifest.json';
 
 // const HOST = 'localhost'
 // const PORT = 8080
@@ -69,10 +69,12 @@ const webpackConfig = merge(baseConf, {
 
     new FriendlyErrorsPlugin(),
   ],
-})
+});
 
 Object.keys(webpackConfig.entry).forEach((name) => {
-  webpackConfig.entry[name] = ['./build/dev-client'].concat(webpackConfig.entry[name])
-})
+  webpackConfig.entry[name] = ['./build/dev-client'].concat(
+    webpackConfig.entry[name]
+  );
+});
 
-export default webpackConfig
+export default webpackConfig;

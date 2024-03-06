@@ -30,6 +30,8 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PRO
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TASK_ID;
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
 
+import com.tencent.bk.codecc.defect.vo.GrayBuildNumAndTaskVO;
+import com.tencent.bk.codecc.defect.vo.GrayTaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
@@ -101,6 +103,21 @@ public interface ServiceTaskLogRestResource
                     String toolName
     );
 
+    @ApiOperation("获取最新分析记录")
+    @Path("/toolName/{toolName}/taskId/{taskId}/buildId/{buildId}")
+    @GET
+    Result<TaskLogVO> getTaskLog(
+            @ApiParam(value = "任务id", required = true)
+            @PathParam("taskId")
+            long taskId,
+            @ApiParam(value = "工具名称", required = true)
+            @PathParam("toolName")
+            String toolName,
+            @ApiParam(value = "构建ID", required = true)
+            @PathParam("buildId")
+            String buildId
+    );
+
     @ApiOperation("平台侧获取任务所有有效工具的最近一次分析结果")
     @Path("/lastAnalysisResults")
     @POST
@@ -165,4 +182,5 @@ public interface ServiceTaskLogRestResource
             @ApiParam(value = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
                     Long taskId);
+
 }

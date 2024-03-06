@@ -9,9 +9,9 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.RedLineMetaRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.RedLineRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.RedLineMetaRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.RedLineRepository;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.RedLineMetaEntity;
 import com.tencent.bk.codecc.defect.model.defect.DefectEntity;
@@ -53,28 +53,6 @@ import org.springframework.stereotype.Service;
 @Service
 public abstract class AbstractRedLineReportService<T extends DefectEntity> implements RedLineReportService<T> {
 
-    @Autowired
-    private RedLineRepository redLineRepository;
-
-    @Autowired
-    private FileDefectGatherService fileDefectGatherService;
-
-    @Autowired
-    protected ToolMetaCacheService toolMetaCacheService;
-
-    @Autowired
-    protected IConfigCheckerPkgBizService configCheckerPkgBizService;
-
-    @Autowired
-    private CheckerRepository checkerRepository;
-
-    private static RedLineMetaRepository redLineMetaRepository;
-
-    @Autowired
-    public void setRedLineMetaRepository(RedLineMetaRepository redLineMetaRepository) {
-        AbstractRedLineReportService.redLineMetaRepository = redLineMetaRepository;
-    }
-
     /**
      * 质量红线当前支持单独上报数量的规则
      */
@@ -82,7 +60,6 @@ public abstract class AbstractRedLineReportService<T extends DefectEntity> imple
             "OCCHECK", Lists.newArrayList("MaxLinesPerFunction"),
             "CHECKSTYLE", Lists.newArrayList("MethodLength"),
             "GOML", Lists.newArrayList("golint/fnsize"));
-
     protected static final Map<String, String> COMMON_META_SUFFIX_CN_NAME_MAP =
             new ImmutableMap.Builder<String, String>()
                     .put(RedLineConstants.HISTORY_SERIOUS_SUFFIX, "接入前严重告警数")
@@ -93,30 +70,6 @@ public abstract class AbstractRedLineReportService<T extends DefectEntity> imple
                     .put(RedLineConstants.NEW_PROMPT_SUFFIX, "接入后示告警数")
                     .put(RedLineConstants.NEW_TOSA, "腾讯开源代码规范告警数")
                     .build();
-
-    /**
-     * 红线基础数据cache
-     */
-    protected static final LoadingCache<String, Map<String, RedLineVO>> RED_LINE_META_CACHE = CacheBuilder.newBuilder()
-            .refreshAfterWrite(2, TimeUnit.HOURS)
-            .build(new CacheLoader<String, Map<String, RedLineVO>>() {
-                @Override
-                public Map<String, RedLineVO> load(@NotNull String toolName) {
-                    List<RedLineMetaEntity> metaData = redLineMetaRepository.findByDetail(toolName);
-                    if (CollectionUtils.isEmpty(metaData)) {
-                        log.warn("fail to get red line meta: {}", toolName);
-                        return new HashMap<>();
-                    }
-
-                    return metaData.stream()
-                            .map(meta -> {
-                                RedLineVO redLineVO = new RedLineVO();
-                                BeanUtils.copyProperties(meta, redLineVO);
-                                return redLineVO;
-                            }).collect(Collectors.toMap(RedLineVO::getEnName, Function.identity(), (k, v) -> v));
-                }
-            });
-
     protected static final Map<String, Consumer<RLDimensionVO>> DIMENSION_CALCULATOR_MAP =
             new HashMap<String, Consumer<RLDimensionVO>>() {{
                 // 代码缺陷
@@ -173,9 +126,47 @@ public abstract class AbstractRedLineReportService<T extends DefectEntity> imple
                 put(CheckerCategory.SECURITY_RISK.name() + FileType.HISTORY.name() + ComConstants.SERIOUS,
                         x -> x.setSecurityHistorySerious(defaultValIfNull(x.getSecurityHistorySerious()) + 1));
             }};
+    private static RedLineMetaRepository redLineMetaRepository;
+    /**
+     * 红线基础数据cache
+     */
+    protected static final LoadingCache<String, Map<String, RedLineVO>> RED_LINE_META_CACHE = CacheBuilder.newBuilder()
+            .refreshAfterWrite(2, TimeUnit.HOURS)
+            .build(new CacheLoader<String, Map<String, RedLineVO>>() {
+                @Override
+                public Map<String, RedLineVO> load(@NotNull String toolName) {
+                    List<RedLineMetaEntity> metaData = redLineMetaRepository.findByDetail(toolName);
+                    if (CollectionUtils.isEmpty(metaData)) {
+                        log.warn("fail to get red line meta: {}", toolName);
+                        return new HashMap<>();
+                    }
+
+                    return metaData.stream()
+                            .map(meta -> {
+                                RedLineVO redLineVO = new RedLineVO();
+                                BeanUtils.copyProperties(meta, redLineVO);
+                                return redLineVO;
+                            }).collect(Collectors.toMap(RedLineVO::getEnName, Function.identity(), (k, v) -> v));
+                }
+            });
+    @Autowired
+    protected ToolMetaCacheService toolMetaCacheService;
+    @Autowired
+    protected IConfigCheckerPkgBizService configCheckerPkgBizService;
+    @Autowired
+    private RedLineRepository redLineRepository;
+    @Autowired
+    private FileDefectGatherService fileDefectGatherService;
+    @Autowired
+    private CheckerRepository checkerRepository;
 
     private static Integer defaultValIfNull(Integer integer) {
         return Optional.ofNullable(integer).orElse(0);
+    }
+
+    @Autowired
+    public void setRedLineMetaRepository(RedLineMetaRepository redLineMetaRepository) {
+        AbstractRedLineReportService.redLineMetaRepository = redLineMetaRepository;
     }
 
     /**
@@ -199,7 +190,7 @@ public abstract class AbstractRedLineReportService<T extends DefectEntity> imple
      */
     @Override
     public void saveRedLineData(TaskDetailVO taskDetailVO, String toolName, String buildId, List<T> newDefectList,
-                                RedLineExtraParams<T> extraParams) {
+            RedLineExtraParams<T> extraParams) {
         if (!ComConstants.BsTaskCreateFrom.BS_PIPELINE.value().equals(taskDetailVO.getCreateFrom())
                 || CollectionUtils.isEmpty(taskDetailVO.getToolConfigInfoList())) {
             log.info("task is not create from pipeline: {} {} {}", taskDetailVO.getTaskId(), buildId, toolName);
@@ -235,7 +226,7 @@ public abstract class AbstractRedLineReportService<T extends DefectEntity> imple
                     BeanUtils.copyProperties(redLineVO, redLineEntity);
                     redLineEntity.setBuildId(buildId);
                     redLineEntity.setTaskId(taskDetailVO.getTaskId());
-                    redLineEntity.applyAuditInfo("system", "system");
+                    redLineEntity.applyAuditInfoOnCreate();
 
                     if (redLineVO.getDimensionByChecker() != null) {
                         RedLineEntity.Dimension dimensionEntity = new RedLineEntity.Dimension();

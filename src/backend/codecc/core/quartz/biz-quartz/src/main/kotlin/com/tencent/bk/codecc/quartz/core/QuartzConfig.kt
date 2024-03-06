@@ -5,6 +5,7 @@ import com.tencent.bk.codecc.quartz.service.ShardingRouterService
 import org.quartz.Scheduler
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -32,9 +33,10 @@ open class QuartzConfig {
     @Bean
     open fun shardingListener(
         @Autowired redisTemplate: RedisTemplate<String, String>,
-        @Autowired jobManageService: JobManageService
+        @Autowired jobManageService: JobManageService,
+        @Value("\${cluster.tag:#{null}}") clusterTag: String?
     ) =
-        ShardingListener(redisTemplate, jobManageService)
+        ShardingListener(redisTemplate, jobManageService, clusterTag)
 
     @Bean(destroyMethod = "stop")
     open fun schedulerManager(
@@ -44,11 +46,13 @@ open class QuartzConfig {
         @Autowired jobManageService: JobManageService,
         @Autowired shardingListener: ShardingListener,
         @Autowired redisTemplate: RedisTemplate<String, String>,
-        @Autowired rabbitTemplate: RabbitTemplate
+        @Autowired rabbitTemplate: RabbitTemplate,
+        @Value("\${cluster.tag:#{null}}") clusterTag: String?
     ) =
         CustomSchedulerManager(
             applicationContext, shardingRouterService,
             jobManageService, scheduler, shardingListener, redisTemplate,
-            rabbitTemplate
+            rabbitTemplate,
+            clusterTag
         )
 }

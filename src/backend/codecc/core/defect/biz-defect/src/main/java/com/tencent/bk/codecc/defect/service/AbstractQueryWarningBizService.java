@@ -27,27 +27,33 @@
 
 package com.tencent.bk.codecc.defect.service;
 
-import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_REPO_USER_ID;
-import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.KEY_CREATE_FROM;
-
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildDefectSummaryRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.BuildDefectV2Repository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintStatisticRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CLOCStatisticsDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildDefectSummaryRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CodeRepoInfoRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ToolBuildInfoRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CLOCStatisticsDao;
 import com.tencent.bk.codecc.defect.model.BuildDefectSummaryEntity;
 import com.tencent.bk.codecc.defect.model.BuildDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.CodeCommentEntity;
+import com.tencent.bk.codecc.defect.model.FileContentQueryParams;
 import com.tencent.bk.codecc.defect.model.defect.DefectEntity;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
+import com.tencent.bk.codecc.defect.model.incremental.CodeRepoEntity;
+import com.tencent.bk.codecc.defect.model.incremental.CodeRepoInfoEntity;
+import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
 import com.tencent.bk.codecc.defect.utils.ConvertUtil;
+import com.tencent.bk.codecc.defect.utils.SCMUtils;
 import com.tencent.bk.codecc.defect.vo.CodeCommentVO;
 import com.tencent.bk.codecc.defect.vo.CountDefectFileRequest;
 import com.tencent.bk.codecc.defect.vo.DefectDetailVO;
 import com.tencent.bk.codecc.defect.vo.DefectFilesInfoVO;
 import com.tencent.bk.codecc.defect.vo.DefectInstanceVO;
 import com.tencent.bk.codecc.defect.vo.GetFileContentSegmentReqVO;
+import com.tencent.bk.codecc.defect.vo.GrayBuildNumAndTaskVO;
+import com.tencent.bk.codecc.defect.vo.GrayDefectStaticVO;
 import com.tencent.bk.codecc.defect.vo.SingleCommentVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectIdVO;
@@ -66,6 +72,7 @@ import com.tencent.bk.codecc.task.vo.ListTaskNameCnRequest;
 import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
+import com.tencent.devops.common.api.enums.ScmType;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt;
@@ -81,17 +88,10 @@ import com.tencent.devops.common.util.GitUtil;
 import com.tencent.devops.common.util.ListSortUtil;
 import com.tencent.devops.common.util.MD5Utils;
 import com.tencent.devops.common.util.OkhttpUtils;
-import java.net.URLEncoder;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.tencent.devops.repository.api.ExternalCodeccRepoResource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -106,6 +106,19 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.util.Pair;
 
+import java.net.URLEncoder;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_REPO_USER_ID;
+import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.KEY_CREATE_FROM;
+
 /**
  * 告警管理抽象类
  *
@@ -114,6 +127,8 @@ import org.springframework.data.util.Pair;
  */
 @Slf4j
 public abstract class AbstractQueryWarningBizService implements IQueryWarningBizService {
+
+    protected static String EMPTY_FILE_CONTENT_TIPS = "无法获取代码片段。请确保你对代码库拥有权限，且该文件未从代码库中删除.";
     protected static String EMPTY_CONTENT_TOOL_TIPS = "此工具不支持代码片段查看";
     private static Logger logger = LoggerFactory.getLogger(AbstractQueryWarningBizService.class);
     @Autowired
@@ -128,13 +143,18 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
     protected TaskLogOverviewService taskLogOverviewService;
     @Autowired
     protected PipelineScmService pipelineScmService;
-
+    @Autowired
+    private SCMUtils scmUtils;
     @Autowired
     protected BuildDefectV2Repository buildDefectV2Repository;
     @Autowired
     protected BuildSnapshotService buildSnapshotService;
     @Autowired
     protected BuildDefectSummaryRepository buildDefectSummaryRepository;
+    @Autowired
+    private CodeRepoInfoRepository codeRepoRepository;
+    @Autowired
+    private ToolBuildInfoRepository toolBuildInfoRepository;
     @Value("${git.hosts:#{null}}")
     private String gitHosts;
     @Value("${github.repo.host:#{null}}")
@@ -149,9 +169,26 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
     private LintStatisticRepository lintStatisticRepository;
 
     @Override
-    public CommonDefectDetailQueryRspVO processGetFileContentSegmentRequest(long taskId, String userId,
-            GetFileContentSegmentReqVO reqModel) {
+    public CommonDefectDetailQueryRspVO processGetFileContentSegmentRequest(String projectId, long taskId,
+            String userId, GetFileContentSegmentReqVO reqModel) {
         return new CommonDefectDetailQueryRspVO();
+    }
+
+    /**
+     * 根据文件路径获取文件名，抽取自#processGetFileContentSegmentRequest
+     *
+     * @author neildwu
+     * @date 2023/6/21
+     * @param filePath
+     * @return java.lang.String
+     */
+    protected String getFileName(String filePath) {
+        int fileNameIndex = filePath.lastIndexOf("/");
+        if (fileNameIndex == -1) {
+            fileNameIndex = filePath.lastIndexOf("\\");
+        }
+
+        return filePath.substring(fileNameIndex + 1);
     }
 
     /**
@@ -198,6 +235,27 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
         return builder.toString();
     }
 
+    /**
+     *
+     * 根据 taskId 和 toolName 在 t_tool_build_info 这张表中取最新的 buildId.
+     *
+     * @author victorljli
+     * @date 2023/9/5
+     * @param taskId
+     * @param toolName
+     * @return java.lang.String
+     */
+    protected String getLastestBuildIdByTaskIdAndToolName(long taskId, String toolName) {
+        ToolBuildInfoEntity buildInfo = toolBuildInfoRepository
+                .findFirstByTaskIdAndToolNameOrderByUpdatedDateDesc(taskId, toolName);
+        if (buildInfo != null) {
+            return buildInfo.getDefectBaseBuildId();
+        } else {
+            logger.warn("Cannot get buildId by taskId({}) and toolName({}).", taskId, toolName);
+        }
+
+        return null;
+    }
 
     @Override
     public DeptTaskDefectRspVO processDeptTaskDefectReq(DeptTaskDefectReqVO deptTaskDefectReqVO) {
@@ -399,19 +457,50 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
         return batchGetTaskListResult.getData();
     }
 
-    protected String getFileContent(long taskId, String projectId, String userId, String url, String repoId,
-            String relPath, String revision, String branch, String subModule) {
+    protected String getFileContent(FileContentQueryParams queryParams) {
+
+        // 取出常用的字段
+        long taskId = queryParams.getTaskId();
+        String projectId = queryParams.getProjectId();
+        String userId = queryParams.getUserId();
+        String url = queryParams.getUrl();
+        String repoId = queryParams.getRepoId();
+        String filePath = queryParams.getFilePath();
+        String relPath = queryParams.getRelPath();
+        String revision = queryParams.getRevision();
+        String subModule = queryParams.getSubModule();
+        String branch = queryParams.getBranch();
+
+        if (StringUtils.isBlank(relPath) && StringUtils.isNotBlank(filePath)
+                && filePath.length() > ComConstants.DEFAULT_LANDUN_WORKSPACE.length()) {
+            relPath = filePath.substring(ComConstants.DEFAULT_LANDUN_WORKSPACE.length());
+        }
+
         Pair<String, String> pair = getTaskCreateFrom(projectId, taskId);
         String createFrom = pair.getFirst();
         String realProjectId = pair.getSecond();
+        String content = null;
 
-        // 先预设是github仓库，从github仓库缓存读取
-        String ref = StringUtils.isBlank(revision) ? branch : revision;
-        String content = tryGetGithubContent(url, ref, relPath, userId, projectId);
+        // 查看是否开启缓存
+        if (isFileCacheEnable(taskId)) {
+            content = pipelineScmService.getFileContentFromFileCache(taskId, queryParams.getBuildId(),
+                    queryParams.getFilePath());
+        }
 
-        // 预设成功，直接返回
+        // 缓存命中，直接返回
         if (content != null) {
             return content;
+        }
+
+        ScmType scmType = scmUtils.getScmType(url);
+        if (scmType != null) {
+            String ref = StringUtils.isBlank(revision) ? branch : revision;
+            content = tryGetGitContent(url, ref, relPath, userId, projectId, queryParams.getBuildId(),
+                    taskId, scmType);
+            // 预设成功，直接返回
+            if (content != null) {
+                return content;
+            }
         }
 
         // 判断是否是oauth
@@ -420,7 +509,9 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
             if (!realProjectId.startsWith("CUSTOMPROJ_")
                     && AuthApiUtils.INSTANCE.isAdminMember(redisTemplate, userId)) {
                 Result<TaskDetailVO> result = client.get(ServiceTaskRestResource.class).getTaskInfoById(taskId);
-                oauthUserId = result.getData().getUpdatedBy();
+                if (result.isOk() && result.getData() != null) {
+                    oauthUserId = result.getData().getUpdatedBy();
+                }
             }
 
             content = getOathFileContent(userId, oauthUserId, url, relPath, revision, branch, realProjectId);
@@ -429,7 +520,7 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
         } else {
             try {
                 content = pipelineScmService.getFileContent(
-                        taskId, repoId, relPath, revision, branch, subModule, createFrom);
+                        taskId, repoId, relPath, revision, branch, subModule, createFrom, url);
             } catch (Exception e) {
                 if (ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value().equalsIgnoreCase(createFrom)
                         && isMatchGitHost(url)) {
@@ -457,11 +548,35 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
         return content;
     }
 
-    private String tryGetGithubContent(String url, String ref, String relPath, String userId, String projectId) {
-        if (StringUtils.isEmpty(url) || !url.contains("github.com")) {
+    private String tryGetGitContent(String url, String ref, String relPath, String userId, String projectId,
+            String buildId, long taskId, ScmType scmType) {
+        if (StringUtils.isEmpty(url)) {
             return null;
         }
 
+        log.info("url: {}, scmType: {}", url, scmType.name());
+
+        String content;
+        if (scmType == ScmType.GITHUB) {
+            content = tryGetGithubContentFromBkrepo(url, ref, relPath, userId, projectId);
+            if (StringUtils.isNotEmpty(content)) {
+                return content;
+            }
+
+            content = tryGetGithubPublicContent(url, ref, relPath);
+            if (StringUtils.isNotEmpty(content)) {
+                return content;
+            }
+        }
+
+        content = tryGetPrivateContentByUrl(projectId, url, buildId, taskId, relPath, scmType);
+
+        return content;
+    }
+
+
+    private String tryGetGithubContentFromBkrepo(String url, String ref, String relPath, String userId,
+            String projectId) {
         try {
             String projectName = GitUtil.INSTANCE.getProjectName(url);
             String[] arr = projectName.split("/");
@@ -479,13 +594,95 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
             headers.put("Authorization", "Platform " + new String(
                     Base64.getEncoder().encode((githubRepoAccessKey + ":" + githubRepoSecretKey).getBytes())));
             headers.put(AUTH_HEADER_DEVOPS_REPO_USER_ID, userId);
-            String content = OkhttpUtils.INSTANCE.doGet(repoUrl, headers);
+
+            String content = OkhttpUtils.INSTANCE.doShortGet(repoUrl, headers);
             logger.info("get from bkrepo of github: {}, {}", projectId, projectName);
             return content;
         } catch (Exception ex) {
-            logger.error("fail to get github content from repo " + url, ex);
+            logger.error("fail to get github content from repo url: {}, error msg: {}", url, ex.getMessage());
             return null;
         }
+    }
+
+    /**
+     * 通过Github Url 获取GitHub 内容
+     *
+     * @param url
+     * @param ref
+     * @param relPath
+     * @return
+     */
+    private String tryGetGithubPublicContent(String url, String ref, String relPath) {
+        try {
+            int headerIndex = 0;
+            if (url.startsWith("https://")) {
+                headerIndex = 8;
+            } else if (url.startsWith("http://")) {
+                headerIndex = 7;
+            }
+
+            int startIndex = url.indexOf("/", headerIndex);
+            int endIndex = url.lastIndexOf(".git");
+            String projectName = url.substring(startIndex + 1, endIndex);
+
+            String contentUrl = String.format("https://raw.githubusercontent.com/%s/%s/%s",
+                    projectName, ref, relPath);
+            return OkhttpUtils.INSTANCE.doShortGet(contentUrl, new HashMap<>());
+        } catch (Exception ex) {
+            logger.error("fail to get github content from public github url: {}, error msg: {}", url, ex.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 利用 ticket id 获取 github 私有库的代码
+     *
+     * @author victorljli
+     * @date 2023/7/17
+     * @param projectId
+     * @param url
+     * @param buildId
+     * @param taskId
+     * @param relPath
+     * @param scmType
+     * @return
+     */
+    private String tryGetPrivateContentByUrl(String projectId, String url, String buildId,
+            long taskId,
+            String relPath, ScmType scmType) {
+        CodeRepoInfoEntity codeRepoInfoEntity = codeRepoRepository.findFirstByTaskIdAndBuildId(taskId, buildId);
+        if (codeRepoInfoEntity == null || CollectionUtils.isEmpty(codeRepoInfoEntity.getRepoList())) {
+            log.info("cannot find the CodeRepoInfoEntity from codeRepoRepository.");
+            return null;
+        }
+
+        List<CodeRepoEntity> repoList = codeRepoInfoEntity.getRepoList();
+        CodeRepoEntity codeRepoEntity = repoList.stream().filter(r ->
+                StringUtils.isNotBlank(r.getUrl()) && r.getUrl().equals(url)
+        ).findFirst().orElse(null);
+        if (codeRepoEntity == null) {
+            log.info("cannot find the CodeRepoEntity from codeRepoInfoEntity's RepoList.");
+            return null;
+        }
+
+        if (StringUtils.isBlank(codeRepoEntity.getTicketId())) {
+            log.warn("GET PRIVATE GITHUB REPO NEED TICKET ID!");
+            return null;
+        }
+
+        try {
+            com.tencent.devops.common.api.pojo.Result<String> result = client.getDevopsService(
+                    ExternalCodeccRepoResource.class).getFileContentByUrl(projectId, codeRepoEntity.getUrl(), scmType,
+                    relPath, null, codeRepoEntity.getBranch(), null, codeRepoEntity.getTicketId());
+            if (result.isOk() && result.getData() != null) {
+                log.info("get private content: {}", result.getData());
+                return result.getData();
+            }
+        } catch (Exception ex) {
+            logger.error("fail to get private content by url: {}, error msg: {}", url, ex.getMessage());
+        }
+
+        return null;
     }
 
     private boolean isMatchGitHost(String url) {
@@ -549,6 +746,11 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
         return Pair.of(createFrom, realProjectId);
     }
 
+    protected boolean isFileCacheEnable(long taskId) {
+        Result<TaskDetailVO> result = client.get(ServiceTaskRestResource.class).getTaskInfoById(taskId);
+        return result.isOk() && result.getData() != null && BooleanUtils.isTrue(result.getData().getFileCacheEnable());
+    }
+
     /**
      * 根据快照Id筛出当次告警Id集
      *
@@ -558,7 +760,7 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
      * @return
      */
     @NotNull
-    protected Set<String> getDefectIdsByBuildId(long taskId, List<String> toolNameSet, String buildId) {
+    public Set<String> getDefectIdsByBuildId(long taskId, List<String> toolNameSet, String buildId) {
         if (StringUtils.isEmpty(buildId)) {
             return Sets.newHashSet();
         }
@@ -606,6 +808,11 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
     @Override
     public Long countNewDefectFile(CountDefectFileRequest request) {
         return 0L;
+    }
+
+    @Override
+    public List<GrayDefectStaticVO> getGaryDefectStaticList(GrayBuildNumAndTaskVO grayBuildNumAndTaskVO) {
+        return null;
     }
 
     /**

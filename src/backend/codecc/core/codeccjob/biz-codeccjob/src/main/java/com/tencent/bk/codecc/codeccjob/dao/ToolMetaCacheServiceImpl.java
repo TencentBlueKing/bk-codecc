@@ -28,6 +28,7 @@ package com.tencent.bk.codecc.codeccjob.dao;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.qcloud.cos.model.ListObjectsRequest;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;

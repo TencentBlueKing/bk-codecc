@@ -19,9 +19,11 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 /**
@@ -41,4 +43,20 @@ public interface ServiceBuildRestResource {
     Result<Boolean> updateBuildInfo(
             @ApiParam(value = "构建信息对象", required = true)
             BuildVO buildVO);
+
+    @ApiOperation("获取构建编号")
+    @Path("/buildNum")
+    @GET
+    Result<Integer> getBuildNum(
+            @QueryParam("buildId")
+            String buildId
+    );
+
+    @ApiOperation("获取构建编号")
+    @Path("/getBuildInfo")
+    @GET
+    Result<BuildVO> getBuildInfo(
+            @QueryParam("buildId")
+            String buildId
+    );
 }

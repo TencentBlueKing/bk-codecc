@@ -14,7 +14,8 @@ import org.springframework.data.redis.core.RedisTemplate
 
 class ShardingListener @Autowired constructor(
     private val redisTemplate: RedisTemplate<String, String>,
-    private val jobManageService: JobManageService
+    private val jobManageService: JobManageService,
+    private val clusterTag: String?
 ) : TriggerListener {
 
     companion object {
@@ -33,13 +34,27 @@ class ShardingListener @Autowired constructor(
         val jobName = context.jobDetail.key.name
         //确认时间用nextScheduledTime,如果用当前的话，会因为延时而导致分布式锁不齐
         val nextFireTime = DateFormatUtils.format(context.nextFireTime, "yyyyMMddHHmmss")
-        val redisLock = RedisLock(redisTemplate, "quartz:cluster:platform:$jobName:$nextFireTime", 20)
+        val redisLockKey = if (clusterTag.isNullOrBlank()) {
+            "quartz:cluster:platform:$jobName:$nextFireTime"
+        } else {
+            "quartz:cluster:$clusterTag:platform:$jobName:$nextFireTime"
+        }
+        val redisLock = RedisLock(redisTemplate, redisLockKey, 20)
         return if (redisLock.tryLock()) {
             //保存执行情况
             logger.info("job begin, job name: $jobName, trigger scheduled fire time is: $nextFireTime")
+            val redisKey = if (clusterTag.isNullOrBlank()) {
+                "${RedisKeyConstants.BK_JOB_CLUSTER_RECORD}${
+                    CustomSchedulerManager.shardingStrategy.getShardingStrategy().getShardingResult()!!.currentShard.tag
+                }"
+            } else {
+                "${RedisKeyConstants.BK_JOB_CLUSTER_RECORD}$clusterTag${
+                    CustomSchedulerManager.shardingStrategy.getShardingStrategy().getShardingResult()!!.currentShard.tag
+                }"
+            }
             //todo 放入的值要注意
             redisTemplate.opsForHash<String, String>().put(
-                "${RedisKeyConstants.BK_JOB_CLUSTER_RECORD}${CustomSchedulerManager.shardingStrategy.getShardingStrategy().getShardingResult()!!.currentShard.tag}",
+                redisKey,
                 "${jobName}_$nextFireTime", "1"
             )
             false
@@ -56,8 +71,17 @@ class ShardingListener @Autowired constructor(
         val jobName = context.jobDetail.key.name
         val nextFireTime = DateFormatUtils.format(context.nextFireTime, "yyyyMMddHHmmss")
         logger.info("job finish, job name: $jobName, trigger fire time is: $nextFireTime")
+        val redisKey = if (clusterTag.isNullOrBlank()) {
+            "${RedisKeyConstants.BK_JOB_CLUSTER_RECORD}${
+                CustomSchedulerManager.shardingStrategy.getShardingStrategy().getShardingResult()!!.currentShard.tag
+            }"
+        } else {
+            "${RedisKeyConstants.BK_JOB_CLUSTER_RECORD}$clusterTag${
+                CustomSchedulerManager.shardingStrategy.getShardingStrategy().getShardingResult()!!.currentShard.tag
+            }"
+        }
         redisTemplate.opsForHash<String, String>().delete(
-            "${RedisKeyConstants.BK_JOB_CLUSTER_RECORD}${CustomSchedulerManager.shardingStrategy.getShardingStrategy().getShardingResult()!!.currentShard.tag}",
+            redisKey,
             "${jobName}_$nextFireTime"
         )
     }

@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RestResource
 public class ServiceTaskLogOverviewResourceImpl implements ServiceTaskLogOverviewResource {
@@ -22,6 +23,11 @@ public class ServiceTaskLogOverviewResourceImpl implements ServiceTaskLogOvervie
     @Override
     public Result<TaskLogOverviewVO> getTaskLogOverview(Long taskId, String buildId, Integer status) {
         return new Result<>(taskLogOverviewService.getTaskLogOverview(taskId, buildId, status));
+    }
+
+    @Override
+    public Result<TaskLogOverviewVO> getTaskLogOverview(Long taskId, String buildId) {
+        return new Result<>(taskLogOverviewService.getTaskLogOverview(taskId, buildId));
     }
 
     @Override
@@ -43,5 +49,10 @@ public class ServiceTaskLogOverviewResourceImpl implements ServiceTaskLogOvervie
     @Override
     public Result<Map<Long, Map<String, TaskLogRepoInfoVO>>> batchGetLastAnalyzeRepoInfo(List<Long> taskIdList) {
         return new Result<>(taskLogOverviewService.batchGetRepoInfo(taskIdList));
+    }
+
+    @Override
+    public Result<Map<Long, String>> getLastAnalyzeBuildIdMap(Map<Long, Set<String>> taskIdToBuildIds) {
+        return new Result<>(taskLogOverviewService.getLastAnalyzeBuildIdMap(taskIdToBuildIds));
     }
 }

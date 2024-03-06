@@ -3,8 +3,8 @@ package com.tencent.devops.common.client.ms
 import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.client.ClientErrorDecoder
 import com.tencent.devops.common.client.pojo.AllProperties
-import com.tencent.devops.common.service.utils.SpringContextUtil
 import com.tencent.devops.common.codecc.util.JsonUtil
+import com.tencent.devops.common.service.utils.SpringContextUtil
 import feign.Feign
 import feign.Request
 import feign.RequestInterceptor
@@ -12,6 +12,7 @@ import feign.RetryableException
 import feign.Retryer
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.consul.discovery.ConsulDiscoveryClient
+import org.springframework.cloud.consul.discovery.ConsulServiceInstance
 import kotlin.reflect.KClass
 
 class ConsulServiceClient constructor(
@@ -105,6 +106,8 @@ class ConsulServiceClient constructor(
     }
 
     override fun getServiceNodeNum(serviceName: String): Int {
-        return discoveryClient.getInstances(serviceName).size
+        return discoveryClient.getInstances(serviceName)?.count {
+            it is ConsulServiceInstance && it.tags.contains(tag)
+        } ?: 0
     }
 }

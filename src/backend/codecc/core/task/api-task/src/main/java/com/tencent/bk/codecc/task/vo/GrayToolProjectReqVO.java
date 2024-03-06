@@ -25,6 +25,9 @@ public class GrayToolProjectReqVO extends CommonVO {
     @ApiModelProperty(value = "项目Id")
     private String projectId;
 
+    @ApiModelProperty(value = "工具id")
+    private String toolName;
+
     /**
      * 项目灰度状态
      */

@@ -173,4 +173,31 @@ public class AsyncTaskConfiguration {
         executor.initialize();
         return executor;
     }
+
+    /**
+     * 定义自定义的文件缓存索引处理线程池
+     * @return
+     */
+    @Bean
+    public Executor asyncFileCacheBuildIndexExecutor() {
+        log.info("initialize async file cache build index thread pool");
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        //配置核心线程数
+        executor.setCorePoolSize(20);
+        //配置最大线程数
+        executor.setMaxPoolSize(20);
+        //配置队列长度
+        executor.setQueueCapacity(10000);
+        //设置线程空闲时间
+        executor.setKeepAliveSeconds(30);
+        //线程名前缀
+        executor.setThreadNamePrefix("file-cache-build-index-");
+        //线程池拒绝策略
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        // 设置Runnable装饰器
+        executor.setTaskDecorator(new AsyncTaskDecorator());
+        //执行初始化
+        executor.initialize();
+        return executor;
+    }
 }

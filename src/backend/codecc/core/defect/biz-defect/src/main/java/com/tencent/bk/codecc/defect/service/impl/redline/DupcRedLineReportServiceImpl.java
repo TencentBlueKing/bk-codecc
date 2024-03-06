@@ -3,7 +3,7 @@ package com.tencent.bk.codecc.defect.service.impl.redline;
 import static com.tencent.bk.codecc.defect.constant.DefectConstants.FORBIDDEN_COUNT_F;
 import static com.tencent.bk.codecc.defect.constant.DefectConstants.PASS_COUNT_D;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.DUPCStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DUPCStatisticRepository;
 import com.tencent.bk.codecc.defect.model.defect.DUPCDefectEntity;
 import com.tencent.bk.codecc.defect.model.redline.RedLineExtraParams;
 import com.tencent.bk.codecc.defect.model.statistic.DUPCStatisticEntity;

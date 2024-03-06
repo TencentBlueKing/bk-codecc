@@ -6,8 +6,12 @@ import com.tencent.bk.codecc.defect.model.TransferAuthorEntity
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectNewInputModel
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectOutputModelV2
 import com.tencent.bk.codecc.defect.pojo.DefectClusterDTO
+import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
 import com.tencent.devops.common.api.exception.CodeCCException
+import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.constant.CommonMessageCode
+import com.tencent.devops.common.service.utils.SpringContextUtil
+import org.apache.commons.lang3.BooleanUtils
 import org.slf4j.LoggerFactory
 
 abstract class AbstractDefectCommitComponent<T>(
@@ -73,5 +77,19 @@ abstract class AbstractDefectCommitComponent<T>(
             throw CodeCCException(CommonMessageCode.SYSTEM_ERROR)
         }
         return fileMD5TotalModel.fileList.associate { it.filePath to it.md5 }
+    }
+
+    /**
+     * 是否开启缓存
+     */
+    protected fun isFileCacheEnable(taskId: Long): Boolean {
+        try {
+            val client = SpringContextUtil.getBean(Client::class.java)
+            val taskInfo = client.get(ServiceTaskRestResource::class.java).getTaskInfoById(taskId).data
+            return taskInfo != null && BooleanUtils.isTrue(taskInfo.fileCacheEnable)
+        } catch (e: Exception) {
+            logger.error("check if file cache enable cause error. taskId: $taskId", e)
+        }
+        return false
     }
 }

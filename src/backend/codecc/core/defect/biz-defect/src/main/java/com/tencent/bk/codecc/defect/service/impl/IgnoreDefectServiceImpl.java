@@ -12,8 +12,8 @@
  
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.IgnoreDefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.IgnoreDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.IgnoreDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.IgnoreDefectDao;
 import com.tencent.bk.codecc.defect.model.ignore.IgnoreCommentDefectModel;
 import com.tencent.bk.codecc.defect.model.ignore.IgnoreCommentDefectSubModel;
 import com.tencent.bk.codecc.defect.service.IIgnoreDefectService;
@@ -61,12 +61,17 @@ public class IgnoreDefectServiceImpl implements IIgnoreDefectService {
             ignoreCommentDefectModel.getIgnoreDefectMap().forEach((k, v) -> {
                 if (CollectionUtils.isNotEmpty(v)) {
                     List<IgnoreCommentDefectSubVO> ignoreCommentDefectSubVOList =
-                        v.stream().map(ignoreCommentDefectSubModel -> {
-                        IgnoreCommentDefectSubVO ignoreCommentDefectSubVO = new IgnoreCommentDefectSubVO();
-                        ignoreCommentDefectSubVO.setLineNum(ignoreCommentDefectSubModel.getLineNum());
-                        ignoreCommentDefectSubVO.setIgnoreRule(ignoreCommentDefectSubModel.getIgnoreRule());
-                        return ignoreCommentDefectSubVO;
-                    }).collect(Collectors.toList());
+                            v.stream().map(ignoreCommentDefectSubModel -> {
+                                IgnoreCommentDefectSubVO ignoreCommentDefectSubVO = new IgnoreCommentDefectSubVO();
+                                ignoreCommentDefectSubVO.setLineNum(ignoreCommentDefectSubModel.getLineNum());
+                                Map<String, String> ignoreRules =
+                                        ignoreCommentDefectSubModel.getIgnoreRule().entrySet().stream()
+                                                .collect(Collectors.toMap(
+                                                        entry -> entry.getKey().replaceAll("#DOT#", "."),
+                                                        Map.Entry::getValue));
+                                ignoreCommentDefectSubVO.setIgnoreRule(ignoreRules);
+                                return ignoreCommentDefectSubVO;
+                            }).collect(Collectors.toList());
                     ignoreDefectVOMap.put(k.replaceAll("~", "."), ignoreCommentDefectSubVOList);
                 } else {
                     ignoreDefectVOMap.put(k.replaceAll("~", "."), null);
@@ -100,12 +105,18 @@ public class IgnoreDefectServiceImpl implements IIgnoreDefectService {
             ignoreCommentDefectModel.getIgnoreDefectMap().forEach((k, v) -> {
                 if(CollectionUtils.isNotEmpty(v)) {
                     List<IgnoreCommentDefectSubModel> ignoreCommentDefectSubModelList =
-                        v.stream().map(ignoreCommentDefectSubVO -> {
-                        IgnoreCommentDefectSubModel ignoreCommentDefectSubModel = new IgnoreCommentDefectSubModel();
-                        ignoreCommentDefectSubModel.setLineNum(ignoreCommentDefectSubVO.getLineNum());
-                        ignoreCommentDefectSubModel.setIgnoreRule(ignoreCommentDefectSubVO.getIgnoreRule());
-                        return ignoreCommentDefectSubModel;
-                    }).collect(Collectors.toList());
+                            v.stream().map(ignoreCommentDefectSubVO -> {
+                                IgnoreCommentDefectSubModel ignoreCommentDefectSubModel
+                                        = new IgnoreCommentDefectSubModel();
+                                ignoreCommentDefectSubModel.setLineNum(ignoreCommentDefectSubVO.getLineNum());
+                                Map<String, String> ignoreRules =
+                                        ignoreCommentDefectSubVO.getIgnoreRule().entrySet().stream()
+                                                .collect(Collectors.toMap(
+                                                        entry -> entry.getKey().replaceAll("\\.", "#DOT#"),
+                                                        Map.Entry::getValue));
+                                ignoreCommentDefectSubModel.setIgnoreRule(ignoreRules);
+                                return ignoreCommentDefectSubModel;
+                            }).collect(Collectors.toList());
                     ignoreDefectMap.put(k.replaceAll("\\.", "~"), ignoreCommentDefectSubModelList);
                 } else {
                     ignoreDefectMap.put(k.replaceAll("\\.", "~"), null);

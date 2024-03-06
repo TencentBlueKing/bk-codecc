@@ -27,8 +27,8 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNDefectRepository;
-import com.tencent.bk.codecc.defect.dao.mongorepository.CCNStatisticRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNStatisticRepository;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.model.statistic.CCNStatisticEntity;
 import com.tencent.bk.codecc.defect.service.AbstractDataReportBizService;
@@ -47,7 +47,6 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.redis.connection.SortParameters;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;

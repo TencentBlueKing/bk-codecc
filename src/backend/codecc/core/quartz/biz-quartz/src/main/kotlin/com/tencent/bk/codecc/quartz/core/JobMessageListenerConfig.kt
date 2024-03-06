@@ -2,7 +2,7 @@ package com.tencent.bk.codecc.quartz.core
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.tencent.bk.codecc.quartz.mq.JobChangeListener
-import com.tencent.devops.common.event.util.IPUtils
+import com.tencent.devops.common.service.utils.IPUtils
 import com.tencent.devops.common.web.mq.EXCHANGE_EXTERNAL_JOB
 import com.tencent.devops.common.web.mq.EXCHANGE_GONGFENG_DELETE_ALL_JOB
 import com.tencent.devops.common.web.mq.EXCHANGE_GONGFENG_INIT_ALL_JOB
@@ -48,7 +48,9 @@ open class JobMessageListenerConfig {
     open fun messageConverter(objectMapper: ObjectMapper) = Jackson2JsonMessageConverter(objectMapper)
 
     @Bean
-    open fun externalJobMsgQueue() = Queue("$QUEUE_EXTERNAL_JOB${IPUtils.getInnerIP().replace(".", "")}$localPort")
+    open fun externalJobMsgQueue(@Autowired ipUtils: IPUtils) =
+        Queue("$QUEUE_EXTERNAL_JOB${ipUtils.getInnerIPOrHostName()
+                .replace(".", "")}$localPort")
 
     @Bean
     open fun externalJobQueueBind(
@@ -89,7 +91,9 @@ open class JobMessageListenerConfig {
     }
 
     @Bean
-    open fun internalJobMsgQueue() = Queue("$QUEUE_INTERNAL_JOB${IPUtils.getInnerIP().replace(".", "")}$localPort")
+    open fun internalJobMsgQueue(@Autowired ipUtils: IPUtils) =
+        Queue("$QUEUE_INTERNAL_JOB${ipUtils.getInnerIPOrHostName()
+                .replace(".", "")}$localPort")
 
     @Bean
     open fun internalJobQueueBind(
@@ -131,7 +135,9 @@ open class JobMessageListenerConfig {
     }
 
     @Bean
-    open fun deleteJobMsgQueue() = Queue("$QUEUE_GONGFENG_DELETE_ALL_JOB${IPUtils.getInnerIP().replace(".", "")}$localPort")
+    open fun deleteJobMsgQueue(@Autowired ipUtils: IPUtils) =
+        Queue("$QUEUE_GONGFENG_DELETE_ALL_JOB${ipUtils.getInnerIPOrHostName()
+                .replace(".", "")}$localPort")
 
     @Bean
     open fun deleteJobQueueBind(
@@ -173,7 +179,9 @@ open class JobMessageListenerConfig {
     }
 
     @Bean
-    open fun initJobMsgQueue() = Queue("$QUEUE_GONGFENG_INIT_ALL_JOB${IPUtils.getInnerIP().replace(".", "")}$localPort")
+    open fun initJobMsgQueue(@Autowired ipUtils: IPUtils) =
+        Queue("$QUEUE_GONGFENG_INIT_ALL_JOB${ipUtils.getInnerIPOrHostName()
+                .replace(".", "")}$localPort")
 
     @Bean
     open fun initJobQueueBind(

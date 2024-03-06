@@ -2,7 +2,7 @@ package com.tencent.bk.codecc.codeccjob.config
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.tencent.bk.codecc.codeccjob.consumer.CleanMongoDataConsumer
-import com.tencent.devops.common.util.IPUtils
+import com.tencent.devops.common.service.utils.IPUtils
 import com.tencent.devops.common.web.mq.EXCHANGE_CLEAN_MONGO_DATA
 import com.tencent.devops.common.web.mq.QUEUE_CLEAN_MONGO_DATA
 import org.springframework.amqp.core.Binding
@@ -10,7 +10,6 @@ import org.springframework.amqp.core.BindingBuilder
 import org.springframework.amqp.core.FanoutExchange
 import org.springframework.amqp.core.Queue
 import org.springframework.amqp.rabbit.connection.ConnectionFactory
-import org.springframework.amqp.rabbit.core.RabbitAdmin
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter
@@ -26,8 +25,8 @@ class CleanMongoDataMQConfig {
     private val localPort: String? = null
 
     @Bean
-    fun cleanMongoDataQueue(): Queue {
-        val queueName = "$QUEUE_CLEAN_MONGO_DATA.${IPUtils.getInnerIP()}.$localPort"
+    fun cleanMongoDataQueue(@Autowired ipUtils: IPUtils): Queue {
+        val queueName = "$QUEUE_CLEAN_MONGO_DATA.${ipUtils.getInnerIPOrHostName()}.$localPort"
         return Queue(queueName)
     }
 

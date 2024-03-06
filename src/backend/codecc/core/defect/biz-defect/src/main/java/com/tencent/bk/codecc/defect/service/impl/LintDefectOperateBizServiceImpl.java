@@ -12,7 +12,7 @@
 
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository;
 import com.tencent.bk.codecc.defect.model.CodeCommentEntity;
 import com.tencent.bk.codecc.defect.model.SingleCommentEntity;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;

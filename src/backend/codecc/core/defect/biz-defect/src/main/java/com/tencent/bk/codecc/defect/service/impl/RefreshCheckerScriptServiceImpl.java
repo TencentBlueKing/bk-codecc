@@ -12,22 +12,21 @@
 
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.mongorepository.CheckerRepository;
-import com.tencent.bk.codecc.defect.dao.mongotemplate.CheckerDetailDao;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongotemplate.CheckerDetailDao;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.service.RefreshCheckerScriptService;
 import com.tencent.bk.codecc.defect.utils.PageUtils;
 import com.tencent.devops.common.api.pojo.Page;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * 刷新 规则描述、详细说明 数据
@@ -38,6 +37,7 @@ import java.util.regex.Pattern;
 @Service
 @Slf4j
 public class RefreshCheckerScriptServiceImpl implements RefreshCheckerScriptService {
+
     @Autowired
     private CheckerDetailDao checkerDetailDao;
 

@@ -1,0 +1,27 @@
+{{- if and (eq .Values.config.bkCodeccStorageType "bkrepo-csi") (.Values.pv.enabled) -}}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ include "common.names.fullname" . }}-csi-bkrepo-pv
+spec:
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 10Gi
+  csi:
+    driver: com.tencent.bkrepo.csi
+    # Specify a unique volumeHandle like pv name or filesystem id.
+    volumeHandle: {{ include "common.names.fullname" . }}-csi-bkrepo-pv
+    volumeAttributes:
+      # bkrepo user for mount
+      user: {{ .Values.config.bkCodeccStorageBkrepoUsername }}
+      # bkrepo user password for auth
+      pwd: {{ .Values.config.bkCodeccStorageBkrepoPassword }}
+      # the url bkrepo to mount
+      url: {{ .Values.config.bkCodeccStorageBkrepoSchema }}://{{ .Values.config.bkCodeccStorageBkrepoHost }}
+      # bkrepo project to mount
+      project: {{ .Values.config.bkCodeccStorageBkrepoProject }}
+      # bkrepo repo to mount
+      repo: {{ .Values.config.bkCodeccStorageBkrepoRepo }}
+  storageClassName: "bkrepo-fs"
+{{- end -}}

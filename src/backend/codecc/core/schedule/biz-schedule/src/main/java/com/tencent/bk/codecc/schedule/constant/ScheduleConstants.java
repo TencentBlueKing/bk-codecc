@@ -61,7 +61,11 @@ public interface ScheduleConstants {
         /**
          * 聚类的临时文件
          */
-        AGGREGATE;
+        AGGREGATE,
+        /**
+         * 文件缓存的临时文件
+         */
+        FILE_CACHE;
     }
 
     /**

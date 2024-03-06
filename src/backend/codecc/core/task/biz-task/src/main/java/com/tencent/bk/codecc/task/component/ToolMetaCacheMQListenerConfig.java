@@ -13,7 +13,7 @@
 package com.tencent.bk.codecc.task.component;
 
 import com.tencent.bk.codecc.task.consumer.RefreshToolMetaCacheConsumer;
-import com.tencent.devops.common.util.IPUtils;
+import com.tencent.devops.common.service.utils.IPUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
@@ -26,7 +26,6 @@ import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_REFRESH_TOOLMETA_CACHE;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_REFRESH_TOOLMETA_CACHE;
@@ -51,7 +50,7 @@ public class ToolMetaCacheMQListenerConfig {
     @Bean
     public Queue toolMetaCacheQueue() {
         String queueName =
-                String.format("%s.%s.%s", QUEUE_REFRESH_TOOLMETA_CACHE, IPUtils.INSTANCE.getInnerIP(), localPort);
+                String.format("%s.%s.%s", QUEUE_REFRESH_TOOLMETA_CACHE, IPUtils.Companion.getInnerIP(), localPort);
         return new Queue(queueName);
     }
 
