@@ -29,7 +29,7 @@ jobs:
         run: |
           cd src/frontend/devops-codecc
           rm -rf dist
-          npm i
+          npm i -f
           npm run build
           if [ -f dist/index.html ]; then
             mv dist/index.html dist/frontend#index.html
