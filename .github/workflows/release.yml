@@ -24,6 +24,10 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew clean copyToRelease --refresh-dependencies
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
       - name: frontend
         id: codecc-frontend
         run: |
