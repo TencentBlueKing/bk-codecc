@@ -169,8 +169,7 @@ if [[ $ALL -eq 1 || $BACKEND -eq 1 ]] ; then
                 mkdir -p tmp
                 cp backend/startup.sh tmp/
                 cp $BACKEND_DIR/release/boot-$SERVICE.jar tmp/app.jar
-                ls -l tmp
-                docker build -f backend/backend.Dockerfile -t $REGISTRY/$NAMESPACE/${PERFIX}$SERVICE_NAME:$VERSION tmp --network=host
+                docker build -f backend/backend.Dockerfile -t $REGISTRY/$NAMESPACE/${PERFIX}$SERVICE_NAME:$VERSION . --network=host
                 if [[ $PUSH -eq 1 ]] ; then
                     docker push $REGISTRY/$NAMESPACE/${PERFIX}$SERVICE_NAME:$VERSION
                 fi
@@ -180,8 +179,7 @@ if [[ $ALL -eq 1 || $BACKEND -eq 1 ]] ; then
             mkdir -p tmp
             cp backend/startup.sh tmp/
             cp $BACKEND_DIR/release/boot-$SERVICE.jar tmp/app.jar
-            ls -l tmp
-            docker build -f backend/backend.Dockerfile -t $REGISTRY/$NAMESPACE/${PERFIX}$SERVICE:$VERSION tmp --network=host
+            docker build -f backend/backend.Dockerfile -t $REGISTRY/$NAMESPACE/${PERFIX}$SERVICE:$VERSION . --network=host
             if [[ $PUSH -eq 1 ]] ; then
                 docker push $REGISTRY/$NAMESPACE/${PERFIX}$SERVICE:$VERSION
             fi            
