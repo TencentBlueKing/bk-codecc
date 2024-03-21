@@ -8,7 +8,6 @@ import org.hibernate.validator.constraints.NotEmpty;
 /**
  * 查询告警代码片段查询类
  *
- * @author victorljli
  * @date 2023/06/30
  */
 @Data
@@ -24,7 +23,7 @@ public class QueryDefectFileContentSegmentReqVO {
     @ApiModelProperty(value = "工具维度", required = false)
     private String dimension;
 
-    @ApiModelProperty(value = "文件完整路径", required = false)
+    @ApiModelProperty(value = "文件完整路径", required = true)
     @NotNull
     private String filePath;
 
@@ -33,4 +32,9 @@ public class QueryDefectFileContentSegmentReqVO {
 
     @ApiModelProperty(value = "结束行", required = false)
     private int endLine;
+
+    /**
+     * 是否要 "尽最大努力" 查看私有库代码
+     */
+    private boolean tryBestForPrivate = true;
 }

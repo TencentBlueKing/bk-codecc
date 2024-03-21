@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSONObject
 import com.fasterxml.jackson.core.type.TypeReference
 import com.tencent.bk.codecc.defect.cluster.ClusterLintCompareProcess
 import com.tencent.bk.codecc.defect.component.abstract.AbstractDefectCommitComponent
-import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao
 import com.tencent.bk.codecc.defect.model.BuildEntity
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity
@@ -31,7 +31,7 @@ import java.io.File
 
 @Component("LINTDefectCommitComponent")
 class LintDefectCommitComponent @Autowired constructor(
-    protected val lintDefectV2Repository: LintDefectV2Repository,
+    protected val lintDefectV2Dao: LintDefectV2Dao,
     private val clusterLintCompareProcess: ClusterLintCompareProcess,
     protected val newLintDefectTracingComponent: NewLintDefectTracingComponent,
     private val redisTemplate: RedisTemplate<String, String>,
@@ -205,25 +205,7 @@ class LintDefectCommitComponent @Autowired constructor(
         val toolName = defectClusterDTO.commitDefectVO.toolName
         val finalDefects = mutableListOf<LintDefectV2Entity>()
 
-        if (!filePathSet.isNullOrEmpty()) {
-            finalDefects.addAll(
-                lintDefectV2Repository.findTrackingByTaskIdAndToolNameAndFilePathIn(
-                    taskId,
-                    toolName,
-                    filePathSet
-                )
-            )
-        }
-
-        if (!relPathSet.isNullOrEmpty()) {
-            finalDefects.addAll(
-                lintDefectV2Repository.findTrackingByTaskIdAndToolNameAndRelPathIn(
-                    taskId,
-                    toolName,
-                    relPathSet
-                )
-            )
-        }
+        finalDefects.addAll(lintDefectV2Dao.findByTaskIdAndToolNameAndPath(taskId, toolName, relPathSet, filePathSet))
 
         return finalDefects
     }
@@ -232,11 +214,12 @@ class LintDefectCommitComponent @Autowired constructor(
         if (buildEntity == null || buildEntity.buildId.isNullOrEmpty()) {
             return false
         }
-        val check = try {
-            redisTemplate.opsForSet().isMember(RedisKeyConstants.DEBUG_BUILD_ID_SET_KEY, buildEntity.buildId) ?: false
+        val check: Boolean = try {
+            redisTemplate.opsForSet()
+                .isMember(RedisKeyConstants.DEBUG_BUILD_ID_SET_KEY, buildEntity.buildId) ?: false
         } catch (e: Exception) {
             logger.error("postHandleDefectListDebugEnabled cause error. ${buildEntity.buildId}", e)
-            return false
+            false
         }
         return check
     }

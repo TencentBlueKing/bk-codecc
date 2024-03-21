@@ -236,15 +236,24 @@ public class DateTimeUtils {
     }
 
     /**
-     * 获得今天0点的毫秒数
+     * 获得今天0点的时间戳
      *
      * @return
      */
     public static long getTodayZeroMillis() {
         String today = getDateByDiff(0);
         String todayZero = today + " 00:00:00";
-        long tina = getTimeStamp(todayZero);
-        return tina;
+        return getTimeStamp(todayZero);
+    }
+
+    /**
+     * 天数转毫秒数
+     * @date 2024/3/7
+     * @param days 天数
+     * @return long
+     */
+    public static long day2Millis(long days) {
+        return days * 24 * 60 * 60 * 1000;
     }
 
     public static String getDateByDiff(int diff) {

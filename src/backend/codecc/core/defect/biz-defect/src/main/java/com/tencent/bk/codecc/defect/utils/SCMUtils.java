@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 /**
  * scm 相关工具类
  *
- * @author victorljli
  * @date 2023/07/17
  */
 @Component
@@ -70,17 +69,6 @@ public class SCMUtils {
         }
 
         return null;
-    }
-
-    /**
-     * 一个测试方法。
-     *
-     * @author victorljli
-     * @date 2023/8/31
-     */
-    public void testSCMUtils() {
-        logger.info("gitHosts: {}", gitHosts);
-        logger.info("tGitHosts: {}", tGitHosts);
     }
 
     /**

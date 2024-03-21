@@ -149,9 +149,4 @@ public interface ServiceBaseDataResource
     @Path("/")
     @POST
     Result<List<BaseDataVO>> findBaseData();
-
-    @ApiOperation("更新各语言的预发布规则集")
-    @Path("/updateLangPreProdConfig")
-    @POST
-    Result<Set<String>> updateLangPreProdConfig(List<CheckerSetVO> checkerSetVOS);
 }

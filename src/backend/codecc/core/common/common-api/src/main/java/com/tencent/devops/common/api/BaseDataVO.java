@@ -28,7 +28,6 @@ package com.tencent.devops.common.api;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -41,8 +40,8 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ApiModel("基础数据视图类")
-public class BaseDataVO extends CommonVO
-{
+public class BaseDataVO extends CommonVO {
+
     @ApiModelProperty("参数代码")
     private String paramCode;
 
@@ -78,10 +77,4 @@ public class BaseDataVO extends CommonVO
 
     @ApiModelProperty("LANG类型专用-语言类型")
     private String langType;
-
-    @ApiModelProperty("LANG类型专用-开源治理规范规则集")
-    private List<OpenSourceCheckerSetVO> openSourceCheckerListVO;
-
-    @ApiModelProperty("LANG类型专用-epc规范规则集")
-    private List<OpenSourceCheckerSetVO> epcCheckerSets;
 }

@@ -7,9 +7,9 @@ import com.tencent.bk.codecc.defect.model.checkerset.CheckerPropsEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetHisEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetProjectRelationshipEntity;
+import com.tencent.bk.codecc.defect.service.CheckerSetPackageService;
 import com.tencent.bk.codecc.defect.service.ICheckerSetIntegratedBizService;
 import com.tencent.bk.codecc.defect.service.ICheckerSetManageBizService;
-import com.tencent.bk.codecc.task.api.ServiceBaseDataResource;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
@@ -44,6 +44,9 @@ public class CheckerSetIntegratedBizServiceImpl implements ICheckerSetIntegrated
 
     @Autowired
     private ICheckerSetManageBizService checkerSetManageBizService;
+
+    @Autowired
+    private CheckerSetPackageService checkerSetPackageService;
 
     @Autowired
     private Client client;
@@ -107,7 +110,7 @@ public class CheckerSetIntegratedBizServiceImpl implements ICheckerSetIntegrated
                 }).collect(Collectors.toList());
                 log.info("is pre prod and update lang pre prod checker set: {}", list);
                 Set<String> updateLangPreProdCheckerSetId =
-                        client.get(ServiceBaseDataResource.class).updateLangPreProdConfig(list).getData();
+                        checkerSetPackageService.updateLangPreProdConfig(list);
                 log.info("finish update lang pre prod checker set: {}", updateLangPreProdCheckerSetId);
             }
 

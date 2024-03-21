@@ -36,6 +36,7 @@
 
 <script>
 import RuleSetDialog from './RuleSetDialog';
+import { mapState } from 'vuex';
 export default {
   name: 'CheckersetSelect',
   components: {
@@ -55,16 +56,21 @@ export default {
       dialogKey: '',
     };
   },
+  computed: {
+    ...mapState('project', ['projectInfo']),
+  },
   watch: {
     data(data) {
       const { selectSets } = this;
+      const isIegProj = this.projectInfo?.bgId === '956';
+      const bkCheckCheckerSets = ['bkcheck_default_java', 'bkcheck_default_lua', 'bkcheck_default_csharp', 'bkcheck_default_test'];
       Object.keys(data).forEach((key) => {
         if (!selectSets[key] || !selectSets[key].length) {
           const list = [];
           this.renderList[key] = [];
           Object.values(data[key]).forEach((value) => {
             value.forEach((item) => {
-              if (item.defaultCheckerSet) {
+              if (item.defaultCheckerSet || (isIegProj && bkCheckCheckerSets.includes(item.checkerSetId))) {
                 list.push(item.checkerSetId);
                 this.renderList[key].push(item);
               }

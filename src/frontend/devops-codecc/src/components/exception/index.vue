@@ -1,5 +1,5 @@
 <template>
-  <div class="bk-exception bk-exception-center" v-show="show">
+  <div class="bk-exception bk-exception-center" v-show="show" style="padding-top: 60px;">
     <img :src="image" />
     <template v-if="$slots.message">
       <slot name="message"></slot>

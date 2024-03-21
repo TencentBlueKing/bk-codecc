@@ -31,7 +31,6 @@ package com.tencent.bk.codecc.task.service.impl;
 import static com.tencent.devops.common.constant.CommonMessageCode.UTIL_EXECUTE_FAIL;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.api.ServiceCheckerSetRestResource;
 import com.tencent.bk.codecc.defect.api.ServiceToolBuildInfoResource;
@@ -44,27 +43,28 @@ import com.tencent.bk.codecc.task.dao.mongotemplate.TaskDao;
 import com.tencent.bk.codecc.task.model.BaseDataEntity;
 import com.tencent.bk.codecc.task.model.CustomProjEntity;
 import com.tencent.bk.codecc.task.model.OpenSourceCheckerSet;
-import com.tencent.bk.codecc.task.model.SpecialCheckerSetConfig;
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
 import com.tencent.bk.codecc.task.service.AbstractTaskRegisterService;
 import com.tencent.bk.codecc.task.utils.CommonKafkaClient;
+import com.tencent.bk.codecc.task.utils.OrgInfoUtils;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.TaskIdVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
+import com.tencent.devops.common.api.OrgInfoVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.exception.StreamException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
-import com.tencent.devops.common.constant.ComConstants.CheckerSetType;
+import com.tencent.devops.common.constant.ComConstants.CheckerSetPackageType;
+import com.tencent.devops.common.constant.ComConstants.CodeLang;
 import com.tencent.devops.common.constant.ComConstants.OpenSourceCheckerSetType;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.prometheus.BkTimed;
-import com.tencent.devops.common.codecc.util.JsonUtil;
-
+import com.tencent.devops.common.util.BeanUtils;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -75,15 +75,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -100,21 +97,49 @@ import org.springframework.stereotype.Service;
 @Service("pipelineTaskRegisterService")
 @Slf4j
 public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService {
+
+    private static final Map<String, String> defaultCheckerSetMap = createDefaultCheckerSetMap();
     @Autowired
     private RabbitTemplate rabbitTemplate;
-
     @Autowired
     private CommonKafkaClient commonKafkaClient;
-
     @Autowired
     private BaseDataRepository baseDataRepository;
-
     @Autowired
     private BaseDataCommonCache baseDataCommonCache;
-
     @Autowired
     private TaskDao taskDao;
 
+    private static Map<String, String> createDefaultCheckerSetMap() {
+        Map<String, String> folderMap = new HashMap<>();
+        folderMap.put(Tool.COVERITY.name(), "codecc_default_rules_" + Tool.COVERITY.name().toLowerCase());
+        folderMap.put(Tool.KLOCWORK.name(), "codecc_default_rules_" + Tool.KLOCWORK.name().toLowerCase());
+        folderMap.put(Tool.PINPOINT.name(), "codecc_default_rules_" + Tool.PINPOINT.name().toLowerCase());
+        folderMap.put(Tool.CPPLINT.name(), "codecc_default_rules_" + Tool.CPPLINT.name().toLowerCase());
+        folderMap.put(Tool.CHECKSTYLE.name(), "codecc_default_rules_" + Tool.CHECKSTYLE.name().toLowerCase());
+        folderMap.put(Tool.STYLECOP.name(), "codecc_default_rules_" + Tool.STYLECOP.name().toLowerCase());
+        folderMap.put(Tool.GOML.name(), "codecc_default_rules_" + Tool.GOML.name().toLowerCase());
+        folderMap.put(Tool.DETEKT.name(), "codecc_default_rules_" + Tool.DETEKT.name().toLowerCase());
+        folderMap.put(Tool.PYLINT.name(), "codecc_default_rules_" + Tool.PYLINT.name().toLowerCase());
+        folderMap.put(Tool.OCCHECK.name(), "codecc_default_rules_" + Tool.OCCHECK.name().toLowerCase());
+        folderMap.put(ComConstants.PHPCSStandardCode.PSR2.name(), "codecc_default_psr2_rules");
+        folderMap.put(ComConstants.PHPCSStandardCode.PSR12.name(), "codecc_default_psr12_rules");
+        folderMap.put(ComConstants.PHPCSStandardCode.PSR1.name(), "codecc_default_psr1_rules");
+        folderMap.put(ComConstants.PHPCSStandardCode.PEAR.name(), "codecc_default_pear_rules");
+        folderMap.put(ComConstants.PHPCSStandardCode.Zend.name(), "codecc_default_zend_rules");
+        folderMap.put(ComConstants.PHPCSStandardCode.Squiz.name(), "codecc_default_squiz_rules");
+        folderMap.put(ComConstants.PHPCSStandardCode.MySource.name(), "codecc_default_mysource_rules");
+        folderMap.put(ComConstants.PHPCSStandardCode.Generic.name(), "codecc_default_generic_rules");
+        folderMap.put(ComConstants.EslintFrameworkType.react.name(), "codecc_default_react_rules");
+        folderMap.put(ComConstants.EslintFrameworkType.vue.name(), "codecc_default_vue_rules");
+        folderMap.put(ComConstants.EslintFrameworkType.standard.name(), "codecc_default_standard_rules");
+        folderMap.put(Tool.SENSITIVE.name(), "codecc_default_rules_" + Tool.SENSITIVE.name().toLowerCase());
+        folderMap.put(Tool.HORUSPY.name(), "codecc_v2_default_" + Tool.HORUSPY.name().toLowerCase());
+        folderMap.put(Tool.WOODPECKER_SENSITIVE.name(),
+                "codecc_v2_default_" + Tool.WOODPECKER_SENSITIVE.name().toLowerCase());
+        folderMap.put(Tool.RIPS.name(), "codecc_v2_default_" + Tool.RIPS.name().toLowerCase());
+        return folderMap;
+    }
 
     @BkTimed(value = "register_task")
     @Override
@@ -171,9 +196,10 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
                 if (StringUtils.isBlank(taskDetailVO.getDevopsTools())) {
                     try {
                         taskDetailVO.setDevopsTools(JsonUtil.INSTANCE.getObjectMapper()
-                                .writeValueAsString(new ArrayList<String>() {{
-                            add("SCC");
-                        }
+                                .writeValueAsString(new ArrayList<String>() {
+                                    {
+                                        add("SCC");
+                                    }
                                 }));
                     } catch (JsonProcessingException e) {
                         e.printStackTrace();
@@ -272,7 +298,6 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
         return true;
     }
 
-
     /**
      * 更新任务信息
      *
@@ -314,7 +339,7 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
         taskInfoEntity.setUpdatedBy(userName);
         taskInfoEntity.setUpdatedDate(System.currentTimeMillis());
         taskInfoEntity.setAutoLang(taskDetailVO.getAutoLang());
-        taskInfoEntity.setCheckerSetType(taskDetailVO.getCheckerSetType() == null ? CheckerSetType.NORMAL.value()
+        taskInfoEntity.setCheckerSetType(taskDetailVO.getCheckerSetType() == null ? CheckerSetPackageType.NORMAL.value()
                 : taskDetailVO.getCheckerSetType().value());
         taskInfoEntity.setCheckerSetEnvType(taskDetailVO.getCheckerSetEnvType());
         //流水线id也要更新
@@ -362,7 +387,6 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
         }
     }
 
-
     /**
      * 更新工具配置信息和工具接入状态
      *
@@ -371,6 +395,7 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
      * @param userName
      */
     private void upsertTools(TaskDetailVO taskDetailVO, TaskInfoEntity taskInfoEntity, String userName) {
+        fillTaskDetailVOBgInfo(taskDetailVO, taskInfoEntity);
         configCheckerSetByType(taskDetailVO);
         // 如果不带有插件code，表示是旧插件接入，需要适配兼容旧插件
         if (StringUtils.isEmpty(taskDetailVO.getAtomCode())) {
@@ -398,6 +423,22 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
             log.info("set force full scan, taskId:{}, toolNames:{}", taskDetailVO.getTaskId(), forceFullScanTools);
             client.get(ServiceToolBuildInfoResource.class)
                     .setForceFullScan(taskDetailVO.getTaskId(), forceFullScanTools);
+        }
+    }
+
+    private void fillTaskDetailVOBgInfo(TaskDetailVO taskDetailVO, TaskInfoEntity taskInfoEntity) {
+        // 判断taskInfoEntity是否包含BgInfo
+        if (taskInfoEntity != null && taskInfoEntity.getBgId() > 0) {
+            taskDetailVO.setBgId(taskInfoEntity.getBgId());
+            taskDetailVO.setDeptId(taskInfoEntity.getDeptId());
+            taskDetailVO.setCenterId(taskInfoEntity.getCenterId());
+            taskDetailVO.setGroupId(taskInfoEntity.getGroupId());
+        } else if (StringUtils.isNotBlank(taskDetailVO.getProjectId())) {
+            OrgInfoVO orgInfoVO = OrgInfoUtils.getOrgInfoByProjectId(taskDetailVO.getProjectId());
+            taskDetailVO.setBgId(orgInfoVO.getBgId());
+            taskDetailVO.setDeptId(orgInfoVO.getDeptId());
+            taskDetailVO.setCenterId(orgInfoVO.getCenterId());
+            taskDetailVO.setGroupId(orgInfoVO.getGroupId());
         }
     }
 
@@ -538,284 +579,53 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
         return defaultCheckerSetMap.get(phpcsStandard);
     }
 
-    private List<CheckerSetVO> setOpenScanCheckerSetsAccordingToLanguage(
+    private List<CheckerSetVO> setCheckerSetsAccordingToLanguageAndType(
             List<String> languages,
-            String checkerSetEnvType
+            CheckerSetPackageType type,
+            String checkerSetEnvType,
+            OrgInfoVO orgInfo
     ) {
+        List<CheckerSetVO> checkerSetVOList = new ArrayList<>();
+        if (CollectionUtils.isEmpty(languages)) {
+            return checkerSetVOList;
+        }
+        List<BaseDataEntity> metaLangList = baseDataRepository.findAllByParamType(ComConstants.KEY_CODE_LANG);
         Set<OpenSourceCheckerSetType> finalOpensourceCheckerSetType =
                 Collections.singleton(OpenSourceCheckerSetType.FULL);
-        List<BaseDataEntity> metaLangList = baseDataRepository.findAllByParamType(ComConstants.KEY_CODE_LANG);
-        final boolean[] otherLanguageCheckerSet = {false};
-        List<CheckerSetVO> checkerSetVOList = new ArrayList<>();
-        if (!languages.isEmpty()) {
-            languages.forEach(it -> {
-                BaseDataEntity selectedBaseData = metaLangList.stream().filter(metaLang -> {
-                    List<String> langArray = JsonUtil.INSTANCE.to(metaLang.getParamExtend2(),
-                            new TypeReference<List<String>>() {
-                            });
-                    return langArray.contains(it);
-                }).findAny().orElse(null);
-                // 如果有选中的语言，并且规则集配置不为空的话，则配置相应的规则集
+        // EPC_SCAN 不过滤CheckerSetType 且 不自动配置其他规则
+        final boolean[] otherLanguageCheckerSet = new boolean[]{CheckerSetPackageType.EPC_SCAN == type};
+        final boolean skipFilterCheckerSetType =  CheckerSetPackageType.EPC_SCAN == type;
+        languages.forEach(it -> {
+            BaseDataEntity selectedBaseData = pickSelectLanguageBaseData(metaLangList, it);
+            // 如果有选中的语言，并且规则集配置不为空的话，则配置相应的规则集
+            // 判断是否要用预发布的版本
+            List<OpenSourceCheckerSet> selectedCheckerSet =
+                    getOpenSourceCheckerSet(selectedBaseData, type, checkerSetEnvType, orgInfo);
+            if (!selectedCheckerSet.isEmpty()) {
+                selectedCheckerSet.stream().filter(checkerSet ->
+                        skipFilterCheckerSetType || StringUtils.isBlank(checkerSet.getCheckerSetType())
+                                || finalOpensourceCheckerSetType.contains(OpenSourceCheckerSetType
+                                .valueOf(checkerSet.getCheckerSetType()))
+                ).forEach(checkerSet -> {
+                    checkerSetVOList.add(covertOpenSourceCheckerSetToVO(checkerSet));
+                });
+            }
 
+            // 如果包含有codecc不支持的语言，则配置啄木鸟-其他规则集
+            if (null == selectedBaseData && !otherLanguageCheckerSet[0]) {
+                BaseDataEntity otherBaseData = pickSelectLanguageBaseData(metaLangList, CodeLang.OTHERS.name());
                 // 判断是否要用预发布的版本
-                List<OpenSourceCheckerSet> selectedCheckerSet = new ArrayList<>();
+                List<OpenSourceCheckerSet> otherSelectedCheckerSet =
+                        getOpenSourceCheckerSet(otherBaseData, type, checkerSetEnvType, orgInfo);
 
-                if (selectedBaseData != null) {
-                    SpecialCheckerSetConfig config = new SpecialCheckerSetConfig();
-
-                    if (StringUtils.isNotBlank(selectedBaseData.getParamExtend6())) {
-                        config = JsonUtil.INSTANCE.to(selectedBaseData.getParamExtend6(),
-                                new TypeReference<SpecialCheckerSetConfig>() {
-                                });
-                        selectedCheckerSet = config.getOpenSourceCheckerSets();
-                    }
-
-                    if (CollectionUtils.isEmpty(selectedCheckerSet)) {
-                        selectedCheckerSet = selectedBaseData.getOpenSourceCheckerSets();
-                    }
-
-                    if (!StringUtils.isBlank(checkerSetEnvType)) {
-                        if (checkerSetEnvType.equals(ComConstants.CheckerSetEnvType.PRE_PROD.getKey())
-                                && CollectionUtils.isNotEmpty(config.getPreProdOpenSourceCheckerSets())) {
-                            selectedCheckerSet = config.getPreProdOpenSourceCheckerSets();
-                        }
-                    }
-                }
-
-                if (!selectedCheckerSet.isEmpty()) {
-                    selectedCheckerSet.forEach(checkerSet -> {
-                        if (StringUtils.isNotBlank(checkerSet.getCheckerSetType())
-                                && !finalOpensourceCheckerSetType.contains(OpenSourceCheckerSetType
-                                .valueOf(checkerSet.getCheckerSetType()))) {
-                            return;
-                        }
-                        CheckerSetVO formatCheckerSet = new CheckerSetVO();
-                        formatCheckerSet.setCheckerSetId(checkerSet.getCheckerSetId());
-                        formatCheckerSet.setToolList(checkerSet.getToolList());
-                        //如果有配置版本，则固定用版本，如果没有配置版本，则用最新版本
-                        if (null != checkerSet.getVersion()) {
-                            formatCheckerSet.setVersion(checkerSet.getVersion());
-                        } else {
-                            formatCheckerSet.setVersion(Integer.MAX_VALUE);
-                        }
-                        checkerSetVOList.add(formatCheckerSet);
+                if (!otherSelectedCheckerSet.isEmpty()) {
+                    otherSelectedCheckerSet.forEach(checkerSet -> {
+                        checkerSetVOList.add(covertOpenSourceCheckerSetToVO(checkerSet));
+                        otherLanguageCheckerSet[0] = true;
                     });
                 }
-
-                // 如果包含有codecc不支持的语言，则配置啄木鸟-其他规则集
-                if (null == selectedBaseData) {
-                    if (!otherLanguageCheckerSet[0]) {
-                        BaseDataEntity otherBaseData = metaLangList.stream().filter(metaLang -> {
-                            List<String> langArray = JsonUtil.INSTANCE.to(metaLang.getParamExtend2());
-                            return langArray.contains("OTHERS");
-                        }).findAny().orElse(null);
-
-                        // 判断是否要用预发布的版本
-                        List<OpenSourceCheckerSet> otherSelectedCheckerSet = new ArrayList<>();
-
-                        SpecialCheckerSetConfig otherConfig = new SpecialCheckerSetConfig();
-                        if (otherBaseData != null) {
-                            if (StringUtils.isNotBlank(otherBaseData.getParamExtend6())) {
-                                otherConfig = JsonUtil.INSTANCE.to(otherBaseData.getParamExtend6(),
-                                        new TypeReference<SpecialCheckerSetConfig>() {
-                                        });
-                                otherSelectedCheckerSet = otherConfig.getOpenSourceCheckerSets();
-                            }
-
-                            if (CollectionUtils.isEmpty(otherSelectedCheckerSet)) {
-                                otherSelectedCheckerSet = otherBaseData.getOpenSourceCheckerSets();
-                            }
-                            if (!StringUtils.isBlank(checkerSetEnvType)) {
-                                if (checkerSetEnvType.equals(ComConstants.CheckerSetEnvType.PRE_PROD.getKey())
-                                        && CollectionUtils.isNotEmpty(otherConfig.getPreProdOpenSourceCheckerSets())) {
-                                    otherSelectedCheckerSet = otherConfig.getPreProdOpenSourceCheckerSets();
-                                }
-                            }
-                        }
-
-                        if (!otherSelectedCheckerSet.isEmpty()) {
-                            otherSelectedCheckerSet.forEach(checkerSet -> {
-                                CheckerSetVO formatCheckerSet = new CheckerSetVO();
-                                formatCheckerSet.setCheckerSetId(checkerSet.getCheckerSetId());
-                                formatCheckerSet.setToolList(checkerSet.getToolList());
-                                //如果有配置版本，则固定用版本，如果没有配置版本，则用最新版本
-                                if (null != checkerSet.getVersion()) {
-                                    formatCheckerSet.setVersion(checkerSet.getVersion());
-                                } else {
-                                    formatCheckerSet.setVersion(Integer.MAX_VALUE);
-                                }
-                                checkerSetVOList.add(formatCheckerSet);
-                                otherLanguageCheckerSet[0] = true;
-                            });
-                        }
-                    }
-                }
-            });
-        }
-        return checkerSetVOList;
-    }
-
-    private List<CheckerSetVO> setCommunityOpenScanCheckerSetsAccordingToLanguage(
-            List<String> languages,
-            String checkerSetEnvType
-    ) {
-        Set<OpenSourceCheckerSetType> finalOpensourceCheckerSetType =
-                Collections.singleton(OpenSourceCheckerSetType.FULL);
-        List<BaseDataEntity> metaLangList = baseDataRepository.findAllByParamType(ComConstants.KEY_CODE_LANG);
-        List<CheckerSetVO> checkerSetVOList = new ArrayList<>();
-        if (!languages.isEmpty()) {
-            languages.forEach(it -> {
-                BaseDataEntity selectedBaseData = metaLangList.stream().filter(metaLang -> {
-                    List<String> langArray = JsonUtil.INSTANCE.to(metaLang.getParamExtend2(),
-                            new TypeReference<List<String>>() {
-                            });
-                    return langArray.contains(it);
-                }).findAny().orElse(null);
-                // 如果有选中的语言，并且规则集配置不为空的话，则配置相应的规则集
-
-                // 判断是否要用预发布的版本
-                List<OpenSourceCheckerSet> selectedCheckerSet = new ArrayList<>();
-
-                if (selectedBaseData != null) {
-                    SpecialCheckerSetConfig config = new SpecialCheckerSetConfig();
-
-                    if (StringUtils.isNotBlank(selectedBaseData.getParamExtend6())) {
-                        config = JsonUtil.INSTANCE.to(selectedBaseData.getParamExtend6(),
-                                new TypeReference<SpecialCheckerSetConfig>() {
-                                });
-                        selectedCheckerSet = config.getProdCommunityOpenScan();
-                    }
-
-                    if (!StringUtils.isBlank(checkerSetEnvType)) {
-                        if (checkerSetEnvType.equals(ComConstants.CheckerSetEnvType.PRE_PROD.getKey())
-                                && CollectionUtils.isNotEmpty(config.getPreProdCommunityOpenScan())) {
-                            selectedCheckerSet = config.getPreProdCommunityOpenScan();
-                        }
-                    }
-                }
-
-                if (!selectedCheckerSet.isEmpty()) {
-                    selectedCheckerSet.forEach(checkerSet -> {
-                        if (StringUtils.isNotBlank(checkerSet.getCheckerSetType())
-                                && !finalOpensourceCheckerSetType.contains(OpenSourceCheckerSetType
-                                .valueOf(checkerSet.getCheckerSetType()))) {
-                            return;
-                        }
-                        CheckerSetVO formatCheckerSet = new CheckerSetVO();
-                        formatCheckerSet.setCheckerSetId(checkerSet.getCheckerSetId());
-                        formatCheckerSet.setToolList(checkerSet.getToolList());
-                        //如果有配置版本，则固定用版本，如果没有配置版本，则用最新版本
-                        if (null != checkerSet.getVersion()) {
-                            formatCheckerSet.setVersion(checkerSet.getVersion());
-                        } else {
-                            formatCheckerSet.setVersion(Integer.MAX_VALUE);
-                        }
-                        checkerSetVOList.add(formatCheckerSet);
-                    });
-                }
-
-                // 如果包含有codecc不支持的语言，则配置啄木鸟-其他规则集
-                if (null == selectedBaseData) {
-                    BaseDataEntity otherBaseData = metaLangList.stream().filter(metaLang -> {
-                        List<String> langArray = JsonUtil.INSTANCE.to(metaLang.getParamExtend2());
-                        return langArray.contains("OTHERS");
-                    }).findAny().orElse(null);
-
-                    // 判断是否要用预发布的版本
-                    List<OpenSourceCheckerSet> otherSelectedCheckerSet = new ArrayList<>();
-
-                    SpecialCheckerSetConfig otherConfig = new SpecialCheckerSetConfig();
-                    if (otherBaseData != null) {
-                        if (StringUtils.isNotBlank(otherBaseData.getParamExtend6())) {
-                            otherConfig = JsonUtil.INSTANCE.to(otherBaseData.getParamExtend6(),
-                                    new TypeReference<SpecialCheckerSetConfig>() {
-                                    });
-                            otherSelectedCheckerSet = otherConfig.getOpenSourceCheckerSets();
-                        }
-
-                        if (!StringUtils.isBlank(checkerSetEnvType)) {
-                            if (checkerSetEnvType.equals(ComConstants.CheckerSetEnvType.PRE_PROD.getKey())
-                                    && CollectionUtils.isNotEmpty(otherConfig.getPreProdOpenSourceCheckerSets())) {
-                                otherSelectedCheckerSet = otherConfig.getPreProdOpenSourceCheckerSets();
-                            }
-                        }
-                    }
-
-                    if (!otherSelectedCheckerSet.isEmpty()) {
-                        otherSelectedCheckerSet.forEach(checkerSet -> {
-                            CheckerSetVO formatCheckerSet = new CheckerSetVO();
-                            formatCheckerSet.setCheckerSetId(checkerSet.getCheckerSetId());
-                            formatCheckerSet.setToolList(checkerSet.getToolList());
-                            //如果有配置版本，则固定用版本，如果没有配置版本，则用最新版本
-                            if (null != checkerSet.getVersion()) {
-                                formatCheckerSet.setVersion(checkerSet.getVersion());
-                            } else {
-                                formatCheckerSet.setVersion(Integer.MAX_VALUE);
-                            }
-                            checkerSetVOList.add(formatCheckerSet);
-                        });
-                    }
-                }
-            });
-        }
-        return checkerSetVOList;
-    }
-
-    private List<CheckerSetVO> setEpcScanCheckerSetsAccordingToLanguage(
-            List<String> languages,
-            String checkerSetEnvType
-    ) {
-        List<BaseDataEntity> metaLangList = baseDataRepository.findAllByParamType(ComConstants.KEY_CODE_LANG);
-        List<CheckerSetVO> checkerSetVOList = new ArrayList<>();
-        if (!languages.isEmpty()) {
-            languages.forEach(it -> {
-                BaseDataEntity selectedBaseData = metaLangList.stream().filter(metaLang -> {
-                    List<String> langArray = JsonUtil.INSTANCE.to(metaLang.getParamExtend2(),
-                            new TypeReference<List<String>>() {
-                            });
-                    return langArray.contains(it);
-                }).findAny().orElse(null);
-                // 如果有选中的语言，并且规则集配置不为空的话，则配置相应的规则集
-                if (null != selectedBaseData) {
-                    List<OpenSourceCheckerSet> epcCheckerSet = new ArrayList<>();
-
-                    SpecialCheckerSetConfig config = new SpecialCheckerSetConfig();
-                    if (StringUtils.isNotBlank(selectedBaseData.getParamExtend6())) {
-                        config = JsonUtil.INSTANCE.to(selectedBaseData.getParamExtend6(),
-                                new TypeReference<SpecialCheckerSetConfig>() {
-                                });
-                        epcCheckerSet = config.getEpcCheckerSets();
-                    }
-
-                    if (CollectionUtils.isEmpty(epcCheckerSet)) {
-                        epcCheckerSet = selectedBaseData.getEpcCheckerSets();
-                    }
-
-                    // 判断是否是预发布
-                    if (!StringUtils.isBlank(checkerSetEnvType)) {
-                        if (checkerSetEnvType.equals(ComConstants.CheckerSetEnvType.PRE_PROD.getKey())
-                                && CollectionUtils.isNotEmpty(config.getPreProdEpcCheckerSets())) {
-                            epcCheckerSet = config.getPreProdEpcCheckerSets();
-                        }
-                    }
-
-                    if (CollectionUtils.isNotEmpty(epcCheckerSet)) {
-                        epcCheckerSet.forEach(checkerSet -> {
-                            CheckerSetVO formatCheckerSet = new CheckerSetVO();
-                            formatCheckerSet.setCheckerSetId(checkerSet.getCheckerSetId());
-                            formatCheckerSet.setToolList(checkerSet.getToolList());
-                            //如果有配置版本，则固定用版本，如果没有配置版本，则用最新版本
-                            if (null != checkerSet.getVersion()) {
-                                formatCheckerSet.setVersion(checkerSet.getVersion());
-                            } else {
-                                formatCheckerSet.setVersion(Integer.MAX_VALUE);
-                            }
-                            checkerSetVOList.add(formatCheckerSet);
-                        });
-                    }
-                }
-            });
-        }
+            }
+        });
         return checkerSetVOList;
     }
 
@@ -829,8 +639,10 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
 
     private boolean configOldAtomCheckerSet(TaskDetailVO taskDetailVO) {
         if (taskDetailVO.getLanguages() != null) {
-            List<CheckerSetVO> checkerSetList = setOpenScanCheckerSetsAccordingToLanguage(
-                    taskDetailVO.getLanguages(), taskDetailVO.getCheckerSetEnvType());
+            OrgInfoVO orgInfo = new OrgInfoVO(taskDetailVO.getBgId(), taskDetailVO.getDeptId(),
+                    taskDetailVO.getCenterId(), taskDetailVO.getGroupId());
+            List<CheckerSetVO> checkerSetList = setCheckerSetsAccordingToLanguageAndType(taskDetailVO.getLanguages(),
+                    CheckerSetPackageType.OPEN_SCAN, taskDetailVO.getCheckerSetEnvType(), orgInfo);
             log.info("set old open scan checker set: {} {} {} {}",
                     taskDetailVO.getTaskId(),
                     taskDetailVO.getNameEn(),
@@ -851,24 +663,21 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
         log.info("before set new open scan checker set: {} {} {} {}",
                 taskDetailVO.getTaskId(),
                 taskDetailVO.getNameEn(),
-                taskDetailVO.getLanguages(),
+                languages,
                 taskDetailVO.getCheckerSetType());
-        if (taskDetailVO.getCheckerSetType() == CheckerSetType.OPEN_SCAN) {
-            checkerSetList = setOpenScanCheckerSetsAccordingToLanguage(
-                    languages, taskDetailVO.getCheckerSetEnvType());
-        } else if (taskDetailVO.getCheckerSetType() == CheckerSetType.COMMUNITY_OPEN_SCAN) {
-            checkerSetList = setCommunityOpenScanCheckerSetsAccordingToLanguage(
-                    languages, taskDetailVO.getCheckerSetEnvType());
-        } else if (taskDetailVO.getCheckerSetType() == CheckerSetType.EPC_SCAN) {
-            checkerSetList = setEpcScanCheckerSetsAccordingToLanguage(
-                    languages, taskDetailVO.getCheckerSetEnvType());
+        OrgInfoVO orgInfo = new OrgInfoVO(taskDetailVO.getBgId(), taskDetailVO.getDeptId(),
+                taskDetailVO.getCenterId(), taskDetailVO.getGroupId());
+        if (taskDetailVO.getCheckerSetType() != null
+                && taskDetailVO.getCheckerSetType() != CheckerSetPackageType.NORMAL) {
+            checkerSetList = setCheckerSetsAccordingToLanguageAndType(
+                    languages, taskDetailVO.getCheckerSetType(), taskDetailVO.getCheckerSetEnvType(), orgInfo);
         } else {
             return false;
         }
         log.info("set new open scan checker set: {} {} {} {}",
                 taskDetailVO.getTaskId(),
                 taskDetailVO.getNameEn(),
-                taskDetailVO.getLanguages(),
+                languages,
                 checkerSetList);
         taskDetailVO.setCheckerSetList(checkerSetList);
         addSccCheckerSet(taskDetailVO);
@@ -885,39 +694,6 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
             taskDetailVO.setCheckerSetList(new ArrayList<>());
         }
         taskDetailVO.getCheckerSetList().add(sccCheckerSet);
-    }
-
-    private static final Map<String, String> defaultCheckerSetMap = createDefaultCheckerSetMap();
-
-    private static Map<String, String> createDefaultCheckerSetMap() {
-        Map<String, String> folderMap = new HashMap<>();
-        folderMap.put(Tool.COVERITY.name(), "codecc_default_rules_" + Tool.COVERITY.name().toLowerCase());
-        folderMap.put(Tool.KLOCWORK.name(), "codecc_default_rules_" + Tool.KLOCWORK.name().toLowerCase());
-        folderMap.put(Tool.PINPOINT.name(), "codecc_default_rules_" + Tool.PINPOINT.name().toLowerCase());
-        folderMap.put(Tool.CPPLINT.name(), "codecc_default_rules_" + Tool.CPPLINT.name().toLowerCase());
-        folderMap.put(Tool.CHECKSTYLE.name(), "codecc_default_rules_" + Tool.CHECKSTYLE.name().toLowerCase());
-        folderMap.put(Tool.STYLECOP.name(), "codecc_default_rules_" + Tool.STYLECOP.name().toLowerCase());
-        folderMap.put(Tool.GOML.name(), "codecc_default_rules_" + Tool.GOML.name().toLowerCase());
-        folderMap.put(Tool.DETEKT.name(), "codecc_default_rules_" + Tool.DETEKT.name().toLowerCase());
-        folderMap.put(Tool.PYLINT.name(), "codecc_default_rules_" + Tool.PYLINT.name().toLowerCase());
-        folderMap.put(Tool.OCCHECK.name(), "codecc_default_rules_" + Tool.OCCHECK.name().toLowerCase());
-        folderMap.put(ComConstants.PHPCSStandardCode.PSR2.name(), "codecc_default_psr2_rules");
-        folderMap.put(ComConstants.PHPCSStandardCode.PSR12.name(), "codecc_default_psr12_rules");
-        folderMap.put(ComConstants.PHPCSStandardCode.PSR1.name(), "codecc_default_psr1_rules");
-        folderMap.put(ComConstants.PHPCSStandardCode.PEAR.name(), "codecc_default_pear_rules");
-        folderMap.put(ComConstants.PHPCSStandardCode.Zend.name(), "codecc_default_zend_rules");
-        folderMap.put(ComConstants.PHPCSStandardCode.Squiz.name(), "codecc_default_squiz_rules");
-        folderMap.put(ComConstants.PHPCSStandardCode.MySource.name(), "codecc_default_mysource_rules");
-        folderMap.put(ComConstants.PHPCSStandardCode.Generic.name(), "codecc_default_generic_rules");
-        folderMap.put(ComConstants.EslintFrameworkType.react.name(), "codecc_default_react_rules");
-        folderMap.put(ComConstants.EslintFrameworkType.vue.name(), "codecc_default_vue_rules");
-        folderMap.put(ComConstants.EslintFrameworkType.standard.name(), "codecc_default_standard_rules");
-        folderMap.put(Tool.SENSITIVE.name(), "codecc_default_rules_" + Tool.SENSITIVE.name().toLowerCase());
-        folderMap.put(Tool.HORUSPY.name(), "codecc_v2_default_" + Tool.HORUSPY.name().toLowerCase());
-        folderMap.put(Tool.WOODPECKER_SENSITIVE.name(),
-                "codecc_v2_default_" + Tool.WOODPECKER_SENSITIVE.name().toLowerCase());
-        folderMap.put(Tool.RIPS.name(), "codecc_v2_default_" + Tool.RIPS.name().toLowerCase());
-        return folderMap;
     }
 
 

@@ -4,7 +4,10 @@ import com.tencent.devops.common.api.BaseDataVO;
 import java.util.List;
 
 public interface BaseDataCacheService {
-    List<BaseDataVO> getLanguageBaseDataFromCache(List<String> languages);
+
+    BaseDataVO getByTypeAndCode(String type, String code);
+
+    List<BaseDataVO> getByType(String type);
 
     List<BaseDataVO> getLanguageBaseDataFromCache(Long codeLang);
 

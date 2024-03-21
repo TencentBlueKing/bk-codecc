@@ -61,6 +61,24 @@ public interface CheckerRepository extends MongoRepository<CheckerDetailEntity, 
     List<CheckerDetailEntity> findByToolNameIn(List<String> toolNameSet);
 
     /**
+     * 根据规则发布者筛选
+     *
+     * @param toolName
+     * @param publishers
+     * @return
+     */
+    List<CheckerDetailEntity> findByToolNameAndPublisherIn(String toolName, Set<String> publishers);
+
+    /**
+     * 只要有 tags 中的某一个即可
+     *
+     * @param toolName
+     * @param tags
+     * @return
+     */
+    List<CheckerDetailEntity> findByToolNameAndCheckerTagIn(String toolName, Set<String> tags);
+
+    /**
      * 通过工具名称与规则key查询规则明细
      * @param toolName
      * @param checkerKey

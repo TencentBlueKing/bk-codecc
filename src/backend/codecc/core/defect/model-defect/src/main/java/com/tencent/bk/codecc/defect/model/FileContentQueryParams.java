@@ -65,11 +65,16 @@ public class FileContentQueryParams {
      */
     private String buildId;
 
+    /**
+     * 是否要 "尽最大努力" 查看私有库代码
+     */
+    private boolean tryBestForPrivate = true;
+
     public static FileContentQueryParams queryParams(long taskId, String projectId, String userId, String url,
             String repoId, String relPath, String filePath, String revision, String branch, String subModule,
             String buildId) {
         return new FileContentQueryParams(taskId, projectId, userId, url, repoId, relPath, filePath, revision, branch,
-                subModule, buildId);
+                subModule, buildId, true);
     }
 
 }

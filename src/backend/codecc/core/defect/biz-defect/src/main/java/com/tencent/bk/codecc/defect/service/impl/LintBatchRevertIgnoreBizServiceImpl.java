@@ -1,6 +1,7 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.google.common.collect.Sets;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.IgnoredNegativeDefectDao;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
@@ -8,9 +9,13 @@ import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.BusinessType;
 import com.tencent.devops.common.constant.ComConstants.ToolType;
+
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
@@ -21,11 +26,15 @@ import org.springframework.stereotype.Service;
  * @version V1.0
  * @date 2020/3/3
  */
+@Slf4j
 @Service("LINTBatchRevertIgnoreBizService")
 public class LintBatchRevertIgnoreBizServiceImpl extends AbstractLintBatchDefectProcessBizService {
 
     @Autowired
     private LintDefectV2Dao defectDao;
+
+    @Autowired
+    private IgnoredNegativeDefectDao ignoredNegativeDefectDao;
 
     /**
      * 获取批处理类型对应的告警状态条件
@@ -56,16 +65,20 @@ public class LintBatchRevertIgnoreBizServiceImpl extends AbstractLintBatchDefect
 
     @Override
     protected void doBizByPage(List defectList, BatchDefectProcessReqVO batchDefectProcessReqVO) {
+        Set<String> entityIdSet = new HashSet<>();
+
         List<LintDefectV2Entity> defects = ((List<LintDefectV2Entity>) defectList).stream()
                 .filter(it -> (it.getStatus() & ComConstants.DefectStatus.IGNORE.value()) > 0
                         && (null == it.getIgnoreCommentDefect() || !it.getIgnoreCommentDefect()))
                 .map(it -> {
                     it.setStatus(it.getStatus() - ComConstants.DefectStatus.IGNORE.value());
+                    entityIdSet.add(it.getEntityId());
                     return it;
                 }).collect(Collectors.toList());
 
         defectDao.batchUpdateDefectStatusIgnoreBit(batchDefectProcessReqVO.getTaskId(), defects, 0, null, null);
 
+        ignoredNegativeDefectDao.batchDelete(entityIdSet);
     }
 
     @Override

@@ -20,7 +20,6 @@ import java.util.Set;
  * DeletedTaskInfoEntity 是在 TaskInfoEntity 的基础上加了 delete_by (记录删除人) 和 delete_date (记录删除时间) 这 2 个字段,
  * 其他的完全一致。
  *
- * @author victorljli
  * @date 2023/10/18
  */
 @Data

@@ -12,9 +12,10 @@ import defect from './modules/defect';
 import tool from './modules/tool';
 import checker from './modules/checker';
 import checkerset from './modules/checkerset';
-import devops from './modules/devops';
+import log from './modules/log';
 import op from './modules/op';
 import ignore from './modules/ignore';
+import paas from './modules/paas';
 import http from '@/api';
 import { unifyObjectStyle } from '@/common/util';
 import preci from './modules/preci';
@@ -54,9 +55,10 @@ const store = new Vuex.Store({
     task,
     checker,
     checkerset,
-    devops,
+    log,
     op,
     ignore,
+    paas,
     preci,
   },
   plugins: [loadedPlugin],
@@ -185,6 +187,11 @@ const store = new Vuex.Store({
           this.commit('updateRbacPermission', res.data);
           return res;
         });
+    },
+
+    getDeptTree({ commit }, payload) {
+      return http.get('task/api/user/organization/tree')
+        .then(response => response.data || {});
     },
   },
 });

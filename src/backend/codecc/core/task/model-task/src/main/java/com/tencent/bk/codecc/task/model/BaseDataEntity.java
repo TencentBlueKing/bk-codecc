@@ -85,12 +85,6 @@ public class BaseDataEntity extends CommonEntity {
     @Field("lang_type")
     private String langType;
 
-    @Field("open_source_checker_sets")
-    private List<OpenSourceCheckerSet> openSourceCheckerSets;
-
-    @Field("epc_checker_sets")
-    private List<OpenSourceCheckerSet> epcCheckerSets;
-
     @Field("cloc_lang")
     private String clocLang;
 }

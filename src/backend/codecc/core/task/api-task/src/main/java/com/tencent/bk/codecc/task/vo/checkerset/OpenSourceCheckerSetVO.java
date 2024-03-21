@@ -12,11 +12,12 @@
 
 package com.tencent.bk.codecc.task.vo.checkerset;
 
+import com.tencent.devops.common.api.OrgInfoVO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
-
+import java.util.List;
 import java.util.Set;
+import lombok.Data;
 
 /**
  * 规则子选项
@@ -28,6 +29,7 @@ import java.util.Set;
 @Data
 @ApiModel
 public class OpenSourceCheckerSetVO {
+
     @ApiModelProperty
     private String checkerSetId;
 
@@ -45,6 +47,9 @@ public class OpenSourceCheckerSetVO {
 
     @ApiModelProperty("规则集名称")
     private String checkerSetName;
+
+    @ApiModelProperty("可见范围")
+    private List<OrgInfoVO> scopes;
 
     @ApiModelProperty("代码语言/code")
     private String lang;

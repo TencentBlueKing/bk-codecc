@@ -391,7 +391,7 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
             throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{"bizType"});
         }
         List<BatchDefectProcessRspVO> rspVOS = new ArrayList<>();
-        // 如果是忽略并标记处理，需要将revertAndMark置为true。让标记处理可以先标记忽略的告警
+        // 如果是取消忽略并标记处理，需要将revertAndMark置为true。让标记处理可以先标记忽略的告警
         if (bizType.contains(BusinessType.REVERT_IGNORE.value())
                 && bizType.contains(BusinessType.MARK_DEFECT.value())) {
             log.info("batchDefectProcess with revert And mark");

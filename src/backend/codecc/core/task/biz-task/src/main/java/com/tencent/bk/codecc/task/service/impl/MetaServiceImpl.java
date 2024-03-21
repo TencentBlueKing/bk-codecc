@@ -30,13 +30,13 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TAS
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.tencent.bk.codecc.defect.vo.checkerset.CheckerSetPackageVO;
 import com.tencent.bk.codecc.task.constant.TaskConstants;
 import com.tencent.bk.codecc.task.dao.CommonDao;
 import com.tencent.bk.codecc.task.dao.mongorepository.BaseDataRepository;
 import com.tencent.bk.codecc.task.dao.mongorepository.TaskRepository;
 import com.tencent.bk.codecc.task.dao.mongorepository.ToolMetaRepository;
 import com.tencent.bk.codecc.task.model.BaseDataEntity;
-import com.tencent.bk.codecc.task.model.OpenSourceCheckerSet;
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
 import com.tencent.bk.codecc.task.model.ToolMetaEntity;
 import com.tencent.bk.codecc.task.service.MetaService;
@@ -84,6 +84,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @Service
 @Slf4j
 public class MetaServiceImpl implements MetaService {
+
     @Autowired
     private AuthExPermissionApi bkAuthExPermissionApi;
 
@@ -122,7 +123,6 @@ public class MetaServiceImpl implements MetaService {
         if (toolMap.size() == 0) {
             toolMap = getToolMetaListFromDB(isDetail, isAdmin);
         }
-
 
         // 2.对工具进行排序
         List<ToolMetaBaseVO> toolList = null;
@@ -372,24 +372,28 @@ public class MetaServiceImpl implements MetaService {
     }
 
     @Override
-    public OpenScanAndEpcToolNameMapVO getOpenScanAndEpcToolNameMap() {
+    public OpenScanAndEpcToolNameMapVO getOpenScanAndEpcToolNameMap(String projectId) {
         return new OpenScanAndEpcToolNameMapVO();
     }
 
     @Override
-    public OpenScanAndPreProdCheckerSetMapVO getOpenScanAndPreProdCheckerSetMap() {
+    public OpenScanAndPreProdCheckerSetMapVO getOpenScanAndPreProdCheckerSetMap(String projectId) {
         return new OpenScanAndPreProdCheckerSetMapVO();
     }
 
+    public List<OpenSourceCheckerSetVO> transferCheckerSetToCheckerSetVO(List<CheckerSetPackageVO> checkerSets) {
+        return transferCheckerSetToCheckerSetVO(checkerSets, true);
+    }
 
-    public List<OpenSourceCheckerSetVO> transferCheckerSetToCheckerSetVO(List<OpenSourceCheckerSet> checkerSets) {
-        List<OpenSourceCheckerSetVO> checkerSetVOList = checkerSets.stream().filter(it ->
-                it.getCheckerSetType() == null || it.getCheckerSetType().equals(ComConstants.OpenSourceCheckerSetType
-                        .FULL.getType())).map(it -> {
-            OpenSourceCheckerSetVO checkerSetVO = new OpenSourceCheckerSetVO();
-            BeanUtils.copyProperties(it, checkerSetVO);
-            return checkerSetVO;
-        }).collect(Collectors.toList());
-        return checkerSetVOList;
+    public List<OpenSourceCheckerSetVO> transferCheckerSetToCheckerSetVO(List<CheckerSetPackageVO> checkerSets,
+            boolean filter) {
+        return checkerSets.stream().filter(it ->
+                        !filter || it.getCheckerSetType() == null
+                                || it.getCheckerSetType().equals(ComConstants.OpenSourceCheckerSetType.FULL.getType()))
+                .map(it -> {
+                    OpenSourceCheckerSetVO checkerSetVO = new OpenSourceCheckerSetVO();
+                    BeanUtils.copyProperties(it, checkerSetVO);
+                    return checkerSetVO;
+                }).collect(Collectors.toList());
     }
 }

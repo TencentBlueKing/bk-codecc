@@ -771,7 +771,14 @@
               ></bk-input>
             </bk-form-item>
             <bk-form-item :label="$t('新处理人')">
+              <bk-tag-input
+                allow-create
+                v-if="IS_ENV_TAI"
+                v-model="operateParams.targetAuthor"
+                style="width: 290px"
+              ></bk-tag-input>
               <bk-tag-input allow-create
+                v-else
                 v-model="operateParams.targetAuthor"
                 style="width: 290px"
               ></bk-tag-input>
@@ -1280,6 +1287,7 @@ export default {
       taskIdList: isProjectDefect ? [] : [Number(taskId)],
       isProjectDefect,
       emptyDialogVisible: false,
+      IS_ENV_TAI: window.IS_ENV_TAI,
     };
   },
   computed: {
@@ -3046,10 +3054,16 @@ export default {
     margin: 0 16px 16px;
   }
 
+  .create-tab {
+    >>> .bk-tab-section {
+      padding-bottom: 0;
+    }
+  }
+
   .content-bd {
     width: 480px;
     height: 350px;
-    margin: 16px;
+    margin: 16px 16px 0;
     overflow: auto;
   }
 

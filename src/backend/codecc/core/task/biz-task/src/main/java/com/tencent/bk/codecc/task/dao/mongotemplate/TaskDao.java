@@ -186,7 +186,6 @@ public class TaskDao implements CommonTaskDao {
      * @param taskInfoEntity
      * @param userName
      * @return boolean
-     * @author victorljli
      * @date 2023/10/31
      */
     public boolean deleteEntity(TaskInfoEntity taskInfoEntity, String userName) {

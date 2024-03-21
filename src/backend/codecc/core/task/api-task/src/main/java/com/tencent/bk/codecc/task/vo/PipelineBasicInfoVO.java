@@ -5,7 +5,8 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 /**
- * @author victorljli
+ * 流水线基础信息视图
+ *
  * @date 2023/10/19
  */
 @Data

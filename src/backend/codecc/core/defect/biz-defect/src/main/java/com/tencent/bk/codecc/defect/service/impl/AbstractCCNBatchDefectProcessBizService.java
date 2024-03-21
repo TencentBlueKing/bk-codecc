@@ -51,7 +51,7 @@ public abstract class AbstractCCNBatchDefectProcessBizService extends AbstractBa
     protected abstract void doBiz(List defectList, BatchDefectProcessReqVO batchDefectProcessReqVO);
 
     @Override
-    protected List getDefectsByQueryCond(long taskId, DefectQueryReqVO request) {
+    protected List getDefectsByQueryCond(long taskId, DefectQueryReqVO request, Set<String> defectKeySet) {
         return getDefectsByQueryCondWithPage(taskId, request, null, null, null);
     }
 

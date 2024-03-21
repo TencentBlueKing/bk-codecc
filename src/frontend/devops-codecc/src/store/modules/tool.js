@@ -45,9 +45,9 @@ export default {
   },
   actions: {
     list({ commit, state, rootState }) {
-      if (!rootState.projectId) {
-        return;
-      }
+      // if (!rootState.projectId) {
+      //   return;
+      // }
       if (rootState.loaded['tool/updateList'] === true) {
         return state.list;
       }

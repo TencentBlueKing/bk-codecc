@@ -528,6 +528,28 @@ public class CheckerServiceImpl implements CheckerService {
 
     @Override
     @I18NResponse
+    public List<CheckerDetailVO> queryCheckerDetailListByToolNameWithI18N(String toolName) {
+        if (StringUtils.isEmpty(toolName)) {
+            return null;
+        }
+
+        List<CheckerDetailEntity> entities = checkerRepository.findByToolName(toolName);
+        if (entities == null) {
+            return null;
+        }
+
+        List<CheckerDetailVO> result = new ArrayList<>();
+        for (CheckerDetailEntity ent : entities) {
+            CheckerDetailVO checkerDetailVO = new CheckerDetailVO();
+            BeanUtils.copyProperties(ent, checkerDetailVO);
+            result.add(checkerDetailVO);
+        }
+
+        return result;
+    }
+
+    @Override
+    @I18NResponse
     public CheckerDetailVO queryCheckerDetailWithI18N(String toolName, String checkerKey) {
         if (StringUtils.isEmpty(toolName) || StringUtils.isEmpty(checkerKey)) {
             return null;

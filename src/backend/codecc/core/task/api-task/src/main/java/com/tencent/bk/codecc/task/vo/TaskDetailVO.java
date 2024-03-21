@@ -26,10 +26,9 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.tencent.bk.codecc.task.vo.checkerset.ToolCheckerSetVO;
 import com.tencent.devops.common.constant.ComConstants;
-import com.tencent.devops.common.constant.ComConstants.CheckerSetType;
+import com.tencent.devops.common.constant.ComConstants.CheckerSetPackageType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
@@ -210,7 +209,7 @@ public class TaskDetailVO extends TaskBaseVO {
     private List<String> languages;
 
     @ApiModelProperty("启用哪种规则集配置")
-    private CheckerSetType checkerSetType;
+    private CheckerSetPackageType checkerSetType;
 
     /**
      * 是否是老插件切换为新插件，不对外接口暴露，仅用于内部逻辑参数传递

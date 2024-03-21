@@ -361,7 +361,7 @@ export function getClosest(elem, selectors) {
 
   if (!Element.prototype.closest) {
     Element.prototype.closest = function (s) {
-      let el = this;
+      let el = this; // eslint-disable-line
       if (!document.documentElement.contains(el)) return null;
       do {
         if (el.matches(s)) return el;
@@ -463,7 +463,7 @@ export function formatDiff(time) {
   const diff = Math.floor(leave / (60 * 60 * 1000));
   if (diff < 1) {
     const used = Math.floor(leave / (60 * 1000));
-    duration = `${used === 0 ? 1 : used}min${i18n.t('前')}`;
+    duration = `${used <= 0 ? 1 : used}min${i18n.t('前')}`;
   } else if (diff < 24) {
     const used = Math.floor(leave / (60 * 60 * 1000));
     duration = `${used === 0 ? 1 : used}h${i18n.t('前')}`;
@@ -492,8 +492,8 @@ export function getQueryParams(urlStr) {
   if (url.indexOf('?') !== -1) {
     const str = url.substr(1);
     const strs = str.split('&');
-    for (let i = 0; i < strs.length; i++) {
-      queryObj[strs[i].split('=')[0]] = decodeURI(strs[i].split('=')[1]);
+    for (const item of strs) {
+      queryObj[item.split('=')[0]] = decodeURI(item.split('=')[1]);
     }
   }
   return queryObj;
@@ -534,3 +534,12 @@ export function array2Str(arr, separator = ';') {
   if (typeof arr === 'string') return arr;
   if (isArray(arr)) return arr.join(separator);
 }
+
+export function isJSON(str = '') {
+  try {
+    JSON.parse(str);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};

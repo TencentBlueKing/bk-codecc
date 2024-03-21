@@ -160,7 +160,7 @@
           class="cc-operate-more"
           @click.prevent.stop
         >
-          <bk-popover theme="light" placement="bottom" trigger="click">
+          <bk-popover z-index="99" theme="light" placement="bottom" trigger="click">
             <span class="bk-icon icon-more guide-icon"></span>
             <div slot="content" class="handle-menu-tips txal">
               <!-- 待修复问题的操作 -->
@@ -224,6 +224,7 @@
               </p>
               <bk-popover
                 v-else
+                z-index="99"
                 ref="guidePopover2"
                 placement="left"
                 theme="dot-menu light"
@@ -317,7 +318,7 @@ export default {
   },
   computed: {
     isEn() {
-      return language === 'en';
+      return language === 'en-US';
     },
     lineHeight() {
       return this.isEn ? 'line-height: 18px' : 'line-height: 22px';
@@ -348,8 +349,7 @@ export default {
     }
   }
 
-  >>> td,
-  >>> th {
+  >>> td{
     height: 60px;
   }
 }

@@ -3,21 +3,28 @@ package com.tencent.bk.codecc.defect.consumer;
 import static java.util.stream.Collectors.toSet;
 
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetTaskRelationshipRepository;
+import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetPackageEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetTaskRelationshipEntity;
+import com.tencent.bk.codecc.defect.model.common.OrgInfoEntity;
 import com.tencent.bk.codecc.defect.service.AbstractCodeScoringService;
+import com.tencent.bk.codecc.defect.service.CheckerSetPackageService;
 import com.tencent.bk.codecc.defect.vo.CommitDefectVO;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.BaseDataVO;
-import com.tencent.devops.common.api.OpenSourceCheckerSetVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.CheckerSetEnvType;
+import com.tencent.devops.common.constant.ComConstants.CheckerSetPackageType;
 import com.tencent.devops.common.constant.ComConstants.CodeLang;
 import com.tencent.devops.common.service.BaseDataCacheService;
 import com.tencent.devops.common.service.IConsumer;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -38,6 +45,9 @@ public class CodeScoringConsumer implements IConsumer<CommitDefectVO> {
 
     @Autowired
     private CheckerSetTaskRelationshipRepository checkerSetTaskRelationshipRepository;
+
+    @Autowired
+    private CheckerSetPackageService checkerSetPackageService;
 
     @Override
     public void consumer(CommitDefectVO commitDefectVO) {
@@ -85,20 +95,42 @@ public class CodeScoringConsumer implements IConsumer<CommitDefectVO> {
         List<CheckerSetTaskRelationshipEntity> checkerSetTaskRelationshipEntityList =
                 checkerSetTaskRelationshipRepository.findByTaskId(taskId);
         List<BaseDataVO> baseDataVOList = baseDataCacheService.getLanguageBaseDataFromCache(codeLang);
+        List<CheckerSetPackageEntity> packages = checkerSetPackageService.getByTypeAndEnvTypeAndOrgInfo(
+                CheckerSetPackageType.OPEN_SCAN.value(), CheckerSetEnvType.PROD.getKey(), getTaskOrgInfo(taskId));
+        Map<Long, List<CheckerSetPackageEntity>> langToPackagesMap =
+                packages.stream().collect(Collectors.groupingBy(CheckerSetPackageEntity::getLangValue));
         // 过滤 OTHERS 的开源规则集
-        Set<Object> openSourceCheckerSet = baseDataVOList.stream()
+        Set<String> openSourceCheckerSet = baseDataVOList.stream()
                 .filter(baseDataVO ->
                         !(CodeLang.OTHERS.langName().equals(baseDataVO.getLangFullKey())))
-                .flatMap(baseDataVO ->
-                    baseDataVO.getOpenSourceCheckerListVO().stream()
-                            .filter(openSourceCheckerSetVO ->
-                                openSourceCheckerSetVO.getCheckerSetType() == null
-                                        || "FULL".equals(openSourceCheckerSetVO.getCheckerSetType())
-                            ).map(OpenSourceCheckerSetVO::getCheckerSetId)
+                .map(baseDataVO -> langToPackagesMap.getOrDefault(Long.valueOf(baseDataVO.getParamCode()),
+                        Collections.emptyList()))
+                .flatMap(langPackages ->
+                        langPackages.stream().filter(checkerSetPackage ->
+                                checkerSetPackage.getCheckerSetType() == null
+                                        || "FULL".equals(checkerSetPackage.getCheckerSetType())
+                        ).map(CheckerSetPackageEntity::getCheckerSetId)
                 ).collect(toSet());
         Set<String> checkerSetIdSet = checkerSetTaskRelationshipEntityList.stream()
                 .map(CheckerSetTaskRelationshipEntity::getCheckerSetId)
                 .collect(toSet());
         return checkerSetIdSet.containsAll(openSourceCheckerSet);
+    }
+
+    private OrgInfoEntity getTaskOrgInfo(Long taskId) {
+        try {
+            Result<TaskDetailVO> response =
+                    client.get(ServiceTaskRestResource.class).getTaskInfoById(taskId);
+
+            if (response.isNotOk() || response.getData() == null) {
+                log.error("fail to get task info: {}", taskId);
+                return null;
+            }
+            TaskDetailVO task = response.getData();
+            return new OrgInfoEntity(task.getBgId(), task.getDeptId(), task.getCenterId(), task.getGroupId());
+        } catch (Throwable e) {
+            log.info("fail to get task info error, taskId : {}", taskId, e);
+        }
+        return null;
     }
 }

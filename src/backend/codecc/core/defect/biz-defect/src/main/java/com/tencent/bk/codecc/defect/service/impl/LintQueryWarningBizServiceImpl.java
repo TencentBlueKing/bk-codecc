@@ -449,16 +449,13 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         LintDefectDetailQueryRspVO responseVO = new LintDefectDetailQueryRspVO();
         LintDefectDetailQueryReqVO requestVO = (LintDefectDetailQueryReqVO) queryWarningDetailReq;
         LintDefectV2Entity defectEntity = lintDefectV2Repository.findByEntityId(requestVO.getEntityId());
-
         if (defectEntity == null) {
             log.info("defect not found by condition: {}", requestVO);
             return responseVO;
         }
 
         String buildId = queryWarningDetailReq.getBuildId();
-
         taskId = defectEntity.getTaskId();
-
         LintDefectDetailVO lintDefectDetailVO = getLintDefectDetailVO(defectEntity, buildId, taskId, responseVO);
 
         // 获取告警文件的信息
@@ -533,8 +530,9 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                 lintDefectV2Entity.getUrl(), lintDefectV2Entity.getRepoId(),
                 relativePathAndRelPath.getSecond(), lintDefectV2Entity.getFilePath(),
                 lintDefectV2Entity.getRevision(), lintDefectV2Entity.getBranch(), lintDefectV2Entity.getSubModule(),
-                 buildId
+                buildId
         );
+        queryParams.setTryBestForPrivate(request.isTryBestForPrivate());
         String content = getFileContent(queryParams);
 
         resp.setFileContent(content);
@@ -585,7 +583,6 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
     /**
      * 设置 EMPTY_FILE_CONTENT_TIPS（文件内容为空）
      *
-     * @author victorljli
      * @date 2023/6/22
      * @param lintDefectDetailVO
      * @return void
@@ -659,16 +656,6 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         }
     }
 
-    /**
-     * getLintDefectDetailVO
-     * @author victorljli
-     * @date 2023/6/22
-     * @param defectEntity
-     * @param buildId
-     * @param taskId
-     * @param responseVO
-     * @return com.tencent.bk.codecc.defect.vo.LintDefectDetailVO
-     */
     private LintDefectDetailVO getLintDefectDetailVO(LintDefectV2Entity defectEntity, String buildId,
             Long taskId, LintDefectDetailQueryRspVO responseVO) {
         defectEntity =

@@ -4,15 +4,14 @@ import static com.tencent.devops.common.constant.ComConstants.BATCH_DEFECT;
 import static com.tencent.devops.common.constant.ComConstants.FUNC_BATCH_DEFECT;
 
 import com.google.common.collect.Sets;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.IgnoredNegativeDefectDao;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
-import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
-import com.tencent.bk.codecc.defect.model.defect.DefectEntity;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
-import com.tencent.bk.codecc.defect.utils.CCNUtils;
 import com.tencent.bk.codecc.defect.utils.ParamUtils;
-import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
+import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
+import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse.TaskBase;
 import com.tencent.codecc.common.db.CommonEntity;
 import com.tencent.devops.common.api.exception.CodeCCException;
@@ -21,8 +20,6 @@ import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.BusinessType;
-import com.tencent.devops.common.constant.ComConstants.Tool;
-import com.tencent.devops.common.constant.ComConstants.ToolType;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.BizServiceFactory;
 import com.tencent.devops.common.service.IBizService;
@@ -39,7 +36,6 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 
@@ -54,12 +50,21 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
 
     @Autowired
     protected BizServiceFactory<IQueryWarningBizService> factory;
+
     @Autowired
     protected Client client;
+
     @Autowired
     private TaskPersonalStatisticService taskPersonalStatisticService;
 
+    @Autowired
+    private IgnoredNegativeDefectDao ignoredNegativeDefectDao;
+
     private Map<String, BatchDefectProcessHandler> handlers;
+
+    private final int NOP = 0;
+    private final int INS = 1;
+    private final int DEL = 2;
 
     @Override
     @OperationHistory(funcId = FUNC_BATCH_DEFECT, operType = BATCH_DEFECT)
@@ -179,6 +184,36 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
         }
     }
 
+
+    /**
+     * 根据 business type 判断是需要插入 negative defect 还是删除
+     *
+     * @date 2024/3/9
+     * @param bizType           业务类型
+     * @param ignoreReasonType  忽略原因类型
+     * @return int              0, 不用操作; 1, 插入; 2 删除
+     */
+    private int isInsertOrDelete(String bizType, int ignoreReasonType) {
+        if (StringUtils.isBlank(bizType)) {
+            return NOP;
+        }
+
+        if (bizType.contains(BusinessType.REVERT_IGNORE.value())) {
+            return DEL;
+        } else if (bizType.contains(BusinessType.IGNORE_DEFECT.value())
+                && ignoreReasonType == ComConstants.IgnoreReasonType.ERROR_DETECT.value()) {
+            return INS;
+        } else if (bizType.contains(BusinessType.CHANGE_IGNORE_TYPE.value())) {
+            if (ignoreReasonType == ComConstants.IgnoreReasonType.ERROR_DETECT.value()) {
+                return INS;
+            } else {
+                return DEL;
+            }
+        }
+
+        return NOP;
+    }
+
     /**
      * 一次性查询处理所有符合条件的告警
      *
@@ -190,24 +225,58 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
         List defectList;
         if (isSelectAll) {
             DefectQueryReqVO queryCondObj = getDefectQueryReqVO(batchDefectProcessReqVO);
-            defectList = getDefectsByQueryCond(batchDefectProcessReqVO.getTaskId(), queryCondObj);
+            defectList = getDefectsByQueryCond(batchDefectProcessReqVO.getTaskId(), queryCondObj,
+                    batchDefectProcessReqVO.getDefectKeySet());
         } else {
             defectList = getEffectiveDefectByDefectKeySet(batchDefectProcessReqVO);
         }
 
-        log.info("batch process, task id: {}, biz: {}, defect list size: {}", batchDefectProcessReqVO.getTaskId(),
-                batchDefectProcessReqVO.getBizType(), defectList == null ? 0 : defectList.size());
+        log.info("batch process, task id: {}, biz: {}, defect list size: {}, defectKeySet size: {}",
+                batchDefectProcessReqVO.getTaskId(), batchDefectProcessReqVO.getBizType(),
+                defectList == null ? 0 : defectList.size(), batchDefectProcessReqVO.getDefectKeySet().size());
+
+        int opType = isInsertOrDelete(batchDefectProcessReqVO.getBizType(),
+                batchDefectProcessReqVO.getIgnoreReasonType());
+        if (opType == INS) {
+            Result<TaskDetailVO> taskBaseResult = client.get(ServiceTaskRestResource.class)
+                    .getTaskInfoById(batchDefectProcessReqVO.getTaskId());
+            if (null == taskBaseResult || taskBaseResult.isNotOk() || null == taskBaseResult.getData()) {
+                log.error("get task info fail!, task id: {}", batchDefectProcessReqVO.getTaskId());
+                throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
+            }
+
+            ignoredNegativeDefectDao.batchInsert(
+                    defectList,
+                    batchDefectProcessReqVO,
+                    taskBaseResult.getData()
+            );
+        } else if (opType == DEL) {
+            ignoredNegativeDefectDao.batchDelete(batchDefectProcessReqVO.getDefectKeySet());
+        }
 
         if (CollectionUtils.isNotEmpty(defectList)) {
             doBiz(defectList, batchDefectProcessReqVO);
             processBatchDefectProcessHandler(defectList, batchDefectProcessReqVO);
         }
+
         return CollectionUtils.isNotEmpty(defectList) ? defectList.size() : 0L;
     }
 
     private long processDefectByPage(BatchDefectProcessReqVO batchDefectProcessReqVO) {
         log.info("processDefectByPage start {} {} {}", batchDefectProcessReqVO.getTaskId(),
                 batchDefectProcessReqVO.getToolName(), batchDefectProcessReqVO.getDimension());
+
+        boolean needBatchInsert = false;
+        if (batchDefectProcessReqVO.getBizType().contains(BusinessType.IGNORE_DEFECT.value())
+                && batchDefectProcessReqVO.getIgnoreReasonType() == ComConstants.IgnoreReasonType.ERROR_DETECT.value()
+        ) {
+            needBatchInsert = true;
+        } else if (batchDefectProcessReqVO.getBizType().contains(BusinessType.CHANGE_IGNORE_TYPE.value())) {
+            if (batchDefectProcessReqVO.getIgnoreReasonType() == ComConstants.IgnoreReasonType.ERROR_DETECT.value()) {
+                needBatchInsert = true;
+            }
+        }
+
         List pageDefectList;
         DefectQueryReqVO queryCondObj = getDefectQueryReqVO(batchDefectProcessReqVO);
         // 起始的FilePath 与 跳过的数量
@@ -219,11 +288,14 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
             // 分页获取，使用条件过滤加SKIP，避免出现深度分页现象
             DefectQueryReqVO reqVO = new DefectQueryReqVO();
             BeanUtils.copyProperties(queryCondObj, reqVO);
+            reqVO.setNeedBatchInsert(needBatchInsert);
             pageDefectList = getDefectsByQueryCondWithPage(batchDefectProcessReqVO.getTaskId(), reqVO,
                     startFilePath, skip, pageSize);
+
             if (CollectionUtils.isEmpty(pageDefectList)) {
                 break;
             }
+
             Pair<Optional<String>, Long> skipPair;
             if (batchDefectProcessReqVO.getBizType().equals(BusinessType.IGNORE_DEFECT.value())
                     || batchDefectProcessReqVO.getBizType().equals(BusinessType.REVERT_IGNORE.value())) {
@@ -419,7 +491,8 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
      */
     protected abstract void processAfterAllPageDone(BatchDefectProcessReqVO batchDefectProcessReqVO);
 
-    protected abstract List getDefectsByQueryCond(long taskId, DefectQueryReqVO defectQueryReqVO);
+    protected abstract List getDefectsByQueryCond(long taskId, DefectQueryReqVO defectQueryReqVO,
+            Set<String> defectKeySet);
 
     protected abstract List getDefectsByQueryCondWithPage(long taskId, DefectQueryReqVO defectQueryReqVO,
             String startFilePath, Long skip, Integer pageSize);
