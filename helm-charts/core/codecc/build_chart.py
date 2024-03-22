@@ -16,7 +16,7 @@ env_properties_file = '../../../scripts/deploy-codecc/codecc.properties'
 output_value_yaml = './values.yaml'
 default_value_json = './build/values.json'
 default_value_yaml = './build/values.yaml'
-default_chart_yaml = './Charts.yaml'
+default_chart_yaml = './Chart.yaml'
 
 # 额外配置
 env_ext_properties_file = '../../../scripts/deploy-codecc/ext/codecc.properties'
