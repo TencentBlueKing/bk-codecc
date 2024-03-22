@@ -213,6 +213,14 @@ db_quartz
 {{- end -}}
 {{- end -}}
 
+{{- define "codecc.redis.db" -}}
+{{- if eq .Values.redis.enabled true -}}
+1
+{{- else -}}
+{{- .Values.config.bkCodeccRedisDb -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "codecc.rabbitmq.host" -}}
 {{- if eq .Values.rabbitmq.enabled true -}}
 {{- include "codecc.rabbitmq.fullname" . -}}
