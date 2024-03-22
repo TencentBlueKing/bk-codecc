@@ -112,9 +112,11 @@ include_dict = {
 env_file = open(env_properties_file, 'r', encoding='UTF-8')
 for line in env_file:
     if line.startswith('BK_'):
-        datas = line.split("=")
-        key = datas[0]
-        replace_dict[key] = humps.camelize(key.lower())
+        key, value = line.split("=",1)
+        camelize_key = humps.camelize(key.lower())
+        replace_dict[key] = camelize_key
+        if value and camelize_key not in default_value_dict:
+            default_value_dict[camelize_key] = value
 env_file.close()
 
 # 读取额外变量映射
@@ -122,9 +124,11 @@ if os.path.isfile(env_ext_properties_file):
     env_file = open(env_ext_properties_file, 'r', encoding='UTF-8')
     for line in env_file:
         if line.startswith('BK_'):
-            datas = line.split("=")
-            key = datas[0]
-            replace_dict[key] = humps.camelize(key.lower())
+            key, value = line.split("=",1)
+            camelize_key = humps.camelize(key.lower())
+            replace_dict[key] = camelize_key
+            if value and camelize_key not in default_value_dict:
+                default_value_dict[camelize_key] = value
     env_file.close()
 
 
@@ -199,7 +203,7 @@ for config_name in os.listdir(merge_config):
                     line = line.replace(key, '{{ .Values.config.' + replace_dict.get(key.replace('__', ''), '') + ' }}')
             new_file.write(line)
         new_file.write('\n{{- end -}}')
-
+        # 处理没有配置的空值
         new_file.flush()
         new_file.close()
         config_file.close()
