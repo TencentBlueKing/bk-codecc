@@ -16,6 +16,7 @@ env_properties_file = '../../../scripts/deploy-codecc/codecc.properties'
 output_value_yaml = './values.yaml'
 default_value_json = './build/values.json'
 default_value_yaml = './build/values.yaml'
+default_chart_yaml = './Charts.yaml'
 
 # 额外配置
 env_ext_properties_file = '../../../scripts/deploy-codecc/ext/codecc.properties'
@@ -126,11 +127,24 @@ if os.path.isfile(env_ext_properties_file):
             replace_dict[key] = humps.camelize(key.lower())
     env_file.close()
 
-# 生成value.yaml
+
+# 读取传入变量
 image_host = sys.argv[1]
 image_path = sys.argv[2]
 image_gateway_tag = sys.argv[3]
 image_backend_tag = sys.argv[4]
+chart_backend_tag = sys.argv[5]
+
+# 替换Chart.yaml的版本变量
+chart_line = []
+for line in open(default_chart_yaml, 'r', encoding='UTF-8'):
+    line = line.replace("__chart_backend_tag__", chart_backend_tag)
+    line = line.replace("__image_backend_tag__", image_backend_tag)
+    chart_line.append(line)
+with open(default_chart_yaml, 'w', encoding='utf-8') as file:
+    file.writelines(chart_line)
+
+# 生成value.yaml
 if os.path.exists(output_value_yaml):
     os.remove(output_value_yaml)
 value_file = open(output_value_yaml, 'w')
