@@ -159,7 +159,7 @@ setup_codecc__ms_service_env (){
 setup_codecc__ms_start_env (){
   #check_empty_var BK_CODECC_HOME BK_CODECC_CONF_DIR || return 15
   local port_key=BK_CODECC_${MS_NAME_WORD^^}_API_PORT
-  local conf_path="file://$MS_DIR/application.yml,file://$BK_CODECC_CONF_DIR/common.yml,file://$BK_CODECC_CONF_DIR/application-$MS_NAME.yml"
+  local conf_path="file://$BK_CODECC_CONF_DIR/common.yml,file://$BK_CODECC_CONF_DIR/application-$MS_NAME.yml"
   env_line_set "$start_env" "DEVOPS_GATEWAY" "$BK_CODECC_HOST"
   env_line_set "$start_env" "SPRING_CONFIG_LOCATION" "$conf_path"
   env_line_set "$start_env" "MS_USER" "$MS_USER"
