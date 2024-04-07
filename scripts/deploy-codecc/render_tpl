@@ -34,6 +34,19 @@ target_file_path () {
     echo ${_target_file%.tpl}
 }
 
+urlencode() {
+    local encoded=""
+    local length="${#1}"
+    for (( i=0; i<length; i++ )); do
+        local c="${1:i:1}"
+        case $c in
+            [a-zA-Z0-9.~_-]) encoded+="$c" ;;
+            *) printf -v encoded "%s%%%02X" "$encoded" "'$c" ;;
+        esac
+    done
+    echo "$encoded"
+}
+
 [[ $# -eq 0 ]] && usage_and_exit 1 
 declare -i DRY_RUN=0 CHECK=0
 declare MODULE=""
@@ -62,6 +75,9 @@ for p in $place_holders
 do
 	k=$(echo $p | sed 's/^__//; s/__$//;')
 	v=${!k}
+	if [ "$k" = "__BK_CODECC_MONGODB_PASSWORD__" ]; then
+		v=$(urlencode "$v")
+	fi
 	[[ $CHECK -eq 1 ]] && [[ -z "$v" ]] && echo "EMPTY PLACE_HOLDER: $p"
         echo "s|$p|$v|g" >> $sed_script
 done
