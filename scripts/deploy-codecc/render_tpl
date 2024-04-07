@@ -75,7 +75,7 @@ for p in $place_holders
 do
 	k=$(echo $p | sed 's/^__//; s/__$//;')
 	v=${!k}
-	if [ "$k" = "__BK_CODECC_MONGODB_PASSWORD__" ]; then
+	if [ "$k" = "BK_CODECC_MONGODB_PASSWORD" ]; then
 		v=$(urlencode "$v")
 	fi
 	[[ $CHECK -eq 1 ]] && [[ -z "$v" ]] && echo "EMPTY PLACE_HOLDER: $p"

@@ -20,3 +20,7 @@ codecc:
   file:
     data:
       path: __BK_CODECC_FILE_DATA_PATH__
+
+result:
+  log:
+    path: __BK_CODECC_RESULT_LOG_PATH__

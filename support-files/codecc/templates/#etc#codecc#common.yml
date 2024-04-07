@@ -37,11 +37,6 @@ spring:
       username: __BK_CODECC_RABBITMQ_USER__
       password: __BK_CODECC_RABBITMQ_PASSWORD__
       addresses: __BK_CODECC_RABBITMQ_ADDR__
-    devops:
-      virtual-host: __BK_DEVOPS_RABBITMQ_VHOST__
-      username: __BK_DEVOPS_RABBITMQ_USER__
-      password: __BK_DEVOPS_RABBITMQ_PASSWORD__
-      addresses: __BK_DEVOPS_RABBITMQ_ADDR__
   cloud:
     consul:
       discovery:
