@@ -28,15 +28,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 16.x
-      - name: frontend
-        id: codecc-frontend
-        run: |
-          cd src/frontend/devops-codecc
-          rm -rf dist
-          npm i --force && npm run build
-          if [ -f dist/index.html ]; then
-            mv dist/index.html dist/frontend#index.html
-          fi
       - name: checkout gateway
         uses: actions/checkout@v4
         with:
@@ -49,6 +40,15 @@ jobs:
           ls bk-ci
           mv bk-ci/src/gateway/core src/gateway/core
           rm -rf bk-ci
+      - name: frontend
+        id: codecc-frontend
+        run: |
+          cd src/frontend/devops-codecc
+          rm -rf dist
+          npm i --force && npm run build
+          if [ -f dist/index.html ]; then
+            mv dist/index.html dist/frontend#index.html
+          fi
       - name: Create artifact - make package
         id: create-artifact
         run: |
