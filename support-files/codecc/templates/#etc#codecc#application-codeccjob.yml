@@ -7,6 +7,12 @@ spring:
   data:
     mongodb:
       uri: mongodb://__BK_CODECC_MONGODB_USER__:__BK_CODECC_MONGODB_PASSWORD__@__BK_CODECC_MONGODB_ADDR__/db_defect?readPreference=secondaryPreferred
+  rabbitmq:
+    devops:
+      virtual-host: __BK_CODECC_RABBITMQ_VHOST__
+      username: __BK_CODECC_RABBITMQ_USER__
+      password: __BK_CODECC_RABBITMQ_PASSWORD__
+      addresses: __BK_CODECC_RABBITMQ_ADDR__
 
 server:
   port: __BK_CODECC_CODECCJOB_API_PORT__
