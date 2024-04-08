@@ -37,12 +37,25 @@ jobs:
           if [ -f dist/index.html ]; then
             mv dist/index.html dist/frontend#index.html
           fi
+      - name: checkout gateway
+        uses: actions/checkout@v4
+        with:
+          repository: TencentBlueKing/bk-ci
+          ref: v1.8.3
+          path: bk-ci
+          sparse-checkout: src/gateway/core
+      - name: gateway package
+        id: codecc-gateway-package
+        run: |
+          ls bk-ci
+          mv bk-ci/src/gateway/core src/gateway/core
+          rm -f bk-ci
       - name: Create artifact - make package
         id: create-artifact
         run: |
           version="$(basename $GITHUB_REF)"
           echo "::set-output name=version::$version"
-          chmod +x scripts/deploy-codecc/packager-codecc.sh
+          chmod +x scripts/deploy-codecc/*
           codecc_pkg_dir=/dev/shm/codecc ./scripts/deploy-codecc/packager-codecc.sh "$version" bkcodecc-slim.tar.gz "$PWD"
       - uses: actions/upload-artifact@v1
         with:
