@@ -43,13 +43,12 @@ jobs:
           repository: TencentBlueKing/bk-ci
           ref: v1.8.3
           path: bk-ci
-          sparse-checkout: src/gateway/core
       - name: gateway package
         id: codecc-gateway-package
         run: |
           ls bk-ci
           mv bk-ci/src/gateway/core src/gateway/core
-          rm -f bk-ci
+          rm -rf bk-ci
       - name: Create artifact - make package
         id: create-artifact
         run: |
