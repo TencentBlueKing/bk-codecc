@@ -153,6 +153,7 @@ EOF
 
   rsync -ra "$BK_CODECC_SRC_DIR/gateway" "$BK_CODECC_HOME"  # gateway无需--del
   rsync -ra --delete "$BK_CODECC_SRC_DIR/frontend" "$BK_CODECC_HOME"  # frontend不必verbose.
+  rsync -ra --delete "$BK_CODECC_SRC_DIR/scripts" "$BK_CODECC_HOME"  # frontend不必verbose.
   if [ -d "$BK_CODECC_SRC_DIR/docs" ]; then
     rsync -ra --delete "$BK_CODECC_SRC_DIR/docs" "$BK_CODECC_HOME" || return $?  # 可选docs
   fi
