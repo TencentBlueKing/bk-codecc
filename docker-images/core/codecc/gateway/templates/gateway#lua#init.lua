@@ -39,9 +39,35 @@ config = {
     http_port = __BK_CODECC_CONSUL_HTTP_PORT__,
     domain = "__BK_CODECC_CONSUL_DOMAIN__",
     tag = "__BK_CODECC_CONSUL_DISCOVERY_TAG__",
-    suffix = "-__BK_CODECC_CONSUL_DISCOVERY_TAG__",
+    suffix = "",
     nodes_url = "/v1/catalog/nodes"
   },
+  ns_devnet = {
+    ip = {
+      "__BK_CODECC_CONSUL_IP__"
+    },
+    port = __BK_CODECC_CONSUL_DNS_PORT__,
+    http_port = __BK_CODECC_CONSUL_HTTP_PORT__,
+    domain = "__BK_CODECC_CONSUL_DOMAIN__",
+    tag = "__BK_CODECC_CONSUL_DISCOVERY_TAG__",
+    suffix = "",
+    nodes_url = "/v1/catalog/nodes"
+  },
+  esb = {
+    enabled = false
+  },
+  kubernetes = {
+    switchAll = false,
+    codeccTags = {}
+  },
+  redis = {
+    host = "__BK_CI_REDIS_HOST__",
+    port = __BK_CI_REDIS_PORT__,
+    pass = "__BK_CI_REDIS_PASSWORD__",  -- redis 密码，没有密码的话，把这行注释掉
+    database = __BK_CI_REDIS_DB__,         -- 默认选择db0
+    max_idle_time = 600000, -- 保留在连接池的时间
+    pool_size = 10         -- 连接池的大小
+   },
   oauth = {  -- 对接蓝鲸权陀要的配置
     ip = "__BK_SSM_HOST__",
     env = "__BK_CI_IAM_ENV__",

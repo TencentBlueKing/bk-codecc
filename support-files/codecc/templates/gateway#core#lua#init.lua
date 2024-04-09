@@ -23,11 +23,10 @@ config = {
   static_dir_gray = "__BK_CI_HOME__/frontend-gray",
   docs_dir = "__BK_CI_HOME__/docs",
   static_dir_codecc = "__BK_CODECC_HOME__/frontend",
-  http_schema = "__BK_HTTP_SCHEMA__", -- 蓝鲸PaaS平台访问协议 http or https, 如果有对接才配置修改，开源默认没对接
-  paas_host = "__BK_PAAS_FQDN__", -- 蓝鲸PaaS平台域名, 如果有对接才配置修改，开源默认没对接
-  paas_http_port = "__BK_PAAS_HTTPS_PORT__", -- 蓝鲸PaaS平台域名的端口, 如果有对接才配置修改，开源默认没对接
-  login_url = "__BK_CODECC_PAAS_LOGIN_URL__",   -- 蓝鲸PaaS平台登录URL, 如果有对接才配置修改，开源默认没对接
-  service_name = "",  -- 指定后台微服务名称，如果对接后端是boot-assembly的单体微服务，则该配置项为bk-ci, 否则请置空会自动路由相应微服务
+  http_schema = "__BK_HTTP_SCHEMA__", -- 蓝鲸PaaS平台访问协议 http or https, 如果有对接才配置修改，开�有对接才配置修改，开源默认没对接
+  paas_http_port = "__BK_PAAS_HTTPS_PORT__", -- 蓝鲸PaaS平台域�有对接才配置修改，开源默认没对接
+  login_url = "__BK_CODECC_PAAS_LOGIN_URL__",   -- 蓝鲸PaaS平台登录URL, 如果有对接才配置修改，开溍务�对接�务，则该配置项为bk-CODECC, �务
+  service_prefix = "__BK_CODECC_SERVICE_PREFIX__",
   allow_hosts = {
     "__BK_CODECC_GATEWAY_CORS_ALLOW_LIST__"
   },
@@ -40,9 +39,27 @@ config = {
     http_port = __BK_CODECC_CONSUL_HTTP_PORT__,
     domain = "__BK_CODECC_CONSUL_DOMAIN__",
     tag = "__BK_CODECC_CONSUL_DISCOVERY_TAG__",
-    suffix = "-__BK_CODECC_CONSUL_DISCOVERY_TAG__",
+    suffix = "",
     nodes_url = "/v1/catalog/nodes"
-  }
+  },
+  ns_devnet = {
+    ip = {
+      "__BK_CODECC_CONSUL_IP__"
+    },
+    port = __BK_CODECC_CONSUL_DNS_PORT__,
+    http_port = __BK_CODECC_CONSUL_HTTP_PORT__,
+    domain = "__BK_CODECC_CONSUL_DOMAIN__",
+    tag = "__BK_CODECC_CONSUL_DISCOVERY_TAG__",
+    suffix = "",
+    nodes_url = "/v1/catalog/nodes"
+  },
+  esb = {
+    enabled = false
+  },
+  kubernetes = {
+    switchAll = false,
+    codeccTags = {}
+  },
   redis = {
     host = "__BK_CI_REDIS_HOST__",
     port = __BK_CI_REDIS_PORT__,
@@ -51,14 +68,14 @@ config = {
     max_idle_time = 600000, -- 保留在连接池的时间
     pool_size = 10         -- 连接池的大小
    },
-  oauth = {  -- 对接蓝鲸权限中心才需要的配置
+  oauth = {  -- 对接蓝鲸权陀要的配置
     ip = "__BK_SSM_HOST__",
     env = "__BK_CI_IAM_ENV__",
     port = "__BK_SSM_PORT__",
     host = "__BK_SSM_HOST__",
     url = "__BK_CI_GATEWAY_SSM_TOKEN_URL__",     -- 接口路径
     app_code = "__BK_CI_APP_CODE__",
-    app_secret = "__BK_CI_APP_TOKEN__",
+    app_secret = "__BK_CI_APP_TOKEN__"
   },
   bkci = {host = "__BK_CI_FQDN__", port = 80},
 }
