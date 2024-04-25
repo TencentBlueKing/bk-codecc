@@ -65,6 +65,8 @@ jobs:
         with:
           name: codecc
           path: bkcodecc-slim.tar.gz
+          retention-days: 5
+          overwrite: true
 
   releaseAll:
     name: Release All
