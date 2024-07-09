@@ -138,6 +138,9 @@ image_path = sys.argv[2]
 image_gateway_tag = sys.argv[3]
 image_backend_tag = sys.argv[4]
 chart_backend_tag = sys.argv[5]
+deploy_enable = "false"
+if len(sys.argv) > 6:
+    deploy_enable = sys.argv[6]
 
 # 替换Chart.yaml的版本变量
 chart_line = []
@@ -157,6 +160,7 @@ for line in open(default_value_yaml, 'r', encoding='UTF-8'):
     line = line.replace("__image_backend_tag__", image_backend_tag)
     line = line.replace("__image_host__", image_host)
     line = line.replace("__image_path__", image_path)
+    line = line.replace("__deploy_enable__", deploy_enable)
     value_file.write(line)
 value_file.write('\n')
 if os.path.isfile(default_ext_value_yaml):
@@ -165,6 +169,7 @@ if os.path.isfile(default_ext_value_yaml):
         line = line.replace("__image_backend_tag__", image_backend_tag)
         line = line.replace("__image_host__", image_host)
         line = line.replace("__image_path__", image_path)
+        line = line.replace("__deploy_enable__", deploy_enable)
         value_file.write(line)
 
 value_file.write('\nconfig:\n')
