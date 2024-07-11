@@ -42,6 +42,8 @@ default_value_dict = {
     "bkCodeccFqdn": "http://codecc.example.com",
     "bkCodeccHome": "/data/workspace/codecc",
     "bkCodeccHost": "bk-codecc.service.consul",
+    "bkCodeccPublicSchema": "http",
+    "bkCiPublicSchema": "http",
     "bkCodeccHttpsPort": "443",
     "bkCodeccHttpPort": "80",
     "bkCodeccLogsDir": "/data/workspace/logs/codecc",
