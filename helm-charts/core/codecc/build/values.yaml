@@ -549,7 +549,7 @@ codeccjob:
       port: 8080
 
 quartz:
-  enabled: __deploy_enable__
+  enabled: false
   env:
     JVM_XMS: 512m
     # JVM的-xmx , 不能大于 limits.memory

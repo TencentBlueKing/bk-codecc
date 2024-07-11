@@ -72,11 +72,6 @@ default_value_dict = {
     "bkCodeccStorageType": "nfs",
     "bkCodeccNfsServerPath": "/data/workspace/nfs",
     "bkCodeccLocalPath": "",
-    "bkCodeccStorageBkrepoUsername": "",
-    "bkCodeccStorageBkrepoPassword": "",
-    "bkCodeccStorageBkrepoProject": "",
-    "bkCodeccStorageBkrepoRepo": "",
-    "bkCodeccStorageBkrepoHost": "",
     "bkCodeccServiceSuffix": ""
 }
 
