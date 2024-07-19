@@ -162,7 +162,7 @@ abstract class AbstractAuthExPermissionApi @Autowired constructor(
         userId: String,
         action: String
     ): Boolean {
-        return false
+        return true
     }
 
     companion object {
