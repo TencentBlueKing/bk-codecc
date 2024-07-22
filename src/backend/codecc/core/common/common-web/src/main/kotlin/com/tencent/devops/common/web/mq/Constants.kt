@@ -361,10 +361,6 @@ const val EXCHANGE_PIPELINE_BUILD_END_CALLBACK = "exchange.pipeline.build.end.ca
 const val ROUTE_PIPELINE_BUILD_END_CALLBACK = "route.pipeline.build.end.callback"
 const val QUEUE_PIPELINE_BUILD_END_CALLBACK = "queue.pipeline.build.end.callback"
 
-const val EXCHANGE_PLUGIN_ERROR_CALLBACK = "exchange.plugin.error.callback"
-const val ROUTE_PLUGIN_ERROR_CALLBACK = "route.plugin.error.callback"
-const val QUEUE_PLUGIN_ERROR_CALLBACK = "queue.plugin.error.callback"
-
 const val EXCHANGE_BK_METRICS_DAILY_FANOUT = "e.metrics.statistic.codecc.daily"
 const val EXCHANGE_BK_METRICS_DAULY_TRIGGER = "exchange.metrics.statistic.trigger"
 const val QUEUE_BK_METRICS_DAILY_TRIGGER = "queue.metrics.statistic.trigger"
@@ -403,9 +399,3 @@ const val ROUTE_DATA_SEPARATION_COOL_DOWN_TRIGGER = "route.data.separation.cool.
 const val QUEUE_DATA_SEPARATION_COOL_DOWN_TRIGGER = "queue.data.separation.cool.down.trigger"
 const val ROUTE_DATA_SEPARATION_FILE_CACHE_PURGING = "route.data.separation.file.cache.purging"
 const val QUEUE_DATA_SEPARATION_FILE_CACHE_PURGING = "queue.data.separation.file.cache.purging"
-
-const val EXCHANGE_TASK_INVALID_TOOL_DEFECT = "exchange.task.invalid.tool.defect"
-const val ROUTE_TASK_INVALID_TOOL_DEFECT = "route.task.invalid.tool.defect"
-const val QUEUE_TASK_INVALID_TOOL_DEFECT = "queue.task.invalid.tool.defect"
-const val ROUTE_TASK_INVALID_TOOL_DEFECT_OPENSOURCE = "route.task.invalid.tool.defect.opensource"
-const val QUEUE_TASK_INVALID_TOOL_DEFECT_OPENSOURCE = "queue.task.invalid.tool.defect.opensource"

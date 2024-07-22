@@ -464,13 +464,12 @@
         </div>
       </div>
     </div>
-    <bk-dialog
-      v-model="openIdeDetail.showDialog"
-      theme="primary"
-      :mask-close="false"
-      header-position="center"
-      :show-footer="false"
-      :title="$t('请确保JetBrains Toolbox已安装')"
+    <bk-dialog v-model="openIdeDetail.showDialog"
+               theme="primary"
+               :mask-close="false"
+               header-position="center"
+               :show-footer="false"
+               :title="$t('请确保JetBrains Toolbox已安装')"
     >
       <div>
         1、{{$t('由JetBrains官方提供的轻量App，可快速启动JetBrains系列IDE的指定工程。')}}
@@ -1528,7 +1527,7 @@ export default {
      */
     shareDefect() {
       const { projectId, taskId } = this.$route.params;
-      const { toolName, entityId, status } = this.currentFile;
+      const { toolName, entityId, defectId, status } = this.currentFile;
       let prefix = `${location.host}`;
       if (window.self !== window.top) {
         prefix = `${window.DEVOPS_SITE_URL}/console`;
@@ -1540,7 +1539,7 @@ export default {
 ?entityId=${entityId}&status=${status}`;
       }
       if (this.isPaas) {
-        url = `${prefix}/paas/ignored/${toolName}/list?entityId=${entityId}`;
+        url = `${prefix}/paas/ignored/${toolName}/list?entityId=${defectId}`;
       }
       const input = document.createElement('input');
       document.body.appendChild(input);

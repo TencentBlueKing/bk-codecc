@@ -41,7 +41,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -151,8 +150,6 @@ public interface ComConstants {
     long COMMON_NUM_10L = 10L;
 
     long COMMON_NUM_100L = 100L;
-
-    int COMMON_NUM_100 = 100;
     long COMMON_NUM_0L = 0L;
     float COMMON_NUM_0F = 0F;
     double COMMON_NUM_0D = 0.0D;
@@ -515,10 +512,6 @@ public interface ComConstants {
 
     String GONGFENG_PROJECT_ID_PREFIX = "CODE_";
     String CUSTOMPROJ_ID_PREFIX = "CUSTOMPROJ_";
-    /**
-     * 闭源扫描项目id前缀
-     */
-    String GONGFENG_PRIVATYE_PROJECT_PREFIX = "CLOSED_SOURCE_";
 
     /**
      * 腾讯内部开源预发布规则开始结束时间
@@ -674,8 +667,6 @@ public interface ComConstants {
 
 
     String EMPTY_STRING = "";
-
-    long DEFAULT_PLUGIN_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(900);
 
     /**
      * 业务类型
@@ -1245,22 +1236,9 @@ public interface ComConstants {
             return createFrom;
         }
 
-        public static BsTaskCreateFrom getByValue(String value) {
-            if (StringUtils.isEmpty(value)) {
-                return null;
-            }
-            for (BsTaskCreateFrom bsTaskCreateFrom : BsTaskCreateFrom.values()) {
-                if (bsTaskCreateFrom.value.equals(value)) {
-                    return bsTaskCreateFrom;
-                }
-            }
-            return null;
-        }
-
         public String value() {
             return this.value;
         }
-
     }
 
     enum EslintFrameworkType {
@@ -2298,8 +2276,7 @@ public interface ComConstants {
         UNPROCESSED(0), // 待处理
         FIXED(1),       // 已优化工具
         NONEED(2),      // 非工具原因
-        OTHER(3),       // 其他
-        FOLLOWING(4);   // 跟进中
+        OTHER(3);       // 其他
 
         private Integer type;
 

@@ -24,11 +24,11 @@ public abstract class AbstractDefectStatisticModelBuilder<T extends AbstractDefe
     public abstract T build();
 
     /**
-     * 在原有基础上，初始化统计数据记录实体类
+     * 初始化统计数据记录实体类
      *
      * @return 告警统计持久化类
      */
-    public abstract S convert(S statisticEntity);
+    public abstract S convert();
 
     /**
      * 初始化统计数据记录实体类

@@ -33,15 +33,13 @@ public class DupcDefectStatisticModelBuilder
     }
 
     /**
-     * 根据现有数据，初始化统计数据记录实体类
+     * 初始化统计数据记录实体类
      *
      * @return 告警统计持久化类
      */
     @Override
-    public DUPCStatisticEntity convert(DUPCStatisticEntity dupcStatisticEntity) {
-        if (dupcStatisticEntity == null) {
-            dupcStatisticEntity = new DUPCStatisticEntity();
-        }
+    public DUPCStatisticEntity convert() {
+        DUPCStatisticEntity dupcStatisticEntity = new DUPCStatisticEntity();
         dupcStatisticEntity.setTaskId(defectStatisticModel.getTaskId());
         dupcStatisticEntity.setToolName(ComConstants.Tool.DUPC.name());
         dupcStatisticEntity.setBuildId(defectStatisticModel.getBuildId());

@@ -358,7 +358,4 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String>
 
     @Query(fields = "{'task_id': 1, 'status': 1, 'create_from': 1}")
     TaskInfoEntity findStatusAndCreateFromByTaskId(Long taskId);
-
-    @Query(fields = "{'task_id': 1}")
-    List<TaskInfoEntity> findTaskIdByProjectIdAndStatus(String projectId,Integer status);
 }

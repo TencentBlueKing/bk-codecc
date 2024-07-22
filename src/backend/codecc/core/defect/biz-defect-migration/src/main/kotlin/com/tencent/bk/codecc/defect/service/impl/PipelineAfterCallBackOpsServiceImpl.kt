@@ -24,45 +24,23 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package com.tencent.bk.codecc.scanschedule.api;
+package com.tencent.bk.codecc.defect.service.impl
 
-import com.tencent.bk.codecc.scanschedule.vo.ContentVO;
-import com.tencent.bk.codecc.scanschedule.vo.ScanResultVO;
-import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import javax.validation.Valid;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import com.tencent.bk.codecc.defect.service.PipelineAfterCallBackOpsService
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Service
 
-/**
- * 工具扫描接口，支持代码片段扫描
- *
- * @author jimxzcai
- * @version V2.0
- * @date 2023/04/17
- */
-@Api(tags = {"TOOL_SCAN"})
-@Path("/service/scan")
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
-public interface ServiceScanResource {
+@Service
+class PipelineAfterCallBackOpsServiceImpl @Autowired constructor(
+    private val scanFinishEventService: ScanFinishEventService
+) : PipelineAfterCallBackOpsService {
+    companion object {
+        private val logger = LoggerFactory.getLogger(PipelineAfterCallBackOpsServiceImpl::class.java)
+    }
 
-    @ApiOperation("工具扫描接口")
-    @Path("/contentScan")
-    @POST
-    Result<ScanResultVO> scan(
-            @ApiParam(value = "应用Code", required = true)
-            @QueryParam("appCode")
-            String appCode,
-            @ApiParam(value = "片段扫描请求", required = true)
-            @Valid
-            ContentVO contentVO
-    );
-
+    override fun doAfterHandleDevopsCallBack(taskId: Long, buildId: String) {
+        //发送扫描结束事件
+        scanFinishEventService.sendScanFinishEvent(taskId, buildId)
+    }
 }

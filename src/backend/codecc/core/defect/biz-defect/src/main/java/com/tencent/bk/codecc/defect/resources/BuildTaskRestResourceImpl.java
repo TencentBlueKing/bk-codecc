@@ -13,44 +13,22 @@
 package com.tencent.bk.codecc.defect.resources;
 
 import com.tencent.bk.codecc.defect.api.BuildTaskRestResource;
-import com.tencent.bk.codecc.defect.dto.CodeLineModel;
 import com.tencent.bk.codecc.defect.service.BuildSnapshotService;
-import com.tencent.bk.codecc.defect.service.ICLOCQueryCodeLineService;
 import com.tencent.bk.codecc.defect.vo.common.BuildWithBranchVO;
-import com.tencent.bk.codecc.defect.vo.common.TaskCodeLineVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.web.RestResource;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.List;
 
 @RestResource
 public class BuildTaskRestResourceImpl implements BuildTaskRestResource {
 
     @Autowired
     private BuildSnapshotService buildSnapshotService;
-    @Autowired
-    private ICLOCQueryCodeLineService iclocQueryCodeLineService;
 
     @Override
     public Result<List<BuildWithBranchVO>> queryBuildInfosWithBranches(Long taskId) {
         return new Result<>(buildSnapshotService.getRecentBuildSnapshotSummary(taskId));
-    }
-
-    @Override
-    public Result<List<TaskCodeLineVO>> getTaskCodeLineInfo(Long taskId) {
-        List<CodeLineModel> codeLineModels = iclocQueryCodeLineService.queryCodeLineByTaskId(taskId);
-        if (CollectionUtils.isEmpty(codeLineModels)) {
-            return new Result<>(Collections.emptyList());
-        }
-        List<TaskCodeLineVO> taskCodeLineVOS = new LinkedList<>();
-        for (CodeLineModel codeLineModel : codeLineModels) {
-            taskCodeLineVOS.add(new TaskCodeLineVO(codeLineModel.getBlankLine(), codeLineModel.getCodeLine(),
-                    codeLineModel.getCommentLine(), codeLineModel.getLanguage(), codeLineModel.getLangValue(),
-                    codeLineModel.getFileNum()));
-        }
-        return new Result<>(taskCodeLineVOS);
     }
 }

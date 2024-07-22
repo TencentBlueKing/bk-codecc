@@ -3,7 +3,6 @@ package com.tencent.bk.codecc.defect.model.pipelinereport;
 import com.tencent.bk.codecc.defect.model.RedLineMetaEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -22,7 +21,6 @@ public class RedLineEntity extends RedLineMetaEntity {
      * 构建ID
      */
     @Field("build_id")
-    @Indexed(background = true)
     private String buildId;
 
     /**

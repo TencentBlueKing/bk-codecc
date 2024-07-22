@@ -12,10 +12,11 @@ public interface DefectIssueInfoRepository extends MongoRepository<DefectIssueIn
     /**
      * 根据任务id和告警的主键id查找告警的提单信息
      *
+     * @param taskId
      * @param defectEntityId
      * @return
      */
-    List<DefectIssueInfoEntity> findByDefectEntityIdIn(Collection<String> defectEntityId);
+    List<DefectIssueInfoEntity> findByTaskIdAndDefectEntityIdIn(long taskId, Collection<String> defectEntityId);
 
     /**
      * 根据任务id、工具名称、状态查找告警的提单信息
@@ -27,16 +28,6 @@ public interface DefectIssueInfoRepository extends MongoRepository<DefectIssueIn
      */
     List<DefectIssueInfoEntity> findByTaskIdAndToolNameInAndStatus(
             long taskId, Collection<String> toolNames, int status);
-
-    /**
-     * 根据任务id、状态查找告警的提单信息
-     *
-     * @param taskId
-     * @param status
-     * @return
-     */
-    List<DefectIssueInfoEntity> findByTaskIdInAndStatus(
-            long taskId,  int status);
 
     /**
      * 根据任务id、工具名称、状态获取告警的提单信息总数

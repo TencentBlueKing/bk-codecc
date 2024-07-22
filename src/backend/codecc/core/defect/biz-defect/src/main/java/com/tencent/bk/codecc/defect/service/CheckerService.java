@@ -38,7 +38,6 @@ import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import com.tencent.devops.common.api.checkerset.CheckerPropVO;
 import org.springframework.data.domain.Sort;
 
 /**
@@ -223,12 +222,4 @@ public interface CheckerService {
      * @return
      */
     List<String> queryTaskCheckerDimension(List<Long> taskIdList, String projectId, List<String> toolNameList);
-
-    /**
-     * 获取工具对应的规则
-     *
-     * @param propVOS
-     * @return
-     */
-    List<CheckerDetailEntity> queryCheckerCategoryByCheckerPropVO(List<CheckerPropVO> propVOS);
 }

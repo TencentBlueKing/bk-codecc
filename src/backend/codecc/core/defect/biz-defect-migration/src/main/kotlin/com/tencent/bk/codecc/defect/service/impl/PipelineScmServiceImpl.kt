@@ -4,9 +4,9 @@ import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CodeRepoInfoDao
 import com.tencent.bk.codecc.defect.service.PipelineScmService
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
 import com.tencent.devops.common.api.CodeRepoVO
-import com.tencent.devops.common.api.codecc.util.JsonUtil
 import com.tencent.devops.common.api.enums.RepositoryType
 import com.tencent.devops.common.api.exception.CodeCCException
+import com.tencent.devops.common.api.codecc.util.JsonUtil
 import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.client.proxy.DevopsProxy
 import com.tencent.devops.common.constant.ComConstants
@@ -35,8 +35,7 @@ class PipelineScmServiceImpl @Autowired constructor(
 
     companion object {
         private val logger = LoggerFactory.getLogger(PipelineScmServiceImpl::class.java)
-        private val FILE_TOO_LARGE_CONTENT =
-            "当前告警代码文件大小超过1M，不能在平台查看代码详情，可以根据告警行号在IDE查看";
+        private val FILE_TOO_LARGE_CONTENT = "当前告警代码文件大小超过1M，不能在平台查看代码详情，可以根据告警行号在IDE查看";
         private val P4_PROTOL = "p4javassl"
     }
 
@@ -50,16 +49,15 @@ class PipelineScmServiceImpl @Autowired constructor(
     lateinit var codeccHost: String
 
     override fun getFileContent(
-        taskId: Long, repoId: String?, filePath: String,
-        reversion: String?, branch: String?, subModule: String?, createFrom: String, url: String?
+            taskId: Long, repoId: String?, filePath: String,
+            reversion: String?, branch: String?, subModule: String?, createFrom: String, url: String?
     ): String? {
         logger.info("start to get file content: $taskId, $repoId, $filePath, $reversion, $branch, $subModule, $createFrom, $url")
 
         val fileContentResult = if (ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value().equals(createFrom, true)) {
             return ""
         } else {
-            if (reversion.isNullOrBlank() || repoId.isNullOrBlank()) {
-                logger.error("reversion or repoId is null, taskId: $taskId")
+            if (reversion.isNullOrBlank()) {
                 return null
             }
             var response: com.tencent.devops.common.api.pojo.Result<String>
@@ -138,10 +136,8 @@ class PipelineScmServiceImpl @Autowired constructor(
         }
     }
 
-    private fun doGetFileContent(
-        repoId: String, filePath: String,
-        reversion: String?, branch: String?, subModule: String?
-    ): com.tencent.devops.common.api.pojo.Result<String> {
+    private fun doGetFileContent(repoId: String, filePath: String,
+                                   reversion: String?, branch: String?, subModule: String?): com.tencent.devops.common.api.pojo.Result<String> {
         try {
             return client.getDevopsService(ExternalCodeccRepoResource::class.java).getFileContent(
                 repoId = repoId,
@@ -156,64 +152,43 @@ class PipelineScmServiceImpl @Autowired constructor(
                 logger.info("file content too large: $reversion, $filePath")
                 return com.tencent.devops.common.api.pojo.Result(FILE_TOO_LARGE_CONTENT)
             }
-            logger.error(
-                "get file content v2 fail! repoId: {}, filePath: {}, reversion: {}, branch: {}, subModule: {}",
-                repoId, filePath, reversion, branch, subModule ?: "", e
-            )
+            logger.error("get file content v2 fail! repoId: {}, filePath: {}, reversion: {}, branch: {}, subModule: {}",
+                repoId, filePath, reversion, branch, subModule ?: "", e)
         } catch (e: Exception) {
-            logger.error(
-                "get file content v2 fail!, repoId: {}, filePath: {}, reversion: {}, branch: {}, subModule: {}, ",
-                repoId,
-                filePath,
-                reversion,
-                branch,
-                subModule ?: "",
-                e
-            )
+            logger.error("get file content v2 fail!, repoId: {}, filePath: {}, reversion: {}, branch: {}, subModule: {}, ", repoId, filePath, reversion,
+                branch, subModule ?: "", e)
         }
         return com.tencent.devops.common.api.pojo.Result("")
     }
 
-    private fun doGetFileContentV2(
-        repoId: String, filePath: String,
-        reversion: String?, branch: String?, subModule: String?
-    ): com.tencent.devops.common.api.pojo.Result<String> {
+    private fun doGetFileContentV2(repoId: String, filePath: String,
+                                   reversion: String?, branch: String?, subModule: String?): com.tencent.devops.common.api.pojo.Result<String> {
         try {
             return client.getDevopsService(ExternalCodeccRepoResource::class.java).getFileContentV2(
-                repoId = repoId,
-                filePath = filePath.removePrefix("/"),
-                reversion = reversion,
-                branch = branch,
-                subModule = subModule ?: "",
-                repositoryType = RepositoryType.ID
+                    repoId = repoId,
+                    filePath = filePath.removePrefix("/"),
+                    reversion = reversion,
+                    branch = branch,
+                    subModule = subModule ?: "",
+                    repositoryType = RepositoryType.ID
             )
         } catch (e: CodeCCException) {
             if (e.errorCode == CommonMessageCode.FILE_CONTENT_TOO_LARGE) {
                 logger.info("file content too large: $reversion, $filePath")
                 return com.tencent.devops.common.api.pojo.Result(FILE_TOO_LARGE_CONTENT)
             }
-            logger.error(
-                "get file content v2 fail! repoId: {}, filePath: {}, reversion: {}, branch: {}, subModule: {}",
-                repoId, filePath, reversion, branch, subModule ?: "", e
-            )
+            logger.error("get file content v2 fail! repoId: {}, filePath: {}, reversion: {}, branch: {}, subModule: {}",
+                repoId, filePath, reversion, branch, subModule ?: "", e)
         } catch (e: Exception) {
-            logger.error(
-                "get file content v2 fail!, repoId: {}, filePath: {}, reversion: {}, branch: {}, subModule: {}, ",
-                repoId,
-                filePath,
-                reversion,
-                branch,
-                subModule ?: "",
-                e
-            )
+            logger.error("get file content v2 fail!, repoId: {}, filePath: {}, reversion: {}, branch: {}, subModule: {}, ", repoId, filePath, reversion,
+                branch, subModule ?: "", e)
         }
         return com.tencent.devops.common.api.pojo.Result("")
     }
 
     override fun getCodeRepoListByTaskIds(taskIds: Set<Long>, projectId: String): Map<Long, Set<CodeRepoVO>> {
         val codeRepoInfoEntities = codeRepoInfoDao.findFirstByTaskIdOrderByCreatedDate(taskIds)
-        val repoResult =
-            client.getDevopsService(ServiceRepositoryResource::class.java).listByProjects(setOf(projectId), 1, 20000)
+        val repoResult = client.getDevopsService(ServiceRepositoryResource::class.java).listByProjects(setOf(projectId), 1, 20000)
         val repoList = if (repoResult.isNotOk()) listOf() else repoResult.data?.records ?: listOf()
         val repoMap = repoList.associate { it.repositoryHashId to it.aliasName }
         return if (CollectionUtils.isEmpty(codeRepoInfoEntities)) {
@@ -292,13 +267,13 @@ class PipelineScmServiceImpl @Autowired constructor(
         val fileContent = try {
             logger.info("get file content: $repoUrl | $filePath | $reversion | $branch | $token")
             val result = client.getDevopsService(ExternalCodeccRepoResource::class.java, projectId)
-                    .getGitFileContentCommon(
-                        repoUrl = repoUrl,
-                        filePath = filePath.removePrefix("/"),
-                        ref = if (!reversion.isNullOrBlank()) reversion else branch,
-                        token = token,
-                        authType = RepoAuthType.OAUTH
-                    )
+                .getGitFileContentCommon(
+                    repoUrl = repoUrl,
+                    filePath = filePath.removePrefix("/"),
+                    ref = if(!reversion.isNullOrBlank()) reversion else branch,
+                    token = token,
+                    authType = RepoAuthType.OAUTH
+                )
             if (result.isNotOk()) {
                 logger.error("get file content fail!")
                 throw CodeCCException(CommonMessageCode.CODE_NORMAL_CONTENT_ERROR, "没权限或者代码文件不存在")

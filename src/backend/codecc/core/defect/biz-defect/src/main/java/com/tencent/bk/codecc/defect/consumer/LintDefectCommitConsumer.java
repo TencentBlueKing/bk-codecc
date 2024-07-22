@@ -540,10 +540,6 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
 
                 if (CollectionUtils.isNotEmpty(lintFileEntity.getDefects())) {
                     ScmBlameVO scmBlameVO = fileChangeRecordsMap.get(lintFileEntity.getFile());
-                    if (scmBlameVO == null) {
-                        log.warn("scmBlameVO is null, {}, {}, {},  {}", taskId, toolName, buildId,
-                                lintFileEntity.getFile());
-                    }
                     // 填充文件内的告警的信息，其中如果告警的规则不属于已录入平台的规则，则移除告警
                     List<LintDefectV2Entity> tmpDefectList = lintFileEntity.getDefects().stream()
                             .filter(defect -> fillDefectInfo(taskVO, toolName, defect, lintFileEntity.getFile(),
@@ -892,6 +888,8 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
         if (fileLineAuthorInfo != null) {
             setFileInfo(defectEntity, fileLineAuthorInfo, codeRepoIdMap);
             setAuthor(defectEntity, fileLineAuthorInfo);
+        } else {
+            log.warn("fileLineAuthorInfo is null, {}, {}", filePath, defectEntity.getLineNum());
         }
 
         if (toolName.equals(ComConstants.Tool.BLACKDUCK.name())) {

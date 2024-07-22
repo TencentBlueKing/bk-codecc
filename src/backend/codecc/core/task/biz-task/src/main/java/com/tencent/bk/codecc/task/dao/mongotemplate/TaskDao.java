@@ -418,10 +418,6 @@ public class TaskDao implements CommonTaskDao {
         update.set("center_id", taskInfoEntity.getCenterId());
         update.set("group_id", taskInfoEntity.getGroupId());
 
-        if (CollectionUtils.isNotEmpty(taskInfoEntity.getTaskOwner())) {
-            update.set("task_owner", taskInfoEntity.getTaskOwner());
-        }
-
         return mongoTemplate.updateFirst(query, update, TaskInfoEntity.class).getModifiedCount() > 0;
     }
 

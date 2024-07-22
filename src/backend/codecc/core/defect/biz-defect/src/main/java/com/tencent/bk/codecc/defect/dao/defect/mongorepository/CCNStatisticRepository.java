@@ -83,6 +83,7 @@ public interface CCNStatisticRepository extends MongoRepository<CCNStatisticEnti
      */
     CCNStatisticEntity findFirstByTaskIdAndToolNameAndBuildId(long taskId, String toolName, String buildId);
 
+
     /**
      * 通过任务id，工具名和时间查询统计信息
      *

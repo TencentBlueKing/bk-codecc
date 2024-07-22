@@ -79,9 +79,7 @@ import com.tencent.bk.codecc.defect.vo.MetricsVO;
 import com.tencent.bk.codecc.defect.vo.QueryTaskCheckerDimensionRequest;
 import com.tencent.bk.codecc.defect.vo.TaskLogOverviewVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
-import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
 import com.tencent.bk.codecc.defect.vo.common.AuthorTransferVO;
-import com.tencent.bk.codecc.defect.vo.enums.CheckerCategory;
 import com.tencent.bk.codecc.quartz.pojo.JobExternalDto;
 import com.tencent.bk.codecc.quartz.pojo.OperationType;
 import com.tencent.bk.codecc.task.constant.TaskConstants;
@@ -164,7 +162,6 @@ import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.StatisticTaskCodeLineToolVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.analysisresult.ToolLastAnalysisResultVO;
-import com.tencent.devops.common.api.checkerset.CheckerPropVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.clusterresult.BaseClusterResultVO;
 import com.tencent.devops.common.api.clusterresult.CcnClusterResultVO;
@@ -202,8 +199,6 @@ import com.tencent.devops.common.util.DateTimeUtils;
 import com.tencent.devops.common.util.List2StrUtil;
 import com.tencent.devops.common.util.ListSortUtil;
 import com.tencent.devops.common.web.aop.annotation.OperationHistory;
-import com.tencent.devops.project.api.service.ServiceProjectResource;
-import com.tencent.devops.project.pojo.ProjectVO;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.Collator;
@@ -256,49 +251,69 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @Slf4j
 public class TaskServiceImpl implements TaskService {
 
-    private static final String TASK_STOP_REASON_PROJECT_DISABLE = "project disable";
     @Autowired
     PipelineIdAsyntaskIdRelationshipDao pipelineIdAsyntaskIdRelationshipDao;
+
     @Autowired
     private AuthExPermissionApi authExPermissionApi;
+
     @Autowired
     private AuthExRegisterApi authExRegisterApi;
+
     @Autowired
     private PipelineService pipelineService;
+
     @Autowired
     private TaskRepository taskRepository;
+
     @Autowired
     private ToolRepository toolRepository;
+
     @Autowired
     private ToolMetaCacheService toolMetaCache;
+
     @Autowired
     private IAuthorTransferBizService authorTransferBizService;
+
     @Autowired
     private CommonDao commonDao;
+
     @Autowired
     private TaskDao taskDao;
+
     @Autowired
     private Client client;
+
     @Autowired
     private ObjectMapper objectMapper;
+
     @Autowired
     private GlobalMessageUtil globalMessageUtil;
+
     @Autowired
     private RabbitTemplate rabbitTemplate;
+
     @Autowired
     private ToolDao toolDao;
+
     @Autowired
     private BaseDataRepository baseDataRepository;
+
     @Autowired
     private AuthTaskService authTaskService;
+
     @Autowired
     private TaskStatisticRepository taskStatisticRepository;
+
     @Autowired
     private BaseDataService baseDataService;
+
     @Autowired
     private ToolConfigRepository toolConfigRepository;
+
     @Autowired
     private DeletedTaskDao deletedTaskDao;
+
     private LoadingCache<String, BaseDataEntity> toolTypeBaseDataCache = CacheBuilder.newBuilder()
             .refreshAfterWrite(2, TimeUnit.HOURS)
             .build(new CacheLoader<String, BaseDataEntity>() {
@@ -1073,11 +1088,11 @@ public class TaskServiceImpl implements TaskService {
     /**
      * 调用 TaskLog 服务获取 ToolLastAnalysisResult list
      *
+     * @date 2023/12/14
      * @param taskId
      * @param buildNum
      * @param toolConfigInfoList
      * @return List<ToolLastAnalysisResultVO>
-     * @date 2023/12/14
      */
     private List<ToolLastAnalysisResultVO> getToolAnalysisResults(
             long taskId,
@@ -1133,11 +1148,6 @@ public class TaskServiceImpl implements TaskService {
         TaskOverviewVO taskOverviewVO = new TaskOverviewVO();
         taskOverviewVO.setTaskId(taskId);
 
-        Map<String, Set<String>> toolTypesMap = getToolWithTypes(taskId, toolAnalysisResults);
-        if (MapUtils.isEmpty(toolTypesMap)) {
-            log.info("can not find tool types by taskId: {}, 用户可能还未进行代码检查", taskId);
-        }
-
         String buildId = null;
         if (NumberUtils.isCreatable(buildNum)) {   // 指定构建号
             if (CollectionUtils.isNotEmpty(toolAnalysisResults)) {
@@ -1162,7 +1172,6 @@ public class TaskServiceImpl implements TaskService {
                     lastAnalysis.setToolName(toolName);
                     lastAnalysis.setCurStep(curStep);
                     lastAnalysis.setStepStatus(stepStatus);
-                    lastAnalysis.setToolTypes(getToolTypes(toolName, toolTypesMap));
                     toolLastAnalysisMap.put(toolName, lastAnalysis);
                     toolLastAnalysisList.add(lastAnalysis);
                     buildId = toolAnalysisRes.getBuildId();
@@ -1183,7 +1192,6 @@ public class TaskServiceImpl implements TaskService {
                 lastAnalysis.setToolName(toolName);
                 lastAnalysis.setCurStep(toolInfo.getCurStep());
                 lastAnalysis.setStepStatus(toolInfo.getStepStatus());
-                lastAnalysis.setToolTypes(getToolTypes(toolName, toolTypesMap));
                 toolLastAnalysisMap.put(toolName, lastAnalysis);
                 toolLastAnalysisList.add(lastAnalysis);
             }
@@ -1255,7 +1263,6 @@ public class TaskServiceImpl implements TaskService {
             log.error("can not find task by taskId: {}", taskId);
             throw new CodeCCException(CommonMessageCode.RECORD_NOT_EXITS, new String[]{String.valueOf(taskId)}, null);
         }
-
         List<ToolConfigInfoEntity> toolConfigInfoList = taskEntity.getToolConfigInfoList();
         Map<String, List<String>> toolMap = toolConfigInfoList.stream()
                 .filter(it -> it.getFollowStatus() != TaskConstants.FOLLOW_STATUS.WITHDRAW.value()
@@ -1333,6 +1340,7 @@ public class TaskServiceImpl implements TaskService {
         return taskOverviewVO;
     }
 
+
     /**
      * 开启任务
      *
@@ -1345,92 +1353,6 @@ public class TaskServiceImpl implements TaskService {
         return doStartTask(taskId, userName, true);
     }
 
-    /**
-     * 获取工具类型
-     *
-     * @param toolName
-     * @param toolTypesMap
-     * @return
-     */
-    public List<String> getToolTypes(String toolName, Map<String, Set<String>> toolTypesMap) {
-        List<String> toolTypes = new ArrayList<>();
-        if (!toolTypesMap.containsKey(toolName)) {
-            toolTypes.add(toolMetaCache.getToolBaseMetaCache(toolName).getType());
-        } else {
-            toolTypes.addAll(toolTypesMap.get(toolName));
-        }
-        if (CollectionUtils.isEmpty(toolTypes)) {
-            log.error("can not find tool({}) types by toolTypesMap: {}", toolName, toolTypesMap);
-        }
-        log.info("toolTypes: {}", toolTypes);
-        return toolTypes;
-    }
-
-    /**
-     * 获取工具对应的类型
-     *
-     * @param taskId
-     * @param toolAnalysisResults
-     * @return
-     */
-    public Map<String, Set<String>> getToolWithTypes(Long taskId, List<ToolLastAnalysisResultVO> toolAnalysisResults) {
-        Map<String, Set<String>> toolWithTypes = toolAnalysisResults.stream()
-                .filter(Objects::nonNull).map(ToolLastAnalysisResultVO::getToolName)
-                .collect(Collectors.toList()).stream()
-                .collect(Collectors.groupingBy(
-                        it -> toolMetaCache.getToolBaseMetaCache(it).getType(),
-                        Collectors.toSet()
-                ));
-        if (MapUtils.isEmpty(toolWithTypes)) {
-            log.info("getToolWithTypes is null, taskId: {}，用户可能还未进行代码检查", taskId);
-            return new HashMap<>();
-        }
-
-        Result<List<CheckerSetVO>> checkerSetResult = client.get(ServiceCheckerSetRestResource.class)
-                .getCheckerSets(taskId);
-        if (checkerSetResult == null
-                || checkerSetResult.isNotOk()
-                || CollectionUtils.isEmpty(checkerSetResult.getData())) {
-            return toolWithTypes;
-        }
-
-        List<CheckerSetVO> checkerSets = checkerSetResult.getData();
-
-        List<CheckerPropVO> checkers = checkerSets.stream()
-                .filter(it -> CollectionUtils.isNotEmpty(it.getCheckerProps()))
-                .map(CheckerSetVO::getCheckerProps)
-                .flatMap(List::stream).collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(checkers)) {
-            return toolWithTypes;
-        }
-        // 顺便转换告警类型
-        List<CheckerDetailVO> checkerDetails = client.get(ServiceCheckerRestResource.class)
-                .queryCheckerDetailByCheckerPropVO(checkers).getData();
-        if (CollectionUtils.isEmpty(checkerDetails)) {
-            return toolWithTypes;
-        }
-        return checkerDetails.stream()
-                .map(it -> {
-                    String checkerCategory = "";
-                    if (CheckerCategory.CODE_DEFECT.name().equals(it.getCheckerCategory())) {
-                        checkerCategory = ComConstants.ToolType.DEFECT.name();
-                    } else if (CheckerCategory.SECURITY_RISK.name().equals(it.getCheckerCategory())) {
-                        checkerCategory = ComConstants.ToolType.SECURITY.name();
-                    } else if (CheckerCategory.CODE_FORMAT.name().equals(it.getCheckerCategory())) {
-                        checkerCategory = ComConstants.ToolType.STANDARD.name();
-                    } else {
-                        checkerCategory = toolMetaCache.getToolBaseMetaCache(it.getToolName()).getType();
-                    }
-                    it.setCheckerCategory(checkerCategory);
-                    return it;
-                }).collect(Collectors.groupingBy(
-                        CheckerDetailVO::getToolName,
-                        Collectors.mapping(
-                                CheckerDetailVO::getCheckerCategory,
-                                Collectors.toSet()
-                        )
-                ));
-    }
 
     /**
      * 开启任务
@@ -4073,31 +3995,5 @@ public class TaskServiceImpl implements TaskService {
         }
 
         return Lists.newArrayList(resultMap.values());
-    }
-
-    @Override
-    public void stopDisableProjectTask(String projectId) {
-        try {
-            log.info("start stop disable priject:{} task.", projectId);
-            // 查询项目是否停用
-            ProjectVO projectVO = client.getDevopsService(ServiceProjectResource.class).get(projectId).getData();
-            if (projectVO == null || projectVO.getEnabled() == null || projectVO.getEnabled()) {
-                // 状态为空或者未禁用,不处理
-                log.info("project:{} no disable, skip stop task.", projectId);
-                return;
-            }
-            // 禁用，则查询所有启用的任务
-            List<TaskInfoEntity> tasks = taskRepository.findTaskIdByProjectIdAndStatus(projectId,
-                    Status.ENABLE.value());
-            if (CollectionUtils.isEmpty(tasks)) {
-                log.info("project:{} have not enable task.", projectId);
-                return;
-            }
-            List<Long> taskIds = tasks.stream().map(TaskInfoEntity::getTaskId).collect(Collectors.toList());
-            taskDao.batchStopTask(taskIds, TASK_STOP_REASON_PROJECT_DISABLE);
-            log.info("project:{} stop task success. task size :{}", projectId, taskIds.size());
-        } catch (Exception e) {
-            log.error("project:" + projectId + " stop task cause error", e);
-        }
     }
 }

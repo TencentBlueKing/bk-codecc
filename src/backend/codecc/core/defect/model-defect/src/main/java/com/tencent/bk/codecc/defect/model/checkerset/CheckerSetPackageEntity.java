@@ -77,12 +77,6 @@ public class CheckerSetPackageEntity extends CommonEntity {
     private List<OrgInfoEntity> scopes;
 
     /**
-     * 可见范围-任务创建来源
-     */
-    @Field("task_create_from_scopes")
-    private List<String> taskCreateFromScopes;
-
-    /**
      * 版本
      */
     @Field("version")

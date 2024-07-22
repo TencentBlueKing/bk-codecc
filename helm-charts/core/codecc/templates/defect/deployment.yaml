@@ -75,7 +75,7 @@ spec:
             - name: JVM_XMX
               value: {{ .Values.defect.env.JVM_XMX }}
             - name: JVM_OPTIONS
-              value: {{ .Values.defect.env.JVM_OPTIONS }}
+              value: {{ .Values.codeccjob.env.JVM_OPTIONS }}
             - name: SERVICE_PREFIX
               value: {{ include "common.names.fullname" . }}-
             - name: SERVICE_SUFFIX

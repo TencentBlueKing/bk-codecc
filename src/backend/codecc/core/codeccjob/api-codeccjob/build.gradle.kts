@@ -3,5 +3,6 @@ dependencies {
     api(group = "com.tencent.bk.devops.ci.log", name = "api-log") {
         isChanging = true
     }
+    api("com.jakewharton:disklrucache")
 }
 

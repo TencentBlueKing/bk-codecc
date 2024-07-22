@@ -76,7 +76,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -672,7 +671,6 @@ public class CheckerSetBizServiceImpl implements ICheckerSetBizService {
         }
     }
 
-    @NotNull
     private CheckerSetEntity getLatestVersionCheckerSet(String toolName, String checkerSetId) {
         List<CheckerSetEntity> checkerSetEntities = checkerSetRepository.findByToolNameAndCheckerSetId(toolName,
                 checkerSetId);
@@ -686,11 +684,7 @@ public class CheckerSetBizServiceImpl implements ICheckerSetBizService {
                 }
             }
         }
-        if (latestVersionCheckerSetEntity == null) {
-            throw new CodeCCException(CommonMessageCode.RECORD_NOT_EXITS, new String[]{"checkerSetName"}, null);
-        }
         return latestVersionCheckerSetEntity;
-
     }
 
     private void updatePipelineCheckerSet(long taskId, String user, List<ToolCheckerSetVO> toolCheckerSets) {

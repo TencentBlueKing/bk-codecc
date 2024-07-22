@@ -39,10 +39,10 @@ import com.tencent.bk.codecc.defect.vo.ToolDefectPageVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.ToolType;
 import com.tencent.devops.common.service.BizServiceFactory;
 import com.tencent.devops.common.service.IBizService;
 import com.tencent.devops.common.web.RestResource;
-
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;

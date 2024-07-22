@@ -19,7 +19,6 @@ import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.constant.ComConstants.CheckerSetEnvType
 import com.tencent.devops.common.constant.ComConstants.CheckerSetPackageType
 import com.tencent.devops.common.service.BaseDataCacheService
-import com.tencent.devops.common.util.TaskCreateFromUtils
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
@@ -90,14 +89,13 @@ class CodeScoringHandler @Autowired constructor(
             checkerSetTaskRelationshipRepository.findByTaskId(taskId)
         val baseDataVOList: List<BaseDataVO> = baseDataCacheService.getLanguageBaseDataFromCache(codeLang)
         val taskDetailVO = getTaskDetail(taskId)
-        val packages = checkerSetPackageService.getByLangValueAndTypeAndEnvTypeAndOrgInfoAndCreateFrom(
+        val packages = checkerSetPackageService.getByLangValueAndTypeAndEnvTypeAndOrgInfo(
             codeLang,
             CheckerSetPackageType.OPEN_SCAN.value(),
             CheckerSetEnvType.PROD.key,
             with(taskDetailVO) {
                 OrgInfoEntity(bgId, deptId, centerId, groupId)
-            },
-            TaskCreateFromUtils.getTaskRealCreateFrom(taskDetailVO.projectId, taskDetailVO.createFrom)
+            }
         )
         // 过滤 OTHERS 的开源规则集
         val openSourceCheckerSet = baseDataVOList.stream()

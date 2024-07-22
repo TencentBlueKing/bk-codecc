@@ -57,7 +57,6 @@ import com.tencent.devops.common.api.exception.StreamException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
-import com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
 import com.tencent.devops.common.constant.ComConstants.CheckerSetPackageType;
 import com.tencent.devops.common.constant.ComConstants.CodeLang;
 import com.tencent.devops.common.constant.ComConstants.OpenSourceCheckerSetType;
@@ -65,7 +64,6 @@ import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.prometheus.BkTimed;
 import com.tencent.devops.common.util.BeanUtils;
-import com.tencent.devops.common.util.TaskCreateFromUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -585,8 +583,7 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
             List<String> languages,
             CheckerSetPackageType type,
             String checkerSetEnvType,
-            OrgInfoVO orgInfo,
-            BsTaskCreateFrom taskCreateFrom
+            OrgInfoVO orgInfo
     ) {
         List<CheckerSetVO> checkerSetVOList = new ArrayList<>();
         if (CollectionUtils.isEmpty(languages)) {
@@ -597,13 +594,13 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
                 Collections.singleton(OpenSourceCheckerSetType.FULL);
         // EPC_SCAN 不过滤CheckerSetType 且 不自动配置其他规则
         final boolean[] otherLanguageCheckerSet = new boolean[]{CheckerSetPackageType.EPC_SCAN == type};
-        final boolean skipFilterCheckerSetType = CheckerSetPackageType.EPC_SCAN == type;
+        final boolean skipFilterCheckerSetType =  CheckerSetPackageType.EPC_SCAN == type;
         languages.forEach(it -> {
             BaseDataEntity selectedBaseData = pickSelectLanguageBaseData(metaLangList, it);
             // 如果有选中的语言，并且规则集配置不为空的话，则配置相应的规则集
             // 判断是否要用预发布的版本
             List<OpenSourceCheckerSet> selectedCheckerSet =
-                    getOpenSourceCheckerSet(selectedBaseData, type, checkerSetEnvType, orgInfo, taskCreateFrom);
+                    getOpenSourceCheckerSet(selectedBaseData, type, checkerSetEnvType, orgInfo);
             if (!selectedCheckerSet.isEmpty()) {
                 selectedCheckerSet.stream().filter(checkerSet ->
                         skipFilterCheckerSetType || StringUtils.isBlank(checkerSet.getCheckerSetType())
@@ -619,7 +616,7 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
                 BaseDataEntity otherBaseData = pickSelectLanguageBaseData(metaLangList, CodeLang.OTHERS.name());
                 // 判断是否要用预发布的版本
                 List<OpenSourceCheckerSet> otherSelectedCheckerSet =
-                        getOpenSourceCheckerSet(otherBaseData, type, checkerSetEnvType, orgInfo, taskCreateFrom);
+                        getOpenSourceCheckerSet(otherBaseData, type, checkerSetEnvType, orgInfo);
 
                 if (!otherSelectedCheckerSet.isEmpty()) {
                     otherSelectedCheckerSet.forEach(checkerSet -> {
@@ -645,8 +642,7 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
             OrgInfoVO orgInfo = new OrgInfoVO(taskDetailVO.getBgId(), taskDetailVO.getDeptId(),
                     taskDetailVO.getCenterId(), taskDetailVO.getGroupId());
             List<CheckerSetVO> checkerSetList = setCheckerSetsAccordingToLanguageAndType(taskDetailVO.getLanguages(),
-                    CheckerSetPackageType.OPEN_SCAN, taskDetailVO.getCheckerSetEnvType(), orgInfo,
-                    BsTaskCreateFrom.BS_PIPELINE);
+                    CheckerSetPackageType.OPEN_SCAN, taskDetailVO.getCheckerSetEnvType(), orgInfo);
             log.info("set old open scan checker set: {} {} {} {}",
                     taskDetailVO.getTaskId(),
                     taskDetailVO.getNameEn(),
@@ -673,8 +669,8 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
                 taskDetailVO.getCenterId(), taskDetailVO.getGroupId());
         if (taskDetailVO.getCheckerSetType() != null
                 && taskDetailVO.getCheckerSetType() != CheckerSetPackageType.NORMAL) {
-            checkerSetList = setCheckerSetsAccordingToLanguageAndType(languages, taskDetailVO.getCheckerSetType(),
-                    taskDetailVO.getCheckerSetEnvType(), orgInfo, BsTaskCreateFrom.BS_PIPELINE);
+            checkerSetList = setCheckerSetsAccordingToLanguageAndType(
+                    languages, taskDetailVO.getCheckerSetType(), taskDetailVO.getCheckerSetEnvType(), orgInfo);
         } else {
             return false;
         }

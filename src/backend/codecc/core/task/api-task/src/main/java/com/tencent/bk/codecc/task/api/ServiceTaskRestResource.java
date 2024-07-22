@@ -628,12 +628,4 @@ public interface ServiceTaskRestResource {
             @ApiParam(value = "每页数量")
             @QueryParam("pageSize")
             Integer pageSize);
-
-    @ApiOperation("项目禁用后停用任务")
-    @Path("/project/disable/stop")
-    @DELETE
-    Result<Boolean> stopDisableProjectTask(
-            @ApiParam(value = "项目ID", required = true)
-            @QueryParam(value = "projectId")
-            String projectId);
 }

@@ -313,15 +313,9 @@ public class LintDefectStatisticServiceImpl
      */
     @Override
     public void buildAndSaveStatisticResult(LintDefectStatisticModel statisticModel) {
-        // 查询是否存在与当前相同标识的数据
-        LintStatisticEntity lintStatisticEntity = lintStatisticRepository.findFirstByTaskIdAndToolNameAndBuildId(
-                statisticModel.getTaskId(), statisticModel.getToolName(), statisticModel.getBuildId()
-        );
-        // 将当前数据进行转换，如果数据库存在，则进行修改，不存在进行新增
-        LintStatisticEntity savelintStatisticEntity = statisticModel.getBuilder().convert(lintStatisticEntity);
-
-        statisticModel.setLintStatisticEntity(savelintStatisticEntity);
-        lintStatisticRepository.save(savelintStatisticEntity);
+        LintStatisticEntity lintStatisticEntity = statisticModel.getBuilder().convert();
+        statisticModel.setLintStatisticEntity(lintStatisticEntity);
+        lintStatisticRepository.save(lintStatisticEntity);
     }
 
     /**

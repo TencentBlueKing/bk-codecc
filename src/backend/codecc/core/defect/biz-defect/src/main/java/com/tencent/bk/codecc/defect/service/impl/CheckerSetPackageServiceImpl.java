@@ -9,7 +9,6 @@ import com.tencent.bk.codecc.task.vo.checkerset.OpenSourceCheckerSetVO;
 import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.constant.ComConstants;
-import com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
 import com.tencent.devops.common.constant.ComConstants.CheckerSetEnvType;
 import com.tencent.devops.common.constant.ComConstants.CheckerSetPackageType;
 import com.tencent.devops.common.service.BaseDataCacheService;
@@ -76,16 +75,10 @@ public class CheckerSetPackageServiceImpl implements CheckerSetPackageService {
                 if (CollectionUtils.isNotEmpty(toolList)) {
                     checkerSetPackage.setToolList(toolList);
                 }
-                //更新组织架构可见范围
                 List<OrgInfoEntity> orgBaseEntities = CollectionUtils.isNotEmpty(reqVO.getScopes())
                         ? reqVO.getScopes().stream().map(it -> new OrgInfoEntity(it.getBgId(), it.getDeptId(),
                         it.getCenterId(), it.getGroupId())).collect(Collectors.toList()) : null;
                 checkerSetPackage.setScopes(orgBaseEntities);
-                //更新创建来源可见范围
-                List<String> taskCreateFromScopes = CollectionUtils.isNotEmpty(reqVO.getTaskCreateFromScopes())
-                        ? reqVO.getTaskCreateFromScopes().stream().filter(it -> BsTaskCreateFrom.getByValue(it) != null)
-                        .collect(Collectors.toList()) : null;
-                checkerSetPackage.setTaskCreateFromScopes(taskCreateFromScopes);
             }
             log.info("updateByLang {} checkersetId:{} checkerSetPackages size: {}", lang, checkerSetId,
                     checkerSetPackages.size());
@@ -120,27 +113,23 @@ public class CheckerSetPackageServiceImpl implements CheckerSetPackageService {
     }
 
     @Override
-    public List<CheckerSetPackageEntity> getByLangValueAndTypeAndEnvTypeAndOrgInfoAndCreateFrom(Long langValue,
-            String type, String envType, OrgInfoEntity orgInfo, BsTaskCreateFrom createFrom) {
+    public List<CheckerSetPackageEntity> getByLangValueAndTypeAndEnvTypeAndOrgInfo(Long langValue, String type,
+            String envType, OrgInfoEntity orgInfo) {
         List<CheckerSetPackageEntity> packages = checkerSetPackageRepository.findByTypeAndLangValueAndEnvType(type,
                 langValue, envType);
         return CollectionUtils.isEmpty(packages) ? Collections.emptyList() : packages.stream()
                 .filter(checkerSetPackage -> CollectionUtils.isEmpty(checkerSetPackage.getScopes())
                         || checkerSetPackage.getScopes().stream().anyMatch(it -> it.contains(orgInfo))
-                        || CollectionUtils.isEmpty(checkerSetPackage.getTaskCreateFromScopes())
-                        || checkerSetPackage.getTaskCreateFromScopes().contains(createFrom.value())
                 ).collect(Collectors.toList());
     }
 
     @Override
-    public List<CheckerSetPackageEntity> getByTypeAndEnvTypeAndOrgInfoAndCreateFrom(String type, String envType,
-            OrgInfoEntity orgInfo, BsTaskCreateFrom createFrom) {
+    public List<CheckerSetPackageEntity> getByTypeAndEnvTypeAndOrgInfo(String type, String envType,
+            OrgInfoEntity orgInfo) {
         List<CheckerSetPackageEntity> packages = checkerSetPackageRepository.findByTypeAndEnvType(type, envType);
         return CollectionUtils.isEmpty(packages) ? Collections.emptyList() : packages.stream()
                 .filter(checkerSetPackage -> CollectionUtils.isEmpty(checkerSetPackage.getScopes())
                         || checkerSetPackage.getScopes().stream().anyMatch(it -> it.contains(orgInfo))
-                        || CollectionUtils.isEmpty(checkerSetPackage.getTaskCreateFromScopes())
-                        || checkerSetPackage.getTaskCreateFromScopes().contains(createFrom.value())
                 ).collect(Collectors.toList());
     }
 
@@ -184,14 +173,11 @@ public class CheckerSetPackageServiceImpl implements CheckerSetPackageService {
         List<OrgInfoEntity> orgBaseEntities = CollectionUtils.isNotEmpty(reqVO.getScopes())
                 ? reqVO.getScopes().stream().map(it -> new OrgInfoEntity(it.getBgId(), it.getDeptId(),
                 it.getCenterId(), it.getGroupId())).collect(Collectors.toList()) : null;
-        List<String> taskCreateFromScopes = CollectionUtils.isNotEmpty(reqVO.getTaskCreateFromScopes())
-                ? reqVO.getTaskCreateFromScopes().stream().filter(it -> BsTaskCreateFrom.getByValue(it) != null)
-                .collect(Collectors.toList()) : null;
         for (CheckerSetEnvType value : CheckerSetEnvType.values()) {
             allEnvCheckerSetPackages.add(new CheckerSetPackageEntity(langName, langValue,
                     StringUtils.isEmpty(manageType) ? CheckerSetPackageType.OPEN_SCAN.value() : manageType,
                     value.getKey(), reqVO.getCheckerSetId(), reqVO.getCheckerSetType(), orgBaseEntities,
-                    taskCreateFromScopes, reqVO.getVersion(), reqVO.getLastVersion(), reqVO.getToolList()
+                    reqVO.getVersion(), reqVO.getLastVersion(), reqVO.getToolList()
             ));
         }
         return allEnvCheckerSetPackages;

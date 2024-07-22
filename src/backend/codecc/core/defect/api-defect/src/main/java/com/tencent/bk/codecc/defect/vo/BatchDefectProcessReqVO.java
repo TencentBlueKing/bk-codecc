@@ -85,9 +85,6 @@ public class BatchDefectProcessReqVO {
     @ApiModelProperty("是否为回复忽略再标记")
     private Boolean revertAndMark;
 
-    @ApiModelProperty("是否强制提交告警到tapd")
-    private Boolean forceSubmit;
-
     public String getToolName() {
         if (getToolNameList() == null || getToolNameList().isEmpty()) {
             return null;

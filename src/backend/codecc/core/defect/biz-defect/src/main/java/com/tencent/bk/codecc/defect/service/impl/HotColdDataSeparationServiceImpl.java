@@ -29,11 +29,7 @@ public class HotColdDataSeparationServiceImpl implements HotColdDataSeparationSe
     private Client client;
 
     @Override
-    public boolean warmUpColdDataIfNecessary(Long taskId) {
-        // taskId 为空，跳过
-        if (taskId == null) {
-            return false;
-        }
+    public boolean warmUpColdDataIfNecessary(long taskId) {
         GetTaskStatusAndCreateFromResponse taskResp =
                 client.get(ServiceTaskRestResource.class).getTaskStatusAndCreateFrom(taskId).getData();
 

@@ -24,19 +24,10 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package com.tencent.bk.codecc.scanschedule.dao.mdb;
+package com.tencent.bk.codecc.defect.service
 
-import com.tencent.bk.codecc.scanschedule.model.ScanRecordEntity;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.stereotype.Repository;
 
-/**
- * 扫描记录持久层代码
- *
- * @author jimxzcai
- * @version V1.0
- * @date 2019/5/5
- */
-@Repository
-public interface ScanRecordRepository extends MongoRepository<ScanRecordEntity, String> {
+interface PipelineAfterCallBackOpsService {
+
+    fun doAfterHandleDevopsCallBack(taskId: Long, buildId: String)
 }

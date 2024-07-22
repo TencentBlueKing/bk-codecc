@@ -109,7 +109,6 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
             }
             // 组装返回信息
             StringBuilder errorMsg = new StringBuilder();
-            errorMsg.append("对于");
             int index = 0;
             for (TaskBase taskBase : taskBases) {
                 if (index > 0) {
@@ -122,7 +121,6 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
                     break;
                 }
             }
-            errorMsg.append("任务，用户").append(userName);
             throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{errorMsg.toString()});
         }
     }
@@ -237,12 +235,8 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
                 batchDefectProcessReqVO.getTaskId(), batchDefectProcessReqVO.getBizType(),
                 defectList == null ? 0 : defectList.size(), batchDefectProcessReqVO.getDefectKeySet().size());
 
-        int opType = NOP;
-        if (CollectionUtils.isNotEmpty(defectList) && defectList.get(0) instanceof LintDefectV2Entity) {
-            opType = isInsertOrDelete(batchDefectProcessReqVO.getBizType(),
-                    batchDefectProcessReqVO.getIgnoreReasonType());
-        }
-
+        int opType = isInsertOrDelete(batchDefectProcessReqVO.getBizType(),
+                batchDefectProcessReqVO.getIgnoreReasonType());
         if (opType == INS) {
             Result<TaskDetailVO> taskBaseResult = client.get(ServiceTaskRestResource.class)
                     .getTaskInfoById(batchDefectProcessReqVO.getTaskId());

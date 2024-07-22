@@ -191,19 +191,17 @@
             <!-- <bk-input class="compile-version" v-model="item.targetAuthor" :placeholder="'新处理人'"></bk-input> -->
             <bk-tag-input
               allow-create
-              v-if="IS_ENV_TAI || !isInnerSite"
+              v-if="IS_ENV_TAI"
               class="compile-version"
               v-model="item.targetAuthor"
               :placeholder="$t('新处理人')"
             ></bk-tag-input>
-            <bk-user-selector
+            <bk-tag-input allow-create
               v-else
               class="compile-version"
-              :api="userApiUrl"
-              name="targetAuthor"
-              :placeholder="$t('新处理人')"
               v-model="item.targetAuthor"
-            ></bk-user-selector>
+              :placeholder="$t('新处理人')"
+            ></bk-tag-input>
             <div class="tool-icon">
               <i
                 class="bk-icon icon-plus"
@@ -282,12 +280,9 @@
 <script>
 import { mapState } from 'vuex';
 import DEPLOY_ENV from '@/constants/env';
-import BkUserSelector from '@blueking/user-selector';
 
 export default {
-  components: {
-    BkUserSelector,
-  },
+  components: {},
   data() {
     return {
       weekList: [
@@ -341,7 +336,6 @@ export default {
       ],
       isInnerSite: DEPLOY_ENV === 'tencent',
       IS_ENV_TAI: window.IS_ENV_TAI,
-      userApiUrl: window.USER_API_URL,
     };
   },
   computed: {
@@ -595,7 +589,6 @@ ${this.taskDetail.pipelineId}/edit#${this.taskDetail.atomCode}`,
       position: relative;
       top: -32px;
       left: 115%;
-      width: 190px;
     }
 
     .compile-version::before {
@@ -610,7 +603,7 @@ ${this.taskDetail.pipelineId}/edit#${this.taskDetail.atomCode}`,
 
     .tool-icon {
       position: relative;
-      top: -72px;
+      top: -63px;
       left: 220%;
 
       .bk-icon {

@@ -55,7 +55,6 @@ import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
-import com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
 import com.tencent.devops.common.constant.ComConstants.CheckerSetEnvType;
 import com.tencent.devops.common.constant.ComConstants.CheckerSetPackageType;
 import com.tencent.devops.common.constant.ComConstants.Tool;
@@ -609,16 +608,16 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
     }
 
     protected List<OpenSourceCheckerSet> getOpenSourceCheckerSet(BaseDataEntity baseDataVO, CheckerSetPackageType type,
-            String checkerSetEnvType, OrgInfoVO orgInfo, BsTaskCreateFrom createFrom) {
+            String checkerSetEnvType, OrgInfoVO orgInfo) {
         List<OpenSourceCheckerSet> openSourceCheckerSets;
         if (baseDataVO == null || !StringUtils.isNumeric(baseDataVO.getParamCode())) {
             return Collections.emptyList();
         }
         Long langValue = Long.valueOf(baseDataVO.getParamCode());
         List<OpenSourceCheckerSet> prodCheckerSets = getOpenSourceCheckerSet(langValue, type,
-                CheckerSetEnvType.PROD, orgInfo, createFrom);
+                CheckerSetEnvType.PROD, orgInfo);
         List<OpenSourceCheckerSet> preProdCheckerSets = getOpenSourceCheckerSet(langValue, type,
-                CheckerSetEnvType.PRE_PROD, orgInfo, createFrom);
+                CheckerSetEnvType.PRE_PROD, orgInfo);
         if (!StringUtils.isBlank(checkerSetEnvType)
                 && checkerSetEnvType.equals(ComConstants.CheckerSetEnvType.PRE_PROD.getKey())
                 && CollectionUtils.isNotEmpty(preProdCheckerSets)) {
@@ -630,13 +629,13 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
     }
 
     protected List<OpenSourceCheckerSet> getOpenSourceCheckerSet(Long langValue, CheckerSetPackageType type,
-            CheckerSetEnvType envType, OrgInfoVO orgInfo, BsTaskCreateFrom createFrom) {
+            CheckerSetEnvType envType, OrgInfoVO orgInfo) {
         if (langValue == null || langValue == 0L) {
             return Collections.emptyList();
         }
         List<CheckerSetPackageVO> packageVOS =
-                checkerSetPackageCacheService.getPackageByLangValueAndTypeAndEnvTypeAndScopesFromCache(langValue,
-                        type.value(), envType.getKey(), orgInfo, createFrom);
+                checkerSetPackageCacheService.getPackageByLangValueAndTypeAndEnvTypeAndOrgInfoFromCache(langValue,
+                        type.value(), envType.getKey(), orgInfo);
         return convertPackageToOpenSourceCheckerSet(packageVOS);
     }
 

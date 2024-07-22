@@ -27,6 +27,7 @@ import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -456,31 +457,5 @@ public class CheckerDetailDao {
                 CheckerDetailEntity.class,
                 String.class
         );
-    }
-
-    /**
-     * 根据工具和 checker_key 获取工具类型
-     * @param propVOS
-     * @return
-     */
-    public List<CheckerDetailEntity> findByCheckerPropVO(List<CheckerPropVO> propVOS) {
-        if (CollectionUtils.isEmpty(propVOS)) {
-            return new ArrayList<>();
-        }
-        Map<String, List<CheckerPropVO>> toolToCheckerMap = propVOS.stream()
-                .collect(Collectors.groupingBy(CheckerPropVO::getToolName));
-        List<Criteria> criList = new ArrayList<>();
-
-        for (Map.Entry<String, List<CheckerPropVO>> entry : toolToCheckerMap.entrySet()) {
-            List<String> checkerKeys = entry.getValue().stream()
-                    .map(CheckerPropVO::getCheckerKey).collect(Collectors.toList());
-            criList.add(Criteria.where("tool_name").is(entry.getKey()).and("checker_key").in(checkerKeys));
-        }
-        Criteria cri = new Criteria();
-        cri.orOperator(criList.toArray(new Criteria[0]));
-
-        Query query = new Query();
-        query.addCriteria(cri);
-        return defectCoreMongoTemplate.find(query, CheckerDetailEntity.class);
     }
 }
