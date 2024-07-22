@@ -22,7 +22,7 @@ public interface ServiceToolConfigRestResource {
     @ApiOperation("获取任务总数")
     @Path("/")
     @GET
-    Result<List<ToolConfigInfoVO>> getTaskIdByPage(
+    Result<List<ToolConfigInfoVO>> getByTaskId(
                     @ApiParam(value = "任务ID")
                     @QueryParam("taskId")
                     Long taskId

@@ -650,4 +650,10 @@ public interface TaskService {
     List<TaskStatisticVO> getTaskStatisticByIds(List<Long> taskIds);
 
     List<Long> getTaskIdNeProjectIdWithPage(String filterProjectId, int pageNum, int pageSize);
+
+    /**
+     * 项目禁用后停用任务
+     * @param projectId
+     */
+    void stopDisableProjectTask(String projectId);
 }

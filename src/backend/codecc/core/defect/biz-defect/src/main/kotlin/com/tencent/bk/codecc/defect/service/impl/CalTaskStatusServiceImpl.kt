@@ -1,6 +1,7 @@
 package com.tencent.bk.codecc.defect.service.impl
 
 import com.tencent.bk.codecc.defect.pojo.HandlerDTO
+import com.tencent.bk.codecc.defect.service.TaskLogOverviewService
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
 import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.constant.ComConstants
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component
 class CalTaskStatusServiceImpl @Autowired constructor(
     private val client: Client,
     private val taskLogService: TaskLogServiceImpl,
-    private val taskLogOverviewService: TaskLogOverviewServiceImpl
+    private val taskLogOverviewService: TaskLogOverviewService
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(CalTaskStatusServiceImpl::class.java)

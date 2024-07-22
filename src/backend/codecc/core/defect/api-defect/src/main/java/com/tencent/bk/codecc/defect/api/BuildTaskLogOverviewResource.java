@@ -29,4 +29,12 @@ public interface BuildTaskLogOverviewResource {
             @ApiParam(value = "规则导入请求对象", required = true)
                     TaskLogOverviewVO taskLogOverviewVO
     );
+
+    @ApiOperation("上报插件错误类型")
+    @Path("/reportPluginResult")
+    @POST
+    Result<Boolean> reportPluginResult(
+            @ApiParam(value = "请求体", required = true)
+            TaskLogOverviewVO taskLogOverviewVO
+    );
 }

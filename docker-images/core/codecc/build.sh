@@ -142,7 +142,6 @@ if [[ $ALL -eq 1 || $GATEWAY -eq 1 ]] ; then
     log "构建gateway镜像..."
     cd $WORKING_DIR
     rm -rf tmp/*
-    mkdir -p tmp
     cp -rf $FRONTEND_DIR/dist tmp/frontend
     cp -rf $GATEWAY_DIR/conf tmp/gateway
     cp -rf $GATEWAY_DIR/startup.sh tmp/
@@ -166,20 +165,18 @@ if [[ $ALL -eq 1 || $BACKEND -eq 1 ]] ; then
             for SERVICE_NAME in ${DEFECT_BACKENDS[@]};
             do
                 rm -rf tmp/*
-                mkdir -p tmp
                 cp backend/startup.sh tmp/
                 cp $BACKEND_DIR/release/boot-$SERVICE.jar tmp/app.jar
-                docker build -f backend/backend.Dockerfile -t $REGISTRY/$NAMESPACE/${PERFIX}$SERVICE_NAME:$VERSION . --network=host
+                docker build -f backend/backend.Dockerfile -t $REGISTRY/$NAMESPACE/${PERFIX}$SERVICE_NAME:$VERSION tmp --network=host
                 if [[ $PUSH -eq 1 ]] ; then
                     docker push $REGISTRY/$NAMESPACE/${PERFIX}$SERVICE_NAME:$VERSION
                 fi
             done
         else
             rm -rf tmp/*
-            mkdir -p tmp
             cp backend/startup.sh tmp/
             cp $BACKEND_DIR/release/boot-$SERVICE.jar tmp/app.jar
-            docker build -f backend/backend.Dockerfile -t $REGISTRY/$NAMESPACE/${PERFIX}$SERVICE:$VERSION . --network=host
+            docker build -f backend/backend.Dockerfile -t $REGISTRY/$NAMESPACE/${PERFIX}$SERVICE:$VERSION tmp --network=host
             if [[ $PUSH -eq 1 ]] ; then
                 docker push $REGISTRY/$NAMESPACE/${PERFIX}$SERVICE:$VERSION
             fi            
@@ -191,7 +188,6 @@ fi
 if [[ $ALL -eq 1 || $INIT -eq 1 ]] ; then
     log "构建mongo镜像..."
     rm -rf tmp/*
-    mkdir -p tmp
     cp -rf mongodb/init-mongodb.sh tmp/
     cp -rf $NOSQL_DIR tmp/
     docker build -f mongodb/init.Dockerfile -t $REGISTRY/$NAMESPACE/${PERFIX}mongo-init:$VERSION tmp --no-cache --network=host
@@ -201,7 +197,6 @@ if [[ $ALL -eq 1 || $INIT -eq 1 ]] ; then
 
     log "构建storage镜像..."
     rm -rf tmp/*
-    mkdir -p tmp
     cp -rf storage/init-storage.sh tmp/
     docker build -f storage/init.Dockerfile -t $REGISTRY/$NAMESPACE/${PERFIX}storage-init:$VERSION tmp --no-cache --network=host
     if [[ $PUSH -eq 1 ]] ; then
@@ -210,7 +205,6 @@ if [[ $ALL -eq 1 || $INIT -eq 1 ]] ; then
 
     log "构建entrance镜像..."
     rm -rf tmp/*
-    mkdir -p tmp
     cp -rf entrance/init-entrance.sh tmp/
     docker build -f entrance/init.Dockerfile -t $REGISTRY/$NAMESPACE/${PERFIX}entrance-init:$VERSION tmp --no-cache --network=host
     if [[ $PUSH -eq 1 ]] ; then

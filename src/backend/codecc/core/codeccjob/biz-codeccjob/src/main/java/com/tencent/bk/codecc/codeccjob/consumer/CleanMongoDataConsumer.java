@@ -300,7 +300,7 @@ public class CleanMongoDataConsumer implements ApplicationContextAware {
      * @param taskId
      */
     public List<String> getTaskTools(long taskId) {
-        Result<List<ToolConfigInfoVO>> result = client.get(ServiceToolConfigRestResource.class).getTaskIdByPage(taskId);
+        Result<List<ToolConfigInfoVO>> result = client.get(ServiceToolConfigRestResource.class).getByTaskId(taskId);
         if (result.isNotOk() || result.getData() == null) {
             throw new CodeCCException(CommonMessageCode.SYSTEM_ERROR, "get tool config fail");
         }

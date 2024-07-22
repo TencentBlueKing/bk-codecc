@@ -28,7 +28,7 @@ spec:
           command: ['/bin/sh','-c','/data/workspace/init-entrance.sh']
           env:
             - name: BK_CODECC_URL
-              value: {{ .Values.config.bkCodeccPublicSchema }}://{{ .Values.config.bkCodeccPublicUrl }}/codecc
+              value: http://{{ .Values.config.bkCodeccPublicUrl }}/codecc
             - name: BK_CI_PROJECT_INNER_URL
               value: {{ .Values.config.bkCiProjectInnerUrl }}
       restartPolicy: OnFailure

@@ -475,7 +475,8 @@ public class CommonAnalyzeTaskBizServiceImpl extends AbstractAnalyzeTaskBizServi
 
         List<TaskLogVO> taskLogVOList = new ArrayList<>();
         BaseDataVO orderToolIds = baseDataCacheService.getToolOrder();
-        List<String> toolOrderList = Arrays.asList(orderToolIds.getParamValue().split(","));
+        List<String> toolOrderList = orderToolIds != null && StringUtils.isNotBlank(orderToolIds.getParamValue())
+                ? Arrays.asList(orderToolIds.getParamValue().split(",")) : new ArrayList<>();
         if (taskLogOverviewVO != null && taskLogOverviewVO.getTaskLogVOList() != null) {
             taskLogVOList = taskLogOverviewVO.getTaskLogVOList();
             // 工具展示顺序排序

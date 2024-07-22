@@ -116,7 +116,7 @@ abstract class AbstractCodeScoringService @Autowired constructor(
         ComConstants.CodeLang.values().filter {
             it != ComConstants.CodeLang.OTHERS
         }.forEach {
-            if (taskDetailVO.codeLang.and(it.langValue()) > 0) {
+            if (taskDetailVO.codeLang != null && taskDetailVO.codeLang.and(it.langValue()) > 0) {
                 languageList.add(it)
             }
         }

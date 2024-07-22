@@ -17,7 +17,9 @@ import com.tencent.devops.common.service.utils.SpringContextUtil
 import com.tencent.devops.common.web.mq.EXCHANGE_GONGFENG_DELETE_ALL_JOB
 import com.tencent.devops.common.web.mq.EXCHANGE_GONGFENG_INIT_ALL_JOB
 import groovy.lang.GroovyClassLoader
+import org.apache.commons.lang.time.DateFormatUtils
 import org.codehaus.groovy.control.CompilationFailedException
+import org.quartz.CronExpression
 import org.quartz.CronScheduleBuilder
 import org.quartz.CronTrigger
 import org.quartz.JobBuilder
@@ -44,6 +46,8 @@ import org.springframework.scheduling.annotation.Scheduled
 import java.net.MalformedURLException
 import java.net.URL
 import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.concurrent.TimeUnit
 
 open class CustomSchedulerManager @Autowired constructor(
     private val applicationContext: ApplicationContext,
@@ -58,25 +62,9 @@ open class CustomSchedulerManager @Autowired constructor(
 
     private val groovyClassLoader = GroovyClassLoader()
 
-    companion object {
-        private val logger = LoggerFactory.getLogger(CustomSchedulerManager::class.java)
-
-        //分片算法
-        val shardingStrategy = EnumShardingStrategy.ASCEND
-
-        //路由算法
-        val routerStrategy = EnumRouterStrategy.CONSISTENT_HASH
-
-        //job分组名称
-        val jobGroup = "bkJobGroup"
-
-        //触发器分组名称
-        val triggerGroup = "bkTriggerGroup"
-    }
-
     @Scheduled(cron = "15 0/30 * * * ?")
     open fun monitorConsulSharding() {
-        //初始化分片及job分配
+        // 初始化分片及job分配
         synchronized(this) {
             val shardingResult = shardingStrategy.getShardingStrategy().getShardingResult()
             if (null == shardingResult) {
@@ -89,8 +77,66 @@ open class CustomSchedulerManager @Autowired constructor(
 
     @Scheduled(cron = "0 0 0/1 * * ?")
     open fun monitorJobCompensate() {
-        //定时查询补偿
+        // 定时查询补偿(补偿触发了但是没完成的)
         queryAndSaveCompensateInfo()
+
+        // 定时查询补偿(补偿服务暂停未触发的)
+        queryAndCompensateUnTriggerJob()
+    }
+
+    private fun queryAndCompensateUnTriggerJob() {
+        try {
+            // 查询前1-6个小时应触发却没触发的Job
+            val classNames = redisTemplate.opsForSet().members(RedisKeyConstants.BK_JOB_NO_TRIGGER_COMPENSATE_CLASS)
+            if (classNames.isNullOrEmpty()) {
+                logger.info("queryAndCompensateUnTriggerJob have not config className")
+                return
+            }
+            val tag = shardingStrategy.getShardingStrategy().getShardingResult()!!.currentShard.tag
+            // 取1~6小时前尚未触发的JOB，进行补偿
+            val curTime = System.currentTimeMillis()
+            val startTime = curTime - TimeUnit.HOURS.toMillis(6)
+            val endTime = curTime - TimeUnit.HOURS.toMillis(1)
+            val jobs = jobManageService.findByNextTimeInInterval(classNames.toList(), tag, startTime, endTime)
+            if (jobs.isNullOrEmpty()) {
+                logger.info(
+                    "queryAndCompensateUnTriggerJob no job need to compensate.$classNames, $tag, $startTime, $endTime"
+                )
+                return
+            }
+            jobs.forEach {
+                logger.info("start to compensate no trigger job! job info is: ${it.jobName}")
+                val cronExpression = CronExpression(it.cronExpression)
+                val nextTriggerDate = cronExpression.getNextValidTimeAfter(Date(curTime)) ?: Date(0L)
+                val nextTriggerTimeString = DateFormatUtils.format(nextTriggerDate, "yyyyMMddHHmmss")
+                // JOB执行锁，自动过期释放
+                val redisLockKey = if (clusterTag.isNullOrBlank()) {
+                    "quartz:cluster:platform:${it.jobName}:$nextTriggerTimeString"
+                } else {
+                    "quartz:cluster:$clusterTag:platform:${it.jobName}:$nextTriggerTimeString"
+                }
+                val redisLock = RedisLock(redisTemplate, redisLockKey, 20)
+                if (redisLock.tryLock()) {
+                    // 记录触发时间 & 下次触发时间
+                    jobManageService.updateLastAndNextTriggerTime(it.jobName, curTime, nextTriggerDate.time)
+                    // 补偿执行
+                    val scheduleTask =
+                        SpringContextUtil.getBean(IScheduleTask::class.java, it.className.decapitalize())
+                    val quartzContext = QuartzJobContext(
+                        it.jobName,
+                        it.className.decapitalize(),
+                        shardingStrategy.getShardingStrategy().getShardingResult()!!.currentShard.shardNum,
+                        shardingStrategy.getShardingStrategy().getShardingResult()!!.currentNode.nodeNum,
+                        Date(curTime),
+                        it.jobParam
+                    )
+                    scheduleTask.executeTask(quartzContext)
+                    logger.info("end to compensate no trigger job! job info is: ${it.jobName}")
+                }
+            }
+        } catch (e: Exception) {
+            logger.error("queryAndCompensateUnTriggerJob cause error", e)
+        }
     }
 
     /**
@@ -129,7 +175,7 @@ open class CustomSchedulerManager @Autowired constructor(
                     val jobInstanceEntity = jobManageService.findJobByName(jobName) ?: return@forEach
                     val scheduleExecuteTime = t.substring(t.indexOfLast { it == '_' } + 1)
                     val executeDate = SimpleDateFormat("yyyyMMddHHmmss").parse(scheduleExecuteTime)
-                    //再执行一遍
+                    // 再执行一遍
                     val scheduleTask =
                         SpringContextUtil.getBean(IScheduleTask::class.java, jobInstanceEntity.className.decapitalize())
                     val quartzContext = QuartzJobContext(
@@ -187,7 +233,7 @@ open class CustomSchedulerManager @Autowired constructor(
                     val executeDate = SimpleDateFormat("yyyyMMddHHmmss").parse(scheduleExecuteTime)
                     logger.info("job name is: $jobName, schedule execute time is: $executeDate")
                     val trigger = scheduler.getTrigger(TriggerKey.triggerKey(jobName, triggerGroup))
-                    //只有当后续又触发时，才确保是补偿，防止记录进行过程中的记录
+                    // 只有当后续又触发时，才确保是补偿，防止记录进行过程中的记录
                     if (null != trigger &&
                             null != trigger.previousFireTime &&
                             executeDate < trigger.previousFireTime
@@ -210,15 +256,15 @@ open class CustomSchedulerManager @Autowired constructor(
      * 初始化工作
      */
     private fun initialize() {
-        //将接口所有子类注入到容器中
+        // 将接口所有子类注入到容器中
         beanInjection()
-        //添加监听器
+        // 添加监听器
         scheduler.listenerManager.addTriggerListener(shardingListener, EverythingMatcher.allTriggers())
-        //初始化分片
+        // 初始化分片
         val shardingResult = shardingRouterService.initSharding(shardingStrategy)
         logger.info("init sharding successfully!")
         val totalJobList = jobManageService.findAllJobs()
-        //根据当前分片和job全量信息取出该分片信息并加入到调度中
+        // 根据当前分片和job全量信息取出该分片信息并加入到调度中
         val qualifiedJobList = shardingRouterService.initJobInstance(
             shardingResult, totalJobList,
             routerStrategy
@@ -227,7 +273,7 @@ open class CustomSchedulerManager @Autowired constructor(
         addJobs(qualifiedJobList)
         qualifiedJobList.forEach {
             it.shardTag = shardingStrategy.getShardingStrategy().getShardingResult()!!.currentShard.tag
-            //暂停状态为1的
+            // 暂停状态为1的
             if (it.status == 1) {
                 parseJob(it)
                 Thread.sleep(100L)
@@ -302,7 +348,6 @@ open class CustomSchedulerManager @Autowired constructor(
                         resumeJob(jobInstanceEntity)
                     }
                 }
-
             }
             jobManageService.addOrRemoveJobToCache(jobInstanceEntity, operType)
         }
@@ -313,18 +358,18 @@ open class CustomSchedulerManager @Autowired constructor(
      */
     private fun monitorSharding() {
         logger.info("start to monitor consul service list")
-        //先取老的分片信息
+        // 先取老的分片信息
         val oldShardingResult = shardingStrategy.getShardingStrategy().getShardingResult()
         val jobChangeInfo = shardingRouterService.reShardAndReRouter(
             shardingStrategy,
             routerStrategy
         )
-        //取新的分片信息
+        // 取新的分片信息
         val newShardingResult = shardingStrategy.getShardingStrategy().getShardingResult()
         if (jobChangeInfo.addJobInstances.isNotEmpty()) {
             addJobs(jobChangeInfo.addJobInstances)
             jobChangeInfo.addJobInstances.forEach {
-                //对于本节点新增的job，改变原来其分片数
+                //  对于本节点新增的job，改变原来其分片数
                 it.shardTag = newShardingResult!!.currentShard.tag
                 if (it.status == 1) {
                     parseJob(it)
@@ -339,7 +384,7 @@ open class CustomSchedulerManager @Autowired constructor(
         }
 
         for (oldNode in oldShardingResult!!.currentShard.nodeList) {
-            //如果有节点下线，则要查询并执行补偿
+            // 如果有节点下线，则要查询并执行补偿
             if (newShardingResult!!.currentShard.nodeList.find { newNode ->
                         oldNode.host == newNode.host && oldNode.port == newNode.port
                     } == null)
@@ -402,7 +447,7 @@ open class CustomSchedulerManager @Autowired constructor(
         try {
             scheduler.scheduleJobs(jobTriggerMap, true)
         } catch (e: SchedulerException) {
-            //如果报错则单个加，确保影响面最低
+            // 如果报错则单个加，确保影响面最低
             logger.error("trigger has problem when scheduling job")
             jobInstances.forEach {
                 addJob(it)
@@ -416,7 +461,7 @@ open class CustomSchedulerManager @Autowired constructor(
     private fun addJob(jobInstanceEntity: JobInstanceEntity) {
         with(jobInstanceEntity) {
             logger.info("start to add job to scheduler! job info: $jobInstanceEntity")
-            //对job进行校验,如果类不存在，则用URLClassLoader进行类的远程加载，并注入bean
+            // 对job进行校验,如果类不存在，则用URLClassLoader进行类的远程加载，并注入bean
             val beanName = className.decapitalize()
             if (!SpringContextUtil.beanExistsWithName(beanName)) {
                 if (!registerJobBean(classUrl, className)) {
@@ -437,7 +482,7 @@ open class CustomSchedulerManager @Autowired constructor(
             val jobDetail = JobBuilder.newJob(ShardingJob::class.java).withIdentity(jobKey)
                     .usingJobData(JobDataMap(jobParamMap)).build()
 
-            //判断原有该job是否存在，如果存在则reschedule
+            // 判断原有该job是否存在，如果存在则reschedule
             val triggerKey = TriggerKey.triggerKey(triggerName, triggerGroup)
             val previousTrigger = scheduler.getTrigger(triggerKey)
             if (null == previousTrigger) {
@@ -495,7 +540,6 @@ open class CustomSchedulerManager @Autowired constructor(
         }
     }
 
-
     /**
      * 暂停定时任务
      */
@@ -510,7 +554,6 @@ open class CustomSchedulerManager @Autowired constructor(
         }
     }
 
-
     /**
      * 恢复定时任务
      */
@@ -524,7 +567,6 @@ open class CustomSchedulerManager @Autowired constructor(
             }
         }
     }
-
 
     /**
      * 删除job
@@ -587,13 +629,13 @@ open class CustomSchedulerManager @Autowired constructor(
                 logger.info("start manual job initialization")
                 val shardingResult = shardingStrategy.getShardingStrategy().getShardingResult()
                 val totalJobList = jobManageService.findAllJobs()
-                //根据当前分片和job全量信息取出该分片信息并加入到调度中
+                // 根据当前分片和job全量信息取出该分片信息并加入到调度中
                 val qualifiedJobList = shardingRouterService.initJobInstance(
                     shardingResult!!, totalJobList,
                     routerStrategy
                 )
                 addJobs(qualifiedJobList)
-                //暂停状态为1的
+                // 暂停状态为1的
                 qualifiedJobList.filter { it.status == 1 }.forEach {
                     parseJob(it)
                     Thread.sleep(100L)
@@ -619,7 +661,7 @@ open class CustomSchedulerManager @Autowired constructor(
         }
     }
 
-    //动态加载逻辑
+    // 动态加载逻辑
     private fun registerJobBean(classUrl: String?, className: String): Boolean {
         logger.info("start to groovy load class, class name: $className")
         if (classUrl.isNullOrBlank()) {
@@ -652,8 +694,27 @@ open class CustomSchedulerManager @Autowired constructor(
             logger.error("compile file fail!, error message: ${e2.message}")
             return false
         } catch (e3: Exception) {
-            logger.error("load custom class fail!, class name : $className, class url: $classUrl, error message: ${e3.message}")
+            logger.error(
+                "load custom class fail!, class name : $className, class url: $classUrl," +
+                        " error message: ${e3.message}"
+            )
             return false
         }
+    }
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(CustomSchedulerManager::class.java)
+
+        // 分片算法
+        val shardingStrategy = EnumShardingStrategy.ASCEND
+
+        // 路由算法
+        val routerStrategy = EnumRouterStrategy.CONSISTENT_HASH
+
+        // job分组名称
+        const val jobGroup = "bkJobGroup"
+
+        // 触发器分组名称
+        const val triggerGroup = "bkTriggerGroup"
     }
 }

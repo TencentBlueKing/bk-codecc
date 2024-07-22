@@ -119,6 +119,9 @@ public class TaskOverviewVO
         @ApiModelProperty(value = "工具名称", required = true)
         private String toolName;
 
+        @ApiModelProperty(value = "工具类型", required = true)
+        private List<String> toolTypes;
+
         @ApiModelProperty(value = "当前步骤", required = true)
         private int curStep;
 

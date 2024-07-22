@@ -4,6 +4,7 @@ import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetPackageEntity;
 import com.tencent.bk.codecc.defect.model.common.OrgInfoEntity;
 import com.tencent.bk.codecc.task.vo.checkerset.OpenSourceCheckerSetVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
+import com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
 import java.util.List;
 import java.util.Set;
 
@@ -13,10 +14,11 @@ public interface CheckerSetPackageService {
 
     boolean deleteByLang(OpenSourceCheckerSetVO reqVO, String userName);
 
-    List<CheckerSetPackageEntity> getByLangValueAndTypeAndEnvTypeAndOrgInfo(Long langValue, String type,
-            String envType, OrgInfoEntity orgInfo);
+    List<CheckerSetPackageEntity> getByLangValueAndTypeAndEnvTypeAndOrgInfoAndCreateFrom(Long langValue, String type,
+            String envType, OrgInfoEntity orgInfo, BsTaskCreateFrom createFrom);
 
-    List<CheckerSetPackageEntity> getByTypeAndEnvTypeAndOrgInfo(String type, String envType, OrgInfoEntity orgInfo);
+    List<CheckerSetPackageEntity> getByTypeAndEnvTypeAndOrgInfoAndCreateFrom(String type, String envType,
+            OrgInfoEntity orgInfo, BsTaskCreateFrom createFrom);
 
     List<CheckerSetPackageEntity> getByLangValue(Long langValue);
 

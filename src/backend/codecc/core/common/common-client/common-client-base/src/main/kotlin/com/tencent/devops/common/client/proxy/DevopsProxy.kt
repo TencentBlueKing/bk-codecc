@@ -36,8 +36,8 @@ class DevopsProxy constructor(
             method.parameters.forEachIndexed { index, parameter ->
                 if (parameter.annotations.any {
                             when (it) {
-                                is PathParam -> it.value == "projectId"
-                                is QueryParam -> it.value == "projectId"
+                                is PathParam -> it.value == "projectId" || it.value == "projectCode"
+                                is QueryParam -> it.value == "projectId" || it.value == "projectCode"
                                 is HeaderParam -> it.value == AUTH_HEADER_DEVOPS_PROJECT_ID
                                 else -> false
                             }
@@ -48,7 +48,7 @@ class DevopsProxy constructor(
             }
         }
 
-        return  try {
+        return try {
             val result = method.invoke(any, *args)
             // 后置处理
             val invokeHandlers = DevopsAfterInvokeHandlerFactory.SINGLETON?.getInvokeHandlers() ?: emptyList()

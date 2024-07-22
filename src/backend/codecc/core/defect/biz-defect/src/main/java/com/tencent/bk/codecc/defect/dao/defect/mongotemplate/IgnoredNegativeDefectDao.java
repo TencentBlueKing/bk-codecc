@@ -64,7 +64,11 @@ public class IgnoredNegativeDefectDao {
             update.set("process_reason_type", processNegativeDefectReq.getProcessReasonType());
         }
 
-        if (processNegativeDefectReq.getProcessProgress().equals(ComConstants.ProcessProgressType.FIXED.value())
+        List<Integer> needIssueLink = Arrays.asList(
+                ComConstants.ProcessProgressType.FIXED.value(),
+                ComConstants.ProcessProgressType.FOLLOWING.value()
+        );
+        if (needIssueLink.contains(processNegativeDefectReq.getProcessProgress())
                 && processNegativeDefectReq.getIssueLink() != null) {
             update.set("issue_link", processNegativeDefectReq.getIssueLink());
         }

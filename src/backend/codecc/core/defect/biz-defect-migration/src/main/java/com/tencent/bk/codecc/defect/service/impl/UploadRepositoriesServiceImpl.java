@@ -15,11 +15,14 @@ import com.tencent.devops.common.api.CodeRepoVO;
 import com.tencent.bk.codecc.defect.vo.coderepository.UploadRepositoriesVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import com.tencent.devops.common.constant.RedisKeyConstants;
+import com.tencent.devops.common.redis.lock.RedisLock;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -47,7 +50,8 @@ public class UploadRepositoriesServiceImpl implements UploadRepositoriesService 
     private ToolBuildStackDao toolBuildStackDao;
     @Autowired
     private RabbitTemplate rabbitTemplate;
-
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
     /**
      * 上报仓库信息
      *
@@ -87,34 +91,53 @@ public class UploadRepositoriesServiceImpl implements UploadRepositoriesService 
         toolBuildStackDao.upsert(toolBuildStackEntity);
 
         // 校验构建号对应的仓库信息是否已存在
-        CodeRepoInfoEntity codeRepoInfo = codeRepoRepository.findFirstByTaskIdAndBuildId(taskId, buildId);
-        if (codeRepoInfo != null) {
-            return new Result(0, CommonMessageCode.SUCCESS, "repo info of this build id is already exist.");
-        }
+        final String lockKey = new StringBuffer(RedisKeyConstants.LOCK_T_CODE_REPO_INFO).append(":").
+                append(taskId).append(":").
+                append(buildId).toString().trim();
+        final long lockTime = 15L;
+        RedisLock locker = null;
+        try {
+            locker = new RedisLock(redisTemplate, lockKey, lockTime);
+            boolean lockSuccess = locker.tryLock();
 
-        // 更新仓库列表和构建ID
-        List<CodeRepoEntity> codeRepoEntities = Lists.newArrayList();
-        if (CollectionUtils.isNotEmpty(codeRepoList)) {
-            log.info("upload repo info, codeRepoList: {}", codeRepoList);
-            for (CodeRepoVO codeRepoVO : codeRepoList) {
-                CodeRepoEntity codeRepoEntity = new CodeRepoEntity();
-                BeanUtils.copyProperties(codeRepoVO, codeRepoEntity);
-                codeRepoEntities.add(codeRepoEntity);
+            if (!lockSuccess) {
+                return new Result(0, CommonMessageCode.SUCCESS, "upload repo info, the lock already exists.");
             }
+            log.info("upload repo info, redis lock: {}", lockKey);
+            CodeRepoInfoEntity codeRepoInfo = codeRepoRepository.findFirstByTaskIdAndBuildId(taskId, buildId);
+            if (codeRepoInfo != null) {
+                return new Result(0, CommonMessageCode.SUCCESS, "repo info of this build id is already exist.");
+            }
+
+            // 更新仓库列表和构建ID
+            List<CodeRepoEntity> codeRepoEntities = Lists.newArrayList();
+            if (CollectionUtils.isNotEmpty(codeRepoList)) {
+                log.info("upload repo info, codeRepoList: {}", codeRepoList);
+                for (CodeRepoVO codeRepoVO : codeRepoList) {
+                    CodeRepoEntity codeRepoEntity = new CodeRepoEntity();
+                    BeanUtils.copyProperties(codeRepoVO, codeRepoEntity);
+                    codeRepoEntities.add(codeRepoEntity);
+                }
+            }
+            codeRepoInfo = new CodeRepoInfoEntity(taskId, buildId, codeRepoEntities,
+                    repoWhiteList, deleteFiles, repoRelativePathList);
+            Long currentTime = System.currentTimeMillis();
+            codeRepoInfo.setUpdatedDate(currentTime);
+            codeRepoInfo.setCreatedDate(currentTime);
+            codeRepoRepository.save(codeRepoInfo);
+
+            // 代码库/分支统计
+            UploadTaskLogStepVO stepVO = new UploadTaskLogStepVO();
+            stepVO.setTaskId(taskId);
+            stepVO.setPipelineBuildId(buildId);
+            rabbitTemplate.convertAndSend(EXCHANGE_CODE_REPO_STAT, ROUTE_CODE_REPO_STAT, stepVO);
+
+            return new Result(0, CommonMessageCode.SUCCESS, "upload repo info success.");
+        } finally {
+            if (locker != null && locker.isLocked()) {
+                locker.unlock();
+            }
+            log.info("upload repo info, unlock : {}", lockKey);
         }
-        codeRepoInfo = new CodeRepoInfoEntity(taskId, buildId, codeRepoEntities,
-                repoWhiteList, deleteFiles, repoRelativePathList);
-        Long currentTime = System.currentTimeMillis();
-        codeRepoInfo.setUpdatedDate(currentTime);
-        codeRepoInfo.setCreatedDate(currentTime);
-        codeRepoRepository.save(codeRepoInfo);
-
-        // 代码库/分支统计
-        UploadTaskLogStepVO stepVO = new UploadTaskLogStepVO();
-        stepVO.setTaskId(taskId);
-        stepVO.setPipelineBuildId(buildId);
-        rabbitTemplate.convertAndSend(EXCHANGE_CODE_REPO_STAT, ROUTE_CODE_REPO_STAT, stepVO);
-
-        return new Result(0, CommonMessageCode.SUCCESS, "upload repo info success.");
     }
 }

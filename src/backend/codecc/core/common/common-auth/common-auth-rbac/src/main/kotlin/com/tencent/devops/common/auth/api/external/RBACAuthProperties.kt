@@ -36,7 +36,7 @@ class RBACAuthProperties {
     /**
      * 后台接口根路径
      */
-    @Value("\${bkci.public.url:#{null}}")
+    @Value("\${bkci.private.url:#{null}}")
     val url: String? = null
 
     /**

@@ -101,6 +101,10 @@ public class SCMUtils {
             startInd += 1;
         }
 
+        if (endInd < 0 || startInd > endInd) {
+            return null;
+        }
+
         return url.substring(startInd, endInd);
     }
 }

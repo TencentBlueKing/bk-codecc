@@ -18,6 +18,7 @@
   "license": "ISC",
   "dependencies": {
     "@blueking/log": "^2.0.14",
+    "@blueking/user-selector": "^1.0.11",
     "aegis-web-sdk": "^1.24.18",
     "babel-plugin-import-bk-magic-vue": "latest",
     "bk-magic-vue": "2.5.6",

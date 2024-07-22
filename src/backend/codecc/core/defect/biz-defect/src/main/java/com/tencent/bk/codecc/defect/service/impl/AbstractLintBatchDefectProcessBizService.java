@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
@@ -87,7 +88,7 @@ public abstract class AbstractLintBatchDefectProcessBizService extends AbstractB
         filedMap.put("author", true);
         filedMap.put("severity", true);
         filedMap.put("file_path", true);
-        if (request.getNeedBatchInsert()) {
+        if (BooleanUtils.isTrue(request.getNeedBatchInsert())) {
             filedMap.put("url", true);
             filedMap.put("line_num", true);
             filedMap.put("checker", true);

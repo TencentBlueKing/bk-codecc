@@ -59,8 +59,9 @@ public class BuildBuildRestResourceImpl implements BuildBuildRestResource {
             log.info("codecc plugin may be old, build id: {}", buildVO.getBuildId());
         }
 
-        hotColdDataSeparationService.warmUpColdDataIfNecessary(buildVO.getTaskId());
-
+        if (buildVO.getTaskId() != null) {
+            hotColdDataSeparationService.warmUpColdDataIfNecessary(buildVO.getTaskId());
+        }
         return new Result<>(null != resultBuildVO);
     }
 }
