@@ -63,6 +63,7 @@ default_value_dict = {
     "bkCodeccMongodbAddr": "127.0.0.1:27017",
     "bkCodeccMongodbPassword": "",
     "bkCodeccMongodbUser": "",
+    "bkCodeccMongoAutoCreateIndex": "false",
     "bkCodeccRabbitmqAddr": "127.0.0.1:5672",
     "bkCodeccRabbitmqPassword": "",
     "bkCodeccRabbitmqUser": "",
