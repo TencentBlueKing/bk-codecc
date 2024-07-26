@@ -592,6 +592,7 @@
                 >{{ $t('分配') }}</bk-button
                 >
                 <bk-button
+                  v-if="DEPLOY_ENV === 'tencent'"
                   size="small"
                   ext-cls="cc-operate-button"
                   @click="handleCommit('commit', true)"
@@ -1031,6 +1032,7 @@ import OperateDialog from '@/components/operate-dialog';
 import ChartPanel from './components/chart-panel.vue';
 import DefectPanel from './components/defect-panel.vue';
 // import CodeMirror from '@/common/codemirror'
+import DEPLOY_ENV from '@/constants/env';
 
 // 搜索过滤项缓存
 const SEARCH_OPTION_CACHE = 'search_option_columns_defect';

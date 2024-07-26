@@ -283,7 +283,7 @@
                   {{ $t('取消忽略并标记处理') }}
                 </bk-button>
               </div>
-              <div class="item">
+              <div class="item" v-if="DEPLOY_ENV === 'tencent'">
                 <bk-button
                   class="item-button"
                   @click="handleRevertIgnoreAndCommit(entityId)"
@@ -362,6 +362,7 @@
               class="item"
             >
               <bk-button
+                v-if="DEPLOY_ENV === 'tencent'"
                 class="item-button"
                 @click="handleCommit('commit', false, entityId)"
               >{{ $t('提单') }}
@@ -464,12 +465,13 @@
         </div>
       </div>
     </div>
-    <bk-dialog v-model="openIdeDetail.showDialog"
-               theme="primary"
-               :mask-close="false"
-               header-position="center"
-               :show-footer="false"
-               :title="$t('请确保JetBrains Toolbox已安装')"
+    <bk-dialog
+      v-model="openIdeDetail.showDialog"
+      theme="primary"
+      :mask-close="false"
+      header-position="center"
+      :show-footer="false"
+      :title="$t('请确保JetBrains Toolbox已安装')"
     >
       <div>
         1、{{$t('由JetBrains官方提供的轻量App，可快速启动JetBrains系列IDE的指定工程。')}}
@@ -508,6 +510,7 @@ import Process from '../paas/list/process.vue';
 import Vue from 'vue';
 import AiSuggestion from './ai-suggestion.vue';
 import CheckerDetail from './checker-detail.vue';
+import DEPLOY_ENV from '@/constants/env';
 
 export default {
   components: {

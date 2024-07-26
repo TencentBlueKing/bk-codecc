@@ -41,7 +41,7 @@ export default {
     ];
     const settings = (DEPLOY_ENV === 'tencent'
       ? ['code', 'checkerset', 'report', 'issue', 'trigger', 'ignore', 'authority', 'record', 'manage']
-      : ['code', 'checkerset', 'issue', 'trigger', 'ignore', 'record', 'manage']);
+      : ['code', 'checkerset', 'trigger', 'ignore', 'record', 'manage']);
     return {
       panels: panels.filter(item => settings.includes(item.name)),
       active: this.$route.name.split('-').pop(),

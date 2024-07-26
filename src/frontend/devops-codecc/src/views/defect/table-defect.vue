@@ -205,7 +205,7 @@
                 {{ $t('取消忽略并标记处理') }}
               </p>
               <p
-                v-if="props.row.status & 4 && !props.row.ignoreCommentDefect"
+                v-if="props.row.status & 4 && !props.row.ignoreCommentDefect && DEPLOY_ENV === 'tencent'"
                 class="entry-link"
                 @click.stop="handleRevertIgnoreAndCommit(props.row.entityId)"
               >
@@ -274,6 +274,8 @@
                       props.row.defectIssueInfoVO.submitStatus &&
                       props.row.defectIssueInfoVO.submitStatus !== 4
                     )
+                    &&
+                    DEPLOY_ENV === 'tencent'
                 "
                 class="entry-link"
                 @click.stop="handleCommit('commit', false, props.row.entityId)"
@@ -308,6 +310,7 @@
 import defectTable from '@/mixins/defect-table';
 import { array2Str } from '@/common/util';
 import { language } from '../../i18n';
+import DEPLOY_ENV from '@/constants/env';
 
 export default {
   mixins: [defectTable],
