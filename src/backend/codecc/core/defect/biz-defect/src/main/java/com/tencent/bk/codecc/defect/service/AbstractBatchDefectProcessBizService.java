@@ -235,23 +235,25 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
                 batchDefectProcessReqVO.getTaskId(), batchDefectProcessReqVO.getBizType(),
                 defectList == null ? 0 : defectList.size(), batchDefectProcessReqVO.getDefectKeySet().size());
 
-        int opType = isInsertOrDelete(batchDefectProcessReqVO.getBizType(),
-                batchDefectProcessReqVO.getIgnoreReasonType());
-        if (opType == INS) {
-            Result<TaskDetailVO> taskBaseResult = client.get(ServiceTaskRestResource.class)
-                    .getTaskInfoById(batchDefectProcessReqVO.getTaskId());
-            if (null == taskBaseResult || taskBaseResult.isNotOk() || null == taskBaseResult.getData()) {
-                log.error("get task info fail!, task id: {}", batchDefectProcessReqVO.getTaskId());
-                throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
-            }
+        if (CollectionUtils.isNotEmpty(defectList) && defectList.get(0) instanceof LintDefectV2Entity) {
+            int opType = isInsertOrDelete(batchDefectProcessReqVO.getBizType(),
+                    batchDefectProcessReqVO.getIgnoreReasonType());
+            if (opType == INS) {
+                Result<TaskDetailVO> taskBaseResult = client.get(ServiceTaskRestResource.class)
+                        .getTaskInfoById(batchDefectProcessReqVO.getTaskId());
+                if (null == taskBaseResult || taskBaseResult.isNotOk() || null == taskBaseResult.getData()) {
+                    log.error("get task info fail!, task id: {}", batchDefectProcessReqVO.getTaskId());
+                    throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
+                }
 
-            ignoredNegativeDefectDao.batchInsert(
-                    defectList,
-                    batchDefectProcessReqVO,
-                    taskBaseResult.getData()
-            );
-        } else if (opType == DEL) {
-            ignoredNegativeDefectDao.batchDelete(batchDefectProcessReqVO.getDefectKeySet());
+                ignoredNegativeDefectDao.batchInsert(
+                        defectList,
+                        batchDefectProcessReqVO,
+                        taskBaseResult.getData()
+                );
+            } else if (opType == DEL) {
+                ignoredNegativeDefectDao.batchDelete(batchDefectProcessReqVO.getDefectKeySet());
+            }
         }
 
         if (CollectionUtils.isNotEmpty(defectList)) {
