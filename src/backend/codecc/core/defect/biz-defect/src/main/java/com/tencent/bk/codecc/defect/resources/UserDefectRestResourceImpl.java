@@ -410,6 +410,9 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
                 rspVOS.add(new BatchDefectProcessRspVO(reqVO.getBizType(), result.getData()));
             }
         }
+        if (CollectionUtils.isEmpty(rspVOS)) {
+            return new Result<>(CommonMessageCode.MODIFY_ZERO_ENTITY, "completed changes is 0, please check");
+        }
         return new Result<>(rspVOS);
     }
 
