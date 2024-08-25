@@ -224,7 +224,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
     private long processDefect(Boolean isSelectAll, BatchDefectProcessReqVO batchDefectProcessReqVO) {
         List defectList;
         if (isSelectAll) {
-            DefectQueryReqVO queryCondObj = getDefectQueryReqVO(batchDefectProcessReqVO);
+            DefectQueryReqVO queryCondObj = batchDefectProcessReqVO.getDefectQueryReqVO();
             defectList = getDefectsByQueryCond(batchDefectProcessReqVO.getTaskId(), queryCondObj,
                     batchDefectProcessReqVO.getDefectKeySet());
         } else {
