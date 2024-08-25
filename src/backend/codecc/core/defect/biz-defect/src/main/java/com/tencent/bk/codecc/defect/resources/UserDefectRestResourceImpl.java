@@ -44,19 +44,8 @@ import com.tencent.bk.codecc.defect.service.IStatQueryWarningService;
 import com.tencent.bk.codecc.defect.service.TaskLogService;
 import com.tencent.bk.codecc.defect.service.impl.CLOCQueryWarningBizServiceImpl;
 import com.tencent.bk.codecc.defect.utils.ParamUtils;
-import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
-import com.tencent.bk.codecc.defect.vo.BatchDefectProcessRspVO;
-import com.tencent.bk.codecc.defect.vo.CountDefectFileRequest;
-import com.tencent.bk.codecc.defect.vo.FileDefectGatherVO;
-import com.tencent.bk.codecc.defect.vo.GetFileContentSegmentReqVO;
-import com.tencent.bk.codecc.defect.vo.ListToolNameRequest;
-import com.tencent.bk.codecc.defect.vo.ListToolNameResponse;
+import com.tencent.bk.codecc.defect.vo.*;
 import com.tencent.bk.codecc.defect.vo.ListToolNameResponse.ToolBase;
-import com.tencent.bk.codecc.defect.vo.QueryCheckersAndAuthorsRequest;
-import com.tencent.bk.codecc.defect.vo.QueryDefectFileContentSegmentReqVO;
-import com.tencent.bk.codecc.defect.vo.QueryFileDefectGatherRequest;
-import com.tencent.bk.codecc.defect.vo.SingleCommentVO;
-import com.tencent.bk.codecc.defect.vo.StatDefectQueryRespVO;
 import com.tencent.bk.codecc.defect.vo.admin.DeptTaskDefectReqVO;
 import com.tencent.bk.codecc.defect.vo.admin.DeptTaskDefectRspVO;
 import com.tencent.bk.codecc.defect.vo.common.BuildVO;
@@ -403,17 +392,35 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
             BatchDefectProcessReqVO reqVO = new BatchDefectProcessReqVO();
             BeanUtils.copyProperties(batchDefectProcessReqVO, reqVO);
             reqVO.setBizType(type.trim());
+            long count = getBatchSelectDefectCount(projectId, userName, batchDefectProcessReqVO);
             Result<Long> result = singleBizTypeBatchProcess(userName, reqVO);
             if (result.isNotOk()) {
                 return new Result<>(result.getStatus(), result.getCode(), result.getMessage(), null);
             } else if (result.getData() != null && result.getData() > 0) {
-                rspVOS.add(new BatchDefectProcessRspVO(reqVO.getBizType(), result.getData()));
+                rspVOS.add(new BatchDefectProcessRspVO(reqVO.getBizType(), result.getData(), count - result.getData()));
             }
         }
-        if (CollectionUtils.isEmpty(rspVOS)) {
-            return new Result<>(CommonMessageCode.MODIFY_ZERO_ENTITY, "completed changes is 0, please check");
-        }
         return new Result<>(rspVOS);
+    }
+
+    private long getBatchSelectDefectCount(String projectId, String userName,
+                                           BatchDefectProcessReqVO batchDefectProcessReqVO) {
+        Result<CommonDefectQueryRspVO> result = queryDefectListWithIssue(userName, projectId,
+                batchDefectProcessReqVO.getDefectQueryReqVO(), 0, 1, null, null);
+        if (result == null || result.isNotOk() || result.getData() == null) {
+            return 0L;
+        }
+        CommonDefectQueryRspVO queryRspVO = result.getData();
+        if (queryRspVO instanceof LintDefectQueryRspVO && ((LintDefectQueryRspVO) queryRspVO).getDefectList() != null) {
+            return ((LintDefectQueryRspVO) queryRspVO).getDefectList().getCount();
+        } else if (queryRspVO instanceof DefectQueryRspVO && ((DefectQueryRspVO) queryRspVO).getDefectList() != null) {
+            return ((DefectQueryRspVO) queryRspVO).getDefectList().getTotalElements();
+        } else if (queryRspVO instanceof CCNDefectQueryRspVO
+                && ((CCNDefectQueryRspVO) queryRspVO).getDefectList() != null) {
+            return ((CCNDefectQueryRspVO) queryRspVO).getDefectList().getTotalElements();
+        } else {
+            return 0L;
+        }
     }
 
     private Result<Long> singleBizTypeBatchProcess(String userName,

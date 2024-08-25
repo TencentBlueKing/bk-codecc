@@ -161,7 +161,7 @@
           @click.prevent.stop
         >
           <bk-popover z-index="99" theme="light" placement="bottom" trigger="click">
-            <span class="bk-icon icon-more guide-icon"></span>
+            <span class="bk-icon icon-more guide-icon" v-if="!(props.row.status & 8 || props.row.status & 16)"></span>
             <div slot="content" class="handle-menu-tips txal">
               <!-- 待修复问题的操作 -->
               <template v-if="props.row.status === 1">

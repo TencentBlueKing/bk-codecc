@@ -2369,12 +2369,14 @@ export default {
                 const list = res.data || [];
                 let revertCount = 0;
                 let markCount = 0;
+                let failCount = 0;
                 list.forEach((item) => {
                   if (item.bizType === 'RevertIgnore') {
                     revertCount = item.count;
                   } else if (item.bizType === 'MarkDefect') {
                     markCount = item.count;
                   }
+                  failCount += item.failCount;
                 });
                 const unfixedMarkCount = markCount - revertCount;
                 message = '';
@@ -2386,6 +2388,9 @@ export default {
                   'x个已忽略问题取消忽略并标记为已处理成功',
                   { revertCount },
                 );
+                if (failCount) {
+                  message += this.$t('剩余x个问题由于状态原因标记失败。', [item.failCount]);
+                }
               }
             } else {
               this.listData.defectList.records.forEach((item) => {
@@ -2613,12 +2618,21 @@ export default {
         .then((res) => {
           if (res.code === '0') {
             let message = '';
+            const list = res.data || [];
             if (this.operateParams.bizType === 'ChangeIgnoreType') {
               message = this.$t('修改忽略类型成功');
             } else {
-              message = this.operateParams.bizType === 'IgnoreDefect'
-                ? this.$t('忽略问题成功')
-                : this.$t('恢复问题成功。该问题将重新在待修复列表中显示。');
+              list.forEach((item) => {
+                console.log('🚀 ~ list.forEach ~ item:', item);
+                const typeMap = {
+                  IgnoreDefect: this.$t('忽略'),
+                  RevertIgnore: this.$t('取消忽略'),
+                };
+                message = this.$t(`成功${typeMap[item.bizType]}x个问题。`, [item.count || 0]);
+                if (item.failCount) {
+                  message += this.$t(`剩余x个问题由于状态原因${typeMap[item.bizType]}失败。`, [item.failCount || 0]);
+                }
+              });
             }
             this.$bkMessage({
               theme: 'success',
