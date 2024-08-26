@@ -392,7 +392,11 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
             BatchDefectProcessReqVO reqVO = new BatchDefectProcessReqVO();
             BeanUtils.copyProperties(batchDefectProcessReqVO, reqVO);
             reqVO.setBizType(type.trim());
-            long count = getBatchSelectDefectCount(projectId, userName, batchDefectProcessReqVO);
+            long count = ComConstants.CommonJudge.COMMON_Y.value()
+                    .equalsIgnoreCase(batchDefectProcessReqVO.getIsSelectAll())
+                    ? getBatchSelectDefectCount(projectId, userName, batchDefectProcessReqVO)
+                    : CollectionUtils.isEmpty(batchDefectProcessReqVO.getDefectKeySet()) ? 0L
+                    : batchDefectProcessReqVO.getDefectKeySet().size();
             Result<Long> result = singleBizTypeBatchProcess(userName, reqVO);
             if (result.isNotOk()) {
                 return new Result<>(result.getStatus(), result.getCode(), result.getMessage(), null);
