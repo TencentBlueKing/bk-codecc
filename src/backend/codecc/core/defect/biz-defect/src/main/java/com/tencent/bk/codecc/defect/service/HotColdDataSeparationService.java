@@ -2,5 +2,5 @@ package com.tencent.bk.codecc.defect.service;
 
 public interface HotColdDataSeparationService {
 
-    boolean warmUpColdDataIfNecessary(Long taskId);
+    boolean warmUpColdDataIfNecessary(long taskId);
 }

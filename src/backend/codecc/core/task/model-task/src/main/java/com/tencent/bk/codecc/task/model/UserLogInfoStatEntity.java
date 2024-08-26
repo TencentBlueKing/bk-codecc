@@ -47,11 +47,6 @@ public class UserLogInfoStatEntity extends CommonEntity {
     @Field("bg_id")
     private Integer bgId;
 
-    /**
-     * 业务线id
-     */
-    @Field("business_line_id")
-    private Integer businessLineId;
 
     @Field("dept_id")
     private Integer deptId;

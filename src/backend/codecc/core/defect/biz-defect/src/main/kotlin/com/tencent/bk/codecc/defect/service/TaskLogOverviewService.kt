@@ -12,7 +12,7 @@ interface TaskLogOverviewService {
      *
      * @param taskLogOverviewVO
      */
-    fun saveActualExeTools(taskLogOverviewVO: TaskLogOverviewVO): Boolean
+    fun saveActualExeTools (taskLogOverviewVO: TaskLogOverviewVO): Boolean
 
     /**
      * 获取当前扫描实际需要执行的工具
@@ -21,7 +21,7 @@ interface TaskLogOverviewService {
      * @param taskId
      * @param buildId
      */
-    fun getActualExeTools(taskId: Long, buildId: String): List<String>?
+    fun getActualExeTools (taskId: Long, buildId: String): List<String>?
 
     /**
      * 获取上一次成功扫描实际执行的工具
@@ -114,9 +114,4 @@ interface TaskLogOverviewService {
      * 通过任务ID获取最后的构建id
      */
     fun getLastAnalyzeBuildIdMap(taskIdToBuildIds: Map<Long, Set<String>>): Map<Long, String>
-
-    /**
-     * 上报插件错误信息
-     */
-    fun reportPluginErrorInfo(taskId: Long, buildId: String, errorCode: Int?, errorType: Int?)
 }

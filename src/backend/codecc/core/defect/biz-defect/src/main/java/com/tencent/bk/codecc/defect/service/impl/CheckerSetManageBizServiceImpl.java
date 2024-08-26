@@ -949,11 +949,6 @@ public class CheckerSetManageBizServiceImpl implements ICheckerSetManageBizServi
         for (CheckerSetVO checkerSetVO : checkerSetList) {
             String checkerSetId = checkerSetVO.getCheckerSetId();
             CheckerSetEntity maxVersionCheckerSet = maxCheckerSetEntityMap.get(checkerSetId);
-            if (maxVersionCheckerSet == null) {
-                log.error("projectId:{}, taskId:{}, checkerSetId:{} max checker set version is null",
-                        projectId, taskId, checkerSetId);
-                continue;
-            }
             if (!projInstallCheckerSetMap.containsKey(checkerSetId)) {
                 //如果是官方的话 需要关联
                 boolean matchCheckerSetSource = StringUtils.isNotBlank(maxVersionCheckerSet.getCheckerSetSource())

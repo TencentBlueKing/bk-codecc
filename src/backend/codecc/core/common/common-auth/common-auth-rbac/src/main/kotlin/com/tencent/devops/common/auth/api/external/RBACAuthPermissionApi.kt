@@ -441,4 +441,8 @@ class RBACAuthPermissionApi(
             }
         }
     }
+
+    override fun checkProjectIsRbacPermissionByCache(projectId: String, needRefresh: Boolean?): Boolean {
+        return true
+    }
 }

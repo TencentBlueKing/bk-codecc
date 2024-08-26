@@ -44,6 +44,7 @@ import com.tencent.devops.common.service.utils.SpringContextUtil
 import com.tencent.devops.project.api.service.ServiceProjectResource
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.http.server.ServerHttpRequest
@@ -62,7 +63,7 @@ import java.util.concurrent.TimeUnit
 open class WebSocketConfig @Autowired constructor(
     private val bkAuthExPermissionApi: AuthExPermissionApi,
     private val authTaskService: AuthTaskService,
-    private val client: Client,
+    private val client : Client,
     private val redisTemplate: RedisTemplate<String, String>
 ) : AbstractWebSocketMessageBrokerConfigurer() {
 
@@ -78,37 +79,24 @@ open class WebSocketConfig @Autowired constructor(
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {
         registry.addEndpoint("/websocket/user/taskLog/analysisInfo").addInterceptors(
             object : HandshakeInterceptor {
-                override fun afterHandshake(
-                    request: ServerHttpRequest,
-                    response: ServerHttpResponse,
-                    wsHandler: WebSocketHandler,
-                    exception: java.lang.Exception?
-                ) {
+                override fun afterHandshake(request: ServerHttpRequest,
+                                            response: ServerHttpResponse,
+                                            wsHandler: WebSocketHandler,
+                                            exception: java.lang.Exception?) {
                     logger.info("after hand shake, end point established")
                     val req = request as ServletServerHttpRequest
                     val taskId = req.servletRequest.getParameter(AUTH_HEADER_DEVOPS_TASK_ID)
-                    if (!taskId.isNullOrBlank()) {
+                    if(!taskId.isNullOrBlank()){
                         //先看是否是开源扫描项目
-                        val createFrom =
-                            redisTemplate.opsForHash<String, String>().get(PREFIX_TASK_INFO + taskId, KEY_CREATE_FROM)
+                        val createFrom = redisTemplate.opsForHash<String, String>().get(PREFIX_TASK_INFO + taskId, KEY_CREATE_FROM)
                         //如果是的话，将task_id设置到缓存中，用于推送websocket
-                        if (!createFrom.isNullOrBlank() && ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value() == createFrom) {
-                            redisTemplate.opsForValue().set(
-                                "${RedisKeyConstants.TASK_WEBSOCKET_SESSION_PREFIX}$taskId",
-                                "1",
-                                TimeUnit.MINUTES.toSeconds(30),
-                                TimeUnit.SECONDS
-                            )
+                        if(!createFrom.isNullOrBlank() && ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value() == createFrom){
+                            redisTemplate.opsForValue().set("${RedisKeyConstants.TASK_WEBSOCKET_SESSION_PREFIX}$taskId", "1", TimeUnit.MINUTES.toSeconds(30), TimeUnit.SECONDS)
                         }
                     }
                 }
 
-                override fun beforeHandshake(
-                    request: ServerHttpRequest,
-                    response: ServerHttpResponse,
-                    wsHandler: WebSocketHandler,
-                    attributes: MutableMap<String, Any>
-                ): Boolean {
+                override fun beforeHandshake(request: ServerHttpRequest, response: ServerHttpResponse, wsHandler: WebSocketHandler, attributes: MutableMap<String, Any>): Boolean {
                     val req = request as ServletServerHttpRequest
                     val user = req.servletRequest.getHeader(AUTH_HEADER_DEVOPS_USER_ID)
                     val taskId = req.servletRequest.getParameter(AUTH_HEADER_DEVOPS_TASK_ID)
@@ -123,10 +111,6 @@ open class WebSocketConfig @Autowired constructor(
                         logger.error("insufficient param info! user: $user, taskId: $taskId, projectId: $projectId")
                         return false
                     }
-                    if (taskId.isNullOrBlank() && isAutoProject(projectId)) {
-                        logger.error("insufficient param info! user: $user, taskId: $taskId, projectId: $projectId")
-                        return false
-                    }
                     if (taskId.isNullOrBlank()) {
                         val accessToken = req.servletRequest.getHeader(AUTH_HEADER_DEVOPS_ACCESS_TOKEN)
                         if (accessToken.isNullOrBlank()) {
@@ -134,7 +118,7 @@ open class WebSocketConfig @Autowired constructor(
                             return false
                         }
                         val verifyResult = client.getDevopsService(ServiceProjectResource::class.java)
-                                .verifyUserProjectPermission(accessToken, projectId, user)
+                            .verifyUserProjectPermission(accessToken, projectId, user)
                         return verifyResult.isOk() && verifyResult.data ?: false
                     }
                     val taskCreateFrom = authTaskService.getTaskCreateFrom(taskId.toLong())
@@ -155,10 +139,8 @@ open class WebSocketConfig @Autowired constructor(
                     }
 
                     val result = if (ComConstants.BsTaskCreateFrom.BS_PIPELINE.value() == taskCreateFrom) {
-                        bkAuthExPermissionApi.validatePipelineBatchPermission(
-                            user,
-                            taskId, projectId, mutableSetOf(PipelineAuthAction.VIEW.actionName)
-                        )
+                        bkAuthExPermissionApi.validatePipelineBatchPermission(user,
+                            taskId, projectId, mutableSetOf(PipelineAuthAction.VIEW.actionName))
                     } else {
 
                         // 查询用户有权限的CodeCC任务
@@ -186,9 +168,5 @@ open class WebSocketConfig @Autowired constructor(
         ).setAllowedOriginPatterns("*").withSockJS()
     }
 
-    private fun isAutoProject(projectId: String): Boolean {
-        return projectId.startsWith(ComConstants.GONGFENG_PROJECT_ID_PREFIX) ||
-                projectId.startsWith(ComConstants.GONGFENG_PRIVATYE_PROJECT_PREFIX) ||
-                projectId == "CUSTOMPROJ_TEG_CUSTOMIZED"
-    }
+
 }

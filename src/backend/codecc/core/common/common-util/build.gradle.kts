@@ -25,7 +25,7 @@ dependencies {
     api("org.springframework.boot:spring-boot-starter-jersey")
     api("org.springframework.boot:spring-boot-starter-undertow")
 //    api("org.springframework.boot:spring-boot-starter-web")
-    api(group = "org.json", name = "json", version = "20180130")
+    api(group = "org.json", name = "json")
     api(group = "org.slf4j", name = "slf4j-api")
     api(group = "org.apache.poi", name = "poi", version = "${Versions.poiVersion}")
     api(group = "org.apache.poi", name = "poi-ooxml", version = "${Versions.poiVersion}")

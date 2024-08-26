@@ -41,11 +41,6 @@ public class CheckerSetPackageVO {
     private List<OrgInfoVO> scopes;
 
     /**
-     * 可见范围-任务创建来源
-     */
-    private List<String> taskCreateFromScopes;
-
-    /**
      * 版本
      */
     private Integer version;

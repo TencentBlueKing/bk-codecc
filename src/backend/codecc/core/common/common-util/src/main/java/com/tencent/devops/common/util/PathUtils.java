@@ -42,12 +42,12 @@ public class PathUtils {
 
     public static final int DIR = 1;
     public static final int FILE = 2;
-    public static final String REGEX_GITHUB_SSH = "git@github\\.com:(.+)\\.git$";
-    public static final String REGEX_GITLAB_SSH = "git@gitlab\\.com:(.+)\\.git$";
-    public static final String REGEX_GIT_SSH = "git@git\\.(.+?):(.+)\\.git$";
-    public static final String REGEX_GITHUB_HTTP_WITH_CERT = "https://(.+)@github(.+)\\.git$";
-    public static final String REGEX_GITLAB_HTTP_WITH_CERT = "https://(.+)@gitlab(.+)\\.git$";
-    public static final String REGEX_GIT_HTTP_WITH_CERT = "http://(.+)@git\\.(.+)\\.git$";
+    public static final String REGEX_GITHUB_SSH = "git@github.com:(.+).git$";
+    public static final String REGEX_GITLAB_SSH = "git@gitlab.com:(.+).git$";
+    public static final String REGEX_GIT_SSH = "git@git\\.(.+?):(.+).git$";
+    public static final String REGEX_GITHUB_HTTP_WITH_CERT = "https://(.+)@github(.+).git$";
+    public static final String REGEX_GITLAB_HTTP_WITH_CERT = "https://(.+)@gitlab(.+).git$";
+    public static final String REGEX_GIT_HTTP_WITH_CERT = "http://(.+)@git\\.(.+).git$";
     // 没有.git后缀的github地址需要拼上.git
     public static final String REGEX_GITHUB_HTTP_WITHOUT_GIT_SUFFIX = "http.*://github(.+)(?<!\\.git)$";
     // 没有.git后缀的gitlab地址需要拼上.git
@@ -55,24 +55,15 @@ public class PathUtils {
     // 没有.git后缀的git地址需要拼上.git
     public static final String REGEX_GIT_HTTP_WITHOUT_GIT_SUFFIX = "http.*://git\\.(.+)(?<!\\.git)$";
     // http的github路径需要把s加上
-    public static final String REGEX_GITHUB_HTTP = "http://github(.+)\\.git$";
+    public static final String REGEX_GITHUB_HTTP = "http://github(.+).git$";
     // http的gitlab路径需要把s加上
-    public static final String REGEX_GITLAB_HTTP = "http://gitlab(.+)\\.git$";
+    public static final String REGEX_GITLAB_HTTP = "http://gitlab(.+).git$";
     // https的git路径需要把s去掉
-    public static final String REGEX_GIT_HTTPS = "https://git\\.(.+)\\.git$";
+    public static final String REGEX_GIT_HTTPS = "https://git\\.(.+).git$";
     public static final String REGEX_SVN_SSH = "svn\\+ssh\\:\\/\\/\\S+@(.+)";
     public static final String REGEX_WIN_PATH_PREFIX = "^[a-zA-Z]:/(.+)";
     public static final String REGEX_WIN_PATH_PREFIX_2 = "^[a-zA-Z]:\\\\(.+)";
     public static final String REGEX_KLOCWORK_WIN_PATH_PREFIX = "^/[a-zA-Z]/(.+)";
-    public static final String REGEX_GITHUB_SSH_2 = "git@github\\.com:(.+)\\.git(.+)";
-    public static final String REGEX_GITLAB_SSH_2 = "git@gitlab\\.com:(.+)\\.git(.+)";
-    public static final String REGEX_GIT_SSH_2 = "git@git\\.(.+?):(.+)\\.git(.+)";
-    public static final String REGEX_GITHUB_HTTPS_2 = "https://(.+)@github(.+)\\.git(.+)";
-    public static final String REGEX_GITLAB_HTTPS_2 = "https://(.+)@gitlab(.+)\\.git(.+)";
-    public static final String REGEX_GIT_HTTP_2 = "http://(.+)@git\\.(.+)\\.git(.+)";
-    public static final String REGEX_GITHUB_HTTP_2 = "http://github(.+)\\.git(.+)";
-    public static final String REGEX_GITLAB_HTTP_2 = "http://gitlab(.+)\\.git(.+)";
-    public static final String REGEX_GIT_HTTPS_2 = "https://git\\.(.+)\\.git(.+)";
     private static final int MIN_LENGTH = 6;
     private static Logger logger = LoggerFactory.getLogger(PathUtils.class);
 
@@ -195,12 +186,7 @@ public class PathUtils {
             root = url.substring(url.lastIndexOf("/"));
         } else {
             String tmpPath = url.substring(0, index);
-            if (StringUtils.isBlank(tmpPath)) {
-                // 如果tmpPath为空。则不使用tmpPath
-                root = url.substring(url.lastIndexOf("/"));
-            } else {
-                root = tmpPath.substring(tmpPath.lastIndexOf("/"));
-            }
+            root = tmpPath.substring(tmpPath.lastIndexOf("/"));
         }
         return root + relPath;
     }
@@ -363,24 +349,24 @@ public class PathUtils {
      */
     public static String formatFileRepoUrlToHttp(String fileUrl) {
         if (StringUtils.isNotEmpty(fileUrl)) {
-            if (Pattern.matches(REGEX_GITHUB_SSH_2, fileUrl)) {
-                fileUrl = fileUrl.replaceAll(REGEX_GITHUB_SSH_2, "https://github.com/$1.git$2");
-            } else if (Pattern.matches(REGEX_GITLAB_SSH_2, fileUrl)) {
-                fileUrl = fileUrl.replaceAll(REGEX_GITLAB_SSH_2, "https://gitlab.com/$1.git$2");
-            } else if (Pattern.matches(REGEX_GIT_SSH_2, fileUrl)) {
-                fileUrl = fileUrl.replaceAll(REGEX_GIT_SSH_2, "http://git\\.$1/$2.git$3");
-            } else if (Pattern.matches(REGEX_GITHUB_HTTPS_2, fileUrl)) {
-                fileUrl = fileUrl.replaceAll(REGEX_GITHUB_HTTPS_2, "https://github$2.git$3");
-            } else if (Pattern.matches(REGEX_GITLAB_HTTPS_2, fileUrl)) {
-                fileUrl = fileUrl.replaceAll(REGEX_GITLAB_HTTPS_2, "https://gitlab$2.git$3");
-            } else if (Pattern.matches(REGEX_GIT_HTTP_2, fileUrl)) {
-                fileUrl = fileUrl.replaceAll(REGEX_GIT_HTTP_2, "http://git\\.$2.git$3");
-            } else if (Pattern.matches(REGEX_GITHUB_HTTP_2, fileUrl)) {
-                fileUrl = fileUrl.replaceAll(REGEX_GITHUB_HTTP_2, "http://github\\.$1.git$2");
-            } else if (Pattern.matches(REGEX_GITLAB_HTTP_2, fileUrl)) {
-                fileUrl = fileUrl.replaceAll(REGEX_GITLAB_HTTP_2, "http://gitlab\\.$1.git$2");
-            } else if (Pattern.matches(REGEX_GIT_HTTPS_2, fileUrl)) {
-                fileUrl = fileUrl.replaceAll(REGEX_GIT_HTTPS_2, "http://git\\.$1.git$2");
+            if (Pattern.matches("git@github.com:(.+).git(.+)", fileUrl)) {
+                fileUrl = fileUrl.replaceAll("git@github.com:(.+).git(.+)", "https://github.com/$1.git$2");
+            } else if (Pattern.matches("git@gitlab.com:(.+).git(.+)", fileUrl)) {
+                fileUrl = fileUrl.replaceAll("git@gitlab.com:(.+).git(.+)", "https://gitlab.com/$1.git$2");
+            } else if (Pattern.matches("git@git\\.(.+?):(.+).git(.+)", fileUrl)) {
+                fileUrl = fileUrl.replaceAll("git@git\\.(.+?):(.+).git(.+)", "http://git\\.$1/$2.git$3");
+            } else if (Pattern.matches("https://(.+)@github(.+).git(.+)", fileUrl)) {
+                fileUrl = fileUrl.replaceAll("https://(.+)@github(.+).git(.+)", "https://github$2.git$3");
+            } else if (Pattern.matches("https://(.+)@gitlab(.+).git(.+)", fileUrl)) {
+                fileUrl = fileUrl.replaceAll("https://(.+)@gitlab(.+).git(.+)", "https://gitlab$2.git$3");
+            } else if (Pattern.matches("http://(.+)@git\\.(.+).git(.+)", fileUrl)) {
+                fileUrl = fileUrl.replaceAll("http://(.+)@git\\.(.+).git(.+)", "http://git\\.$2.git$3");
+            } else if (Pattern.matches("http://github(.+).git(.+)", fileUrl)) {
+                fileUrl = fileUrl.replaceAll("http://github(.+).git(.+)", "http://github\\.$1.git$2");
+            } else if (Pattern.matches("http://gitlab(.+).git(.+)", fileUrl)) {
+                fileUrl = fileUrl.replaceAll("http://gitlab(.+).git(.+)", "http://gitlab\\.$1.git$2");
+            } else if (Pattern.matches("https://git\\.(.+).git(.+)", fileUrl)) {
+                fileUrl = fileUrl.replaceAll("https://git\\.(.+).git(.+)", "http://git\\.$1.git$2");
             } else if (Pattern.matches(REGEX_SVN_SSH, fileUrl)) {
                 fileUrl = fileUrl.replaceAll(REGEX_SVN_SSH, "http://$1");
             }

@@ -855,6 +855,40 @@ public class ToolServiceImpl implements ToolService {
         return true;
     }
 
+    /**
+     * 仅用于初始化查询工具数量
+     *
+     * @param day 天数
+     * @return
+     */
+    @Override
+    public Boolean initToolCountScript(Integer day) {
+        // 获取日期
+        List<String> dates = DateTimeUtils.getBeforeDaily(day);
+
+        // 获取开源的任务id集合
+        List<Long> openTaskIdList = taskService.queryTaskIdByType(DefectStatType.GONGFENG_SCAN);
+        // 获取非开源的任务id集合
+        List<Long> taskIdList = taskService.queryTaskIdByType(DefectStatType.USER);
+
+        List<ToolStatisticEntity> toolCountData = Lists.newArrayList();
+        for (String date : dates) {
+            // 获取结束时间
+            long endTime = DateTimeUtils.getTimeStampEnd(date);
+            try {
+                // 根据工具名分组 查询开源的各工具数量
+                getToolCount(openTaskIdList, toolCountData, date, endTime, DefectStatType.GONGFENG_SCAN.value());
+                // 根据工具名分组 查询非开源的各工具数量
+                getToolCount(taskIdList, toolCountData, date, endTime, DefectStatType.USER.value());
+            } catch (Exception e) {
+                log.error("Failed to obtain tool data", e);
+            }
+        }
+
+        toolStatisticRepository.saveAll(toolCountData);
+        return true;
+    }
+
     @Override
     public ToolTaskInfoVO getToolInfoConfigByToolName(String toolName, String detailTime) {
         // 将字符串时间格式转换成时间戳

@@ -13,19 +13,25 @@
 package com.tencent.bk.codecc.task.dao.mongorepository;
 
 import com.tencent.bk.codecc.task.model.TaskFailRecordEntity;
-import java.util.List;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 /**
  * 开源扫描失败重试持久
- *
- * @version V1.0
+ * 
  * @date 2020/7/13
+ * @version V1.0
  */
 @Repository
-public interface TaskFailRecordRepository extends MongoRepository<TaskFailRecordEntity, String> {
-
-    List<TaskFailRecordEntity> findByUploadTimeGreaterThanAndTimeCostLessThanAndProjectIdNotOrderByUploadTimeAsc(
-            Long uploadTime, Long timeCost, String projectId);
+public interface TaskFailRecordRepository extends MongoRepository<TaskFailRecordEntity, String>
+{
+    /**
+     * 根据开始时间排序查询失败记录
+     * @param uploadTime
+     * @param retryFlag
+     * @return
+     */
+    List<TaskFailRecordEntity> findByUploadTimeGreaterThanAndRetryFlagIsAndTimeCostLessThanAndProjectIdNotOrderByUploadTimeAsc(Long uploadTime, Boolean retryFlag, Long timeCost, String projectId);
 }

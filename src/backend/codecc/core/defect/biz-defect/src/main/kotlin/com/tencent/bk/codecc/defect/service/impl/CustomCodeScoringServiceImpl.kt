@@ -55,8 +55,8 @@ class CustomCodeScoringServiceImpl @Autowired constructor(
     redisTemplate,
     commonKafkaClient,
     clocStatisticRepository,
-    redLineRepository,
-    redLineMetaRepository
+        redLineRepository,
+        redLineMetaRepository
 ) {
 
     override fun scoring(taskDetailVO: TaskDetailVO, buildId: String): MetricsEntity? {
@@ -300,13 +300,6 @@ class CustomCodeScoringServiceImpl @Autowired constructor(
                 totalLine
             )
         }
-
-        val totalDefectCount = metricsEntity.codeStyleSeriousDefectCount + metricsEntity.codeStyleNormalDefectCount
-        if (totalDefectCount == 0) {
-            // 如果没有告警，得分改为100，计算过程中出现了99.99分的情况
-            metricsEntity.codeStyleScore = 100.toDouble()
-        }
-
         metricsEntity.averageSeriousStandardThousandDefect =
             BigDecimal(
                 1000 * metricsEntity.codeStyleSeriousDefectCount.toDouble()

@@ -205,12 +205,6 @@ public class TaskInfoEntity extends CommonEntity {
     private int bgId;
 
     /**
-     * 业务线id
-     */
-    @Field("business_line_id")
-    private Integer businessLineId;
-
-    /**
      * 部门id
      */
     @Indexed

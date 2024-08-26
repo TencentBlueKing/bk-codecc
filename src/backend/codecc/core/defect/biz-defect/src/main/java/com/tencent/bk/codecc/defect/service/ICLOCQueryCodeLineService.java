@@ -9,26 +9,24 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
 package com.tencent.bk.codecc.defect.service;
 
-import com.tencent.bk.codecc.defect.dto.CodeLineModel;
 import com.tencent.bk.codecc.defect.vo.CLOCDefectQueryRspInfoVO;
 import com.tencent.bk.codecc.defect.vo.ToolClocRspVO;
+
 import java.util.Collection;
-import java.util.List;
 
 /**
  * cloc查询代码行数接口
- *
- * @version V1.0
+ * 
  * @date 2020/3/31
+ * @version V1.0
  */
-public interface ICLOCQueryCodeLineService {
-
+public interface ICLOCQueryCodeLineService
+{
     /**
      * 根据任务id查询代码行数信息
-     *
      * @param taskId
      * @return
      */
@@ -44,19 +42,10 @@ public interface ICLOCQueryCodeLineService {
 
     /**
      * 根据特定task_id和语言查询
-     *
      * @param language
      * @param taskId
      * @return
      */
     CLOCDefectQueryRspInfoVO generateSpecificLanguage(long taskId, String toolName, String language);
-
-    /**
-     * 按任务ID获取代码行数
-     *
-     * @param taskId 任务ID集合
-     * @return int
-     */
-    List<CodeLineModel> queryCodeLineByTaskId(Long taskId);
 
 }

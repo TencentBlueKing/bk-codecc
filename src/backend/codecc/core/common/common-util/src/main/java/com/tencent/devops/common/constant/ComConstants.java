@@ -41,7 +41,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -151,13 +150,9 @@ public interface ComConstants {
     long COMMON_NUM_10L = 10L;
 
     long COMMON_NUM_100L = 100L;
-    int COMMON_NUM_0 = 0;
-    int COMMON_NUM_10 = 10;
-    int COMMON_NUM_100 = 100;
     long COMMON_NUM_0L = 0L;
     float COMMON_NUM_0F = 0F;
     double COMMON_NUM_0D = 0.0D;
-    double COMMON_NUM_100D = 100.0D;
     int COMMON_NUM_5000 = 5000;
 
     /**
@@ -517,11 +512,6 @@ public interface ComConstants {
 
     String GONGFENG_PROJECT_ID_PREFIX = "CODE_";
     String CUSTOMPROJ_ID_PREFIX = "CUSTOMPROJ_";
-    String STREAM_PROJECT_ID_PREFIX = "git_";
-    /**
-     * 闭源扫描项目id前缀
-     */
-    String GONGFENG_PRIVATYE_PROJECT_PREFIX = "CLOSED_SOURCE_";
 
     /**
      * 腾讯内部开源预发布规则开始结束时间
@@ -677,8 +667,6 @@ public interface ComConstants {
 
 
     String EMPTY_STRING = "";
-
-    long DEFAULT_PLUGIN_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(900);
 
     /**
      * 业务类型
@@ -1222,28 +1210,35 @@ public interface ComConstants {
          */
         TIMING_SCAN("timing_scan");
 
-        private final String value;
+        private String value;
 
         BsTaskCreateFrom(String value) {
             this.value = value;
         }
 
-        public static BsTaskCreateFrom getByValue(String value) {
-            if (StringUtils.isEmpty(value)) {
-                return null;
-            }
-            for (BsTaskCreateFrom bsTaskCreateFrom : BsTaskCreateFrom.values()) {
-                if (bsTaskCreateFrom.value.equals(value)) {
-                    return bsTaskCreateFrom;
+        @NotNull
+        public static Set<String> getByStatType(Set<String> type) {
+            Set<String> createFrom;
+            if (type != null) {
+                createFrom = Sets.newHashSet();
+                if (type.contains(DefectStatType.GONGFENG_SCAN.value)) {
+                    // 开源
+                    createFrom.add(GONGFENG_SCAN.value());
                 }
+                if (type.contains(DefectStatType.USER.value)) {
+                    // 非开源
+                    createFrom.add(BS_CODECC.value());
+                    createFrom.add(BS_PIPELINE.value());
+                }
+            } else {
+                createFrom = Sets.newHashSet(BS_CODECC.value(), BS_PIPELINE.value(), GONGFENG_SCAN.value());
             }
-            return null;
+            return createFrom;
         }
 
         public String value() {
             return this.value;
         }
-
     }
 
     enum EslintFrameworkType {
@@ -1901,7 +1896,7 @@ public interface ComConstants {
 
     enum DefectStatType {
         /**
-         * 所有任务范围,仅用于参数，不存储
+         * 所有任务范围
          */
         ALL("all"),
         /**
@@ -1909,30 +1904,11 @@ public interface ComConstants {
          */
         USER("user"),
         /**
-         * （项目id以git_开头）
+         * 开源扫描
          */
-        STREAM_SCAN("stream_scan"),
-        /**
-         * 开源扫描（项目id以CODE_开头）
-         * 原本只有系统创建(gongfeng_scan), 用户自主创建(bs_codecc, bs_pipeline)，user是自主创建的集合
-         * 现在系统创建细分为开源扫描(open_source_scan), 闭源扫描(closed_source_scan)
-         * 原createFrom是gongfeng_scan的，现在分为closed_source_scan, open_source_scan(包括api创建的CUSTOMPROJ_xxxx)
-         */
-        OPEN_SOURCE_SCAN("open_source_scan"),
-        /**
-         * 闭源扫描（项目id以CLOSED_SOURCE_开头）
-         */
-        CLOSED_SOURCE_SCAN("closed_source_scan"),
-        /**
-         * （项目id以GITHUB_开头）
-         */
-        GITHUB_SCAN("github_scan"),
-        /**
-         * （项目id以CUSTOMPROJ_开头）
-         */
-        API_SCAN("api_scan");
+        GONGFENG_SCAN("gongfeng_scan");
 
-        private final String value;
+        private String value;
 
         DefectStatType(String value) {
             this.value = value;
@@ -1940,35 +1916,6 @@ public interface ComConstants {
 
         public String value() {
             return this.value;
-        }
-
-        /**
-         * OP业务统计划分：
-         *  1.任务创建来源(BsTaskCreateFrom)：工蜂扫描、流水线、CodeCC服务
-         *  2.统计会细分数据来源(DefectStatType)：工蜂闭源扫描、用户（流水线、CodeCC服务）、工蜂开源扫描（除开闭源与用户以外）
-         */
-        @NotNull
-        public static String getDataFromByProjectId(String taskCreateFrom, String projectId) {
-            if (BsTaskCreateFrom.GONGFENG_SCAN.value().equals(taskCreateFrom)) {
-                return getGongfengScanType(projectId);
-            } else if (projectId.startsWith(STREAM_PROJECT_ID_PREFIX)) {
-                return STREAM_SCAN.value();
-            }
-            return USER.value();
-        }
-        public static String getGongfengScanType(String projectId) {
-            if (projectId.startsWith(GONGFENG_PRIVATYE_PROJECT_PREFIX)) {
-                // 闭源扫描
-                return CLOSED_SOURCE_SCAN.value();
-            } else if (projectId.startsWith("GITHUB_")) {
-                // GitHub扫描
-                return GITHUB_SCAN.value();
-            } else if (projectId.startsWith(CUSTOMPROJ_ID_PREFIX)) {
-                // API触发扫描
-                return API_SCAN.value();
-            }
-            // 默认开源扫描
-            return OPEN_SOURCE_SCAN.value();
         }
     }
 
@@ -2329,8 +2276,7 @@ public interface ComConstants {
         UNPROCESSED(0), // 待处理
         FIXED(1),       // 已优化工具
         NONEED(2),      // 非工具原因
-        OTHER(3),       // 其他
-        FOLLOWING(4);   // 跟进中
+        OTHER(3);       // 其他
 
         private Integer type;
 

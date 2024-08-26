@@ -19,36 +19,36 @@ import com.tencent.bk.codecc.defect.vo.common.CommonDefectDetailQueryRspVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.exception.UnauthorizedException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import com.tencent.devops.common.auth.api.OpAuthApi;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.service.utils.I18NUtils;
 import com.tencent.devops.common.web.RestResource;
 import com.tencent.devops.common.web.security.AuthMethod;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @RestResource
 public class UserIgnoredNegativeDefectRestResourceImpl implements UserIgnoredNegativeDefectRestResource {
 
-    private final String ERROR_MESSAGE_FOR_GONGFENG_PRIVATE = "fail to get git file content with: 403): ";
     @Autowired
     IIgnoredNegativeDefectService iIgnoredNegativeDefectService;
+
     @Autowired
     CheckerService checkerService;
+
     @Autowired
     @Qualifier("LINTQueryWarningBizService")
     private LintQueryWarningBizServiceImpl lintQueryWarningBizServiceImpl;
-    @Autowired
-    private OpAuthApi opAuthApi;
+
+    private final String ERROR_MESSAGE_FOR_GONGFENG_PRIVATE = "fail to get git file content with: 403): ";
 
     @Override
     @AuthMethod(extPassClassName = ToolDeveloperExtAuth.class)
@@ -57,11 +57,7 @@ public class UserIgnoredNegativeDefectRestResourceImpl implements UserIgnoredNeg
             String toolName,
             QueryDefectFileContentSegmentReqVO request
     ) {
-        if (StringUtils.isBlank(userId)) {
-            throw new IllegalArgumentException("X-DEVOPS-UID is missing");
-        }
-
-        request.setTryBestForPrivate(opAuthApi.isOpAdminMember(userId));
+        request.setTryBestForPrivate(false);
         request.setToolName(toolName);
         DefectFileContentSegmentQueryRspVO rsp = lintQueryWarningBizServiceImpl.processQueryDefectFileContentSegment(
                 null, userId, request);
@@ -156,16 +152,14 @@ public class UserIgnoredNegativeDefectRestResourceImpl implements UserIgnoredNeg
         Set<String> checkers = new HashSet<>();
         Set<String> publishers = new HashSet<>();
         Set<String> tags = new HashSet<>();
-        if (!CollectionUtils.isEmpty(checkerData)) {
-            checkerData.forEach(checkerDetail -> {
-                log.info("checker name: {}, tag: {}", checkerDetail.getCheckerName(), checkerDetail.getCheckerTag());
-                checkers.add(checkerDetail.getCheckerName());
-                tags.addAll(checkerDetail.getCheckerTag());
-                if (StringUtils.isNotBlank(checkerDetail.getPublisher())) {
-                    publishers.add(checkerDetail.getPublisher());
-                }
-            });
-        }
+        checkerData.forEach(checkerDetail -> {
+            log.info("checker name: {}, tag: {}", checkerDetail.getCheckerName(), checkerDetail.getCheckerTag());
+            checkers.add(checkerDetail.getCheckerName());
+            tags.addAll(checkerDetail.getCheckerTag());
+            if (StringUtils.isNotBlank(checkerDetail.getPublisher())) {
+                publishers.add(checkerDetail.getPublisher());
+            }
+        });
 
         List<String> checkerList = new ArrayList<>(checkers);
         Collections.sort(checkerList);

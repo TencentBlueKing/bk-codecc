@@ -1,9 +1,7 @@
 package com.tencent.bk.codecc.defect.dao;
 
 import static com.tencent.devops.common.constant.ComConstants.HISTORY_IGNORE_TYPE;
-import static com.tencent.devops.common.constant.ComConstants.METADATA_TYPE_LANG;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -11,13 +9,10 @@ import com.tencent.bk.codecc.task.api.ServiceBaseDataResource;
 import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
-import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.service.BaseDataCacheService;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -122,30 +117,5 @@ public class BaseDataCacheServiceImpl implements BaseDataCacheService {
             log.error("getHistoryIgnoreType fail!", e);
         }
         return null;
-    }
-
-    @Override
-    public Map<String, Long> getLangToValueMap() {
-        try {
-            List<BaseDataVO> langMetas = getByType(METADATA_TYPE_LANG);
-            if (CollectionUtils.isEmpty(langMetas)) {
-                log.error("getLangToValueMap is empty");
-                return Collections.emptyMap();
-            }
-            Map<String, Long> langToValueMap = new HashMap<>();
-            for (BaseDataVO langMeta : langMetas) {
-                if (StringUtils.isBlank(langMeta.getParamExtend2()) || StringUtils.isBlank(langMeta.getParamCode())
-                        || !StringUtils.isNumeric(langMeta.getParamCode())) {
-                    continue;
-                }
-                Long langValue = Long.valueOf(langMeta.getParamCode());
-                JsonUtil.INSTANCE.to(langMeta.getParamExtend2(), new TypeReference<List<String>>() {
-                        }).forEach(it -> langToValueMap.put(it, langValue));
-            }
-            return langToValueMap;
-        } catch (Exception e) {
-            log.error("getLangToValueMap fail!", e);
-        }
-        return Collections.emptyMap();
     }
 }

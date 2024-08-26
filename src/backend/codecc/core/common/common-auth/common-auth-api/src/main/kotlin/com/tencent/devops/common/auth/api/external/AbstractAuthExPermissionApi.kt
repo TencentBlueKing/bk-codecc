@@ -70,7 +70,7 @@ abstract class AbstractAuthExPermissionApi @Autowired constructor(
     ): Boolean {
         val authTaskService = SpringContextUtil.getBean(AuthTaskService::class.java)
         var createFromStr = createFrom ?: authTaskService.getTaskCreateFrom(taskId.toLong())
-        if (ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value() != createFromStr) {
+        if (ComConstants.DefectStatType.GONGFENG_SCAN.value() != createFromStr) {
             createFromStr = ComConstants.DefectStatType.USER.value()
         }
         val bgIdStr = redisTemplate.opsForHash<String, String>().get(RedisKeyConstants.KEY_TASK_BG_MAPPING, taskId)

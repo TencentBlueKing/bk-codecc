@@ -1489,13 +1489,4 @@ public class CheckerServiceImpl implements CheckerService {
             }
         }).filter(StringUtils::isNotEmpty).collect(Collectors.toList());
     }
-
-    @Override
-    public List<CheckerDetailEntity> queryCheckerCategoryByCheckerPropVO(List<CheckerPropVO> propVOS) {
-        List<CheckerDetailEntity> checkerDetailEntityList = checkerDetailDao.findByCheckerPropVO(propVOS);
-        if (CollectionUtils.isEmpty(checkerDetailEntityList)) {
-            return new ArrayList<>();
-        }
-        return checkerDetailEntityList;
-    }
 }

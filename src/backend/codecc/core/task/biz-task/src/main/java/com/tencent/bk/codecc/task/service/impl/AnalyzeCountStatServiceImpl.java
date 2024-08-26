@@ -4,14 +4,19 @@ import com.google.common.collect.Maps;
 import com.tencent.bk.codecc.task.dao.mongorepository.AnalyzeCountStatRepository;
 import com.tencent.bk.codecc.task.model.AnalyzeCountStatEntity;
 import com.tencent.bk.codecc.task.service.AnalyzeCountStatService;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import com.tencent.devops.common.constant.ComConstants;
 
-import java.util.ArrayList;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
@@ -25,9 +30,16 @@ public class AnalyzeCountStatServiceImpl implements AnalyzeCountStatService {
         Map<Integer, List<Long>> taskIds = Maps.newHashMap();
         List<AnalyzeCountStatEntity> analyzeCountStatEntities =
                 analyzeCountStatRepository.findByDateAndDataFromInAndToolName(detailTime, createFrom, toolName);
-        analyzeCountStatEntities.forEach(analyzeCountStat ->
-                taskIds.computeIfAbsent(analyzeCountStat.getStatus(), k -> new ArrayList<>())
-                        .addAll(analyzeCountStat.getTaskIdList()));
+        if (CollectionUtils.isNotEmpty(analyzeCountStatEntities)) {
+            for (AnalyzeCountStatEntity analyzeCountStat: analyzeCountStatEntities) {
+                // 如果key第一次存key
+                if (taskIds.containsKey(analyzeCountStat.getStatus())) {
+                    taskIds.get(analyzeCountStat.getStatus()).addAll(analyzeCountStat.getTaskIdList());
+                } else {
+                    taskIds.put(analyzeCountStat.getStatus(), analyzeCountStat.getTaskIdList());
+                }
+            }
+        }
         return taskIds;
     }
 }

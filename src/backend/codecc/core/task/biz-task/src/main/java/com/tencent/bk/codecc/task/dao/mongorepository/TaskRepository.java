@@ -159,7 +159,7 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String>
      *
      * @return
      */
-    @Query(fields = "{'create_from': 1, 'project_id': 1, 'task_id': 1, 'bg_id': 1}")
+    @Query("{}")
     Page<TaskInfoEntity> findTasksByPage(Pageable pageable);
 
     /**
@@ -358,7 +358,4 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String>
 
     @Query(fields = "{'task_id': 1, 'status': 1, 'create_from': 1}")
     TaskInfoEntity findStatusAndCreateFromByTaskId(Long taskId);
-
-    @Query(fields = "{'task_id': 1}")
-    List<TaskInfoEntity> findTaskIdByProjectIdAndStatus(String projectId,Integer status);
 }

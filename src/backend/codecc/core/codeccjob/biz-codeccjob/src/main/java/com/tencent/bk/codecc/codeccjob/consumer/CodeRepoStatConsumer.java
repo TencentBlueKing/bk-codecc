@@ -13,7 +13,6 @@
 package com.tencent.bk.codecc.codeccjob.consumer;
 
 import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.KEY_CREATE_FROM;
-import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.KEY_PROJECT_ID;
 import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.PREFIX_TASK_INFO;
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_CODE_REPO_STAT;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_CODE_REPO_STAT;
@@ -26,10 +25,9 @@ import com.tencent.bk.codecc.defect.model.CodeRepoStatisticEntity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoInfoEntity;
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
-import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
-import com.tencent.bk.codecc.task.vo.TaskDetailVO;
-import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
+import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -40,9 +38,6 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Set;
 
 /**
  * 代码库统计消息消费类
@@ -61,8 +56,6 @@ public class CodeRepoStatConsumer {
     private CodeRepoInfoRepository codeRepoInfoRepository;
     @Autowired
     private CodeRepoStatRepository codeRepoStatRepository;
-    @Autowired
-    private Client client;
 
 
     /**
@@ -87,22 +80,11 @@ public class CodeRepoStatConsumer {
         }
         long taskId = uploadTaskLogStepVO.getTaskId();
         String buildId = uploadTaskLogStepVO.getPipelineBuildId();
-        String projectId = uploadTaskLogStepVO.getProjectId();
-        if (StringUtils.isBlank(projectId)) {
-            projectId = (String) redisTemplate.opsForHash().get(PREFIX_TASK_INFO + taskId, KEY_PROJECT_ID);
-            if (StringUtils.isBlank(projectId)) {
-                TaskDetailVO taskDetail =
-                        client.get(ServiceTaskRestResource.class).getTaskInfoWithoutToolsByTaskId(taskId).getData();
-                if (null == taskDetail) {
-                    log.error("CodeRepoStatConsumer taskDetail is null. task_id: {}", taskId);
-                    return;
-                }
-                projectId = taskDetail.getProjectId();
-                redisTemplate.opsForHash().put(PREFIX_TASK_INFO + taskId, KEY_PROJECT_ID, projectId);
-            }
+
+        String createFrom = (String) redisTemplate.opsForHash().get(PREFIX_TASK_INFO + taskId, KEY_CREATE_FROM);
+        if (!ComConstants.DefectStatType.GONGFENG_SCAN.value().equals(createFrom)) {
+            createFrom = ComConstants.DefectStatType.USER.value();
         }
-        String taskCreateFrom = (String) redisTemplate.opsForHash().get(PREFIX_TASK_INFO + taskId, KEY_CREATE_FROM);
-        String createFrom = ComConstants.DefectStatType.getDataFromByProjectId(taskCreateFrom, projectId);
 
         CodeRepoInfoEntity codeRepoInfoEntity = codeRepoInfoRepository.findFirstByTaskIdAndBuildId(taskId, buildId);
         if (codeRepoInfoEntity != null) {

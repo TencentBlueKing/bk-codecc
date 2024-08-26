@@ -182,16 +182,6 @@ public interface RedisKeyConstants {
     String KEY_DEPT_TREE = "DEPT_TREE";
 
     /**
-     * 仅保存BG、业务线、部门层级
-     */
-    String KEY_BG_TO_DEPT_TREE = "BG_TO_DEPT_TREE";
-
-    /**
-     * 保存每个组织架构的类型id
-     */
-    String KEY_DEPT_TYPE_ID = "KEY_DEPT_TYPE_ID";
-
-    /**
      * bg管理员清单
      */
     String KEY_USER_BG_ADMIN = "USER_BG_ADMIN";
@@ -260,9 +250,7 @@ public interface RedisKeyConstants {
 
     /**
      * 统计每天活跃工具数
-     * 已改为从 PREFIX_ANALYZE_FAIL_COUNT + PREFIX_ANALYZE_SUCC_COUNT中获取
      */
-    @Deprecated
     String PREFIX_ACTIVE_TOOL = "ACTIVE_TOOL:";
 
     /**
@@ -446,8 +434,6 @@ public interface RedisKeyConstants {
 
     String GONGFENG_SCAN_CREATE_TASK_MIGRATE = "GONGFENG_SCAN_CREATE_TASK_MIGRATE";
 
-    String NOTIFY_GONGFENG_SCAN_INTERVAL = "NOTIFY_GONGFENG_SCAN_INTERVAL";
-
     /**
      * 提单锁模式
      */
@@ -456,36 +442,12 @@ public interface RedisKeyConstants {
     /**
      * 数据表每日清理
      */
-    String CLEAN_MONGO_DATA_STOP_FLAG = "CLEAN_MONGO_DATA_STOP_FLAG";
+    String CLEAN_MONGO_DATA_STOP_FLAG  = "CLEAN_MONGO_DATA_STOP_FLAG";
 
     /**
      * 规则数据统计【执行时长18小时】
      */
-    String CHECKER_DEFECT_STAT_CONSUMER_STOP_FLAG = "CHECKER_DEFECT_STAT_CONSUMER_STOP_FLAG";
+    String CHECKER_DEFECT_STAT_CONSUMER_STOP_FLAG   = "CHECKER_DEFECT_STAT_CONSUMER_STOP_FLAG";
 
-    /**
-     * 工具侧上报代码仓库信息(/build/defects/repositories) 时，在 t_code_repo_info 表中创建新数据锁
-     */
-    String LOCK_T_CODE_REPO_INFO = "LOCK:T_CODE_REPO_INFO";
-    /**
-     * 任务失效工具告警处理
-     */
-    String TASK_INVALID_TOOL_DEFECT = "TASK_INVALID_TOOL_DEFECT";
 
-    /**
-     * 支持未触发补偿的任务类名
-     */
-    String BK_JOB_NO_TRIGGER_COMPENSATE_CLASS = "BK_JOB_NO_TRIGGER_COMPENSATE_CLASS";
-
-    /**
-     * 异步任务状态,"true":已执行完成，"false":执行中
-     * ASYNC_TASK_STATUS:{key} - true/false
-     */
-    String ASYNC_TASK_STATUS = "ASYNC_TASK_STATUS:";
-
-    /**
-     * 异步任务得出的结果(不需持久化的数据，要配置过期时间)
-     * ASYNC_TASK_RESULT:{key} - string
-     */
-    String ASYNC_TASK_RESULT = "ASYNC_TASK_RESULT:";
 }

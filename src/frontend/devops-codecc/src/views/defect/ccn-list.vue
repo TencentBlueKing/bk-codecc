@@ -469,6 +469,7 @@
                 >{{ $t('分配') }}</bk-button
                 >
                 <bk-button
+                  v-if="DEPLOY_ENV === 'tencent'"
                   size="small"
                   ext-cls="cc-operate-button"
                   @click="handleCommit('commit', true)"
@@ -755,6 +756,7 @@
                           v-if="
                             props.row.status & 4 &&
                               !props.row.ignoreCommentDefect
+                              && DEPLOY_ENV === 'tencent'
                           "
                           class="entry-link"
                           @click.stop="
@@ -857,6 +859,7 @@
                                 props.row.defectIssueInfoVO.submitStatus &&
                                 props.row.defectIssueInfoVO.submitStatus !== 4
                               )
+                              && DEPLOY_ENV === 'tencent'
                           "
                           class="entry-link"
                           @click.stop="
@@ -1061,7 +1064,7 @@
                             {{ $t('取消忽略并标记处理') }}
                           </bk-button>
                         </div>
-                        <div class="item">
+                        <div class="item" v-if="DEPLOY_ENV === 'tencent'">
                           <bk-button
                             class="item-button"
                             @click="
@@ -1156,6 +1159,7 @@
                               currentLintFile.defectIssueInfoVO.submitStatus &&
                               currentLintFile.defectIssueInfoVO.submitStatus !== 4
                             )
+                            && DEPLOY_ENV === 'tencent'
                         "
                       >
                         <bk-button
@@ -1618,6 +1622,7 @@ import DefectPanel from './components/defect-panel.vue';
 // eslint-disable-next-line
 import { export_json_to_excel } from '@/vendor/export2Excel';
 import { language } from '../../i18n';
+import DEPLOY_ENV from '@/constants/env';
 
 // 搜索过滤项缓存
 const CCN_SEARCH_OPTION_CACHE = 'search_option_columns_cnn';

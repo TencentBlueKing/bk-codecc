@@ -26,9 +26,7 @@
 
 package com.tencent.bk.codecc.defect.api;
 
-import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
 import com.tencent.bk.codecc.defect.vo.QueryTaskCheckerDimensionRequest;
-import com.tencent.devops.common.api.checkerset.CheckerPropVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -54,9 +52,4 @@ public interface ServiceCheckerRestResource {
     @Path("/listDimensionByToolAndChecker")
     @POST
     Result<List<String>> queryDimensionByToolChecker(QueryTaskCheckerDimensionRequest request);
-
-    @ApiOperation("获取工具对应的规则")
-    @Path("/listCheckerDetailByCheckerPropVO")
-    @POST
-    Result<List<CheckerDetailVO>> queryCheckerDetailByCheckerPropVO(List<CheckerPropVO> propVOS);
 }

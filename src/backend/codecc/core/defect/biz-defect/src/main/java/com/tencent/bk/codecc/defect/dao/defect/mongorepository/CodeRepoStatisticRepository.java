@@ -16,8 +16,6 @@ import com.tencent.bk.codecc.defect.model.CodeRepoStatisticEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 /**
  * 代码仓库 分支 持久层
  *
@@ -28,7 +26,5 @@ import java.util.List;
 public interface CodeRepoStatisticRepository extends MongoRepository<CodeRepoStatisticEntity, String> {
 
     long countByDataFromAndUrlAndBranch(String dataFrom, String url, String branch);
-
-    List<CodeRepoStatisticEntity> findByDataFromAndUrlIn(String dataFrom, List<String> urls);
 
 }

@@ -12,11 +12,23 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
+import com.google.common.collect.Sets;
+import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
+import com.tencent.devops.common.api.exception.CodeCCException;
+import com.tencent.devops.common.codecc.util.JsonUtil;
+import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.CommonMessageCode;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 
 /**
  * 批量告警处理的请求对象
@@ -26,6 +38,7 @@ import lombok.Data;
  */
 @Data
 @ApiModel("批量告警处理的请求对象")
+@Slf4j
 public class BatchDefectProcessReqVO {
 
     @ApiModelProperty("操作的用户")
@@ -85,9 +98,6 @@ public class BatchDefectProcessReqVO {
     @ApiModelProperty("是否为回复忽略再标记")
     private Boolean revertAndMark;
 
-    @ApiModelProperty("是否强制提交告警到tapd")
-    private Boolean forceSubmit;
-
     public String getToolName() {
         if (getToolNameList() == null || getToolNameList().isEmpty()) {
             return null;
@@ -100,5 +110,16 @@ public class BatchDefectProcessReqVO {
             return null;
         }
         return String.join(",", getDimensionList());
+    }
+
+    public DefectQueryReqVO getDefectQueryReqVO() {
+        String queryDefectCondition = getQueryDefectCondition();
+        DefectQueryReqVO queryCondObj = JsonUtil.INSTANCE.to(queryDefectCondition, DefectQueryReqVO.class);
+        if (queryCondObj == null) {
+            log.error("defect batch op, query obj deserialize fail, json: {}", queryDefectCondition);
+            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID);
+        }
+        queryCondObj.setRevertAndMark(getRevertAndMark());
+        return queryCondObj;
     }
 }

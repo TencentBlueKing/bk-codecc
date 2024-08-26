@@ -70,12 +70,6 @@ include("core:schedule:model-schedule")
 include("core:schedule:biz-schedule")
 include("core:schedule:boot-schedule")
 
-include("core:scanschedule")
-include("core:scanschedule:api-scanschedule")
-include("core:scanschedule:biz-scanschedule")
-include("core:scanschedule:boot-scanschedule")
-include("core:scanschedule:model-scanschedule")
-
 
 
 

@@ -161,7 +161,7 @@
           @click.prevent.stop
         >
           <bk-popover z-index="99" theme="light" placement="bottom" trigger="click">
-            <span class="bk-icon icon-more guide-icon"></span>
+            <span class="bk-icon icon-more guide-icon" v-if="!(props.row.status & 8 || props.row.status & 16)"></span>
             <div slot="content" class="handle-menu-tips txal">
               <!-- 待修复问题的操作 -->
               <template v-if="props.row.status === 1">
@@ -205,7 +205,7 @@
                 {{ $t('取消忽略并标记处理') }}
               </p>
               <p
-                v-if="props.row.status & 4 && !props.row.ignoreCommentDefect"
+                v-if="props.row.status & 4 && !props.row.ignoreCommentDefect && DEPLOY_ENV === 'tencent'"
                 class="entry-link"
                 @click.stop="handleRevertIgnoreAndCommit(props.row.entityId)"
               >
@@ -274,6 +274,8 @@
                       props.row.defectIssueInfoVO.submitStatus &&
                       props.row.defectIssueInfoVO.submitStatus !== 4
                     )
+                    &&
+                    DEPLOY_ENV === 'tencent'
                 "
                 class="entry-link"
                 @click.stop="handleCommit('commit', false, props.row.entityId)"
@@ -308,6 +310,7 @@
 import defectTable from '@/mixins/defect-table';
 import { array2Str } from '@/common/util';
 import { language } from '../../i18n';
+import DEPLOY_ENV from '@/constants/env';
 
 export default {
   mixins: [defectTable],

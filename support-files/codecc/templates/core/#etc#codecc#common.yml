@@ -5,6 +5,9 @@ spring:
   jmx:
     enabled: true
   # consul config do not need to change
+  data:
+    mongodb:
+      auto-index-creation: __BK_CODECC_MONGODB_AUTO_CREATE_INDEX__
   redis:
     host: __BK_CODECC_REDIS_HOST__
     password: __BK_CODECC_REDIS_PASSWORD__

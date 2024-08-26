@@ -92,7 +92,7 @@ public class RedLineReportServiceImpl extends AbstractRedLineReportService<Defec
      * @param buildId
      */
     private void updateDimensionRedLineData_V2(Long taskId, String buildId) {
-        List<RedLineEntity> redLineList = redLineRepository.findByBuildIdAndTaskId(buildId, taskId);
+        List<RedLineEntity> redLineList = redLineRepository.findByBuildId(buildId);
         redLineList = filterByLatestBuild(redLineList);
         List<RedLineEntity.Dimension> dimensionList = getRedLineDimension(redLineList);
 

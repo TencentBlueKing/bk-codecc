@@ -50,6 +50,17 @@ import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.ToolPattern;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.util.DateTimeUtils;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import com.tencent.devops.common.util.ThreadUtils;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -64,16 +75,6 @@ import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
-
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * 规则告警统计消费者
@@ -196,14 +197,15 @@ public class CheckerDefectStatConsumer {
                 initDefectStatEntityMap(dataFrom, toolList, toolCheckerInfoMap);
 
         int dataSize = 0;
+        int pageNum = 1;
         int pageSize = 2000;
         // 定义重试次数
         int retryCount = 5;
-        long lastTaskId = 0L;
+
         do {
             // 获取任务ID列表 (排除灰度项目)
             Result<List<Long>> result = client.get(ServiceTaskRestResource.class)
-                    .queryTaskIdByCreateFromExcludeGray(createFrom, lastTaskId, pageSize);
+                    .queryTaskIdByCreateFromExcludeGray(createFrom, pageNum, pageSize);
 
             if (result.isNotOk() || result.getData() == null) {
                 if (retryCount > 0) {
@@ -228,7 +230,6 @@ public class CheckerDefectStatConsumer {
                 log.info("taskIdList is empty!");
                 return;
             }
-            lastTaskId = taskIdList.get(taskIdList.size() - 1);
 
             for (String toolName : toolList) {
                 String toolPattern = toolMetaCache.getToolPattern(toolName);
@@ -291,6 +292,7 @@ public class CheckerDefectStatConsumer {
             }
 
             dataSize = taskIdList.size();
+            pageNum++;
         } while (dataSize >= pageSize);
         checkerDefectStatRepository.saveAll(defectStatEntityMap.values());
         // 记录更新时间
@@ -301,15 +303,15 @@ public class CheckerDefectStatConsumer {
     @NotNull
     private List<String> getCreateFromByDataFrom(String dataFrom) {
         List<String> createFrom;
-        if (ComConstants.DefectStatType.USER.value().equals(dataFrom)) {
-            createFrom = Lists.newArrayList(ComConstants.BsTaskCreateFrom.BS_CODECC.value(),
-                    ComConstants.BsTaskCreateFrom.BS_PIPELINE.value());
+        if (ComConstants.DefectStatType.GONGFENG_SCAN.value().equals(dataFrom)) {
+            createFrom = Lists.newArrayList(ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value());
         } else if (ComConstants.DefectStatType.ALL.value().equals(dataFrom)) {
             createFrom = Lists.newArrayList(ComConstants.BsTaskCreateFrom.BS_CODECC.value(),
                     ComConstants.BsTaskCreateFrom.BS_PIPELINE.value(),
                     ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value());
         } else {
-            createFrom = Lists.newArrayList(ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value());
+            createFrom = Lists.newArrayList(ComConstants.BsTaskCreateFrom.BS_CODECC.value(),
+                    ComConstants.BsTaskCreateFrom.BS_PIPELINE.value());
         }
         return createFrom;
     }

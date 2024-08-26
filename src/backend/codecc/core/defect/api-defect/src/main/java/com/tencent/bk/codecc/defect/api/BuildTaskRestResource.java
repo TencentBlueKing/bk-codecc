@@ -13,7 +13,6 @@
 package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.bk.codecc.defect.vo.common.BuildWithBranchVO;
-import com.tencent.bk.codecc.defect.vo.common.TaskCodeLineVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -40,14 +39,5 @@ public interface BuildTaskRestResource {
         @ApiParam(value = "任务ID", required = true)
         @PathParam(value = "taskId")
         Long taskId
-    );
-
-    @ApiOperation("查询任务的代码行信息")
-    @Path("/tasks/{taskId}/codeLine")
-    @GET
-    Result<List<TaskCodeLineVO>> getTaskCodeLineInfo(
-            @ApiParam(value = "任务ID", required = true)
-            @PathParam(value = "taskId")
-            Long taskId
     );
 }

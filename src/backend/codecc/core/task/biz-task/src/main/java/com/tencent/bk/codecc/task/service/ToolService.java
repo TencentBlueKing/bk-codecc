@@ -212,6 +212,14 @@ public interface ToolService {
      */
     Boolean refreshToolFollowStatusByTaskIds(String userName, QueryTaskListReqVO reqVO);
 
+    /**
+     * 仅用于初始化查询工具数量
+     *
+     * @param day 天数
+     * @return
+     */
+    Boolean initToolCountScript(Integer day);
+
     /***
      * 查询工具在指定时间当天的工具新增和停用情况
      * @param toolName 工具名称

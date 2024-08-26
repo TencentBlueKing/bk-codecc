@@ -536,20 +536,18 @@ class CodeScoringServiceImpl @Autowired constructor(
                 totalLine
             )
         }
-        // 四舍五入保留两位小数
-        metricsEntity.codeStyleScore = Math.round(metricsEntity.codeStyleScore * ComConstants.COMMON_NUM_100D) / ComConstants.COMMON_NUM_100D
 
         if (totalLine > 0) {
             metricsEntity.averageSeriousStandardThousandDefect =
                 BigDecimal(
-                    ComConstants.COMMON_NUM_1000L * metricsEntity.codeStyleSeriousDefectCount.toDouble()
+                    1000 * metricsEntity.codeStyleSeriousDefectCount.toDouble()
                             / totalLine.toDouble()
                 )
                         .setScale(2, RoundingMode.HALF_UP)
                         .toDouble()
             metricsEntity.averageNormalStandardThousandDefect =
                 BigDecimal(
-                    ComConstants.COMMON_NUM_1000L * metricsEntity.codeStyleNormalDefectCount.toDouble()
+                    1000 * metricsEntity.codeStyleNormalDefectCount.toDouble()
                             / totalLine.toDouble()
                 )
                         .setScale(2, RoundingMode.HALF_UP)
@@ -628,7 +626,7 @@ class CodeScoringServiceImpl @Autowired constructor(
                 100 * linePercentage * ((0.6.pow(1.toDouble() / languageWaringConfigCount)).pow(
                     hundredWaringCount
                 ))
-            ).toDouble()
+            ).setScale(2, BigDecimal.ROUND_HALF_UP).toDouble()
         } catch (e: Exception) {
             logger.error(
                 "calCodeStyleScore fail, task id: $taskId, build id: $buildId, " +

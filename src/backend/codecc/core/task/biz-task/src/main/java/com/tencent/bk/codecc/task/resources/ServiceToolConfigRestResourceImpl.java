@@ -16,7 +16,7 @@ public class ServiceToolConfigRestResourceImpl implements ServiceToolConfigRestR
     private ToolConfigService toolConfigService;
 
     @Override
-    public Result<List<ToolConfigInfoVO>> getByTaskId(Long taskId) {
+    public Result<List<ToolConfigInfoVO>> getTaskIdByPage(Long taskId) {
         return new Result<>(toolConfigService.getToolConfigByTaskId(taskId));
     }
 

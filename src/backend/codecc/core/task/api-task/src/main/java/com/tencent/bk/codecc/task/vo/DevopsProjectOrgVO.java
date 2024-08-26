@@ -33,9 +33,6 @@ public class DevopsProjectOrgVO {
     @ApiModelProperty("事业群ID")
     private Integer bgId;
 
-    @ApiModelProperty("业务线ID")
-    private Integer businessLineId;
-
     @ApiModelProperty("部门ID")
     private Integer deptId;
 

@@ -288,15 +288,9 @@ public class DupcDefectStatisticServiceImpl
      */
     @Override
     public void buildAndSaveStatisticResult(DupcDefectStatisticModel statisticModel) {
-        // 查询是否存在与当前相同标识的数据
-        DUPCStatisticEntity dupcStatisticEntity = dupcStatisticRepository.findFirstByTaskIdAndToolNameAndBuildId(
-                statisticModel.getTaskId(), statisticModel.getToolName(), statisticModel.getBuildId()
-        );
-        // 将当前数据进行转换，如果数据库存在，则进行修改，不存在进行新增
-        DUPCStatisticEntity saveDupcStatisticEntity = statisticModel.getBuilder().convert(dupcStatisticEntity);
-
-        statisticModel.setDupcStatisticEntity(saveDupcStatisticEntity);
-        dupcStatisticRepository.save(saveDupcStatisticEntity);
+        DUPCStatisticEntity dupcStatisticEntity = statisticModel.getBuilder().convert();
+        statisticModel.setDupcStatisticEntity(dupcStatisticEntity);
+        dupcStatisticRepository.save(dupcStatisticEntity);
     }
 
     /**

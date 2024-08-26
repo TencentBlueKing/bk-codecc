@@ -306,15 +306,9 @@ public class CCNDefectStatisticServiceImpl
      */
     @Override
     public void buildAndSaveStatisticResult(CcnDefectStatisticModel statisticModel) {
-        // 查询是否存在与当前相同标识的数据
-        CCNStatisticEntity ccnStatisticEntity = ccnStatisticRepository.findFirstByTaskIdAndToolNameAndBuildId(
-                statisticModel.getTaskId(), statisticModel.getToolName(), statisticModel.getBuildId()
-        );
-        // 将当前数据进行转换，如果数据库存在，则进行修改，不存在进行新增
-        CCNStatisticEntity saveCcnStatisticEntity = statisticModel.getBuilder().convert(ccnStatisticEntity);
-
-        statisticModel.setCcnStatisticEntity(saveCcnStatisticEntity);
-        ccnStatisticRepository.save(saveCcnStatisticEntity);
+        CCNStatisticEntity ccnStatisticEntity = statisticModel.getBuilder().convert();
+        statisticModel.setCcnStatisticEntity(ccnStatisticEntity);
+        ccnStatisticRepository.save(ccnStatisticEntity);
     }
 
     /**
