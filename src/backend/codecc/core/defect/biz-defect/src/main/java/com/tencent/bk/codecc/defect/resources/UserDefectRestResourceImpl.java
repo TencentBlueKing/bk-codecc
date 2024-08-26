@@ -400,9 +400,9 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
             Result<Long> result = singleBizTypeBatchProcess(userName, reqVO);
             if (result.isNotOk()) {
                 return new Result<>(result.getStatus(), result.getCode(), result.getMessage(), null);
-            } else if (result.getData() != null && result.getData() > 0) {
-                rspVOS.add(new BatchDefectProcessRspVO(reqVO.getBizType(), result.getData(), count - result.getData()));
             }
+            rspVOS.add(new BatchDefectProcessRspVO(reqVO.getBizType(), result.getData(),
+                    count - (result.getData() == null ? 0 : result.getData())));
         }
         return new Result<>(rspVOS);
     }
