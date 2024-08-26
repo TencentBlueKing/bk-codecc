@@ -139,9 +139,13 @@ public class CodeRepoServiceImpl implements CodeRepoService {
      * @param sortType  排序类型
      * @return
      */
+    @Deprecated
     @Override
     public Boolean initCodeRepoStatistic(DeptTaskDefectReqVO reqVO, Integer pageNum, Integer pageSize, String sortField,
             String sortType) {
+        if (CollectionUtils.isEmpty(reqVO.getCreateFrom())) {
+            return false;
+        }
         // 根据来源获取taskId集合
         List<Long> taskIdList =
                 client.get(ServiceTaskRestResource.class).queryTaskIdByCreateFrom(reqVO.getCreateFrom()).getData();
@@ -178,11 +182,7 @@ public class CodeRepoServiceImpl implements CodeRepoService {
             pageable = PageableUtils.getPageable(pageNumber, pageSize);
         } while (size >= pageSize);
 
-        String dataFromStr = ComConstants.DefectStatType.USER.value();
-        if (reqVO.getCreateFrom() != null
-                && reqVO.getCreateFrom().iterator().next().equals(ComConstants.DefectStatType.GONGFENG_SCAN.value())) {
-            dataFromStr = ComConstants.DefectStatType.GONGFENG_SCAN.value();
-        }
+        String dataFromStr = reqVO.getCreateFrom().iterator().next();
         List<CodeRepoStatisticEntity> codeRepoStatisticEntityList = new ArrayList<>();
         for (Map.Entry<String, Set<CodeRepoFromAnalyzeLogEntity.CodeRepo>> entry : urlMap.entrySet()) {
             ArrayList<CodeRepoFromAnalyzeLogEntity.CodeRepo> codeRepos = new ArrayList<>(entry.getValue());
@@ -226,8 +226,9 @@ public class CodeRepoServiceImpl implements CodeRepoService {
         if (CollectionUtils.isNotEmpty(reqVO.getCreateFrom())) {
             createFromList = reqVO.getCreateFrom();
         } else {
-            createFromList.add("user");
-            createFromList.add("gongfeng_scan");
+            createFromList.add(ComConstants.DefectStatType.USER.value());
+            createFromList.add(ComConstants.DefectStatType.CLOSED_SOURCE_SCAN.value());
+            createFromList.add(ComConstants.DefectStatType.OPEN_SOURCE_SCAN.value());
         }
 
         // 获取初始化天数 默认查询30天
@@ -302,7 +303,9 @@ public class CodeRepoServiceImpl implements CodeRepoService {
     @Override
     public Boolean codeRepoStatisticFixed(DeptTaskDefectReqVO reqVO) {
         log.info("codeRepoStatisticFixed reqVO: {}", reqVO);
-
+        if (CollectionUtils.isEmpty(reqVO.getCreateFrom())) {
+            return false;
+        }
         // 根据来源获取taskId集合
         List<Long> taskIdList =
                 client.get(ServiceTaskRestResource.class).queryTaskIdByCreateFrom(reqVO.getCreateFrom()).getData();
@@ -343,12 +346,7 @@ public class CodeRepoServiceImpl implements CodeRepoService {
             }
         }
 
-        String dataFromStr = ComConstants.DefectStatType.USER.value();
-        if (reqVO.getCreateFrom() != null
-                && reqVO.getCreateFrom().iterator().next().equals(ComConstants.DefectStatType.GONGFENG_SCAN.value())) {
-            dataFromStr = ComConstants.DefectStatType.GONGFENG_SCAN.value();
-        }
-
+        String dataFromStr = reqVO.getCreateFrom().iterator().next();
         List<CodeRepoStatisticEntity> codeRepoStatisticEntityList = Lists.newArrayList();
         for (Map.Entry<String, Set<CodeRepoFromAnalyzeLogEntity.CodeRepo>> entry : urlMap.entrySet()) {
             Set<CodeRepoFromAnalyzeLogEntity.CodeRepo> codeRepos = entry.getValue();

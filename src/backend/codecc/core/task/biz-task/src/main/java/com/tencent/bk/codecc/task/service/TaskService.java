@@ -419,7 +419,7 @@ public interface TaskService {
      */
     List<TaskBaseVO> getTasksByIds(List<Long> taskIds);
 
-    List<TaskDetailVO> getTaskDetailListByIdsWithDelete(List<Long> taskIds);
+    List<TaskDetailVO> getTaskDetailListByIdsWithDelete(QueryTaskListReqVO reqVO);
 
     /**
      * 根据任务状态及任务接入过的工具获取
@@ -538,23 +538,6 @@ public interface TaskService {
     List<Long> queryTaskIdByCreateFrom(List<String> taskCreateFrom);
 
     /**
-     * 获取开源或非开源的任务ID
-     *
-     * @param defectStatType enum
-     * @return list
-     */
-    List<Long> queryTaskIdByType(ComConstants.DefectStatType defectStatType);
-
-
-    /**
-     * 仅用于查询获取任务数量脚本
-     *
-     * @param day 天数
-     * @return boolean
-     */
-    Boolean initTaskCountScript(Integer day);
-
-    /**
      * 根据任务英文名查询任务信息，不包含工具信息
      *
      * @param nameEn 流名称
@@ -591,13 +574,6 @@ public interface TaskService {
     long countTaskSize();
 
     List<TaskDetailVO> getTaskIdByPage(int page, int pageSize);
-
-    /**
-     * 定时任务统计任务数、代码行、工具数
-     *
-     * @param reqVO 请求体
-     */
-    void statisticTaskCodeLineTool(StatisticTaskCodeLineToolVO reqVO);
 
     List<TaskBaseVO> queryTaskListByProjectId(String projectId);
 
@@ -650,4 +626,10 @@ public interface TaskService {
     List<TaskStatisticVO> getTaskStatisticByIds(List<Long> taskIds);
 
     List<Long> getTaskIdNeProjectIdWithPage(String filterProjectId, int pageNum, int pageSize);
+
+    /**
+     * 项目禁用后停用任务
+     * @param projectId
+     */
+    void stopDisableProjectTask(String projectId);
 }

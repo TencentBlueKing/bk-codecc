@@ -201,10 +201,14 @@ public class CommonFastIncrementConsumer extends AbstractFastIncrementConsumer
                         true
                 )
         );
-
-        CommonStatisticEntity statisticEntity = statisticModel.getBuilder().convert();
-        statisticEntity.setCheckerStatistic(getCheckerStatistic(toolName, allNewDefectList));
-        commonStatisticRepository.save(statisticEntity);
+        // 查询是否存在与当前相同标识的数据
+        CommonStatisticEntity commonStatisticEntity = commonStatisticRepository.findFirstByTaskIdAndToolNameAndBuildId(
+                statisticModel.getTaskId(), statisticModel.getToolName(), statisticModel.getBuildId()
+        );
+        // 将当前数据进行转换，如果数据库存在，则进行修改，不存在进行新增
+        CommonStatisticEntity saveStatisticEntity = statisticModel.getBuilder().convert(commonStatisticEntity);
+        saveStatisticEntity.setCheckerStatistic(getCheckerStatistic(toolName, allNewDefectList));
+        commonStatisticRepository.save(saveStatisticEntity);
 
         // 将数据加入数据平台
         // commonKafkaClient.pushCommonStatisticToKafka(statisticEntity);

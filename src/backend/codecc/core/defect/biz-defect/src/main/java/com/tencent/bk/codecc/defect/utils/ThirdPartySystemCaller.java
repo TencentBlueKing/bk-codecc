@@ -33,7 +33,9 @@ import com.tencent.bk.codecc.defect.api.ServiceReportTaskLogRestResource;
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
 import com.tencent.bk.codecc.task.api.ServiceBaseDataResource;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
+import com.tencent.bk.codecc.task.api.ServiceToolConfigRestResource;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
+import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
 import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
@@ -42,17 +44,21 @@ import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.RiskFactor;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+
 import java.util.AbstractMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 /**
  * 外部服务公共调度器
@@ -63,6 +69,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class ThirdPartySystemCaller {
+
     @Autowired
     private Client client;
 
@@ -117,7 +124,8 @@ public class ThirdPartySystemCaller {
      */
     @NotNull
     public TaskDetailVO getTaskInfoWithoutToolsByTaskId(Long taskId) {
-        Result<TaskDetailVO> taskDetailResult = client.get(ServiceTaskRestResource.class).getTaskInfoWithoutToolsByTaskId(taskId);
+        Result<TaskDetailVO> taskDetailResult = client.get(ServiceTaskRestResource.class)
+                .getTaskInfoWithoutToolsByTaskId(taskId);
         if (taskDetailResult.isNotOk() || null == taskDetailResult.getData()) {
             log.error("get task info fail! taskId: {}, msg: {}", taskId, taskDetailResult.getMessage());
             throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
@@ -125,6 +133,30 @@ public class ThirdPartySystemCaller {
         return taskDetailResult.getData();
     }
 
+    public TaskDetailVO getNullableTaskInfoWithoutToolsByTaskId(Long taskId) {
+        Result<TaskDetailVO> taskDetailResult = client.get(ServiceTaskRestResource.class)
+                .getTaskInfoWithoutToolsByTaskId(taskId);
+        if (taskDetailResult.isNotOk() || null == taskDetailResult.getData()) {
+            return null;
+        }
+        return taskDetailResult.getData();
+    }
+
+    public TaskDetailVO geTaskInfoTaskId(Long taskId) {
+        try {
+            Result<TaskDetailVO> response =
+                    client.get(ServiceTaskRestResource.class).getTaskInfoById(taskId);
+
+            if (response.isNotOk() || response.getData() == null) {
+                log.error("fail to get task info: {}", taskId);
+                return null;
+            }
+            return response.getData();
+        } catch (Throwable e) {
+            log.info("fail to get task info error, taskId : {}", taskId, e);
+        }
+        return null;
+    }
 
     /**
      * 获取重复率的风险系数基本数据
@@ -172,6 +204,7 @@ public class ThirdPartySystemCaller {
      * @param streamName 流名称
      * @return vo
      */
+    @NotNull
     public TaskDetailVO getTaskInfoWithoutToolsByStreamName(String streamName) {
         Result<TaskDetailVO> taskInfoResult =
                 client.get(ServiceTaskRestResource.class).getTaskInfoWithoutToolsByStreamName(streamName);
@@ -198,6 +231,7 @@ public class ThirdPartySystemCaller {
 
     /**
      * 获取指定工具已下架的任务id
+     *
      * @param toolSet 工具名集合
      * @return map
      */
@@ -209,6 +243,27 @@ public class ThirdPartySystemCaller {
             throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
         }
         return result.getData();
+    }
+
+
+    /**
+     * 获取任务配置的工具类别（包含已下架）
+     *
+     * @param taskId
+     * @return
+     */
+    public Set<String> getTaskConfigTools(Long taskId) {
+        if (taskId == null) {
+            return Collections.emptySet();
+        }
+        // 获取任务所有使用过的工具
+        Result<List<ToolConfigInfoVO>> result = client.get(ServiceToolConfigRestResource.class).getByTaskId(taskId);
+        if (result.isNotOk() || CollectionUtils.isEmpty(result.getData())) {
+            log.error("handler task invalid tools {} result not ok or empty", taskId);
+            return Collections.emptySet();
+        }
+        return result.getData().stream().map(ToolConfigInfoVO::getToolName).filter(StringUtils::isNotBlank)
+                .collect(Collectors.toSet());
     }
 
     public Map.Entry<Integer, Integer> getCCNRiskFactorConfig(ComConstants.RiskFactor riskFactor) {

@@ -80,7 +80,7 @@ public class Log4j2Initializer implements ApplicationContextInitializer<Configur
     }
 
     private void configLog4j2(ConfigurableEnvironment environment) {
-        String pattern = "%d{yyyy-MM-dd HH:mm:ss.SSS}|%X{ip:--}|%F|%L|%level|%X{err_code:-0}|[%TID]||||[%t] %m%ex%n";
+        String pattern = "%d{yyyy-MM-dd HH:mm:ss.SSS}|%X{ip:--}|%F|%L|%level|%X{err_code:-0}|[%TID]|[%SID]|||[%t] %m%ex%n";
         String appName = environment.getProperty("spring.application.name");
 
         ConfigurationBuilder<BuiltConfiguration> builder = ConfigurationBuilderFactory.newConfigurationBuilder();

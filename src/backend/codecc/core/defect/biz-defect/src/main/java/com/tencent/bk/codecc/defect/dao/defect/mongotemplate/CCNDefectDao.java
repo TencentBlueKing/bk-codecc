@@ -460,6 +460,7 @@ public class CCNDefectDao {
             Set<String> defectIds, Integer pageNum, Integer pageSize,
             String sortField, Sort.Direction sortType, String buildId,
             String startTimeStr, String endTimeStr,
+            String startFixTimeStr, String endFixTimeStr,
             Set<Integer> ignoreReasonTypes
     ) {
         boolean isSnapshotQuery = StringUtils.isNotEmpty(buildId);
@@ -468,6 +469,7 @@ public class CCNDefectDao {
                 fileList, ccnThresholds,
                 defectIds, isSnapshotQuery,
                 startTimeStr, endTimeStr,
+                startFixTimeStr, endFixTimeStr,
                 ignoreReasonTypes
         );
 
@@ -505,6 +507,7 @@ public class CCNDefectDao {
             List<Long> taskIdList, String author, Set<Integer> status,
             Set<String> fileList, Set<Map.Entry<Integer, Integer>> ccnThresholds,
             Set<String> defectIds, String buildId, String startTimeStr, String endTimeStr,
+            String startFixTimeStr, String endFixTimeStr,
             Set<Integer> ignoreReasonTypes, Map<String, Boolean> filedMap
     ) {
         boolean isSnapshotQuery = StringUtils.isNotEmpty(buildId);
@@ -513,6 +516,7 @@ public class CCNDefectDao {
                 fileList, ccnThresholds,
                 defectIds, isSnapshotQuery,
                 startTimeStr, endTimeStr,
+                startFixTimeStr, endFixTimeStr,
                 ignoreReasonTypes
         );
         Query query = new Query();
@@ -548,6 +552,7 @@ public class CCNDefectDao {
             List<Long> taskIdList, String author, Set<Integer> status,
             Set<String> fileList, Set<Map.Entry<Integer, Integer>> ccnThresholds,
             Set<String> defectIds, String buildId, String startTimeStr, String endTimeStr,
+            String startFixTimeStr, String endFixTimeStr,
             Set<Integer> ignoreReasonTypes, String startFilePath, Long skip, Integer pageSize,
             Map<String, Boolean> filedMap
     ) {
@@ -557,6 +562,7 @@ public class CCNDefectDao {
                 fileList, ccnThresholds,
                 defectIds, isSnapshotQuery,
                 startTimeStr, endTimeStr,
+                startFixTimeStr, endFixTimeStr,
                 ignoreReasonTypes
         );
         if (startFilePath != null) {
@@ -584,6 +590,7 @@ public class CCNDefectDao {
             Set<String> fileList, Set<Map.Entry<Integer, Integer>> ccnThresholds,
             Set<String> defectIds, boolean isSnapshotQuery,
             String startTimeStr, String endTimeStr,
+            String startFixTimeStr, String endFixTimeStr,
             Set<Integer> ignoreReasonTypes
     ) {
         Criteria magicEmptyCriteria = Criteria.where("task_id").is(-1L);
@@ -646,17 +653,48 @@ public class CCNDefectDao {
             }
         }
 
-        if (StringUtils.isNotEmpty(startTimeStr)) {
-            long minTime = DateTimeUtils.getTimeStamp(startTimeStr + " 00:00:00");
-            rootCriteriaList.add(Criteria.where("create_time").gte(minTime));
+        // 按创建日期过滤
+        Criteria creatTimeCri = getStartEndTimeStampCri("latest_datetime",
+                startTimeStr, endTimeStr);
+        if (creatTimeCri != null) {
+            rootCriteriaList.add(creatTimeCri);
         }
 
-        if (StringUtils.isNotEmpty(startTimeStr)) {
-            long maxTime = DateTimeUtils.getTimeStamp(endTimeStr + " 23:59:59");
-            rootCriteriaList.add(Criteria.where("create_time").lt(maxTime));
+        //按修复日期过滤
+        Criteria fixTimeCri = getStartEndTimeStampCri("fixed_time",
+                startFixTimeStr, endFixTimeStr);
+        if (fixTimeCri != null) {
+            rootCriteriaList.add(fixTimeCri);
         }
 
         return new Criteria().andOperator(rootCriteriaList.toArray(new Criteria[0]));
+    }
+
+    /**
+     * 根据查询字段和时间范围定制查询规则
+     *
+     * @param field        查询字段
+     * @param startTimeStr 查询起始时间
+     * @param endTimeStr   查询结束时间
+     * @return 查询规则
+     */
+    private Criteria getStartEndTimeStampCri(String field, String startTimeStr, String endTimeStr) {
+        long minTime = 0L;
+        long maxTime = 0L;
+        if (StringUtils.isNotEmpty(startTimeStr)) {
+            minTime = DateTimeUtils.getTimeStamp(startTimeStr + " 00:00:00");
+            maxTime = StringUtils.isEmpty(endTimeStr) ? System.currentTimeMillis()
+                    : DateTimeUtils.getTimeStamp(endTimeStr + " 23:59:59");
+        }
+
+        if (minTime != 0 && maxTime == 0) {
+            return new Criteria().and(field).gte(minTime);
+        } else if (minTime == 0 && maxTime != 0) {
+            return new Criteria().and(field).lt(maxTime).gt(0);
+        } else if (minTime != 0 && maxTime != 0) {
+            return new Criteria().and(field).lt(maxTime).gte(minTime);
+        }
+        return null;
     }
 
     /**
@@ -732,12 +770,15 @@ public class CCNDefectDao {
     public List<CCNDefectGroupStatisticVO> statisticDefectCountByStatus(
             List<Long> taskIdList, String author, Set<String> fileList,
             Set<String> defectIds, boolean isSnapshotQuery,
-            String startTimeStr, String endTimeStr
+            String startTimeStr, String endTimeStr,
+            String startFixTimeStr, String endFixTimeStr
+
     ) {
         Criteria criteria = getQueryCriteria(
                 taskIdList, author, null, fileList, null,
                 defectIds, isSnapshotQuery,
                 startTimeStr, endTimeStr,
+                startFixTimeStr, endFixTimeStr,
                 null
         );
 
@@ -757,12 +798,14 @@ public class CCNDefectDao {
             List<Long> taskIdList, String author, Set<Integer> statusSet, Set<String> fileList,
             Set<Map.Entry<Integer, Integer>> ccnThresholds,
             Set<String> defectIds, boolean isSnapshotQuery,
-            String startTimeStr, String endTimeStr
+            String startTimeStr, String endTimeStr,
+            String startFixTimeStr, String endFixTimeStr
     ) {
         Criteria criteria = getQueryCriteria(
                 taskIdList, author, statusSet, fileList, ccnThresholds,
                 defectIds, isSnapshotQuery,
                 startTimeStr, endTimeStr,
+                startFixTimeStr, endFixTimeStr,
                 null
         );
 
@@ -928,5 +971,19 @@ public class CCNDefectDao {
         query.with(pageable);
 
         return defectMongoTemplate.find(query, CCNDefectEntity.class);
+    }
+
+    public long batchExcludeToolNewDefect(Long taskId, String toolName) {
+        if (taskId == null || StringUtils.isBlank(toolName)) {
+            return 0L;
+        }
+        Query query = Query.query(Criteria.where("task_id").is(taskId)
+                .and("status").is(DefectStatus.NEW.value()));
+        long curTime = System.currentTimeMillis();
+        Update update = new Update();
+        update.set("status", ComConstants.DefectStatus.NEW.value() | DefectStatus.CHECKER_MASK.value());
+        update.set("exclude_time", curTime);
+        update.set("updated_date", curTime);
+        return defectMongoTemplate.updateMulti(query, update, CCNDefectEntity.class).getModifiedCount();
     }
 }

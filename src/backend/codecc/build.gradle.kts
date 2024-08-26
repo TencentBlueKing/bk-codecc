@@ -177,7 +177,6 @@ allprojects {
 
             dependency("com.qcloud:cos_api:${Versions.cosVersion}")
             dependency("org.tukaani:xz:${Versions.xzVersion}")
-            dependency("org.json:json:${Versions.jsonVersion}")
         }
     }
 

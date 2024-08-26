@@ -26,9 +26,6 @@
 
 package com.tencent.bk.codecc.task.dao.mongotemplate;
 
-import static com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
-import static com.tencent.devops.common.constant.ComConstants.COMMON_PAGE_SIZE;
-
 import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.task.constant.TaskConstants;
 import com.tencent.bk.codecc.task.model.DeletedTaskInfoEntity;
@@ -39,16 +36,9 @@ import com.tencent.bk.codecc.task.model.UserLogInfoStatEntity;
 import com.tencent.bk.codecc.task.vo.FilterPathInputVO;
 import com.tencent.bk.codecc.task.vo.TaskProjectCountVO;
 import com.tencent.bk.codecc.task.vo.TaskStatisticVO;
-import com.tencent.bk.codecc.task.vo.TaskUpdateDeptInfoVO;
+import com.tencent.codecc.common.db.utils.TaskCreateFromUtils;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.Status;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -76,6 +66,17 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.tencent.devops.common.constant.ComConstants.COMMON_PAGE_SIZE;
 
 /**
  * 任务持久层代码
@@ -352,7 +353,7 @@ public class TaskDao implements CommonTaskDao {
     }
 
     /**
-     * 多条件查询任务列表
+     * 多条件查询任务列表(若所有条件都为空，则返回空，防止过载查询)
      *
      * @param status 任务状态
      * @param bgId 事业群ID
@@ -363,41 +364,41 @@ public class TaskDao implements CommonTaskDao {
      */
     public List<TaskInfoEntity> queryTaskInfoEntityList(Integer status, Integer bgId, Collection<Integer> deptIds,
             Collection<Long> taskIds, Collection<String> createFrom, String userId) {
-        Document fieldsObj = new Document();
-        fieldsObj.put("execute_time", false);
-        fieldsObj.put("execute_date", false);
-        fieldsObj.put("timer_expression", false);
-        fieldsObj.put("last_disable_task_info", false);
-        fieldsObj.put("default_filter_path", false);
-        fieldsObj.put("workspace_id", false);
-        fieldsObj.put("tool_config_info_list", false);
-        fieldsObj.put("compile_plat", false);
-        fieldsObj.put("run_plat", false);
-
-        Query query = new BasicQuery(new Document(), fieldsObj);
-        // 任务状态筛选
+        List<Criteria> criteriaList = Lists.newArrayList();
         if (status != null) {
-            query.addCriteria(Criteria.where("status").is(status));
+            criteriaList.add(Criteria.where("status").is(status));
         }
         // 指定批量任务
         if (!CollectionUtils.isEmpty(taskIds)) {
-            query.addCriteria(Criteria.where("task_id").in(taskIds));
+            criteriaList.add(Criteria.where("task_id").in(taskIds));
         }
         // 事业群ID筛选
         if (bgId != null && bgId != 0) {
-            query.addCriteria(Criteria.where("bg_id").is(bgId));
+            criteriaList.add(Criteria.where("bg_id").is(bgId));
         }
         // 部门ID筛选
         if (!CollectionUtils.isEmpty(deptIds)) {
-            query.addCriteria(Criteria.where("dept_id").in(deptIds));
+            criteriaList.add(Criteria.where("dept_id").in(deptIds));
         }
         // 创建来源筛选
         if (!CollectionUtils.isEmpty(createFrom)) {
-            query.addCriteria(Criteria.where("create_from").in(createFrom));
+            criteriaList.add(Criteria.where("create_from").in(createFrom));
         }
         if (StringUtils.isNotBlank(userId)) {
-            query.addCriteria(Criteria.where("task_members").in(userId));
+            criteriaList.add(Criteria.where("task_members").in(userId));
         }
+
+        // 若所有条件都为空，则返回空，防止过载查询
+        if (CollectionUtils.isEmpty(criteriaList)) {
+            return Collections.emptyList();
+        }
+        Criteria criteria = new Criteria();
+        criteria.andOperator(criteriaList.toArray(new Criteria[0]));
+        Query query = new Query(criteria);
+
+        query.fields().exclude("execute_time","execute_date", "timer_expression", "last_disable_task_info",
+                "default_filter_path", "tool_config_info_list", "test_source_filter_path",
+                "white_paths", "project_build_command", "third_party_filter_path", "auto_gen_filter_path");
         return mongoTemplate.find(query, TaskInfoEntity.class);
     }
 
@@ -405,18 +406,28 @@ public class TaskDao implements CommonTaskDao {
     /**
      * 更新组织架构信息
      *
-     * @param taskInfoEntity entity
      * @return result
      */
-    public Boolean updateOrgInfo(@NotNull TaskInfoEntity taskInfoEntity) {
+    public Boolean updateOrgInfo(Long taskId, List<String> taskOwner, Integer bgId, Integer businessLineId,
+            Integer deptId, Integer centerId, Integer groupId) {
+        if (null == taskId || null == bgId) {
+            log.error("param id is null: taskId[{}], bgId[{}]", taskId, bgId);
+            return false;
+        }
         Query query = new Query();
-        query.addCriteria(Criteria.where("task_id").is(taskInfoEntity.getTaskId()));
+        query.addCriteria(Criteria.where("task_id").is(taskId));
 
         Update update = new Update();
-        update.set("bg_id", taskInfoEntity.getBgId());
-        update.set("dept_id", taskInfoEntity.getDeptId());
-        update.set("center_id", taskInfoEntity.getCenterId());
-        update.set("group_id", taskInfoEntity.getGroupId());
+        update.set("bg_id", bgId);
+        // 其它有可能为null，需要更新
+        update.set("business_line_id", businessLineId);
+        update.set("dept_id", deptId);
+        update.set("center_id", centerId);
+        update.set("group_id", groupId);
+
+        if (CollectionUtils.isNotEmpty(taskOwner)) {
+            update.set("task_owner", taskOwner);
+        }
 
         return mongoTemplate.updateFirst(query, update, TaskInfoEntity.class).getModifiedCount() > 0;
     }
@@ -463,29 +474,6 @@ public class TaskDao implements CommonTaskDao {
         Query query = new Query();
         query.addCriteria(criteria);
         return mongoTemplate.find(query, TaskInfoEntity.class);
-    }
-
-    /**
-     * 查找每日任务数量
-     *
-     * @param endTime 结束时间
-     * @param createFrom 来源
-     * @return
-     */
-    public Long findDailyTaskCount(Long endTime, String createFrom) {
-        Query query = new Query();
-        if (BsTaskCreateFrom.GONGFENG_SCAN.value().equals(createFrom)) {
-            query.addCriteria(Criteria.where("create_from").is(createFrom));
-        } else {
-            query.addCriteria(Criteria.where("create_from")
-                    .in(BsTaskCreateFrom.BS_CODECC.value(), BsTaskCreateFrom.BS_PIPELINE.value()));
-        }
-        if (endTime != null && endTime != 0) {
-            query.addCriteria(Criteria.where("create_date").lte(endTime));
-        }
-        query.addCriteria(Criteria.where("status").is(ComConstants.Status.ENABLE.value()));
-
-        return mongoTemplate.count(query, TaskInfoEntity.class, "t_task_detail");
     }
 
     /**
@@ -546,24 +534,6 @@ public class TaskDao implements CommonTaskDao {
         return mongoTemplate.upsert(query, update, TaskInfoEntity.class).getModifiedCount() > 0;
     }
 
-    /**
-     * 编辑任务信息
-     *
-     * @param reqVO 请求体
-     */
-    public void editTaskDetail(TaskUpdateDeptInfoVO reqVO) {
-        Query query = new Query();
-        query.addCriteria(Criteria.where("task_id").is(reqVO.getTaskId()));
-
-        Update update = new Update();
-        update.set("bg_id", reqVO.getBgId());
-        update.set("dept_id", reqVO.getDeptId());
-        update.set("center_id", reqVO.getCenterId());
-        update.set("task_owner", reqVO.getTaskOwner());
-
-        mongoTemplate.upsert(query, update, TaskInfoEntity.class);
-    }
-
     public List<TaskInfoEntity> findByCodeccNameCn(String projectId, String nameCn, Long offset, Long limit) {
         Query query = new Query();
         query.addCriteria(Criteria.where("project_id").regex(projectId));
@@ -584,16 +554,16 @@ public class TaskDao implements CommonTaskDao {
      * @param projectIdSet 需排除的项目id
      * @return list
      */
-    public List<TaskIdInfo> findTaskIdList(int status, List<String> createFrom,
-            Set<String> projectIdSet, Pageable pageable) {
-        Document fieldsObj = new Document();
-        fieldsObj.put("task_id", true);
+    public List<TaskIdInfo> findTaskIdList(int status, List<String> createFrom, Set<String> projectIdSet,
+            Pageable pageable) {
+        Query query = new Query();
+        query.fields().include("task_id");
 
-        Query query = new BasicQuery(new Document(), fieldsObj);
         query.addCriteria(Criteria.where("status").is(status));
 
-        if (CollectionUtils.isNotEmpty(createFrom)) {
-            query.addCriteria(Criteria.where("create_from").in(createFrom));
+        Criteria criteriaByCreateFrom = TaskCreateFromUtils.getCriteriaByCreateFrom(createFrom);
+        if (null != criteriaByCreateFrom) {
+            query.addCriteria(criteriaByCreateFrom);
         }
 
         // 排除这些项目id的任务
@@ -617,18 +587,6 @@ public class TaskDao implements CommonTaskDao {
      */
     public List<TaskIdInfo> findTaskIdList(int status, List<String> createFrom) {
         return findTaskIdList(status, createFrom, null, null);
-    }
-
-    /**
-     * 按创建来源分页查询任务ID
-     *
-     * @param status 任务状态
-     * @param createFrom 任务来源
-     * @param pageable
-     * @return
-     */
-    public List<TaskIdInfo> pageFindTaskIdList(int status, List<String> createFrom, Pageable pageable) {
-        return findTaskIdList(status, createFrom, null, pageable);
     }
 
     public List<TaskInfoEntity> findTaskIdByPage(int page, int pageSize, List<Integer> statusList) {
@@ -784,7 +742,7 @@ public class TaskDao implements CommonTaskDao {
     public List<TaskOrgInfoEntity> findByPage(Pageable pageable) {
         Query query = Query.query(Criteria.where("status").is(ComConstants.Status.ENABLE.value()));
         query.fields().include("task_id", "create_from", "project_id", "task_owner", "created_by", "bg_id", "dept_id",
-                "center_id", "group_id");
+                "business_line_id", "center_id", "group_id", "gongfeng_project_id");
         if (pageable != null) {
             query.with(pageable);
         }
@@ -806,13 +764,22 @@ public class TaskDao implements CommonTaskDao {
                     continue;
                 }
 
-                Query query = Query.query(Criteria.where("task_id").is(entry.getKey()));
+                final Query query = Query.query(Criteria.where("task_id").is(entry.getKey()));
 
                 Update update = new Update();
                 update.set("bg_id", userInfoEntity.getBgId())
                         .set("dept_id", userInfoEntity.getDeptId())
                         .set("center_id", userInfoEntity.getCenterId())
                         .set("group_id", userInfoEntity.getGroupId());
+                if (null != userInfoEntity.getBusinessLineId()) {
+                    update.set("business_line_id", userInfoEntity.getBusinessLineId());
+                }
+
+                // 回写owner到任务详情表
+                if (StringUtils.isNotEmpty(userInfoEntity.getUserName())) {
+                    // update.push("task_owner").atPosition(0).value(userInfoEntity.getUserName());
+                    update.set("task_owner", Arrays.asList(userInfoEntity.getUserName().split(ComConstants.COMMA)));
+                }
                 ops.updateOne(query, update);
             }
             ops.execute();

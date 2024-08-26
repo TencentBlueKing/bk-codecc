@@ -283,7 +283,7 @@
                   {{ $t('取消忽略并标记处理') }}
                 </bk-button>
               </div>
-              <div class="item" v-if="DEPLOY_ENV === 'tencent'">
+              <div class="item">
                 <bk-button
                   class="item-button"
                   @click="handleRevertIgnoreAndCommit(entityId)"
@@ -362,7 +362,6 @@
               class="item"
             >
               <bk-button
-                v-if="DEPLOY_ENV === 'tencent'"
                 class="item-button"
                 @click="handleCommit('commit', false, entityId)"
               >{{ $t('提单') }}
@@ -510,7 +509,6 @@ import Process from '../paas/list/process.vue';
 import Vue from 'vue';
 import AiSuggestion from './ai-suggestion.vue';
 import CheckerDetail from './checker-detail.vue';
-import DEPLOY_ENV from '@/constants/env';
 
 export default {
   components: {
@@ -1530,7 +1528,7 @@ export default {
      */
     shareDefect() {
       const { projectId, taskId } = this.$route.params;
-      const { toolName, entityId, defectId, status } = this.currentFile;
+      const { toolName, entityId, status } = this.currentFile;
       let prefix = `${location.host}`;
       if (window.self !== window.top) {
         prefix = `${window.DEVOPS_SITE_URL}/console`;
@@ -1542,7 +1540,7 @@ export default {
 ?entityId=${entityId}&status=${status}`;
       }
       if (this.isPaas) {
-        url = `${prefix}/paas/ignored/${toolName}/list?entityId=${defectId}`;
+        url = `${prefix}/paas/ignored/${toolName}/list?entityId=${entityId}`;
       }
       const input = document.createElement('input');
       document.body.appendChild(input);

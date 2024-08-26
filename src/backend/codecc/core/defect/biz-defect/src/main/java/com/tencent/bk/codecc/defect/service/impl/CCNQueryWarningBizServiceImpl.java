@@ -180,12 +180,15 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
                 : Sets.newHashSet();
         String startCreateTimeStr = request.getStartCreateTime();
         String endCreateTimeStr = request.getEndCreateTime();
+        String startFixTimeStr = request.getStartFixTime();
+        String endFixTimeStr = request.getEndFixTime();
 
         if (ComConstants.StatisticType.STATUS.name().equalsIgnoreCase(type)) {
             statisticByStatus(
                     taskIdList, author, fileList,
                     defectIds, isSnapshotQuery,
                     startCreateTimeStr, endCreateTimeStr,
+                    startFixTimeStr, endFixTimeStr,
                     response
             );
         } else if (ComConstants.StatisticType.SEVERITY.name().equalsIgnoreCase(type)) {
@@ -194,6 +197,7 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
                     taskIdList, author, statusFilters, fileList,
                     defectIds, isSnapshotQuery,
                     startCreateTimeStr, endCreateTimeStr,
+                    startFixTimeStr, endFixTimeStr,
                     response
             );
         }
@@ -647,6 +651,8 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
         sortType = sortPair.getSecond();
         String startCreateTime = request.getStartCreateTime();
         String endCreateTime = request.getEndCreateTime();
+        String startFixTimeStr = request.getStartFixTime();
+        String endFixTimeStr = request.getEndFixTime();
         Set<String> fileList = request.getFileList();
         String author = request.getAuthor();
         Set<String> defectIds = StringUtils.isNotEmpty(buildId)
@@ -660,6 +666,7 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
                 fileList, riskFactors, defectIds,
                 pageNum, pageSize, sortField, sortType,
                 buildId, startCreateTime, endCreateTime,
+                startFixTimeStr, endFixTimeStr,
                 ignoreReasonTypes
         );
         List<CCNDefectEntity> defectList = defectPair.getFirst();
@@ -750,12 +757,14 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
             List<Long> taskIdList, String author, Set<String> fileList,
             Set<String> defectIds, boolean isSnapshotQuery,
             String startTimeStr, String endTimeStr,
+            String startFixTimeStr, String endFixTimeStr,
             CCNDefectQueryRspVO response
     ) {
         List<CCNDefectGroupStatisticVO> aggList = ccnDefectDao.statisticDefectCountByStatus(
                 taskIdList, author, fileList,
                 defectIds, isSnapshotQuery,
-                startTimeStr, endTimeStr
+                startTimeStr, endTimeStr,
+                startFixTimeStr, endFixTimeStr
         );
 
         long existCount = 0;
@@ -795,35 +804,41 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
     private void statisticBySeverity(
             List<Long> taskIdList, String author, Set<Integer> status, Set<String> fileList,
             Set<String> defectIds, boolean isSnapshotQuery,
-            String startTimeStr, String endTimeStr, CCNDefectQueryRspVO response
+            String startTimeStr, String endTimeStr,
+            String startFixTimeStr, String endFixTimeStr,
+            CCNDefectQueryRspVO response
     ) {
 
         long superHighCount = ccnDefectDao.countByCondition(
                 taskIdList, author, status, fileList,
                 Sets.newHashSet(thirdPartySystemCaller.getCCNRiskFactorConfig(ComConstants.RiskFactor.SH)),
                 defectIds, isSnapshotQuery,
-                startTimeStr, endTimeStr
+                startTimeStr, endTimeStr,
+                startFixTimeStr, endFixTimeStr
         );
 
         long highCount = ccnDefectDao.countByCondition(
                 taskIdList, author, status, fileList,
                 Sets.newHashSet(thirdPartySystemCaller.getCCNRiskFactorConfig(ComConstants.RiskFactor.H)),
                 defectIds, isSnapshotQuery,
-                startTimeStr, endTimeStr
+                startTimeStr, endTimeStr,
+                startFixTimeStr, endFixTimeStr
         );
 
         long mediumCount = ccnDefectDao.countByCondition(
                 taskIdList, author, status, fileList,
                 Sets.newHashSet(thirdPartySystemCaller.getCCNRiskFactorConfig(ComConstants.RiskFactor.M)),
                 defectIds, isSnapshotQuery,
-                startTimeStr, endTimeStr
+                startTimeStr, endTimeStr,
+                startFixTimeStr, endFixTimeStr
         );
 
         long lowCount = ccnDefectDao.countByCondition(
                 taskIdList, author, status, fileList,
                 Sets.newHashSet(thirdPartySystemCaller.getCCNRiskFactorConfig(ComConstants.RiskFactor.L)),
                 defectIds, isSnapshotQuery,
-                startTimeStr, endTimeStr
+                startTimeStr, endTimeStr,
+                startFixTimeStr, endFixTimeStr
         );
 
         response.setSuperHighCount(superHighCount);

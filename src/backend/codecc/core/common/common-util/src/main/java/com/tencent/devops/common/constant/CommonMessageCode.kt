@@ -192,9 +192,4 @@ object CommonMessageCode {
      * 不允许存在多个灰度工具的规则
      */
     const val NOT_ALLOW_MULTI_GRAY_TOOL_RULE = "2300033"
-
-    /**
-     * 操作的数量为空
-     */
-    const val MODIFY_ZERO_ENTITY = "2300034"
 }

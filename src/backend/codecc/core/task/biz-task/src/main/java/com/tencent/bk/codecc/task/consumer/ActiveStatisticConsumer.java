@@ -12,7 +12,6 @@
 
 package com.tencent.bk.codecc.task.consumer;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.tencent.bk.codecc.defect.api.OpDefectRestResource;
@@ -24,7 +23,6 @@ import com.tencent.bk.codecc.task.model.AnalyzeCountStatEntity;
 import com.tencent.bk.codecc.task.model.ToolElapseTimeEntity;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.StatisticTaskCodeLineToolVO;
-import com.tencent.devops.common.api.codecc.util.JsonUtil;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.DefectStatType;
@@ -38,15 +36,13 @@ import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_ACTIVE_STAT;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_ACTIVE_STAT;
@@ -93,11 +89,13 @@ public class ActiveStatisticConsumer {
             log.info("pageTaskIdStatistic finish.");
 
             // 保存执行分析的任务ID来统计执行次数
-            statisticToolAnalyzeCount(date, DefectStatType.GONGFENG_SCAN, toolOrder);
+            statisticToolAnalyzeCount(date, DefectStatType.OPEN_SOURCE_SCAN, toolOrder);
+            statisticToolAnalyzeCount(date, DefectStatType.CLOSED_SOURCE_SCAN, toolOrder);
             statisticToolAnalyzeCount(date, DefectStatType.USER, toolOrder);
 
             // 统计工具分析耗时
-            toolAnalyzeElapseTimeStat(date, DefectStatType.GONGFENG_SCAN.value(), toolOrder);
+            toolAnalyzeElapseTimeStat(date, DefectStatType.OPEN_SOURCE_SCAN.value(), toolOrder);
+            toolAnalyzeElapseTimeStat(date, DefectStatType.CLOSED_SOURCE_SCAN.value(), toolOrder);
             toolAnalyzeElapseTimeStat(date, DefectStatType.USER.value(), toolOrder);
             log.info("toolAnalyzeElapseTimeStat finish.");
 
@@ -119,9 +117,8 @@ public class ActiveStatisticConsumer {
     private void pageTaskIdStatistic(long endTime, String date, String toolOrder) {
         log.info("pageTaskIdStatistic endTime: [{}], date: [{}], toolOrder:[{}]", endTime, date, toolOrder);
         // 设置来源范围
-        List<DefectStatType> dataFromList = new ArrayList<>();
-        dataFromList.add(DefectStatType.GONGFENG_SCAN);
-        dataFromList.add(DefectStatType.USER);
+        List<DefectStatType> dataFromList = Lists.newArrayList(DefectStatType.USER, DefectStatType.OPEN_SOURCE_SCAN,
+                DefectStatType.CLOSED_SOURCE_SCAN);
 
         // 设置请求参数
         StatisticTaskCodeLineToolVO reqVO = new StatisticTaskCodeLineToolVO();
@@ -130,16 +127,8 @@ public class ActiveStatisticConsumer {
         reqVO.setToolOrder(toolOrder);
         reqVO.setDataFromList(dataFromList);
 
-        // 防止异常影响后续任务
-        try {
-            log.info("start task statisticTaskCodeLineTool");
-            client.get(ServiceTaskRestResource.class).statisticTaskCodeLineTool(reqVO);
-            log.info("end task statisticTaskCodeLineTool, time :{}", System.currentTimeMillis());
-        } catch (RuntimeException e) {
-            log.error("pageTaskIdStatistic execute failure");
-            e.printStackTrace();
-        }
-
+        // 触发异步统计任务
+        client.get(ServiceTaskRestResource.class).statisticTaskCodeLineTool(reqVO);
     }
 
     /**
@@ -166,62 +155,42 @@ public class ActiveStatisticConsumer {
         }
         String[] toolArr = toolOrder.split(ComConstants.STRING_SPLIT);
         // 获取分析成功次数
-        List<Object> succObjects = redisTemplate.executePipelined((RedisCallback<Long>) conn -> {
-            for (String tool : toolArr) {
-                String redisKey = getToolAnalyzeSuccStatKey(date, dataFrom.value(), tool);
-                conn.lRange(redisKey.getBytes(), 0, -1);
-            }
-            return null;
-        });
+        saveAnalyzeCounts(date, dataFrom, toolArr, true);
         // 获取分析失败次数
-        List<Object> failObjects = redisTemplate.executePipelined((RedisCallback<Long>) conn -> {
-            for (String tool : toolArr) {
-                String redisKey = getToolAnalyzeFailStatKey(date, dataFrom.value(), tool);
-                try {
-                    conn.lRange(redisKey.getBytes(StandardCharsets.UTF_8.name()), 0, -1);
-                } catch (UnsupportedEncodingException e) {
-                    log.error(e.getMessage(), e);
-                }
-            }
-            return null;
-        });
-        // 保存分析成功数据
-        saveToolAnalyzeCountEntities(date, dataFrom, toolArr, succObjects, ComConstants.ScanStatus.SUCCESS.getCode());
-        // 保存分析失败数据
-        saveToolAnalyzeCountEntities(date, dataFrom, toolArr, failObjects, ComConstants.ScanStatus.FAIL.getCode());
+        saveAnalyzeCounts(date, dataFrom, toolArr, false);
     }
 
     /**
      * 按工具保存分析次数
      *
-     * @param succObjects taskId list in redis
-     * @param code        scanStatus
+     * @param isSuccess true:统计成功状态,false:统计失败状态
      */
-    private void saveToolAnalyzeCountEntities(String date, DefectStatType dataFrom, @NotNull String[] toolArr,
-            List<Object> succObjects, int code) {
-        List<AnalyzeCountStatEntity> analyzeCountStatEntities = Lists.newArrayList();
-        for (int i = 0; i < toolArr.length; i++) {
-            Object listObj = succObjects.get(i);
-            List<Long> taskIdList;
-            if (listObj != null) {
-                String listStr = listObj.toString();
-                taskIdList = JsonUtil.INSTANCE.to(listStr, new TypeReference<List<Long>>() {
-                });
-            } else {
-                taskIdList = Lists.newArrayList();
+    private void saveAnalyzeCounts(String date, DefectStatType dataFrom, @NotNull String[] toolArr, boolean isSuccess) {
+        try {
+            List<AnalyzeCountStatEntity> analyzeCountStatEntities = Lists.newArrayList();
+            for (String tool : toolArr) {
+                // 组装key
+                String redisKey = isSuccess ? getToolAnalyzeSuccStatKey(date, dataFrom.value(), tool)
+                        : getToolAnalyzeFailStatKey(date, dataFrom.value(), tool);
+
+                List<String> taskIdStrList = redisTemplate.opsForList().range(redisKey, 0, -1);
+                if (taskIdStrList == null) {
+                    taskIdStrList = Collections.emptyList();
+                }
+
+                AnalyzeCountStatEntity countStatEntity = new AnalyzeCountStatEntity();
+                countStatEntity.setDate(date);
+                countStatEntity.setStatus(isSuccess ? ComConstants.ScanStatus.SUCCESS.getCode()
+                        : ComConstants.ScanStatus.FAIL.getCode());
+                countStatEntity.setDataFrom(dataFrom.value());
+                countStatEntity.setToolName(tool);
+                countStatEntity.setTaskIdList(taskIdStrList.stream().map(Long::parseLong).collect(Collectors.toList()));
+                analyzeCountStatEntities.add(countStatEntity);
             }
-
-            AnalyzeCountStatEntity countStatEntity = new AnalyzeCountStatEntity();
-            countStatEntity.setDate(date);
-            countStatEntity.setStatus(code);
-            countStatEntity.setDataFrom(dataFrom.value());
-            countStatEntity.setToolName(toolArr[i]);
-            countStatEntity.setTaskIdList(taskIdList);
-
-            analyzeCountStatEntities.add(countStatEntity);
+            analyzeCountStatRepository.saveAll(analyzeCountStatEntities);
+        } catch (Throwable throwable) {
+            log.error("saveAnalyzeCounts error", throwable);
         }
-
-        analyzeCountStatRepository.saveAll(analyzeCountStatEntities);
     }
 
     /**
@@ -240,8 +209,6 @@ public class ActiveStatisticConsumer {
      * @param toolOrder 工具顺序
      */
     private void toolAnalyzeElapseTimeStat(String date, String dataFrom, String toolOrder) {
-
-
         String[] toolArr = toolOrder.split(ComConstants.STRING_SPLIT);
 
         List<ToolElapseTimeEntity> toolElapseTimeEntities = Lists.newArrayList();

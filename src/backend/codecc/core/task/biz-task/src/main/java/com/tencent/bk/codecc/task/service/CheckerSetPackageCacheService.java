@@ -2,6 +2,7 @@ package com.tencent.bk.codecc.task.service;
 
 import com.tencent.bk.codecc.defect.vo.checkerset.CheckerSetPackageVO;
 import com.tencent.devops.common.api.OrgInfoVO;
+import com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
 import java.util.List;
 import java.util.Map;
 
@@ -62,8 +63,8 @@ public interface CheckerSetPackageCacheService {
      * @param orgInfo
      * @return
      */
-    List<CheckerSetPackageVO> getPackageByLangValueAndTypeAndEnvTypeAndOrgInfoFromCache(Long langValue,
-            String type, String envType, OrgInfoVO orgInfo);
+    List<CheckerSetPackageVO> getPackageByLangValueAndTypeAndEnvTypeAndScopesFromCache(Long langValue,
+            String type, String envType, OrgInfoVO orgInfo, BsTaskCreateFrom createFrom);
 
     /**
      * 根据langValue与其他信息获取CheckerSetPackage

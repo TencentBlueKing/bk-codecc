@@ -41,9 +41,10 @@ public class CodeRepoStatisticEntity {
 
     /**
      * 来源
+     * @see com.tencent.devops.common.constant.ComConstants.DefectStatType
      */
     @Field("data_from")
-    @Indexed
+    @Indexed(background = true)
     private String dataFrom;
 
     /**
@@ -62,14 +63,14 @@ public class CodeRepoStatisticEntity {
      * 代码库创建时间
      */
     @Field("url_first_scan")
-    @Indexed
+    @Indexed(background = true)
     private Long urlFirstScan;
 
     /**
      * 分支创建时间
      */
     @Field("branch_first_scan")
-    @Indexed
+    @Indexed(background = true)
     private Long branchFirstScan;
 
     /**

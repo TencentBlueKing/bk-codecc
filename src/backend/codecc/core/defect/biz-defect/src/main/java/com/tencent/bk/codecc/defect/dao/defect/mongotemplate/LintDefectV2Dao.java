@@ -45,6 +45,16 @@ import com.tencent.devops.common.api.pojo.Page;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.DefectStatus;
 import com.tencent.devops.common.util.DateTimeUtils;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -73,18 +83,6 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
-
-import javax.print.Doc;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * lint类工具持久层代码
@@ -116,16 +114,16 @@ public class LintDefectV2Dao {
     /**
      * 为了降低代码重复率，抽象出一个函数用于 add 重复使用的条件。
      * add 如下条件：
-     *      task_id = taskId AND tool_name = toolName AND (rel_path in relPathSet OR
-     *          ((rel_path == NULL OR rel_path not exists OR rel_path == "") AND file_path in absPathSet))
+     * task_id = taskId AND tool_name = toolName AND (rel_path in relPathSet OR
+     * ((rel_path == NULL OR rel_path not exists OR rel_path == "") AND file_path in absPathSet))
      *
-     * @date 2024/2/28
      * @param criteria 待添加的条件
      * @param taskId
      * @param toolName
      * @param relPathSet
      * @param absPathSet
      * @return void
+     * @date 2024/2/28
      */
     private void addCommonCriteria(
             Criteria criteria,
@@ -143,7 +141,7 @@ public class LintDefectV2Dao {
             List<Criteria> subOrCriteriaList = new ArrayList<>();
             subOrCriteriaList.add(Criteria.where("rel_path").isNull());
             subOrCriteriaList.add(Criteria.where("rel_path").is(""));
-            Criteria subOrCriteria =  new Criteria().orOperator(subOrCriteriaList);
+            Criteria subOrCriteria = new Criteria().orOperator(subOrCriteriaList);
 
             Criteria subAndCriteria = new Criteria();
             subAndCriteria.andOperator(subOrCriteria, Criteria.where("file_path").in(absPathSet));
@@ -162,16 +160,16 @@ public class LintDefectV2Dao {
 
     /**
      * 查询满足:
-     *      task_id = taskId AND tool_name = toolName AND (rel_path in relPathSet OR
-     *          ((rel_path == NULL OR rel_path not exists OR rel_path == "") AND file_path in absPathSet))
+     * task_id = taskId AND tool_name = toolName AND (rel_path in relPathSet OR
+     * ((rel_path == NULL OR rel_path not exists OR rel_path == "") AND file_path in absPathSet))
      * 的所有 LintDefectV2Entity
      *
-     * @date 2024/2/27
      * @param taskId
      * @param toolName
      * @param relPathSet
      * @param absPathSet
      * @return java.util.List<com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity>
+     * @date 2024/2/27
      */
     public List<LintDefectV2EntityTracking> findByTaskIdAndToolNameAndPath(
             long taskId,
@@ -194,18 +192,18 @@ public class LintDefectV2Dao {
 
     /**
      * 查询满足:
-     *      task_id = taskId AND tool_name = toolName AND (rel_path in relPathSet OR
-     *          ((rel_path == NULL OR rel_path not exists OR rel_path == "") AND file_path in absPathSet))
-     *        AND line_update_time >= lineUpdateTime
+     * task_id = taskId AND tool_name = toolName AND (rel_path in relPathSet OR
+     * ((rel_path == NULL OR rel_path not exists OR rel_path == "") AND file_path in absPathSet))
+     * AND line_update_time >= lineUpdateTime
      * 的所有 LintDefectV2Entity
      *
-     * @date 2024/2/27
      * @param taskId
      * @param toolName
      * @param relPathSet
      * @param absPathSet
      * @param lineUpdateTime
      * @return java.util.List<com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity>
+     * @date 2024/2/27
      */
     public List<LintDefectV2Entity> findByTaskIdAndToolNameAndPathAndLineUpdateTime(
             long taskId,
@@ -489,37 +487,6 @@ public class LintDefectV2Dao {
             }
 
             List<Criteria> innerOrOpList = Lists.newArrayList();
-            /*
-            // 实测更慢
-            // 63是指除SCC/CLOC/CCN/DUPC之外的工具总数
-            if (taskToolMap.size() > 63) {
-                // Map{taskId, toolNames} => Map{toolName, taskIds}
-                // toolName作为key，Map大小最大为63，在大项目下远小于taskId作为key，从而减少IXSCAN次数
-                Map<String, List<Long>> toolNameToTaskIdMap = Maps.newHashMap();
-
-                for (String toolName : allToolNameSet) {
-                    for (Entry<Long, List<String>> kv : taskToolMap.entrySet()) {
-                        HashSet<String> curToolNameSet = Sets.newHashSet(kv.getValue());
-                        Long curTaskId = kv.getKey();
-                        if (curToolNameSet.contains(toolName)) {
-                            List<Long> taskIdList =
-                                    toolNameToTaskIdMap.computeIfAbsent(toolName, x -> Lists.newArrayList());
-                            taskIdList.add(curTaskId);
-                        }
-                    }
-                }
-
-                for (Entry<String, List<Long>> kv : toolNameToTaskIdMap.entrySet()) {
-                    String toolName = kv.getKey();
-                    List<Long> taskIdList = kv.getValue();
-                    innerOrOpList.add(
-                            Criteria.where("task_id").in(taskIdList)
-                                    .and("tool_name").is(toolName)
-                    );
-                }
-
-            }
-            */
             for (Entry<Long, List<String>> entry : taskToolMap.entrySet()) {
                 Long taskId = entry.getKey();
                 List<String> toolNameList = entry.getValue();
@@ -590,32 +557,18 @@ public class LintDefectV2Dao {
             andOpList.add(new Criteria().orOperator(criteriaList.toArray(new Criteria[0])));
         }
 
-        long minTime = 0L;
-        long maxTime = 0L;
-
-        // 按日期过滤，告警录入line_update_time可能为null
-        String startTimeStr = defectQueryReqVO.getStartCreateTime();
-        String endTimeStr = defectQueryReqVO.getEndCreateTime();
-        if (StringUtils.isNotEmpty(startTimeStr)) {
-            minTime = DateTimeUtils.getTimeStamp(startTimeStr + " 00:00:00");
-            maxTime = StringUtils.isEmpty(endTimeStr) ? System.currentTimeMillis()
-                    : DateTimeUtils.getTimeStamp(endTimeStr + " 23:59:59");
+        // 按创建日期过滤
+        Criteria creatTimeCri = getStartEndTimeStampCri("line_update_time",
+                defectQueryReqVO.getStartCreateTime(), defectQueryReqVO.getEndCreateTime());
+        if (creatTimeCri != null) {
+            andOpList.add(creatTimeCri);
         }
 
-        if (minTime != 0 && maxTime == 0) {
-            Criteria orCriteria = new Criteria().orOperator(
-                    Criteria.where("line_update_time").gte(minTime),
-                    Criteria.where("line_update_time").is(0L)
-            );
-            andOpList.add(orCriteria);
-        }
-
-        if (minTime == 0 && maxTime != 0) {
-            rootCriteria.and("line_update_time").lt(maxTime).gt(0L);
-        }
-
-        if (minTime != 0 && maxTime != 0) {
-            rootCriteria.and("line_update_time").lt(maxTime).gte(minTime);
+        //按修复日期过滤
+        Criteria fixTimeCri = getStartEndTimeStampCri("fixed_time",
+                defectQueryReqVO.getStartFixTime(), defectQueryReqVO.getEndFixTime());
+        if (fixTimeCri != null) {
+            andOpList.add(fixTimeCri);
         }
 
         long langValue = defectQueryReqVO.getCheckerSet() != null ? defectQueryReqVO.getCheckerSet().getCodeLang() : 0L;
@@ -634,6 +587,33 @@ public class LintDefectV2Dao {
         }
 
         return rootCriteria;
+    }
+
+    /**
+     * 根据查询字段和时间范围定制查询规则
+     *
+     * @param field 查询字段
+     * @param startTimeStr 查询起始时间
+     * @param endTimeStr 查询结束时间
+     * @return 查询规则
+     */
+    private Criteria getStartEndTimeStampCri(String field, String startTimeStr, String endTimeStr) {
+        long minTime = 0L;
+        long maxTime = 0L;
+        if (StringUtils.isNotEmpty(startTimeStr)) {
+            minTime = DateTimeUtils.getTimeStamp(startTimeStr + " 00:00:00");
+            maxTime = StringUtils.isEmpty(endTimeStr) ? System.currentTimeMillis()
+                    : DateTimeUtils.getTimeStamp(endTimeStr + " 23:59:59");
+        }
+
+        if (minTime != 0 && maxTime == 0) {
+            return new Criteria().and(field).gte(minTime);
+        } else if (minTime == 0 && maxTime != 0) {
+            return new Criteria().and(field).lt(maxTime).gt(0);
+        } else if (minTime != 0 && maxTime != 0) {
+            return new Criteria().and(field).lt(maxTime).gte(minTime);
+        }
+        return null;
     }
 
     /**
@@ -790,6 +770,21 @@ public class LintDefectV2Dao {
         update.set("ignore_time", curTime);
         update.set("ignore_author", ignoreAuthor);
         defectMongoTemplate.updateMulti(query, update, LintDefectV2Entity.class);
+    }
+
+    public long batchExcludeToolNewDefect(Long taskId, String toolName) {
+        if (taskId == null || StringUtils.isBlank(toolName)) {
+            return 0L;
+        }
+        Query query = Query.query(Criteria.where("task_id").is(taskId)
+                .and("tool_name").in(toolName)
+                .and("status").is(DefectStatus.NEW.value()));
+        long curTime = System.currentTimeMillis();
+        Update update = new Update();
+        update.set("status", ComConstants.DefectStatus.NEW.value() | DefectStatus.CHECKER_MASK.value());
+        update.set("exclude_time", curTime);
+        update.set("updated_date", curTime);
+        return defectMongoTemplate.updateMulti(query, update, LintDefectV2Entity.class).getModifiedCount();
     }
 
     public void batchRollbackIgnoreDefect(long taskId, List<LintDefectV2Entity> defectList) {
@@ -1579,6 +1574,7 @@ public class LintDefectV2Dao {
 
     /**
      * 根据修复时间查询修复过告警的任务id集合
+     *
      * @param startTime 起始时间
      * @param endTime 结束时间
      * @param taskIds 任务id集合
@@ -1586,7 +1582,7 @@ public class LintDefectV2Dao {
      * @return 修复过告警的任务id
      */
     public Set<Long> findStatisticWithFixedTime(Long startTime, Long endTime,
-                                                                           Set<Long> taskIds, String toolName) {
+            Set<Long> taskIds, String toolName) {
         int fixed = ComConstants.DefectStatus.FIXED.value() | ComConstants.DefectStatus.NEW.value();
         Criteria criteria = Criteria.where("task_id").in(taskIds)
                 .and("tool_name").is(toolName)
@@ -1607,6 +1603,7 @@ public class LintDefectV2Dao {
 
     /**
      * 根据忽略告警类型是误报类型查询每个任务对应的误报问题数
+     *
      * @param startTime 起始时间
      * @param endTime 结束时间
      * @param taskIds 任务ids集合
@@ -1615,7 +1612,7 @@ public class LintDefectV2Dao {
      * @return 每个任务对应的问题数map
      */
     public List<StatisticVO> findPositiveStatistic(Long startTime, Long endTime, Set<Long> taskIds, String toolName,
-                                               Integer ignoreReasonType) {
+            Integer ignoreReasonType) {
         int ignore = ComConstants.DefectStatus.IGNORE.value() | ComConstants.DefectStatus.NEW.value();
         Criteria criteria = Criteria.where("task_id").in(taskIds)
                 .and("tool_name").is(toolName)

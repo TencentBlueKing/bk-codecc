@@ -102,12 +102,15 @@ public abstract class AbstractCCNBatchDefectProcessBizService extends AbstractBa
                     CollectionUtils.isEmpty(request.getStatus()) ? Collections.emptySet() :
                             request.getStatus().stream().map(Integer::valueOf).collect(Collectors.toSet()),
                     request.getFileList(), riskFactors, defectIds, request.getBuildId(),
-                    request.getStartCreateTime(), request.getEndCreateTime(), request.getIgnoreReasonTypes(), filedMap);
+                    request.getStartCreateTime(), request.getEndCreateTime(),
+                    request.getStartFixTime(), request.getEndFixTime(),
+                    request.getIgnoreReasonTypes(), filedMap);
         } else {
             return ccnDefectDao.findDefectByConditionWithFilePathPage(taskIdList, request.getAuthor(),
                     CollectionUtils.isEmpty(request.getStatus()) ? Collections.emptySet() :
                             request.getStatus().stream().map(Integer::valueOf).collect(Collectors.toSet()),
                     request.getFileList(), riskFactors, defectIds, request.getBuildId(), request.getStartCreateTime(),
+                    request.getStartFixTime(), request.getEndFixTime(),
                     request.getEndCreateTime(), request.getIgnoreReasonTypes(), startFilePath, skip, pageSize,
                     filedMap);
         }

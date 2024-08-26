@@ -8,6 +8,7 @@ import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetTaskRelationshipE
 import com.tencent.bk.codecc.defect.model.common.OrgInfoEntity;
 import com.tencent.bk.codecc.defect.service.AbstractCodeScoringService;
 import com.tencent.bk.codecc.defect.service.CheckerSetPackageService;
+import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
 import com.tencent.bk.codecc.defect.vo.CommitDefectVO;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
@@ -15,11 +16,13 @@ import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
 import com.tencent.devops.common.constant.ComConstants.CheckerSetEnvType;
 import com.tencent.devops.common.constant.ComConstants.CheckerSetPackageType;
 import com.tencent.devops.common.constant.ComConstants.CodeLang;
 import com.tencent.devops.common.service.BaseDataCacheService;
 import com.tencent.devops.common.service.IConsumer;
+import com.tencent.devops.common.util.TaskCreateFromUtils;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +51,9 @@ public class CodeScoringConsumer implements IConsumer<CommitDefectVO> {
 
     @Autowired
     private CheckerSetPackageService checkerSetPackageService;
+
+    @Autowired
+    private ThirdPartySystemCaller thirdPartySystemCaller;
 
     @Override
     public void consumer(CommitDefectVO commitDefectVO) {
@@ -95,8 +101,13 @@ public class CodeScoringConsumer implements IConsumer<CommitDefectVO> {
         List<CheckerSetTaskRelationshipEntity> checkerSetTaskRelationshipEntityList =
                 checkerSetTaskRelationshipRepository.findByTaskId(taskId);
         List<BaseDataVO> baseDataVOList = baseDataCacheService.getLanguageBaseDataFromCache(codeLang);
-        List<CheckerSetPackageEntity> packages = checkerSetPackageService.getByTypeAndEnvTypeAndOrgInfo(
-                CheckerSetPackageType.OPEN_SCAN.value(), CheckerSetEnvType.PROD.getKey(), getTaskOrgInfo(taskId));
+        TaskDetailVO task = thirdPartySystemCaller.geTaskInfoTaskId(taskId);
+        List<CheckerSetPackageEntity> packages = checkerSetPackageService.getByTypeAndEnvTypeAndOrgInfoAndCreateFrom(
+                CheckerSetPackageType.OPEN_SCAN.value(), CheckerSetEnvType.PROD.getKey(),
+                task == null ? null : new OrgInfoEntity(task.getBgId(), task.getBusinessLineId(), task.getDeptId(),
+                        task.getCenterId(), task.getGroupId()),
+                task == null ? BsTaskCreateFrom.BS_PIPELINE : TaskCreateFromUtils.INSTANCE.getTaskRealCreateFrom(
+                        task.getProjectId(), task.getCreateFrom()));
         Map<Long, List<CheckerSetPackageEntity>> langToPackagesMap =
                 packages.stream().collect(Collectors.groupingBy(CheckerSetPackageEntity::getLangValue));
         // 过滤 OTHERS 的开源规则集
@@ -115,22 +126,5 @@ public class CodeScoringConsumer implements IConsumer<CommitDefectVO> {
                 .map(CheckerSetTaskRelationshipEntity::getCheckerSetId)
                 .collect(toSet());
         return checkerSetIdSet.containsAll(openSourceCheckerSet);
-    }
-
-    private OrgInfoEntity getTaskOrgInfo(Long taskId) {
-        try {
-            Result<TaskDetailVO> response =
-                    client.get(ServiceTaskRestResource.class).getTaskInfoById(taskId);
-
-            if (response.isNotOk() || response.getData() == null) {
-                log.error("fail to get task info: {}", taskId);
-                return null;
-            }
-            TaskDetailVO task = response.getData();
-            return new OrgInfoEntity(task.getBgId(), task.getDeptId(), task.getCenterId(), task.getGroupId());
-        } catch (Throwable e) {
-            log.info("fail to get task info error, taskId : {}", taskId, e);
-        }
-        return null;
     }
 }

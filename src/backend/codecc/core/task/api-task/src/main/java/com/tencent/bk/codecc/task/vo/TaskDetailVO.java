@@ -87,6 +87,9 @@ public class TaskDetailVO extends TaskBaseVO {
     @ApiModelProperty(value = "事业群id")
     private int bgId;
 
+    @ApiModelProperty(value = "业务线id")
+    private Integer businessLineId;
+
     @ApiModelProperty(value = "部门id")
     private int deptId;
 

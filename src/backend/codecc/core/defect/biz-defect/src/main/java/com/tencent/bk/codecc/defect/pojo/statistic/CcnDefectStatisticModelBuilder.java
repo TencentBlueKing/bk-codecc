@@ -36,8 +36,10 @@ public class CcnDefectStatisticModelBuilder
      * @return 告警统计持久化类
      */
     @Override
-    public CCNStatisticEntity convert() {
-        CCNStatisticEntity ccnStatisticEntity = new CCNStatisticEntity();
+    public CCNStatisticEntity convert(CCNStatisticEntity ccnStatisticEntity) {
+        if (ccnStatisticEntity == null) {
+            ccnStatisticEntity = new CCNStatisticEntity();
+        }
         ccnStatisticEntity.setTaskId(defectStatisticModel.getTaskId());
         ccnStatisticEntity.setToolName(defectStatisticModel.getToolName());
         ccnStatisticEntity.setBuildId(defectStatisticModel.getBuildId());

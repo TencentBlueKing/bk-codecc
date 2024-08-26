@@ -38,9 +38,4 @@ public class BatchDefectProcessRspVO {
      * 影响数量
      */
     private Long count;
-
-    /**
-     * 失败的数量
-     */
-    private Long failCount;
 }

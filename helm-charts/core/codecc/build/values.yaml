@@ -20,7 +20,7 @@ commonAnnotations: {}
 ##
 rbac:
   cluster:
-    create: true
+    create: false
   create: true
 
 ## Specifies whether a ServiceAccount should be created
@@ -32,12 +32,7 @@ serviceAccount:
   ##
   name:
 
-# ipv6 开启为true
-ipv6:
-  enabled: false
 
-# 支持esb 开启为true
-bkEsbEnabled: false
 
 # metrics采集配置
 serviceMonitor:
@@ -74,65 +69,27 @@ nginx-ingress-controller:
 mongodb:
   # 是否部署mongodb
   # 如果需要使用外部数据库，设置为false并配置externalMongodb
-  enabled: __deploy_enable__
-  useStatefulSet: true
-  # ipv6 开启
-  # enableIPv6: true
-  # arbiter:
-  #   enabled: false
+  enabled: false
   auth:
     enabled: true
     rootPassword: codecc
     password: codecc
     username: codecc
     database: db_task
-  resources:
-    requests:
-      cpu: 100m
-      memory: 1000Mi
-    limits:
-      cpu: 500m
-      memory: 1500Mi
   persistence:
     subPath: mongodb
     size: 10Gi
   initdbScripts:
-     # ipv6 时关闭
     create_admin_user.sh: |
-      $MONGODB_BIN_DIR/mongo admin --host 127.0.0.1 --port $MONGODB_PORT_NUMBER -u $MONGODB_ROOT_USER -p $MONGODB_ROOT_PASSWORD << EOF
+      $MONGODB_BIN_DIR/mongo admin --host 127.0.0.1 --port $MONGODB_PORT_NUMBER -u root -p $MONGODB_ROOT_PASSWORD << EOF
       use db_defect
-      db.createUser({ user: "$MONGODB_EXTRA_USERNAMES" , pwd: "$MONGODB_EXTRA_PASSWORDS" , roles: [{role: "dbOwner" , db:"db_defect"}]})
+      db.createUser({ user: "$MONGODB_USERNAME" , pwd: "$MONGODB_PASSWORD" , roles: [{role: "dbOwner" , db:"db_defect"}]})
       use db_quartz
-      db.createUser({ user: "$MONGODB_EXTRA_USERNAMES" , pwd: "$MONGODB_EXTRA_PASSWORDS" , roles: [{role: "dbOwner" , db:"db_quartz"}]})
-      use db_schedule
-      db.createUser({ user: "$MONGODB_EXTRA_USERNAMES" , pwd: "$MONGODB_EXTRA_PASSWORDS" , roles: [{role: "dbOwner" , db:"db_schedule"}]})
-      use db_quartz
-      db.createUser({ user: "$MONGODB_EXTRA_USERNAMES" , pwd: "$MONGODB_EXTRA_PASSWORDS" , roles: [{role: "dbOwner" , db:"db_quartz"}]})
+      db.createUser({ user: "$MONGODB_USERNAME" , pwd: "$MONGODB_PASSWORD" , roles: [{role: "dbOwner" , db:"db_quartz"}]})
       EOF
-     # ipv6 开启
-  #   create_admin_user.sh: |
-  #     $MONGODB_BIN_DIR/mongo --ipv6 admin --port $MONGODB_PORT_NUMBER -u  $MONGODB_ROOT_USER -p $MONGODB_ROOT_PASSWORD << EOF
-  #     use db_defect
-  #     db.createUser({ user: "$MONGODB_EXTRA_USERNAMES" , pwd: "$MONGODB_EXTRA_PASSWORDS" , roles: [{role: "dbOwner" , db:"db_defect"}]})
-  #     use db_quartz
-  #     db.createUser({ user: "$MONGODB_EXTRA_USERNAMES" , pwd: "$MONGODB_EXTRA_PASSWORDS" , roles: [{role: "dbOwner" , db:"db_quartz"}]})
-  #     EOF
-  # extraEnvVars:
-  # - name: MONGODB_CLIENT_EXTRA_FLAGS
-  #   value: "--ipv6"      
- 
-## 如果mongodb.enabled为false，bkrepo将使用下面的参数连接外部mongodb
-externalMongodb:
-  ## mongodb 帐号密码与
-  host: localhost:27017
-  username: codecc
-  password: codecc
-  port: 27017
-  extraUrlParams: ""
-  authDB: admin
 
 redis:
-  enabled: __deploy_enable__
+  enabled: false
   auth:
     enabled: true
     password: codecc
@@ -144,23 +101,10 @@ redis:
     persistence: 
       size: 10Gi
 
-externalRedis:
-  ## mongodb 标准连接字符串
-  host: localhost
-  port: 6379
-  password: codecc
-
 rabbitmq:
-  enabled: __deploy_enable__
+  enabled: false
   persistence:
     size: 10Gi
-  resources:
-    requests:
-      cpu: 100m
-      memory: 1000Mi
-    limits:
-      cpu: 500m
-      memory: 1500Mi
   auth:
     enabled: true
     username: codecc
@@ -174,34 +118,6 @@ rabbitmq:
     default_permissions.configure = .*
     default_permissions.read = .*
     default_permissions.write = .*
-  # # ipv6环境开启
-  # initContainers:
-  # - name: ipv6-init
-  #   image: "docker.io/busybox:1.33.1"
-  #   imagePullPolicy: IfNotPresent
-  #   volumeMounts:
-  #   - name: ipv6-cfg
-  #     mountPath: /ipv6
-  #   command: ['sh', '-c', 'echo "{inet6, true}." > /ipv6/erl_inetrc']
-  # extraVolumes:
-  # - name: ipv6-cfg
-  #   emptyDir: {}
-  # extraVolumeMounts:
-  # - name: ipv6-cfg
-  #   mountPath: /ipv6
-  # extraEnvVars:
-  # - name: RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS
-  #   value: "-kernel inetrc '/ipv6/erl_inetrc' -proto_dist inet6_tcp"
-  # - name: RABBITMQ_CTL_ERL_ARGS
-  #   value: "-proto_dist inet6_tcp"
-
-
-externalRabbitmq:
-  ## mongodb 标准连接字符串
-  host: localhost
-  virtualhost: localhost
-  username: codecc
-  password: codecc
 
     
 ## 数据持久化配置, 当使用filesystem方式存储时需要配置
@@ -231,18 +147,18 @@ pv:
 
 init:
   mongodb:
-    enabled: __deploy_enable__
+    enabled: false
     auth:
       username: codecc
       password: codecc
     image:
-      registry: __image_host__
+      registry: __image_repo__
       repository: __image_path__/codecc-mongo-init
       tag: __image_backend_tag__
       pullPolicy: IfNotPresent
       pullSecrets: []
   entrance:
-    enabled: __deploy_enable__
+    enabled: false
     image:
       registry: __image_host__
       repository: __image_path__/codecc-entrance-init
@@ -250,7 +166,7 @@ init:
       pullPolicy: IfNotPresent
       pullSecrets: []
   storage:
-    enabled: __deploy_enable__
+    enabled: false
     image:
       registry: __image_host__
       repository: __image_path__/codecc-storage-init
@@ -270,7 +186,7 @@ configmap:
 
 ## 网关配置
 gateway:
-  enabled: __deploy_enable__
+  enabled: false
   ## dns服务器地址，用于配置nginx resolver。local=on为openrestry语法，取本机/etc/resolv.conf配置
   dnsServer: local=on
   ## 网关访问微服务认证信息
@@ -321,7 +237,7 @@ gateway:
   priorityClassName: ""
 
 task:
-  enabled: __deploy_enable__
+  enabled: false
   env:
     JVM_XMS: 512m
     # JVM的-xmx , 不能大于 limits.memory
@@ -367,7 +283,7 @@ task:
       port: 8080
 
 defect:
-  enabled: __deploy_enable__
+  enabled: false
   env:
     JVM_XMS: 512m
     # JVM的-xmx , 不能大于 limits.memory
@@ -414,7 +330,7 @@ defect:
 
 
 report:
-  enabled: __deploy_enable__
+  enabled: false
   env:
     JVM_XMS: 512m
     # JVM的-xmx , 不能大于 limits.memory
@@ -461,7 +377,7 @@ report:
 
 
 asyncreport:
-  enabled: __deploy_enable__
+  enabled: false
   env:
     JVM_XMS: 512m
     # JVM的-xmx , 不能大于 limits.memory
@@ -507,7 +423,7 @@ asyncreport:
       port: 8080
 
 codeccjob:
-  enabled: __deploy_enable__
+  enabled: false
   env:
     JVM_XMS: 512m
     # JVM的-xmx , 不能大于 limits.memory
@@ -553,7 +469,7 @@ codeccjob:
       port: 8080
 
 quartz:
-  enabled: __deploy_enable__
+  enabled: false
   env:
     JVM_XMS: 512m
     # JVM的-xmx , 不能大于 limits.memory
@@ -600,7 +516,7 @@ quartz:
 
 
 schedule:
-  enabled: __deploy_enable__
+  enabled: false
   env:
     JVM_XMS: 512m
     # JVM的-xmx , 不能大于 limits.memory
@@ -610,6 +526,52 @@ schedule:
   image:
     registry: __image_host__
     repository: __image_path__/codecc-schedule
+    tag: __image_backend_tag__
+    pullPolicy: IfNotPresent
+    pullSecrets: [ ]
+  replicaCount: 1
+  hostAliases: [ ]
+  resources:
+    requests:
+      cpu: 100m
+      memory: 1000Mi
+    limits:
+      cpu: 500m
+      memory: 1500Mi
+  containerSecurityContext:
+    enabled: false
+    runAsUser: 1001
+    runAsNonRoot: true
+  podSecurityContext:
+    enabled: false
+    fsGroup: 1001
+  podAffinityPreset: ""
+  podAntiAffinityPreset: soft
+  nodeAffinityPreset:
+    type: ""
+    key: ""
+    values: [ ]
+  affinity: { }
+  nodeSelector: { }
+  tolerations: [ ]
+  podLabels: { }
+  podAnnotations: { }
+  priorityClassName: ""
+  config:
+    server:
+      port: 8080
+
+scanschedule:
+  enabled: false
+  env:
+    JVM_XMS: 512m
+    # JVM的-xmx , 不能大于 limits.memory
+    JVM_XMX: 1024m
+    # 其他的配置
+    JVM_OPTIONS:
+  image:
+    registry: __image_host__
+    repository: __image_path__/codecc-scanschedule
     tag: __image_backend_tag__
     pullPolicy: IfNotPresent
     pullSecrets: [ ]

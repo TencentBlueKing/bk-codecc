@@ -19,8 +19,10 @@ import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity
 import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO
 import com.tencent.devops.common.auth.api.pojo.external.KEY_CREATE_FROM
+import com.tencent.devops.common.auth.api.pojo.external.KEY_PROJECT_ID
 import com.tencent.devops.common.auth.api.pojo.external.PREFIX_TASK_INFO
 import com.tencent.devops.common.constant.ComConstants
+import com.tencent.devops.common.constant.ComConstants.DefectStatType.getDataFromByProjectId
 import com.tencent.devops.common.constant.ComConstants.ScanStatType
 import com.tencent.devops.common.constant.ComConstants.TOTAL_BLANK
 import com.tencent.devops.common.constant.ComConstants.TOTAL_CODE
@@ -62,63 +64,49 @@ class ActiveStatisticService @Autowired constructor(
         val voBuildId = uploadTaskLogStepVO.pipelineBuildId
 
         val isLastStepNum = if (COMMON_TOOLS.contains(
-                        voToolName)) ComConstants.Step4Cov.DEFECT_SYNS.value() else ComConstants.Step4MutliTool.COMMIT.value()
+                voToolName)) ComConstants.Step4Cov.DEFECT_SYNS.value() else ComConstants.Step4MutliTool.COMMIT.value()
 
         val dateStr = DateTimeUtils.getDateByDiff(0)
 
         // 修复任务ID可能为空
-        val taskId = if (voTaskId == 0L) {
-            try {
-                thirdPartySystemCaller.getTaskInfoWithoutToolsByStreamName(uploadTaskLogStepVO.streamName)
-                        .taskId.toString()
-            } catch (e: Exception) {
-                logger.error("getTaskInfo fail: ${e.message}")
-                return
-            }
+        val finalTaskId = getFinalTaskIdStr(voTaskId, uploadTaskLogStepVO.streamName)
 
-        } else {
-            voTaskId.toString()
-        }
-
-        var createFrom = redisTemplate.opsForHash<String, String>().get(PREFIX_TASK_INFO + taskId, KEY_CREATE_FROM)
-        if (ComConstants.DefectStatType.GONGFENG_SCAN.value() != createFrom) {
-            createFrom = ComConstants.DefectStatType.USER.value()
-        }
+        val taskCreateFrom =
+            redisTemplate.opsForHash<String, String>().get(PREFIX_TASK_INFO + finalTaskId, KEY_CREATE_FROM)
+        val projectId =
+            redisTemplate.opsForHash<String, String>().get(PREFIX_TASK_INFO + finalTaskId, KEY_PROJECT_ID)
+        val dataFrom = getDataFromByProjectId(taskCreateFrom!!, projectId!!)
 
         // 统计活跃
         if (voStepNum == 1) {
             // 活跃任务
-            val taskKey = "${RedisKeyConstants.PREFIX_ACTIVE_TASK}$dateStr:$createFrom"
-            redisTemplate.opsForSet().add(taskKey, taskId)
-
-            // 活跃工具
-            val toolKey = "${RedisKeyConstants.PREFIX_ACTIVE_TOOL}$dateStr:$createFrom"
-            redisTemplate.opsForHash<String, String>().increment(toolKey, voToolName, 1)
+            val taskKey = "${RedisKeyConstants.PREFIX_ACTIVE_TASK}$dateStr:$dataFrom"
+            redisTemplate.opsForSet().add(taskKey, finalTaskId)
             logger.info("active statistic save.")
         }
 
         // 区分超快和非超快
         val scanStatTypeStr = if (uploadTaskLogStepVO.isFastIncrement) {
-            ComConstants.ScanStatType.IS_FAST_INCREMENT.value
+            ScanStatType.IS_FAST_INCREMENT.value
         } else {
-            ComConstants.ScanStatType.NOT_FAST_INCREMENT.value
+            ScanStatType.NOT_FAST_INCREMENT.value
         }
 
         // 统计分析失败次数 2、4
         if (voFlag == ComConstants.StepFlag.FAIL.value() || voFlag == ComConstants.StepFlag.ABORT.value()) {
             // 判断是否已统计过该buildId
-            val toolBuildIdKey = "${RedisKeyConstants.PREDIX_TOOL_BUILD_ID_SET}$dateStr:$createFrom:$voToolName"
+            val toolBuildIdKey = "${RedisKeyConstants.PREDIX_TOOL_BUILD_ID_SET}$dateStr:$dataFrom:$voToolName"
             if (redisTemplate.opsForSet().isMember(toolBuildIdKey, voBuildId) != true) {
                 // 记录已统计标记
                 redisTemplate.opsForSet().add(toolBuildIdKey, voBuildId)
 
                 val analyzeFailKey =
-                    "${RedisKeyConstants.PREFIX_ANALYZE_FAIL_COUNT}$dateStr:$createFrom:$voToolName"
-                redisTemplate.opsForList().rightPush(analyzeFailKey, taskId)
+                    "${RedisKeyConstants.PREFIX_ANALYZE_FAIL_COUNT}$dateStr:$dataFrom:$voToolName"
+                redisTemplate.opsForList().rightPush(analyzeFailKey, finalTaskId)
 
                 // 记录每天各工具分析失败次数(按是否超快)
                 val analyzeFailToolKey =
-                    "${RedisKeyConstants.PREFIX_ANALYZE_FAIL_TOOL}$dateStr:$createFrom:$scanStatTypeStr"
+                    "${RedisKeyConstants.PREFIX_ANALYZE_FAIL_TOOL}$dateStr:$dataFrom:$scanStatTypeStr"
                 redisTemplate.opsForHash<String, String>().increment(analyzeFailToolKey, voToolName, 1)
                 logger.info("analyze fail statistic save.")
             }
@@ -128,13 +116,13 @@ class ActiveStatisticService @Autowired constructor(
         // 统计分析成功次数 1
         if (voStepNum == isLastStepNum && voFlag == ComConstants.StepFlag.SUCC.value()) {
             // 判断是否已统计过该buildId
-            val toolBuildIdKey = "${RedisKeyConstants.PREDIX_TOOL_BUILD_ID_SET}$dateStr:$createFrom:$voToolName"
+            val toolBuildIdKey = "${RedisKeyConstants.PREDIX_TOOL_BUILD_ID_SET}$dateStr:$dataFrom:$voToolName"
             if (redisTemplate.opsForSet().isMember(toolBuildIdKey, voBuildId) != true) {
                 // 记录已统计标记
                 redisTemplate.opsForSet().add(toolBuildIdKey, voBuildId)
 
-                val analyzeSuccessKey = "${RedisKeyConstants.PREFIX_ANALYZE_SUCC_COUNT}$dateStr:$createFrom:$voToolName"
-                redisTemplate.opsForList().rightPush(analyzeSuccessKey, taskId)
+                val analyzeSuccessKey = "${RedisKeyConstants.PREFIX_ANALYZE_SUCC_COUNT}$dateStr:$dataFrom:$voToolName"
+                redisTemplate.opsForList().rightPush(analyzeSuccessKey, finalTaskId)
                 logger.info("analyze success statistic save.")
 
                 // 记录工具分析耗时
@@ -144,18 +132,14 @@ class ActiveStatisticService @Autowired constructor(
 
                 // 记录每天累计耗时
                 val elapseTimeKey =
-                        "${RedisKeyConstants.PREFIX_ANALYZE_SUCC_ELAPSE_TIME}$dateStr:$createFrom:$scanStatTypeStr"
+                        "${RedisKeyConstants.PREFIX_ANALYZE_SUCC_ELAPSE_TIME}$dateStr:$dataFrom:$scanStatTypeStr"
                 val elapseTimeStr = redisTemplate.opsForHash<String, String>().get(elapseTimeKey, voToolName)
-                val elapseTimeLong = if (elapseTimeStr.isNullOrBlank()) {
-                    elapseTime
-                } else {
-                    elapseTime + elapseTimeStr.toLong()
-                }
+                val elapseTimeLong =  (elapseTimeStr?.toLongOrNull() ?: 0L) + elapseTime
                 redisTemplate.opsForHash<String, String>().put(elapseTimeKey, voToolName, elapseTimeLong.toString())
 
                 // 记录每天各工具分析成功次数(按是否超快)
                 val analyzeSuccToolKey =
-                        "${RedisKeyConstants.PREFIX_ANALYZE_SUCC_TOOL}$dateStr:$createFrom:$scanStatTypeStr"
+                        "${RedisKeyConstants.PREFIX_ANALYZE_SUCC_TOOL}$dateStr:$dataFrom:$scanStatTypeStr"
                 redisTemplate.opsForHash<String, String>().increment(analyzeSuccToolKey, voToolName, 1)
                 logger.info("tool analyze elapse time statistic save.")
             }
@@ -164,39 +148,61 @@ class ActiveStatisticService @Autowired constructor(
         logger.info("statistic finish.")
     }
 
+    private fun getFinalTaskIdStr(voTaskId: Long, nameEn: String): String {
+        val finalTaskId = if (voTaskId == 0L) {
+            thirdPartySystemCaller.getTaskInfoWithoutToolsByStreamName(nameEn)
+                .let { taskDetailVO ->
+                    redisTemplate.opsForHash<String, String>()
+                        .put(PREFIX_TASK_INFO + taskDetailVO.taskId, KEY_PROJECT_ID, taskDetailVO.projectId)
+                    taskDetailVO.taskId.toString()
+                }
+        } else {
+            redisTemplate.opsForHash<String, String>().get(PREFIX_TASK_INFO + voTaskId, KEY_PROJECT_ID) ?: run {
+                thirdPartySystemCaller.getTaskInfoWithoutToolsByTaskId(voTaskId).let { taskDetailVO ->
+                    redisTemplate.opsForHash<String, String>()
+                        .put(PREFIX_TASK_INFO + taskDetailVO.taskId, KEY_PROJECT_ID, taskDetailVO.projectId)
+                }
+            }
+            voTaskId.toString()
+        }
+        return finalTaskId
+    }
+
     /**
      * 统计代码行
      */
     fun statCodeLineByCloc(clocStatisticEntity: Collection<CLOCStatisticEntity>, scanStatType: ScanStatType) {
         logger.info("active statistic after upload -> size: {}", clocStatisticEntity.size)
-        val taskId = clocStatisticEntity.iterator().next().taskId
-        var createFrom = redisTemplate.opsForHash<String, String>().get(PREFIX_TASK_INFO + taskId, KEY_CREATE_FROM)
-        if (ComConstants.DefectStatType.GONGFENG_SCAN.value() != createFrom) {
-            createFrom = ComConstants.DefectStatType.USER.value()
-        }
+        val taskId = clocStatisticEntity.first().taskId
+        val finalTaskInfoKey = PREFIX_TASK_INFO + taskId
+        // 根据任务创建来源taskCreateFrom和项目id判定
+        val taskCreateFrom = redisTemplate.opsForHash<String, String>().get(finalTaskInfoKey, KEY_CREATE_FROM)
+            ?: thirdPartySystemCaller.getTaskInfoWithoutToolsByTaskId(taskId).createFrom.also {
+                redisTemplate.opsForHash<String, String>().put(finalTaskInfoKey, KEY_CREATE_FROM, it)
+            }
+        val projectId = redisTemplate.opsForHash<String, String>().get(finalTaskInfoKey, KEY_PROJECT_ID)
+            ?: thirdPartySystemCaller.getTaskInfoWithoutToolsByTaskId(taskId).projectId.also {
+                redisTemplate.opsForHash<String, String>().put(finalTaskInfoKey, KEY_PROJECT_ID, it)
+            }
+
+        val createFrom = getDataFromByProjectId(taskCreateFrom, projectId)
 
         val currentDate = DateTimeUtils.getDateByDiff(0)
         val key = "${RedisKeyConstants.CODE_LINE_STAT}$currentDate:$createFrom"
-        var currentMap = redisTemplate.opsForHash<String, String>().entries(key)
-        if (currentMap.isNullOrEmpty()) {
-            currentMap = mutableMapOf()
+        val currentMap = redisTemplate.opsForHash<String, String>().entries(key).toMutableMap().apply {
+            putIfAbsent(TOTAL_BLANK, "0")
+            putIfAbsent(TOTAL_COMMENT, "0")
+            putIfAbsent(TOTAL_CODE, "0")
         }
 
-        var totalBlank: Long = currentMap.getOrDefault(TOTAL_BLANK, "0").toLong()
-        var totalComment: Long = currentMap.getOrDefault(TOTAL_COMMENT, "0").toLong()
-        var totalCode: Long = currentMap.getOrDefault(TOTAL_CODE, "0").toLong()
-
-        clocStatisticEntity.forEach {
-            if (it.sumBlank > 0) {
-                totalBlank += it.sumBlank
-            }
-            if (it.sumComment > 0) {
-                totalComment += it.sumComment
-            }
-            if (it.sumCode > 0) {
-                totalCode += it.sumCode
-            }
+        val (totalBlank, totalComment, totalCode) = clocStatisticEntity.fold(Triple(0L, 0L, 0L)) { acc, entity ->
+            Triple(
+                acc.first + entity.sumBlank,
+                acc.second + entity.sumComment,
+                acc.third + entity.sumCode
+            )
         }
+
 
         currentMap[TOTAL_BLANK] = totalBlank.toString()
         currentMap[TOTAL_COMMENT] = totalComment.toString()

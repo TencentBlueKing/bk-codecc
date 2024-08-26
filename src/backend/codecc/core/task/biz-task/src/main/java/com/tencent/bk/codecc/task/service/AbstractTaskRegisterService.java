@@ -29,6 +29,7 @@
 package com.tencent.bk.codecc.task.service;
 
 import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.KEY_CREATE_FROM;
+import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.KEY_PROJECT_ID;
 import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.PREFIX_TASK_INFO;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -55,6 +56,7 @@ import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
 import com.tencent.devops.common.constant.ComConstants.CheckerSetEnvType;
 import com.tencent.devops.common.constant.ComConstants.CheckerSetPackageType;
 import com.tencent.devops.common.constant.ComConstants.Tool;
@@ -81,6 +83,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -181,8 +184,15 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
         log.info("save task info successfully! task id: {}, entity id: {}", taskId, taskInfoResult.getEntityId());
 
         // 缓存创建来源
-        redisTemplate.opsForHash().put(PREFIX_TASK_INFO + taskId, KEY_CREATE_FROM, taskInfoResult.getCreateFrom());
+        cacheTaskInfo(taskInfoEntity);
         return taskInfoResult;
+    }
+
+    protected void cacheTaskInfo(@NotNull TaskInfoEntity taskInfoEntity) {
+        Map<String, String> taskInfoMap = new HashMap<>();
+        taskInfoMap.put(KEY_CREATE_FROM, taskInfoEntity.getCreateFrom());
+        taskInfoMap.put(KEY_PROJECT_ID, taskInfoEntity.getProjectId());
+        redisTemplate.opsForHash().putAll(PREFIX_TASK_INFO + taskInfoEntity.getTaskId(), taskInfoMap);
     }
 
     /**
@@ -608,16 +618,16 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
     }
 
     protected List<OpenSourceCheckerSet> getOpenSourceCheckerSet(BaseDataEntity baseDataVO, CheckerSetPackageType type,
-            String checkerSetEnvType, OrgInfoVO orgInfo) {
+            String checkerSetEnvType, OrgInfoVO orgInfo, BsTaskCreateFrom createFrom) {
         List<OpenSourceCheckerSet> openSourceCheckerSets;
         if (baseDataVO == null || !StringUtils.isNumeric(baseDataVO.getParamCode())) {
             return Collections.emptyList();
         }
         Long langValue = Long.valueOf(baseDataVO.getParamCode());
         List<OpenSourceCheckerSet> prodCheckerSets = getOpenSourceCheckerSet(langValue, type,
-                CheckerSetEnvType.PROD, orgInfo);
+                CheckerSetEnvType.PROD, orgInfo, createFrom);
         List<OpenSourceCheckerSet> preProdCheckerSets = getOpenSourceCheckerSet(langValue, type,
-                CheckerSetEnvType.PRE_PROD, orgInfo);
+                CheckerSetEnvType.PRE_PROD, orgInfo, createFrom);
         if (!StringUtils.isBlank(checkerSetEnvType)
                 && checkerSetEnvType.equals(ComConstants.CheckerSetEnvType.PRE_PROD.getKey())
                 && CollectionUtils.isNotEmpty(preProdCheckerSets)) {
@@ -629,13 +639,13 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
     }
 
     protected List<OpenSourceCheckerSet> getOpenSourceCheckerSet(Long langValue, CheckerSetPackageType type,
-            CheckerSetEnvType envType, OrgInfoVO orgInfo) {
+            CheckerSetEnvType envType, OrgInfoVO orgInfo, BsTaskCreateFrom createFrom) {
         if (langValue == null || langValue == 0L) {
             return Collections.emptyList();
         }
         List<CheckerSetPackageVO> packageVOS =
-                checkerSetPackageCacheService.getPackageByLangValueAndTypeAndEnvTypeAndOrgInfoFromCache(langValue,
-                        type.value(), envType.getKey(), orgInfo);
+                checkerSetPackageCacheService.getPackageByLangValueAndTypeAndEnvTypeAndScopesFromCache(langValue,
+                        type.value(), envType.getKey(), orgInfo, createFrom);
         return convertPackageToOpenSourceCheckerSet(packageVOS);
     }
 

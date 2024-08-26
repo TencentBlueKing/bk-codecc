@@ -27,14 +27,16 @@
 package com.tencent.bk.codecc.quartz.model;
 
 import com.tencent.codecc.common.db.CommonEntity;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-
-import java.util.Map;
 
 /**
  * 分析版本持久实体类
@@ -43,11 +45,16 @@ import java.util.Map;
  * @date 2019/7/16
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @Document(collection = "t_job_instance")
-public class JobInstanceEntity extends CommonEntity
-{
+@CompoundIndexes({
+        @CompoundIndex(name = "class_name_1_shard_tag_1_next_trigger_time_1",
+                def = "{'class_name': 1, 'shard_tag': 1, 'next_trigger_time': 1}", background = true)
+})
+public class JobInstanceEntity extends CommonEntity {
+
     /**
      * 用于远程加载类
      */
@@ -97,4 +104,16 @@ public class JobInstanceEntity extends CommonEntity
      */
     @Field("status")
     private Integer status;
+
+    /**
+     * 最后一次执行的时间
+     */
+    @Field("last_trigger_time")
+    private Long lastTriggerTime;
+
+    /**
+     * 下次执行时间
+     */
+    @Field("next_trigger_time")
+    private Long nextTriggerTime;
 }

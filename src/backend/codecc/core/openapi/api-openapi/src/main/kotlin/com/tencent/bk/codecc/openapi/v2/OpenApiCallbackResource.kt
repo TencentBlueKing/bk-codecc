@@ -1,6 +1,8 @@
 package com.tencent.bk.codecc.openapi.v2
 
+import com.tencent.bk.codecc.openapi.v2.vo.ProjectCallbackEvent
 import com.tencent.bk.sdk.iam.dto.callback.request.CallbackRequestDTO
+import com.tencent.devops.common.api.pojo.codecc.Result
 import com.tencent.devops.common.web.security.AuthCodeCCToken
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
@@ -26,4 +28,12 @@ interface OpenApiCallbackResource {
         @ApiParam(value = "回调信息", required = true)
         callBackInfo: CallbackRequestDTO
     ): String
+
+    @POST
+    @Path("/project/event")
+    @ApiOperation("项目时间回调")
+    fun projectEvent(
+        @ApiParam(value = "回调信息", required = true)
+        callBackInfo: ProjectCallbackEvent
+    ): Result<String>
 }

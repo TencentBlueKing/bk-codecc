@@ -109,6 +109,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
             }
             // 组装返回信息
             StringBuilder errorMsg = new StringBuilder();
+            errorMsg.append("对于");
             int index = 0;
             for (TaskBase taskBase : taskBases) {
                 if (index > 0) {
@@ -121,6 +122,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
                     break;
                 }
             }
+            errorMsg.append("任务，用户").append(userName);
             throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{errorMsg.toString()});
         }
     }
@@ -173,7 +175,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
         if (!isSelectAll) {
             return processDefect(false, batchDefectProcessReqVO);
         } else {
-            DefectQueryReqVO queryCondObj = batchDefectProcessReqVO.getDefectQueryReqVO();
+            DefectQueryReqVO queryCondObj = getDefectQueryReqVO(batchDefectProcessReqVO);
             // fileList 是分页的因子，author会导致处理人分配时分页出现不确定性，并且筛选后数量不大，所以都直接全量查询
             if (CollectionUtils.isNotEmpty(queryCondObj.getFileList())
                     || StringUtils.isNotBlank(queryCondObj.getAuthor())) {
@@ -224,7 +226,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
     private long processDefect(Boolean isSelectAll, BatchDefectProcessReqVO batchDefectProcessReqVO) {
         List defectList;
         if (isSelectAll) {
-            DefectQueryReqVO queryCondObj = batchDefectProcessReqVO.getDefectQueryReqVO();
+            DefectQueryReqVO queryCondObj = getDefectQueryReqVO(batchDefectProcessReqVO);
             defectList = getDefectsByQueryCond(batchDefectProcessReqVO.getTaskId(), queryCondObj,
                     batchDefectProcessReqVO.getDefectKeySet());
         } else {
@@ -235,25 +237,27 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
                 batchDefectProcessReqVO.getTaskId(), batchDefectProcessReqVO.getBizType(),
                 defectList == null ? 0 : defectList.size(), batchDefectProcessReqVO.getDefectKeySet().size());
 
+        int opType = NOP;
         if (CollectionUtils.isNotEmpty(defectList) && defectList.get(0) instanceof LintDefectV2Entity) {
-            int opType = isInsertOrDelete(batchDefectProcessReqVO.getBizType(),
+            opType = isInsertOrDelete(batchDefectProcessReqVO.getBizType(),
                     batchDefectProcessReqVO.getIgnoreReasonType());
-            if (opType == INS) {
-                Result<TaskDetailVO> taskBaseResult = client.get(ServiceTaskRestResource.class)
-                        .getTaskInfoById(batchDefectProcessReqVO.getTaskId());
-                if (null == taskBaseResult || taskBaseResult.isNotOk() || null == taskBaseResult.getData()) {
-                    log.error("get task info fail!, task id: {}", batchDefectProcessReqVO.getTaskId());
-                    throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
-                }
+        }
 
-                ignoredNegativeDefectDao.batchInsert(
-                        defectList,
-                        batchDefectProcessReqVO,
-                        taskBaseResult.getData()
-                );
-            } else if (opType == DEL) {
-                ignoredNegativeDefectDao.batchDelete(batchDefectProcessReqVO.getDefectKeySet());
+        if (opType == INS) {
+            Result<TaskDetailVO> taskBaseResult = client.get(ServiceTaskRestResource.class)
+                    .getTaskInfoById(batchDefectProcessReqVO.getTaskId());
+            if (null == taskBaseResult || taskBaseResult.isNotOk() || null == taskBaseResult.getData()) {
+                log.error("get task info fail!, task id: {}", batchDefectProcessReqVO.getTaskId());
+                throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
             }
+
+            ignoredNegativeDefectDao.batchInsert(
+                    defectList,
+                    batchDefectProcessReqVO,
+                    taskBaseResult.getData()
+            );
+        } else if (opType == DEL) {
+            ignoredNegativeDefectDao.batchDelete(batchDefectProcessReqVO.getDefectKeySet());
         }
 
         if (CollectionUtils.isNotEmpty(defectList)) {
@@ -280,7 +284,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
         }
 
         List pageDefectList;
-        DefectQueryReqVO queryCondObj = batchDefectProcessReqVO.getDefectQueryReqVO();
+        DefectQueryReqVO queryCondObj = getDefectQueryReqVO(batchDefectProcessReqVO);
         // 起始的FilePath 与 跳过的数量
         String startFilePath = null;
         Long skip = 0L;
@@ -392,9 +396,30 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
         return null;
     }
 
+
+    private DefectQueryReqVO getDefectQueryReqVO(BatchDefectProcessReqVO batchDefectProcessReqVO) {
+        String queryDefectCondition = batchDefectProcessReqVO.getQueryDefectCondition();
+        DefectQueryReqVO queryCondObj = JsonUtil.INSTANCE.to(queryDefectCondition, DefectQueryReqVO.class);
+        if (queryCondObj == null) {
+            log.error("defect batch op, query obj deserialize fail, json: {}", queryDefectCondition);
+            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID);
+        }
+        queryCondObj.setRevertAndMark(batchDefectProcessReqVO.getRevertAndMark());
+        log.info("defect batch op, query obj: {}", queryCondObj);
+        Set<String> statusAllows = new HashSet<>(getStatusCondition(queryCondObj));
+        Set<String> retainStatus = CollectionUtils.isEmpty(queryCondObj.getStatus()) ? statusAllows
+                : queryCondObj.getStatus().stream().filter(statusAllows::contains).collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(retainStatus)) {
+            retainStatus = Sets.newHashSet("-1");
+        }
+        queryCondObj.setStatus(retainStatus);
+        return queryCondObj;
+    }
+
     protected void refreshOverviewData(long taskId) {
         taskPersonalStatisticService.refresh(taskId, "from batch defect process: " + this);
     }
+
 
     protected void processBatchDefectProcessHandler(List defects, BatchDefectProcessReqVO batchDefectProcessReqVO) {
         if (handlers == null || handlers.isEmpty()) {

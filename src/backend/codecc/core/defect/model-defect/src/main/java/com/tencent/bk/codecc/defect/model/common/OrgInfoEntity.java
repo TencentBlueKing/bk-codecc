@@ -13,6 +13,9 @@ public class OrgInfoEntity {
     @Field("bg_id")
     private Integer bgId;
 
+    @Field("business_line_id")
+    private Integer businessLineId;
+
     @Field("dept_id")
     private Integer deptId;
 
@@ -26,10 +29,11 @@ public class OrgInfoEntity {
 
     public boolean checkIsNotEmpty() {
         boolean hasBgId = bgId != null && bgId > 0;
+        boolean hasBusinessLineId = businessLineId != null && businessLineId > 0;
         boolean hasDeptId = deptId != null && deptId > 0;
         boolean hasCenterId = centerId != null && centerId > 0;
         boolean hasGroupId = groupId != null && groupId > 0;
-        return hasBgId || hasDeptId || hasCenterId || hasGroupId;
+        return hasBgId || hasBusinessLineId || hasDeptId || hasCenterId || hasGroupId;
     }
 
     public boolean checkIsEmpty() {
@@ -43,10 +47,12 @@ public class OrgInfoEntity {
      */
     public boolean contains(OrgInfoEntity target) {
         boolean matchBgId = bgId == null || bgId == 0 || bgId.equals(target.getBgId());
+        boolean matchBusinessLineId =
+                businessLineId == null || businessLineId == 0 || businessLineId.equals(target.getBusinessLineId());
         boolean matchDeptId = deptId == null || deptId == 0 || deptId.equals(target.getDeptId());
         boolean matchCenterId = centerId == null || centerId == 0 || centerId.equals(target.getCenterId());
         boolean matchGroupId = groupId == null || groupId == 0 || groupId.equals(target.getGroupId());
-        return matchBgId && matchDeptId && matchCenterId && matchGroupId;
+        return matchBgId && matchBusinessLineId && matchDeptId && matchCenterId && matchGroupId;
     }
 
 }

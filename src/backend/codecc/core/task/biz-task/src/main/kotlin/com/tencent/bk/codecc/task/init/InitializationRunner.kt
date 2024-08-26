@@ -34,6 +34,7 @@ import com.tencent.bk.codecc.task.service.AdminAuthorizeService
 import com.tencent.bk.codecc.task.service.code.InitResponseCode
 import com.tencent.devops.common.auth.api.pojo.external.KEY_ADMIN_MEMBER
 import com.tencent.devops.common.auth.api.pojo.external.KEY_CREATE_FROM
+import com.tencent.devops.common.auth.api.pojo.external.KEY_PROJECT_ID
 import com.tencent.devops.common.auth.api.pojo.external.PREFIX_TASK_INFO
 import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.constant.RedisKeyConstants
@@ -43,10 +44,10 @@ import com.tencent.devops.common.util.ThreadPoolUtil
 import org.apache.commons.lang.StringUtils
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.CommandLineRunner
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
@@ -61,9 +62,6 @@ class InitializationRunner @Autowired constructor(
     private val adminAuthorizeService: AdminAuthorizeService,
     private val commonDao: CommonDao
 ) : CommandLineRunner {
-
-    @Value("\${auth.url:#{null}}")
-    private var authUrl: String? = null
 
     companion object {
         private val logger = LoggerFactory.getLogger(InitializationRunner::class.java)
@@ -208,59 +206,58 @@ class InitializationRunner @Autowired constructor(
         if (StringUtils.isNotEmpty(newestTaskCreateFrom) && !latestBgMapping.isNullOrBlank()) {
             return
         }
-        var pageable: Pageable = PageRequest.of(0, 1000)
+        var pageable: Pageable = PageRequest.of(0, 1000, Sort.by(Sort.Direction.ASC, "task_id"))
         var pageTasks: List<TaskInfoEntity>
         do {
             val taskInfoEntityPage = taskRepository.findTasksByPage(pageable)
-            if (taskInfoEntityPage.hasContent()) {
-                pageTasks = taskInfoEntityPage.content
-                var needCache = false
-                var needBgCache = false
-                val lastTask = pageTasks.last()
-                if (lastTask != null) {
-                    val lastTaskCreateFrom = redisTemplate.opsForHash<String, String>()
-                            .get(PREFIX_TASK_INFO + lastTask.taskId, KEY_CREATE_FROM)
-                    if (lastTaskCreateFrom.isNullOrEmpty()) {
-                        needCache = true
-                    }
-                }
-                val lastGongfengTask =
-                    pageTasks.findLast { it.createFrom == ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value() }
-                if (lastGongfengTask != null) {
-                    val lastGongfengBgId = redisTemplate.opsForHash<String, String>()
-                            .get(RedisKeyConstants.KEY_TASK_BG_MAPPING, lastGongfengTask.taskId.toString())
-                    if (lastGongfengBgId.isNullOrBlank()) {
-                        needBgCache = true
-                    }
-                }
-                if (needCache) {
-                    redisTemplate.execute { connection ->
-                        for (task in pageTasks) {
-                            if (!task.createFrom.isNullOrEmpty()) {
-                                connection.hSet(
-                                    (PREFIX_TASK_INFO + task.taskId).toByteArray(),
-                                    KEY_CREATE_FROM.toByteArray(),
-                                    task.createFrom.toByteArray()
-                                )
-                            }
+            if (!taskInfoEntityPage.hasContent()) {
+                break
+            }
+            pageTasks = taskInfoEntityPage.content
+            var needCache = false
+            var needProjectIdCache = false
+            val lastTask = pageTasks.lastOrNull()
+            lastTask?.let {
+                needCache =
+                    redisTemplate.opsForHash<String, String>().get(PREFIX_TASK_INFO + it.taskId, KEY_CREATE_FROM)
+                        .isNullOrEmpty()
+                needProjectIdCache =
+                    redisTemplate.opsForHash<String, String>().get(PREFIX_TASK_INFO + it.taskId, KEY_PROJECT_ID)
+                        .isNullOrEmpty()
+            }
+
+            if (needCache || needProjectIdCache) {
+                redisTemplate.execute { connection ->
+                    pageTasks.forEach { task ->
+                        if (needCache && !task.createFrom.isNullOrEmpty()) {
+                            connection.hSet(
+                                (PREFIX_TASK_INFO + task.taskId).toByteArray(),
+                                KEY_CREATE_FROM.toByteArray(),
+                                task.createFrom.toByteArray()
+                            )
+                        }
+                        if (needProjectIdCache && !task.projectId.isNullOrEmpty()) {
+                            connection.hSet(
+                                (PREFIX_TASK_INFO + task.taskId).toByteArray(),
+                                KEY_PROJECT_ID.toByteArray(),
+                                task.projectId.toByteArray()
+                            )
                         }
                     }
                 }
+            }
 
-                redisTemplate.execute { connection ->
-                    for (task in pageTasks) {
-                        connection.hSet(
-                            RedisKeyConstants.KEY_TASK_BG_MAPPING.toByteArray(),
-                            task.taskId.toString().toByteArray(),
-                            task.bgId.toString().toByteArray()
-                        )
-                    }
-                }
-
-                if (taskInfoEntityPage.hasNext()) {
-                    pageable = pageable.next()
+            redisTemplate.execute { connection ->
+                pageTasks.forEach { task ->
+                    connection.hSet(
+                        RedisKeyConstants.KEY_TASK_BG_MAPPING.toByteArray(),
+                        task.taskId.toString().toByteArray(),
+                        task.bgId.toString().toByteArray()
+                    )
                 }
             }
+
+            pageable = pageable.next()
         } while (taskInfoEntityPage.hasNext())
     }
 
