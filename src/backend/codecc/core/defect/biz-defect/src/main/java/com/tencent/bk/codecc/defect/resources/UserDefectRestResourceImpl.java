@@ -410,7 +410,7 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
     private long getBatchSelectDefectCount(String projectId, String userName,
                                            BatchDefectProcessReqVO batchDefectProcessReqVO) {
         Result<CommonDefectQueryRspVO> result = queryDefectListWithIssue(userName, projectId,
-                batchDefectProcessReqVO.getDefectQueryReqVO(), 0, 1, null, null);
+                batchDefectProcessReqVO.convertDefectQueryReqVO(), 0, 1, null, null);
         if (result == null || result.isNotOk() || result.getData() == null) {
             return 0L;
         }

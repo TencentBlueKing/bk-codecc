@@ -17,7 +17,6 @@ import com.tencent.codecc.common.db.CommonEntity;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
-import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.BusinessType;
 import com.tencent.devops.common.constant.CommonMessageCode;
@@ -393,7 +392,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
     }
 
     private DefectQueryReqVO getDefectQueryReqVO(BatchDefectProcessReqVO batchDefectProcessReqVO) {
-        DefectQueryReqVO queryCondObj =  batchDefectProcessReqVO.getDefectQueryReqVO();
+        DefectQueryReqVO queryCondObj =  batchDefectProcessReqVO.convertDefectQueryReqVO();
         Set<String> statusAllows = new HashSet<>(getStatusCondition(queryCondObj));
         Set<String> retainStatus = CollectionUtils.isEmpty(queryCondObj.getStatus()) ? statusAllows
                 : queryCondObj.getStatus().stream().filter(statusAllows::contains).collect(Collectors.toSet());
