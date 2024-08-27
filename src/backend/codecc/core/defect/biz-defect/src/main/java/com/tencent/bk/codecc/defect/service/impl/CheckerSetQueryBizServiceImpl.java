@@ -613,7 +613,7 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
                 String resourceCode = categoryMap.get(category.getCnName());
                 if (!ObjectUtils.isEmpty(resourceCode)) {
                     String message = I18NUtils.getMessage(resourceCode);
-                    checkerSetVO.getCatagories().add(new CheckerSetCategoryVO(message, message));
+                    checkerSetVO.getCatagories().add(new CheckerSetCategoryVO(category.getEnName(), message));
                 }
             }
         }

@@ -2329,7 +2329,7 @@ export default {
         this.$refs.table.$refs.fileListTable.selection.forEach((item) => {
           defectKeySet.push(item.entityId);
         });
-        if (markFlag) bizType = 'MarkDefect|RevertIgnore';
+        if (markFlag) bizType = 'RevertIgnore|MarkDefect';
       } else {
         defectKeySet = [entityId];
       }
@@ -2389,7 +2389,7 @@ export default {
                   { revertCount },
                 );
                 if (failCount) {
-                  message += this.$t('剩余x个问题由于状态原因标记失败。', [item.failCount]);
+                  message += this.$t('x个问题由于状态原因标记失败。', [failCount]);
                 }
               }
             } else {

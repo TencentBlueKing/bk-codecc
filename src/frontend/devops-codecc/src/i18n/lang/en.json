@@ -1129,6 +1129,6 @@
   "剩余x个问题由于状态原因忽略失败。": "Remaining {0} issues failed to ignore due to status reasons.",
   "成功取消忽略x个问题。": "Successfully canceled ignoring {0} issues.",
   "剩余x个问题由于状态原因取消忽略失败。": "Remaining {0} issues failed to cancel ignoring due to status reasons.",
-  "剩余x个问题由于状态原因标记失败。": "Remaining {0} issues failed to mark due to status reasons.",
+  "x个问题由于状态原因标记失败。": "{0} issues failed to mark due to status reasons.",
   "代码已复制": "Code copied"
 }
