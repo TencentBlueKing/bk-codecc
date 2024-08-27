@@ -199,7 +199,11 @@ function handleReject(error, config) {
   if (config.url && config.url.includes(window.OP_AJAX_URL_PREFIX)) {
     return Promise.reject(error);
   }
-  http.queue.delete(config.requestId);
+  try {
+    http.queue.delete(config.requestId);
+  } catch (error) {
+    console.log('🚀 ~ handleReject ~ error:', error);
+  }
 
   if (config.globalError && error.response) {
     const { status, data } = error.response;
