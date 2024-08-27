@@ -124,7 +124,7 @@ export default {
       return {};
     },
     isEn() {
-      return language === 'en';
+      return language === 'en-US';
     },
   },
   mounted() {
@@ -245,6 +245,7 @@ export default {
         return temp;
       });
       Object.assign(params, { checkerProps });
+      bus.$emit('show-app-loading');
       await this.$store.dispatch('checkerset/save', params).then((res) => {
         if (res.code === '0') {
           let nextVersion = this.detailInfo.version;
@@ -281,7 +282,10 @@ export default {
             this.getCheckersetDetail();
           }
         }
-      });
+      })
+        .finally(() => {
+          bus.$emit('hide-app-loading');
+        });
     },
     saveConf() {
       if (this.selectedRuleList.length && !this.hasNoPermission) {

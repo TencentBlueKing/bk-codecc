@@ -153,6 +153,13 @@ public interface CheckerService {
      */
     CheckerDetailVO queryCheckerDetail(String toolName, String checkerKey);
 
+    /**'
+     * 根据 toolName 查询规则详情列表（国际化版本）
+     * @param toolName
+     * @return
+     */
+    List<CheckerDetailVO> queryCheckerDetailListByToolNameWithI18N(String toolName);
+
     /**
      * 查询规则详情（国际化版本）
      *

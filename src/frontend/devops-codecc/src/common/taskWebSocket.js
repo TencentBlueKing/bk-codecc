@@ -1,5 +1,5 @@
 import SockJS from 'sockjs-client';
-const { Stomp } = require('stompjs/lib/stomp.js');
+import { Stomp } from 'stompjs/lib/stomp.js';
 
 class TaskWebSocket {
   constructor() {
@@ -28,6 +28,7 @@ class TaskWebSocket {
 
   subscribeMsg(subscribeUrl, { success }) {
     this.stompClient.subscribe(subscribeUrl, (res) => {
+      console.log('subscribeMsg', res);
       success(res);
     });
   }

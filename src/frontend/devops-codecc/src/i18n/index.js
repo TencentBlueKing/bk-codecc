@@ -24,7 +24,7 @@ curLocale = Object.prototype.hasOwnProperty.call(languageMaps, curLocale)
   : curLocale;
 const langKey = curLocale === 'zh-CN' ? 'zhCN' : 'enUS';
 locale.use(lang[langKey]);
-// console.log(locale, messages)
+// console.log(locale, messages);
 
 const i18n = new VueI18n({
   locale: curLocale,

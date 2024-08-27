@@ -265,7 +265,8 @@
     font-size: 14px;
     line-height: 1.4;
     color: #dd4423;
-    cursor: pointer;
+
+    /* cursor: pointer; */
     background: rgb(235 210 209 / 40%);
 
     &.linter {
@@ -362,11 +363,13 @@
     }
 
     .checker-comment {
-      padding: 6px 8px;
+      padding: 10px 8px 10px 20px;
       margin-right: 10px;
       margin-bottom: 10px;
       cursor: default;
+      background: url('../images/comment.svg') no-repeat;
       background-color: #fde7e7;
+      background-size: 30px;
       border: 1px solid #fcc8be;
       border-radius: 4px;
     }
@@ -494,8 +497,12 @@
   }
 
   .tag-line {
+    display: flex;
+    padding-right: 10px;
+    font-size: 12px;
     line-height: 38px;
     color: #63656e;
+    justify-content: space-between;
 
     .tag {
       position: relative;

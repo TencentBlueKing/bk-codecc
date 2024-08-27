@@ -1,9 +1,34 @@
 import com.tencent.devops.enums.AssemblyMode
 import com.tencent.devops.utils.findPropertyOrEmpty
+import kotlin.streams.toList
 
 plugins {
     id("com.tencent.devops.boot") version "0.0.7"
 }
+
+
+val devopsDependencies = mapOf(
+    "com.tencent.bk.devops.ci.common" to listOf(
+        "common-pipeline",
+        "common-redis",
+        "common-auth-v3",
+        "common-kafka",
+        "common-api",
+        "common-web",
+        "common-scm",
+        "common-codecc"
+    ),
+    "com.tencent.bk.devops.ci.auth" to listOf("api-auth"),
+    "com.tencent.bk.devops.ci.project" to listOf("api-project"),
+    "com.tencent.bk.devops.ci.process" to listOf("api-process"),
+    "com.tencent.bk.devops.ci.log" to listOf("api-log"),
+    "com.tencent.bk.devops.ci.quality" to listOf("api-quality"),
+    "com.tencent.bk.devops.ci.repository" to listOf("api-repository"),
+    "com.tencent.bk.devops.ci.notify" to listOf("api-notify"),
+    "com.tencent.bk.devops.ci.image" to listOf("api-image"),
+    "com.tencent.bk.devops.ci.plugin" to listOf("api-plugin")
+).entries.stream().map { entry -> entry.value.map { "${entry.key}:$it:${Versions.devopsVersion}" }.toList() }
+        .toList().flatten()
 
 allprojects {
     group = "com.tencent.bk.codecc"
@@ -35,6 +60,11 @@ allprojects {
 
     // 版本管理
     dependencyManagement {
+        imports {
+            devopsDependencies.forEach { devopsDependency ->
+                mavenBom(devopsDependency)
+            }
+        }
         setApplyMavenExclusions(false)
         dependencies {
             dependency("org.hashids:hashids:${Versions.hashidsVersion}")
@@ -129,68 +159,25 @@ allprojects {
             /**
              * 蓝盾依赖
              */
-            dependencySet("com.tencent.bk.devops.ci.common:${Versions.devopsVersion}") {
-                entry("common-pipeline")
-                entry("common-redis")
-                entry("common-auth-v3")
-                entry("common-kafka")
-                entry("common-api")
-                entry("common-web")
-                entry("common-scm")
-                entry("common-codecc")
+            devopsDependencies.forEach { devopsDependency ->
+                dependency(devopsDependency)
             }
-            dependencySet("com.tencent.bk.devops.ci.auth:${Versions.devopsVersion}") {
-                entry("api-auth")
-            }
-            dependencySet("com.tencent.bk.devops.ci.project:${Versions.devopsVersion}") {
-                entry("api-project")
-            }
-            dependencySet("com.tencent.bk.devops.ci.process:${Versions.devopsVersion}") {
-                entry("api-process")
-            }
-            dependencySet("com.tencent.bk.devops.ci.log:${Versions.devopsVersion}") {
-                entry("api-log")
-            }
-            dependencySet("com.tencent.bk.devops.ci.quality:${Versions.devopsVersion}") {
-                entry("api-quality")
-            }
-            dependencySet("com.tencent.bk.devops.ci.repository:${Versions.devopsVersion}") {
-                entry("api-repository")
-            }
-            dependencySet("com.tencent.bk.devops.ci.notify:${Versions.devopsVersion}") {
-                entry("api-notify")
-            }
-            dependencySet("com.tencent.bk.devops.ci.image:${Versions.devopsVersion}") {
-                entry("api-image")
-            }
-            dependencySet("com.tencent.bk.devops.ci.plugin:${Versions.devopsVersion}") {
-                entry("api-plugin")
-            }
-            dependency("com.vdurmont:emoji-java:${Versions.emojiJava}")
-            dependency("org.apache.commons:commons-csv:${Versions.commonCsv}")
-            dependency("org.apache.lucene:lucene-core:${Versions.lucene}")
-            dependency("com.perforce:p4java:${Versions.p4}")
-            dependency("com.github.taptap:pinyin-plus:${Versions.pinyinPlus}")
-            dependencySet("org.eclipse.jgit:${Versions.jgit}") {
-                entry("org.eclipse.jgit")
-                entry("org.eclipse.jgit.ssh.jsch")
-            }
-            dependency("org.apache.commons:commons-text:${Versions.commonText}")
-            dependencySet("com.tencent.bk.repo:${Versions.bkRepoVersion}") {
-                entry("api-generic")
-                entry("api-repository")
-                entry("api-webhook")
-            }
-            dependency("org.apache.ant:ant:${Versions.ant}")
 
             dependency("io.opentelemetry:opentelemetry-api:${Versions.opentelemetryVersion}")
             dependency("com.esotericsoftware:reflectasm:${Versions.reflectasmVersion}")
             dependency("com.tencent.bk.sdk:iam-java-sdk:${Versions.iamSdkVersion}")
             dependency("com.tencent.bk.sdk:crypto-java-sdk:${Versions.cryptSdkVersion}")
+            dependencySet("org.jetbrains.kotlinx:${Versions.kotlinxVersion}") {
+                entry("kotlinx-coroutines-core-jvm")
+                entry("kotlinx-coroutines-core")
+                entry("kotlinx-coroutines-jdk8")
+                entry("kotlinx-coroutines-slf4j")
+                entry("kotlinx-coroutines-test")
+            }
+
             dependency("com.qcloud:cos_api:${Versions.cosVersion}")
             dependency("org.tukaani:xz:${Versions.xzVersion}")
             dependency("org.json:json:${Versions.jsonVersion}")
-            dependency("com.jakewharton:disklrucache:${Versions.disklrucacheVersion}")
         }
     }
 

@@ -434,10 +434,20 @@ public interface RedisKeyConstants {
 
     String GONGFENG_SCAN_CREATE_TASK_MIGRATE = "GONGFENG_SCAN_CREATE_TASK_MIGRATE";
 
+    /**
+     * 提单锁模式
+     */
+    String COMMIT_DEFECT_LOCK_IS_CLOSED = "COMMIT_DEFECT_LOCK_IS_CLOSED";
 
     /**
-     * 开源数据清理相关
+     * 数据表每日清理
      */
-    String OPEN_SCAN_DATA_CLEAN_TRIGGER_LOCK_KEY = "OPEN_SCAN_DATA_CLEAN_TRIGGER_LOCK_KEY";
-    String OPEN_SCAN_DATA_CLEAN_INTERVAL = "OPEN_SCAN_DATA_CLEAN_INTERVAL";
+    String CLEAN_MONGO_DATA_STOP_FLAG  = "CLEAN_MONGO_DATA_STOP_FLAG";
+
+    /**
+     * 规则数据统计【执行时长18小时】
+     */
+    String CHECKER_DEFECT_STAT_CONSUMER_STOP_FLAG   = "CHECKER_DEFECT_STAT_CONSUMER_STOP_FLAG";
+
+
 }

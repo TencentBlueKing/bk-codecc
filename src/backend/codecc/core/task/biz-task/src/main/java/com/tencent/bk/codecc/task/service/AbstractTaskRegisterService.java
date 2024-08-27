@@ -31,18 +31,23 @@ package com.tencent.bk.codecc.task.service;
 import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.KEY_CREATE_FROM;
 import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.PREFIX_TASK_INFO;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.api.ServiceCheckerSetRestResource;
+import com.tencent.bk.codecc.defect.vo.checkerset.CheckerSetPackageVO;
 import com.tencent.bk.codecc.task.constant.TaskConstants;
 import com.tencent.bk.codecc.task.dao.mongorepository.TaskRepository;
 import com.tencent.bk.codecc.task.dao.mongorepository.ToolRepository;
 import com.tencent.bk.codecc.task.dao.mongotemplate.ToolDao;
+import com.tencent.bk.codecc.task.model.BaseDataEntity;
+import com.tencent.bk.codecc.task.model.OpenSourceCheckerSet;
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
 import com.tencent.bk.codecc.task.model.ToolConfigInfoEntity;
 import com.tencent.bk.codecc.task.service.specialparam.SpecialParamUtil;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigParamJsonVO;
+import com.tencent.devops.common.api.OrgInfoVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
@@ -50,7 +55,8 @@ import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
-import com.tencent.devops.common.constant.ComConstants.CheckerSetType;
+import com.tencent.devops.common.constant.ComConstants.CheckerSetEnvType;
+import com.tencent.devops.common.constant.ComConstants.CheckerSetPackageType;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
@@ -114,6 +120,8 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
     private ToolMetaCacheService toolMetaCache;
     @Autowired
     private TaskService taskService;
+    @Autowired
+    private CheckerSetPackageCacheService checkerSetPackageCacheService;
 
     @Override
     public Boolean checkeIsStreamRegistered(String nameEn) {
@@ -195,7 +203,6 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
         }
         return a.toString();
     }
-
 
     /**
      * 正则匹配,true表示匹配成功，false表示匹配失败
@@ -334,7 +341,7 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
 
         // 兼容旧逻辑判断
         if ((CollectionUtils.isEmpty(taskDetailVO.getLanguages()) && taskDetailVO.getCheckerSetType() == null)
-                || taskDetailVO.getCheckerSetType() == CheckerSetType.NORMAL) {
+                || taskDetailVO.getCheckerSetType() == CheckerSetPackageType.NORMAL) {
             log.info("query checker set {}", taskDetailVO.getProjectId());
             result = client.get(ServiceCheckerSetRestResource.class)
                     .queryCheckerSets(checkerSetIdList, taskDetailVO.getProjectId());
@@ -598,5 +605,72 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
         } catch (Exception e) {
             log.error("check and add pipeline finish callback failed!", e);
         }
+    }
+
+    protected List<OpenSourceCheckerSet> getOpenSourceCheckerSet(BaseDataEntity baseDataVO, CheckerSetPackageType type,
+            String checkerSetEnvType, OrgInfoVO orgInfo) {
+        List<OpenSourceCheckerSet> openSourceCheckerSets;
+        if (baseDataVO == null || !StringUtils.isNumeric(baseDataVO.getParamCode())) {
+            return Collections.emptyList();
+        }
+        Long langValue = Long.valueOf(baseDataVO.getParamCode());
+        List<OpenSourceCheckerSet> prodCheckerSets = getOpenSourceCheckerSet(langValue, type,
+                CheckerSetEnvType.PROD, orgInfo);
+        List<OpenSourceCheckerSet> preProdCheckerSets = getOpenSourceCheckerSet(langValue, type,
+                CheckerSetEnvType.PRE_PROD, orgInfo);
+        if (!StringUtils.isBlank(checkerSetEnvType)
+                && checkerSetEnvType.equals(ComConstants.CheckerSetEnvType.PRE_PROD.getKey())
+                && CollectionUtils.isNotEmpty(preProdCheckerSets)) {
+            openSourceCheckerSets = preProdCheckerSets;
+        } else {
+            openSourceCheckerSets = prodCheckerSets;
+        }
+        return openSourceCheckerSets;
+    }
+
+    protected List<OpenSourceCheckerSet> getOpenSourceCheckerSet(Long langValue, CheckerSetPackageType type,
+            CheckerSetEnvType envType, OrgInfoVO orgInfo) {
+        if (langValue == null || langValue == 0L) {
+            return Collections.emptyList();
+        }
+        List<CheckerSetPackageVO> packageVOS =
+                checkerSetPackageCacheService.getPackageByLangValueAndTypeAndEnvTypeAndOrgInfoFromCache(langValue,
+                        type.value(), envType.getKey(), orgInfo);
+        return convertPackageToOpenSourceCheckerSet(packageVOS);
+    }
+
+    private List<OpenSourceCheckerSet> convertPackageToOpenSourceCheckerSet(List<CheckerSetPackageVO> packageVOS) {
+        if (CollectionUtils.isEmpty(packageVOS)) {
+            return Collections.emptyList();
+        }
+        List<OpenSourceCheckerSet> checkerSets = new ArrayList<>();
+        for (CheckerSetPackageVO packageVO : packageVOS) {
+            OpenSourceCheckerSet checkerSet = new OpenSourceCheckerSet();
+            BeanUtils.copyProperties(packageVO, checkerSet);
+            checkerSets.add(checkerSet);
+        }
+        return checkerSets;
+    }
+
+    protected BaseDataEntity pickSelectLanguageBaseData(List<BaseDataEntity> metaLangList, String language) {
+        return metaLangList.stream().filter(metaLang -> {
+            List<String> langArray = JsonUtil.INSTANCE.to(metaLang.getParamExtend2(),
+                    new TypeReference<List<String>>() {
+                    });
+            return langArray.contains(language);
+        }).findAny().orElse(null);
+    }
+
+    protected CheckerSetVO covertOpenSourceCheckerSetToVO(OpenSourceCheckerSet checkerSet) {
+        CheckerSetVO formatCheckerSet = new CheckerSetVO();
+        formatCheckerSet.setCheckerSetId(checkerSet.getCheckerSetId());
+        formatCheckerSet.setToolList(checkerSet.getToolList());
+        //如果有配置版本，则固定用版本，如果没有配置版本，则用最新版本
+        if (null != checkerSet.getVersion()) {
+            formatCheckerSet.setVersion(checkerSet.getVersion());
+        } else {
+            formatCheckerSet.setVersion(Integer.MAX_VALUE);
+        }
+        return formatCheckerSet;
     }
 }

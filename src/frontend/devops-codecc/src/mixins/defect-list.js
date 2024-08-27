@@ -181,16 +181,28 @@ export default {
       }
     },
     addTool(query) {
-      if (this.taskDetail.createFrom.indexOf('pipeline') !== -1) {
-        const that = this;
+      if (this.taskDetail.projectId.startsWith('git_')) {
+        this.$bkInfo({
+          title: this.$t('配置规则集'),
+          subTitle: this.$t('此代码检查任务为Stream创建，规则集需前往Stream配置。'),
+          maskClose: true,
+          confirmFn: (name) => {
+            window.open(
+              `${window.STREAM_SITE_URL}/pipeline/${this.taskDetail.pipelineId}
+    #${this.taskDetail.projectName}`,
+              '_blank',
+            );
+          },
+        });
+      } else if (this.taskDetail.createFrom.indexOf('pipeline') !== -1) {
         this.$bkInfo({
           title: this.$t('配置规则集'),
           subTitle: this.$t('此代码检查任务为流水线创建，规则集需前往相应流水线配置。'),
           maskClose: true,
-          confirmFn(name) {
+          confirmFn: (name) => {
             window.open(
-              `${window.DEVOPS_SITE_URL}/console/pipeline/${that.taskDetail.projectId}
-/${that.taskDetail.pipelineId}/edit#${that.taskDetail.atomCode}`,
+              `${window.DEVOPS_SITE_URL}/console/pipeline/${this.taskDetail.projectId}
+/${this.taskDetail.pipelineId}/edit#${this.taskDetail.atomCode}`,
               '_blank',
             );
           },
@@ -389,6 +401,7 @@ export default {
             const { submitIssueList = [] } = res.data;
             this.$bkMessage({
               theme: 'success',
+              delay: 5000,
               message: h('p', {}, [
                 this.$t('待修复问题提单至'),
                 h(

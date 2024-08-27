@@ -8,7 +8,6 @@ import org.springframework.data.mongodb.core.mapping.Field;
 /**
  * t_pipeline_asyntask_relationship 表的 model
  *
- * @author victorljli
  * @date 2023/10/26
  */
 @Data

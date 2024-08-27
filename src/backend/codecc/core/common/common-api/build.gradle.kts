@@ -21,18 +21,5 @@ dependencies {
     api("commons-codec:commons-codec:1.9")
     api("org.projectlombok:lombok")
     api("org.glassfish.jersey.media:jersey-media-multipart")
-
-    api("com.vdurmont:emoji-java")
-    api("org.apache.commons:commons-csv")
-    api("org.apache.lucene:lucene-core")
-    api("com.perforce:p4java")
-    api("com.github.taptap:pinyin-plus")
-    api("org.eclipse.jgit:org.eclipse.jgit.ssh.jsch")
-    api("org.apache.commons:commons-text")
-    api("com.tencent.bk.repo:api-generic")
-    api("com.tencent.bk.repo:api-repository")
-    api("com.tencent.bk.repo:api-webhook")
-    api("org.apache.ant:ant")
-
 }
 

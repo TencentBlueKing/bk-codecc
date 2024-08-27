@@ -94,7 +94,6 @@ public interface IQueryWarningBizService {
     /**
      * 获取文件内容片段极简接口
      *
-     * @author victorljli
      * @date 2023/6/30
      * @param projectId
      * @param userId

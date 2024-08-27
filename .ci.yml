@@ -1,0 +1,21 @@
+---
+version: "v2.0"
+stages:
+- name: "stage1"
+  jobs:
+    job1:
+      runs-on:
+        pool-name: "docker"
+      steps:
+      - checkout: "self"
+      - name: "腾讯代码分析"
+        uses: "CodeccCheckAtomDebug@4.*"
+        with:
+          beAutoLang: true
+          checkerSetType: "openScan"
+          checkerSetEnvType: "prod"
+          toolScanType: "1"
+resources:
+  repositories:
+  - repository: "ci_templates/public/codecc"
+    name: "codecc"

@@ -11,9 +11,11 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.query.Collation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -220,8 +223,10 @@ public class TaskLogOverviewDao {
                 .first("task_id").as("task_id")
                 .first("build_id").as("build_id");
 
+        // 调整排序字段规则,将数字字符串作为数字或者字符串比较,true为数字比较,false为字符串比较,默认为false
+        Collation collation = Collation.of(Locale.CHINESE).numericOrdering(true);
         // 允许磁盘操作(支持较大数据集合的处理)
-        AggregationOptions options = new AggregationOptions.Builder().allowDiskUse(true).build();
+        AggregationOptions options = new AggregationOptions.Builder().allowDiskUse(true).collation(collation).build();
         Aggregation agg = Aggregation.newAggregation(match, sort, group).withOptions(options);
         AggregationResults<TaskLogOverviewEntity> queryResult =
                 defectMongoTemplate.aggregate(agg, "t_task_log_overview", TaskLogOverviewEntity.class);

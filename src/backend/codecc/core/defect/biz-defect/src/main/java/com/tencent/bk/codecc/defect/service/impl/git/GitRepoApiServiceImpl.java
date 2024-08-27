@@ -21,7 +21,6 @@ public class GitRepoApiServiceImpl implements GitRepoApiService {
             String buildId,
             String buildNum,
             String toolName,
-            Set<String> currentFileSet,
             List<LintDefectV2Entity> newDefectList
     ) {
 
@@ -33,7 +32,6 @@ public class GitRepoApiServiceImpl implements GitRepoApiService {
             String buildId,
             String buildNum,
             String toolName,
-            Set<String> currentFileSet,
             List<CCNDefectEntity> newDefectList
     ) {
 

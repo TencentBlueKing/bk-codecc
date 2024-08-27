@@ -26,6 +26,8 @@
 
 package com.tencent.bk.codecc.task.api;
 
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
+
 import com.tencent.bk.codecc.task.vo.BuildEnvVO;
 import com.tencent.bk.codecc.task.vo.MetadataVO;
 import com.tencent.bk.codecc.task.vo.OpenScanAndEpcToolNameMapVO;
@@ -90,10 +92,16 @@ public interface UserMetaRestResource
     @ApiOperation("查询开源治理/EPC对应工具列表映射")
     @Path("/getOpenScanAndEpcToolNameMap")
     @GET
-    Result<OpenScanAndEpcToolNameMapVO> getOpenScanAndEpcToolNameMap();
+    Result<OpenScanAndEpcToolNameMapVO> getOpenScanAndEpcToolNameMap(
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId
+    );
 
     @ApiOperation("查询开源治理/预发布版对应规则集映射")
     @Path("/getOpenScanAndPreProdCheckerSetMap")
     @GET
-    Result<OpenScanAndPreProdCheckerSetMapVO> getOpenScanAndPreProdCheckerSetMap();
+    Result<OpenScanAndPreProdCheckerSetMapVO> getOpenScanAndPreProdCheckerSetMap(
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId
+    );
 }

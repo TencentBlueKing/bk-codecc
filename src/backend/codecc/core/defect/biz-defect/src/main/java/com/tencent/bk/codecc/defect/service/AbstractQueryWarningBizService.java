@@ -239,7 +239,6 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
      *
      * 根据 taskId 和 toolName 在 t_tool_build_info 这张表中取最新的 buildId.
      *
-     * @author victorljli
      * @date 2023/9/5
      * @param taskId
      * @param toolName
@@ -470,6 +469,7 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
         String revision = queryParams.getRevision();
         String subModule = queryParams.getSubModule();
         String branch = queryParams.getBranch();
+        boolean tryBest = queryParams.isTryBestForPrivate();
 
         if (StringUtils.isBlank(relPath) && StringUtils.isNotBlank(filePath)
                 && filePath.length() > ComConstants.DEFAULT_LANDUN_WORKSPACE.length()) {
@@ -496,7 +496,7 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
         if (scmType != null) {
             String ref = StringUtils.isBlank(revision) ? branch : revision;
             content = tryGetGitContent(url, ref, relPath, userId, projectId, queryParams.getBuildId(),
-                    taskId, scmType);
+                    taskId, scmType, tryBest);
             // 预设成功，直接返回
             if (content != null) {
                 return content;
@@ -506,7 +506,7 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
         // 判断是否是oauth
         if (isOauth(url, branch, createFrom, realProjectId)) {
             String oauthUserId = userId;
-            if (!realProjectId.startsWith("CUSTOMPROJ_")
+            if (tryBest && !realProjectId.startsWith("CUSTOMPROJ_")
                     && AuthApiUtils.INSTANCE.isAdminMember(redisTemplate, userId)) {
                 Result<TaskDetailVO> result = client.get(ServiceTaskRestResource.class).getTaskInfoById(taskId);
                 if (result.isOk() && result.getData() != null) {
@@ -515,7 +515,7 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
             }
 
             content = getOathFileContent(userId, oauthUserId, url, relPath, revision, branch, realProjectId);
-        } else if (projectId.startsWith("git_") || projectId.startsWith("github_")) {
+        } else if (projectId != null && (projectId.startsWith("git_") || projectId.startsWith("github_"))) {
             content = pipelineScmService.getStreamFileContent(projectId, userId, url, relPath, revision, branch);
         } else {
             try {
@@ -542,21 +542,20 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
 
         // DUPC 和 CCN 传进来的 projectId 是空的
         if (StringUtils.isBlank(content)) {
-            content = pipelineScmService.getStreamFileContent(
-                    realProjectId, userId, url, relPath, revision, branch);
+            content = pipelineScmService.getStreamFileContent(realProjectId, userId, url, relPath, revision, branch);
         }
         return content;
     }
 
     private String tryGetGitContent(String url, String ref, String relPath, String userId, String projectId,
-            String buildId, long taskId, ScmType scmType) {
+            String buildId, long taskId, ScmType scmType, boolean tryBestForPrivate) {
         if (StringUtils.isEmpty(url)) {
             return null;
         }
 
         log.info("url: {}, scmType: {}", url, scmType.name());
 
-        String content;
+        String content = null;
         if (scmType == ScmType.GITHUB) {
             content = tryGetGithubContentFromBkrepo(url, ref, relPath, userId, projectId);
             if (StringUtils.isNotEmpty(content)) {
@@ -569,7 +568,9 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
             }
         }
 
-        content = tryGetPrivateContentByUrl(projectId, url, buildId, taskId, relPath, scmType);
+        if (tryBestForPrivate) {
+            content = tryGetPrivateContentByUrl(projectId, url, buildId, taskId, relPath, scmType);
+        }
 
         return content;
     }
@@ -637,7 +638,6 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
     /**
      * 利用 ticket id 获取 github 私有库的代码
      *
-     * @author victorljli
      * @date 2023/7/17
      * @param projectId
      * @param url
@@ -675,7 +675,6 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
                     ExternalCodeccRepoResource.class).getFileContentByUrl(projectId, codeRepoEntity.getUrl(), scmType,
                     relPath, null, codeRepoEntity.getBranch(), null, codeRepoEntity.getTicketId());
             if (result.isOk() && result.getData() != null) {
-                log.info("get private content: {}", result.getData());
                 return result.getData();
             }
         } catch (Exception ex) {

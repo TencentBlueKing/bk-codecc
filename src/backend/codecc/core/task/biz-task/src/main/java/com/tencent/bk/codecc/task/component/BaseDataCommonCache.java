@@ -6,12 +6,11 @@ import com.google.common.cache.LoadingCache;
 import com.tencent.bk.codecc.task.dao.mongorepository.BaseDataRepository;
 import com.tencent.bk.codecc.task.model.BaseDataEntity;
 import com.tencent.devops.common.constant.ComConstants;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * base data 统一缓存

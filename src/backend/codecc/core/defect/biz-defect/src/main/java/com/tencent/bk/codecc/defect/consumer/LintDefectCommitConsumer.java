@@ -327,7 +327,7 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
         // 7.回写工蜂mr信息
         beginTime = System.currentTimeMillis();
         gitRepoApiService.addLintGitCodeAnalyzeComment(taskVO, buildEntity.getBuildId(), buildEntity.getBuildNo(),
-                toolName, currentFileSet, allNewDefectList);
+                toolName, allNewDefectList);
         log.info("gitRepoApiService.addLintGitCodeAnalyzeComment cost: {}, {}, {}, {}",
                 System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
 
@@ -552,14 +552,16 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
                         deleteFiles.add(lintFileEntity.getFile());
                         continue;
                     }
+
                     if (StringUtils.isNotBlank(tmpDefectList.get(0).getRelPath())) {
                         eachBatchRelPathSet.add(tmpDefectList.get(0).getRelPath());
-                    } else {
-                        eachBatchFilePathSet.add(lintFileEntity.getFile());
                     }
+                    eachBatchFilePathSet.add(lintFileEntity.getFile());
+
                     String filePath = StringUtils.isEmpty(tmpDefectList.get(0).getRelPath()) ? lintFileEntity.getFile()
                             : tmpDefectList.get(0).getRelPath();
                     currentFileSet.add(filePath);
+
                     lintDefectList.addAll(tmpDefectList);
                     cursor += tmpDefectList.size();
                     if (cursor > MAX_PER_BATCH) {
@@ -662,6 +664,7 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
         } else {
             earliestTime = toolBuildStackEntity.getCommitSince();
         }
+
         for (LintDefectV2Entity defect : allDefectEntityList) {
             String filePath = defect.getFilePath();
             String relPath = defect.getRelPath();

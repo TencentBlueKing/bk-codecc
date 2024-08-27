@@ -144,9 +144,4 @@ public class ServiceBaseDataResourceImpl implements ServiceBaseDataResource
     public Result<List<BaseDataVO>> findBaseData() {
         return new Result<>(baseDataService.findBaseData());
     }
-
-    @Override
-    public Result<Set<String>> updateLangPreProdConfig(List<CheckerSetVO> checkerSetVOS) {
-        return new Result<>(baseDataService.updateLangPreProdConfig(checkerSetVOS));
-    }
 }

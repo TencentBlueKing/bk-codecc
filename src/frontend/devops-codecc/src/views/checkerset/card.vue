@@ -374,7 +374,7 @@ export default {
       return this.hasNew && !localStorage.getItem('new-tips');
     },
     isEn() {
-      return language === 'en';
+      return language === 'en-US';
     },
   },
   mounted() {

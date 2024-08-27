@@ -21,6 +21,7 @@ import defectRoutes from './defect';
 import checkerRoutes from './checker';
 import checkersetRoutes from './checkerset';
 import ignoreRoutes from './ignore';
+import paasRoutes from './paas';
 
 Vue.use(VueRouter);
 
@@ -50,6 +51,9 @@ const rootRoutes = [
     path: '*',
     name: '404',
     component: NotFound,
+    meta: {
+      layout: 'full',
+    },
   },
 ];
 const defaultRouters = [
@@ -73,6 +77,7 @@ const routes = rootRoutes.concat(
   checkerRoutes,
   checkersetRoutes,
   ignoreRoutes,
+  paasRoutes,
   defaultRouters,
 );
 

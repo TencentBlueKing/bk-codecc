@@ -29,6 +29,35 @@
 
 package com.tencent.bk.codecc.task.service.impl;
 
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
+import static com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
+import static com.tencent.devops.common.constant.ComConstants.CLEAN_TASK_STATUS;
+import static com.tencent.devops.common.constant.ComConstants.CLEAN_TASK_WHITE_LIST;
+import static com.tencent.devops.common.constant.ComConstants.CheckerSetPackageType;
+import static com.tencent.devops.common.constant.ComConstants.DISABLE_ACTION;
+import static com.tencent.devops.common.constant.ComConstants.ENABLE_ACTION;
+import static com.tencent.devops.common.constant.ComConstants.FOLLOW_STATUS;
+import static com.tencent.devops.common.constant.ComConstants.FUNC_CODE_REPOSITORY;
+import static com.tencent.devops.common.constant.ComConstants.FUNC_SCAN_SCHEDULE;
+import static com.tencent.devops.common.constant.ComConstants.FUNC_TASK_INFO;
+import static com.tencent.devops.common.constant.ComConstants.FUNC_TASK_SWITCH;
+import static com.tencent.devops.common.constant.ComConstants.FUNC_TRIGGER_ANALYSIS;
+import static com.tencent.devops.common.constant.ComConstants.MODIFY_INFO;
+import static com.tencent.devops.common.constant.ComConstants.Status;
+import static com.tencent.devops.common.constant.ComConstants.Step4MutliTool;
+import static com.tencent.devops.common.constant.ComConstants.StepStatus;
+import static com.tencent.devops.common.constant.ComConstants.TOOL_LICENSE_WHITE_LIST;
+import static com.tencent.devops.common.constant.ComConstants.TRIGGER_ANALYSIS;
+import static com.tencent.devops.common.constant.ComConstants.Tool;
+import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_TOOL_PARAMS_LABEL_NAME;
+import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_TOOL_PARAMS_TIPS;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_EXPIRED_TASK_STATUS;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_EXTERNAL_JOB;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_SCORING_OPENSOURCE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_EXPIRED_TASK_STATUS;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_SCORING_OPENSOURCE;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.CacheBuilder;
@@ -170,27 +199,6 @@ import com.tencent.devops.common.util.DateTimeUtils;
 import com.tencent.devops.common.util.List2StrUtil;
 import com.tencent.devops.common.util.ListSortUtil;
 import com.tencent.devops.common.web.aop.annotation.OperationHistory;
-import lombok.extern.slf4j.Slf4j;
-import net.sf.json.JSONObject;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.Collator;
@@ -212,13 +220,26 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-
-import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
-import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
-import static com.tencent.devops.common.constant.ComConstants.*;
-import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_TOOL_PARAMS_LABEL_NAME;
-import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_TOOL_PARAMS_TIPS;
-import static com.tencent.devops.common.web.mq.ConstantsKt.*;
+import javax.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+import net.sf.json.JSONObject;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
  * 任务服务实现类
@@ -826,7 +847,7 @@ public class TaskServiceImpl implements TaskService {
             taskBaseVO.setHasNoPermission(false);
         }
 
-        taskBaseVO.setCheckerSetType(ComConstants.CheckerSetType.forValue(taskEntity.getCheckerSetType()));
+        taskBaseVO.setCheckerSetType(CheckerSetPackageType.forValue(taskEntity.getCheckerSetType()));
         // 数据迁移标识
         taskBaseVO.setDataMigrationSuccessful(true);
 
@@ -882,7 +903,7 @@ public class TaskServiceImpl implements TaskService {
         TaskDetailVO taskDetailVO = new TaskDetailVO();
         BeanUtils.copyProperties(taskEntity, taskDetailVO);
 
-        taskDetailVO.setCheckerSetType(ComConstants.CheckerSetType.forValue(taskEntity.getCheckerSetType()));
+        taskDetailVO.setCheckerSetType(CheckerSetPackageType.forValue(taskEntity.getCheckerSetType()));
         return taskDetailVO;
     }
 
@@ -926,7 +947,7 @@ public class TaskServiceImpl implements TaskService {
             taskDetailVO.setNotifyCustomInfo(notifyCustomVO);
         }
 
-        taskDetailVO.setCheckerSetType(ComConstants.CheckerSetType.forValue(taskEntity.getCheckerSetType()));
+        taskDetailVO.setCheckerSetType(CheckerSetPackageType.forValue(taskEntity.getCheckerSetType()));
 
         // 是否回写工蜂
         if (taskEntity.getMrCommentEnable() != null) {
@@ -1067,7 +1088,6 @@ public class TaskServiceImpl implements TaskService {
     /**
      * 调用 TaskLog 服务获取 ToolLastAnalysisResult list
      *
-     * @author victorljli
      * @date 2023/12/14
      * @param taskId
      * @param buildNum
@@ -1626,7 +1646,6 @@ public class TaskServiceImpl implements TaskService {
     }
 
     /**
-     * @author neildwu
      * @param taskEntity
      * @param disabledReason
      * @param userName
@@ -2026,36 +2045,31 @@ public class TaskServiceImpl implements TaskService {
                 .map(ToolConfigInfoEntity::getToolName).collect(Collectors.toSet());
 
         if (CollectionUtils.isNotEmpty(toolSet)) {
-            // 支持并发后不再停用正在运行的流水线
-            //停止原有正在运行的流水线
-            /*Result<Boolean> stopResult = client.get(ServiceTaskLogRestResource.class).stopRunningTask
-            (taskInfoEntity.getPipelineId(), taskInfoEntity.getNameEn(),
-                    toolSet, taskInfoEntity.getProjectId(), taskId, userName);
-            if (stopResult.isNotOk() || null == stopResult.getData() || !stopResult.getData())
-            {
-                log.error("stop running pipeline fail! task id: {}", taskId);
-                throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
-            }*/
-
-            // 启动流水线
-            String buildId = pipelineService.startPipeline(taskInfoEntity.getPipelineId(),
-                    taskInfoEntity.getProjectId(),
-                    taskInfoEntity.getNameEn(), taskInfoEntity.getCreateFrom(), new ArrayList<>(toolSet), userName);
-
-            //更新任务状态
-            toolSet.forEach(tool ->
-                    pipelineService.updateTaskInitStep(isFirstTrigger, taskInfoEntity, buildId, tool, userName)
-            );
-
-            log.info("start pipeline and send delay message");
-            rabbitTemplate.convertAndSend(EXCHANGE_EXPIRED_TASK_STATUS, ROUTE_EXPIRED_TASK_STATUS,
-                    new ScanTaskTriggerDTO(taskId, buildId), message -> {
-                        //todo 配置在配置文件里
-                        message.getMessageProperties().setDelay(900 * 60 * 1000);
-                        return message;
-                    });
+            // 执行流水线
+            doExecuteTask(taskId, taskInfoEntity, toolSet, isFirstTrigger, userName);
         }
         return true;
+    }
+
+    protected void doExecuteTask(long taskId, TaskInfoEntity taskInfoEntity, Set<String> toolSet, String isFirstTrigger,
+            String userName) {
+        // 启动流水线
+        String buildId = pipelineService.startPipeline(taskInfoEntity.getPipelineId(),
+                taskInfoEntity.getProjectId(),
+                taskInfoEntity.getNameEn(), taskInfoEntity.getCreateFrom(), new ArrayList<>(toolSet), userName);
+
+        //更新任务状态
+        toolSet.forEach(tool ->
+                pipelineService.updateTaskInitStep(isFirstTrigger, taskInfoEntity, buildId, tool, userName)
+        );
+
+        log.info("start pipeline and send delay message");
+        rabbitTemplate.convertAndSend(EXCHANGE_EXPIRED_TASK_STATUS, ROUTE_EXPIRED_TASK_STATUS,
+                new ScanTaskTriggerDTO(taskId, buildId), message -> {
+                    //todo 配置在配置文件里
+                    message.getMessageProperties().setDelay(900 * 60 * 1000);
+                    return message;
+                });
     }
 
     @Override

@@ -189,7 +189,15 @@
           >
             <bk-input v-model="item.sourceAuthor"></bk-input>
             <!-- <bk-input class="compile-version" v-model="item.targetAuthor" :placeholder="'新处理人'"></bk-input> -->
+            <bk-tag-input
+              allow-create
+              v-if="IS_ENV_TAI"
+              class="compile-version"
+              v-model="item.targetAuthor"
+              :placeholder="$t('新处理人')"
+            ></bk-tag-input>
             <bk-tag-input allow-create
+              v-else
               class="compile-version"
               v-model="item.targetAuthor"
               :placeholder="$t('新处理人')"
@@ -327,6 +335,7 @@ export default {
         this.$t('周日'),
       ],
       isInnerSite: DEPLOY_ENV === 'tencent',
+      IS_ENV_TAI: window.IS_ENV_TAI,
     };
   },
   computed: {

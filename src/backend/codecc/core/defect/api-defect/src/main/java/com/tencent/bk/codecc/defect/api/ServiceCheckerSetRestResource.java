@@ -27,7 +27,9 @@
 package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.bk.codecc.defect.vo.CheckerSetListQueryReq;
+import com.tencent.bk.codecc.defect.vo.checkerset.CheckerSetPackageVO;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
+import com.tencent.bk.codecc.task.vo.checkerset.OpenSourceCheckerSetVO;
 import com.tencent.devops.common.api.checkerset.*;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
@@ -154,5 +156,14 @@ public interface ServiceCheckerSetRestResource
     Result<List<CheckerSetVO>> getCheckerSetsForContent(
             @ApiParam(value = "规则集列表", required = true)
             List<String> checkerSetIdList
+    );
+
+    @ApiOperation("根据语言获取所有的规则包")
+    @Path("/getPackageByLangValue")
+    @GET
+    Result<List<CheckerSetPackageVO>> getPackageByLangValue(
+            @ApiParam(value = "语言值")
+            @QueryParam("langValue")
+            Long langValue
     );
 }

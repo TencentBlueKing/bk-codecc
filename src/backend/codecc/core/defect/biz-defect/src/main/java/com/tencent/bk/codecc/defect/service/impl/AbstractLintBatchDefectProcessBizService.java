@@ -3,8 +3,10 @@ package com.tencent.bk.codecc.defect.service.impl;
 import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.defect.model.BuildDefectSummaryEntity;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.service.AbstractBatchDefectProcessBizService;
+import com.tencent.bk.codecc.defect.service.BuildSnapshotService;
 import com.tencent.bk.codecc.defect.service.LintQueryWarningSpecialService;
 import com.tencent.bk.codecc.defect.utils.ParamUtils;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 
@@ -38,6 +41,9 @@ public abstract class AbstractLintBatchDefectProcessBizService extends AbstractB
     @Autowired
     private LintDefectV2Dao lintDefectV2Dao;
 
+    @Autowired
+    private BuildSnapshotService buildSnapshotService;
+
     /**
      * 根据前端传入的条件查询告警键值
      *
@@ -46,16 +52,23 @@ public abstract class AbstractLintBatchDefectProcessBizService extends AbstractB
      * @return
      */
     @Override
-    protected List getDefectsByQueryCond(long taskId, DefectQueryReqVO request) {
-        return getDefectsByQueryCondWithPage(taskId, request, null, null, null);
+    protected List getDefectsByQueryCond(long taskId, DefectQueryReqVO request, Set<String> defectKeySet) {
+        List<LintDefectV2Entity> result = getDefectsByQueryCondWithPage(taskId, request, null, null, null);
+        result.forEach(defect -> defectKeySet.add(defect.getEntityId()));
+
+        return result;
     }
 
     @Override
     protected List getDefectsByQueryCondWithPage(long taskId, DefectQueryReqVO request,
             String startFilePath, Long skip, Integer pageSize) {
-
         List<String> dimensionList = ParamUtils.allDimensionIfEmptyForLint(request.getDimensionList());
         String buildId = request.getBuildId();
+        if (StringUtils.isBlank(buildId)) {
+            BuildDefectSummaryEntity entity = buildSnapshotService.getLatestSummaryByTaskId(taskId);
+            buildId = entity.getBuildId();
+        }
+
         Map<Long, List<String>> taskToolMap = ParamUtils.getTaskToolMap(
                 request.getToolNameList(),
                 dimensionList,
@@ -74,6 +87,16 @@ public abstract class AbstractLintBatchDefectProcessBizService extends AbstractB
         filedMap.put("author", true);
         filedMap.put("severity", true);
         filedMap.put("file_path", true);
+        if (request.getNeedBatchInsert()) {
+            filedMap.put("url", true);
+            filedMap.put("line_num", true);
+            filedMap.put("checker", true);
+            filedMap.put("message", true);
+            filedMap.put("file_name", true);
+            filedMap.put("defect_instances", true);
+            filedMap.put("rel_path", true);
+            filedMap.put("branch", true);
+        }
 
         LintQueryWarningSpecialService lintSpecialService =
                 SpringContextUtil.Companion.getBean(LintQueryWarningSpecialService.class);
@@ -90,6 +113,7 @@ public abstract class AbstractLintBatchDefectProcessBizService extends AbstractB
                 request.getCheckerSet(), request.getChecker(),
                 toolNameList, dimensionList
         );
+
         List<LintDefectV2Entity> defectEntityList;
         if (pageSize == null) {
             defectEntityList = lintDefectV2Dao.findDefectByCondition(

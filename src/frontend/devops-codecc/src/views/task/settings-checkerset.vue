@@ -177,6 +177,7 @@ export default {
         openScan: this.$t('内网开源治理'),
         communityOpenScan: this.$t('外网开源'),
         epcScan: 'PCG EPC',
+        privateScan: this.$t('内网闭源治理'),
       };
       return `${checkersetMap[checkerSetType]}-${strMap[checkerSetEnvType]}`;
     },
