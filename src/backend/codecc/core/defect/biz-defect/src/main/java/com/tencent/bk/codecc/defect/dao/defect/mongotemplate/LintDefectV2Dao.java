@@ -28,10 +28,11 @@ package com.tencent.bk.codecc.defect.dao.defect.mongotemplate;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository;
 import com.tencent.bk.codecc.defect.dto.IgnoreTypeStatModel;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
+import com.tencent.bk.codecc.defect.model.defect.code.gen.LintDefectV2EntityTracking;
 import com.tencent.bk.codecc.defect.vo.LintDefectGroupStatisticVO;
 import com.tencent.bk.codecc.defect.vo.LintFileVO;
 import com.tencent.bk.codecc.defect.vo.LintStatisticVO;
@@ -73,6 +74,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
 
+import javax.print.Doc;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -94,6 +96,8 @@ import java.util.stream.Collectors;
 @Repository
 public class LintDefectV2Dao {
 
+    public static final String COLLECTION_NAME = "t_lint_defect_v2";
+
     // 公共的分页大小
     private static final int PAGE_SIZE = 1000;
 
@@ -101,6 +105,124 @@ public class LintDefectV2Dao {
     private MongoTemplate defectMongoTemplate;
     @Autowired
     private MongoPageHelper mongoPageHelper;
+    @Autowired
+    private LintDefectV2Repository lintDefectV2Repository;
+
+    public boolean saveAll(List<LintDefectV2Entity> entities) {
+        lintDefectV2Repository.saveAll(entities);
+        return true;
+    }
+
+    /**
+     * 为了降低代码重复率，抽象出一个函数用于 add 重复使用的条件。
+     * add 如下条件：
+     *      task_id = taskId AND tool_name = toolName AND (rel_path in relPathSet OR
+     *          ((rel_path == NULL OR rel_path not exists OR rel_path == "") AND file_path in absPathSet))
+     *
+     * @date 2024/2/28
+     * @param criteria 待添加的条件
+     * @param taskId
+     * @param toolName
+     * @param relPathSet
+     * @param absPathSet
+     * @return void
+     */
+    private void addCommonCriteria(
+            Criteria criteria,
+            long taskId,
+            String toolName,
+            Set<String> relPathSet,
+            Set<String> absPathSet
+    ) {
+        List<Criteria> orCriteriaList = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(relPathSet)) {
+            orCriteriaList.add(Criteria.where("rel_path").in(relPathSet));
+        }
+
+        if (CollectionUtils.isNotEmpty(absPathSet)) {
+            List<Criteria> subOrCriteriaList = new ArrayList<>();
+            subOrCriteriaList.add(Criteria.where("rel_path").isNull());
+            subOrCriteriaList.add(Criteria.where("rel_path").is(""));
+            Criteria subOrCriteria =  new Criteria().orOperator(subOrCriteriaList);
+
+            Criteria subAndCriteria = new Criteria();
+            subAndCriteria.andOperator(subOrCriteria, Criteria.where("file_path").in(absPathSet));
+
+            orCriteriaList.add(subAndCriteria);
+        }
+
+        criteria.and("task_id").is(taskId)
+                .and("tool_name").is(toolName);
+
+        if (CollectionUtils.isNotEmpty(orCriteriaList)) {
+            Criteria subCriteria = new Criteria().orOperator(orCriteriaList);
+            criteria.andOperator(subCriteria);
+        }
+    }
+
+    /**
+     * 查询满足:
+     *      task_id = taskId AND tool_name = toolName AND (rel_path in relPathSet OR
+     *          ((rel_path == NULL OR rel_path not exists OR rel_path == "") AND file_path in absPathSet))
+     * 的所有 LintDefectV2Entity
+     *
+     * @date 2024/2/27
+     * @param taskId
+     * @param toolName
+     * @param relPathSet
+     * @param absPathSet
+     * @return java.util.List<com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity>
+     */
+    public List<LintDefectV2EntityTracking> findByTaskIdAndToolNameAndPath(
+            long taskId,
+            String toolName,
+            Set<String> relPathSet,
+            Set<String> absPathSet
+    ) {
+        Criteria criteria = new Criteria();
+        addCommonCriteria(criteria, taskId, toolName, relPathSet, absPathSet);
+
+        Query query = new Query();
+        query.addCriteria(criteria);
+
+        return defectMongoTemplate.find(
+                query,
+                LintDefectV2EntityTracking.class,
+                COLLECTION_NAME
+        );
+    }
+
+    /**
+     * 查询满足:
+     *      task_id = taskId AND tool_name = toolName AND (rel_path in relPathSet OR
+     *          ((rel_path == NULL OR rel_path not exists OR rel_path == "") AND file_path in absPathSet))
+     *        AND line_update_time >= lineUpdateTime
+     * 的所有 LintDefectV2Entity
+     *
+     * @date 2024/2/27
+     * @param taskId
+     * @param toolName
+     * @param relPathSet
+     * @param absPathSet
+     * @param lineUpdateTime
+     * @return java.util.List<com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity>
+     */
+    public List<LintDefectV2Entity> findByTaskIdAndToolNameAndPathAndLineUpdateTime(
+            long taskId,
+            String toolName,
+            Set<String> relPathSet,
+            Set<String> absPathSet,
+            long lineUpdateTime
+    ) {
+        Criteria criteria = new Criteria();
+        criteria.and("line_update_time").gte(lineUpdateTime);
+        addCommonCriteria(criteria, taskId, toolName, relPathSet, absPathSet);
+
+        Query query = new Query();
+        query.addCriteria(criteria);
+
+        return defectMongoTemplate.find(query, LintDefectV2Entity.class);
+    }
 
     /**
      * 根据条件查询告警列表
@@ -175,6 +297,7 @@ public class LintDefectV2Dao {
         if (skipValue > 0) {
             query.skip(skipValue);
         }
+
         return defectMongoTemplate.find(query, LintDefectV2Entity.class);
     }
 

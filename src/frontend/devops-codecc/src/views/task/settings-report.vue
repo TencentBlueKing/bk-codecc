@@ -278,7 +278,14 @@
               ></custom-receiver>
             </bk-dialog>
             <bk-form-item :label="$t('抄送人')">
+              <bk-tag-input
+                allow-create
+                v-if="IS_ENV_TAI"
+                v-model="formData.emailCCReceiverList"
+                type="all"
+              ></bk-tag-input>
               <bk-tag-input allow-create
+                v-else
                 v-model="formData.emailCCReceiverList"
                 type="all"
               ></bk-tag-input>
@@ -457,6 +464,7 @@ export default {
         6: '周六',
         7: '周日',
       },
+      IS_ENV_TAI: window.IS_ENV_TAI,
     };
   },
   computed: {

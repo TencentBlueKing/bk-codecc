@@ -42,7 +42,7 @@ public abstract class AbstractCommonBatchDefectProcessBizService extends Abstrac
      */
     @Deprecated
     @Override
-    protected List getDefectsByQueryCond(long taskId, DefectQueryReqVO defectQueryReqVO) {
+    protected List getDefectsByQueryCond(long taskId, DefectQueryReqVO defectQueryReqVO, Set<String> defectKeySet) {
         throw new UnsupportedOperationException();
     }
 

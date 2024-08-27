@@ -74,7 +74,7 @@ nginx-ingress-controller:
 mongodb:
   # 是否部署mongodb
   # 如果需要使用外部数据库，设置为false并配置externalMongodb
-  enabled: false
+  enabled: __deploy_enable__
   useStatefulSet: true
   # ipv6 开启
   # enableIPv6: true
@@ -104,6 +104,10 @@ mongodb:
       db.createUser({ user: "$MONGODB_EXTRA_USERNAMES" , pwd: "$MONGODB_EXTRA_PASSWORDS" , roles: [{role: "dbOwner" , db:"db_defect"}]})
       use db_quartz
       db.createUser({ user: "$MONGODB_EXTRA_USERNAMES" , pwd: "$MONGODB_EXTRA_PASSWORDS" , roles: [{role: "dbOwner" , db:"db_quartz"}]})
+      use db_schedule
+      db.createUser({ user: "$MONGODB_EXTRA_USERNAMES" , pwd: "$MONGODB_EXTRA_PASSWORDS" , roles: [{role: "dbOwner" , db:"db_schedule"}]})
+      use db_quartz
+      db.createUser({ user: "$MONGODB_EXTRA_USERNAMES" , pwd: "$MONGODB_EXTRA_PASSWORDS" , roles: [{role: "dbOwner" , db:"db_quartz"}]})
       EOF
      # ipv6 开启
   #   create_admin_user.sh: |
@@ -128,7 +132,7 @@ externalMongodb:
   authDB: admin
 
 redis:
-  enabled: false
+  enabled: __deploy_enable__
   auth:
     enabled: true
     password: codecc
@@ -147,7 +151,7 @@ externalRedis:
   password: codecc
 
 rabbitmq:
-  enabled: false
+  enabled: __deploy_enable__
   persistence:
     size: 10Gi
   resources:
@@ -227,7 +231,7 @@ pv:
 
 init:
   mongodb:
-    enabled: false
+    enabled: __deploy_enable__
     auth:
       username: codecc
       password: codecc
@@ -238,7 +242,7 @@ init:
       pullPolicy: IfNotPresent
       pullSecrets: []
   entrance:
-    enabled: false
+    enabled: __deploy_enable__
     image:
       registry: __image_host__
       repository: __image_path__/codecc-entrance-init
@@ -246,7 +250,7 @@ init:
       pullPolicy: IfNotPresent
       pullSecrets: []
   storage:
-    enabled: false
+    enabled: __deploy_enable__
     image:
       registry: __image_host__
       repository: __image_path__/codecc-storage-init
@@ -266,7 +270,7 @@ configmap:
 
 ## 网关配置
 gateway:
-  enabled: false
+  enabled: __deploy_enable__
   ## dns服务器地址，用于配置nginx resolver。local=on为openrestry语法，取本机/etc/resolv.conf配置
   dnsServer: local=on
   ## 网关访问微服务认证信息
@@ -317,7 +321,7 @@ gateway:
   priorityClassName: ""
 
 task:
-  enabled: false
+  enabled: __deploy_enable__
   env:
     JVM_XMS: 512m
     # JVM的-xmx , 不能大于 limits.memory
@@ -363,7 +367,7 @@ task:
       port: 8080
 
 defect:
-  enabled: false
+  enabled: __deploy_enable__
   env:
     JVM_XMS: 512m
     # JVM的-xmx , 不能大于 limits.memory
@@ -410,7 +414,7 @@ defect:
 
 
 report:
-  enabled: false
+  enabled: __deploy_enable__
   env:
     JVM_XMS: 512m
     # JVM的-xmx , 不能大于 limits.memory
@@ -457,7 +461,7 @@ report:
 
 
 asyncreport:
-  enabled: false
+  enabled: __deploy_enable__
   env:
     JVM_XMS: 512m
     # JVM的-xmx , 不能大于 limits.memory
@@ -503,7 +507,7 @@ asyncreport:
       port: 8080
 
 codeccjob:
-  enabled: false
+  enabled: __deploy_enable__
   env:
     JVM_XMS: 512m
     # JVM的-xmx , 不能大于 limits.memory
@@ -549,7 +553,7 @@ codeccjob:
       port: 8080
 
 quartz:
-  enabled: false
+  enabled: __deploy_enable__
   env:
     JVM_XMS: 512m
     # JVM的-xmx , 不能大于 limits.memory
@@ -596,7 +600,7 @@ quartz:
 
 
 schedule:
-  enabled: false
+  enabled: __deploy_enable__
   env:
     JVM_XMS: 512m
     # JVM的-xmx , 不能大于 limits.memory

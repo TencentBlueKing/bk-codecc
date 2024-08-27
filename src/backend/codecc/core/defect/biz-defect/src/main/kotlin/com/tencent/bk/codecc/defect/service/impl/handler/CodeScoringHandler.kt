@@ -1,19 +1,23 @@
 package com.tencent.bk.codecc.defect.service.impl.handler
 
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetTaskRelationshipRepository
+import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetPackageEntity
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetTaskRelationshipEntity
+import com.tencent.bk.codecc.defect.model.common.OrgInfoEntity
 import com.tencent.bk.codecc.defect.pojo.HandlerDTO
 import com.tencent.bk.codecc.defect.service.AbstractCodeScoringService
+import com.tencent.bk.codecc.defect.service.CheckerSetPackageService
 import com.tencent.bk.codecc.defect.service.IHandler
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
 import com.tencent.bk.codecc.task.constant.TaskMessageCode
 import com.tencent.bk.codecc.task.vo.TaskDetailVO
 import com.tencent.devops.common.api.BaseDataVO
-import com.tencent.devops.common.api.OpenSourceCheckerSetVO
 import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.api.pojo.codecc.Result
 import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.constant.ComConstants
+import com.tencent.devops.common.constant.ComConstants.CheckerSetEnvType
+import com.tencent.devops.common.constant.ComConstants.CheckerSetPackageType
 import com.tencent.devops.common.service.BaseDataCacheService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -30,6 +34,7 @@ class CodeScoringHandler @Autowired constructor(
     private val handler: ClusterHandler,
     private val applicationContext: ApplicationContext,
     private val baseDataCacheService: BaseDataCacheService,
+    private val checkerSetPackageService: CheckerSetPackageService,
     private val checkerSetTaskRelationshipRepository: CheckerSetTaskRelationshipRepository
 ) : IHandler {
 
@@ -83,16 +88,25 @@ class CodeScoringHandler @Autowired constructor(
         val checkerSetTaskRelationshipEntityList: List<CheckerSetTaskRelationshipEntity> =
             checkerSetTaskRelationshipRepository.findByTaskId(taskId)
         val baseDataVOList: List<BaseDataVO> = baseDataCacheService.getLanguageBaseDataFromCache(codeLang)
+        val taskDetailVO = getTaskDetail(taskId)
+        val packages = checkerSetPackageService.getByLangValueAndTypeAndEnvTypeAndOrgInfo(
+            codeLang,
+            CheckerSetPackageType.OPEN_SCAN.value(),
+            CheckerSetEnvType.PROD.key,
+            with(taskDetailVO) {
+                OrgInfoEntity(bgId, deptId, centerId, groupId)
+            }
+        )
         // 过滤 OTHERS 的开源规则集
         val openSourceCheckerSet = baseDataVOList.stream()
                 .filter { baseDataVO: BaseDataVO ->
                     ComConstants.CodeLang.OTHERS.langName() != baseDataVO.langFullKey
                 }.flatMap { baseDataVO: BaseDataVO ->
-                    baseDataVO.openSourceCheckerListVO.stream()
-                            .filter { openSourceCheckerSetVO: OpenSourceCheckerSetVO ->
-                                (openSourceCheckerSetVO.checkerSetType == null ||
-                                        "FULL" == openSourceCheckerSetVO.checkerSetType)
-                            }.map { obj: OpenSourceCheckerSetVO -> obj.checkerSetId }
+                    packages.stream()
+                            .filter { checkerSetPackageEntity: CheckerSetPackageEntity ->
+                                (checkerSetPackageEntity.checkerSetType == null ||
+                                        "FULL" == checkerSetPackageEntity.checkerSetType)
+                            }.map { obj: CheckerSetPackageEntity -> obj.checkerSetId }
                 }.collect(Collectors.toSet())
         val checkerSetIdSet = checkerSetTaskRelationshipEntityList.stream()
                 .map { obj: CheckerSetTaskRelationshipEntity -> obj.checkerSetId }

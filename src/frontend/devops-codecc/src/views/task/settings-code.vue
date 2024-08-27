@@ -31,14 +31,13 @@
         <span class="fs14">{{ formData.multiPipelineMark }}</span>
       </div>
       <div class="disf">
-        <span class="pipeline-label disf">{{ $t('任务语言') }}</span>
-        <span
-          :class="index === 0 ? '' : 'lang'"
-          class="fs14"
-          v-for="(lang, index) in formatLang(taskDetail.codeLang)"
-          :key="lang"
-        >{{ lang }}</span
-        >
+        <div class="pipeline-label disf"><span>{{ $t('任务语言') }}</span></div>
+        <div class="inner-height"><span
+            :class="index === 0 ? '' : 'lang'"
+            class="fs14"
+            v-for="(lang, index) in formatLang(taskDetail.codeLang)"
+            :key="lang"
+        >{{ lang }}</span></div>
       </div>
       <bk-form :label-width="130">
         <div v-for="toolParam in toolConfigParams" :key="toolParam.name">
@@ -376,6 +375,11 @@ ${this.taskDetail.pipelineId}/edit#${this.taskDetail.atomCode}`,
 
 >>> .bk-form .bk-form-content {
   width: 620px;
+}
+
+.inner-height {
+  width: 88%;
+  height: 60px;
 }
 
 .checkbox-lang {

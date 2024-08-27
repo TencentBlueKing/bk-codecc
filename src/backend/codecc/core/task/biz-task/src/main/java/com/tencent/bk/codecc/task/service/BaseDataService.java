@@ -28,14 +28,10 @@ package com.tencent.bk.codecc.task.service;
 
 import com.tencent.bk.codecc.task.vo.DefaultFilterPathVO;
 import com.tencent.bk.codecc.task.vo.ReleaseDateVO;
-import com.tencent.bk.codecc.task.vo.checkerset.OpenSourceCheckerSetVO;
 import com.tencent.bk.codecc.task.vo.pipeline.PipelineTaskLimitVO;
 import com.tencent.devops.common.api.BaseDataVO;
-import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.pojo.Page;
-
 import java.util.List;
-import java.util.Set;
 
 /**
  * 基础数据服务代码
@@ -44,6 +40,7 @@ import java.util.Set;
  * @date 2019/5/28
  */
 public interface BaseDataService {
+
     /**
      * 根据参数类型和参数代码查询信息
      *
@@ -121,17 +118,6 @@ public interface BaseDataService {
      */
     List<BaseDataVO> findBaseData();
 
-    Boolean updateOpenSourceCheckerSetByLang(OpenSourceCheckerSetVO reqVO, String userName);
-
-    /**
-     * 删除开源扫描规则集配置
-     *
-     * @param reqVO    请求体
-     * @param userName 用户名
-     * @return boolean
-     */
-    Boolean deleteOpenSourceCheckerSetByLang(OpenSourceCheckerSetVO reqVO, String userName);
-
 
     List<BaseDataVO> getPreCICheckerSetList();
 
@@ -139,7 +125,7 @@ public interface BaseDataService {
      * 编辑PreCI规则集配置
      *
      * @param userName 用户名
-     * @param reqVO    请求体
+     * @param reqVO 请求体
      * @return boolean
      */
     Boolean editPreCICheckerSet(String userName, BaseDataVO reqVO);
@@ -164,20 +150,18 @@ public interface BaseDataService {
 
     Boolean updateReleaseDate(ReleaseDateVO reqVO, String userName);
 
-    Set<String> updateLangPreProdConfig(List<CheckerSetVO> checkerSetVOS);
-
     /**
      * 分页获取系统默认屏蔽路径列表
      *
      * @param paramValue 搜索参数
-     * @param pageNum    页码
-     * @param pageSize   每页数量
-     * @param sortField  排序字段
-     * @param sortType   排序类型
+     * @param pageNum 页码
+     * @param pageSize 每页数量
+     * @param sortField 排序字段
+     * @param sortType 排序类型
      * @return page
      */
     Page<DefaultFilterPathVO> getDefaultFilterPathList(String paramValue, Integer pageNum, Integer pageSize,
-                                                       String sortField, String sortType);
+            String sortField, String sortType);
 
     /**
      * 删除一条系统默认屏蔽路径
@@ -191,7 +175,7 @@ public interface BaseDataService {
      * 新增一条系统默认屏蔽路径
      *
      * @param paramValue 屏蔽路径
-     * @param createBy   新增路径的管理员名称
+     * @param createBy 新增路径的管理员名称
      */
 
     Boolean insertBaseDataEntityByParamValueAndCreatedBy(String paramValue, String createBy);
@@ -214,7 +198,7 @@ public interface BaseDataService {
      * 配置工具/语言顺序
      *
      * @param paramType 区分工具/语言
-     * @param reqVO     更新的值
+     * @param reqVO 更新的值
      * @return boolean
      */
     Boolean editToolLangSort(String paramType, BaseDataVO reqVO);

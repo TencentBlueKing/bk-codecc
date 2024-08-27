@@ -7,7 +7,7 @@ import lombok.Data;
 
 /**
  * 告警代码文件片段查询返回视图
- * @author victorljli
+ *
  * @date 2023/07/03
  */
 @Data

@@ -26,6 +26,8 @@ public class OpenScanAndPreProdCheckerSetMapVO {
 
     private Map<String, List<OpenSourceCheckerSetVO>> prodEpcScan;
 
+    private Map<String, List<OpenSourceCheckerSetVO>> prodPrivateScan;
+
     /**
      * 预发布版对应的规则集
      */
@@ -34,6 +36,8 @@ public class OpenScanAndPreProdCheckerSetMapVO {
     private Map<String, List<OpenSourceCheckerSetVO>> preProdCommunityOpenScan;
 
     private Map<String, List<OpenSourceCheckerSetVO>> preProdEpcScan;
+
+    private Map<String, List<OpenSourceCheckerSetVO>> preProdPrivateScan;
 
     private TimeUnit prodOpenScanTimeGap;
 
@@ -46,6 +50,11 @@ public class OpenScanAndPreProdCheckerSetMapVO {
     private TimeUnit prodEpcScanTimeGap;
 
     private TimeUnit preProdEpcScanTimeGap;
+
+    private TimeUnit prodPrivateScanTimeGap;
+
+    private TimeUnit preProdPrivateScanTimeGap;
+
 
     @Data
     @AllArgsConstructor

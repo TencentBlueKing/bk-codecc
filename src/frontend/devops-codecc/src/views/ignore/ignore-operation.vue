@@ -121,7 +121,13 @@
         </bk-form-item>
         <bk-form-item :label="$t('附加通知人')">
           <!-- <bk-input v-model="formData.notify.extReceiver"></bk-input> -->
+          <bk-tag-input
+            allow-create
+            v-if="IS_ENV_TAI"
+            v-model="formData.notify.extReceiver"
+          ></bk-tag-input>
           <bk-tag-input allow-create
+            v-else
             v-model="formData.notify.extReceiver"
           ></bk-tag-input>
         </bk-form-item>
@@ -229,6 +235,7 @@ export default {
           },
         ],
       },
+      IS_ENV_TAI: window.IS_ENV_TAI,
     };
   },
   computed: {

@@ -252,7 +252,7 @@ public class CCNDefectCommitConsumer extends AbstractDefectCommitConsumer {
         // 8.回写工蜂mr信息
         beginTime = System.currentTimeMillis();
         gitRepoApiService.addCcnGitCodeAnalyzeComment(taskVO, buildEntity.getBuildId(), buildEntity.getBuildNo(),
-                toolName, currentFileSet, allNewDefectList);
+                toolName, allNewDefectList);
         log.info("gitRepoApiService.addCcnGitCodeAnalyzeComment cost: {}, {}, {}, {}",
                 System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
 

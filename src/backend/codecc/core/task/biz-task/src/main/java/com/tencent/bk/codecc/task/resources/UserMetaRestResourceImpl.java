@@ -83,12 +83,12 @@ public class UserMetaRestResourceImpl implements UserMetaRestResource
     }
 
     @Override
-    public Result<OpenScanAndEpcToolNameMapVO> getOpenScanAndEpcToolNameMap() {
-        return new Result<>(metaService.getOpenScanAndEpcToolNameMap());
+    public Result<OpenScanAndEpcToolNameMapVO> getOpenScanAndEpcToolNameMap(String projectId) {
+        return new Result<>(metaService.getOpenScanAndEpcToolNameMap(projectId));
     }
 
     @Override
-    public Result<OpenScanAndPreProdCheckerSetMapVO> getOpenScanAndPreProdCheckerSetMap() {
-        return new Result<>(metaService.getOpenScanAndPreProdCheckerSetMap());
+    public Result<OpenScanAndPreProdCheckerSetMapVO> getOpenScanAndPreProdCheckerSetMap(String projectId) {
+        return new Result<>(metaService.getOpenScanAndPreProdCheckerSetMap(projectId));
     }
 }

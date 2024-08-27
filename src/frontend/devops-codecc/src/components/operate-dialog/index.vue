@@ -47,7 +47,7 @@ export default {
   },
   computed: {
     isEn() {
-      return language === 'en';
+      return language === 'en-US';
     },
   },
   watch: {

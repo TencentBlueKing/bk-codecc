@@ -2,7 +2,7 @@ package com.tencent.bk.codecc.defect.component
 
 import com.tencent.bk.codecc.defect.cluster.ClusterDescriptionCompareProcess
 import com.tencent.bk.codecc.defect.cluster.ClusterLintCompareProcess
-import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao
 import com.tencent.bk.codecc.defect.model.BuildEntity
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class DescriptionDefectCommitComponent(
-    lintDefectV2Repository: LintDefectV2Repository,
+    lintDefectV2Dao: LintDefectV2Dao,
     clusterLintCompareProcess: ClusterLintCompareProcess,
     newLintDefectTracingComponent: NewLintDefectTracingComponent,
     scmJsonComponent: ScmJsonComponent,
@@ -24,7 +24,7 @@ class DescriptionDefectCommitComponent(
     private val clusterDescriptionCompareProcess: ClusterDescriptionCompareProcess,
     private val redisTemplate: RedisTemplate<String,String>
 ) : LintDefectCommitComponent(
-    lintDefectV2Repository,
+    lintDefectV2Dao,
     clusterLintCompareProcess,
     newLintDefectTracingComponent,
     redisTemplate,

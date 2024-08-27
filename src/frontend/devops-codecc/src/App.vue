@@ -274,7 +274,7 @@ export default {
     goOauth() {
       this.oauthDialogVisible = false;
       this.$store
-        .dispatch('defect/oauthUrl', { toolName: this.$route.params.toolId })
+        .dispatch('defect/oauthUrl', { toolName: this.$route.params.toolId || this.$route.params.toolName })
         .then((res) => {
           window.open(res, '_blank');
         });

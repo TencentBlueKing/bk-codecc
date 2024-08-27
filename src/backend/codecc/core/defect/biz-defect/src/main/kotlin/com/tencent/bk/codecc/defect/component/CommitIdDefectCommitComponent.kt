@@ -2,8 +2,8 @@ package com.tencent.bk.codecc.defect.component
 
 import com.tencent.bk.codecc.defect.cluster.ClusterCommitIdCompareProcess
 import com.tencent.bk.codecc.defect.cluster.ClusterLintCompareProcess
-import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ToolBuildStackRepository
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao
 import com.tencent.bk.codecc.defect.model.BuildEntity
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectNewInputModel
@@ -27,7 +27,7 @@ import java.util.function.Consumer
 
 @Component
 class CommitIdDefectCommitComponent @Autowired constructor(
-    lintDefectV2Repository: LintDefectV2Repository,
+    lintDefectV2Dao: LintDefectV2Dao,
     clusterLintCompareProcess: ClusterLintCompareProcess,
     private val clusterCommitIdCompareProcess: ClusterCommitIdCompareProcess,
     newLintDefectTracingComponent: NewLintDefectTracingComponent,
@@ -38,7 +38,7 @@ class CommitIdDefectCommitComponent @Autowired constructor(
     private val lintFilterPathBizServiceImpl: LintFilterPathBizServiceImpl,
     private val redisTemplate: RedisTemplate<String,String>
 ) : LintDefectCommitComponent(
-    lintDefectV2Repository,
+    lintDefectV2Dao,
     clusterLintCompareProcess,
     newLintDefectTracingComponent,
     redisTemplate,
@@ -125,7 +125,7 @@ class CommitIdDefectCommitComponent @Autowired constructor(
                 }
                 logger.info("save defect trace result: taskId:{}, toolName:{}, buildId:{}," +
                     " defectCount:{}", taskId, toolName, buildEntity.buildId, upsertDefectList.size)
-                lintDefectV2Repository.saveAll(upsertDefectList)
+                lintDefectV2Dao.saveAll(upsertDefectList)
             }
             logger.info("end saveDefectFile, cost:{}, taskId:{}, toolName:{}, buildId:{}",
                 System.currentTimeMillis() - beginTime, taskId, toolName, buildEntity.buildId)
@@ -142,32 +142,17 @@ class CommitIdDefectCommitComponent @Autowired constructor(
         val buildId = defectClusterDTO.commitDefectVO.buildId
         val finalDefects = mutableListOf<LintDefectV2Entity>()
         val toolBuildStack = toolBuildStackRepository.findFirstByTaskIdAndToolNameAndBuildId(
-            taskId, toolName, buildId)
+            taskId, toolName, buildId
+        )
 
-        logger.info("commit defect component getPreDefectList: " +
-            "$taskId $toolName $buildId $toolBuildStack")
+        logger.info("commit defect component getPreDefectList: $taskId $toolName $buildId $toolBuildStack")
 
         // 获取文件集合中增量时间之后的告警
-        if (!filePathSet.isNullOrEmpty()) {
-            finalDefects.addAll(
-                lintDefectV2Repository.findByTaskIdAndToolNameAndFilePathInAndLineUpdateTimeGreaterThanEqual(
-                    taskId,
-                    toolName,
-                    filePathSet,
-                    toolBuildStack?.commitSince?:0L
-                )
+        finalDefects.addAll(
+            lintDefectV2Dao.findByTaskIdAndToolNameAndPathAndLineUpdateTime(
+                taskId, toolName, relPathSet, filePathSet, toolBuildStack?.commitSince ?: 0L
             )
-        }
-        if (!relPathSet.isNullOrEmpty()) {
-            finalDefects.addAll(
-                lintDefectV2Repository.findByTaskIdAndToolNameAndRelPathInAndLineUpdateTimeGreaterThanEqual(
-                    taskId,
-                    toolName,
-                    relPathSet,
-                    toolBuildStack?.commitSince?:0L
-                )
-            )
-        }
+        )
 
         return finalDefects
     }

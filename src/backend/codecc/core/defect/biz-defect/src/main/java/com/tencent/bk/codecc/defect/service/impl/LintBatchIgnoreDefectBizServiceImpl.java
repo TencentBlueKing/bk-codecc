@@ -1,15 +1,23 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.google.common.collect.Sets;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.IgnoredNegativeDefectDao;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
+import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
+import com.tencent.bk.codecc.task.vo.TaskDetailVO;
+import com.tencent.devops.common.api.exception.CodeCCException;
+import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.BusinessType;
 import com.tencent.devops.common.constant.ComConstants.ToolType;
 import java.util.List;
 import java.util.Set;
+
+import com.tencent.devops.common.constant.CommonMessageCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
@@ -27,6 +35,12 @@ public class LintBatchIgnoreDefectBizServiceImpl extends AbstractLintBatchDefect
 
     @Autowired
     private LintDefectV2Dao defectDao;
+
+    @Autowired
+    private IgnoredNegativeDefectDao ignoredNegativeDefectDao;
+
+    @Autowired
+    private Client client;
 
     @Override
     protected void doBiz(List defectList, BatchDefectProcessReqVO batchDefectProcessReqVO) {
@@ -53,6 +67,17 @@ public class LintBatchIgnoreDefectBizServiceImpl extends AbstractLintBatchDefect
         defectDao.batchUpdateDefectStatusIgnoreBit(batchDefectProcessReqVO.getTaskId(), defectList,
                 batchDefectProcessReqVO.getIgnoreReasonType(),
                 batchDefectProcessReqVO.getIgnoreReason(), batchDefectProcessReqVO.getIgnoreAuthor());
+
+        if (batchDefectProcessReqVO.getIgnoreReasonType() == ComConstants.IgnoreReasonType.ERROR_DETECT.value()) {
+            Result<TaskDetailVO> taskBaseResult = client.get(ServiceTaskRestResource.class)
+                    .getTaskInfoById(batchDefectProcessReqVO.getTaskId());
+            if (null == taskBaseResult || taskBaseResult.isNotOk() || null == taskBaseResult.getData()) {
+                log.error("get task info fail!, task id: {}", batchDefectProcessReqVO.getTaskId());
+                throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
+            }
+
+            ignoredNegativeDefectDao.batchInsert(defectList, batchDefectProcessReqVO, taskBaseResult.getData());
+        }
     }
 
     @Override

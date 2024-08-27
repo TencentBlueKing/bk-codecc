@@ -36,7 +36,7 @@ a:hover {
   color: #3a84ff;
 }
 
-::-webkit-scrollbar {
+/* ::-webkit-scrollbar {
   width: 9px;
   height: 9px;
   background-color: white;
@@ -46,7 +46,7 @@ a:hover {
   height: 8px;
   background-color: #a5a5a5;
   border-radius: 20px;
-}
+} */
 
 :focus {
   outline: none;
@@ -375,4 +375,16 @@ a:hover {
 .disabled {
   color: #c4c6cc;
   cursor: not-allowed;
+}
+
+.pr-8 {
+  padding-right: 8px;
+}
+
+.pl-8 {
+  padding-left: 8px;
+}
+
+.border-right {
+  border-right: 1px solid #dcdee5;
 }

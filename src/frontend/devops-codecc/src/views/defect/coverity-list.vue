@@ -1271,7 +1271,14 @@
               ></bk-input>
             </bk-form-item>
             <bk-form-item :label="$t('新处理人')">
+              <bk-tag-input
+                allow-create
+                v-if="IS_ENV_TAI"
+                v-model="operateParams.targetAuthor"
+                style="width: 290px"
+              ></bk-tag-input>
               <bk-tag-input allow-create
+                v-else
                 v-model="operateParams.targetAuthor"
                 style="width: 290px"
               ></bk-tag-input>
@@ -1679,6 +1686,7 @@ export default {
       },
       isRowChangeIgnoreType: false,
       guideFlag: false,
+      IS_ENV_TAI: window.IS_ENV_TAI,
     };
   },
   computed: {

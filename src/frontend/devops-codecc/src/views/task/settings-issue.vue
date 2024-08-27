@@ -101,13 +101,26 @@
           }}</bk-button>
         </bk-form-item>
         <bk-form-item :label="$t('缺陷处理人')" property="resolvers">
+          <bk-tag-input
+            allow-create
+            v-if="IS_ENV_TAI"
+            v-model="issueData.resolvers"
+            :placeholder="$t('默认为问题处理人')"
+          ></bk-tag-input>
           <bk-tag-input allow-create
+            v-else
             v-model="issueData.resolvers"
             :placeholder="$t('默认为问题处理人')"
           ></bk-tag-input>
         </bk-form-item>
         <bk-form-item :label="$t('缺陷抄送人')">
+          <bk-tag-input
+            allow-create
+            v-if="IS_ENV_TAI"
+            v-model="issueData.receivers"
+          ></bk-tag-input>
           <bk-tag-input allow-create
+            v-else
             v-model="issueData.receivers"
           ></bk-tag-input>
         </bk-form-item>
@@ -219,6 +232,7 @@ export default {
       issueData: {
         issueSystemInfoVOList: [],
       },
+      IS_ENV_TAI: window.IS_ENV_TAI,
     };
   },
   computed: {

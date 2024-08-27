@@ -57,18 +57,10 @@ object Versions {
     const val iamSdkVersion = "1.0.21-SNAPSHOT"
     const val reflectasmVersion = "1.11.9"
     const val cryptSdkVersion = "1.1.3"
+    const val kotlinxVersion = "1.6.0"
+    const val cosVersion = "5.6.185"
+    const val xzVersion = "1.9"
 
     // Devops 依赖版本
     const val devopsVersion = "1.13.0"
-    const val commonText = "1.10.0"
-    const val emojiJava = "5.1.1"
-    const val commonCsv = "1.8"
-    const val p4 = "2021.1.2163843"
-    const val pinyinPlus = "1.0"
-    const val jgit = "5.13.1.202206130422-r"
-    const val bkRepoVersion = "1.0.1"
-    const val ant = "1.10.5"
-    const val cosVersion = "5.6.185"
-    const val xzVersion = "1.9"
-    const val disklrucacheVersion = "2.0.2"
 }

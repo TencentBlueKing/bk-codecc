@@ -10,7 +10,6 @@ import org.springframework.data.mongodb.core.mapping.Field;
 /**
  * 记录将 id = asyn_task_id 的任务作为异步任务的流水线, 在删除自建任务的时候需要用到这个关系信息.
  *
- * @author victorljli
  * @date 2023/10/26
  */
 @Data

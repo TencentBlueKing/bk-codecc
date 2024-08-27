@@ -469,6 +469,7 @@
                 >{{ $t('分配') }}</bk-button
                 >
                 <bk-button
+                  v-if="DEPLOY_ENV === 'tencent'"
                   size="small"
                   ext-cls="cc-operate-button"
                   @click="handleCommit('commit', true)"
@@ -755,6 +756,7 @@
                           v-if="
                             props.row.status & 4 &&
                               !props.row.ignoreCommentDefect
+                              && DEPLOY_ENV === 'tencent'
                           "
                           class="entry-link"
                           @click.stop="
@@ -857,6 +859,7 @@
                                 props.row.defectIssueInfoVO.submitStatus &&
                                 props.row.defectIssueInfoVO.submitStatus !== 4
                               )
+                              && DEPLOY_ENV === 'tencent'
                           "
                           class="entry-link"
                           @click.stop="
@@ -914,9 +917,9 @@
                       `${lintDetail.fileName}:${currentLintFile.startLines}`
                     }}</b>
                     <span
-                        :title="$t('复制问题所在文件位置')"
-                        class="copy-icon"
-                        @click.stop="copy(`${lintDetail.fileName}:${currentLintFile.startLines}`)">
+                      :title="$t('复制问题所在文件位置')"
+                      class="copy-icon"
+                      @click.stop="copy(`${lintDetail.fileName}:${currentLintFile.startLines}`)">
                       <i class="codecc-icon icon-copy-line" style="font-size: 15px"></i>
                     </span>
                     <!-- <div class="filepath" :title="currentLintFile.filePath">{{$t('文件路径')}}：{{currentLintFile.filePath}}</div> -->
@@ -1061,7 +1064,7 @@
                             {{ $t('取消忽略并标记处理') }}
                           </bk-button>
                         </div>
-                        <div class="item">
+                        <div class="item" v-if="DEPLOY_ENV === 'tencent'">
                           <bk-button
                             class="item-button"
                             @click="
@@ -1156,6 +1159,7 @@
                               currentLintFile.defectIssueInfoVO.submitStatus &&
                               currentLintFile.defectIssueInfoVO.submitStatus !== 4
                             )
+                            && DEPLOY_ENV === 'tencent'
                         "
                       >
                         <bk-button
@@ -1195,6 +1199,30 @@
                           }}
                         </dd>
                       </div>
+                      <div class="item">
+                        <dt>
+                          {{ $t('处理人') }}
+                        </dt>
+                        <dd>
+                          {{ currentLintFile.author }}
+                          <span
+                            v-if="
+                              currentLintFile.status & 1 ||
+                                currentLintFile.status & 4
+                            "
+                            @click.stop="
+                              handleAuthor(
+                                1,
+                                currentLintFile.entityId,
+                                currentLintFile.author,
+                                currentLintFile.defectId
+                              )
+                            "
+                            class="curpt bk-icon icon-edit2 fs20"
+                          >
+                          </span>
+                        </dd>
+                      </div>
                       <div class="item" v-if="currentLintFile.status & 2">
                         <dt>{{ $t('修复时间') }}</dt>
                         <dd class="small">
@@ -1206,6 +1234,10 @@
                         <dd class="small">
                           {{ currentLintFile.latestDateTime | formatDate }}
                         </dd>
+                      </div>
+                      <div class="item">
+                        <dt>{{ $t('提交人') }}</dt>
+                        <dd>{{ currentLintFile.commitAuthor}}</dd>
                       </div>
                     </div>
                     <div class="block" v-if="currentLintFile.status & 4">
@@ -1232,32 +1264,6 @@
                               ? '：' + currentLintFile.ignoreReason
                               : ''
                           }}
-                        </dd>
-                      </div>
-                    </div>
-                    <div class="block">
-                      <div class="item">
-                        <dt>
-                          {{ $t('处理人') }}
-                        </dt>
-                        <dd>
-                          {{ currentLintFile.author }}
-                          <span
-                            v-if="
-                              currentLintFile.status & 1 ||
-                                currentLintFile.status & 4
-                            "
-                            @click.stop="
-                              handleAuthor(
-                                1,
-                                currentLintFile.entityId,
-                                currentLintFile.author,
-                                currentLintFile.defectId
-                              )
-                            "
-                            class="curpt bk-icon icon-edit2 fs20"
-                          >
-                          </span>
                         </dd>
                       </div>
                     </div>
@@ -1353,7 +1359,14 @@
               ></bk-input>
             </bk-form-item>
             <bk-form-item :label="$t('新处理人')">
+              <bk-tag-input
+                allow-create
+                v-if="IS_ENV_TAI"
+                v-model="operateParams.targetAuthor"
+                style="width: 290px"
+              ></bk-tag-input>
               <bk-tag-input allow-create
+                v-else
                 v-model="operateParams.targetAuthor"
                 style="width: 290px"
               ></bk-tag-input>
@@ -1609,6 +1622,7 @@ import DefectPanel from './components/defect-panel.vue';
 // eslint-disable-next-line
 import { export_json_to_excel } from '@/vendor/export2Excel';
 import { language } from '../../i18n';
+import DEPLOY_ENV from '@/constants/env';
 
 // 搜索过滤项缓存
 const CCN_SEARCH_OPTION_CACHE = 'search_option_columns_cnn';
@@ -1833,6 +1847,7 @@ export default {
       isProjectDefect,
       taskIdList: isProjectDefect ? [] : [Number(taskId)],
       emptyDialogVisible: false,
+      IS_ENV_TAI: window.IS_ENV_TAI,
     };
   },
   computed: {
@@ -1992,7 +2007,7 @@ export default {
       return config;
     },
     isEn() {
-      return language === 'en';
+      return language === 'en-US';
     },
     lineHeight() {
       return this.isEn ? 'line-height: 18px' : 'line-height: 22px';
@@ -3421,7 +3436,7 @@ export default {
       document.execCommand('copy');
       document.body.removeChild(input);
       this.$bkMessage({ theme: 'success', message: this.$t('复制成功') });
-    }
+    },
   },
 };
 </script>

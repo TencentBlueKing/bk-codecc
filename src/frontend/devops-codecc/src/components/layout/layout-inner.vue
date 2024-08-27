@@ -420,7 +420,7 @@ export default {
       toolMap: 'mapList',
     }),
     projectId() {
-      return this.$route.params.projectId;
+      return this.$route.params.projectId || '';
     },
     toolId() {
       return this.$route.params.toolId;
@@ -633,6 +633,7 @@ export default {
   methods: {
     async init() {
       this.fetchDimension();
+      if (!this.taskId) return;
       const res = await this.$store.dispatch('task/overView', {
         taskId: this.taskId,
         buildNum: this.$route.query.buildNum,

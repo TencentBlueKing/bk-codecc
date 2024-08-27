@@ -592,6 +592,7 @@
                 >{{ $t('分配') }}</bk-button
                 >
                 <bk-button
+                  v-if="DEPLOY_ENV === 'tencent'"
                   size="small"
                   ext-cls="cc-operate-button"
                   @click="handleCommit('commit', true)"
@@ -771,7 +772,14 @@
               ></bk-input>
             </bk-form-item>
             <bk-form-item :label="$t('新处理人')">
+              <bk-tag-input
+                allow-create
+                v-if="IS_ENV_TAI"
+                v-model="operateParams.targetAuthor"
+                style="width: 290px"
+              ></bk-tag-input>
               <bk-tag-input allow-create
+                v-else
                 v-model="operateParams.targetAuthor"
                 style="width: 290px"
               ></bk-tag-input>
@@ -1024,6 +1032,7 @@ import OperateDialog from '@/components/operate-dialog';
 import ChartPanel from './components/chart-panel.vue';
 import DefectPanel from './components/defect-panel.vue';
 // import CodeMirror from '@/common/codemirror'
+import DEPLOY_ENV from '@/constants/env';
 
 // 搜索过滤项缓存
 const SEARCH_OPTION_CACHE = 'search_option_columns_defect';
@@ -1280,6 +1289,7 @@ export default {
       taskIdList: isProjectDefect ? [] : [Number(taskId)],
       isProjectDefect,
       emptyDialogVisible: false,
+      IS_ENV_TAI: window.IS_ENV_TAI,
     };
   },
   computed: {
@@ -2319,7 +2329,7 @@ export default {
         this.$refs.table.$refs.fileListTable.selection.forEach((item) => {
           defectKeySet.push(item.entityId);
         });
-        if (markFlag) bizType = 'MarkDefect|RevertIgnore';
+        if (markFlag) bizType = 'RevertIgnore|MarkDefect';
       } else {
         defectKeySet = [entityId];
       }
@@ -2359,12 +2369,14 @@ export default {
                 const list = res.data || [];
                 let revertCount = 0;
                 let markCount = 0;
+                let failCount = 0;
                 list.forEach((item) => {
                   if (item.bizType === 'RevertIgnore') {
                     revertCount = item.count;
                   } else if (item.bizType === 'MarkDefect') {
                     markCount = item.count;
                   }
+                  failCount += item.failCount;
                 });
                 const unfixedMarkCount = markCount - revertCount;
                 message = '';
@@ -2376,6 +2388,9 @@ export default {
                   'x个已忽略问题取消忽略并标记为已处理成功',
                   { revertCount },
                 );
+                if (failCount) {
+                  message += this.$t('x个问题由于状态原因标记失败。', [failCount]);
+                }
               }
             } else {
               this.listData.defectList.records.forEach((item) => {
@@ -2603,12 +2618,21 @@ export default {
         .then((res) => {
           if (res.code === '0') {
             let message = '';
+            const list = res.data || [];
             if (this.operateParams.bizType === 'ChangeIgnoreType') {
               message = this.$t('修改忽略类型成功');
             } else {
-              message = this.operateParams.bizType === 'IgnoreDefect'
-                ? this.$t('忽略问题成功')
-                : this.$t('恢复问题成功。该问题将重新在待修复列表中显示。');
+              list.forEach((item) => {
+                console.log('🚀 ~ list.forEach ~ item:', item);
+                const typeMap = {
+                  IgnoreDefect: this.$t('忽略'),
+                  RevertIgnore: this.$t('取消忽略'),
+                };
+                message = this.$t(`成功${typeMap[item.bizType]}x个问题。`, [item.count || 0]);
+                if (item.failCount) {
+                  message += this.$t(`剩余x个问题由于状态原因${typeMap[item.bizType]}失败。`, [item.failCount || 0]);
+                }
+              });
             }
             this.$bkMessage({
               theme: 'success',
@@ -3046,10 +3070,16 @@ export default {
     margin: 0 16px 16px;
   }
 
+  .create-tab {
+    >>> .bk-tab-section {
+      padding-bottom: 0;
+    }
+  }
+
   .content-bd {
     width: 480px;
     height: 350px;
-    margin: 16px;
+    margin: 16px 16px 0;
     overflow: auto;
   }
 

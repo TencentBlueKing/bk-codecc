@@ -540,7 +540,19 @@ public interface ComConstants {
      * 腾讯epc开源生产规则开始结束时间
      */
     String PROD_TENCENT_EPC_OPENSOURCE_CHECKER_SET_TIME_GAP = "PROD_TENCENT_EPC_OPENSOURCE_CHECKER_SET_TIME_GAP";
+
+    /**
+     * 腾讯闭源仓库治理预发布规则版本开始时间（暂不使用）
+     */
+    String PRE_PROD_TENCENT_PRIVATE_CHECKER_SET_TIME_GAP = "PRE_PROD_TENCENT_PRIVATE_CHECKER_SET_TIME_GAP";
+    /**
+     * 腾讯闭源仓库治理生产规则发布版本开始时间
+     */
+    String PROD_TENCENT_PRIVATE_CHECKER_SET_TIME_GAP = "PROD_TENCENT_PRIVATE_CHECKER_SET_TIME_GAP";
+
+
     String MAX_BUILD_LIST_SIZE = "MAX_BUILD_LIST_SIZE";
+    String HISTORY_IGNORE_TYPE = "HISTORY_IGNORE_TYPE";
 
     /**
      * 分析结果commit到platform的锁的超时时间，设置为30分钟
@@ -652,6 +664,9 @@ public interface ComConstants {
      * 冷热分离，加热开关
      */
     String SWITCH_FOR_DATA_SEPARATION_WARM_UP = "SWITCH_FOR_DATA_SEPARATION_WARM_UP";
+
+
+    String EMPTY_STRING = "";
 
     /**
      * 业务类型
@@ -1925,7 +1940,7 @@ public interface ComConstants {
         }
     }
 
-    enum CheckerSetType {
+    enum CheckerSetPackageType {
         /**
          * 自主配置
          */
@@ -1935,6 +1950,10 @@ public interface ComConstants {
          * 内网开源治理
          */
         OPEN_SCAN("openScan"),
+        /**
+         * 内网闭源治理
+         */
+        PRIVATE_SCAN("privateScan"),
 
         /**
          * 外网开源
@@ -1948,14 +1967,14 @@ public interface ComConstants {
 
         private String value;
 
-        CheckerSetType(String value) {
+        CheckerSetPackageType(String value) {
             this.value = value;
         }
 
         @JsonCreator
-        public static CheckerSetType forValue(String value) {
-            CheckerSetType[] checkerSetTypes = CheckerSetType.values();
-            for (CheckerSetType checkerSetType : checkerSetTypes) {
+        public static CheckerSetPackageType forValue(String value) {
+            CheckerSetPackageType[] checkerSetTypes = CheckerSetPackageType.values();
+            for (CheckerSetPackageType checkerSetType : checkerSetTypes) {
                 if (checkerSetType.value.equalsIgnoreCase(value)) {
                     return checkerSetType;
                 }
@@ -2250,6 +2269,25 @@ public interface ComConstants {
 
     }
 
+    /**
+     * 工具开发者对误报告警的处理进展类型
+     */
+    enum ProcessProgressType {
+        UNPROCESSED(0), // 待处理
+        FIXED(1),       // 已优化工具
+        NONEED(2),      // 非工具原因
+        OTHER(3);       // 其他
+
+        private Integer type;
+
+        ProcessProgressType(Integer type) {
+            this.type = type;
+        }
+
+        public Integer value() {
+            return this.type;
+        }
+    }
 
     enum PreCiInstallType {
 
@@ -2349,6 +2387,7 @@ public interface ComConstants {
         ON_PROBATION(3);
 
         Integer id;
+
         UserStatusType(Integer id) {
             this.id = id;
         }

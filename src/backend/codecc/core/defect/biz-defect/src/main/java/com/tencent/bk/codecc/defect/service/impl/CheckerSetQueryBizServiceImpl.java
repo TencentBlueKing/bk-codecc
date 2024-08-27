@@ -40,6 +40,7 @@ import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.CheckerConstants;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.CheckerSetPackageType;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
@@ -612,7 +613,7 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
                 String resourceCode = categoryMap.get(category.getCnName());
                 if (!ObjectUtils.isEmpty(resourceCode)) {
                     String message = I18NUtils.getMessage(resourceCode);
-                    checkerSetVO.getCatagories().add(new CheckerSetCategoryVO(message, message));
+                    checkerSetVO.getCatagories().add(new CheckerSetCategoryVO(category.getEnName(), message));
                 }
             }
         }
@@ -788,7 +789,7 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
                                 CheckerSetTaskRelationshipEntity::getCheckerSetId, Function.identity(), (k, v) -> v));
         // 非自主配置的，用任务维度规则集版本覆盖项目维度的
         if (taskDetail != null && taskDetail.getCheckerSetType() != null
-                && taskDetail.getCheckerSetType() != ComConstants.CheckerSetType.NORMAL) {
+                && taskDetail.getCheckerSetType() != CheckerSetPackageType.NORMAL) {
             for (CheckerSetProjectRelationshipEntity projectRelationshipEntity : projectRelationships) {
                 CheckerSetTaskRelationshipEntity taskRelationship =
                         checkerSetTaskRelationshipEntityMap.get(projectRelationshipEntity.getCheckerSetId());
@@ -1213,7 +1214,7 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
                 .getTaskInfoWithoutToolsByTaskId(taskId).getData();
         // 非自主配置的，用任务维度规则集版本覆盖项目维度的
         if (taskDetail != null && taskDetail.getCheckerSetType() != null
-                && taskDetail.getCheckerSetType() != ComConstants.CheckerSetType.NORMAL) {
+                && taskDetail.getCheckerSetType() != CheckerSetPackageType.NORMAL) {
             for (CheckerSetProjectRelationshipEntity projectRelationshipEntity : projectRelationships) {
                 CheckerSetTaskRelationshipEntity taskRelationship =
                         taskRelationshipMap.get(projectRelationshipEntity.getCheckerSetId());

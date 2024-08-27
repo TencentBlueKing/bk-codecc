@@ -13,6 +13,7 @@ metadata:
   annotations: {{- include "common.tplvalues.render" (dict "value" .Values.commonAnnotations "context" $) | nindent 4 }}
   {{- end }}
 spec:
+  serviceName: {{ include "common.names.fullname" . }}-codeccjob
   selector:
     matchLabels: {{- include "codecc.labels.matchLabels" . | nindent 6 }}
       app.kubernetes.io/name: codeccjob

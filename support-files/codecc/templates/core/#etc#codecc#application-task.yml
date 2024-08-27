@@ -49,8 +49,3 @@ codecc:
     password: __BK_CODECC_PUBLISH_PASSWORD__
 
 
-git:
-  workcopy:
-    host: __BK_CODECC_GIT_WORKCOPY_HOST__
-    code: __BK_CODECC_GIT_WORKCOPY_CODE__
-    token: __BK_CODECC_GIT_WORKCOPY_TOKEN__

@@ -1,6 +1,5 @@
 rootProject.name = "codecc"
 
-
 include("core")
 include("core:common")
 include("core:common:common-api")

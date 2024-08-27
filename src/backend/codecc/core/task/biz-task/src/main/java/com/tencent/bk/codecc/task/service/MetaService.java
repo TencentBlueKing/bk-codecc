@@ -90,10 +90,10 @@ public interface MetaService {
     /**
      * 获取开源治理/EPC对应工具列表映射
      */
-    OpenScanAndEpcToolNameMapVO getOpenScanAndEpcToolNameMap();
+    OpenScanAndEpcToolNameMapVO getOpenScanAndEpcToolNameMap(String projectId);
 
     /**
      * 获取开源治理/预发布版对应规则集映射
      */
-    OpenScanAndPreProdCheckerSetMapVO getOpenScanAndPreProdCheckerSetMap();
+    OpenScanAndPreProdCheckerSetMapVO getOpenScanAndPreProdCheckerSetMap(String projectId);
 }

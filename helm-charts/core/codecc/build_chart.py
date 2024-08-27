@@ -16,6 +16,7 @@ env_properties_file = '../../../scripts/deploy-codecc/codecc.properties'
 output_value_yaml = './values.yaml'
 default_value_json = './build/values.json'
 default_value_yaml = './build/values.yaml'
+default_chart_yaml = './Chart.yaml'
 
 # 额外配置
 env_ext_properties_file = '../../../scripts/deploy-codecc/ext/codecc.properties'
@@ -41,6 +42,8 @@ default_value_dict = {
     "bkCodeccFqdn": "http://codecc.example.com",
     "bkCodeccHome": "/data/workspace/codecc",
     "bkCodeccHost": "bk-codecc.service.consul",
+    "bkCodeccPublicSchema": "http",
+    "bkCiPublicSchema": "http",
     "bkCodeccHttpsPort": "443",
     "bkCodeccHttpPort": "80",
     "bkCodeccLogsDir": "/data/workspace/logs/codecc",
@@ -60,6 +63,7 @@ default_value_dict = {
     "bkCodeccMongodbAddr": "127.0.0.1:27017",
     "bkCodeccMongodbPassword": "",
     "bkCodeccMongodbUser": "",
+    "bkCodeccMongoAutoCreateIndex": "false",
     "bkCodeccRabbitmqAddr": "127.0.0.1:5672",
     "bkCodeccRabbitmqPassword": "",
     "bkCodeccRabbitmqUser": "",
@@ -71,11 +75,6 @@ default_value_dict = {
     "bkCodeccStorageType": "nfs",
     "bkCodeccNfsServerPath": "/data/workspace/nfs",
     "bkCodeccLocalPath": "",
-    "bkCodeccStorageBkrepoUsername": "",
-    "bkCodeccStorageBkrepoPassword": "",
-    "bkCodeccStorageBkrepoProject": "",
-    "bkCodeccStorageBkrepoRepo": "",
-    "bkCodeccStorageBkrepoHost": "",
     "bkCodeccServiceSuffix": ""
 }
 
@@ -111,9 +110,11 @@ include_dict = {
 env_file = open(env_properties_file, 'r', encoding='UTF-8')
 for line in env_file:
     if line.startswith('BK_'):
-        datas = line.split("=")
-        key = datas[0]
-        replace_dict[key] = humps.camelize(key.lower())
+        key, value = line.split("=",1)
+        camelize_key = humps.camelize(key.lower())
+        replace_dict[key] = camelize_key
+        if value and camelize_key not in default_value_dict:
+            default_value_dict[camelize_key] = value
 env_file.close()
 
 # 读取额外变量映射
@@ -121,16 +122,34 @@ if os.path.isfile(env_ext_properties_file):
     env_file = open(env_ext_properties_file, 'r', encoding='UTF-8')
     for line in env_file:
         if line.startswith('BK_'):
-            datas = line.split("=")
-            key = datas[0]
-            replace_dict[key] = humps.camelize(key.lower())
+            key, value = line.split("=",1)
+            camelize_key = humps.camelize(key.lower())
+            replace_dict[key] = camelize_key
+            if value and camelize_key not in default_value_dict:
+                default_value_dict[camelize_key] = value
     env_file.close()
 
-# 生成value.yaml
+
+# 读取传入变量
 image_host = sys.argv[1]
 image_path = sys.argv[2]
 image_gateway_tag = sys.argv[3]
 image_backend_tag = sys.argv[4]
+chart_backend_tag = sys.argv[5]
+deploy_enable = "false"
+if len(sys.argv) > 6:
+    deploy_enable = sys.argv[6]
+
+# 替换Chart.yaml的版本变量
+chart_line = []
+for line in open(default_chart_yaml, 'r', encoding='UTF-8'):
+    line = line.replace("__chart_backend_tag__", chart_backend_tag)
+    line = line.replace("__image_backend_tag__", image_backend_tag)
+    chart_line.append(line)
+with open(default_chart_yaml, 'w', encoding='utf-8') as file:
+    file.writelines(chart_line)
+
+# 生成value.yaml
 if os.path.exists(output_value_yaml):
     os.remove(output_value_yaml)
 value_file = open(output_value_yaml, 'w')
@@ -139,6 +158,7 @@ for line in open(default_value_yaml, 'r', encoding='UTF-8'):
     line = line.replace("__image_backend_tag__", image_backend_tag)
     line = line.replace("__image_host__", image_host)
     line = line.replace("__image_path__", image_path)
+    line = line.replace("__deploy_enable__", deploy_enable)
     value_file.write(line)
 value_file.write('\n')
 if os.path.isfile(default_ext_value_yaml):
@@ -147,6 +167,7 @@ if os.path.isfile(default_ext_value_yaml):
         line = line.replace("__image_backend_tag__", image_backend_tag)
         line = line.replace("__image_host__", image_host)
         line = line.replace("__image_path__", image_path)
+        line = line.replace("__deploy_enable__", deploy_enable)
         value_file.write(line)
 
 value_file.write('\nconfig:\n')
@@ -185,7 +206,7 @@ for config_name in os.listdir(merge_config):
                     line = line.replace(key, '{{ .Values.config.' + replace_dict.get(key.replace('__', ''), '') + ' }}')
             new_file.write(line)
         new_file.write('\n{{- end -}}')
-
+        # 处理没有配置的空值
         new_file.flush()
         new_file.close()
         config_file.close()
