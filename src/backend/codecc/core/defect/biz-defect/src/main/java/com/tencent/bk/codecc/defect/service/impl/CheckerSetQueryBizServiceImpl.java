@@ -1061,7 +1061,7 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
             CheckerSetCategoryVO categoryVO = new CheckerSetCategoryVO();
             String message = I18NUtils.getMessage(checkerSetCategory.getI18nResourceCode());
             categoryVO.setCnName(message);
-            categoryVO.setEnName(message);
+            categoryVO.setEnName(checkerSetCategory.name());
             checkerSetParams.getCatatories().add(categoryVO);
         }
 
