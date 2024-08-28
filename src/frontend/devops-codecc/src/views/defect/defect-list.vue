@@ -2376,7 +2376,9 @@ export default {
                   } else if (item.bizType === 'MarkDefect') {
                     markCount = item.count;
                   }
-                  failCount += item.failCount;
+                  if (item.failCount) {
+                    failCount = item.failCount;
+                  }
                 });
                 const unfixedMarkCount = markCount - revertCount;
                 message = '';

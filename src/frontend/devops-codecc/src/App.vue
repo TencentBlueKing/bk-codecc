@@ -98,7 +98,7 @@ import { mapGetters, mapState } from 'vuex';
 import { bus } from './common/bus';
 import { toggleLang } from './i18n';
 import { getToolMeta, getToolList, getTaskList } from './common/preload';
-import Aegis from 'aegis-web-sdk';
+// import Aegis from 'aegis-web-sdk';
 
 export default {
   name: 'App',
@@ -189,12 +189,12 @@ export default {
     },
   },
   created() {
-    const aegis = new Aegis({
-      id: window.AEGISID, // 项目ID
-      uin: this.user.username, // 用户唯一 ID（可选）
-      reportApiSpeed: true, // 接口测速
-      reportAssetSpeed: true, // 静态资源测速
-    });
+    // const aegis = new Aegis({
+    //   id: window.AEGISID, // 项目ID
+    //   uin: this.user.username, // 用户唯一 ID（可选）
+    //   reportApiSpeed: true, // 接口测速
+    //   reportAssetSpeed: true, // 静态资源测速
+    // });
     // 蓝盾切换项目
     window.addEventListener('change::$currentProjectId', (data) => {
       if (
@@ -292,7 +292,9 @@ export default {
     },
     confirmPermission() {
       this.permissionDialogVisible = false;
-      this.$router.push({ name: 'task-settings-authority' });
+      if (this.taskId) {
+        this.$router.push({ name: 'task-settings-authority' });
+      }
     },
     reload() {
       this.isRouterAlive = false;

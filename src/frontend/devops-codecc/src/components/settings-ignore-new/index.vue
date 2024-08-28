@@ -284,6 +284,10 @@ export default {
         this.getTreeData();
         this.postData.customPath = [];
       }
+      const { filterFile, filterDir, customPath } = this.postData;
+      if (!filterFile.length && !filterDir.length && !customPath.length) {
+        return;
+      }
       this.postData.taskId = this.taskId;
       this.$store
         .dispatch('task/createIgnore', this.postData)
@@ -291,7 +295,7 @@ export default {
           if (res === true) {
             this.$bkMessage({
               theme: 'success',
-              message: this.$t('路径添加成功'),
+              message: this.$t('路径变更成功'),
             });
             this.$store.dispatch('task/ignore', this.taskId);
             this.$store.dispatch('task/ignoreTree');
