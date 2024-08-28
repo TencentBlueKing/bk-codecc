@@ -199,16 +199,11 @@ function handleReject(error, config) {
   if (config.url && config.url.includes(window.OP_AJAX_URL_PREFIX)) {
     return Promise.reject(error);
   }
-  try {
-    http.queue.delete(config.requestId);
-  } catch (error) {
-    console.log('🚀 ~ handleReject ~ error:', error);
-  }
+  console.log(error, error.response);
 
   if (config.globalError && error.response) {
     const { status, data } = error.response;
     const nextError = { message: error.message, response: error.response };
-    console.log('🚀 ~ handleReject ~ status:', status);
     if (status === 401) {
       window.location.href = `${
         window.PAAS_SERVICE_URL
@@ -216,7 +211,6 @@ function handleReject(error, config) {
       // bus.$emit('show-login-modal')
     } else if (status === 403) {
       bus.$emit('show-permission-dialog');
-      messageError(data.message);
     } else if (status === 500) {
       nextError.message = I18n.t('系统出现异常');
       messageError(nextError.message);
@@ -233,6 +227,12 @@ function handleReject(error, config) {
   }
   messageError(error.message);
   console.error(error.message);
+
+  try {
+    http.queue.delete(config.requestId);
+  } catch (error) {
+    console.log('🚀 ~ handleReject ~ error:', error);
+  }
   return Promise.reject(error);
 }
 
