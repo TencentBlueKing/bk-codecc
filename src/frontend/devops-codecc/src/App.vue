@@ -30,9 +30,14 @@
     <bk-dialog
       v-model="permissionDialogVisible"
       theme="primary"
-      :confirm-fn="confirmPermission"
     >
       <p class="f18">{{ $t('暂无权限，请联系任务管理员添加权限。') }}</p>
+      <template slot="footer">
+        <bk-button
+          theme="primary"
+          @click="confirmPermission"
+        >{{ $t('确定') }}</bk-button>
+      </template>
     </bk-dialog>
     <!-- 新版本更新 -->
     <bk-dialog
@@ -98,6 +103,7 @@ import { mapGetters, mapState } from 'vuex';
 import { bus } from './common/bus';
 import { toggleLang } from './i18n';
 import { getToolMeta, getToolList, getTaskList } from './common/preload';
+import DEPLOY_ENV from '@/constants/env';
 // import Aegis from 'aegis-web-sdk';
 
 export default {
@@ -110,6 +116,7 @@ export default {
       noticeMesVisible: true,
       newVersionMesVisible: true,
       isRouterAlive: true,
+      isInnerSite: DEPLOY_ENV === 'tencent',
     };
   },
   provide() {
@@ -292,7 +299,7 @@ export default {
     },
     confirmPermission() {
       this.permissionDialogVisible = false;
-      if (this.taskId) {
+      if (this.taskId && this.isInnerSite) {
         this.$router.push({ name: 'task-settings-authority' });
       }
     },

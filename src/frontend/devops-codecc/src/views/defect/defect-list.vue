@@ -1884,14 +1884,16 @@ export default {
           return '';
         }
         if (j === 'dimension') {
-          const { dimension } = this.searchParams;
-          let dimensionName = '';
-          this.dimenList.forEach((i) => {
-            if (dimension === i.key) {
-              dimensionName = i.name;
-            }
-          });
-          return dimensionName;
+          // const { dimension } = this.searchParams;
+          // let dimensionName = '';
+          // this.dimenList.forEach((i) => {
+          //   if (dimension === i.key) {
+          //     dimensionName = i.name;
+          //   }
+          // });
+          // return dimensionName;
+          const dimension = this.dimenList.find(i => i.key === item[j]) || {};
+          return dimension.name || '';
         }
         return item[j];
       }));
@@ -2382,12 +2384,12 @@ export default {
                 });
                 const unfixedMarkCount = markCount - revertCount;
                 message = '';
-                if (markCount && unfixedMarkCount) message = this.$t('x个待修复问题标记为已处理成功', {
+                if (markCount && unfixedMarkCount) message = this.$t('x个待修复问题标记为已处理成功。', {
                   unfixedMarkCount,
                 });
                 if (markCount && unfixedMarkCount && revertCount) message += ', ';
                 if (revertCount) message += this.$t(
-                  'x个已忽略问题取消忽略并标记为已处理成功',
+                  'x个已忽略问题取消忽略并标记为已处理成功。',
                   { revertCount },
                 );
                 if (failCount) {

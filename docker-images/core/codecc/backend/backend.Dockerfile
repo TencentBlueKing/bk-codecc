@@ -4,6 +4,7 @@ LABEL maintainer="Tencent BlueKing Devops"
 
 ENV CODECC_HOME=/data/workspace \
     CODECC_LOGS_DIR=/data/workspace/logs \
+    CODECC_LOGS_LEVEL=INFO \
     SERVICE_PREFIX=codecc \
     CODECC_PROFILE=native \
     NAMESPACE=codecc \
