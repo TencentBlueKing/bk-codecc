@@ -2380,16 +2380,19 @@ export default {
                     failCount = item.failCount;
                   }
                 });
-                const unfixedMarkCount = markCount - revertCount;
-                message = '';
-                if (markCount && unfixedMarkCount) message = this.$t('x个待修复问题标记为已处理成功。', {
-                  unfixedMarkCount,
-                });
-                if (markCount && unfixedMarkCount && revertCount) message += ', ';
-                if (revertCount) message += this.$t(
-                  'x个已忽略问题取消忽略并标记为已处理成功。',
-                  { revertCount },
-                );
+                // const unfixedMarkCount = markCount - revertCount;
+                // message = '';
+                // if (markCount && unfixedMarkCount) message = this.$t('x个待修复问题标记为已处理成功。', {
+                //   unfixedMarkCount,
+                // });
+                // if (markCount && unfixedMarkCount && revertCount) message += ', ';
+                // if (revertCount) message += this.$t(
+                //   'x个已忽略问题取消忽略并标记为已处理成功。',
+                //   { revertCount },
+                // );
+                if (markCount) {
+                  message = this.$t('x个问题标记为已处理成功。', [markCount]);
+                }
                 if (failCount) {
                   message += this.$t('x个问题由于状态原因标记失败。', [failCount]);
                 }
