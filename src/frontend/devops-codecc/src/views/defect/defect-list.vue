@@ -1749,7 +1749,7 @@ export default {
         this.$t('路径'),
         this.$t('规则'),
         this.$t('工具'),
-        this.$t('维度'),
+        // this.$t('维度'),
         this.$t('问题描述'),
         this.$t('处理人'),
         this.$t('级别'),
@@ -1771,7 +1771,7 @@ export default {
         'filePath',
         'checker',
         'toolName',
-        'dimension',
+        // 'dimension',
         'message',
         'author',
         'severity',
@@ -2377,8 +2377,6 @@ export default {
                     revertCount = item.count;
                   } else if (item.bizType === 'MarkDefect') {
                     markCount = item.count;
-                  }
-                  if (item.failCount) {
                     failCount = item.failCount;
                   }
                 });
