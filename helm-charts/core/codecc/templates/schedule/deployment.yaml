@@ -130,7 +130,7 @@ spec:
             initialDelaySeconds: 120
             periodSeconds: 15
             timeoutSeconds: 10
-            failureThreshold: 5
+            failureThreshold: 10
             successThreshold: 1
           readinessProbe:
             httpGet:
@@ -139,7 +139,7 @@ spec:
             initialDelaySeconds: 60
             periodSeconds: 15
             timeoutSeconds: 10
-            failureThreshold: 5
+            failureThreshold: 10
             successThreshold: 1
           volumeMounts:
             - name: storage
