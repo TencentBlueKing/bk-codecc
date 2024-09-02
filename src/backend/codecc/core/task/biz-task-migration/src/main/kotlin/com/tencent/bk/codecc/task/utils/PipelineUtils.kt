@@ -471,7 +471,7 @@ class PipelineUtils {
         val hour = executeTime.substring(0, executeTime.indexOf(":"))
         val min = executeTime.substring(executeTime.indexOf(":") + 1)
 
-        val weekDayListStr = executeDateList.reduce { acc, s -> "$acc,$s" }
+        val weekDayListStr = executeDateList.fold("") { acc, s -> "$acc,${(s.toInt() % 7) + 1}" }
         return String.format("0 %s %s ? * %s", min, hour, weekDayListStr)
     }
 
