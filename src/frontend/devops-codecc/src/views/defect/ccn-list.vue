@@ -2427,7 +2427,7 @@ export default {
         this.$refs.fileListTable.selection.forEach((item) => {
           defectKeySet.push(item.entityId);
         });
-        if (markFlag) bizType = 'MarkDefect|RevertIgnore';
+        if (markFlag) bizType = 'MarkDefect';
       } else {
         defectKeySet = [entityId];
       }
