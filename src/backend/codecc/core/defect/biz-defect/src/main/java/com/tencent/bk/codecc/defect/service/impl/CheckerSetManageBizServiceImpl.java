@@ -1834,6 +1834,7 @@ public class CheckerSetManageBizServiceImpl implements ICheckerSetManageBizServi
             CheckerSetCategoryModel checkerSetCategoryModel = new CheckerSetCategoryModel(enName, cnName, enumName);
             catagoryNameMap.put(enName, checkerSetCategoryModel);
             catagoryNameMap.put(cnName, checkerSetCategoryModel);
+            catagoryNameMap.put(enumName, checkerSetCategoryModel);
         }
 
         List<CheckerSetCatagoryEntity> retList = Lists.newArrayList();

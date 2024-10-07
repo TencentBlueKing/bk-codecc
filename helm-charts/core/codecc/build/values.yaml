@@ -106,8 +106,6 @@ mongodb:
       db.createUser({ user: "$MONGODB_EXTRA_USERNAMES" , pwd: "$MONGODB_EXTRA_PASSWORDS" , roles: [{role: "dbOwner" , db:"db_quartz"}]})
       use db_schedule
       db.createUser({ user: "$MONGODB_EXTRA_USERNAMES" , pwd: "$MONGODB_EXTRA_PASSWORDS" , roles: [{role: "dbOwner" , db:"db_schedule"}]})
-      use db_quartz
-      db.createUser({ user: "$MONGODB_EXTRA_USERNAMES" , pwd: "$MONGODB_EXTRA_PASSWORDS" , roles: [{role: "dbOwner" , db:"db_quartz"}]})
       EOF
      # ipv6 开启
   #   create_admin_user.sh: |

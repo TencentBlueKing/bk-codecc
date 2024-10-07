@@ -134,14 +134,17 @@ public class Log4j2Initializer implements ApplicationContextInitializer<Configur
                     .addComponent(triggeringPolicy);
             builder.add(appenderBuilder);
 
+            String levelConfig = System.getProperty("service.log.level");
+            Level level = Level.toLevel(levelConfig, Level.INFO);
             String console = System.getProperty("console.log.enabled");
+
             if (!StringUtils.isEmpty(console) && console.equals("true")) {
-                builder.add(builder.newRootLogger(Level.INFO)
+                builder.add(builder.newRootLogger(level)
                         .add(builder.newAppenderRef("Exception"))
                         .add(builder.newAppenderRef("Rolling"))
                         .add(builder.newAppenderRef("Stdout")));
             } else {
-                builder.add(builder.newRootLogger(Level.INFO)
+                builder.add(builder.newRootLogger(level)
                         .add(builder.newAppenderRef("Exception"))
                         .add(builder.newAppenderRef("Rolling")));
             }

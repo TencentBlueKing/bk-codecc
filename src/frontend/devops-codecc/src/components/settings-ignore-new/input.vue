@@ -68,7 +68,7 @@ export default {
           if (res === true) {
             this.$bkMessage({
               theme: 'success',
-              message: this.$t('路径添加成功'),
+              message: this.$t('路径变更成功'),
             });
             this.$store.dispatch('task/ignore', this.taskId);
           }
