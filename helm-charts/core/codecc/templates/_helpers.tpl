@@ -43,14 +43,6 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 {{- end -}}
 
-{{- define "codecc.redis.db" -}}
-{{- if eq .Values.redis.enabled true -}}
-1
-{{- else -}}
-{{- .Values.config.bkCodeccRedisDb -}}
-{{- end -}}
-{{- end -}}
-
 {{- define "codecc.rabbitmq.fullname" -}}
 {{- if .Values.rabbitmq.fullnameOverride -}}
 {{- .Values.rabbitmq.fullnameOverride | trunc 63 | trimSuffix "-" -}}
