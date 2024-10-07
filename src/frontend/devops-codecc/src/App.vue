@@ -30,9 +30,14 @@
     <bk-dialog
       v-model="permissionDialogVisible"
       theme="primary"
-      :confirm-fn="confirmPermission"
     >
       <p class="f18">{{ $t('暂无权限，请联系任务管理员添加权限。') }}</p>
+      <template slot="footer">
+        <bk-button
+          theme="primary"
+          @click="confirmPermission"
+        >{{ $t('确定') }}</bk-button>
+      </template>
     </bk-dialog>
     <!-- 新版本更新 -->
     <bk-dialog
@@ -98,7 +103,8 @@ import { mapGetters, mapState } from 'vuex';
 import { bus } from './common/bus';
 import { toggleLang } from './i18n';
 import { getToolMeta, getToolList, getTaskList } from './common/preload';
-import Aegis from 'aegis-web-sdk';
+import DEPLOY_ENV from '@/constants/env';
+// import Aegis from 'aegis-web-sdk';
 
 export default {
   name: 'App',
@@ -110,6 +116,7 @@ export default {
       noticeMesVisible: true,
       newVersionMesVisible: true,
       isRouterAlive: true,
+      isInnerSite: DEPLOY_ENV === 'tencent',
     };
   },
   provide() {
@@ -189,12 +196,12 @@ export default {
     },
   },
   created() {
-    const aegis = new Aegis({
-      id: window.AEGISID, // 项目ID
-      uin: this.user.username, // 用户唯一 ID（可选）
-      reportApiSpeed: true, // 接口测速
-      reportAssetSpeed: true, // 静态资源测速
-    });
+    // const aegis = new Aegis({
+    //   id: window.AEGISID, // 项目ID
+    //   uin: this.user.username, // 用户唯一 ID（可选）
+    //   reportApiSpeed: true, // 接口测速
+    //   reportAssetSpeed: true, // 静态资源测速
+    // });
     // 蓝盾切换项目
     window.addEventListener('change::$currentProjectId', (data) => {
       if (
@@ -292,7 +299,9 @@ export default {
     },
     confirmPermission() {
       this.permissionDialogVisible = false;
-      this.$router.push({ name: 'task-settings-authority' });
+      if (this.taskId && this.isInnerSite) {
+        this.$router.push({ name: 'task-settings-authority' });
+      }
     },
     reload() {
       this.isRouterAlive = false;

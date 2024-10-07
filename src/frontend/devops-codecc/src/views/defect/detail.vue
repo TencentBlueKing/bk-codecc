@@ -684,6 +684,7 @@ export default {
       aiSuggestionVM: null,
       checkerDetailVisible: false,
       checkerDetailVM: null,
+      isInnerSite: DEPLOY_ENV === 'tencent',
     };
   },
   computed: {
@@ -762,9 +763,11 @@ export default {
     },
   },
   async created() {
-    await this.getTaskOpenIdeConfig();
-    if (this.isOpenIde) {
-      this.linkPreCiWebSocket();
+    if (this.isInnerSite) {
+      await this.getTaskOpenIdeConfig();
+      if (this.isOpenIde) {
+        this.linkPreCiWebSocket();
+      }
     }
   },
   methods: {
@@ -1193,7 +1196,7 @@ export default {
 }
                             | ${defectSeverityDetailMap[detailVO.severity]}
                         </span>
-                        ${this.isPaas
+                        ${this.isPaas || DEPLOY_ENV !== 'tencent'
     ? `
     <span>
       <span class="toggle-checker-detail cc-link-primary">${this.$t('规则详情')}</span>

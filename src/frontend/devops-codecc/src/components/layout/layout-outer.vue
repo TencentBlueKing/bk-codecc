@@ -6,10 +6,10 @@
         <img
           @click="$router.push({ name: 'task-list' })"
           :src="logo"
-          :alt="$t('腾讯代码分析')"
+          :alt="isInnerSite ? $t('腾讯代码分析') : $t('代码分析')"
         />
         <div class="breadcrumb">
-          {{ $t('腾讯代码分析') }}
+          {{ isInnerSite ? $t('腾讯代码分析') : $t('代码分析') }}
           <a v-if="isInnerSite" class="sub-header-link" target="_blank" :href="iwikiCodeccHome">
             <span class="bk-icon icon-question-circle"></span>
           </a>

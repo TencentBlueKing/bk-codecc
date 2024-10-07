@@ -29,6 +29,7 @@ BACKEND_DIR=$ROOT_DIR/src/backend/codecc
 FRONTEND_DIR=$ROOT_DIR/src/frontend/devops-codecc
 GATEWAY_DIR=$WORKING_DIR/gateway
 NOSQL_DIR=$ROOT_DIR/support-files/codecc/nosql
+GATEWAY_TEMPLATE_DIR=$ROOT_DIR/support-files/codecc/templates/core
 
 usage () {
     cat <<EOF
@@ -148,7 +149,7 @@ if [[ $ALL -eq 1 || $GATEWAY -eq 1 ]] ; then
     cp -rf $GATEWAY_DIR/startup.sh tmp/
     cp -rf $GATEWAY_DIR/scripts/render_tpl tmp/
     cp -rf $GATEWAY_DIR/scripts/codecc.env tmp/
-    cp -rf $GATEWAY_DIR/templates tmp/
+    cp -f $GATEWAY_TEMPLATE_DIR/gateway#* tmp/
     docker build -f gateway/gateway.Dockerfile -t $REGISTRY/$NAMESPACE/${PERFIX}gateway:$VERSION tmp --network=host
     if [[ $PUSH -eq 1 ]] ; then
         docker push $REGISTRY/$NAMESPACE/${PERFIX}gateway:$VERSION

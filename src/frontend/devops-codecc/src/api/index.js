@@ -196,7 +196,7 @@ function handleReject(error, config) {
     return Promise.reject(error);
   }
   // op接口直接reject, 不出现弹框
-  if (config.url && config.url.includes(window.OP_AJAX_URL_PREFIX)) {
+  if (config.url && window.OP_AJAX_URL_PREFIX && config.url.includes(window.OP_AJAX_URL_PREFIX)) {
     return Promise.reject(error);
   }
   http.queue.delete(config.requestId);
@@ -227,6 +227,7 @@ function handleReject(error, config) {
   }
   messageError(error.message);
   console.error(error.message);
+
   return Promise.reject(error);
 }
 
