@@ -59,12 +59,14 @@ jobs:
         run: |
           version="$(basename $GITHUB_REF)"
           echo "::set-output name=version::$version"
-          chmod +x scripts/deploy-codecc/packager-codecc.sh
+          chmod +x scripts/deploy-codecc/*
           codecc_pkg_dir=/dev/shm/codecc ./scripts/deploy-codecc/packager-codecc.sh "$version" bkcodecc-slim.tar.gz "$PWD"
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v4
         with:
           name: codecc
           path: bkcodecc-slim.tar.gz
+          retention-days: 5
+          overwrite: true
 
   releaseAll:
     name: Release All
