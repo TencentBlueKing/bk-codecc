@@ -63,7 +63,7 @@ jobs:
           codecc_pkg_dir=/dev/shm/codecc ./scripts/deploy-codecc/packager-codecc.sh "$version" bkcodecc-slim.tar.gz "$PWD"
       - uses: actions/upload-artifact@v4
         with:
-          name: codecc
+          name: codecc-artifact
           path: bkcodecc-slim.tar.gz
           retention-days: 5
           overwrite: true
@@ -88,7 +88,7 @@ jobs:
       - name: download codecc
         uses: actions/download-artifact@v4
         with:
-          name: codecc
+          name: codecc-artifact
           path: ./
       - name: Upload Release Asset -- CODECC
         uses: actions/upload-release-asset@v1
@@ -96,6 +96,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./bkcodecc-slim.tar.gz
-          asset_name: bkcodecc-slim.tar.gz
+          asset_path: ./codecc-artifact.zip
+          asset_name: codecc-artifact.zip
           asset_content_type: application/gzip
