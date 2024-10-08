@@ -106,7 +106,7 @@ install_codecc__ms_common (){
   rsync -ra --delete "$BK_CODECC_SRC_DIR/$MS_NAME/lib" "$BK_CODECC_SRC_DIR/$MS_NAME/com" "$BK_CODECC_HOME/$MS_NAME"
   # CodeCC启动jar包依赖顺序特殊调整
   mkdir -p $BK_CODECC_HOME/$MS_NAME/priority
-  ls -al $BK_CODECC_HOME/$MS_NAME/lib/|grep codecc-common 2>/dev/null && mv $BK_CODECC_HOME/$MS_NAME/lib/codecc-common-*.jar $BK_CODECC_HOME/$MS_NAME/priority/
+  ls -al $BK_CODECC_HOME/$MS_NAME/lib/|grep common-.*-1.7.37 2>/dev/null && mv $BK_CODECC_HOME/$MS_NAME/lib/common-*-1.7.37*.jar $BK_CODECC_HOME/$MS_NAME/priority/
   sed -i -e '/CLASSPATH/s/.*/CLASSPATH=\".:priority\/*:lib\/*\"/' $BK_CODECC_HOME/$MS_NAME/service.env
 }
 
@@ -153,6 +153,7 @@ EOF
 
   rsync -ra "$BK_CODECC_SRC_DIR/gateway" "$BK_CODECC_HOME"  # gateway无需--del
   rsync -ra --delete "$BK_CODECC_SRC_DIR/frontend" "$BK_CODECC_HOME"  # frontend不必verbose.
+  rsync -ra --delete "$BK_CODECC_SRC_DIR/scripts" "$BK_CODECC_HOME"  # frontend不必verbose.
   if [ -d "$BK_CODECC_SRC_DIR/docs" ]; then
     rsync -ra --delete "$BK_CODECC_SRC_DIR/docs" "$BK_CODECC_HOME" || return $?  # 可选docs
   fi
