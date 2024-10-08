@@ -95,7 +95,7 @@ render_codecc (){
   case "$proj" in
     gateway)
       # 渲染可能存在的gateway配置文件.
-      files+=("$BK_CODECC_SRC_DIR/support-files/templates/gateway#"*)
+      files+=("$BK_CODECC_SRC_DIR/support-files/templates/core/gateway#"*)
       ;&  # 这里不中断, 继续渲染frontend.
     frontend)
       # 渲染可能存在的frontend页面文件.
@@ -103,9 +103,9 @@ render_codecc (){
       ;;
     *)
       # 渲染对应的微服务配置文件. 这里的模式必须通配到.
-      files+=("$BK_CODECC_SRC_DIR/support-files/templates/#etc#codecc#common.yml"
-        "$BK_CODECC_SRC_DIR/support-files/templates/#etc#codecc#"*"$proj."*
-        "$BK_CODECC_SRC_DIR/support-files/templates/$proj"#*
+      files+=("$BK_CODECC_SRC_DIR/support-files/templates/core/#etc#codecc#common.yml"
+        "$BK_CODECC_SRC_DIR/support-files/templates/core/#etc#codecc#"*"$proj."*
+        "$BK_CODECC_SRC_DIR/support-files/templates/core/$proj"#*
         )
       ;;
   esac
