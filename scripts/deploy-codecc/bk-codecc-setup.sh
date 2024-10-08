@@ -25,8 +25,7 @@ BK_CODECC_SRC_DIR="${BK_CODECC_SRC_DIR:-$BK_PKG_SRC_PATH/codecc}"  # codecc安�
 CTRL_DIR=${CTRL_DIR:-/data/install}
 LAN_IP=${LAN_IP:-$(ip route show | grep -Pom 1 "(?<=src )[0-9.]+")}
 
-BKCE_RENDER_CMD="$CTRL_DIR/bin/render_tpl"  # 蓝鲸社区版的render, 需要env文件及$BK_HOME.
-CODECC_RENDER_CMD="$(dirname "$0")/render_tpl"  # bk-codecc里的默认读取本地的bkenv.properties文件.
+CODECC_RENDER_CMD="$BK_CODECC_SRC_DIR/scripts/deploy-codecc/render_tpl"  # bk-codecc里的默认读取本地的bkenv.properties文件.
 GEN_DOCKER_CONF_CMD="$(dirname "$0a")/bk-codecc-gen-docker-conf.sh"
 
 # 批量检查变量名为空的情况.
@@ -115,9 +114,7 @@ render_codecc (){
     echo "render_codecc: no file matches, do nothing, proj is $proj."
     return 0
   fi
-  if [ -x "$BKCE_RENDER_CMD" ]; then
-    BK_ENV_FILE="$CTRL_DIR/bin/04-final/codecc.env" $BKCE_RENDER_CMD -u -m codecc -p "$BK_HOME" "${files[@]}"
-  elif [ -x "$CODECC_RENDER_CMD" ]; then
+  if [ -x "$CODECC_RENDER_CMD" ]; then
     $CODECC_RENDER_CMD -m codecc "${files[@]}"
   else
     echo >&2 "CODECC_RENDER_CMD is not executable: $CODECC_RENDER_CMD."
@@ -159,7 +156,7 @@ setup_codecc__ms_service_env (){
 setup_codecc__ms_start_env (){
   #check_empty_var BK_CODECC_HOME BK_CODECC_CONF_DIR || return 15
   local port_key=BK_CODECC_${MS_NAME_WORD^^}_API_PORT
-  local conf_path="file://$MS_DIR/application.yml,file://$BK_CODECC_CONF_DIR/common.yml,file://$BK_CODECC_CONF_DIR/application-$MS_NAME.yml"
+  local conf_path="file://$MS_DIR/bootstrap.yml,file://$BK_CODECC_CONF_DIR/common.yml,file://$BK_CODECC_CONF_DIR/application-$MS_NAME.yml"
   env_line_set "$start_env" "DEVOPS_GATEWAY" "$BK_CODECC_HOST"
   env_line_set "$start_env" "SPRING_CONFIG_LOCATION" "$conf_path"
   env_line_set "$start_env" "MS_USER" "$MS_USER"
