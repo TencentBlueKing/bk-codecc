@@ -121,7 +121,7 @@ install_codecc_gateway (){
   else
     cat > $BK_CODECC_SRC_DIR/support-files/templates/gateway\#core\#vhosts\#devops.bkrepo.upstream.conf << EOF 
 upstream __BK_REPO_HOST__ {
-    server __BK_REPO_GATEWAY_IP__;
+    server 127.0.0.1;
 }
 EOF
   fi

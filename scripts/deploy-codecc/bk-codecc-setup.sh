@@ -136,7 +136,7 @@ setup_codecc__ms_common (){
   update_link_to_target "$MS_DIR/logs" "$MS_LOGS_DIR" || return 3
   update_link_to_target "$MS_DIR/data" "$MS_DATA_DIR" || return 3
   # 提供 MS_NAME.log 日志路径. 确保自定义tag时的日志路径统一.
-  update_link_to_target "$MS_DIR/logs/$MS_NAME.log" "$MS_LOGS_DIR/$MS_NAME-$BK_CODECC_CONSUL_DISCOVERY_TAG.log" || return 3
+  # update_link_to_target "$MS_DIR/logs/$MS_NAME.log" "$MS_LOGS_DIR/$MS_NAME-$BK_CODECC_CONSUL_DISCOVERY_TAG.log" || return 3
   # 渲染微服务.
   render_codecc "$MS_NAME" || return $?
 }
