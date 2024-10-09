@@ -45,7 +45,6 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
-@ConditionalOnBean(name = "devopsRabbitTemplate")
 public class BkMetricsServiceImpl implements BkMetricsService {
 
     private static final int FIXED_STATUS =
