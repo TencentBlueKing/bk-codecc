@@ -114,17 +114,13 @@ install_codecc__ms_common (){
 install_codecc_gateway (){
   local proj=$1
   install_openresty || return $?
-  
+
   # 特殊文件处理
-  if ! grep -w repo $CTRL_DIR/install.config|grep -v ^\# ; then
-    > $BK_CODECC_SRC_DIR/support-files/templates/gateway\#core\#vhosts\#devops.bkrepo.upstream.conf
-  else
-    cat > $BK_CODECC_SRC_DIR/support-files/templates/gateway\#core\#vhosts\#devops.bkrepo.upstream.conf << EOF 
+  cat > $BK_CODECC_SRC_DIR/support-files/templates/gateway\#core\#vhosts\#devops.bkrepo.upstream.conf << EOF
 upstream __BK_REPO_HOST__ {
     server 127.0.0.1;
 }
 EOF
-  fi
 
   cat > $BK_CODECC_SRC_DIR/support-files/templates/gateway\#core\#server.common.conf << EOF
   client_max_body_size 0;
