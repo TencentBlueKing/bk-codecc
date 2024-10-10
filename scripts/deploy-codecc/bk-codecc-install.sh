@@ -116,13 +116,13 @@ install_codecc_gateway (){
   install_openresty || return $?
 
   # 特殊文件处理
-  cat > $BK_CODECC_SRC_DIR/support-files/templates/gateway\#core\#vhosts\#devops.bkrepo.upstream.conf << EOF
+    cat > $BK_CODECC_SRC_DIR/support-files/templates/core/gateway\#core\#vhosts\#devops.bkrepo.upstream.conf << EOF
 upstream __BK_REPO_HOST__ {
     server 127.0.0.1;
 }
 EOF
 
-  cat > $BK_CODECC_SRC_DIR/support-files/templates/gateway\#core\#server.common.conf << EOF
+  cat > $BK_CODECC_SRC_DIR/support-files/templates/core/gateway\#core\#server.common.conf << EOF
   client_max_body_size 0;
 
   if (\$time_iso8601 ~ '(\d{4}-\d{2}-\d{2})') {
@@ -142,9 +142,6 @@ EOF
 
   #状态监测
   include nginx.status.conf;
-
-  #网关auth验证
-  include auth.conf;
 EOF
 
   rsync -ra "$BK_CODECC_SRC_DIR/gateway" "$BK_CODECC_HOME"  # gateway无需--del

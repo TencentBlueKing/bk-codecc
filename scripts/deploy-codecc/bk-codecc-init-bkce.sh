@@ -27,7 +27,7 @@ api_helper (){
 # 注册ci-auth的回调.
 echo "reg ci-auth callback."
 iam_api_url="http://127.0.0.1:$BK_CI_AUTH_API_PORT/api/op/auth/iam/callback/"
-iam_json_tpl="${BK_PKG_SRC_PATH:-/data/src}/codecc/support-files/templates/codecc_conf.json"
+iam_json_tpl="${BK_PKG_SRC_PATH:-/data/src}/codecc/support-files/templates/core/codecc_conf.json"
 # 在中控机渲染json, stdin透传. 在蓝鲸社区版环境中测试可用.
 TARGET_HOST="$BK_CI_AUTH_IP0" api_helper -m 5 -X POST -H "Content-Type:application/json" \
   -d "@/dev/stdin" "$iam_api_url" < <(
