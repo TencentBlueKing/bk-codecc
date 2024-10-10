@@ -18,6 +18,7 @@ import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.api.util.UUIDUtil
 import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.constant.ComConstants.DefectStatus
+import com.tencent.devops.common.constant.ComConstants.Tool
 import com.tencent.devops.common.constant.CommonMessageCode
 import com.tencent.devops.common.constant.RedisKeyConstants
 import org.slf4j.LoggerFactory
@@ -149,8 +150,9 @@ class LintDefectCommitComponent @Autowired constructor(
             }
         }
         finalDefectList.addAll(currentDefectList)
-        //2.再处理原有的告警
-        val processedPreDefectList = preDefectList.filter { !it.pinpointHash.isNullOrBlank() }
+        // 2.再处理原有的告警
+        val processedPreDefectList = preDefectList.filter { !it.pinpointHash.isNullOrBlank() ||
+                toolName in Tool.SCAN_COMMIT_TOOLS }
         processedPreDefectList.forEach {
             it.newDefect = false
             if (it.status == 0) {
@@ -216,7 +218,7 @@ class LintDefectCommitComponent @Autowired constructor(
         }
         val check: Boolean = try {
             redisTemplate.opsForSet()
-                .isMember(RedisKeyConstants.DEBUG_BUILD_ID_SET_KEY, buildEntity.buildId) ?: false
+                    .isMember(RedisKeyConstants.DEBUG_BUILD_ID_SET_KEY, buildEntity.buildId) ?: false
         } catch (e: Exception) {
             logger.error("postHandleDefectListDebugEnabled cause error. ${buildEntity.buildId}", e)
             false
@@ -387,6 +389,10 @@ class LintDefectCommitComponent @Autowired constructor(
                                     (null == newDefect.ignoreCommentDefect || !newDefect.ignoreCommentDefect)
                             ) {
                                 selectedOldDefect.ignoreCommentDefect = false
+                                reopenDefect(selectedOldDefect)
+                            }
+                            // 重新上报，打开规则屏蔽的告警
+                            if (selectedOldDefect.status and DefectStatus.CHECKER_MASK.value() > 0) {
                                 reopenDefect(selectedOldDefect)
                             }
                         }
@@ -654,14 +660,17 @@ class LintDefectCommitComponent @Autowired constructor(
                 oldDefect.ignoreReasonType = ComConstants.IgnoreReasonType.ERROR_DETECT.value()
                 oldDefect.ignoreReason = ignoreReason.substringAfter(groupValues[2])
             }
+
             "其他" -> {
                 oldDefect.ignoreReasonType = ComConstants.IgnoreReasonType.OTHER.value()
                 oldDefect.ignoreReason = ignoreReason.substringAfter(groupValues[2])
             }
+
             "设计如此" -> {
                 oldDefect.ignoreReasonType = ComConstants.IgnoreReasonType.SPECIAL_PURPOSE.value()
                 oldDefect.ignoreReason = ignoreReason.substringAfter(groupValues[2])
             }
+
             else -> {
                 oldDefect.ignoreReasonType = ComConstants.IgnoreReasonType.OTHER.value()
                 oldDefect.ignoreReason = ignoreReason
