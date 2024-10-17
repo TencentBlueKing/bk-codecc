@@ -261,6 +261,7 @@ codecc standard labels
 helm.sh/chart: {{ include "common.names.chart" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/name: {{ .Release.Name }}
 {{- end -}}
 
 {{/*
@@ -268,4 +269,5 @@ Labels to use on deploy.spec.selector.matchLabels and svc.spec.selector
 */}}
 {{- define "codecc.labels.matchLabels" -}}
 app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/name: {{ .Release.Name }}
 {{- end -}}

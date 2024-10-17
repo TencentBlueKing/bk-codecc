@@ -97,14 +97,14 @@ management:
 
 bkci:
   public:
-    url: __BK_CI_PRIVATE_URL__
+    url: __BK_CI_PUBLIC_URL__
   private:
     url: __BK_CI_PRIVATE_URL__
   token: __BK_CI_TOKEN__
 
 codecc:
   public:
-    url: __BK_CODECC_FQDN__
+    url: __BK_CODECC_PUBLIC_URL__
   privatetoken: __BK_CODECC_PRIVATE_TOKEN__
   quartz:
     tag: __BK_CODECC_CONSUL_DISCOVERY_TAG__

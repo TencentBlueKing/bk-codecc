@@ -1,7 +1,6 @@
 package com.tencent.bk.codecc.codeccjob.config
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.tencent.codecc.common.mq.common.ConditionalOnNonEmptyRabbitMQProperties
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory
 import org.springframework.amqp.rabbit.connection.ConnectionFactory
 import org.springframework.amqp.rabbit.core.RabbitTemplate
@@ -19,8 +18,7 @@ import org.springframework.context.annotation.Configuration
  */
 @Configuration
 @AutoConfigureBefore(RabbitAutoConfiguration::class)
-@ConditionalOnNonEmptyRabbitMQProperties(prefix = "spring.rabbitmq.devops",
-    name = ["addresses", "virtual-host", "username", "password"])
+@ConditionalOnProperty(prefix = "spring.rabbitmq.devops", name = ["addresses", "virtual-host", "username", "password"])
 class DevopsMQAutoConfig {
 
     @Bean(name = ["devopsConnectionFactory"])
