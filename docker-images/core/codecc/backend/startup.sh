@@ -29,6 +29,7 @@ java -server \
      -Dserver.fullname=${SERVICE_PREFIX}${MS_NAME} \
      -Dserver.common.name=${SERVICE_PREFIX}common \
      -Dservice.log.dir=$CODECC_LOGS_DIR/ \
+     -Dservice.log.lever=$CODECC_LOGS_LEVEL \
      -Dcodecc.storage.mouth.path=$SERVER_STORAGE_MOUNT_PATH \
      $CODECC_JVM_OPTION \
      -jar /data/workspace/app.jar

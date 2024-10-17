@@ -2427,7 +2427,7 @@ export default {
         this.$refs.fileListTable.selection.forEach((item) => {
           defectKeySet.push(item.entityId);
         });
-        if (markFlag) bizType = 'MarkDefect|RevertIgnore';
+        if (markFlag) bizType = 'MarkDefect';
       } else {
         defectKeySet = [entityId];
       }
@@ -2471,12 +2471,12 @@ export default {
                 });
                 const unfixedMarkCount = markCount - revertCount;
                 message = '';
-                if (unfixedMarkCount) message = this.$t('x个待修复问题标记为已处理成功', {
+                if (unfixedMarkCount) message = this.$t('x个待修复问题标记为已处理成功。', {
                   unfixedMarkCount,
                 });
                 if (unfixedMarkCount && revertCount) message += ', ';
                 if (revertCount) message += this.$t(
-                  'x个已忽略问题取消忽略并标记为已处理成功',
+                  'x个已忽略问题取消忽略并标记为已处理成功。',
                   { revertCount },
                 );
               }

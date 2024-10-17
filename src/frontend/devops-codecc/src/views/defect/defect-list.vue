@@ -1749,7 +1749,7 @@ export default {
         this.$t('路径'),
         this.$t('规则'),
         this.$t('工具'),
-        this.$t('维度'),
+        // this.$t('维度'),
         this.$t('问题描述'),
         this.$t('处理人'),
         this.$t('级别'),
@@ -1771,7 +1771,7 @@ export default {
         'filePath',
         'checker',
         'toolName',
-        'dimension',
+        // 'dimension',
         'message',
         'author',
         'severity',
@@ -1884,14 +1884,16 @@ export default {
           return '';
         }
         if (j === 'dimension') {
-          const { dimension } = this.searchParams;
-          let dimensionName = '';
-          this.dimenList.forEach((i) => {
-            if (dimension === i.key) {
-              dimensionName = i.name;
-            }
-          });
-          return dimensionName;
+          // const { dimension } = this.searchParams;
+          // let dimensionName = '';
+          // this.dimenList.forEach((i) => {
+          //   if (dimension === i.key) {
+          //     dimensionName = i.name;
+          //   }
+          // });
+          // return dimensionName;
+          const dimension = this.dimenList.find(i => i.key === item[j]) || {};
+          return dimension.name || '';
         }
         return item[j];
       }));
@@ -2329,7 +2331,7 @@ export default {
         this.$refs.table.$refs.fileListTable.selection.forEach((item) => {
           defectKeySet.push(item.entityId);
         });
-        if (markFlag) bizType = 'RevertIgnore|MarkDefect';
+        if (markFlag) bizType = 'MarkDefect';
       } else {
         defectKeySet = [entityId];
       }
@@ -2375,19 +2377,22 @@ export default {
                     revertCount = item.count;
                   } else if (item.bizType === 'MarkDefect') {
                     markCount = item.count;
+                    failCount = item.failCount;
                   }
-                  failCount += item.failCount;
                 });
-                const unfixedMarkCount = markCount - revertCount;
-                message = '';
-                if (markCount && unfixedMarkCount) message = this.$t('x个待修复问题标记为已处理成功', {
-                  unfixedMarkCount,
-                });
-                if (markCount && unfixedMarkCount && revertCount) message += ', ';
-                if (revertCount) message += this.$t(
-                  'x个已忽略问题取消忽略并标记为已处理成功',
-                  { revertCount },
-                );
+                // const unfixedMarkCount = markCount - revertCount;
+                // message = '';
+                // if (markCount && unfixedMarkCount) message = this.$t('x个待修复问题标记为已处理成功。', {
+                //   unfixedMarkCount,
+                // });
+                // if (markCount && unfixedMarkCount && revertCount) message += ', ';
+                // if (revertCount) message += this.$t(
+                //   'x个已忽略问题取消忽略并标记为已处理成功。',
+                //   { revertCount },
+                // );
+                if (markCount) {
+                  message = this.$t('x个问题标记为已处理成功。', [markCount]);
+                }
                 if (failCount) {
                   message += this.$t('x个问题由于状态原因标记失败。', [failCount]);
                 }
