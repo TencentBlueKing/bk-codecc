@@ -33,7 +33,16 @@ class DevopsServiceTarget<T> constructor(
 ) : ThirdServiceTarget<T>(serviceName, type, rootPath) {
 
     override fun url(): String {
-        return "http://$rootPath/ms/$serviceName/api"
+        return if (rootPath.startsWith(HTTP_SCHEME) || rootPath.startsWith(HTTPS_SCHEME)) {
+            "$rootPath/ms/$serviceName/api"
+        } else {
+            "http://$rootPath/ms/$serviceName/api"
+        }
+    }
+
+    companion object {
+        private const val HTTP_SCHEME: String = "http://"
+        private const val HTTPS_SCHEME: String = "https://"
     }
 
 }
