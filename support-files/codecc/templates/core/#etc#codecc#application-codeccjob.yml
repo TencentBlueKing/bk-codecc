@@ -16,7 +16,7 @@ spring:
       username: __BK_CODECC_DEVOPS_RABBITMQ_USERNAME__
       password: __BK_CODECC_DEVOPS_RABBITMQ_PASSWORD__
       virtual-host: __BK_CODECC_DEVOPS_RABBITMQ_VIRTUAL_HOST__
-      addresses: __BK_CODECC_DEVOPS_RABBITMG_ADDRESSES__
+      addresses: __BK_CODECC_DEVOPS_RABBITMQ_ADDRESSES__
 
 server:
   port: __BK_CODECC_CODECCJOB_API_PORT__
