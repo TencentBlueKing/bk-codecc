@@ -30,7 +30,7 @@ set_env03 (){
   done
 }
 random_pass (){
-  base64 /dev/urandom | head -c ${1:-16}
+  base64 /dev/urandom | tr -cd '0-9A-Za-z' | head -c ${1:-16}
 }
 uuid_v4 (){
   if command -v uuidgen &>/dev/null; then
