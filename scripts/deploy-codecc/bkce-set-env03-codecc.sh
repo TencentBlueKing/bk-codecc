@@ -89,5 +89,8 @@ if grep -w repo $CTRL_DIR/install.config|grep -v ^\# ; then
   BK_REPO_HOST=$BK_REPO_HOST
 fi
 
+set -a
+source $CTRL_DIR/load_env.sh
+set +a
 echo "合并env."
 ./bin/merge_env.sh codecc &>/dev/null || true
