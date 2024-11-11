@@ -28,6 +28,18 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 16.x
+      - name: checkout gateway
+        uses: actions/checkout@v4
+        with:
+          repository: TencentBlueKing/bk-ci
+          ref: v2.0.2
+          path: bk-ci
+      - name: gateway package
+        id: codecc-gateway-package
+        run: |
+          ls bk-ci
+          mv bk-ci/src/gateway/core src/gateway/core
+          rm -rf bk-ci
       - name: frontend
         id: codecc-frontend
         run: |
@@ -37,17 +49,24 @@ jobs:
           if [ -f dist/index.html ]; then
             mv dist/index.html dist/frontend#index.html
           fi
+      - name: Clear artifacts
+        uses: kolpav/purge-artifacts-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          expire-in: 7days
       - name: Create artifact - make package
         id: create-artifact
         run: |
           version="$(basename $GITHUB_REF)"
           echo "::set-output name=version::$version"
-          chmod +x scripts/deploy-codecc/packager-codecc.sh
+          chmod +x scripts/deploy-codecc/*
           codecc_pkg_dir=/dev/shm/codecc ./scripts/deploy-codecc/packager-codecc.sh "$version" bkcodecc-slim.tar.gz "$PWD"
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v4
         with:
           name: codecc
           path: bkcodecc-slim.tar.gz
+          retention-days: 5
+          overwrite: true
 
   releaseAll:
     name: Release All
@@ -67,7 +86,7 @@ jobs:
           prerelease: true
       ## codecc
       - name: download codecc
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: codecc
           path: ./

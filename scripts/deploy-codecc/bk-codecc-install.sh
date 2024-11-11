@@ -106,7 +106,7 @@ install_codecc__ms_common (){
   rsync -ra --delete "$BK_CODECC_SRC_DIR/$MS_NAME/lib" "$BK_CODECC_SRC_DIR/$MS_NAME/com" "$BK_CODECC_HOME/$MS_NAME"
   # CodeCC启动jar包依赖顺序特殊调整
   mkdir -p $BK_CODECC_HOME/$MS_NAME/priority
-  ls -al $BK_CODECC_HOME/$MS_NAME/lib/|grep codecc-common 2>/dev/null && mv $BK_CODECC_HOME/$MS_NAME/lib/codecc-common-*.jar $BK_CODECC_HOME/$MS_NAME/priority/
+  ls -al $BK_CODECC_HOME/$MS_NAME/lib/|grep common-.*-1.7.37 2>/dev/null && mv $BK_CODECC_HOME/$MS_NAME/lib/common-*-1.7.37*.jar $BK_CODECC_HOME/$MS_NAME/priority/
   sed -i -e '/CLASSPATH/s/.*/CLASSPATH=\".:priority\/*:lib\/*\"/' $BK_CODECC_HOME/$MS_NAME/service.env
 }
 
@@ -114,19 +114,15 @@ install_codecc__ms_common (){
 install_codecc_gateway (){
   local proj=$1
   install_openresty || return $?
-  
+
   # 特殊文件处理
-  if ! grep -w repo $CTRL_DIR/install.config|grep -v ^\# ; then
-    > $BK_CODECC_SRC_DIR/support-files/templates/gateway\#core\#vhosts\#devops.bkrepo.upstream.conf
-  else
-    cat > $BK_CODECC_SRC_DIR/support-files/templates/gateway\#core\#vhosts\#devops.bkrepo.upstream.conf << EOF 
+    cat > $BK_CODECC_SRC_DIR/support-files/templates/core/gateway\#core\#vhosts\#devops.bkrepo.upstream.conf << EOF
 upstream __BK_REPO_HOST__ {
-    server __BK_REPO_GATEWAY_IP__;
+    server 127.0.0.1;
 }
 EOF
-  fi
 
-  cat > $BK_CODECC_SRC_DIR/support-files/templates/gateway\#core\#server.common.conf << EOF
+  cat > $BK_CODECC_SRC_DIR/support-files/templates/core/gateway\#core\#server.common.conf << EOF
   client_max_body_size 0;
 
   if (\$time_iso8601 ~ '(\d{4}-\d{2}-\d{2})') {
@@ -146,13 +142,11 @@ EOF
 
   #状态监测
   include nginx.status.conf;
-
-  #网关auth验证
-  include auth.conf;
 EOF
 
   rsync -ra "$BK_CODECC_SRC_DIR/gateway" "$BK_CODECC_HOME"  # gateway无需--del
   rsync -ra --delete "$BK_CODECC_SRC_DIR/frontend" "$BK_CODECC_HOME"  # frontend不必verbose.
+  rsync -ra --delete "$BK_CODECC_SRC_DIR/scripts" "$BK_CODECC_HOME"  # frontend不必verbose.
   if [ -d "$BK_CODECC_SRC_DIR/docs" ]; then
     rsync -ra --delete "$BK_CODECC_SRC_DIR/docs" "$BK_CODECC_HOME" || return $?  # 可选docs
   fi

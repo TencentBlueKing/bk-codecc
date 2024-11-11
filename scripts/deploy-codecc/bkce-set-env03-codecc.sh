@@ -30,7 +30,7 @@ set_env03 (){
   done
 }
 random_pass (){
-  base64 /dev/urandom | head -c ${1:-16}
+  base64 /dev/urandom | tr -cd '0-9A-Za-z' | head -c ${1:-16}
 }
 uuid_v4 (){
   if command -v uuidgen &>/dev/null; then
@@ -54,9 +54,11 @@ echo "检查设置 CODECC 基础配置"
 set_env03 BK_HTTP_SCHEMA=http \
   BK_DOMAIN=$BK_DOMAIN \
   BK_PAAS_PUBLIC_URL=$BK_PAAS_PUBLIC_URL \
-  BK_CODECC_AUTH_PROVIDER=bk_login_v3 \
+  BK_CI_AUTH_PROVIDER=rbac \
+  BK_CODECC_AUTH_PROVIDER=rbac \
   BK_CODECC_FQDN=codecc.\$BK_DOMAIN \
   BK_HOME=$BK_HOME \
+  BK_CODECC_MONGODB_AUTO_CREATE_INDEX=true \
   BK_CODECC_PUBLIC_URL=http://\$BK_CODECC_FQDN \
   BK_SSM_HOST=bkssm.service.consul \
   BK_IAM_PRIVATE_URL=$BK_IAM_PRIVATE_URL \
@@ -69,8 +71,10 @@ set_env03 BK_HTTP_SCHEMA=http \
   BK_CODECC_PAAS_LOGIN_URL=\$BK_PAAS_PUBLIC_URL/login/\?c_url= \
   BK_CODECC_REPOSITORY_GITLAB_URL=http://\$BK_CODECC_FQDN \
   BK_CODECC_APP_CODE=bk_codecc \
+  BK_CODECC_APP_CODE=bk_codecc \
   BK_CODECC_APP_TOKEN=$(uuid_v4) \
-  BK_CODECC_GATEWAY_DNS_ADDR=127.0.0.1:53
+  BK_CODECC_GATEWAY_DNS_ADDR=127.0.0.1:53 \
+  BK_CODECC_DEVOPS_RABBITMQ_ADDRESSES=$BK_CI_RABBITMQ_ADDR
 # 复用rabbitmq, 生成密码并创建账户, 刷新03env.
 set_env03 BK_CODECC_RABBITMQ_ADDR=$BK_RABBITMQ_IP:5672 BK_CODECC_RABBITMQ_USER=bk_codecc BK_CODECC_RABBITMQ_PASSWORD=$(random_pass) BK_CODECC_RABBITMQ_VHOST=bk_codecc
 # 复用redis, 读取密码, 刷新03env.
@@ -85,5 +89,8 @@ if grep -w repo $CTRL_DIR/install.config|grep -v ^\# ; then
   BK_REPO_HOST=$BK_REPO_HOST
 fi
 
+set -a
+source $CTRL_DIR/load_env.sh
+set +a
 echo "合并env."
 ./bin/merge_env.sh codecc &>/dev/null || true
