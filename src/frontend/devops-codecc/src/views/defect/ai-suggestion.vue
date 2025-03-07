@@ -181,7 +181,9 @@ export default {
               model,
               choices,
             } = JSON.parse(item);
-            if (!model?.includes('hunyuan')) {
+            if (model?.includes('hunyuan')) {
+              this.model = this.$t('混元大模型');
+            } else if (model) {
               this.model = model;
             }
             if (choices.length > 0) {
@@ -239,20 +241,47 @@ export default {
       });
     },
     async handleLike(like) {
+      // 构建新的评价列表
+      const newGoodEvaluates = [...this.likeList];
+      const newBadEvaluates = [...this.unlikeList];
+      const { username } = this.user;
+
+      if (like) {
+        // 处理点赞
+        if (newGoodEvaluates.includes(username)) {
+          newGoodEvaluates.splice(newGoodEvaluates.indexOf(username), 1);
+        } else {
+          newGoodEvaluates.push(username);
+          // 如果在踩列表中存在，则移除
+          const badIndex = newBadEvaluates.indexOf(username);
+          if (badIndex > -1) {
+            newBadEvaluates.splice(badIndex, 1);
+          }
+        }
+      } else {
+        // 处理点踩
+        if (newBadEvaluates.includes(username)) {
+          newBadEvaluates.splice(newBadEvaluates.indexOf(username), 1);
+        } else {
+          newBadEvaluates.push(username);
+          // 如果在赞列表中存在，则移除
+          const goodIndex = newGoodEvaluates.indexOf(username);
+          if (goodIndex > -1) {
+            newGoodEvaluates.splice(goodIndex, 1);
+          }
+        }
+      }
+
       const res = await this.$store.dispatch('defect/postEvaluate', {
         defectId: this.currentFile.entityId,
-        goodEvaluates: this.likeList,
-        badEvaluates: this.unlikeList,
+        goodEvaluates: newGoodEvaluates,
+        badEvaluates: newBadEvaluates,
       });
+
       if (res === true) {
-        const list = like ? this.likeList : this.unlikeList;
-        const otherList = like ? this.unlikeList : this.likeList;
-        if (list.includes(this.user.username)) {
-          list.splice(list.indexOf(this.user.username), 1);
-        } else {
-          list.push(this.user.username);
-          otherList.splice(otherList.indexOf(this.user.username), 1);
-        }
+        // 请求成功后更新视图
+        this.likeList = newGoodEvaluates;
+        this.unlikeList = newBadEvaluates;
         this.$bkMessage({
           theme: 'success',
           message: this.$t('评价成功'),

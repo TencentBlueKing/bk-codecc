@@ -1,14 +1,14 @@
 package com.tencent.bk.codecc.defect.llm.extension
 
 import com.tencent.bk.codecc.defect.llm.http.JsonLenient
+import com.tencent.bk.codecc.defect.pojo.serializable.BkChatCompletionChunk
 import io.ktor.client.call.*
 import io.ktor.client.statement.HttpResponse
 import io.ktor.utils.io.*
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.isActive
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.*
 import kotlin.text.String
 
 private const val STREAM_PREFIX = "data: "
@@ -73,17 +73,36 @@ internal suspend inline fun <reified T> FlowCollector<T>.streamEventsFrom(respon
 
 internal suspend inline fun <reified T> FlowCollector<T>.streamEventsFromForOpenAI(response: HttpResponse) {
     val channel: ByteReadChannel = response.body()
+    // 记录前一个消息的ID,用于填充结束消息块
+    var lastId: String? = null
     try {
         while (currentCoroutineContext().isActive && !channel.isClosedForRead) {
             val line = channel.readUTF8Line() ?: continue
             val jsonContent = line.removePrefix(STREAM_PREFIX)
             when {
                 line.startsWith(STREAM_END_TOKEN) -> break
-                jsonContent == "[DONE]" -> break
+                jsonContent == "[DONE]" -> {
+                    // 发送结束信号对象
+                    emit(
+                        BkChatCompletionChunk(
+                            id = lastId ?: "default-id",
+                            choices = listOf(BkChatCompletionChunk.Choice(
+                                finishReason = "stop"
+                            ))
+                    ) as T)
+                    break
+                }
                 jsonContent.isBlank() -> continue
                 else -> {
                     try {
-                        val value = JsonLenient.decodeFromString<T>(jsonContent)
+                        // 先解析为通用JSON元素来获取id
+                        val element = JsonLenient.parseToJsonElement(jsonContent)
+                        // 安全地尝试获取id字段
+                        element.jsonObject["id"]?.jsonPrimitive?.contentOrNull?.let {
+                            lastId = it
+                        }
+                        // 转换为目标类型
+                        val value = JsonLenient.decodeFromJsonElement<T>(element)
                         emit(value)
                     } catch (e: Exception) {
                         println("JSON解析失败: ${e.message}\n原始内容: $jsonContent")
