@@ -138,7 +138,7 @@
 </template>
 
 <script>
-import { bkSelect, bkOption } from '@tencent/bk-magic-vue';
+import { bkSelect, bkOption } from 'bk-magic-vue';
 import Result from './result.vue';
 
 export default {

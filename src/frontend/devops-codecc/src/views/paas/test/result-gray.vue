@@ -41,7 +41,7 @@
 </template>
 
 <script>
-import {bkCollapse, bkCollapseItem} from '@tencent/bk-magic-vue';
+import {bkCollapse, bkCollapseItem} from 'bk-magic-vue';
 import spinner from '@/images/spinner.svg';
 
 export default {

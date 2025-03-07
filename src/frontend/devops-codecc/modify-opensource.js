@@ -8,6 +8,9 @@ const magicVueList = [
   './src/i18n/index.js',
   './src/App.vue',
   './src/common/permission.js',
+  './src/views/paas/test/design.vue',
+  './src/views/paas/test/random.vue',
+  './src/views/paas/test/result-gray.vue',
 ];
 magicVueList.forEach((item) => {
   let fileData = fs.readFileSync(item).toString();
