@@ -107,6 +107,10 @@ const val EXCHANGE_DEFECT_COMMIT_STAT_NEW = "exchange.defect.commit.stat.new"
 const val ROUTE_DEFECT_COMMIT_STAT_NEW = "route.defect.commit.stat.new"
 const val QUEUE_DEFECT_COMMIT_STAT_NEW = "queue.defect.commit.stat.new"
 
+const val EXCHANGE_DEFECT_COMMIT_SCA_NEW = "exchange.defect.commit.sca.new"
+const val ROUTE_DEFECT_COMMIT_SCA_NEW = "route.defect.commit.sca.new"
+const val QUEUE_DEFECT_COMMIT_SCA_NEW = "queue.defect.commit.sca.new"
+
 const val EXCHANGE_DEFECT_COMMIT_METRICS = "exchange.defect.commit.metrics"
 const val ROUTE_DEFECT_COMMIT_METRICS = "route.defect.commit.metrics"
 const val QUEUE_DEFECT_COMMIT_METRICS = "queue.defect.commit.metrics"
@@ -143,6 +147,10 @@ const val EXCHANGE_DEFECT_COMMIT_SUPER_LARGE = "exchange.defect.commit.super.lar
 const val ROUTE_DEFECT_COMMIT_SUPER_LARGE = "route.defect.commit.super.large"
 const val QUEUE_DEFECT_COMMIT_SUPER_LARGE = "queue.defect.commit.super.large"
 
+const val EXCHANGE_DEFECT_COMMIT_SCA_LARGE = "exchange.defect.commit.sca.large"
+const val ROUTE_DEFECT_COMMIT_SCA_LARGE = "route.defect.commit.sca.large"
+const val QUEUE_DEFECT_COMMIT_SCA_LARGE = "queue.defect.commit.sca.large"
+
 const val EXCHANGE_ANALYZE_DISPATCH = "exchange.analyze.schedule"
 const val ROUTE_ANALYZE_DISPATCH = "route.analyze.schedule"
 const val QUEUE_ANALYZE_DISPATCH = "queue.analyze.schedule"
@@ -154,7 +162,6 @@ const val QUEUE_ANALYZE_DISPATCH_OPENSOURCE = "queue.analyze.schedule.opensource
 const val EXCHANGE_CHECK_THREAD_ALIVE = "exchange.check.thread.alive"
 const val ROUTE_CHECK_THREAD_ALIVE = "route.check.thread.alive"
 const val QUEUE_CHECK_THREAD_ALIVE = "queue.check.thread.alive"
-
 
 const val EXCHANGE_CODECC_GENERAL_NOTIFY = "exchange.codecc.general.notify"
 const val ROUTE_CODECC_EMAIL_NOTIFY = "route.codecc.email.notify"
@@ -241,6 +248,10 @@ const val EXCHANGE_FAST_INCREMENT_STAT = "exchange.fast.increment.stat"
 const val ROUTE_FAST_INCREMENT_STAT = "route.fast.increment.stat"
 const val QUEUE_FAST_INCREMENT_STAT = "queue.fast.increment.stat"
 
+const val EXCHANGE_FAST_INCREMENT_SCA = "exchange.fast.increment.sca"
+const val ROUTE_FAST_INCREMENT_SCA = "route.fast.increment.sca"
+const val QUEUE_FAST_INCREMENT_SCA = "queue.fast.increment.sca"
+
 const val EXCHANGE_FAST_INCREMENT_PINPOINT = "exchange.fast.increment.pinpoint"
 const val ROUTE_FAST_INCREMENT_PINPOINT = "route.fast.increment.pinpoint"
 const val QUEUE_FAST_INCREMENT_PINPOINT = "queue.fast.increment.pinpoint"
@@ -261,7 +272,7 @@ const val EXCHANGE_SCORING_OPENSOURCE = "exchange.scoring.opensource"
 const val ROUTE_SCORING_OPENSOURCE = "route.scoring.opensource"
 const val QUEUE_SCORING_OPENSOURCE = "queue.scoring.opensource"
 
-const val EXCHANGE_ATOM_MONITOR_DATA_REPORT_FANOUT = "e.engine.atom.monitor.data.report.fanout"
+const val EXCHANGE_ATOM_MONITOR_DATA_REPORT_FANOUT = "engine.atom.monitor.data.report.fanout"
 
 const val EXCHANGE_CLOSE_DEFECT_STATISTIC = "exchange.close.defect.statistic"
 const val ROUTE_CLOSE_DEFECT_STATISTIC = "route.close.defect.statistic"
@@ -299,6 +310,7 @@ const val EXCHANGE_ACTIVE_STAT = "exchange.active.stat"
 const val ROUTE_ACTIVE_STAT = "route.active.stat"
 const val QUEUE_ACTIVE_STAT = "queue.active.stat"
 const val QUEUE_ACTIVE_STAT_EXT = "queue.active.stat.ext"
+const val QUEUE_ACTIVE_STAT_CLZZ = "queue.active.stat.clzz"
 
 const val EXCHANGE_TASK_PERSONAL = "exchange.task.personal"
 const val ROUTE_TASK_PERSONAL = "route.task.personal"
@@ -332,6 +344,10 @@ const val EXCHANGE_SMOKE_CHECK = "exchange.smoke.check"
 const val ROUTE_SMOKE_CHECK = "route.smoke.check"
 const val QUEUE_SMOKE_CHECK = "queue.smoke.check"
 
+const val EXCHANGE_TEST_STATUS_REPORT = "exchange.test.status.report"
+const val ROUTE_TEST_STATUS_REPORT = "route.test.status.report"
+const val QUEUE_TEST_STATUS_REPORT = "queue.test.status.report"
+
 const val EXCHANGE_SMOKE_TRIGGER_ANALYZE = "exchange.smoke.trigger.analyze"
 const val ROUTE_SMOKE_TRIGGER_ANALYZE = "route.smoke.trigger.analyze"
 const val QUEUE_SMOKE_TRIGGER_ANALYZE = "queue.smoke.trigger.analyze"
@@ -346,6 +362,9 @@ const val EXCHANGE_SCAN_FINISH = "exchange.scan.finish"
 const val ROUTE_SCAN_FINISH = "route.scan.finish"
 const val QUEUE_SCAN_FINISH_FOR_SYNC_DATA = "queue.scan.finish.sync.data"
 const val QUEUE_SCAN_FINISH_FOR_SCAN_SLA = "queue.scan.finish.scan_sla"
+const val QUEUE_SCAN_FINISH_FOR_TEST_REPORT = "queue.scan.finish.test.report"
+const val QUEUE_SCAN_FINISH_FOR_SYNC_GITHUB_TIMING_DEFECT = "queue.scan.finish.sync.github.timing.defect"
+const val QUEUE_SCAN_FINISH_FOR_CALLBACK = "queue.scan.finish.callback"
 
 const val EXCHANGE_CODECCJOB_TASKLOG_WEBSOCKET = "exchange.codeccjob.tasklog.websocket"
 const val QUEUE_CODECCJOB_TASKLO_WEBSOCKET = "queue.codeccjob.tasklog.websocket."
@@ -361,8 +380,12 @@ const val EXCHANGE_PIPELINE_BUILD_END_CALLBACK = "exchange.pipeline.build.end.ca
 const val ROUTE_PIPELINE_BUILD_END_CALLBACK = "route.pipeline.build.end.callback"
 const val QUEUE_PIPELINE_BUILD_END_CALLBACK = "queue.pipeline.build.end.callback"
 
-const val EXCHANGE_BK_METRICS_DAILY_FANOUT = "e.metrics.statistic.codecc.daily"
-const val EXCHANGE_BK_METRICS_DAULY_TRIGGER = "exchange.metrics.statistic.trigger"
+const val EXCHANGE_PLUGIN_ERROR_CALLBACK = "exchange.plugin.error.callback"
+const val ROUTE_PLUGIN_ERROR_CALLBACK = "route.plugin.error.callback"
+const val QUEUE_PLUGIN_ERROR_CALLBACK = "queue.plugin.error.callback"
+
+const val EXCHANGE_BK_METRICS_DAILY_FANOUT = "metrics.statistic.code.check.daily"
+const val EXCHANGE_BK_METRICS_DAILY_TRIGGER = "exchange.metrics.statistic.trigger"
 const val QUEUE_BK_METRICS_DAILY_TRIGGER = "queue.metrics.statistic.trigger"
 const val ROUTE_BK_METRICS_DAILY_TRIGGER = "route.metrics.statistic.trigger"
 
@@ -382,6 +405,10 @@ const val EXCHANGE_SYNC_USER_TASK_ORG_INFO = "exchange.sync.user.task.org.info"
 const val ROUTE_SYNC_USER_TASK_ORG_INFO = "route.sync.user.task.org.info"
 const val QUEUE_SYNC_USER_TASK_ORG_INFO = "queue.sync.user.task.org.info"
 
+const val EXCHANGE_SYNC_ORG_INFO = "exchange.sync.org.info"
+const val ROUTE_SYNC_ORG_INFO = "route.sync.org.info"
+const val QUEUE_SYNC_ORG_INFO = "queue.sync.org.info"
+
 const val EXCHANGE_DEFECT_CHANGE_LOG = "exchange.defect.change.log"
 const val ROUTE_DEFECT_CHANGE_LOG = "route.defect.change.log"
 const val QUEUE_DEFECT_CHANGE_LOG = "queue.defect.change.log"
@@ -399,3 +426,21 @@ const val ROUTE_DATA_SEPARATION_COOL_DOWN_TRIGGER = "route.data.separation.cool.
 const val QUEUE_DATA_SEPARATION_COOL_DOWN_TRIGGER = "queue.data.separation.cool.down.trigger"
 const val ROUTE_DATA_SEPARATION_FILE_CACHE_PURGING = "route.data.separation.file.cache.purging"
 const val QUEUE_DATA_SEPARATION_FILE_CACHE_PURGING = "queue.data.separation.file.cache.purging"
+
+const val EXCHANGE_TASK_INVALID_TOOL_DEFECT = "exchange.task.invalid.tool.defect"
+const val ROUTE_TASK_INVALID_TOOL_DEFECT = "route.task.invalid.tool.defect"
+const val QUEUE_TASK_INVALID_TOOL_DEFECT = "queue.task.invalid.tool.defect"
+const val ROUTE_TASK_INVALID_TOOL_DEFECT_OPENSOURCE = "route.task.invalid.tool.defect.opensource"
+const val QUEUE_TASK_INVALID_TOOL_DEFECT_OPENSOURCE = "queue.task.invalid.tool.defect.opensource"
+
+const val EXCHANGE_CODECC_CALLBACK_EVENT = "exchange.codecc.callback.event"
+const val ROUTE_CODECC_CALLBACK_EVENT = "route.codecc.callback.event"
+const val QUEUE_CODECC_CALLBACK_EVENT = "queue.codecc.callback.event"
+
+const val EXCHANGE_CODECC_DEFECT_IGNORE_APPROVAL = "exchange.codecc.defect.ignore.approval"
+const val ROUTE_CODECC_DEFECT_IGNORE_APPROVAL = "route.codecc.defect.ignore.approval"
+const val QUEUE_CODECC_DEFECT_IGNORE_APPROVAL = "queue.codecc.defect.ignore.approval"
+
+const val EXCHANGE_CODECC_IGNORE_APPROVAL_TIMING_CHECK = "exchange.codecc.ignore.approval.timing.check"
+const val ROUTE_CODECC_IGNORE_APPROVAL_TIMING_CHECK = "route.codecc.ignore.approval.timing.check"
+const val QUEUE_CODECC_IGNORE_APPROVAL_TIMING_CHECK = "queue.codecc.ignore.approval.timing.check"

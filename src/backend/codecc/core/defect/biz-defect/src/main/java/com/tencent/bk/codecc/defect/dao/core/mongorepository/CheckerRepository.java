@@ -122,6 +122,14 @@ public interface CheckerRepository extends MongoRepository<CheckerDetailEntity, 
                                                                              Collection<String> checkerIds);
 
     /**
+     * 通过规则创建来源查询规则详细信息
+     *
+     * @param checkerSource
+     * @return
+     */
+    List<CheckerDetailEntity> findByCheckerSource(String checkerSource);
+
+    /**
      * 通过工具名和版本删除规则详细信息
      *
      * @param toolName
@@ -146,4 +154,5 @@ public interface CheckerRepository extends MongoRepository<CheckerDetailEntity, 
 
     @Query(fields = "{'checker_key': 1, 'checker_version': 1, 'tool_name': 1}")
     List<CheckerDetailEntity> findByCheckerVersionIn(Collection<Integer> versions, Pageable pageable);
+
 }

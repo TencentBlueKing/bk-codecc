@@ -239,6 +239,18 @@ public interface BuildTaskRestResource {
             Long taskId
     );
 
+    @ApiOperation("路径屏蔽列表")
+    @Path("/filter/path/pipeline/{pipelineId}")
+    @GET
+    Result<FilterPathOutVO> filterPath(
+            @ApiParam(value = "流水线ID", required = true)
+            @PathParam("pipelineId")
+            String pipelineId,
+            @ApiParam(value = "标识", required = false)
+            @QueryParam("mark")
+            String mark
+    );
+
     @ApiOperation("更新code.yml的路径屏蔽")
     @Path("/code/yml/filter/update")
     @POST

@@ -20,7 +20,7 @@ import java.util.List;
 
 /**
  * 工具项目分类持久
- * 
+ *
  * @date 2021/1/4
  * @version V1.0
  */
@@ -49,4 +49,20 @@ public interface GrayTaskCategoryRepository extends MongoRepository<GrayTaskCate
      * @return
      */
     GrayTaskCategoryEntity findFirstByProjectIdAndGongfengProjectId(String projectId, Integer gongfengProjectId);
+
+    /**
+     * 根据项目id和状态查询和语言
+     * @param projectId
+     * @param status
+     * @return
+     */
+    List<GrayTaskCategoryEntity> findByProjectIdAndStatusAndLang(String projectId, Integer status, Long lang);
+
+    /**
+     * 通过工蜂项目id和语言查找
+     * @param gongfengProjectId
+     * @return
+     */
+    GrayTaskCategoryEntity findFirstByProjectIdAndGongfengProjectIdAndLang(
+            String projectId, Integer gongfengProjectId, Long lang);
 }

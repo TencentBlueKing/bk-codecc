@@ -13,8 +13,7 @@ import java.util.Map;
  * @version V1.0
  * @date 2019/11/21
  */
-public interface ToolMetaCacheService
-{
+public interface ToolMetaCacheService {
     /**
      * 查询工具类型
      *

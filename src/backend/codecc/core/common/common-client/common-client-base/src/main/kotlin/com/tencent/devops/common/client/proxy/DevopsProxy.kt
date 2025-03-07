@@ -28,7 +28,8 @@ class DevopsProxy constructor(
             projectIdThreadLocal.set(args[argIndex])
         } else {
             if ((clz.simpleName.equals("ServicePublicScanResource") && method.name.equals("createCodeCCScanProject"))
-                    || clz.simpleName.equals("ServiceDockerImageResource")
+                    || clz.simpleName.equals("ServiceDockerImageResource") ||
+                    (clz.simpleName.equals("ServiceRepositoryResource") && method.name.equals("create"))
             ) {
                 gatewayTagThreadLocal.set(autoTag)
             }
@@ -36,8 +37,8 @@ class DevopsProxy constructor(
             method.parameters.forEachIndexed { index, parameter ->
                 if (parameter.annotations.any {
                             when (it) {
-                                is PathParam -> it.value == "projectId"
-                                is QueryParam -> it.value == "projectId"
+                                is PathParam -> it.value == "projectId" || it.value == "projectCode"
+                                is QueryParam -> it.value == "projectId" || it.value == "projectCode"
                                 is HeaderParam -> it.value == AUTH_HEADER_DEVOPS_PROJECT_ID
                                 else -> false
                             }
@@ -48,7 +49,7 @@ class DevopsProxy constructor(
             }
         }
 
-        return  try {
+        return try {
             val result = method.invoke(any, *args)
             // 后置处理
             val invokeHandlers = DevopsAfterInvokeHandlerFactory.SINGLETON?.getInvokeHandlers() ?: emptyList()

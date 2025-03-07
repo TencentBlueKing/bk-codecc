@@ -2,6 +2,11 @@ package com.tencent.bk.codecc.defect.dao.defect.mongotemplate;
 
 import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.model.TaskLogOverviewEntity;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,26 +14,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.MatchOperation;
-import org.springframework.data.mongodb.core.aggregation.GroupOperation;
-import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
-import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.query.Collation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
 @Repository
 public class TaskLogOverviewDao {
+
     @Autowired
     private MongoTemplate defectMongoTemplate;
 
@@ -50,6 +49,20 @@ public class TaskLogOverviewDao {
     public TaskLogOverviewEntity findOneByTaskIdAndBuildId(Long taskId, String buildId) {
         Query query = Query.query(Criteria.where("task_id").is(taskId)
                 .and("build_id").is(buildId));
+        return defectMongoTemplate.findOne(query, TaskLogOverviewEntity.class);
+    }
+
+    /**
+     * 根据TaskId与BuildId查询, 只返回部分字段
+     *
+     * @param taskId
+     * @param buildId
+     * @return
+     */
+    public TaskLogOverviewEntity tinyFindOneByTaskIdAndBuildId(Long taskId, String buildId) {
+        Query query = Query.query(Criteria.where("task_id").is(taskId)
+                .and("build_id").is(buildId));
+        query.fields().include("task_id", "build_id", "status", "tool_list");
         return defectMongoTemplate.findOne(query, TaskLogOverviewEntity.class);
     }
 
@@ -83,10 +96,10 @@ public class TaskLogOverviewDao {
     /**
      * 查询任务维度的分析次数
      *
-     * @param taskIds   任务ID集合
-     * @param status    分析状态
+     * @param taskIds 任务ID集合
+     * @param status 分析状态
      * @param startTime 开始范围
-     * @param endTime   结束范围
+     * @param endTime 结束范围
      * @return long
      */
     public Long queryTaskAnalyzeCount(Collection<Long> taskIds, Integer status, Long startTime, Long endTime) {
@@ -105,15 +118,15 @@ public class TaskLogOverviewDao {
     /**
      * 按任务ID分组获取时间范围内的build id
      *
-     * @param taskIds   任务ID集合
-     * @param status    分析状态
+     * @param taskIds 任务ID集合
+     * @param status 分析状态
      * @param startTime 开始范围
-     * @param endTime   结束范围
+     * @param endTime 结束范围
      * @return list
      */
     @Deprecated
     public List<TaskLogOverviewEntity> findBuildIdsByStartTime(Collection<Long> taskIds, Integer status,
-                                                               Long startTime, Long endTime) {
+            Long startTime, Long endTime) {
         MatchOperation match = getIndexMatchOpera(taskIds, status, startTime, endTime);
 
         // 以开始时间倒序
@@ -138,7 +151,7 @@ public class TaskLogOverviewDao {
      *
      * @param taskIds 任务ID集合
      * @param buildIds 构建ID集合
-     * @param status  分析状态
+     * @param status 分析状态
      * @return list
      */
     public List<TaskLogOverviewEntity> findLatestAnalyzeStatus(Collection<Long> taskIds, Collection<String> buildIds,
@@ -208,11 +221,12 @@ public class TaskLogOverviewDao {
 
     /**
      * 根据taskId和buildId查询最新buildId
+     *
      * @param searchMap 搜索字段map
      * @return
      */
     public List<TaskLogOverviewEntity> findLastBuildIdWithTaskIdAndBuildId(List<Map.Entry<Long, Set<String>>>
-                                                                                   searchMap) {
+            searchMap) {
         MatchOperation match = getMatchOperationWithTaskIdAndBuildId(searchMap);
 
         // 根据开始时间倒序
@@ -234,14 +248,30 @@ public class TaskLogOverviewDao {
     }
 
     /**
+     * 更新插件运行错误信息
+     *
+     * @param taskId
+     * @param buildId
+     * @param errorCode
+     * @param errorType
+     */
+    public void updatePluginErrorInfo(Long taskId, String buildId, Integer errorCode, Integer errorType) {
+        Query query = Query.query(Criteria.where("task_id").is(taskId)
+                .and("build_id").is(buildId));
+        Update update = Update.update("plugin_error_code", errorCode).set("plugin_error_type", errorType);
+        defectMongoTemplate.updateFirst(query, update, TaskLogOverviewEntity.class);
+    }
+
+    /**
      * 组建筛选条件
+     *
      * @param searchMap
      * @return
      */
     private MatchOperation getMatchOperationWithTaskIdAndBuildId(List<Map.Entry<Long, Set<String>>>
-                                         searchMap) {
+            searchMap) {
         List<Criteria> criteriaList = Lists.newArrayList();
-        for (Map.Entry<Long, Set<String>> taskAndBuildSet: searchMap) {
+        for (Map.Entry<Long, Set<String>> taskAndBuildSet : searchMap) {
             criteriaList.add(Criteria.where("task_id").is(taskAndBuildSet.getKey())
                     .and("build_id").in(taskAndBuildSet.getValue()));
         }

@@ -43,7 +43,7 @@
           <div id="authorsChart" ref="authorsChart"></div>
         </div>
         <div class="authors-table">
-          <div class="table">
+          <div>
             <bk-table :data="authorsData" :outer-border="false">
               <bk-table-column
                 show-overflow-tooltip

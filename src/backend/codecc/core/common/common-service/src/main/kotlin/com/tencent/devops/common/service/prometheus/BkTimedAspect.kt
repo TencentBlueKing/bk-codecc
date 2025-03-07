@@ -27,6 +27,7 @@
 
 package com.tencent.devops.common.service.prometheus
 
+import com.tencent.devops.common.api.exception.CodeCCException
 import io.micrometer.core.instrument.LongTaskTimer
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
@@ -51,7 +52,7 @@ import javax.ws.rs.Path
 @Aspect
 @NonNullApi
 class BkTimedAspect(
-        private val registry: MeterRegistry
+    private val registry: MeterRegistry
 ) {
     @Value("\${spring.application.name:#{null}}")
     val applicationName: String? = null
@@ -76,35 +77,35 @@ class BkTimedAspect(
 
     @Throws(Throwable::class)
     private fun processWithTimer(
-            pjp: ProceedingJoinPoint,
-            timed: BkTimed,
-            metricName: String,
-            stopWhenCompleted: Boolean
+        pjp: ProceedingJoinPoint,
+        timed: BkTimed,
+        metricName: String,
+        stopWhenCompleted: Boolean
     ): Any {
         val sample = Timer.start(registry)
         if (stopWhenCompleted) {
             return try {
                 (pjp.proceed() as CompletionStage<*>).whenComplete { _: Any?, throwable: Throwable? ->
                     record(
-                            pjp,
-                            timed,
-                            metricName,
-                            sample,
-                            getExceptionTag(throwable)
+                        pjp,
+                        timed,
+                        metricName,
+                        sample,
+                        throwable
                     )
                 }
             } catch (ex: Exception) {
                 logger.error("metricName: $metricName cause error", ex)
-                record(pjp, timed, metricName, sample, ex.javaClass.simpleName)
+                record(pjp, timed, metricName, sample, ex)
                 throw ex
             }
         }
-        var exceptionClass = DEFAULT_EXCEPTION_TAG_VALUE
+        var exceptionClass: Throwable? = null
         return try {
             pjp.proceed()
         } catch (ex: Exception) {
             logger.error("metricName: $metricName cause error", ex)
-            exceptionClass = ex.javaClass.simpleName
+            exceptionClass = ex
             throw ex
         } finally {
             record(pjp, timed, metricName, sample, exceptionClass)
@@ -112,17 +113,18 @@ class BkTimedAspect(
     }
 
     private fun record(
-            pjp: ProceedingJoinPoint,
-            timed: BkTimed,
-            metricName: String,
-            sample: Timer.Sample,
-            exceptionClass: String
+        pjp: ProceedingJoinPoint,
+        timed: BkTimed,
+        metricName: String,
+        sample: Timer.Sample,
+        throwable: Throwable?
     ) {
         try {
             val builder = Timer.builder(metricName)
                     .description(timed.description)
                     .tags(*timed.extraTags)
-                    .tags(EXCEPTION_TAG, exceptionClass)
+                    .tags(EXCEPTION_TAG, getExceptionTag(throwable))
+                    .tags(CODECC_ERROR_CODE, getCodeCCErrorCode(throwable))
                     .tags(tagsBasedOnJoinPoint(pjp))
                     .tag(APPLICATION_TAG, applicationName ?: "")
                     .publishPercentileHistogram(timed.histogram)
@@ -131,7 +133,7 @@ class BkTimedAspect(
                 builder.tag(PATH_TAG, getPathWhenTagPath(pjp))
             }
             sample.stop(
-                    builder.register(registry)
+                builder.register(registry)
             )
         } catch (e: Exception) {
             logger.warn("record failed", e)
@@ -140,8 +142,8 @@ class BkTimedAspect(
 
     private fun tagsBasedOnJoinPoint(pjp: ProceedingJoinPoint): Iterable<Tag> {
         return Tags.of(
-                "class", pjp.staticPart.signature.declaringTypeName,
-                "method", pjp.staticPart.signature.name
+            "class", pjp.staticPart.signature.declaringTypeName,
+            "method", pjp.staticPart.signature.name
         )
     }
 
@@ -154,13 +156,21 @@ class BkTimedAspect(
         } else throwable.cause?.javaClass?.simpleName ?: "unknown"
     }
 
+    private fun getCodeCCErrorCode(throwable: Throwable?): String {
+        return if (throwable != null && throwable is CodeCCException) {
+            throwable.errorCode
+        } else {
+            DEFAULT_EXCEPTION_TAG_VALUE
+        }
+    }
+
     @Suppress("NAME_SHADOWING")
     @Throws(Throwable::class)
     private fun processWithLongTaskTimer(
-            pjp: ProceedingJoinPoint,
-            timed: BkTimed,
-            metricName: String,
-            stopWhenCompleted: Boolean
+        pjp: ProceedingJoinPoint,
+        timed: BkTimed,
+        metricName: String,
+        stopWhenCompleted: Boolean
     ): Any {
         val sample = buildLongTaskTimer(pjp, timed, metricName).map { obj: LongTaskTimer -> obj.start() }
         return if (stopWhenCompleted) {
@@ -168,7 +178,7 @@ class BkTimedAspect(
                 (pjp.proceed() as CompletionStage<*>).whenComplete { _: Any?, _: Throwable? ->
                     sample.ifPresent { sample: LongTaskTimer.Sample ->
                         stopTimer(
-                                sample
+                            sample
                         )
                     }
                 }
@@ -176,7 +186,7 @@ class BkTimedAspect(
                 logger.error("metricName: $metricName cause error", ex)
                 sample.ifPresent { sample: LongTaskTimer.Sample ->
                     stopTimer(
-                            sample
+                        sample
                     )
                 }
                 throw ex
@@ -189,7 +199,7 @@ class BkTimedAspect(
         } finally {
             sample.ifPresent { sample: LongTaskTimer.Sample ->
                 stopTimer(
-                        sample
+                    sample
                 )
             }
         }
@@ -207,17 +217,17 @@ class BkTimedAspect(
      * Secure long task timer creation - it should not disrupt the application flow in case of exception
      */
     private fun buildLongTaskTimer(
-            pjp: ProceedingJoinPoint,
-            timed: BkTimed,
-            metricName: String
+        pjp: ProceedingJoinPoint,
+        timed: BkTimed,
+        metricName: String
     ): Optional<LongTaskTimer> {
         return try {
             Optional.of(
-                    LongTaskTimer.builder(metricName)
-                            .description(timed.description)
-                            .tags(*timed.extraTags)
-                            .tags(tagsBasedOnJoinPoint(pjp))
-                            .register(registry)
+                LongTaskTimer.builder(metricName)
+                        .description(timed.description)
+                        .tags(*timed.extraTags)
+                        .tags(tagsBasedOnJoinPoint(pjp))
+                        .register(registry)
             )
         } catch (e: Exception) {
             Optional.empty()
@@ -251,11 +261,12 @@ class BkTimedAspect(
         const val DEFAULT_METRIC_NAME = "bk_method_time"
         const val DEFAULT_EXCEPTION_TAG_VALUE = "null"
         const val EXCEPTION_TAG = "exception"
+        const val CODECC_ERROR_CODE = "codecc_error_code"
         const val APPLICATION_TAG = "application"
         const val PATH_TAG = "path"
 
         private val logger = LoggerFactory.getLogger(BkTimedAspect::class.java)
 
-        private val pathMap = ConcurrentHashMap<String,String>()
+        private val pathMap = ConcurrentHashMap<String, String>()
     }
 }

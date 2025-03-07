@@ -233,4 +233,18 @@ public class CheckerDetailEntity extends CommonEntity {
      */
     @Field("publisher")
     private String publisher;
+
+    /**
+     * 规则创建来源：用户自定义 / 工具集成
+     */
+    @Field("checker_source")
+    @Indexed
+    private String checkerSource;
+
+    /**
+     * 用户自定义规则的创建来源项目ID
+     */
+    @Field("created_by_project_id")
+    private String createdByProjectId;
+
 }

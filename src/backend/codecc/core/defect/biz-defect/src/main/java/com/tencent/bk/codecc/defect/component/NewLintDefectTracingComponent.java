@@ -99,19 +99,17 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
 
         //如果代码没有变化，本次上报的告警全部被去重完，则不需要做聚类，直接根据去重规则判断告警的状态
         if (CollectionUtils.isEmpty(defectList)) {
+            Set<String> whitePaths = new HashSet<>();
+            if (buildEntity.getWhitePaths() != null) {
+                whitePaths.addAll(buildEntity.getWhitePaths());
+            } else if (CollectionUtils.isNotEmpty(taskVO.getWhitePaths())) {
+                whitePaths.addAll(taskVO.getWhitePaths());
+            }
+
             log.info("no file change since last check!");
             List<LintDefectV2Entity> upsertDefectList = updateOriginalDefectStatus(originalDefectList,
-                    currentDefectList,
-                    new HashSet<>(taskVO.getWhitePaths()),
-                    filterPathSet,
-                    buildEntity,
-                    transferAuthorList);
-            saveDefectFile(taskId,
-                    toolName,
-                    filterPathSet,
-                    new HashSet<>(taskVO.getWhitePaths()),
-                    buildEntity,
-                    upsertDefectList);
+                    currentDefectList, whitePaths, filterPathSet, buildEntity, transferAuthorList);
+            saveDefectFile(taskId, toolName, filterPathSet, whitePaths, buildEntity, upsertDefectList);
 
             return new AsyncResult<>(true);
         }

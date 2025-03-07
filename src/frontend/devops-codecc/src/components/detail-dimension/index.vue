@@ -32,7 +32,7 @@
             </div>
             <div class="name">{{ $t('新增问题数') }}</div>
           </bk-col>
-          <bk-col class="fixed">
+          <bk-col>
             <div class="number" @click="handleToPage('defect')">
               {{ item.baseClusterResultVO.fixDefectCount | formatUndefNum }}
             </div>
@@ -108,7 +108,7 @@
             </div>
             <div class="name">{{ $t('新增问题数') }}</div>
           </bk-col>
-          <bk-col class="fixed">
+          <bk-col>
             <div class="number" @click="handleToPage('security')">
               {{ item.baseClusterResultVO.fixDefectCount | formatUndefNum }}
             </div>
@@ -201,7 +201,7 @@
             </div>
             <div class="name">{{ $t('问题趋势') }}</div>
           </bk-col>
-          <bk-col class="fixed">
+          <bk-col>
             <div class="number" @click="handleToPage('standard')">
               {{
                 (item.baseClusterResultVO.averageThousandDefect &&
@@ -305,7 +305,7 @@
             </div>
             <div class="name">{{ $t('风险函数个数趋势') }}</div>
           </bk-col>
-          <bk-col class="fixed">
+          <bk-col>
             <div class="number" @click="handleToPage('ccn')">
               {{
                 (item.baseClusterResultVO.averageThousandDefect &&
@@ -381,7 +381,7 @@
             </div>
             <div class="name">{{ $t('重复文件趋势') }}</div>
           </bk-col>
-          <bk-col class="fixed">
+          <bk-col>
             <div class="number" @click="handleToPage('dupc')">
               {{
                 item.baseClusterResultVO.dupRate &&
@@ -419,6 +419,46 @@
               </i>
             </div>
             <div class="name">{{ $t('重复率趋势') }}</div>
+          </bk-col>
+        </bk-row>
+      </bk-container>
+      <bk-container
+        :col="5"
+        :gutter="4"
+        v-else-if="
+          item.baseClusterResultVO &&
+            item.baseClusterResultVO.type === 'SCA' &&
+            item.baseClusterResultVO
+        "
+      >
+        <bk-row>
+          <bk-col class="card-name">
+            <div class="desc">{{ $t('软件成分') }}</div>
+            <div
+              class="name"
+              :title="$t('软件成分')"
+            >
+              {{ item.baseClusterResultVO.toolNum || 0 }}{{ $t('个工具') }}
+            </div>
+          </bk-col>
+          <bk-col class="history">
+            <div class="number" @click="handleToPage('sca-pkg')">
+              {{ item.baseClusterResultVO.packageCount | formatUndefNum }}
+            </div>
+            <div class="name">{{ $t('组件数') }}</div>
+          </bk-col>
+          <!-- 隐藏漏洞数 -->
+          <!-- <bk-col class="new">
+            <div class="number" @click="handleToPage('sca-vuln')">
+              {{ item.baseClusterResultVO.newVulCount | formatUndefNum }}
+            </div>
+            <div class="name">{{ $t('漏洞数') }}</div>
+          </bk-col> -->
+          <bk-col>
+            <div class="number" @click="handleToPage('sca-lic')">
+              {{ item.baseClusterResultVO.licenseCount | formatUndefNum }}
+            </div>
+            <div class="name">{{ $t('许可证数') }}</div>
           </bk-col>
         </bk-row>
       </bk-container>

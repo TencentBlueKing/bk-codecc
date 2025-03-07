@@ -4,5 +4,6 @@ data class GrayToolProjectDto(
     val gongfengProjectId: Int,
     val toolName: String,
     val category: String,
-    val user: String
+    val user: String,
+    val language: String?
 )

@@ -13,6 +13,7 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.model.CodeCommentEntity;
 import com.tencent.bk.codecc.defect.model.SingleCommentEntity;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
@@ -45,6 +46,9 @@ public class LintDefectOperateBizServiceImpl extends AbstractDefectOperateBizSer
     private LintDefectV2Repository lintDefectV2Repository;
 
     @Autowired
+    private LintDefectV2Dao lintDefectV2Dao;
+
+    @Autowired
     private Client client;
 
     @Value("${codecc.public.url}")
@@ -67,15 +71,17 @@ public class LintDefectOperateBizServiceImpl extends AbstractDefectOperateBizSer
         if (StringUtils.isBlank(commentId)) {
             LintDefectV2Entity defectV2Entity = lintDefectV2Repository.findById(defectId).orElse(null);
             if (null != defectV2Entity) {
-                CodeCommentEntity codeCommentEntity = new CodeCommentEntity();
                 SingleCommentEntity singleCommentEntity = new SingleCommentEntity();
                 BeanUtils.copyProperties(singleCommentVO, singleCommentEntity);
                 singleCommentEntity.setSingleCommentId(new ObjectId().toString());
                 Long currentTime = System.currentTimeMillis();
                 singleCommentEntity.setCommentTime(currentTime / ComConstants.COMMON_NUM_1000L);
-                codeCommentEntity.setCommentList(new ArrayList<SingleCommentEntity>() {{
-                    add(singleCommentEntity);
-                }});
+                CodeCommentEntity codeCommentEntity = new CodeCommentEntity();
+                codeCommentEntity.setCommentList(new ArrayList<SingleCommentEntity>() {
+                    {
+                        add(singleCommentEntity);
+                    }
+                });
                 codeCommentEntity.setCreatedDate(currentTime);
                 codeCommentEntity.setUpdatedDate(currentTime);
                 codeCommentEntity.setCreatedBy(singleCommentVO.getUserName());
@@ -84,8 +90,7 @@ public class LintDefectOperateBizServiceImpl extends AbstractDefectOperateBizSer
                 defectV2Entity.setCodeComment(codeCommentEntity);
                 lintDefectV2Repository.save(defectV2Entity);
             }
-        }
-        else {
+        } else {
             saveCodeComment(commentId, singleCommentVO);
         }
 
@@ -97,5 +102,10 @@ public class LintDefectOperateBizServiceImpl extends AbstractDefectOperateBizSer
                     taskId, toolName, defectId, userName, nameCn, fileName
             );
         }
+    }
+
+    @Override
+    protected void deleteDefectCommentRelated(String defectId, String userName) {
+        lintDefectV2Dao.deleteCommentRelated(defectId, userName);
     }
 }

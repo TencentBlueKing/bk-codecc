@@ -12,8 +12,6 @@
 
 package com.tencent.bk.codecc.defect.service.impl;
 
-import static com.tencent.devops.common.constant.ComConstants.StaticticItem;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -25,11 +23,11 @@ import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.DefectDao;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.dao.redis.StatisticDao;
 import com.tencent.bk.codecc.defect.mapping.DefectConverter;
-import com.tencent.bk.codecc.defect.model.TaskLogEntity;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.pojo.statistic.CommonDefectStatisticModel;
 import com.tencent.bk.codecc.defect.pojo.statistic.DefectStatisticModel;
+import com.tencent.bk.codecc.defect.service.BuildService;
 import com.tencent.bk.codecc.defect.service.FilterPathService;
 import com.tencent.bk.codecc.defect.service.IUpdateDefectBizService;
 import com.tencent.bk.codecc.defect.service.file.ScmFileInfoService;
@@ -45,6 +43,14 @@ import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.MarkStatus;
 import com.tencent.devops.common.util.FileUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
+import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,13 +61,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.util.Pair;
-import org.springframework.stereotype.Service;
+
+import static com.tencent.devops.common.constant.ComConstants.StaticticItem;
 
 /**
  * 更新告警服务实现类
@@ -98,6 +99,8 @@ public class UpdateDefectBizServiceImpl implements IUpdateDefectBizService {
     private LintDefectV2Repository lintDefectV2Repository;
     @Autowired
     private DefectConverter defectConverter;
+    @Autowired
+    private BuildService buildService;
 
     /**
      * 更新告警状态
@@ -118,11 +121,7 @@ public class UpdateDefectBizServiceImpl implements IUpdateDefectBizService {
         List<DefectDetailVO> defectList = updateDefectVO.getDefectList();
         String buildId = updateDefectVO.getBuildId();
         Map<String, Integer> checkerCountMap = new HashMap<>();
-        if (CollectionUtils.isNotEmpty(defectList)) {
-            TaskLogEntity taskLogEntity =
-                    taskLogRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
-            String buildNum = taskLogEntity.getBuildNum();
-
+        if (CollectionUtils.isNotEmpty(defectList) && StringUtils.isNotBlank(buildId)) {
             TaskDetailVO taskDetailVO = thirdPartySystemCaller.getTaskInfoWithoutToolsByTaskId(taskId);
 
             Map<String, DefectDetailVO> defectDetailVOMap = defectList.stream()
@@ -138,9 +137,8 @@ public class UpdateDefectBizServiceImpl implements IUpdateDefectBizService {
             );
             Set<String> filterPathSet = filterPathService.getFilterPaths(taskDetailVO, toolName);
             Set<String> whitePaths = new HashSet<>();
-            if (CollectionUtils.isNotEmpty(taskDetailVO.getWhitePaths())) {
-                whitePaths.addAll(taskDetailVO.getWhitePaths());
-            }
+            String buildNum = buildService.getBuildInfo(buildId, taskId, toolName,
+                    taskDetailVO, whitePaths);
             ArrayList<CommonDefectEntity> toStatisticDefectList = new ArrayList<>();
 
             // 统计新增、关闭、遗留

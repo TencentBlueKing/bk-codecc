@@ -74,6 +74,12 @@ public class GrayToolProjectServiceImpl implements GrayToolProjectService {
     }
 
     @Override
+    public Boolean batchUpdateGrayProject(String userId, String toolName, Set<String> oldProjectIds,
+            Set<String> newProjectIds) {
+        return true;
+    }
+
+    @Override
     public Page<GrayToolProjectVO> queryGrayToolProjectList(GrayToolProjectReqVO reqVO, Integer pageNum,
             Integer pageSize, String sortField, String sortType) {
         return new Page<>(0, pageNum, pageSize, 0, Collections.emptyList());
@@ -85,7 +91,7 @@ public class GrayToolProjectServiceImpl implements GrayToolProjectService {
     }
 
     @Override
-    public void selectGrayTaskPool(String toolName, String stage, String userName) {
+    public void selectGrayTaskPool(String toolName, String langCode, String stage, String userName) {
 
     }
 
@@ -95,7 +101,7 @@ public class GrayToolProjectServiceImpl implements GrayToolProjectService {
     }
 
     @Override
-    public TriggerGrayToolVO triggerGrayToolTasks(String toolName, String taskNum) {
+    public TriggerGrayToolVO triggerGrayToolTasks(String toolName, String taskNum, String langCode) {
         String codeccBuildId = UUIDUtil.INSTANCE.generate();
         return new TriggerGrayToolVO(codeccBuildId, Collections.emptySet());
     }

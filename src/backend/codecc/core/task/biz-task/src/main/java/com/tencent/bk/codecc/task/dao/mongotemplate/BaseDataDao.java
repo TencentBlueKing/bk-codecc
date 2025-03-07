@@ -16,6 +16,7 @@ package com.tencent.bk.codecc.task.dao.mongotemplate;
 import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.task.model.BaseDataEntity;
 import com.tencent.devops.common.api.pojo.Page;
+import com.tencent.devops.common.constant.ComConstants;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -110,6 +111,41 @@ public class BaseDataDao {
         // 流水线id支持匹配查询
         if (StringUtils.isNotBlank(paramCode)) {
             criteria.and("param_code").regex(paramCode);
+        }
+
+        long totalCount = mongoTemplate.count(new Query(criteria), BaseDataEntity.class);
+
+        // 分页排序
+        int pageNumber = pageable.getPageNumber();
+        int pageSize = pageable.getPageSize();
+
+        SkipOperation skip = Aggregation.skip(Long.valueOf(pageNumber * pageSize));
+        SortOperation sort = Aggregation.sort(pageable.getSort());
+        LimitOperation limit = Aggregation.limit(pageSize);
+
+        Aggregation aggregation = Aggregation.newAggregation(Aggregation.match(criteria), sort, skip, limit);
+        AggregationResults<BaseDataEntity> results =
+                mongoTemplate.aggregate(aggregation, "t_base_data", BaseDataEntity.class);
+
+        return new Page<>(pageNumber + 1, pageSize, totalCount, results.getMappedResults());
+    }
+
+    /**
+     * 按paramType分页查询
+     *
+     * @param paramType 类型
+     * @param pageable  page
+     * @return page
+     */
+    public Page<BaseDataEntity> findGitHubSyncPage(String paramType, Pageable pageable) {
+        Criteria criteria = new Criteria();
+
+        // 如果paramType为空，则将组和单仓库都加入到查询条件中
+        if (StringUtils.isNotEmpty(paramType)) {
+            criteria.and("param_type").is(paramType);
+        } else {
+            criteria.and("param_type").in(ComConstants.SYNC_GITHUB_CONFIG_GROUP_REPO,
+                    ComConstants.SYNC_GITHUB_CONFIG_SINGLE_REPO);
         }
 
         long totalCount = mongoTemplate.count(new Query(criteria), BaseDataEntity.class);

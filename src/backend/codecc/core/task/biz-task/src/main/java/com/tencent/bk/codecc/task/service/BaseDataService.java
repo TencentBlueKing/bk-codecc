@@ -27,6 +27,7 @@
 package com.tencent.bk.codecc.task.service;
 
 import com.tencent.bk.codecc.task.vo.DefaultFilterPathVO;
+import com.tencent.bk.codecc.task.vo.GithubSyncVO;
 import com.tencent.bk.codecc.task.vo.ReleaseDateVO;
 import com.tencent.bk.codecc.task.vo.pipeline.PipelineTaskLimitVO;
 import com.tencent.devops.common.api.BaseDataVO;
@@ -210,4 +211,29 @@ public interface BaseDataService {
      */
     Boolean updateByParamTypeAndParamNameAndParamValue(String paramType, String paramName, String paramValue,
             long updatedDate, String updateBy);
+
+    /**
+     * 查看GitHub同步仓库
+     * @param paramType 仓库类型
+     * @param pageNum 页码
+     * @param pageSize 页数
+     * @return page
+     */
+    Page<GithubSyncVO> queryGitHubSyncPage(String paramType, Integer pageNum, Integer pageSize);
+
+    /**
+     * 更新GitHub同步设置
+     *
+     * @param reqVO 请求体
+     * @return boolean
+     */
+    Boolean updateGitHubSync(GithubSyncVO reqVO);
+
+    /**
+     * 删除GitHub同步设置
+     * @param entityId 实体id
+     * @param userId 用户id
+     * @return boolean
+     */
+    Boolean deleteGitHubSync(String entityId, String userId);
 }

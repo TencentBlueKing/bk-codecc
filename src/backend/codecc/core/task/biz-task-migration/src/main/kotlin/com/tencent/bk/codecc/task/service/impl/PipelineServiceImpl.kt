@@ -44,6 +44,7 @@ import com.tencent.bk.codecc.task.vo.BuildEnvVO
 import com.tencent.bk.codecc.task.vo.PipelineBasicInfoVO
 import com.tencent.bk.codecc.task.vo.RepoInfoVO
 import com.tencent.bk.codecc.task.vo.checkerset.ToolCheckerSetVO
+import com.tencent.bkrepo.common.api.exception.NotFoundException
 import com.tencent.devops.common.api.enums.RepositoryType
 import com.tencent.devops.common.api.enums.ScmType
 import com.tencent.devops.common.api.exception.CodeCCException
@@ -647,6 +648,28 @@ open class PipelineServiceImpl @Autowired constructor(
             throw CodeCCException(CommonMessageCode.BLUE_SHIELD_INTERNAL_ERROR)
         }
         logger.info("delete codecc task schedule successfully! project id: $projectId, pipeline id: $pipelineId")
+    }
+
+    override fun getRepoUrl(projectId: String?, repoHashId: String?): String {
+        if (projectId.isNullOrBlank() || repoHashId.isNullOrBlank()) {
+            return ""
+        }
+
+        val repoResult = try {
+            client.getDevopsService(ServiceRepositoryResource::class.java).get(projectId, repoHashId, RepositoryType.ID)
+        } catch (illegalArgument: IllegalArgumentException) {
+            logger.warn("illegal argument: ${illegalArgument.message}")
+            null
+        } catch (notFound: NotFoundException) {
+            logger.warn("repo not found: ${notFound.message}")
+            null
+        }
+
+        if (repoResult == null || repoResult.isNotOk() || repoResult.data == null || repoResult.data!!.url.isBlank()) {
+            return ""
+        }
+
+        return repoResult.data!!.url
     }
 
     override fun getRepoDetail(

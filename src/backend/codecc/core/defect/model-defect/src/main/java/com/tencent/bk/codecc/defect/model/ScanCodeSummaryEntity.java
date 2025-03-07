@@ -19,7 +19,8 @@ import org.springframework.data.mongodb.core.mapping.Field;
                 name = "createfrom_1_bgid_1_projectid_1_scanfinishtime_1",
                 def = "{'create_from': 1, 'bg_id': 1, 'project_id': 1, 'scan_finish_time': 1}",
                 background = true
-        )
+        ),
+        @CompoundIndex(name = "task_id_1_build_id_1", def = "{'task_id': 1, 'build_id': 1}", background = true)
 })
 public class ScanCodeSummaryEntity extends CommonEntity {
 

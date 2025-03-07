@@ -231,4 +231,9 @@ public class ToolMetaEntity extends CommonEntity
     @Field("cluster_type")
     private String clusterType;
 
+    /**
+     * 工具是否需要 git diff 信息
+     */
+    @Field("git_diff_required")
+    private Boolean gitDiffRequired;
 }

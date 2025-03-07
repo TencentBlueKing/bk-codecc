@@ -53,11 +53,13 @@ public interface TaskConstants
 
     /**
      * 任务状态，0-启用，1-停用
+     * 3-测试任务
      */
     enum TaskStatus {
         ENABLE(0),
         DISABLE(1),
-        COLD(2);
+        COLD(2),
+        TEST(3);
 
         private Integer value;
 

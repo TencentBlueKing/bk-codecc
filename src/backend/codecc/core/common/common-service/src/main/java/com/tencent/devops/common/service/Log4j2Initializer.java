@@ -37,6 +37,7 @@ import org.apache.logging.log4j.core.config.builder.api.LayoutComponentBuilder;
 import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFactory;
 import org.apache.logging.log4j.core.config.builder.api.AppenderComponentBuilder;
 import org.apache.logging.log4j.core.config.builder.api.ComponentBuilder;
+import org.apache.logging.log4j.core.config.builder.api.LoggerComponentBuilder;
 import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -79,8 +80,41 @@ public class Log4j2Initializer implements ApplicationContextInitializer<Configur
         loggerContext.setConfigLocation(uri);
     }
 
+    /**
+     * 为 BK-Audit 的日志配置
+     */
+    private void bkAuditConfig(ConfigurationBuilder<BuiltConfiguration> builder, String logPath, String appName) {
+        LayoutComponentBuilder layoutBuilder = builder.newLayout("PatternLayout")
+                .addAttribute("pattern", "%m%n")
+                .addAttribute("charset", "UTF-8");
+
+        AppenderComponentBuilder appender = builder.newAppender("audit-event-appender", "RollingFile")
+                .add(layoutBuilder)
+                .addComponent(
+                        builder.newComponent("Policies")
+                                .addComponent(
+                                        builder.newComponent("TimeBasedTriggeringPolicy")
+                                                .addAttribute("interval", "1")
+                                                .addAttribute("modulate", "true")
+                                )
+                                .addComponent(
+                                        builder.newComponent("SizeBasedTriggeringPolicy")
+                                                .addAttribute("size", "250 MB")
+                                )
+                )
+                .addComponent(builder.newComponent("DefaultRolloverStrategy").addAttribute("max", "10"))
+                .addAttribute("fileName", logPath + appName + "-" + "audit.log")
+                .addAttribute("filePattern", logPath + appName + "-" + "audit-%d{yyyy-MM-dd}-%i.log.gz");
+
+        builder.add(appender)
+                .add(builder.newLogger("bk_audit", Level.INFO)
+                .add(builder.newAppenderRef("audit-event-appender"))
+                .addAttribute("additivity", false));
+    }
+
     private void configLog4j2(ConfigurableEnvironment environment) {
-        String pattern = "%d{yyyy-MM-dd HH:mm:ss.SSS}|%X{ip:--}|%F|%L|%level|%X{err_code:-0}|[%TID]||||[%t] %m%ex%n";
+        String pattern =
+                "%d{yyyy-MM-dd HH:mm:ss.SSS}|%X{ip:--}|%F|%L|%level|%X{err_code:-0}|[%TID]|[%SID]|||[%t] %m%ex%n";
         String appName = environment.getProperty("spring.application.name");
 
         ConfigurationBuilder<BuiltConfiguration> builder = ConfigurationBuilderFactory.newConfigurationBuilder();
@@ -149,6 +183,7 @@ public class Log4j2Initializer implements ApplicationContextInitializer<Configur
                         .add(builder.newAppenderRef("Rolling")));
             }
 
+            bkAuditConfig(builder, logPath, appName);
         }
 
         LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);

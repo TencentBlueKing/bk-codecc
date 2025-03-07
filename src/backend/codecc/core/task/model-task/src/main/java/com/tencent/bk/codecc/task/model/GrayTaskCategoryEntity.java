@@ -64,5 +64,8 @@ public class GrayTaskCategoryEntity extends CommonEntity {
     //上次构建id
     @Field("last_build_id")
     private String lastBuildId;
+    //语言code
+    @Field("lang")
+    private Long lang;
 
 }

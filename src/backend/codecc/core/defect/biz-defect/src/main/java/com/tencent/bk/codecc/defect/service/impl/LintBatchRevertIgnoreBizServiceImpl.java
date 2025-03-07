@@ -58,7 +58,8 @@ public class LintBatchRevertIgnoreBizServiceImpl extends AbstractLintBatchDefect
                     return it;
                 }).collect(Collectors.toList());
 
-        defectDao.batchUpdateDefectStatusIgnoreBit(batchDefectProcessReqVO.getTaskId(), defects, 0, null, null);
+        defectDao.batchUpdateDefectStatusIgnoreBit(batchDefectProcessReqVO.getTaskId(), defects, 0,
+                null, null, true);
 
         refreshOverviewData(batchDefectProcessReqVO.getTaskId());
     }
@@ -76,7 +77,8 @@ public class LintBatchRevertIgnoreBizServiceImpl extends AbstractLintBatchDefect
                     return it;
                 }).collect(Collectors.toList());
 
-        defectDao.batchUpdateDefectStatusIgnoreBit(batchDefectProcessReqVO.getTaskId(), defects, 0, null, null);
+        defectDao.batchUpdateDefectStatusIgnoreBit(batchDefectProcessReqVO.getTaskId(), defects, 0,
+                null, null, true);
 
         ignoredNegativeDefectDao.batchDelete(entityIdSet);
     }

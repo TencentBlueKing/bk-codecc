@@ -49,9 +49,9 @@ class PipelineUtils {
     public lateinit var GIT_ATOM_CODE_VERSION: String
     @Value("\${pipeline.atomCode.gitlab:GitLab}")
     public lateinit var GITLAB_ATOM_CODE: String
-    @Value("\${pipeline.atomCode.github:PullFromGithub}")
+    @Value("\${pipeline.atomCode.github:checkout}")
     public lateinit var GITHUB_ATOM_CODE: String
-    @Value("\${pipeline.atomCode.githubVersion:4.*}")
+    @Value("\${pipeline.atomCode.githubVersion:1.*}")
     public lateinit var GITHUB_ATOM_CODE_VERSION: String
     @Value("\${pipeline.atomCode.svn:svnCodeRepo}")
     public lateinit var SVN_ATOM_CODE: String
@@ -305,13 +305,17 @@ class PipelineUtils {
                         "repositoryHashId" to codeElementData.repoHashId,
                         "aliasName" to "",
                         "pullType" to "BRANCH",
-                        "branchName" to codeElementData.branch,
-                        "tagName" to "",
-                        "commitId" to "",
+                        "refName" to codeElementData.branch,
                         "localPath" to (codeElementData.relPath ?: ""),
                         "strategy" to CodePullStrategy.FRESH_CHECKOUT,
                         "enableSubmodule" to true,
-                        "enableVirtualMergeBranch" to false
+                        "enableVirtualMergeBranch" to false,
+                        "enableGitLfsClean" to false,
+                        "enableGitClean" to false,
+                        "enableGitCleanIgnore" to true,
+                        "enableGitCleanNested" to false,
+                        "enableTrace" to false,
+                        "setSafeDirectory" to false,
                     )))
             }
             GIT_URL_TYPE -> MarketBuildAtomElement(

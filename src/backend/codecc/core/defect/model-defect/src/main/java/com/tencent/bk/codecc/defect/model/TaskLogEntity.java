@@ -96,6 +96,12 @@ public class TaskLogEntity extends CommonEntity {
     @Field("trigger_from")
     private String triggerFrom;
 
+    @Field("error_code")
+    private long errorCode;
+
+    @Field("error_message")
+    private String errorMsg;
+
     /**
      * 此次构建的代码中最晚提交时间
      */

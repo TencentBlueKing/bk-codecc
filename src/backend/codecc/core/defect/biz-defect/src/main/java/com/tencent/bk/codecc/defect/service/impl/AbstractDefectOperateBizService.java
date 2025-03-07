@@ -26,6 +26,7 @@ import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.bson.types.ObjectId;
 import com.tencent.devops.common.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,7 +87,7 @@ public abstract class AbstractDefectOperateBizService implements IDefectOperateB
     }
 
     @Override
-    public void deleteCodeComment(String commentId, String singleCommentId, String userName) {
+    public void deleteCodeComment(String defectId, String commentId, String singleCommentId, String userName) {
         Boolean isAdmin = authExPermissionApi.isAdminMember(userName);
         Optional<CodeCommentEntity> optional = codeCommentRepository.findById(commentId);
         if (!optional.isPresent()) {
@@ -106,21 +107,29 @@ public abstract class AbstractDefectOperateBizService implements IDefectOperateB
                     return false;
                 }
             });
-            codeCommentRepository.save(codeCommentEntity);
+            if (CollectionUtils.isEmpty(codeCommentEntity.getCommentList()) && StringUtils.isNotBlank(defectId)) {
+                // 删除告警评论关联
+                deleteDefectCommentRelated(defectId, userName);
+                // 删除评论实体
+                codeCommentRepository.deleteById(commentId);
+            } else {
+                codeCommentRepository.save(codeCommentEntity);
+            }
         }
     }
 
+    protected abstract void deleteDefectCommentRelated(String defectId, String userName);
 
     protected void saveCodeComment(String commentId, SingleCommentVO singleCommentVO) {
         Optional<CodeCommentEntity> optional = codeCommentRepository.findById(commentId);
         if (!optional.isPresent()) {
             return;
         }
-        CodeCommentEntity codeCommentEntity = optional.get();
         SingleCommentEntity singleCommentEntity = new SingleCommentEntity();
         BeanUtils.copyProperties(singleCommentVO, singleCommentEntity);
         singleCommentEntity.setSingleCommentId(new ObjectId().toString());
         singleCommentEntity.setCommentTime(System.currentTimeMillis() / ComConstants.COMMON_NUM_1000L);
+        CodeCommentEntity codeCommentEntity = optional.get();
         List<SingleCommentEntity> commentEntityList = codeCommentEntity.getCommentList();
         if (CollectionUtils.isNotEmpty(commentEntityList)) {
             if (commentEntityList.size() >= 10) {
@@ -129,9 +138,11 @@ public abstract class AbstractDefectOperateBizService implements IDefectOperateB
             }
             commentEntityList.add(singleCommentEntity);
         } else {
-            codeCommentEntity.setCommentList(new ArrayList<SingleCommentEntity>() {{
-                add(singleCommentEntity);
-            }});
+            codeCommentEntity.setCommentList(new ArrayList<SingleCommentEntity>() {
+                {
+                    add(singleCommentEntity);
+                }
+            });
         }
         codeCommentRepository.save(codeCommentEntity);
     }

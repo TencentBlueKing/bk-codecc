@@ -34,6 +34,7 @@ export default {
   methods: {
     change(sourceList, targetList, tagetValueList) {
       this.selectedList = targetList;
+      this.$emit('updateTargetList', targetList);
     },
   },
 };

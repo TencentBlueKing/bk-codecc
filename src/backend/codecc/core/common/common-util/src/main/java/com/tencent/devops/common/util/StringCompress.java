@@ -75,7 +75,7 @@ public class StringCompress
         }
         catch (IOException e)
         {
-            log.error("uncompress exception-->", e);
+//            log.error("uncompress exception-->", e);
             throw new CodeCCException(CommonMessageCode.SYSTEM_ERROR);
         }
 

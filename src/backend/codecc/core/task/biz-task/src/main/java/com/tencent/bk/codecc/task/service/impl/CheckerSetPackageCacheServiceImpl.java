@@ -12,6 +12,7 @@ import com.tencent.devops.common.api.OrgInfoVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -134,8 +135,8 @@ public class CheckerSetPackageCacheServiceImpl implements CheckerSetPackageCache
     }
 
     @Override
-    public List<CheckerSetPackageVO> getPackageByLangValueAndTypeAndEnvTypeAndOrgInfoFromCache(Long langValue,
-            String type, String envType, OrgInfoVO orgInfo) {
+    public List<CheckerSetPackageVO> getPackageByLangValueAndTypeAndEnvTypeAndScopesFromCache(Long langValue,
+            String type, String envType, OrgInfoVO orgInfo, BsTaskCreateFrom createFrom) {
         List<CheckerSetPackageVO> packageVOS = getPackageByLangValueAndTypeFromCache(langValue, type);
         if (CollectionUtils.isEmpty(packageVOS)) {
             return Collections.emptyList();
@@ -143,6 +144,8 @@ public class CheckerSetPackageCacheServiceImpl implements CheckerSetPackageCache
         return packageVOS.stream().filter(it -> it.getEnvType().equals(envType)).filter(it ->
                         CollectionUtils.isEmpty(it.getScopes())
                                 || it.getScopes().stream().anyMatch(org -> org.contains(orgInfo)))
+                .filter(it -> CollectionUtils.isEmpty(it.getTaskCreateFromScopes())
+                        || it.getTaskCreateFromScopes().contains(createFrom.value()))
                 .collect(Collectors.toList());
     }
 

@@ -6,6 +6,7 @@ import com.tencent.bk.codecc.defect.service.IHandler
 import com.tencent.bk.codecc.defect.service.SnapShotService
 import com.tencent.bk.codecc.defect.service.impl.redline.CompileRedLineReportServiceImpl
 import com.tencent.bk.codecc.defect.service.impl.redline.RedLineReportServiceImpl
+import com.tencent.bk.codecc.defect.utils.RedLineUtils
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
 import com.tencent.bk.codecc.task.constant.TaskMessageCode
 import com.tencent.bk.codecc.task.vo.TaskDetailVO
@@ -41,7 +42,7 @@ class UploadRedLineIndicatorsHandler @Autowired constructor(
                 // 查询任务详情
                 val taskDetailVO = getTaskDetail(handlerDTO.taskId)
                 // 流水线创建的，则处理产出报告以及红线
-                if (ComConstants.BsTaskCreateFrom.BS_PIPELINE.value() == taskDetailVO.createFrom) {
+                if (RedLineUtils.checkIfTaskEnableRedLine(taskDetailVO)) {
                     // TODO 为了下架coverity工具后不会导致配制了coverity指标的质量红线被拦截，这里做个兼容，给coverity的指标都上报0
                     val hasCoverity = taskDetailVO.toolConfigInfoList.filter { toolConfigInfoVO ->
                         // TODO 临时修改测试，稍后回更

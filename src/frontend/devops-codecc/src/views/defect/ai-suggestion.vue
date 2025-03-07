@@ -1,12 +1,25 @@
 <template>
   <div v-show="isShow" class="content" v-bkloading="{ isLoading: loading }">
     <div class="render-content" id="suggestion-content">
+      <div class="model-name">{{ model }} :</div>
+      <template v-if="thinkingContent">
+        <div class="thinking-label">
+          <bk-button class="bg-[#F0F1F5]" size="small" @click="thinkingVisible = !thinkingVisible">
+            {{ isThinking ? $t('思考中') : $t('已完成思考') }}
+            <bk-icon class="!text-[18px]" :class="{ 'rotate-180': !thinkingVisible }" type="angle-up" />
+          </bk-button>
+        </div>
+        <div class="thinking-content" v-show="thinkingVisible">
+          <render-markdown :mds="thinking" />
+        </div>
+      </template>
       <render-markdown :mds="mds" :copy-text="copyText" />
     </div>
     <bk-icon class="suggestion-close" @click="handleClick" type="close" />
     <div class="footer">
       <span
         class="footer-icon mr10"
+        v-show="isFinished"
         :class="{ active: likeList.includes(user.username) }"
         v-bk-tooltips="likeList.join(',')"
         @click="handleLike(true)">
@@ -15,6 +28,7 @@
       </span>
       <span
         class="footer-icon unlike mr20"
+        v-show="isFinished"
         :class="{ active: unlikeList.includes(user.username) }"
         v-bk-tooltips="unlikeList.join(',')"
         @click="handleLike(false)">
@@ -55,15 +69,23 @@ export default {
       isShow: true,
       loading: true,
       defectWS: null,
+      model: this.$t('混元大模型'),
+      isThinking: true,
+      thinkingContent: '',
+      thinkingVisible: true,
       suggestion: '',
       likeList: [],
       unlikeList: [],
+      isFinished: false,
     };
   },
   computed: {
     ...mapGetters(['user']),
     mds() {
       return this.splitMd(this.suggestion);
+    },
+    thinking() {
+      return this.splitMd(this.thinkingContent);
     },
   },
   created() {
@@ -150,35 +172,32 @@ export default {
     },
     handleMessage(suggestion) {
       try {
-        const values = suggestion.split(/(?<=})\s*(?={"result":true,)/);
+        const values = suggestion.split(/(?<=})\s*(?={"id":)/);
         values.forEach((value) => {
           const item = value.trim();
           if (isJSON(item)) {
             const {
-              result,
-              data,
-              message,
+              id,
+              model,
+              choices,
             } = JSON.parse(item);
-            if (result === true) {
-              if (!data.llm.includes('hunyuan')) {
-                const llm = data.llm.split('.')[0].toUpperCase();
-                this.suggestion.replace('混元大模型', `${llm}大模型`);
-              }
-              const choice = data?.result?.choices?.[0];
-              if (!choice) {
-                console.log('模型调用失败，返回对象为空');
-              } else if (choice.finish_reason) {
-                // console.log('模型调用完成');
-                // console.log(this.suggestion);
-                this.scrollBottom();
+            if (!model?.includes('hunyuan')) {
+              this.model = model;
+            }
+            if (choices.length > 0) {
+              this.isFinished = false;
+              const choice = choices[0];
+              if (choice.finish_reason) {
+                this.isFinished = true;
+              } else if (choice.delta.reasoning_content) {
+                this.isThinking = true;
+                this.thinkingContent += choice.delta.reasoning_content;
               } else if (choice.delta.content) {
+                this.isThinking = false;
                 this.suggestion += choice.delta.content;
-                // console.log(choice.delta.content);
-                this.scrollBottom();
-                this.loading = false;
-              } else {
-                console.log('模型调用失败，返回对象为空');
               }
+              this.loading = false;
+              this.scrollBottom();
             }
           }
         });
@@ -188,7 +207,8 @@ export default {
     },
     getSuggestion(flushCache = false) {
       this.loading = true;
-      this.suggestion = this.$t('**混元大模型**：');
+      this.thinkingContent = '';
+      this.suggestion = '';
       const { toolName, entityId, filePath, taskId } = this.currentFile;
       const params = {
         toolName,
@@ -218,20 +238,31 @@ export default {
         }
       });
     },
-    handleLike(like) {
-      const list = like ? this.likeList : this.unlikeList;
-      const otherList = like ? this.unlikeList : this.likeList;
-      if (list.includes(this.user.username)) {
-        list.splice(list.indexOf(this.user.username), 1);
-      } else {
-        list.push(this.user.username);
-        otherList.splice(otherList.indexOf(this.user.username), 1);
-      }
-      this.$store.dispatch('defect/postEvaluate', {
+    async handleLike(like) {
+      const res = await this.$store.dispatch('defect/postEvaluate', {
         defectId: this.currentFile.entityId,
         goodEvaluates: this.likeList,
         badEvaluates: this.unlikeList,
       });
+      if (res === true) {
+        const list = like ? this.likeList : this.unlikeList;
+        const otherList = like ? this.unlikeList : this.likeList;
+        if (list.includes(this.user.username)) {
+          list.splice(list.indexOf(this.user.username), 1);
+        } else {
+          list.push(this.user.username);
+          otherList.splice(otherList.indexOf(this.user.username), 1);
+        }
+        this.$bkMessage({
+          theme: 'success',
+          message: this.$t('评价成功'),
+        });
+      } else {
+        this.$bkMessage({
+          theme: 'error',
+          message: this.$t('评价失败'),
+        });
+      }
     },
   },
 };
@@ -253,6 +284,25 @@ export default {
   background-attachment: local;
   background-color: rgb(255 255 255 / 90%);
   background-size: 30px;
+
+  .model-name {
+    padding: 8px 25px 15px 25px;
+    background-color: rgba(235, 210, 209, 0.4);
+  }
+
+  .thinking-label {
+    padding: 8px 25px 15px 25px;
+    background-color: rgba(235, 210, 209, 0.4);
+  }
+
+  .thinking-content {
+    color: #979BA5;
+    background-color: #F5F7FA;
+
+    >>> .markdown-body {
+      color: #979BA5;
+    }
+  }
 
   &::-webkit-scrollbar {
     background-color: rgb(235 210 209 / 40%);

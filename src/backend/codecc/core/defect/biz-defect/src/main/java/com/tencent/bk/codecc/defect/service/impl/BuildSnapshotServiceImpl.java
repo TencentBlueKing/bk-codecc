@@ -16,8 +16,14 @@ import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoInfoEntity;
+import com.tencent.bk.codecc.defect.model.sca.SCALicenseEntity;
+import com.tencent.bk.codecc.defect.model.sca.SCASbomAggregateModel;
+import com.tencent.bk.codecc.defect.model.sca.SCAVulnerabilityEntity;
 import com.tencent.bk.codecc.defect.pojo.HandlerDTO;
 import com.tencent.bk.codecc.defect.service.BuildSnapshotService;
+import com.tencent.bk.codecc.defect.service.sca.SCALicenseService;
+import com.tencent.bk.codecc.defect.service.sca.SCASbomService;
+import com.tencent.bk.codecc.defect.service.sca.SCAVulnerabilityService;
 import com.tencent.bk.codecc.defect.vo.common.BuildWithBranchVO;
 import com.tencent.devops.common.constant.ComConstants.DefectStatus;
 import com.tencent.devops.common.redis.lock.RedisLock;
@@ -58,6 +64,15 @@ public class BuildSnapshotServiceImpl implements BuildSnapshotService {
     private CodeRepoInfoRepository codeRepoInfoRepository;
     @Autowired
     private BaseDataCacheService baseDataCacheService;
+
+    @Autowired
+    private SCASbomService scaSbomService;
+
+    @Autowired
+    private SCALicenseService scaLicenseService;
+
+    @Autowired
+    private SCAVulnerabilityService scaVulnerabilityService;
 
     @Override
     public void saveBuildSnapshotSummary(HandlerDTO dto) {
@@ -357,6 +372,16 @@ public class BuildSnapshotServiceImpl implements BuildSnapshotService {
         return buildDefectSummaryDao.findLastByTaskId(taskId);
     }
 
+    @Override
+    public void saveSCASnapshot(long taskId, String toolName, String buildId, BuildEntity buildEntity,
+            SCASbomAggregateModel aggregateModel, List<SCAVulnerabilityEntity> vulnerabilities,
+            List<SCALicenseEntity> licenses) {
+        // 后续SCAVulnerabilityEntity可能需要录入lint告警库，与build_defect_v2
+        scaSbomService.saveSCASbomSnapshot(taskId, toolName, buildId, buildEntity, aggregateModel);
+        scaVulnerabilityService.saveBuildVulnerabilities(taskId, toolName, buildId, buildEntity, vulnerabilities);
+        scaLicenseService.saveBuildLicenses(taskId, toolName, buildId, buildEntity, licenses);
+    }
+
     private BuildDefectV2Entity constructBuildDefectV2Entity(long taskId, String toolName, String buildId,
             String buildNum, String defectId, String revision,
             String branch, String subModule, Integer lineNum,
@@ -373,7 +398,6 @@ public class BuildSnapshotServiceImpl implements BuildSnapshotService {
         entity.setLineNum(lineNum);
         entity.setStartLines(startLines);
         entity.setEndLines(endLines);
-
         return entity;
     }
 }

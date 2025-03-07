@@ -26,47 +26,30 @@
 
 package com.tencent.bk.codecc.defect.service.impl
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.tencent.bk.codecc.defect.model.SnapShotEntity
 import com.tencent.bk.codecc.defect.model.TaskLogEntity
-import com.tencent.bk.codecc.defect.service.PipelineAfterCallBackOpsService
+import com.tencent.bk.codecc.defect.service.AfterDevopsCallBackOpsService
 import com.tencent.bk.codecc.defect.service.PipelineService
 import com.tencent.bk.codecc.defect.service.SnapShotService
-import com.tencent.bk.codecc.defect.vo.TaskPersonalStatisticRefreshReq
-import com.tencent.bk.codecc.task.api.ServiceToolRestResource
-import com.tencent.bk.codecc.task.enums.EmailType
-import com.tencent.bk.codecc.task.pojo.EmailNotifyModel
-import com.tencent.bk.codecc.task.pojo.RtxNotifyModel
+import com.tencent.bk.codecc.defect.service.TaskLogOverviewService
 import com.tencent.bk.codecc.task.vo.TaskDetailVO
 import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.constant.CommonMessageCode
 import com.tencent.devops.common.pipeline.enums.ChannelCode
-import com.tencent.devops.common.redis.lock.RedisLock
-import com.tencent.devops.common.web.mq.EXCHANGE_CODECC_GENERAL_NOTIFY
-import com.tencent.devops.common.web.mq.EXCHANGE_TASK_PERSONAL
-import com.tencent.devops.common.web.mq.ROUTE_CODECC_EMAIL_NOTIFY
-import com.tencent.devops.common.web.mq.ROUTE_CODECC_RTX_NOTIFY
-import com.tencent.devops.common.web.mq.ROUTE_TASK_PERSONAL
 import com.tencent.devops.process.api.service.ServiceBuildResource
 import org.slf4j.LoggerFactory
-import org.springframework.amqp.core.Message
-import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
-import java.util.concurrent.TimeUnit
 
 @Service
 open class PipelineServiceImpl @Autowired constructor(
     private val client: Client,
     private val snapShotService: SnapShotService,
-    private val rabbitTemplate: RabbitTemplate,
-    private val taskLogOverviewServiceImpl: TaskLogOverviewServiceImpl,
-    private val redisTemplate: RedisTemplate<String, String>,
-    private val pipelineAfterCallBackOpsService: PipelineAfterCallBackOpsService
+    private val taskLogOverviewService: TaskLogOverviewService,
+    private val afterDevopsCallBackOpsService: AfterDevopsCallBackOpsService
 ) : PipelineService {
 
     @Async("asyncTaskExecutor")
@@ -98,9 +81,11 @@ open class PipelineServiceImpl @Autowired constructor(
             resultMessage, toolName
         )
 
-        var effectiveTools = taskLogOverviewServiceImpl.getActualExeTools(taskId, buildId)
+        val pair = taskLogOverviewService.getAutoScanLangFlagAndExeTools(taskId, buildId)
+        val autoLangScanFlag = pair.first
+        var effectiveTools = pair.second
 
-        if (effectiveTools.isNullOrEmpty()) {
+        if (effectiveTools.isEmpty()) {
             effectiveTools = taskDetailVO.toolConfigInfoList.filter { toolConfigInfoVO ->
                 toolConfigInfoVO.followStatus != ComConstants.FOLLOW_STATUS.WITHDRAW.value()
             }.map { toolConfigInfoVO ->
@@ -114,139 +99,18 @@ open class PipelineServiceImpl @Autowired constructor(
             return
         }
 
-        logger.info("all tool completed! ready to send report! build id is {}", buildId)
-
-        // 流水线创建的，则处理产出报告以及红线
-        if (ComConstants.BsTaskCreateFrom.BS_PIPELINE.value() == taskDetailVO.createFrom) {
-            val toolOrderResult = client.get(ServiceToolRestResource::class.java).findToolOrder()
-            if (toolOrderResult.isOk() && null != toolOrderResult.data) {
-                val toolOrder = toolOrderResult.data!!.split(",")
-                snapShotEntity.toolSnapshotList.sortBy {
-                    if (toolOrder.contains(it.toolNameEn)) {
-                        toolOrder.indexOf(it.toolNameEn)
-                    } else {
-                        Integer.MAX_VALUE
-                    }
-                }
-            }
+        // 自动识别语言扫描，不需要进行DevopsCallback
+        if (autoLangScanFlag) {
+            logger.info("auto lang scan ! build id is {}", buildId)
+            return
         }
 
-        // 更新个人待处理信息
-        refreshPersonalStatistic(taskDetailVO)
-
-        // 通知发送
-        val isGrayToolTask: Boolean = !taskDetailVO.projectId.isNullOrBlank()
-                && taskDetailVO.projectId.startsWith(ComConstants.GRAY_PROJECT_PREFIX)
-        if (isGrayToolTask) {
-            logger.info(
-                "gray tool task not send any notify, task id: {}, project id: {}",
-                taskId, taskDetailVO.projectId
-            )
-        } else {
-            // 若buildFlag不为空，则说明是新版插件，具备区分重试边界能力: non-redis
-            // 但不保障：插件流程控制的"失败时自动重试"
-            val needRedisLock = snapShotEntity.buildFlag == null
-            val allowNotify = if (needRedisLock) {
-                // 主要是防止插件扫描失败后用户进行重试，会突破isAllToolsComplete(..)的逻辑，造成资源无意义重复损耗
-                RedisLock(
-                    redisTemplate,
-                    "NOTIFY_FOR_DEVOPS_cCALLBACK:TASK_ID:${taskId}:BUILD_ID:${buildId}",
-                    TimeUnit.HOURS.toSeconds(12)
-                ).tryLock()
-            } else {
-                true
-            }
-
-            if (allowNotify) {
-                // 发送邮件
-                val emailNotifyModel = EmailNotifyModel(taskId, buildId, EmailType.INSTANT)
-                rabbitTemplate.convertAndSend(
-                    EXCHANGE_CODECC_GENERAL_NOTIFY,
-                    ROUTE_CODECC_EMAIL_NOTIFY,
-                    emailNotifyModel,
-                    getMQMessagePostProcessor(
-                        taskDetailVO.notifyCustomInfo?.emailReceiverType,
-                        taskId
-                    )
-                )
-
-                // 发送企业微信
-                val rtxRetStatus = resultStatus == ComConstants.RDMCoverityStatus.success.name
-                val rtxNotifyModel = RtxNotifyModel(taskId, rtxRetStatus, buildId)
-                rabbitTemplate.convertAndSend(
-                    EXCHANGE_CODECC_GENERAL_NOTIFY,
-                    ROUTE_CODECC_RTX_NOTIFY,
-                    rtxNotifyModel,
-                    getMQMessagePostProcessor(
-                        taskDetailVO.notifyCustomInfo?.rtxReceiverType,
-                        taskId
-                    )
-                )
-            }
-        }
-        pipelineAfterCallBackOpsService.doAfterHandleDevopsCallBack(taskId, buildId)
-
+        // 所有工具完成后，进行处理
+        afterDevopsCallBackOpsService.doAfterHandleDevopsCallBack(
+            taskId, taskDetailVO, buildId,
+            snapShotEntity, toolName
+        )
     }
-
-
-    /**
-     * 延迟消息属性处理器
-     * 注："遗留处理人"通知依赖个人待处理的统计数据，适当延迟发出通知
-     */
-    private fun getMQMessagePostProcessor(
-        receiverType: String?,
-        taskId: Long,
-        delay: Int = 10 * 1000
-    ): (Message) -> Message {
-        if (ComConstants.EmailReceiverType.ONLY_AUTHOR.code() == receiverType) {
-            logger.info("mq delay notify message, task id: {}", taskId)
-            return { msg -> msg.apply { messageProperties.delay = delay } }
-        } else {
-            return { msg -> msg }
-        }
-    }
-
-    /**
-     * 更新个人待处理
-     */
-    private fun refreshPersonalStatistic(taskDetailVO: TaskDetailVO) {
-        if (ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value() == taskDetailVO.createFrom
-            && ComConstants.EmailReceiverType.ONLY_AUTHOR.code() != taskDetailVO.notifyCustomInfo?.rtxReceiverType
-            && ComConstants.EmailReceiverType.ONLY_AUTHOR.code() != taskDetailVO.notifyCustomInfo?.emailReceiverType
-        ) {
-            // 开源扫描，没有打开"遗留处理人"开关的一律不刷新个人待处理；减少DB压力
-            logger.info(
-                "task from gongfeng scan not refresh personal statistic, task id: {}",
-                taskDetailVO.taskId
-            )
-        } else {
-            val request = TaskPersonalStatisticRefreshReq(
-                taskDetailVO.taskId,
-                "from pipeline service #handleDevopsCallBack"
-            )
-            rabbitTemplate.convertAndSend(EXCHANGE_TASK_PERSONAL, ROUTE_TASK_PERSONAL, request)
-        }
-    }
-
-    /**
-     * 组装pcg回调接口
-     */
-    /*private fun assembleCallback(snapShotEntity: SnapShotEntity, taskDetailVO: TaskDetailVO) : CustomProjCallbackModel {
-        val pcgRdCallBackModel = CustomProjCallbackModel()
-        return with(pcgRdCallBackModel){
-            taskId = snapShotEntity.taskId
-            buildId = snapShotEntity.buildId
-            url = taskDetailVO.customProjInfo.url
-            if(null != snapShotEntity.toolSnapshotList && snapShotEntity.toolSnapshotList.isNotEmpty()){
-                snapShotEntity.toolSnapshotList.forEach {
-                    it.defectDetailUrl = null
-                    it.defectReportUrl = null
-                }
-            }
-            toolSnapshotList = snapShotEntity.toolSnapshotList
-            this
-        }
-    }*/
 
     override fun stopRunningTask(
         projectId: String,
@@ -271,9 +135,10 @@ open class PipelineServiceImpl @Autowired constructor(
             channelCode = ChannelCode.CODECC
         }
 
-        //停止流水线
+        // 停止流水线
         val shutdownResult = client.getDevopsService(ServiceBuildResource::class.java).manualShutdown(
-            userName, projectId, pipelineId, buildId, channelCode)
+            userName, projectId, pipelineId, buildId, channelCode
+        )
         if (shutdownResult.isNotOk() || null == shutdownResult.data || shutdownResult.data != true) {
             logger.error(
                 "shut down pipeline fail! project id: {}, pipeline id: {}, build id: {}, msg: {}", projectId,
@@ -302,11 +167,12 @@ open class PipelineServiceImpl @Autowired constructor(
         taskStep: TaskLogEntity.TaskUnit,
         toolName: String
     ): String? {
-        val finishStep = if (ComConstants.Tool.COVERITY.name == toolName || ComConstants.Tool.KLOCWORK.name == toolName){
-            ComConstants.Step4Cov.DEFECT_SYNS.value()
-        } else{
-            ComConstants.Step4MutliTool.COMMIT.value()
-        }
+        val finishStep =
+            if (ComConstants.Tool.COVERITY.name == toolName || ComConstants.Tool.KLOCWORK.name == toolName) {
+                ComConstants.Step4Cov.DEFECT_SYNS.value()
+            } else {
+                ComConstants.Step4MutliTool.COMMIT.value()
+            }
         return if (taskStep.flag == ComConstants.StepFlag.FAIL.value() || taskStep.flag == ComConstants.StepFlag.ABORT.value()) {
             ComConstants.RDMCoverityStatus.failed.name
         } else if (taskStep.flag == ComConstants.StepFlag.SUCC.value() && taskStep.endTime != 0L) {

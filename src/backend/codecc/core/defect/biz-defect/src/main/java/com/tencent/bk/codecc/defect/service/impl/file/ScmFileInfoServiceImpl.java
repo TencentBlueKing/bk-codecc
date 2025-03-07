@@ -147,6 +147,7 @@ public class ScmFileInfoServiceImpl implements ScmFileInfoService {
                     scmFileInfoSnapshotEntity.setRelPath(scmBlame.getFileRelPath());
                     scmFileInfoSnapshotEntity.setMd5(scmBlame.getExtraInfoMap().get("md5"));
                     scmFileInfoSnapshotEntity.setUpdateTime(scmBlame.getFileUpdateTime());
+                    scmFileInfoSnapshotEntity.setFileAuthor(scmBlame.getFileAuthor());
                     scmFileInfoSnapshotEntity.setScmType(scmBlame.getScmType());
                     scmFileInfoSnapshotEntity.setUrl(scmBlame.getUrl());
                     scmFileInfoSnapshotEntity.setBranch(scmBlame.getBranch());

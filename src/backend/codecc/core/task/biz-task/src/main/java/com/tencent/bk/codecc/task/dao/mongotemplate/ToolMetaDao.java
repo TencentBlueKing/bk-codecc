@@ -34,6 +34,8 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
+import java.util.Set;
+
 /**
  * 工具元数据持久层
  *
@@ -55,5 +57,23 @@ public class ToolMetaDao
         return mongoTemplate.updateMulti(query, update, ToolMetaEntity.class).getModifiedCount() > 0;
     }
 
+    public Boolean updateVisibleRange(String toolName, Set<String> visibleProjects, Set<String> visibleOrgIds) {
+        Query query = new Query(Criteria.where("name").is(toolName));
+        Update update = new Update();
+        update.set("visible_projects", visibleProjects);
+        update.set("visible_org_ids", visibleOrgIds);
+        update.set("updated_date", System.currentTimeMillis());
+
+        mongoTemplate.updateFirst(query, update, ToolMetaEntity.class);
+
+        return true;
+    }
+
+    public ToolMetaEntity findBasicInfoByToolName(String toolName) {
+        Query query = new Query(Criteria.where("name").is(toolName));
+        query.fields().include("name", "display_name", "lang", "description", "brief_introduction", "type");
+
+        return mongoTemplate.findOne(query, ToolMetaEntity.class);
+    }
 
 }

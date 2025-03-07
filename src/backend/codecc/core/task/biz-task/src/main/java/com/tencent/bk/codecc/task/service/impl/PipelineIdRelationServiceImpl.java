@@ -46,22 +46,19 @@ public class PipelineIdRelationServiceImpl implements PipelineIdRelationService 
 
 
     @Override
-    public void updateSuccessRecord(String pipelineId, LocalDate triggerDate) {
-        pipelineIdRelationDao.updatePipelineIdRelationStatus(pipelineId, triggerDate, ComConstants.ScanStatus.SUCCESS.getCode());
-    }
-
-    @Override
-    public void updateFailOrProcessRecord(PipelineIdRelationshipEntity pipelineIdRelationshipEntity){
-        PipelineIdRelationshipEntity previousPipelineEntity = pipelineIdRelationshipRepository.findFirstByPipelineIdAndTriggerDate(
-                pipelineIdRelationshipEntity.getPipelineId(), pipelineIdRelationshipEntity.getTriggerDate());
-        logger.info("start to update fail or process record, pipeline id: {}", pipelineIdRelationshipEntity.getPipelineId());
+    public void updateFailOrProcessRecord(PipelineIdRelationshipEntity pipelineIdRelationshipEntity) {
+        PipelineIdRelationshipEntity previousPipelineEntity = pipelineIdRelationshipRepository
+                .findFirstByPipelineIdAndTriggerDate(pipelineIdRelationshipEntity.getPipelineId(),
+                        pipelineIdRelationshipEntity.getTriggerDate());
+        logger.info("start to update fail or process record, pipeline id: {}",
+                pipelineIdRelationshipEntity.getPipelineId());
         //查询该流水线下当日的构建记录，如果没有记录则新增，如果有记录则需要判断是否是成功状态，如果不是则需要更新状态
         //该表原则是一个流水线，一个日期下，如果有为成功状态的，则不再更新，如果无成功状态的话，则需要再下发
-        if(null == previousPipelineEntity || StringUtils.isBlank(previousPipelineEntity.getPipelineId())){
+        if (null == previousPipelineEntity || StringUtils.isBlank(previousPipelineEntity.getPipelineId())) {
             logger.info("new pipeline id relation record, need to insert");
             pipelineIdRelationshipRepository.save(pipelineIdRelationshipEntity);
         } else {
-            if(!ComConstants.ScanStatus.SUCCESS.getCode().equals(previousPipelineEntity.getStatus())){
+            if (!ComConstants.ScanStatus.SUCCESS.getCode().equals(previousPipelineEntity.getStatus())) {
                 logger.info("previous record with non-success status, need to update");
                 previousPipelineEntity.setStatus(pipelineIdRelationshipEntity.getStatus());
                 pipelineIdRelationshipRepository.save(previousPipelineEntity);
@@ -78,7 +75,7 @@ public class PipelineIdRelationServiceImpl implements PipelineIdRelationService 
     }
 
     @Override
-    public void deleteExpiredRecord(){
+    public void deleteExpiredRecord() {
         pipelineIdRelationDao.deleteRecordsBeforeDate(LocalDate.now().minusDays(2));
     }
 }

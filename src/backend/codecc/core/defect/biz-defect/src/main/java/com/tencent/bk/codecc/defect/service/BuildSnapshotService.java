@@ -5,6 +5,9 @@ import com.tencent.bk.codecc.defect.model.BuildEntity;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
+import com.tencent.bk.codecc.defect.model.sca.SCALicenseEntity;
+import com.tencent.bk.codecc.defect.model.sca.SCASbomAggregateModel;
+import com.tencent.bk.codecc.defect.model.sca.SCAVulnerabilityEntity;
 import com.tencent.bk.codecc.defect.pojo.HandlerDTO;
 import com.tencent.bk.codecc.defect.vo.common.BuildWithBranchVO;
 import java.util.List;
@@ -104,4 +107,12 @@ public interface BuildSnapshotService {
      * @return
      */
     BuildDefectSummaryEntity getLatestSummaryByTaskId(long taskId);
+
+
+    /**
+     * 保存SCA告警快照
+     */
+    void saveSCASnapshot(long taskId, String toolName, String buildId, BuildEntity buildEntity,
+            SCASbomAggregateModel aggregateModel, List<SCAVulnerabilityEntity> vulnerabilities,
+            List<SCALicenseEntity> licenses);
 }

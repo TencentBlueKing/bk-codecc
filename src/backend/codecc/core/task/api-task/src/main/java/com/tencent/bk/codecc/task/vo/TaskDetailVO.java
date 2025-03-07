@@ -88,6 +88,9 @@ public class TaskDetailVO extends TaskBaseVO {
     @ApiModelProperty(value = "事业群id")
     private int bgId;
 
+    @ApiModelProperty(value = "业务线id")
+    private Integer businessLineId;
+
     @ApiModelProperty(value = "部门id")
     private int deptId;
 
@@ -235,6 +238,12 @@ public class TaskDetailVO extends TaskBaseVO {
     @ApiModelProperty(value = "自动语言识别")
     private Boolean autoLang;
 
+    @ApiModelProperty(value = "自动语言识别扫描标识")
+    private Boolean autoLangScanFlag;
+
+    @ApiModelProperty(value = "是否新的自动识别语言方式")
+    private Boolean newAutoLangScanFlag;
+
     @ApiModelProperty(value = "检查规则集环境类型:preProd/prod")
     private String checkerSetEnvType;
 
@@ -273,4 +282,13 @@ public class TaskDetailVO extends TaskBaseVO {
 
     @ApiModelProperty(value = "最新BuildId")
     private String latestBuildId;
+
+    @ApiModelProperty(value = "测试任务的阶段号")
+    private Integer testStage;
+
+    @ApiModelProperty(value = "测试工具名")
+    private String testTool;
+
+    @ApiModelProperty(value = "测试版本号")
+    private String testVersion;
 }

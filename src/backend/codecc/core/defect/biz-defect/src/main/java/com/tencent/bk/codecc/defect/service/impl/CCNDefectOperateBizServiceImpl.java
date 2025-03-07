@@ -13,6 +13,7 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CCNDefectRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CCNDefectDao;
 import com.tencent.bk.codecc.defect.model.CodeCommentEntity;
 import com.tencent.bk.codecc.defect.model.SingleCommentEntity;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
@@ -43,6 +44,9 @@ public class CCNDefectOperateBizServiceImpl extends AbstractDefectOperateBizServ
     @Autowired
     private CCNDefectRepository ccnDefectRepository;
 
+    @Autowired
+    private CCNDefectDao ccnDefectDao;
+
     @Override
     public void addCodeComment(String defectId, String toolName, String commentId, String userName,
             SingleCommentVO singleCommentVO, String fileName, String nameCn, String checker, String projectId,
@@ -54,26 +58,28 @@ public class CCNDefectOperateBizServiceImpl extends AbstractDefectOperateBizServ
         }
         //如果comment_id为空，则表示是重新新建的评论系列
         if (StringUtils.isBlank(commentId)) {
-            CCNDefectEntity ccnDefectEntity = ccnDefectRepository.findFirstByEntityId(defectId);
-            CodeCommentEntity codeCommentEntity = new CodeCommentEntity();
             SingleCommentEntity singleCommentEntity = new SingleCommentEntity();
             BeanUtils.copyProperties(singleCommentVO, singleCommentEntity);
             Long currentTime = System.currentTimeMillis();
             singleCommentEntity.setSingleCommentId(new ObjectId().toString());
             singleCommentEntity.setCommentTime(currentTime / ComConstants.COMMON_NUM_1000L);
-            codeCommentEntity.setCommentList(new ArrayList<SingleCommentEntity>() {{
-                add(singleCommentEntity);
-            }});
+            CodeCommentEntity codeCommentEntity = new CodeCommentEntity();
+            codeCommentEntity.setCommentList(new ArrayList<SingleCommentEntity>() {
+                {
+                    add(singleCommentEntity);
+                }
+            });
             codeCommentEntity.setCreatedDate(currentTime);
             codeCommentEntity.setUpdatedDate(currentTime);
             codeCommentEntity.setCreatedBy(singleCommentVO.getUserName());
             codeCommentEntity.setUpdatedBy(singleCommentVO.getUserName());
             codeCommentEntity = codeCommentRepository.save(codeCommentEntity);
+
+            CCNDefectEntity ccnDefectEntity = ccnDefectRepository.findFirstByEntityId(defectId);
             ccnDefectEntity.setCodeComment(codeCommentEntity);
             ccnDefectRepository.save(ccnDefectEntity);
-        }
-        //如果comment_id不为空，则直接更新
-        else {
+        } else {
+            //如果comment_id不为空，则直接更新
             saveCodeComment(commentId, singleCommentVO);
         }
 
@@ -85,5 +91,10 @@ public class CCNDefectOperateBizServiceImpl extends AbstractDefectOperateBizServ
         } else {
             log.info("Not eligible to send message");
         }
+    }
+
+    @Override
+    protected void deleteDefectCommentRelated(String defectId, String userName) {
+        ccnDefectDao.deleteCommentRelated(defectId, userName);
     }
 }

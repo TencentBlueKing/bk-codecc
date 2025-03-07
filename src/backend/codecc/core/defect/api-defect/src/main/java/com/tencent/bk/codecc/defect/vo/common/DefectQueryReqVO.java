@@ -26,6 +26,9 @@
 
 package com.tencent.bk.codecc.defect.vo.common;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.tencent.bk.codecc.defect.vo.sca.SCADefectQueryReqVO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
@@ -40,8 +43,11 @@ import lombok.EqualsAndHashCode;
  * @date 2019/5/27
  */
 @Data
-@ApiModel("公共文件查询请求视图")
 @EqualsAndHashCode(callSuper = true)
+@ApiModel("公共文件查询请求视图")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "pattern", visible = true, defaultImpl = DefectQueryReqVO.class)
+@JsonSubTypes({@JsonSubTypes.Type(value = SCADefectQueryReqVO.class, name = "SCA")
+})
 public class DefectQueryReqVO extends DefectQueryReqVOBase {
 
     @ApiModelProperty(value = "任务Id列表", required = true)
@@ -53,9 +59,21 @@ public class DefectQueryReqVO extends DefectQueryReqVOBase {
     @ApiModelProperty("维度")
     private List<String> dimensionList;
 
+    @ApiModelProperty(value = "查询模型，用于指定创建的实例类型")
+    private String pattern = "DEFAULT";
+
     @ApiModelProperty("是否为恢复忽略再标记")
     private Boolean revertAndMark;
 
     @ApiModelProperty("查询的结果是否要插入到 t_ignored_negative_defect 表中")
     private Boolean needBatchInsert;
+
+    @ApiModelProperty("是否需要过滤掉正在审核的告警")
+    private Boolean needFilterApprovalDefect;
+
+    @ApiModelProperty("操作")
+    private List<String> operates;
+
+    @ApiModelProperty("提单的ID列表， 默认为空")
+    private Set<String> submitDefectIds;
 }

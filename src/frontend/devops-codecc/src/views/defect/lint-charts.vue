@@ -68,7 +68,7 @@
             <div id="newTrendChart" ref="newTrendChart"></div>
           </div>
           <div class="trend-table">
-            <div class="table">
+            <div>
               <bk-table :data="trendTableData" :outer-border="false">
                 <bk-table-column
                   :label="$t('日期')"
@@ -102,7 +102,7 @@
           <div id="newAuthorsChart" ref="newAuthorsChart"></div>
         </div>
         <div class="authors-table">
-          <div class="table">
+          <div>
             <bk-table :data="newAuthorsTableData" :outer-border="false">
               <bk-table-column
                 show-overflow-tooltip

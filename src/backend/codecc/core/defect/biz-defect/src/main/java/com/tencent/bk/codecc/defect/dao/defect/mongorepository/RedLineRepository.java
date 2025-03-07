@@ -22,4 +22,12 @@ public interface RedLineRepository extends MongoRepository<RedLineEntity, String
      * @return
      */
     List<RedLineEntity> findByBuildId(String buildId);
+
+    /**
+     * 根据构建ID和任务ID查询红线数据
+     * @param buildId 构建ID
+     * @param taskId 任务ID
+     * @return 红线entity
+     */
+    List<RedLineEntity> findByBuildIdAndTaskId(String buildId, Long taskId);
 }

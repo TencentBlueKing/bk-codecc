@@ -37,6 +37,12 @@ public class ScmFileInfoSnapshotEntity {
     private long updateTime;
 
     /**
+     * 文件最后修改人
+     */
+    @Field("file_author")
+    private String fileAuthor;
+
+    /**
      * 代码库id
      */
     @Field("repo_id")

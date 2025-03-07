@@ -14,6 +14,7 @@ import preload, {
   getToolList,
   getNotice,
   getRbacPermission,
+  getIsProjectManager,
 } from '@/common/preload';
 
 import taskRoutes from './task';
@@ -145,6 +146,11 @@ router.beforeEach(async (to, from, next) => {
   if (store.state.isRbac === undefined) {
     getRbacPermission();
   }
+
+  if (store.state.isProjectManager === undefined && store.state.projectId) {
+    getIsProjectManager();
+  }
+
   if (!Object.prototype.hasOwnProperty.call(to.meta, 'layout')) {
     to.meta.layout = 'inner';
     next();

@@ -13,6 +13,7 @@
 package com.tencent.bk.codecc.defect.resources;
 
 import com.tencent.bk.codecc.defect.api.BuildCheckerRestResource;
+import com.tencent.bk.codecc.defect.dao.core.mongotemplate.CheckerDetailDao;
 import com.tencent.bk.codecc.defect.service.CheckerImportService;
 import com.tencent.bk.codecc.defect.service.ICheckerIntegratedBizService;
 import com.tencent.bk.codecc.defect.vo.CheckerImportVO;
@@ -23,6 +24,8 @@ import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import com.tencent.devops.common.web.RestResource;
 import java.util.List;
 import java.util.Map;
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -31,13 +34,15 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @version V1.0
  * @date 2020/4/10
  */
+@Slf4j
 @RestResource
 public class BuildCheckerRestResourceImpl implements BuildCheckerRestResource {
     @Autowired
     private CheckerImportService checkerImportService;
-
     @Autowired
     private ICheckerIntegratedBizService checkerIntegratedBizService;
+    @Autowired
+    private CheckerDetailDao checkerDetailDao;
 
     @Override
     public Result<Map<String, List<CheckerPropVO>>> checkerImport(String userName,
@@ -47,7 +52,7 @@ public class BuildCheckerRestResourceImpl implements BuildCheckerRestResource {
     }
 
     @Override
-    public Result<List<String>> updateToolCheckerSetToStatus(
+    public Result<List<String>> updateToolCheckersToStatus(
             String userName,
             String buildId,
             String toolName,
@@ -66,4 +71,8 @@ public class BuildCheckerRestResourceImpl implements BuildCheckerRestResource {
         return new Result<>(checkerIntegratedBizService.revertStatus(userName, toolName, status));
     }
 
+    @Override
+    public Result<Long> getCheckerNumByToolName(String toolName) {
+        return new Result<>(checkerDetailDao.countByToolName(toolName));
+    }
 }

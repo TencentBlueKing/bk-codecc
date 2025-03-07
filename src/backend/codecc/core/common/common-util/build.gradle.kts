@@ -32,4 +32,6 @@ dependencies {
     api(group = "org.apache.commons", name = "commons-exec")
     api("com.github.ben-manes.caffeine:caffeine")
     api("com.tencent.bk.sdk:crypto-java-sdk")
+
+    api("com.tencent.bk.sdk:spring-boot-bk-audit-starter")
 }

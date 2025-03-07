@@ -1,6 +1,7 @@
 package com.tencent.bk.codecc.task.api;
 
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_ACCESS_TOKEN;
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
 
 import com.tencent.bk.codecc.task.vo.DevopsProjectVO;
@@ -49,4 +50,16 @@ public interface UserManageRestResource {
             @ApiParam(value = "PAAS_CC token", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_ACCESS_TOKEN)
                     String accessToken);
+
+    @ApiOperation("")
+    @Path("/isProjectManager")
+    @GET
+    Result<Boolean> isProjectManager(
+            @ApiParam(value = "项目ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId,
+            @ApiParam(value = "用户名称", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userName
+    );
 }

@@ -2,6 +2,7 @@ package com.tencent.bk.codecc.quartz.service.impl
 
 import com.tencent.bk.codecc.quartz.dao.JobCompensateRepository
 import com.tencent.bk.codecc.quartz.dao.JobInstanceRepository
+import com.tencent.bk.codecc.quartz.dao.mongotemplate.JobInstanceDao
 import com.tencent.bk.codecc.quartz.model.JobCompensateEntity
 import com.tencent.bk.codecc.quartz.model.JobInstanceEntity
 import com.tencent.bk.codecc.quartz.pojo.JobExternalDto
@@ -13,19 +14,17 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import java.util.concurrent.CopyOnWriteArrayList
 
 @Service
 class JobManageServiceImpl @Autowired constructor(
     private val jobInstanceRepository: JobInstanceRepository,
-    private val jobCompensateRepository: JobCompensateRepository
+    private val jobCompensateRepository: JobCompensateRepository,
+    private val jobInstanceDao: JobInstanceDao
 ) : JobManageService {
 
-    companion object {
-        private val logger = LoggerFactory.getLogger(JobManageServiceImpl::class.java)
-    }
-
-    //确保操作是线程安全的
-    private val jobNameList = mutableListOf<JobInstanceEntity>()
+    // 确保操作是线程安全的
+    private val jobNameList = CopyOnWriteArrayList<JobInstanceEntity>()
 
     override fun findAllJobs(): List<JobInstanceEntity> {
         val jobInstanceList = jobInstanceRepository.findAll()
@@ -34,16 +33,14 @@ class JobManageServiceImpl @Autowired constructor(
         return jobInstanceList
     }
 
-    override fun findCachedJobs(): List<JobInstanceEntity> {
-        return jobNameList
-    }
+    override fun findCachedJobs(): List<JobInstanceEntity> = jobNameList
 
     override fun saveJob(jobExternalDto: JobExternalDto): JobInstanceEntity {
         val jobInstance = JobInstanceEntity()
         val cronMd5 = DigestUtils.md5Hex(jobExternalDto.cronExpression)
         val key = "${UUIDUtil.generate()}_$cronMd5"
-        jobInstance.jobName = if(jobExternalDto.jobName.isNullOrBlank()) key else jobExternalDto.jobName
-        jobInstance.triggerName = if(jobExternalDto.jobName.isNullOrBlank()) key else jobExternalDto.jobName
+        jobInstance.jobName = if (jobExternalDto.jobName.isNullOrBlank()) key else jobExternalDto.jobName
+        jobInstance.triggerName = if (jobExternalDto.jobName.isNullOrBlank()) key else jobExternalDto.jobName
         jobInstance.classUrl = jobExternalDto.classUrl
         jobInstance.className = jobExternalDto.className
         jobInstance.cronExpression = jobExternalDto.cronExpression
@@ -55,13 +52,11 @@ class JobManageServiceImpl @Autowired constructor(
         return jobInstanceRepository.save(jobInstance)
     }
 
-    override fun findJobsByName(jobNames: List<String>): List<JobInstanceEntity> {
-        return jobInstanceRepository.findByJobNameIn(jobNames)
-    }
+    override fun findJobsByName(jobNames: List<String>): List<JobInstanceEntity> =
+        jobInstanceRepository.findByJobNameIn(jobNames)
 
-    override fun findJobByName(jobName: String): JobInstanceEntity? {
-        return jobInstanceRepository.findFirstByJobName(jobName)
-    }
+    override fun findJobByName(jobName: String): JobInstanceEntity? =
+        jobInstanceRepository.findFirstByJobName(jobName)
 
     override fun saveJobs(jobInstances: List<JobInstanceEntity>): List<JobInstanceEntity> {
         jobInstances.forEach {
@@ -94,40 +89,39 @@ class JobManageServiceImpl @Autowired constructor(
             OperationType.ADD -> {
                 jobNameList.add(jobInstance)
             }
+
             OperationType.REMOVE -> {
                 jobNameList.removeIf { it.jobName == jobInstance.jobName }
             }
         }
     }
 
-
-    override fun deleteAllJobs(){
+    override fun deleteAllJobs() {
         jobInstanceRepository.deleteAll()
     }
 
-    override fun deleteAllCacheJobs(){
+    override fun deleteAllCacheJobs() {
         jobNameList.clear()
     }
 
-
-    override fun refreshOpensourceCronExpression(period : Int, startTime : Int){
+    override fun refreshOpensourceCronExpression(period: Int, startTime: Int) {
         val jobInstances = jobInstanceRepository.findByClassName("TriggerPipelineScheduleTask")
         val currentTime = System.currentTimeMillis()
         jobInstances.forEach {
-            try{
-                if(it.jobParam.isNullOrEmpty()){
+            try {
+                if (it.jobParam.isNullOrEmpty()) {
                     return@forEach
                 }
-                if(it.jobParam["gongfengId"] == null){
+                if (it.jobParam["gongfengId"] == null) {
                     return@forEach
                 }
                 val gongfengId = it.jobParam["gongfengId"] as Int
-                if(gongfengId == 0){
+                if (gongfengId == 0) {
                     return@forEach
                 }
                 it.cronExpression = getGongfengTriggerCronExpression(gongfengId, period, startTime)
                 it.updatedDate = currentTime
-            } catch (e : Exception){
+            } catch (e: Exception) {
                 logger.info("update cron expression fail!")
             }
         }
@@ -139,8 +133,29 @@ class JobManageServiceImpl @Autowired constructor(
             convert(it)
         }
 
-    //将定时时间全天平均，以10分钟为间隔
-    private fun getGongfengTriggerCronExpression(gongfengId: Int, period : Int, startTime : Int): String {
+    override fun updateLastAndNextTriggerTime(jobName: String, triggerTime: Long, nextTime: Long) {
+        jobInstanceDao.updateLastAndNextTriggerTime(jobName, triggerTime, nextTime)
+    }
+
+    /**
+     * 查找next_trigger_time在指定时间段内的指定ClassName的Job
+     * @param classNames
+     * @param startTime
+     * @param endTime
+     */
+    override fun findByNextTimeInInterval(
+        classNames: List<String>,
+        tag: String,
+        startTime: Long,
+        endTime: Long
+    ): List<JobInfoVO>? {
+        return jobInstanceDao.findByNextTimeInterval(classNames, tag, startTime, endTime)?.map {
+            convert(it)
+        }
+    }
+
+    // 将定时时间全天平均，以10分钟为间隔
+    private fun getGongfengTriggerCronExpression(gongfengId: Int, period: Int, startTime: Int): String {
         val remainder = gongfengId % (period * 6)
         val minuteNum = (remainder % 6) * 10
         val hourNum = (startTime + ((remainder / 6) % period)) % 24
@@ -160,5 +175,9 @@ class JobManageServiceImpl @Autowired constructor(
                 updatedDate = updatedDate ?: 0L
             )
         }
+    }
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(JobManageServiceImpl::class.java)
     }
 }

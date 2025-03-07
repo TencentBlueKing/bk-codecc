@@ -4,10 +4,13 @@ import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildDefectV2Repository;
 import com.tencent.bk.codecc.defect.model.BuildDefectV2Entity;
 import com.tencent.devops.common.constant.ComConstants;
+import com.tencent.devops.common.constant.ComConstants.DefectStatus;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -99,5 +102,26 @@ public class BuildDefectV2Dao {
         }
 
         ops.execute();
+    }
+
+    public List<BuildDefectV2Entity> findNewByTaskIdAndBuildIdAndToolsWithLimit(Long taskId, String buildId,
+                                                                                List<String> tools, String defectIdGt,
+                                                                                Integer limit) {
+        Criteria cri = Criteria.where("task_id").is(taskId).and("build_id").is(buildId)
+                .and("tool_name").in(tools);
+        if (StringUtils.isNotEmpty(defectIdGt)) {
+            cri.and("defect_id").gt(defectIdGt);
+        }
+        Query query = Query.query(cri);
+        query.limit(limit);
+        query.with(Sort.by(Sort.Direction.ASC, "defect_id"));
+        return defectMongoTemplate.find(query, BuildDefectV2Entity.class);
+    }
+
+    public long countNewByTaskIdAndBuildIdAndTools(Long taskId, String buildId, List<String> tools) {
+        Query query = Query.query(Criteria.where("task_id").is(taskId)
+                .and("build_id").is(buildId)
+                .and("tool_name").in(tools));
+        return defectMongoTemplate.count(query, BuildDefectV2Entity.class);
     }
 }

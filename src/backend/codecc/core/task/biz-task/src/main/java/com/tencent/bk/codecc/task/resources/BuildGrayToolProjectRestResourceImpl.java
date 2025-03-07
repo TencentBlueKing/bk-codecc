@@ -50,14 +50,14 @@ public class BuildGrayToolProjectRestResourceImpl implements BuildGrayToolProjec
     private GrayToolProjectService grayToolProjectService;
 
     @Override
-    public Result<Boolean> createGrayTaskPool(String toolName,String stage, String user) {
-        grayToolProjectService.selectGrayTaskPool(toolName, stage, user);
+    public Result<Boolean> createGrayTaskPool(String toolName, String langCode, String stage, String user) {
+        grayToolProjectService.selectGrayTaskPool(toolName, langCode, stage, user);
         return new Result<>(true);
     }
 
     @Override
-    public Result<TriggerGrayToolVO> triggerGrayTaskPool(String toolName, String taskNum) {
-        return new Result<>(grayToolProjectService.triggerGrayToolTasks(toolName, taskNum));
+    public Result<TriggerGrayToolVO> triggerGrayTaskPool(String toolName, String taskNum, String langCode) {
+        return new Result<>(grayToolProjectService.triggerGrayToolTasks(toolName, taskNum, langCode));
     }
 
     @Override

@@ -26,13 +26,9 @@
 
 package com.tencent.bk.codecc.defect.resources;
 
-import static com.tencent.devops.common.constant.ComConstants.CODE_COMMENT_ADD;
-import static com.tencent.devops.common.constant.ComConstants.CODE_COMMENT_DEL;
-import static com.tencent.devops.common.constant.ComConstants.FUNC_CODE_COMMENT_ADD;
-import static com.tencent.devops.common.constant.ComConstants.FUNC_CODE_COMMENT_DEL;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.tencent.bk.audit.annotations.AuditEntry;
 import com.tencent.bk.codecc.defect.api.UserDefectRestResource;
 import com.tencent.bk.codecc.defect.service.BuildSnapshotService;
 import com.tencent.bk.codecc.defect.service.CommonDefectMigrationService;
@@ -43,9 +39,25 @@ import com.tencent.bk.codecc.defect.service.IQueryWarningBizService;
 import com.tencent.bk.codecc.defect.service.IStatQueryWarningService;
 import com.tencent.bk.codecc.defect.service.TaskLogService;
 import com.tencent.bk.codecc.defect.service.impl.CLOCQueryWarningBizServiceImpl;
+import com.tencent.bk.codecc.defect.service.impl.LintBatchIgnoreApprovalBizServiceImpl;
 import com.tencent.bk.codecc.defect.utils.ParamUtils;
-import com.tencent.bk.codecc.defect.vo.*;
+import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
+import com.tencent.bk.codecc.defect.vo.BatchDefectProcessRspVO;
+import com.tencent.bk.codecc.defect.vo.CCNDefectQueryRspVO;
+import com.tencent.bk.codecc.defect.vo.CountDefectFileRequest;
+import com.tencent.bk.codecc.defect.vo.DefectQueryRspVO;
+import com.tencent.bk.codecc.defect.vo.FileDefectGatherVO;
+import com.tencent.bk.codecc.defect.vo.GetFileContentSegmentReqVO;
+import com.tencent.bk.codecc.defect.vo.LintDefectQueryRspVO;
+import com.tencent.bk.codecc.defect.vo.ListToolNameRequest;
+import com.tencent.bk.codecc.defect.vo.ListToolNameResponse;
 import com.tencent.bk.codecc.defect.vo.ListToolNameResponse.ToolBase;
+import com.tencent.bk.codecc.defect.vo.PreIgnoreApprovalCheckVO;
+import com.tencent.bk.codecc.defect.vo.QueryCheckersAndAuthorsRequest;
+import com.tencent.bk.codecc.defect.vo.QueryDefectFileContentSegmentReqVO;
+import com.tencent.bk.codecc.defect.vo.QueryFileDefectGatherRequest;
+import com.tencent.bk.codecc.defect.vo.SingleCommentVO;
+import com.tencent.bk.codecc.defect.vo.StatDefectQueryRespVO;
 import com.tencent.bk.codecc.defect.vo.admin.DeptTaskDefectReqVO;
 import com.tencent.bk.codecc.defect.vo.admin.DeptTaskDefectRspVO;
 import com.tencent.bk.codecc.defect.vo.common.BuildVO;
@@ -64,10 +76,8 @@ import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
-import com.tencent.devops.common.constant.ComConstants.BusinessType;
-import com.tencent.devops.common.constant.ComConstants.Tool;
-import com.tencent.devops.common.constant.ComConstants.ToolType;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import com.tencent.devops.common.constant.audit.ActionIds;
 import com.tencent.devops.common.service.BizServiceFactory;
 import com.tencent.devops.common.service.IBizService;
 import com.tencent.devops.common.service.ToolMetaCacheService;
@@ -77,11 +87,6 @@ import com.tencent.devops.common.web.RestResource;
 import com.tencent.devops.common.web.aop.annotation.OperationHistory;
 import com.tencent.devops.common.web.condition.CommunityCondition;
 import com.tencent.devops.common.web.security.AuthMethod;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -90,6 +95,13 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.util.Pair;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 告警查询服务实现
@@ -119,13 +131,12 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
     @Autowired
     private BuildSnapshotService buildSnapshotService;
     @Autowired
-    private IIgnoreTypeService iIgnoreTypeService;
-    @Autowired
     private ToolMetaCacheService toolMetaCache;
     @Autowired
     private CommonDefectMigrationService commonDefectMigrationService;
     @Autowired
-    private Client client;
+    private LintBatchIgnoreApprovalBizServiceImpl lintBatchIgnoreApprovalBizService;
+
 
     @Override
     public Result<QueryWarningPageInitRspVO> queryCheckersAndAuthors(
@@ -140,19 +151,23 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
         );
 
         Set<String> statusSet = Sets.newHashSet(List2StrUtil.fromString(status, ComConstants.STRING_SPLIT));
-
+        List<String> statusList = new ArrayList<>(statusSet);
+        QueryCheckersAndAuthorsRequest request = new QueryCheckersAndAuthorsRequest(
+                taskId == null ? Lists.newArrayList() : Lists.newArrayList(taskId),
+                Lists.newArrayList(toolName),
+                null,
+                null,
+                statusList,
+                null,
+                buildId,
+                false
+        );
         return new Result<>(
                 // 兼容老版本接口，当时还没有跨任务，所以multiTaskQuery固定为false
                 queryWarningBizService.processQueryWarningPageInitRequest(
                         userId,
-                        taskId == null ? Lists.newArrayList() : Lists.newArrayList(taskId),
-                        Lists.newArrayList(toolName),
-                        null,
-                        statusSet,
-                        null,
-                        buildId,
                         projectId,
-                        false
+                        request
                 )
         );
     }
@@ -167,12 +182,12 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
         List<String> toolNameList = pair.getFirst();
         List<String> dimensionList = pair.getSecond();
         List<String> statusList = List2StrUtil.fromString(status, ComConstants.STRING_SPLIT);
+
         // 兼容老版本接口，当时还没有跨任务，所以multiTaskQuery固定为false
         QueryCheckersAndAuthorsRequest request = new QueryCheckersAndAuthorsRequest(
-                taskIdList, toolNameList, dimensionList,
+                taskIdList, toolNameList, dimensionList,null,
                 statusList, checkerSet, buildId, false
         );
-
         return queryCheckersAndAuthors("", "", request);
     }
 
@@ -182,14 +197,8 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
             String projectId,
             QueryCheckersAndAuthorsRequest request
     ) {
-        List<String> statusList = request.getStatusList();
-        Set<String> statusSet = CollectionUtils.isEmpty(statusList) ? Sets.newHashSet() : Sets.newHashSet(statusList);
         List<String> toolNameList = request.getToolNameList();
         List<String> dimensionList = request.getDimensionList();
-        List<Long> taskIdList = request.getTaskIdList();
-        String checkerSet = request.getCheckerSet();
-        String buildId = request.getBuildId();
-        boolean isMultiTaskQuery = Boolean.TRUE.equals(request.getMultiTaskQuery());
 
         IQueryWarningBizService service = fileAndDefectQueryFactory.createBizService(
                 toolNameList,
@@ -200,14 +209,8 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
 
         QueryWarningPageInitRspVO response = service.processQueryWarningPageInitRequest(
                 userId,
-                taskIdList,
-                toolNameList,
-                dimensionList,
-                statusSet,
-                checkerSet,
-                buildId,
                 projectId,
-                isMultiTaskQuery
+                request
         );
 
         return new Result<>(response);
@@ -367,8 +370,8 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
                         getFileContentSegmentReqVO));
     }
 
-
     @Override
+    @AuditEntry(actionId = ActionIds.PROCESS_DEFECT)
     @AuthMethod(permission = {CodeCCAuthAction.DEFECT_MANAGE})
     public Result<List<BatchDefectProcessRspVO>> batchDefectProcess(String projectId, String userName,
             BatchDefectProcessReqVO batchDefectProcessReqVO) {
@@ -381,8 +384,8 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
         }
         List<BatchDefectProcessRspVO> rspVOS = new ArrayList<>();
         // 如果是取消忽略并标记处理，需要将revertAndMark置为true。让标记处理可以先标记忽略的告警
-        if (bizType.contains(BusinessType.REVERT_IGNORE.value())
-                && bizType.contains(BusinessType.MARK_DEFECT.value())) {
+        if (bizType.contains(ComConstants.BusinessType.REVERT_IGNORE.value())
+                && bizType.contains(ComConstants.BusinessType.MARK_DEFECT.value())) {
             log.info("batchDefectProcess with revert And mark");
             batchDefectProcessReqVO.setRevertAndMark(true);
         }
@@ -396,11 +399,12 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
                     .equalsIgnoreCase(batchDefectProcessReqVO.getIsSelectAll())
                     ? getBatchSelectDefectCount(projectId, userName, batchDefectProcessReqVO)
                     : CollectionUtils.isEmpty(batchDefectProcessReqVO.getDefectKeySet()) ? 0L
-                    : batchDefectProcessReqVO.getDefectKeySet().size();
+                            : batchDefectProcessReqVO.getDefectKeySet().size();
             Result<Long> result = singleBizTypeBatchProcess(userName, reqVO);
             if (result.isNotOk()) {
                 return new Result<>(result.getStatus(), result.getCode(), result.getMessage(), null);
             }
+
             rspVOS.add(new BatchDefectProcessRspVO(reqVO.getBizType(), result.getData(),
                     count - (result.getData() == null ? 0 : result.getData())));
         }
@@ -408,7 +412,7 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
     }
 
     private long getBatchSelectDefectCount(String projectId, String userName,
-                                           BatchDefectProcessReqVO batchDefectProcessReqVO) {
+            BatchDefectProcessReqVO batchDefectProcessReqVO) {
         Result<CommonDefectQueryRspVO> result = queryDefectListWithIssue(userName, projectId,
                 batchDefectProcessReqVO.convertDefectQueryReqVO(), 0, 1, null, null);
         if (result == null || result.isNotOk() || result.getData() == null) {
@@ -425,6 +429,16 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
         } else {
             return 0L;
         }
+    }
+
+    @Override
+    public Result<PreIgnoreApprovalCheckVO> preCheckIgnoreApproval(String projectId, String userName,
+            BatchDefectProcessReqVO batchDefectProcessReqVO) {
+        batchDefectProcessReqVO.setUserName(userName);
+        batchDefectProcessReqVO.setIgnoreAuthor(userName);
+        batchDefectProcessReqVO.setProjectId(projectId);
+        return new Result<>(lintBatchIgnoreApprovalBizService.getMatchDefectCountAndDefectLimit(
+                batchDefectProcessReqVO));
     }
 
     private Result<Long> singleBizTypeBatchProcess(String userName,
@@ -469,7 +483,7 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
 
     @Override
     @AuthMethod(permission = {CodeCCAuthAction.DEFECT_MANAGE})
-    @OperationHistory(funcId = FUNC_CODE_COMMENT_ADD, operType = CODE_COMMENT_ADD)
+    @OperationHistory(funcId = ComConstants.FUNC_CODE_COMMENT_ADD, operType = ComConstants.CODE_COMMENT_ADD)
     public Result<Boolean> addCodeComment(
             String defectId, String toolName, String commentId, String userName,
             SingleCommentVO singleCommentVO, String fileName, String nameCn,
@@ -498,13 +512,13 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
 
     @Override
     @AuthMethod(permission = {CodeCCAuthAction.DEFECT_MANAGE})
-    @OperationHistory(funcId = FUNC_CODE_COMMENT_DEL, operType = CODE_COMMENT_DEL)
+    @OperationHistory(funcId = ComConstants.FUNC_CODE_COMMENT_DEL, operType = ComConstants.CODE_COMMENT_DEL)
     public Result<Boolean> deleteCodeComment(
             String commentId, String singleCommentId, String toolName,
             String userName, String entityId, String comment
     ) {
         IDefectOperateBizService service = getServiceForCodeCommentBiz(toolName);
-        service.deleteCodeComment(commentId, singleCommentId, userName);
+        service.deleteCodeComment(entityId, commentId, singleCommentId, userName);
 
         return new Result<>(true);
     }
@@ -623,25 +637,25 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
         IQueryWarningBizService service;
 
         if (CollectionUtils.isEmpty(request.getDimensionList())
-                || request.getDimensionList().contains(ToolType.DEFECT.name())
-                || request.getDimensionList().contains(ToolType.SECURITY.name())
-                || request.getDimensionList().contains(ToolType.STANDARD.name())) {
+                || request.getDimensionList().contains(ComConstants.ToolType.DEFECT.name())
+                || request.getDimensionList().contains(ComConstants.ToolType.SECURITY.name())
+                || request.getDimensionList().contains(ComConstants.ToolType.STANDARD.name())) {
             service = fileAndDefectQueryFactory.createBizService(
                     "",
-                    ToolType.STANDARD.name(),
+                    ComConstants.ToolType.STANDARD.name(),
                     ComConstants.BusinessType.QUERY_WARNING.value(),
                     IQueryWarningBizService.class
             );
-        } else if (request.getDimensionList().contains(ToolType.CCN.name())) {
+        } else if (request.getDimensionList().contains(ComConstants.ToolType.CCN.name())) {
             service = fileAndDefectQueryFactory.createBizService(
-                    ToolType.CCN.name(),
+                    ComConstants.ToolType.CCN.name(),
                     "",
                     ComConstants.BusinessType.QUERY_WARNING.value(),
                     IQueryWarningBizService.class
             );
-        } else if (request.getDimensionList().contains(ToolType.DUPC.name())) {
+        } else if (request.getDimensionList().contains(ComConstants.ToolType.DUPC.name())) {
             service = fileAndDefectQueryFactory.createBizService(
-                    ToolType.DUPC.name(),
+                    ComConstants.ToolType.DUPC.name(),
                     "",
                     ComConstants.BusinessType.QUERY_WARNING.value(),
                     IQueryWarningBizService.class
@@ -659,14 +673,14 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
             throw new CodeCCException(CommonMessageCode.NOT_FOUND_PROCESSOR);
         }
 
-        if (Tool.CCN.name().equalsIgnoreCase(toolName)) {
+        if (ComConstants.Tool.CCN.name().equalsIgnoreCase(toolName)) {
             return defectOperateBizServiceFactory.createBizService(
                     toolName, ComConstants.BusinessType.DEFECT_OPERATE.value(),
                     IDefectOperateBizService.class
             );
         } else {
             return defectOperateBizServiceFactory.createBizService(
-                    "", ToolType.STANDARD.name(), ComConstants.BusinessType.DEFECT_OPERATE.value(),
+                    "", ComConstants.ToolType.STANDARD.name(), ComConstants.BusinessType.DEFECT_OPERATE.value(),
                     IDefectOperateBizService.class
             );
         }

@@ -34,13 +34,14 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -98,6 +99,9 @@ public interface ComConstants {
      * 通用BizService类名（CommonBizTypeBizServiceImpl）的前缀名
      */
     String COMMON_BIZ_SERVICE_PREFIX = "Common";
+
+    String BATCH_DEFECT_PROCESSOR_INFFIX = "BatchDefectProcess";
+
     /**
      * 项目已接入工具的名称之间的分隔符
      */
@@ -107,6 +111,11 @@ public interface ComConstants {
      * 分号分隔符
      */
     String SEPARATOR_SEMICOLON = ":";
+
+    /**
+     * 特殊分隔符
+     */
+    String SPECIAL_SEPARATOR = ">>>";
 
     /**
      * GOML工具特殊参数rel_path
@@ -123,8 +132,9 @@ public interface ComConstants {
     String SUM = "合计";
 
     /**
-     * 严重程度类别：严重（1），一般（2），提示（4）
+     * 严重程度类别：未知（0），严重（1），一般（2），提示（4）
      */
+    int UNKNOWN = 0; //SCA license新增风险等级
     int SERIOUS = 1;
     int NORMAL = 2;
     int PROMPT = 4;
@@ -142,17 +152,30 @@ public interface ComConstants {
     int PROMPT_IN_DB = 3;
 
     /**
+     * 告警提单默认上限值
+     */
+    int ISSUE_DEFECT_MAX_ISSUE = 1000;
+
+    int GET_PIPELINE_MAX_BATCH_SIZE = 100;
+
+    /**
      * 常用整数
      */
     long COMMON_NUM_10000L = 10000L;
     long COMMON_NUM_1000L = 1000L;
     long COMMON_NUM_1L = 1L;
+    long COMMON_NUM_2L = 2L;
     long COMMON_NUM_10L = 10L;
 
     long COMMON_NUM_100L = 100L;
+    int COMMON_NUM_0 = 0;
+    int COMMON_NUM_10 = 10;
+    int COMMON_NUM_100 = 100;
+    int COMMON_NUM_1000 = 1000;
     long COMMON_NUM_0L = 0L;
     float COMMON_NUM_0F = 0F;
     double COMMON_NUM_0D = 0.0D;
+    double COMMON_NUM_100D = 100.0D;
     int COMMON_NUM_5000 = 5000;
 
     /**
@@ -283,6 +306,16 @@ public interface ComConstants {
     Integer DEFAULT_PIPELINE_TASK_LIMIT_VALUE = 50;
 
     /**
+     * GitHub同步配置 组仓库
+     */
+    String SYNC_GITHUB_CONFIG_GROUP_REPO = "SYNC_GITHUB_CONFIG_GROUP_REPO";
+
+    /**
+     * GitHub同步配置 单仓库
+     */
+    String SYNC_GITHUB_CONFIG_SINGLE_REPO = "SYNC_GITHUB_CONFIG_SINGLE_REPO";
+
+    /**
      * 工具对应的规范规则集ID的配置
      */
     String STANDARD_CHECKER_SET_ID = "STANDARD_CHECKER_SET_ID";
@@ -308,6 +341,9 @@ public interface ComConstants {
     String MODIFY_INFO = "modify_info";
     String ENABLE_ACTION = "enable_action";
     String DISABLE_ACTION = "diable_action";
+    String DELETE_ACTION = "delete_action";
+    String CREATE_ACTION = "create_action";
+    String UPDATE_ACTION = "update_action";
     String OPEN_CHECKER = "open_checker";
     String CLOSE_CHECKER = "close_checker";
     String TRIGGER_ANALYSIS = "trigger_analysis";
@@ -335,25 +371,29 @@ public interface ComConstants {
     /**
      * ------------------------操作历史记录操作功能id------------------
      */
-    //注册工具
+    // 注册工具
     String FUNC_REGISTER_TOOL = "register_tool";
-    //修改任务信息
+    // 管理任务, 创建/删除
+    String FUNC_TASK_MANAGE = "task_manage";
+    // 修改任务信息
     String FUNC_TASK_INFO = "task_info";
-    //切换任务状态
+    // 切换任务状态
     String FUNC_TASK_SWITCH = "task_switch";
-    //切换工具状态
+    // 切换工具状态
     String FUNC_TOOL_SWITCH = "tool_switch";
-    //任务代码库更新
+    // 任务代码库更新
     String FUNC_CODE_REPOSITORY = "task_code";
-    //规则配置
+    // 规则配置
     String FUNC_CHECKER_CONFIG = "checker_config";
-    //触发立即分析
+    // 规则集配置
+    String FUNC_CHECKER_SET_CONFIG = "checker_set_config";
+    // 触发立即分析
     String FUNC_TRIGGER_ANALYSIS = "trigger_analysis";
-    //定时扫描修改
+    // 定时扫描修改
     String FUNC_SCAN_SCHEDULE = "scan_schedule";
-    //过滤路径
+    // 过滤路径
     String FUNC_FILTER_PATH = "filter_path";
-    //告警管理
+    // 告警管理
     String FUNC_DEFECT_MANAGE = "defect_manage";
     // 批处理告警
     String FUNC_BATCH_DEFECT = "batch_defect";
@@ -502,6 +542,7 @@ public interface ComConstants {
 
     String GRAY_PROJECT_PREFIX = "GRAY_TASK_POOL_";
 
+    String STREAM_CI_PROJECT_PREFIX = "git_";
     /**
      * 每日分析代码行统计
      */
@@ -512,6 +553,20 @@ public interface ComConstants {
 
     String GONGFENG_PROJECT_ID_PREFIX = "CODE_";
     String CUSTOMPROJ_ID_PREFIX = "CUSTOMPROJ_";
+    String OTEAM_PROJECT_ID = "CUSTOMPROJ_TEG_CUSTOMIZED";
+    String STREAM_PROJECT_ID_PREFIX = "git_";
+    /**
+     * 闭源扫描项目id前缀
+     */
+    String GONGFENG_PRIVATYE_PROJECT_PREFIX = "CLOSED_SOURCE_";
+    /**
+     * GIHUB开源扫描项目id前缀
+     */
+    String GITHUB_PROJECT_PREFIX = "GITHUB_";
+    /**
+     * 排除非用户创建的项目
+     */
+    String ONLY_USER_CREATE_FROM_REGEX = "^(?!(GRAY_TASK_POOL_|open-source-scan-))";
 
     /**
      * 腾讯内部开源预发布规则开始结束时间
@@ -549,6 +604,40 @@ public interface ComConstants {
      * 腾讯闭源仓库治理生产规则发布版本开始时间
      */
     String PROD_TENCENT_PRIVATE_CHECKER_SET_TIME_GAP = "PROD_TENCENT_PRIVATE_CHECKER_SET_TIME_GAP";
+
+    /**
+     * 腾讯闭源仓库治理预发布规则版本开始时间（暂不使用）
+     */
+    String PRE_PROD_TENCENT_GITHUB_OPENSOURCE_CHECKER_SET_TIME_GAP =
+            "PRE_PROD_TENCENT_GITHUB_OPENSOURCE_CHECKER_SET_TIME_GAP";
+
+    /**
+     * 腾讯闭源仓库治理生产规则发布版本开始时间
+     */
+    String PROD_TENCENT_GITHUB_OPENSOURCE_CHECKER_SET_TIME_GAP = "PROD_TENCENT_GITHUB_OPENSOURCE_CHECKER_SET_TIME_GAP";
+
+    /**
+     * 腾讯TEG/AMS规则包预发布规则版本开始时间（暂不使用）
+     */
+    String PRE_PROD_TENCENT_TEG_AMS_CHECKER_SET_TIME_GAP = "PRE_PROD_TENCENT_TEG_AMS_CHECKER_SET_TIME_GAP";
+
+    /**
+     * 腾讯TEG/AMS规则包生产规则发布版本开始时间
+     */
+    String PROD_TENCENT_TEG_AMS_CHECKER_SET_TIME_GAP = "PROD_TENCENT_TEG_AMS_CHECKER_SET_TIME_GAP";
+
+    /**
+     * 腾讯外网开源预发布规则开始结束时间
+     */
+    String PRE_PROD_TENCENT_COMMUNITY_OPENSOURCE_V2_CHECKER_SET_TIME_GAP
+            = "PRE_PROD_TENCENT_COMMUNITY_OPENSOURCE_V2_CHECKER_SET_TIME_GAP";
+    /**
+     * 腾讯外网开源生产规则开始结束时间
+     */
+    String PROD_TENCENT_COMMUNITY_OPENSOURCE_V2_CHECKER_SET_TIME_GAP
+            = "PROD_TENCENT_COMMUNITY_OPENSOURCE_V2_CHECKER_SET_TIME_GAP";
+
+
 
 
     String MAX_BUILD_LIST_SIZE = "MAX_BUILD_LIST_SIZE";
@@ -668,6 +757,10 @@ public interface ComConstants {
 
     String EMPTY_STRING = "";
 
+    long DEFAULT_PLUGIN_TIMEOUT_MIN = 900;
+
+    long MAX_PLUGIN_TIMEOUT_MIN = 10800;
+
     /**
      * 业务类型
      */
@@ -736,6 +829,11 @@ public interface ComConstants {
          * 告警标志修改
          */
         MARK_DEFECT("MarkDefect"),
+
+        /**
+         * 忽略审核
+         */
+        IGNORE_APPROVAL("IgnoreApproval"),
 
         /**
          * 查询规则包
@@ -821,7 +919,16 @@ public interface ComConstants {
         BLACKDUCK,
         WOODPECKER_COMMITSCAN,
 
-        BKCHECK;
+        BKCHECK,
+
+        GITHUB_PECKER_SECURITY_AKSK,
+
+        SCA;
+
+
+        public static final Set<String> SCAN_COMMIT_TOOLS = ImmutableSet.of(
+                Tool.GITHUB_PECKER_SECURITY_AKSK.name()
+        );
     }
 
     /**
@@ -1210,30 +1317,65 @@ public interface ComConstants {
          */
         TIMING_SCAN("timing_scan");
 
-        private String value;
+        private final String value;
 
         BsTaskCreateFrom(String value) {
             this.value = value;
         }
 
-        @NotNull
-        public static Set<String> getByStatType(Set<String> type) {
-            Set<String> createFrom;
-            if (type != null) {
-                createFrom = Sets.newHashSet();
-                if (type.contains(DefectStatType.GONGFENG_SCAN.value)) {
-                    // 开源
-                    createFrom.add(GONGFENG_SCAN.value());
-                }
-                if (type.contains(DefectStatType.USER.value)) {
-                    // 非开源
-                    createFrom.add(BS_CODECC.value());
-                    createFrom.add(BS_PIPELINE.value());
-                }
-            } else {
-                createFrom = Sets.newHashSet(BS_CODECC.value(), BS_PIPELINE.value(), GONGFENG_SCAN.value());
+        public static BsTaskCreateFrom getByValue(String value) {
+            if (StringUtils.isEmpty(value)) {
+                return null;
             }
-            return createFrom;
+            for (BsTaskCreateFrom bsTaskCreateFrom : BsTaskCreateFrom.values()) {
+                if (bsTaskCreateFrom.value.equals(value)) {
+                    return bsTaskCreateFrom;
+                }
+            }
+            return null;
+        }
+
+        public String value() {
+            return this.value;
+        }
+
+    }
+
+    /**
+     * 区分提单系统授权来源
+     */
+    enum IssueSystemAuthorizationFrom {
+        /**
+         * codecc服务进行提单系统授权
+         */
+        BS_CODECC("bs_codecc"),
+
+        /**
+         * 蓝盾流水线创建进行提单系统授权
+         */
+        BS_PIPELINE("bs_pipeline"),
+
+        /**
+         * 蓝盾流水线模板创建进行提单系统授权
+         */
+        BS_TEMPLATE("bs_template");
+
+        private final String value;
+
+        IssueSystemAuthorizationFrom(String value) {
+            this.value = value;
+        }
+
+        public static IssueSystemAuthorizationFrom getByValue(String value) {
+            if (StringUtils.isEmpty(value)) {
+                return null;
+            }
+            for (IssueSystemAuthorizationFrom issueSystemAuthorizationFrom : IssueSystemAuthorizationFrom.values()) {
+                if (issueSystemAuthorizationFrom.value.equals(value)) {
+                    return issueSystemAuthorizationFrom;
+                }
+            }
+            return null;
         }
 
         public String value() {
@@ -1322,7 +1464,8 @@ public interface ComConstants {
         CLOC,
         SCC,
         STAT,
-        TSCLUA;
+        TSCLUA,
+        SCA;
 
         @NotNull
         public static List<String> getCommonPatternList() {
@@ -1424,6 +1567,7 @@ public interface ComConstants {
         public int value() {
             return value;
         }
+
     }
 
     /**
@@ -1764,7 +1908,10 @@ public interface ComConstants {
         SEVERITY,
 
         // 按新旧告警统计
-        DEFECT_TYPE
+        DEFECT_TYPE,
+
+        // 操作类型
+        OPERATE
     }
 
     /**
@@ -1846,13 +1993,43 @@ public interface ComConstants {
     }
 
     enum ToolType {
-        STANDARD,
-        SECURITY,
-        DUPC,
-        CCN,
-        DEFECT,
-        CLOC,
-        STAT;
+        STANDARD("代码规范", "Code Style Issues"),
+        SECURITY("安全漏洞", "Security Vulnerabilities"),
+        DUPC("重复率", "Duplication Rate"),
+        CCN("圈复杂度", "CCN"),
+        DEFECT("代码缺陷", "Code Defects"),
+        CLOC("代码统计", "Code Metrics"),
+        STAT("统计", "Statistic"),
+        SCA("软件成分", "Software Composition Analysis");
+
+        private String cnName;
+
+        private String enName;
+
+        ToolType(String cnName, String enName) {
+            this.cnName = cnName;
+            this.enName = enName;
+        }
+
+        public String getCnName() {
+            return cnName;
+        }
+
+        public String getEnName() {
+            return enName;
+        }
+
+        public static ToolType getByName(String name) {
+            if (StringUtils.isBlank(name)) {
+                return null;
+            }
+            for (ToolType value : ToolType.values()) {
+                if (value.name().equals(name)) {
+                    return value;
+                }
+            }
+            return null;
+        }
 
         // LINT问题管理的全维度
         public static final Set<String> DIMENSION_FOR_LINT_PATTERN_SET = ImmutableSet.of(
@@ -1872,6 +2049,50 @@ public interface ComConstants {
                 Tool.SCC.name(),
                 Tool.CLOC.name()
         );
+
+        public static final Set<String> SNAPSHOT_TOOLS = ImmutableSet.of(
+                ToolType.DEFECT.name(),
+                ToolType.SECURITY.name(),
+                ToolType.STANDARD.name(),
+                ToolType.CCN.name()
+        );
+    }
+
+    enum SCADimenstion {
+        LICENSE("许可证", "License"),
+        VULNERABILITY("漏洞", "Vulnerabilities"),
+        PACKAGE("组件", "package"),
+        FILE("文件", "file"),
+        SNIPPET("代码片段", "snippet");
+
+        private String cnName;
+
+        private String enName;
+
+        SCADimenstion(String cnName, String enName) {
+            this.cnName = cnName;
+            this.enName = enName;
+        }
+
+        public String getCnName() {
+            return cnName;
+        }
+
+        public String getEnName() {
+            return enName;
+        }
+
+        public static SCADimenstion getByName(String name) {
+            if (StringUtils.isBlank(name)) {
+                return null;
+            }
+            for (SCADimenstion value : SCADimenstion.values()) {
+                if (value.name().equals(name)) {
+                    return value;
+                }
+            }
+            return null;
+        }
     }
 
     enum BaseConfig {
@@ -1896,19 +2117,34 @@ public interface ComConstants {
 
     enum DefectStatType {
         /**
-         * 所有任务范围
-         */
-        ALL("all"),
-        /**
-         * 非开源扫描（服务、流水线）
+         * 非开源扫描（服务、流水线）,需排除 ^(?!(GRAY_TASK_POOL_|open-source-scan-))
          */
         USER("user"),
         /**
-         * 开源扫描
+         * （项目id以git_开头）
          */
-        GONGFENG_SCAN("gongfeng_scan");
+        STREAM_SCAN("stream_scan"),
+        /**
+         * 开源扫描（项目id以CODE_开头）
+         * 原本只有系统创建(gongfeng_scan), 用户自主创建(bs_codecc, bs_pipeline)，user是自主创建的集合
+         * 现在系统创建细分为开源扫描(open_source_scan), 闭源扫描(closed_source_scan)
+         * 原createFrom是gongfeng_scan的，现在分为closed_source_scan, open_source_scan(包括api创建的CUSTOMPROJ_xxxx)
+         */
+        OPEN_SOURCE_SCAN("open_source_scan"),
+        /**
+         * 闭源扫描（项目id以CLOSED_SOURCE_开头）
+         */
+        CLOSED_SOURCE_SCAN("closed_source_scan"),
+        /**
+         * （项目id以GITHUB_开头）
+         */
+        GITHUB_SCAN("github_scan"),
+        /**
+         * （项目id以CUSTOMPROJ_开头）
+         */
+        API_SCAN("api_scan");
 
-        private String value;
+        private final String value;
 
         DefectStatType(String value) {
             this.value = value;
@@ -1916,6 +2152,45 @@ public interface ComConstants {
 
         public String value() {
             return this.value;
+        }
+
+        public static DefectStatType fromValue(String value) {
+            for (DefectStatType name : DefectStatType.values()) {
+                if (name.value().equals(value)) {
+                    return name;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * OP业务统计划分：
+         *  1.任务创建来源(BsTaskCreateFrom)：工蜂扫描、流水线、CodeCC服务
+         *  2.统计会细分数据来源(DefectStatType)：工蜂闭源扫描、用户（流水线、CodeCC服务）、工蜂开源扫描（除开闭源与用户以外）
+         */
+        @NotNull
+        public static String getDataFromByProjectId(String taskCreateFrom, String projectId) {
+            if (BsTaskCreateFrom.GONGFENG_SCAN.value().equals(taskCreateFrom)) {
+                return getGongfengScanType(projectId);
+            } else if (projectId.startsWith(STREAM_PROJECT_ID_PREFIX)) {
+                return STREAM_SCAN.value();
+            }
+            return USER.value();
+        }
+
+        public static String getGongfengScanType(String projectId) {
+            if (projectId.startsWith(GONGFENG_PRIVATYE_PROJECT_PREFIX)) {
+                // 闭源扫描
+                return CLOSED_SOURCE_SCAN.value();
+            } else if (projectId.startsWith(GITHUB_PROJECT_PREFIX)) {
+                // GitHub扫描
+                return GITHUB_SCAN.value();
+            } else if (projectId.startsWith(CUSTOMPROJ_ID_PREFIX)) {
+                // API触发扫描
+                return API_SCAN.value();
+            }
+            // 默认开源扫描
+            return OPEN_SOURCE_SCAN.value();
         }
     }
 
@@ -1950,20 +2225,36 @@ public interface ComConstants {
          * 内网开源治理
          */
         OPEN_SCAN("openScan"),
+
         /**
          * 内网闭源治理
          */
         PRIVATE_SCAN("privateScan"),
 
         /**
-         * 外网开源
+         * 外网开源（待下线）
          */
         COMMUNITY_OPEN_SCAN("communityOpenScan"),
 
         /**
          * PCG EPC
          */
-        EPC_SCAN("epcScan");
+        EPC_SCAN("epcScan"),
+
+        /**
+         * github开源扫描
+         */
+        GITHUB_OPEN_SCAN("githubOpenScan"),
+
+        /**
+         * TEG/AMS
+         */
+        TEG_AMS_SCAN("tegAmsScan"),
+
+        /**
+         * 外网开源治理（新）
+         */
+        COMMUNITY_OPEN_SCAN_V2("communityOpenScanV2");
 
         private String value;
 
@@ -1980,6 +2271,16 @@ public interface ComConstants {
                 }
             }
             return NORMAL;
+        }
+
+        public static CheckerSetPackageType forValue(String value, CheckerSetPackageType defaultValue) {
+            CheckerSetPackageType[] checkerSetTypes = CheckerSetPackageType.values();
+            for (CheckerSetPackageType checkerSetType : checkerSetTypes) {
+                if (checkerSetType.value.equalsIgnoreCase(value)) {
+                    return checkerSetType;
+                }
+            }
+            return defaultValue;
         }
 
         @JsonValue
@@ -2259,7 +2560,6 @@ public interface ComConstants {
         }
     }
 
-
     /**
      * 缺陷消费类型
      */
@@ -2276,7 +2576,8 @@ public interface ComConstants {
         UNPROCESSED(0), // 待处理
         FIXED(1),       // 已优化工具
         NONEED(2),      // 非工具原因
-        OTHER(3);       // 其他
+        OTHER(3),       // 其他
+        FOLLOWING(4);   // 跟进中
 
         private Integer type;
 
@@ -2310,6 +2611,7 @@ public interface ComConstants {
         CODE_CCN_SCORE
     }
 
+
     /**
      * 缺陷消费类型
      */
@@ -2327,7 +2629,6 @@ public interface ComConstants {
             return flag;
         }
     }
-
 
     enum ColdDataArchivingType {
         LINT,
@@ -2396,4 +2697,87 @@ public interface ComConstants {
             return id;
         }
     }
+
+    enum ToolIntegrateErrorCode {
+        INVALID_TYPE("#INVALID_TYPE#"),
+        NOCHANGE_NAME("#NOCHANGE_NAME#"),
+        NOCHANGE_PATTERN("#NOCHANGE_PATTERN#");
+
+        final String value;
+
+        ToolIntegrateErrorCode(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+    }
+
+    enum CheckerImportErrorCode {
+        NODELETE_CHECKER("#NODELETE_CHECKER#"),
+        INVALID_LANG("#INVALID_LANG#");
+
+        final String value;
+
+        CheckerImportErrorCode(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+    }
+
+    /**
+     * CodeCC回调事件类型
+     */
+    enum CodeCCCallbackEvent {
+        SCAN_FINISH,
+        ;
+
+        public static CodeCCCallbackEvent getByName(String name) {
+            if (StringUtils.isBlank(name)) {
+                return null;
+            }
+            for (CodeCCCallbackEvent value : CodeCCCallbackEvent.values()) {
+                if (value.name().equals(name)) {
+                    return value;
+                }
+            }
+            return null;
+        }
+    }
+
+    /**
+     * CodeCC 告警操作类型
+     */
+    enum CodeCCDefectOpsType {
+        MARK,
+        MARK_NOT_FIXED,
+        ISSUE_SUBMIT,
+        COMMENT,
+        NO_OPS;
+
+        public static CodeCCDefectOpsType getByName(String name) {
+            if (StringUtils.isBlank(name)) {
+                return null;
+            }
+            for (CodeCCDefectOpsType value : CodeCCDefectOpsType.values()) {
+                if (value.name().equals(name)) {
+                    return value;
+                }
+            }
+            return null;
+        }
+    }
+
+    /**
+     * ITSM 系统
+     */
+    enum ItsmSystem {
+        BK_ITSM;
+    }
+
+
 }

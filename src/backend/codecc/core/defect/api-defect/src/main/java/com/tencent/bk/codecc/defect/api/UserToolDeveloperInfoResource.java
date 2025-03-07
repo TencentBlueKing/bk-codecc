@@ -25,11 +25,12 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
 @Consumes(MediaType.APPLICATION_JSON)
 public interface UserToolDeveloperInfoResource {
 
+    // TODO: 这个不太安全, 后续修改
     @ApiOperation("将特定用户添加为特定工具的特定权限角色")
     @Path("/toolName/{toolName}/userName/{userName}")
     @POST
     Result<Boolean> addUserAsRole(
-            @ApiParam(value = "调用接口的用户名", required = true)
+            @ApiParam(value = "调用接口的用户名")
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userId,
             @ApiParam(value = "工具名", required = true)
@@ -42,4 +43,5 @@ public interface UserToolDeveloperInfoResource {
             @QueryParam("role")
             Integer role
     );
+
 }

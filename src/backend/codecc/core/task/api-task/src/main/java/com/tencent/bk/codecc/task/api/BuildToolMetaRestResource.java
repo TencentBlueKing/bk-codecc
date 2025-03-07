@@ -26,6 +26,7 @@
 
 package com.tencent.bk.codecc.task.api;
 
+import com.tencent.devops.common.api.BKToolBasicInfoVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
@@ -84,5 +85,14 @@ public interface BuildToolMetaRestResource
             @ApiParam(value = "工具名称", required = true)
             @QueryParam("toolName")
                     String toolName
+    );
+
+    @ApiOperation("获取工具基本信息")
+    @Path("/get/basicInfo/{toolName}")
+    @GET
+    Result<BKToolBasicInfoVO> getBasicInfo(
+            @ApiParam(value = "工具名", required = true)
+            @PathParam("toolName")
+            String toolName
     );
 }

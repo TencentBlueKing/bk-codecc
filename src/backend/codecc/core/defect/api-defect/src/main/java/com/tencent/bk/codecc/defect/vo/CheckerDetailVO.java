@@ -140,7 +140,7 @@ public class CheckerDetailVO extends CommonVO {
      * 规则类型
      */
     @ApiModelProperty(value = "规则类型")
-    @Pattern(regexp = "CODE_DEFECT|CODE_FORMAT|SECURITY_RISK|COMPLEXITY|DUPLICATE")
+    @Pattern(regexp = "CODE_DEFECT|CODE_FORMAT|SECURITY_RISK|COMPLEXITY|DUPLICATE|SOFTWARE_COMPOSITION")
     private String checkerCategory;
 
     /**
@@ -183,4 +183,7 @@ public class CheckerDetailVO extends CommonVO {
 
     @ApiModelProperty("规则发布者")
     private String publisher;
+
+    @ApiModelProperty("规则来源：用户自定义/工具集成")
+    private String checkerSource;
 }

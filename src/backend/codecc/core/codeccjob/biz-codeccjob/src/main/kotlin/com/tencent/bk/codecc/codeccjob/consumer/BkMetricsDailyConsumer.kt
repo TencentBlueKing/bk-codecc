@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.codeccjob.consumer
 
 import com.tencent.bk.codecc.codeccjob.service.BkMetricsService
-import com.tencent.devops.common.web.mq.EXCHANGE_BK_METRICS_DAULY_TRIGGER
+import com.tencent.devops.common.web.mq.EXCHANGE_BK_METRICS_DAILY_TRIGGER
 import com.tencent.devops.common.web.mq.QUEUE_BK_METRICS_DAILY_TRIGGER
 import com.tencent.devops.common.web.mq.ROUTE_BK_METRICS_DAILY_TRIGGER
 import org.slf4j.LoggerFactory
@@ -24,7 +24,7 @@ class BkMetricsDailyConsumer @Autowired constructor(
         bindings = [QueueBinding(
             key = arrayOf(ROUTE_BK_METRICS_DAILY_TRIGGER),
             value = Queue(value = QUEUE_BK_METRICS_DAILY_TRIGGER, durable = "true"),
-            exchange = Exchange(value = EXCHANGE_BK_METRICS_DAULY_TRIGGER, durable = "true", delayed = "true")
+            exchange = Exchange(value = EXCHANGE_BK_METRICS_DAILY_TRIGGER, durable = "true", delayed = "true")
         )]
     )
     fun statisticDaily() {

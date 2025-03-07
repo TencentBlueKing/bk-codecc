@@ -189,6 +189,11 @@ interface PipelineService {
     fun getRepoDetail(taskInfoEntity: TaskInfoEntity, analyzeConfigInfoVO: AnalyzeConfigInfoVO): AnalyzeConfigInfoVO
 
     /**
+     * 获取 projectId 中 repoHashId 这个代码库的 url
+     */
+    fun getRepoUrl(projectId: String?, repoHashId: String?): String
+
+    /**
      * 更新任务初始化信息
      */
     fun updateTaskInitStep(

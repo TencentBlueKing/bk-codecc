@@ -17,6 +17,7 @@ import com.tencent.devops.common.api.util.UUIDUtil
 import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.constant.ComConstants.Tool
 import com.tencent.devops.common.constant.CommonMessageCode
+import org.apache.commons.lang.BooleanUtils
 import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
 import org.springframework.data.util.Pair
@@ -69,7 +70,8 @@ class CCNDefectCommitComponent constructor(
             logger.info("[ccn cluster process] cluster result, output group size: ${outputDefectList.size}")
             // 6. 对于聚类结果进行后处理
             val upsertDefectList = postHandleDefectList(
-                outputDefectList, buildEntity, transferAuthorList, commitDefectVO.isReallocate)
+                outputDefectList, buildEntity, transferAuthorList, commitDefectVO.isReallocate
+            )
             logger.info("[ccn cluster process] post handle result, result defect size: ${upsertDefectList.size}")
 
             // 7. 保存文件路径聚合
@@ -280,6 +282,10 @@ class CCNDefectCommitComponent constructor(
                                 selectedOldDefect.ignoreCommentDefect = false
                                 reopenDefect(selectedOldDefect)
                             }
+                            // 重新上报，打开规则屏蔽的告警
+                            if (selectedOldDefect.status and ComConstants.DefectStatus.CHECKER_MASK.value() > 0) {
+                                reopenDefect(selectedOldDefect)
+                            }
                         }
                         if (selectedOldDefect.author.isNullOrBlank()) {
                             selectedOldDefect.author = newDefect.author
@@ -363,7 +369,7 @@ class CCNDefectCommitComponent constructor(
             revision = newDefect.revision
             branch = newDefect.branch
             subModule = newDefect.subModule
-            if (author.isNullOrBlank() || true == isReallocate) {
+            if (author.isNullOrBlank() || true == isReallocate || BooleanUtils.isTrue(buildEntity?.reallocate)) {
                 author = newDefect.author
                 //作者转换
                 transferAuthor(this, transferAuthorList)
@@ -414,14 +420,17 @@ class CCNDefectCommitComponent constructor(
                 oldDefect.ignoreReasonType = ComConstants.IgnoreReasonType.ERROR_DETECT.value()
                 oldDefect.ignoreReason = ignoreReason.substringAfter(groupValues[2])
             }
+
             "其他" -> {
                 oldDefect.ignoreReasonType = ComConstants.IgnoreReasonType.OTHER.value()
                 oldDefect.ignoreReason = ignoreReason.substringAfter(groupValues[2])
             }
+
             "设计如此" -> {
                 oldDefect.ignoreReasonType = ComConstants.IgnoreReasonType.SPECIAL_PURPOSE.value()
                 oldDefect.ignoreReason = ignoreReason.substringAfter(groupValues[2])
             }
+
             else -> {
                 oldDefect.ignoreReasonType = ComConstants.IgnoreReasonType.OTHER.value()
                 oldDefect.ignoreReason = ignoreReason

@@ -63,8 +63,12 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
+
+import com.tencent.devops.project.api.service.ServiceProjectResource;
+import com.tencent.devops.project.pojo.ProjectVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -109,8 +113,34 @@ public class MetaServiceImpl implements MetaService {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
+    /**
+     * 当前项目是否在工具的可见范围内
+     * @date 2024/8/30
+     * @param orgIds    当前项目所属的组织的 id 的列表 (包括所有的祖先组织)
+     * @param projectId 当前项目 id
+     * @param toolMetaVO
+     * @return boolean
+     */
+    private boolean inVisibleRange(List<String> orgIds, String projectId, ToolMetaBaseVO toolMetaVO) {
+        // 兼容老逻辑. 如果这 2 个字段都为 null, 就认为这个工具还没有引入可见范围的概念, 直接认定工具在可见范围内.
+        if (toolMetaVO.getVisibleOrgIds() == null && toolMetaVO.getVisibleProjects() == null) {
+            return true;
+        }
+
+        if (CollectionUtils.isNotEmpty(toolMetaVO.getVisibleProjects())
+                && toolMetaVO.getVisibleProjects().contains(projectId)) {
+            return true;
+        }
+        if (CollectionUtils.isNotEmpty(toolMetaVO.getVisibleOrgIds()) && CollectionUtils.isNotEmpty(orgIds)
+                && orgIds.stream().anyMatch(toolMetaVO.getVisibleOrgIds()::contains)) {
+            return true;
+        }
+
+        return false;
+    }
+
     @Override
-    public List<ToolMetaBaseVO> toolList(Boolean isDetail) {
+    public List<ToolMetaBaseVO> toolList(String projectId, Boolean isDetail) {
         // 1.查询工具列表
         /*HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
                 .getRequest();
@@ -120,8 +150,26 @@ public class MetaServiceImpl implements MetaService {
         boolean isAdmin = true;
 
         Map<String, ToolMetaBaseVO> toolMap = toolMetaCache.getToolMetaListFromCache(isDetail, isAdmin);
-        if (toolMap.size() == 0) {
+        if (toolMap == null || toolMap.size() == 0) {
             toolMap = getToolMetaListFromDB(isDetail, isAdmin);
+        }
+
+        List<String> orgIds = new ArrayList<>();
+        if (StringUtils.isNotBlank(projectId)) {
+            com.tencent.devops.project.pojo.Result<ProjectVO> result =
+                    client.getDevopsService(ServiceProjectResource.class).get(projectId);
+            if (result.isOk() && result.getData() != null) {
+                ProjectVO projectVO = result.getData();
+                if (StringUtils.isNotBlank(projectVO.getBgId())) {
+                    orgIds.add(projectVO.getBgId());
+                }
+                if (StringUtils.isNotBlank(projectVO.getDeptId())) {
+                    orgIds.add(projectVO.getDeptId());
+                }
+                if (StringUtils.isNotBlank(projectVO.getCenterId())) {
+                    orgIds.add(projectVO.getCenterId());
+                }
+            }
         }
 
         // 2.对工具进行排序
@@ -132,7 +180,11 @@ public class MetaServiceImpl implements MetaService {
             String[] toolIDArr = orderToolIds.split(",");
             for (String id : toolIDArr) {
                 ToolMetaBaseVO toolMetaVO = toolMap.get(id);
-                if (toolMetaVO != null) {
+                if (toolMetaVO == null) {
+                    continue;
+                }
+                // projectId不为空，需要过滤项目是否在工具的可见范围
+                if (projectId == null || inVisibleRange(orgIds, projectId, toolMetaVO)) {
                     if (ComConstants.Tool.PHPCS.name().equals(id) || ComConstants.Tool.ESLINT.name().equals(id)
                             || ComConstants.Tool.CCN.name().equals(id)) {
                         toolMetaVO.setParams(null);

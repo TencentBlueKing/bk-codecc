@@ -31,7 +31,7 @@ import com.tencent.bk.codecc.defect.vo.GrayTaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
-import com.tencent.devops.common.api.annotation.ServiceInterface;
+import com.tencent.bk.codecc.defect.vo.UploadToolErrorTaskLogVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -40,7 +40,6 @@ import io.swagger.annotations.ApiParam;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 分析任务构建机接口
@@ -61,6 +60,14 @@ public interface BuildTaskLogRestResource
     Result uploadTaskLog(
             @ApiParam(value = "上传分析任务详情", required = true)
                     UploadTaskLogStepVO uploadTaskLogStepVO
+    );
+
+    @ApiOperation("上报工具分析失败记录")
+    @Path("/reportToolErrorTaskLog")
+    @POST
+    Result<Boolean> uploadToolErrorTaskLog(
+        @ApiParam(value = "上传工具分析失败详情", required = true)
+        UploadToolErrorTaskLogVO uploadToolErrorTaskLogVO
     );
 
 

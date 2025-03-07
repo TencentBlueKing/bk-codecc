@@ -31,13 +31,17 @@ import com.tencent.bk.codecc.defect.vo.CheckerCommonCountVO;
 import com.tencent.bk.codecc.defect.vo.CheckerDetailListQueryReqVO;
 import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
 import com.tencent.bk.codecc.defect.vo.CheckerListQueryReq;
+import com.tencent.bk.codecc.defect.vo.CheckerManagementPermissionReqVO;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerListSortType;
+import com.tencent.bk.codecc.defect.vo.enums.CheckerPermissionType;
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import com.tencent.devops.common.api.checkerset.CheckerPropVO;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import org.springframework.data.domain.Sort;
 
 /**
@@ -210,8 +214,15 @@ public interface CheckerService {
      * @param checkerDetailVO
      * @return
      */
-    boolean updateCheckerByCheckerKey(CheckerDetailVO checkerDetailVO);
+    boolean updateCheckerByCheckerKey(CheckerDetailVO checkerDetailVO, String userId);
 
+    /**
+     * 根据checkerKey和ToolName更新用户自定义规则详情
+     *
+     * @param checkerDetailVO
+     * @return
+     */
+    boolean updateCustomCheckerByCheckerKey(CheckerDetailVO checkerDetailVO, String projectId, String userId);
 
     /**
      * 查询任务关联规则所对应的维度信息
@@ -222,4 +233,34 @@ public interface CheckerService {
      * @return
      */
     List<String> queryTaskCheckerDimension(List<Long> taskIdList, String projectId, List<String> toolNameList);
+
+    /**
+     * 获取工具对应的规则
+     *
+     * @param propVOS
+     * @return
+     */
+    List<CheckerDetailEntity> queryCheckerCategoryByCheckerPropVO(List<CheckerPropVO> propVOS);
+
+    /**
+     * 删除用户自定义规则
+     *
+     * @param checkerDetailVO
+     * @param projectId
+     * @param userId
+     * @deprecated 由于规则集的更新采用累加版本方式，删除规则对规则集的处理逻辑将导致原有设计遭到破坏，目前暂时停用删除功能
+     * @return
+     */
+    @Deprecated
+    Boolean deleteCustomCheckerByCheckerKey(CheckerDetailVO checkerDetailVO, String projectId, String userId);
+
+    /**
+     * 获取用户规则管理权限
+     *
+     * @param authManagementPermissionReqVO
+     * @return
+     */
+    List<CheckerPermissionType> getCheckerManagementPermission(CheckerManagementPermissionReqVO
+                                                                   authManagementPermissionReqVO);
+
 }

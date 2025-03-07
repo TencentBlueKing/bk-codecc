@@ -60,9 +60,12 @@ public interface UserMetaRestResource
     @Path("/toolList")
     @GET
     Result<List<ToolMetaBaseVO>> toolList(
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId,
             @ApiParam(value = "是否查询详细信息")
             @QueryParam("isDetail")
-                    Boolean isDetail);
+            Boolean isDetail
+    );
 
     @ApiOperation("查询工具详情")
     @Path("/toolDetail")

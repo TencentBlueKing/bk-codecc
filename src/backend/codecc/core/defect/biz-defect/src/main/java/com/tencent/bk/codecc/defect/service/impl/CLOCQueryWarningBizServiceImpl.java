@@ -13,6 +13,7 @@ import com.tencent.bk.codecc.defect.vo.CLOCDefectQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.CLOCDefectTreeRespVO;
 import com.tencent.bk.codecc.defect.vo.CLOCTreeNodeVO;
 import com.tencent.bk.codecc.defect.vo.DefectFileContentSegmentQueryRspVO;
+import com.tencent.bk.codecc.defect.vo.QueryCheckersAndAuthorsRequest;
 import com.tencent.bk.codecc.defect.vo.QueryDefectFileContentSegmentReqVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogOverviewVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
@@ -31,7 +32,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -109,14 +109,8 @@ public class CLOCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
     @Override
     public QueryWarningPageInitRspVO processQueryWarningPageInitRequest(
             String userId,
-            List<Long> taskIdList,
-            List<String> toolNameList,
-            List<String> dimensionList,
-            Set<String> statusSet,
-            String checkerSet,
-            String buildId,
             String projectId,
-            boolean isMultiTaskQuery
+            QueryCheckersAndAuthorsRequest request
     ) {
         return new QueryWarningPageInitRspVO();
     }
@@ -129,8 +123,11 @@ public class CLOCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
 
 
     @Override
-    public DefectFileContentSegmentQueryRspVO processQueryDefectFileContentSegment(String projectId, String userId,
-            QueryDefectFileContentSegmentReqVO request) {
+    public DefectFileContentSegmentQueryRspVO processQueryDefectFileContentSegment(
+            String projectId,
+            String userId,
+            QueryDefectFileContentSegmentReqVO request
+    ) {
         return new DefectFileContentSegmentQueryRspVO();
     }
 

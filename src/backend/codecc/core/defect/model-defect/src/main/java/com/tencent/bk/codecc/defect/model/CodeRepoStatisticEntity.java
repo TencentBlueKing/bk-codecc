@@ -21,6 +21,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -41,9 +42,10 @@ public class CodeRepoStatisticEntity {
 
     /**
      * 来源
+     * @see com.tencent.devops.common.constant.ComConstants.DefectStatType
      */
     @Field("data_from")
-    @Indexed
+    @Indexed(background = true)
     private String dataFrom;
 
     /**
@@ -62,14 +64,14 @@ public class CodeRepoStatisticEntity {
      * 代码库创建时间
      */
     @Field("url_first_scan")
-    @Indexed
+    @Indexed(background = true)
     private Long urlFirstScan;
 
     /**
      * 分支创建时间
      */
     @Field("branch_first_scan")
-    @Indexed
+    @Indexed(background = true)
     private Long branchFirstScan;
 
     /**
@@ -84,4 +86,9 @@ public class CodeRepoStatisticEntity {
     @Field("task_id_set")
     private Set<Long> taskIdSet;
 
+    /**
+     * 记录工具第一次扫描的时间
+     */
+    @Field("tool_first_scan_list")
+    private List<ToolFirstScan> toolFirstScanList;
 }

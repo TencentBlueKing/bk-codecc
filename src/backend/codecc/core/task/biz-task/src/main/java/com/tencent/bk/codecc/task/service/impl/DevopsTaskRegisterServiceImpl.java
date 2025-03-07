@@ -27,6 +27,8 @@
 
 package com.tencent.bk.codecc.task.service.impl;
 
+import com.tencent.bk.audit.annotations.ActionAuditRecord;
+import com.tencent.bk.audit.annotations.AuditInstanceRecord;
 import com.tencent.bk.codecc.defect.api.ServiceCheckerSetRestResource;
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
 import com.tencent.bk.codecc.task.service.AbstractTaskRegisterService;
@@ -38,9 +40,12 @@ import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.auth.api.external.AuthExRegisterApi;
+import com.tencent.devops.common.constant.audit.ActionIds;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import com.tencent.devops.common.constant.audit.ActionAuditRecordContents;
+import com.tencent.devops.common.constant.audit.ResourceTypes;
 import com.tencent.devops.common.service.prometheus.BkTimed;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -70,6 +75,15 @@ public class DevopsTaskRegisterServiceImpl extends AbstractTaskRegisterService {
     @Autowired
     private CommonKafkaClient commonKafkaClient;
 
+    @ActionAuditRecord(
+            actionId = ActionIds.CREATE_TASK,
+            instance = @AuditInstanceRecord(
+                    resourceType = ResourceTypes.TASK,
+                    instanceIds = "#$?.taskId",
+                    instanceNames = "#$?.nameEn"
+            ),
+            content = ActionAuditRecordContents.CREATE_TASK
+    )
     @BkTimed(value = "register_task")
     @Override
     public TaskIdVO registerTask(TaskDetailVO taskDetailVO, String userName) {

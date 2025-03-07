@@ -37,9 +37,15 @@ public class TaskUpdateDeptInfoVO {
     @ApiModelProperty("事业群ID")
     private Integer bgId;
 
+    @ApiModelProperty("业务线")
+    private Integer businessLineId;
+
     @ApiModelProperty("部门ID")
     private Integer deptId;
 
     @ApiModelProperty("中心ID")
     private Integer centerId;
+
+    @ApiModelProperty("项目组ID")
+    private Integer groupId;
 }

@@ -1,5 +1,5 @@
 const DefectList = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/defect-list');
-const DefectCoverityList = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/coverity-list');
+const DefectCoverityList = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/defect-list');
 const DefectCoverityCharts = () => import(
   /* webpackChunkName: 'defect-charts' */ '../views/defect/coverity-charts');
 const DefectDupcList = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/dupc-list');
@@ -11,6 +11,11 @@ const DefectClocList = () => import(/* webpackChunkName: 'defect-list' */ '../vi
 const DefectClocLang = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/cloc-lang');
 // const DefectLintList = () => import(/* webpackChunkName: 'defect-list' */'../views/defect/lint-list')
 const DefectLintCharts = () => import(/* webpackChunkName: 'defect-charts' */ '../views/defect/lint-charts');
+
+const DefectPkgList = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/sca/sca-pkg-list');
+// 隐藏漏洞数
+// const DefectVulnList = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/sca/sca-vuln-list');
+const DefectLicList = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/sca/sca-lic-list');
 
 const routes = [
   {
@@ -204,6 +209,32 @@ const routes = [
     path: '/codecc/:projectId/task/:taskId/defect/ccn/charts',
     name: 'defect-ccn-charts',
     component: DefectCcnCharts,
+    meta: {
+      breadcrumb: 'inside',
+    },
+  },
+
+  {
+    path: '/codecc/:projectId/task/:taskId/defect/sca/pkg/list',
+    name: 'defect-sca-pkg-list',
+    component: DefectPkgList,
+    meta: {
+      breadcrumb: 'inside',
+    },
+  },
+  // 隐藏漏洞数
+  // {
+  //   path: '/codecc/:projectId/task/:taskId/defect/sca/vuln/list',
+  //   name: 'defect-sca-vuln-list',
+  //   component: DefectVulnList,
+  //   meta: {
+  //     breadcrumb: 'inside',
+  //   },
+  // },
+  {
+    path: '/codecc/:projectId/task/:taskId/defect/sca/lic/list',
+    name: 'defect-sca-lic-list',
+    component: DefectLicList,
     meta: {
       breadcrumb: 'inside',
     },

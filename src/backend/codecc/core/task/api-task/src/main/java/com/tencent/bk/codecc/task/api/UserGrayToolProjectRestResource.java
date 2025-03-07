@@ -110,15 +110,17 @@ public interface UserGrayToolProjectRestResource {
     @POST
     Result<Boolean> createGrayTaskPool(
             @ApiParam(value = "工具名", required = true) @PathParam("toolName") String toolName,
+            @ApiParam(value = "语言", required = false) @QueryParam("langCode") String langCode,
             @ApiParam(value = "阶段", required = true) @PathParam("stage") String stage,
-            @ApiParam(value = "工具名", required = true) @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String user);
+            @ApiParam(value = "当前用户", required = true) @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String user);
 
     @ApiOperation("触发灰度池项目")
     @Path("/task/pool/trigger/toolName/{toolName}/taskNum")
     @GET
     Result<TriggerGrayToolVO> triggerGrayTaskPool(
             @ApiParam(value = "工具名", required = true) @PathParam("toolName") String toolName,
-            @ApiParam(value = "执行任务数", required = false) @QueryParam("taskNum") String taskNum
+            @ApiParam(value = "执行任务数", required = false) @QueryParam("taskNum") String taskNum,
+            @ApiParam(value = "语言", required = false) @QueryParam("langCode") String langCode
     );
 
 //    @ApiOperation("根据工具名查询灰度项目信息")

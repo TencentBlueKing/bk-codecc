@@ -76,12 +76,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import static com.tencent.devops.common.constant.audit.CodeccAuditAttributeNames.TASK_ID;
+import static com.tencent.devops.common.constant.audit.CodeccAuditAttributeNames.TOOL_NAME;
 
 /**
  * 规则集业务实现类
@@ -125,8 +129,7 @@ public class CheckerSetBizServiceImpl implements ICheckerSetBizService {
      */
     @Override
     public Boolean updateCheckerSet(Long taskId, String toolName, String checkerSetId,
-            UpdateCheckerSetReqVO updateCheckerSetReqVO, String user,
-            String projectId) {
+            UpdateCheckerSetReqVO updateCheckerSetReqVO, String user, String projectId) {
         // 查找最新版本的规则集
         long currentTime = System.currentTimeMillis();
         CheckerSetEntity latestVersionCheckerSetEntity = getLatestVersionCheckerSet(toolName, checkerSetId);
@@ -671,6 +674,7 @@ public class CheckerSetBizServiceImpl implements ICheckerSetBizService {
         }
     }
 
+    @NotNull
     private CheckerSetEntity getLatestVersionCheckerSet(String toolName, String checkerSetId) {
         List<CheckerSetEntity> checkerSetEntities = checkerSetRepository.findByToolNameAndCheckerSetId(toolName,
                 checkerSetId);
@@ -684,7 +688,11 @@ public class CheckerSetBizServiceImpl implements ICheckerSetBizService {
                 }
             }
         }
+        if (latestVersionCheckerSetEntity == null) {
+            throw new CodeCCException(CommonMessageCode.RECORD_NOT_EXITS, new String[]{"checkerSetName"}, null);
+        }
         return latestVersionCheckerSetEntity;
+
     }
 
     private void updatePipelineCheckerSet(long taskId, String user, List<ToolCheckerSetVO> toolCheckerSets) {

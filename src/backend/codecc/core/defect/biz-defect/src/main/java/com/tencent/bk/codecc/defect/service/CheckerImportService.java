@@ -48,4 +48,13 @@ public interface CheckerImportService
      * @return
      */
     Map<String, List<CheckerPropVO>> checkerImport(String userName, String projectId, CheckerImportVO checkerImportVO);
+
+    /**
+     * 规则导入
+     * @param userName
+     * @param projectId
+     * @param checkerImportVO
+     * @return
+     */
+    Boolean customCheckerImport(String userName, String projectId, CheckerImportVO checkerImportVO);
 }

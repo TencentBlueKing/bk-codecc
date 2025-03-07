@@ -32,12 +32,12 @@ import com.tencent.bk.codecc.defect.vo.GrayTaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
+import com.tencent.bk.codecc.defect.vo.UploadToolErrorTaskLogVO;
 import com.tencent.bk.codecc.defect.vo.common.BuildVO;
 import com.tencent.devops.common.api.analysisresult.BaseLastAnalysisResultVO;
 import com.tencent.devops.common.api.analysisresult.ToolLastAnalysisResultVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -246,4 +246,6 @@ public interface TaskLogService {
     List<GrayTaskLogRepoInfoVO> getTaskLogInfoByBuildBumAndTaskId(GrayBuildNumAndTaskVO grayBuildNumAndTaskVO);
 
     List<TaskLogVO> listBuildTaskLog(long taskId, String toolName, int range);
+
+    Boolean uploadToolErrorTaskLog(UploadToolErrorTaskLogVO uploadToolErrorTaskLogVO);
 }

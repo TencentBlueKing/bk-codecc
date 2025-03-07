@@ -58,6 +58,9 @@ public abstract class AbstractDataReportBizService implements IDataReportBizServ
 {
     private static Logger logger = LoggerFactory.getLogger(AbstractDataReportBizService.class);
     private static final ZoneOffset DEFAULT_ZONE_OFFSET = OffsetDateTime.now().getOffset();
+    public static final String DEFAULT_AUTHOR = "No Author";
+    public static final String OTHER_AUTHOR_NAME = "other";
+    public static final int MAX_QUEUE_LEN = 25;
 
     public abstract List<LocalDate> getShowDateList(int size, String startTime, String endTime);
 
@@ -73,6 +76,55 @@ public abstract class AbstractDataReportBizService implements IDataReportBizServ
         logger.info("data report params: taskId:{}, toolName:{}, startTime:{}, endTime:{}", taskId, toolName, startTime,
                 endTime);
         return getDataReport(taskId, toolName, 0, startTime, endTime);
+    }
+
+    /**
+     * 根据原始 map 数据处理出每个用户归属的告警数.
+     * 1. 对于没有归属人的告警, 归属到 other 名下;
+     * 2. 如果告警归属人多于 25 个, 只实名列出告警总数前 25 多的归属人, 其他所有告警都归属到 other 名下 (因为如果超过 25 人, 最终的统计
+     * 数据在邮件中的展示效果不好)
+     */
+    protected List<ChartAuthorBaseVO> getCommonAuthorChart(Map<String, CommonChartAuthorVO> origin) {
+        // 根据 total 值升序排列
+        Comparator<CommonChartAuthorVO> comparator = Comparator.comparingInt(CommonChartAuthorVO::getTotal);
+        // 用优先队列临时维护告警前 25 多的归属人
+        PriorityQueue<CommonChartAuthorVO> chartCache = new PriorityQueue<>(comparator);
+
+        CommonChartAuthorVO other = new CommonChartAuthorVO(OTHER_AUTHOR_NAME);
+        origin.forEach((k, v) -> {
+            // No Author 的告警直接归入 other 名下
+            if (DEFAULT_AUTHOR.equals(k)) {
+                other.add(v);
+                return;
+            }
+
+            if (chartCache.size() < MAX_QUEUE_LEN) {
+                // 队列未满 25 人, 直接入队
+                chartCache.add(v);
+            } else {
+                CommonChartAuthorVO minAuthor = chartCache.peek();
+                if (minAuthor.getTotal() < v.getTotal()) {
+                    // 如果当前遍历的告警总数多于队首的告警总数, 则队首出队, 归入 other, 当前告警人入队
+                    other.add(minAuthor);
+                    chartCache.poll();
+                    chartCache.add(v);
+                } else {
+                    other.add(v);
+                }
+            }
+        });
+
+        List<ChartAuthorBaseVO> result = new ArrayList<>();
+        while (!chartCache.isEmpty()) {
+            result.add(chartCache.poll());
+        }
+        // 将 result 做一个翻转, 如此得到一个根据 total 值从大到小排列的 list
+        Collections.reverse(result);
+        if (other.getTotal() != null && other.getTotal() > 0) {
+            result.add(other);
+        }
+
+        return result;
     }
 
     /**

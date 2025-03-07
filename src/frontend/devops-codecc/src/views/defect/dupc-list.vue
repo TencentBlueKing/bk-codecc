@@ -372,7 +372,7 @@
   </div>
 </template>
 
-<script>
+<script lang="jsx">
 import _ from 'lodash';
 import { mapState } from 'vuex';
 import util from '@/mixins/defect-list';

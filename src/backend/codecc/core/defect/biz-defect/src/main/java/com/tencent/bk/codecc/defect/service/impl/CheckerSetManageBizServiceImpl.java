@@ -7,6 +7,10 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_IGNORE_CHECKER;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.tencent.bk.audit.annotations.ActionAuditRecord;
+import com.tencent.bk.audit.annotations.AuditInstanceRecord;
+import com.tencent.bk.codecc.defect.dao.CheckerListQueryParams;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetProjectRelationshipRepository;
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetRepository;
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetTaskRelationshipRepository;
@@ -27,6 +31,7 @@ import com.tencent.bk.codecc.defect.vo.ConfigCheckersPkgReqVO;
 import com.tencent.bk.codecc.defect.vo.UpdateAllCheckerReq;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetCategory;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetSource;
+import com.tencent.bk.codecc.defect.vo.enums.CheckerSource;
 import com.tencent.bk.codecc.task.api.ServiceBaseDataResource;
 import com.tencent.bk.codecc.task.api.ServiceGrayToolProjectResource;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
@@ -53,6 +58,9 @@ import com.tencent.devops.common.constant.CheckerConstants;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import com.tencent.devops.common.constant.audit.ActionAuditRecordContents;
+import com.tencent.devops.common.constant.audit.ActionIds;
+import com.tencent.devops.common.constant.audit.ResourceTypes;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import com.tencent.devops.common.service.aop.AbstractI18NResponseAspect;
 import com.tencent.devops.common.service.utils.I18NUtils;
@@ -96,6 +104,8 @@ public class CheckerSetManageBizServiceImpl implements ICheckerSetManageBizServi
     @Autowired
     private CheckerSetRepository checkerSetRepository;
     @Autowired
+    private CheckerRepository checkerRepository;
+    @Autowired
     private CheckerSetDao checkerSetDao;
     @Autowired
     private Client client;
@@ -125,6 +135,15 @@ public class CheckerSetManageBizServiceImpl implements ICheckerSetManageBizServi
      * @param createCheckerSetReqVO
      * @return
      */
+    @ActionAuditRecord(
+            actionId = ActionIds.CREATE_CHECKER_SET,
+            instance = @AuditInstanceRecord(
+                    resourceType = ResourceTypes.CHECKER_SET,
+                    instanceIds = "#createCheckerSetReqVO?.checkerSetId",
+                    instanceNames = "#createCheckerSetReqVO?.checkerSetName"
+            ),
+            content = ActionAuditRecordContents.CREATE_CHECKER_SET
+    )
     @Override
     public void createCheckerSet(String user, String projectId, CreateCheckerSetReqVO createCheckerSetReqVO) {
         if (StringUtils.isEmpty(createCheckerSetReqVO.getCheckerSetId())
@@ -239,22 +258,17 @@ public class CheckerSetManageBizServiceImpl implements ICheckerSetManageBizServi
         } else {
             checkerPropVOS = updateAllCheckerReq.getCheckerProps();
         }
+        CheckerListQueryParams checkerListQueryParams = new CheckerListQueryParams();
+        checkerListQueryParams.setKeyWord(checkerListQueryReq.getKeyWord());
+        checkerListQueryParams.setCheckerLanguage(checkerListQueryReq.getCheckerLanguage());
+        checkerListQueryParams.setCheckerCategory(checkerListQueryReq.getCheckerCategory());
+        checkerListQueryParams.setToolName(checkerListQueryReq.getToolName());
+        checkerListQueryParams.setTag(checkerListQueryReq.getTag());
+        checkerListQueryParams.setSeverity(checkerListQueryReq.getSeverity());
+        checkerListQueryParams.setEditable(checkerListQueryReq.getEditable());
+        checkerListQueryParams.setCheckerRecommend(checkerListQueryReq.getCheckerRecommend());
         List<CheckerDetailEntity> checkerDetailEntityList =
-                checkerDetailDao.findByComplexCheckerCondition(checkerListQueryReq.getKeyWord(),
-                        checkerListQueryReq.getCheckerLanguage(),
-                        checkerListQueryReq.getCheckerCategory(),
-                        checkerListQueryReq.getToolName(),
-                        checkerListQueryReq.getTag(),
-                        checkerListQueryReq.getSeverity(),
-                        checkerListQueryReq.getEditable(),
-                        checkerListQueryReq.getCheckerRecommend(),
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null);
+                checkerDetailDao.findByComplexCheckerCondition(checkerListQueryParams,null,null,null,null);
         if (CollectionUtils.isNotEmpty(checkerDetailEntityList)) {
             checkerDetailEntityList.forEach(checkerDetailEntity -> {
                 if (checkerPropVOS.stream().noneMatch(checkerPropVO ->
@@ -280,6 +294,15 @@ public class CheckerSetManageBizServiceImpl implements ICheckerSetManageBizServi
      * @param checkerProps
      * @param versionAndTool Pair: version, tool
      */
+    @ActionAuditRecord(
+            actionId = ActionIds.UPDATE_CHECKER_SET,
+            instance = @AuditInstanceRecord(
+                    resourceType = ResourceTypes.CHECKER_SET,
+                    instanceIds = "#checkerSetId",
+                    instanceNames = "#user"
+            ),
+            content = ActionAuditRecordContents.UPDATE_CHECKER_SET
+    )
     @Override
     public void updateCheckersOfSet(String checkerSetId, String user,
             List<CheckerPropVO> checkerProps, Pair<Integer, String> versionAndTool) {
@@ -290,6 +313,21 @@ public class CheckerSetManageBizServiceImpl implements ICheckerSetManageBizServi
             List<CheckerDetailEntity> checkerDetailList = null;
             if (CollectionUtils.isNotEmpty(checkerProps)) {
                 checkerDetailList = checkerDetailDao.findByToolNameAndCheckerKey(checkerProps);
+
+                //对于公开的规则集，不允许更新的规则列表中包含用户自定义规则
+                if (CheckerConstants.CheckerSetScope.PUBLIC.code() == checkerSetEntities.get(0).getScope()) {
+                    Set<String> customCheckersCheckerName = checkerDetailList.stream()
+                        .filter(checker -> CheckerSource.CUSTOM.name().equals(checker.getCheckerSource()))
+                        .map(CheckerDetailEntity::getCheckerName)
+                        .collect(Collectors.toSet());
+
+                    if (CollectionUtils.isNotEmpty(customCheckersCheckerName)) {
+                        String errMsg = "规则集为公开，不可添加用户自定义规则";
+                        log.error(errMsg);
+                        throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg}, null);
+                    }
+                }
+
                 Map<String, CheckerDetailEntity> checkerDetailMap = checkerDetailList.stream()
                         .collect(Collectors.toMap(x -> x.getCheckerKey() + x.getToolName(), y -> y, (k1, k2) -> k2));
 
@@ -928,6 +966,7 @@ public class CheckerSetManageBizServiceImpl implements ICheckerSetManageBizServi
                         Function.identity(), (k, v) -> v));
         Set<String> checkerSetIds = originCheckerSetMap.keySet();
 
+
         List<CheckerSetEntity> checkerSetEntityList = checkerSetRepository.findByCheckerSetIdIn(checkerSetIds);
 
         // 找到每个规则集中版本号最大的一个规则集
@@ -936,7 +975,6 @@ public class CheckerSetManageBizServiceImpl implements ICheckerSetManageBizServi
                 .entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
                         entry -> entry.getValue().stream().max(
                                 Comparator.comparingInt(CheckerSetEntity::getVersion)).orElse(new CheckerSetEntity())));
-
         // 项目还没安装的规则集是非法规则集
         List<String> invalidCheckerSet = new ArrayList<>();
 
@@ -949,6 +987,11 @@ public class CheckerSetManageBizServiceImpl implements ICheckerSetManageBizServi
         for (CheckerSetVO checkerSetVO : checkerSetList) {
             String checkerSetId = checkerSetVO.getCheckerSetId();
             CheckerSetEntity maxVersionCheckerSet = maxCheckerSetEntityMap.get(checkerSetId);
+            if (maxVersionCheckerSet == null) {
+                log.error("projectId:{}, taskId:{}, checkerSetId:{} max checker set version is null",
+                        projectId, taskId, checkerSetId);
+                continue;
+            }
             if (!projInstallCheckerSetMap.containsKey(checkerSetId)) {
                 //如果是官方的话 需要关联
                 boolean matchCheckerSetSource = StringUtils.isNotBlank(maxVersionCheckerSet.getCheckerSetSource())
@@ -1153,10 +1196,39 @@ public class CheckerSetManageBizServiceImpl implements ICheckerSetManageBizServi
             }
         }
 
-        // 校验设置为公开的规则集名称是否与公共规则集重复
+        /*
+         * 校验设置为公开的规则集名称是否与公共规则集重复
+         * 校验设置为公开的规则集所有版本中是否包含用户自定义规则，包含用户自定义规则不允许公开
+         */
         if (checkerSetManagementReqVO.getScope() != null
                 && checkerSetManagementReqVO.getScope() == CheckerConstants.CheckerSetScope.PUBLIC.code()) {
             checkNameExistInPublic(firstCheckerSetEntity.getCheckerSetName());
+
+            //查询所有用户自定义类型的规则列表
+            List<CheckerDetailEntity> customCheckerDetailEntityList =
+                checkerRepository.findByCheckerSource(CheckerSource.CUSTOM.name());
+            Set<String> customCheckerNameSet = customCheckerDetailEntityList.stream()
+                .map(CheckerDetailEntity::getCheckerName)
+                .collect(Collectors.toSet());
+
+            //遍历所有版本规则集，若包含用户自定义规则则不允许公开
+            List<CheckerSetEntity> allVersionCheckerSetEntityList =
+                checkerSetRepository.findByCheckerSetId(checkerSetId);
+            for (CheckerSetEntity checkerSetEntity : allVersionCheckerSetEntityList) {
+                if (!checkerSetEntity.getCheckerProps().isEmpty()) {
+                    //校验选中的规则集中是否包含用户自定义规则
+                    String inCheckerSetEntityCustomChecker = checkerSetEntity.getCheckerProps().stream()
+                        .map(CheckerPropsEntity::getCheckerKey)
+                        .filter(customCheckerNameSet::contains)
+                        .findFirst()
+                        .orElse(null);
+                    if (inCheckerSetEntityCustomChecker != null) {
+                        String errMsg = "不可设为公开,因为存在包含用户自定义规则的规则集版本";
+                        log.error(errMsg);
+                        throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg}, null);
+                    }
+                }
+            }
         }
 
         // 校验用户是否有权限
@@ -1164,7 +1236,8 @@ public class CheckerSetManageBizServiceImpl implements ICheckerSetManageBizServi
         if (checkerSetManagementReqVO.getDiscardFromTask() == null) {
             log.info("management checkerSet version auth user {} | project {}",
                     user, checkerSetManagementReqVO.getProjectId());
-            havePermission = authExPermissionApi.authProjectManager(checkerSetManagementReqVO.getProjectId(), user);
+            havePermission = authExPermissionApi.authProjectManagerNotThrow(checkerSetManagementReqVO.getProjectId(),
+                    user);
         } else {
             Set<String> tasks = authExPermissionApi.queryTaskListForUser(user, checkerSetManagementReqVO.getProjectId(),
                     Sets.newHashSet(CodeCCAuthAction.TASK_MANAGE.getActionName()));
@@ -1861,22 +1934,25 @@ public class CheckerSetManageBizServiceImpl implements ICheckerSetManageBizServi
     @Override
     public Boolean updateCheckerSetBaseInfoByOp(String userName,
             @NotNull V3UpdateCheckerSetReqExtVO updateCheckerSetReqExtVO) {
+        log.info("updateCheckerSetBaseInfoByOp updater: {}, updateReqVO: {}", userName, updateCheckerSetReqExtVO);
         boolean result = false;
         CheckerSetEntity checkerSetEntity = checkerSetRepository
                 .findFirstByCheckerSetIdAndVersion(updateCheckerSetReqExtVO.getCheckerSetId(),
                         updateCheckerSetReqExtVO.getVersion());
         if (null != checkerSetEntity) {
-            checkerSetEntity.setCheckerSetName(updateCheckerSetReqExtVO.getCheckerSetName());
-            checkerSetEntity.setCatagories(getCatagoryEntities(updateCheckerSetReqExtVO.getCatagories()));
-            checkerSetEntity.setCheckerSetSource(updateCheckerSetReqExtVO.getCheckerSetSource());
-            checkerSetEntity.setDescription(updateCheckerSetReqExtVO.getDescription());
-            checkerSetEntity.setUpdatedBy(userName);
-            // 判断发布者是否为空，如果为空则不修改发布者
-            if (StringUtils.isNotEmpty(updateCheckerSetReqExtVO.getCreator())) {
-                checkerSetEntity.setCreator(updateCheckerSetReqExtVO.getCreator());
-            }
-            checkerSetEntity.setLastUpdateTime(System.currentTimeMillis());
-            checkerSetRepository.save(checkerSetEntity);
+            log.info("checker set info before update: {}|{}|{}|{}|{}", checkerSetEntity.getCheckerSetName(),
+                    checkerSetEntity.getCreator(), checkerSetEntity.getCatagories(),
+                    checkerSetEntity.getCheckerSetSource(), checkerSetEntity.getDescription());
+
+            long updateCount = checkerSetDao.updateInfoByCheckerSetId(userName,
+                    updateCheckerSetReqExtVO.getCheckerSetId(),
+                    updateCheckerSetReqExtVO.getCheckerSetName(),
+                    updateCheckerSetReqExtVO.getCreator(),
+                    getCatagoryEntities(updateCheckerSetReqExtVO.getCatagories()),
+                    updateCheckerSetReqExtVO.getCheckerSetSource(),
+                    updateCheckerSetReqExtVO.getDescription()
+            );
+            log.info("updated checker set count: {}", updateCount);
             result = true;
         }
 

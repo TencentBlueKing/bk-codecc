@@ -29,6 +29,7 @@ package com.tencent.bk.codecc.defect.service.impl;
 
 import static com.tencent.devops.common.constant.ComConstants.DEFAULT_LANDUN_WORKSPACE;
 import static com.tencent.devops.common.constant.ComConstants.TOOL_NAMES_SEPARATOR;
+import static com.tencent.devops.common.constant.ComConstants.Tool.SCAN_COMMIT_TOOLS;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -48,7 +49,6 @@ import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintStatisticDao;
 import com.tencent.bk.codecc.defect.dao.core.mongotemplate.TaskPersonalStatisticDao;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.file.ScmFileInfoSnapshotDao;
-import com.tencent.bk.codecc.defect.model.BuildDefectEntity;
 import com.tencent.bk.codecc.defect.model.BuildDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.CodeFileUrlEntity;
 import com.tencent.bk.codecc.defect.model.FileContentQueryParams;
@@ -57,11 +57,11 @@ import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.file.ScmFileInfoCacheEntity;
 import com.tencent.bk.codecc.defect.model.file.ScmFileInfoSnapshotEntity;
-import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
 import com.tencent.bk.codecc.defect.service.AbstractQueryWarningBizService;
 import com.tencent.bk.codecc.defect.service.CheckerService;
 import com.tencent.bk.codecc.defect.service.CommonDefectMigrationService;
 import com.tencent.bk.codecc.defect.service.CommonQueryWarningSpecialService;
+import com.tencent.bk.codecc.defect.service.DefectIssueService;
 import com.tencent.bk.codecc.defect.service.IQueryWarningBizService;
 import com.tencent.bk.codecc.defect.service.LintQueryWarningSpecialService;
 import com.tencent.bk.codecc.defect.service.TreeService;
@@ -83,6 +83,7 @@ import com.tencent.bk.codecc.defect.vo.LintDefectGroupStatisticVO;
 import com.tencent.bk.codecc.defect.vo.LintDefectQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.LintDefectVO;
 import com.tencent.bk.codecc.defect.vo.LintFileVO;
+import com.tencent.bk.codecc.defect.vo.QueryCheckersAndAuthorsRequest;
 import com.tencent.bk.codecc.defect.vo.QueryDefectFileContentSegmentReqVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectIdVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectPageVO;
@@ -93,6 +94,7 @@ import com.tencent.bk.codecc.defect.vo.common.CommonDefectQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVOBase.CheckerSet;
 import com.tencent.bk.codecc.defect.vo.common.QueryWarningPageInitRspVO;
+import com.tencent.bk.codecc.defect.vo.ignore.IgnoreApprovalVO;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
@@ -125,6 +127,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import com.tencent.devops.common.util.ToolUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -183,6 +187,9 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
     private ScmFileInfoSnapshotDao scmFileInfoSnapshotDao;
     @Autowired
     private ScmFileInfoCacheRepository scmFileInfoCacheRepository;
+
+    @Autowired
+    private DefectIssueService defectIssueService;
 
     @Override
     public Long countNewDefectFile(CountDefectFileRequest request) {
@@ -276,6 +283,14 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             condStatusList.add(String.valueOf(DefectStatus.CHECKER_MASK.value() | DefectStatus.PATH_MASK.value()));
         }
 
+        // 如果查询包含告警操作筛选，需要加上issueIds的过滤
+        if (CollectionUtils.isNotEmpty(request.getOperates())
+                && (request.getOperates().contains(ComConstants.CodeCCDefectOpsType.NO_OPS.name())
+                || request.getOperates().contains(ComConstants.CodeCCDefectOpsType.ISSUE_SUBMIT.name()))) {
+            Set<String> issueDefectIds = defectIssueService.getDefectIdByTaskIdAndToolMap(taskToolMap);
+            request.setSubmitDefectIds(issueDefectIds);
+        }
+
         // 按文件聚类
         String clusterType = request.getClusterType();
         if (StringUtils.isNotEmpty(clusterType) && ComConstants.ClusterType.file.name().equalsIgnoreCase(clusterType)) {
@@ -313,6 +328,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                         taskIdList, lintDefectList.size(), pkgChecker.size());
 
                 final Map<Long, String> taskNameCnMap = getTaskNameCnMap(request, lintDefectList);
+                final Set<String> hasCodeCommonDefectIds = hasCodeCommonDefectId(lintDefectList);
                 defectVOList = lintDefectList.stream().map(defectV2Entity -> {
                     if (StringUtils.isEmpty(defectV2Entity.getFileName())) {
                         String filePathOrRelPath = StringUtils.isNotEmpty(defectV2Entity.getFilePath())
@@ -332,7 +348,8 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                     if (Boolean.TRUE.equals(request.getShowTaskNameCn()) && taskNameCnMap != null) {
                         defectVO.setTaskNameCn(taskNameCnMap.get(defectVO.getTaskId()));
                     }
-
+                    defectVO.setHasCodeComment(CollectionUtils.isNotEmpty(hasCodeCommonDefectIds)
+                            && hasCodeCommonDefectIds.contains(defectVO.getEntityId()));
                     return defectVO;
                 }).collect(Collectors.toList());
             }
@@ -399,6 +416,14 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             lintDefectDetailVO.setCodeComment(codeCommentVO);
         }
 
+        // 设置忽略审批
+        if (StringUtils.isNotBlank(defectEntity.getIgnoreApprovalId())) {
+            IgnoreApprovalVO ignoreApproval = getIgnoreApprovalById(defectEntity.getIgnoreApprovalId());
+            if (ignoreApproval != null) {
+                lintDefectDetailVO.setIgnoreApprovalUrl(ignoreApproval.getItsmUrl());
+            }
+        }
+
         // 获取告警文件内容
         Result<TaskDetailVO> taskInfoResult = client.get(ServiceTaskRestResource.class).getTaskInfoById(taskId);
         TaskDetailVO taskDetailVO = taskInfoResult.getData();
@@ -419,9 +444,8 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             responseVO.setFileName(lintDefectDetailVO.getFileName());
         } else {
             String relativePath = PathUtils.getRelativePath(defectEntity.getUrl(), defectEntity.getRelPath());
-            String url = PathUtils.getFileUrl(
-                    defectEntity.getUrl(), defectEntity.getBranch(), defectEntity.getRelPath()
-            );
+            String url = PathUtils.getFileUrl(defectEntity.getUrl(), defectEntity.getBranch(),
+                    defectEntity.getRevision(), defectEntity.getRelPath());
             responseVO.setRelativePath(relativePath);
             responseVO.setFilePath(StringUtils.isEmpty(url) ? defectEntity.getFilePath() : url);
             responseVO.setFileName(defectEntity.getFileName());
@@ -466,6 +490,14 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                 lintDefectDetailVO, lintDefectDetailVO.getToolName(), queryWarningDetailReq.getPattern()
         );
 
+        // 设置忽略审批
+        if (StringUtils.isNotBlank(defectEntity.getIgnoreApprovalId())) {
+            IgnoreApprovalVO ignoreApproval = getIgnoreApprovalById(defectEntity.getIgnoreApprovalId());
+            if (ignoreApproval != null) {
+                lintDefectDetailVO.setIgnoreApprovalUrl(ignoreApproval.getItsmUrl());
+            }
+        }
+
         setLintDefectDetailQueryRspVO(defectEntity, lintDefectDetailVO, responseVO, taskId);
 
         responseVO.setRevision(defectEntity.getRevision());
@@ -474,8 +506,11 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
     }
 
     @Override
-    public DefectFileContentSegmentQueryRspVO processQueryDefectFileContentSegment(String projectId, String userId,
-            QueryDefectFileContentSegmentReqVO request) {
+    public DefectFileContentSegmentQueryRspVO processQueryDefectFileContentSegment(
+            String projectId,
+            String userId,
+            QueryDefectFileContentSegmentReqVO request
+    ) {
         String toolName = request.getToolName();
         String filePath = request.getFilePath();
 
@@ -511,6 +546,15 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             return resp;
         }
 
+        if (SCAN_COMMIT_TOOLS.contains(toolName)) {
+            // 扫描Commit的工具，会再路径中自带commitId (例：/1.go@12312312 中 12312312 为commitId)，需要去除工具自带的CommitId
+            if (StringUtils.isNotEmpty(lintDefectV2Entity.getRelPath())
+                    && lintDefectV2Entity.getRelPath().contains("@")) {
+                lintDefectV2Entity.setRelPath(lintDefectV2Entity.getRelPath().substring(0,
+                        lintDefectV2Entity.getRelPath().lastIndexOf("@")));
+            }
+        }
+
         resp.setRevision(lintDefectV2Entity.getRevision());
         resp.setBranch(lintDefectV2Entity.getBranch());
 
@@ -526,7 +570,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         }
 
         FileContentQueryParams queryParams = FileContentQueryParams.queryParams(
-                lintDefectV2Entity.getTaskId(), "", userId,
+                lintDefectV2Entity.getTaskId(), projectId, userId,
                 lintDefectV2Entity.getUrl(), lintDefectV2Entity.getRepoId(),
                 relativePathAndRelPath.getSecond(), lintDefectV2Entity.getFilePath(),
                 lintDefectV2Entity.getRevision(), lintDefectV2Entity.getBranch(), lintDefectV2Entity.getSubModule(),
@@ -543,17 +587,16 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
     }
 
 
-
     /**
      * 设置 response 中各个字段的值
      *
-     * @author weijianguan
-     * @date 2023/6/22
      * @param defectEntity
      * @param lintDefectDetailVO
      * @param responseVO
      * @param taskId
      * @return void
+     * @author weijianguan
+     * @date 2023/6/22
      */
     private void setLintDefectDetailQueryRspVO(LintDefectV2Entity defectEntity, LintDefectDetailVO lintDefectDetailVO,
             LintDefectDetailQueryRspVO responseVO, Long taskId) {
@@ -566,10 +609,18 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             responseVO.setFilePath(lintDefectDetailVO.getFilePath());
             responseVO.setFileName(lintDefectDetailVO.getFileName());
         } else {
-            String relativePath = PathUtils.getRelativePath(defectEntity.getUrl(), defectEntity.getRelPath());
-            String url = PathUtils.getFileUrl(
-                    defectEntity.getUrl(), defectEntity.getBranch(), defectEntity.getRelPath()
-            );
+            String relativePath;
+            String url;
+            if (SCAN_COMMIT_TOOLS.contains(defectEntity.getToolName())) {
+                String relPath = ToolUtils.convertCommitToolPathToCommon(defectEntity.getRelPath());
+                relativePath = PathUtils.getRelativePath(defectEntity.getUrl(), relPath);
+                // 扫描Commit的工具，直接通过commitId获取代码
+                url = PathUtils.getFileUrl(defectEntity.getUrl(), defectEntity.getRevision(), relPath);
+            } else {
+                relativePath = PathUtils.getRelativePath(defectEntity.getUrl(), defectEntity.getRelPath());
+                url = PathUtils.getFileUrl(defectEntity.getUrl(), defectEntity.getBranch(),
+                        defectEntity.getRevision(), defectEntity.getRelPath());
+            }
             responseVO.setRelativePath(relativePath);
             responseVO.setFilePath(StringUtils.isEmpty(url) ? defectEntity.getFilePath() : url);
             responseVO.setFileName(defectEntity.getFileName());
@@ -583,9 +634,9 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
     /**
      * 设置 EMPTY_FILE_CONTENT_TIPS（文件内容为空）
      *
-     * @date 2023/6/22
      * @param lintDefectDetailVO
      * @return void
+     * @date 2023/6/22
      */
     private void setEmptyFileInfo(LintDefectDetailVO lintDefectDetailVO) {
         String md5 = MD5Utils.getMD5(lintDefectDetailVO.getFilePath());
@@ -932,21 +983,29 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         filedMap.put("ignore_reason_type", true);
         filedMap.put("ignore_reason", true);
         filedMap.put("ignore_author", true);
+        // 需求(120433908)需要展示分支信息
+        filedMap.put("url", true);
+        filedMap.put("branch", true);
+        filedMap.put("ignore_approval_id", true);
+        filedMap.put("ignore_approval_status", true);
         return filedMap;
     }
 
     @Override
     public QueryWarningPageInitRspVO processQueryWarningPageInitRequest(
             String userId,
-            List<Long> taskIdList,
-            List<String> toolNameList,
-            List<String> dimensionList,
-            Set<String> statusSet,
-            String checkerSetId,
-            String buildId,
             String projectId,
-            boolean isMultiTaskQuery
+            QueryCheckersAndAuthorsRequest request
     ) {
+        List<String> statusList = request.getStatusList();
+        Set<String> statusSet = CollectionUtils.isEmpty(statusList) ? Sets.newHashSet() : Sets.newHashSet(statusList);
+        List<String> toolNameList = request.getToolNameList();
+        List<String> dimensionList = request.getDimensionList();
+        List<Long> taskIdList = request.getTaskIdList();
+        String checkerSetId = request.getCheckerSet();
+        String buildId = request.getBuildId();
+        boolean isMultiTaskQuery = Boolean.TRUE.equals(request.getMultiTaskQuery());
+
         taskIdList = ParamUtils.allTaskByProjectIdIfEmpty(taskIdList, projectId, userId);
         dimensionList = ParamUtils.allDimensionIfEmptyForLint(dimensionList);
         Map<Long, List<String>> taskToolMap = ParamUtils.getTaskToolMap(
@@ -1081,7 +1140,6 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
 
         log.info("begin pageInit, task tool map: {}", taskToolMap);
 
-
         if (MapUtils.isEmpty(taskToolMap)) {
             return response;
         }
@@ -1115,6 +1173,16 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
 
         String statisticType = request.getStatisticType();
 
+        boolean opsStatistic = ComConstants.StatisticType.OPERATE.name().equalsIgnoreCase(statisticType);
+        boolean needIssueFilter = CollectionUtils.isNotEmpty(request.getOperates())
+                && (request.getOperates().contains(ComConstants.CodeCCDefectOpsType.NO_OPS.name())
+                || request.getOperates().contains(ComConstants.CodeCCDefectOpsType.ISSUE_SUBMIT.name()));
+        // 如果查询包含告警操作筛选，需要加上issueIds的过滤
+        if (opsStatistic || needIssueFilter) {
+            Set<String> issueDefectIds = defectIssueService.getDefectIdByTaskIdAndToolMap(taskToolMap);
+            request.setSubmitDefectIds(issueDefectIds);
+        }
+
         if (ComConstants.StatisticType.STATUS.name().equalsIgnoreCase(statisticType)) {
             // 1.根据规则、处理人、快照、路径、日期过滤后计算各状态告警数
             statisticByStatus(taskToolMap, request, pkgChecker, defectIdsPair, response, projectId, userId);
@@ -1124,6 +1192,9 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         } else if (ComConstants.StatisticType.DEFECT_TYPE.name().equalsIgnoreCase(statisticType)) {
             // 3.根据规则、处理人、快照、路径、日期、状态过滤后计算: 新老告警数
             statisticByDefectType(taskToolMap, request, pkgChecker, defectIdsPair, response);
+        } else if (ComConstants.StatisticType.OPERATE.name().equalsIgnoreCase(statisticType)) {
+            // 4.根据规则、处理人、快照、路径、日期、状态过滤后计算: 各个操作的告警数
+            statisticByOps(taskToolMap, request, pkgChecker, defectIdsPair, response);
         } else {
             log.error("StatisticType is invalid. {}", GsonUtils.toJson(request));
         }
@@ -1192,10 +1263,78 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         );
     }
 
+    protected void statisticByOps(
+            Map<Long, List<String>> taskToolMap,
+            DefectQueryReqVO defectQueryReqVO,
+            Set<String> pkgChecker,
+            Pair<Set<String>, Set<String>> defectIdsPair,
+            QueryWarningPageInitRspVO respVO
+    ) {
+        // 查询标记处理告警数
+        List<LintDefectGroupStatisticVO> markGroupList = lintDefectV2Dao.statisticOps(
+                taskToolMap,
+                defectQueryReqVO,
+                defectIdsPair,
+                pkgChecker,
+                ComConstants.CodeCCDefectOpsType.MARK
+        );
+        int markCount = CollectionUtils.isNotEmpty(markGroupList)
+                ? markGroupList.stream().mapToInt(LintDefectGroupStatisticVO::getDefectCount).sum() : 0;
+        respVO.setMaskOpsCount(markCount);
+
+        // 查询标记处理未修复告警数
+        List<LintDefectGroupStatisticVO> markNotFixGroupList = lintDefectV2Dao.statisticOps(
+                taskToolMap,
+                defectQueryReqVO,
+                defectIdsPair,
+                pkgChecker,
+                ComConstants.CodeCCDefectOpsType.MARK_NOT_FIXED
+        );
+        int markNotFixCount = CollectionUtils.isNotEmpty(markNotFixGroupList)
+                ? markNotFixGroupList.stream().mapToInt(LintDefectGroupStatisticVO::getDefectCount).sum() : 0;
+        respVO.setMaskNotFixCount(markNotFixCount);
+
+        // 查询评论总告警数
+        List<LintDefectGroupStatisticVO> commentGroupList = lintDefectV2Dao.statisticOps(
+                taskToolMap,
+                defectQueryReqVO,
+                defectIdsPair,
+                pkgChecker,
+                ComConstants.CodeCCDefectOpsType.COMMENT
+        );
+        int commentCount = CollectionUtils.isNotEmpty(commentGroupList)
+                ? commentGroupList.stream().mapToInt(LintDefectGroupStatisticVO::getDefectCount).sum() : 0;
+        respVO.setCommentOpsCount(commentCount);
+
+        // 查询提单总告警数
+        List<LintDefectGroupStatisticVO> tapdGroupList = lintDefectV2Dao.statisticOps(
+                taskToolMap,
+                defectQueryReqVO,
+                defectIdsPair,
+                pkgChecker,
+                ComConstants.CodeCCDefectOpsType.ISSUE_SUBMIT
+        );
+        int tapdCount = CollectionUtils.isNotEmpty(tapdGroupList)
+                ? tapdGroupList.stream().mapToInt(LintDefectGroupStatisticVO::getDefectCount).sum() : 0;
+        respVO.setTapdOpsCount(tapdCount);
+
+        // 查询未操作总告警数
+        List<LintDefectGroupStatisticVO> allGroupList = lintDefectV2Dao.statisticOps(
+                taskToolMap,
+                defectQueryReqVO,
+                defectIdsPair,
+                pkgChecker,
+                ComConstants.CodeCCDefectOpsType.NO_OPS
+        );
+        int notOpsCount = CollectionUtils.isNotEmpty(allGroupList)
+                ? allGroupList.stream().mapToInt(LintDefectGroupStatisticVO::getDefectCount).sum() : 0;
+        respVO.setNotOpsCount(notOpsCount);
+    }
+
     protected void statisticByStatus(
             Map<Long, List<String>> taskToolMap, DefectQueryReqVO defectQueryReqVO, Set<String> pkgChecker,
             Pair<Set<String>, Set<String>> defectIdsPair, QueryWarningPageInitRspVO rspVO,
-            String projectId,String userId
+            String projectId, String userId
     ) {
         Set<String> condStatusSet = defectQueryReqVO.getStatus();
         List<LintDefectGroupStatisticVO> groups = lintDefectV2Dao.statisticByStatus(
@@ -1461,6 +1600,25 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             List<String> toolNameList,
             List<String> dimensionList
     ) {
+        return getCheckerDetails(checkerSetId, checkerSetVersion, checker, toolNameList, dimensionList).stream()
+                .map(CheckerDetailVO::getCheckerKey).collect(Collectors.toSet());
+    }
+
+    @Override
+    public List<CheckerDetailVO> getCheckerDetails(CheckerSet checkerSet, String checker, List<String> toolNameList,
+            List<String> dimensionList) {
+        String checkerSetId = checkerSet != null ? checkerSet.getCheckerSetId() : null;
+        Integer checkerSetVersion = checkerSet != null ? checkerSet.getVersion() : null;
+        return getCheckerDetails(checkerSetId, checkerSetVersion, checker, toolNameList, dimensionList);
+    }
+
+    private List<CheckerDetailVO> getCheckerDetails(
+            String checkerSetId,
+            Integer checkerSetVersion,
+            String checker,
+            List<String> toolNameList,
+            List<String> dimensionList
+    ) {
         List<String> checkerCategoryList = ParamUtils.getCheckerCategoryListByDimensionList(dimensionList);
         List<String> checkerListCondition = Lists.newArrayList();
         Set<String> checkersByCheckerSetId = null;
@@ -1489,7 +1647,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             }
 
             if (CollectionUtils.isEmpty(checkersByCheckerSetId)) {
-                return Sets.newHashSet();
+                return Lists.newArrayList();
             }
 
             checkerListCondition.addAll(checkersByCheckerSetId);
@@ -1501,7 +1659,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                 log.error("checker does not belong this checker set: {}, {}, {}",
                         checkerSetId, checkerSetVersion, checker);
 
-                return Sets.newHashSet();
+                return Lists.newArrayList();
             }
 
             checkerListCondition.clear();
@@ -1512,7 +1670,14 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                 toolNameList,
                 checkerCategoryList,
                 checkerListCondition
-        );
+        ).stream().map(it -> {
+            CheckerDetailVO vo = new CheckerDetailVO();
+            vo.setCheckerKey(it.getCheckerKey());
+            vo.setToolName(it.getToolName());
+            vo.setCheckerCategory(it.getCheckerCategory());
+            vo.setPublisher(it.getPublisher());
+            return vo;
+        }).collect(Collectors.toList());
     }
 
     @Override
@@ -1543,6 +1708,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
 
     /**
      * lint从scmFiLe中获取代码提交人
+     *
      * @param taskId 任务id
      * @param toolName 工具名称
      * @param lintDefectV2Entity 告警
@@ -1594,6 +1760,17 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             commitAuthor = StringUtils.join(lintDefectV2Entity.getAuthor(), TOOL_NAMES_SEPARATOR);
         }
         return commitAuthor;
+    }
+
+    private Set<String> hasCodeCommonDefectId(List<LintDefectV2Entity> defectList) {
+        if (CollectionUtils.isEmpty(defectList)) {
+            return Collections.emptySet();
+        }
+        List<String> defectIds = defectList.stream().map(LintDefectV2Entity::getEntityId)
+                .collect(Collectors.toList());
+        List<Long> taskIds = defectList.stream().map(LintDefectV2Entity::getTaskId).distinct()
+                .collect(Collectors.toList());
+        return lintDefectV2Dao.filterHasCodeCommonDefectId(taskIds, defectIds);
     }
 }
 

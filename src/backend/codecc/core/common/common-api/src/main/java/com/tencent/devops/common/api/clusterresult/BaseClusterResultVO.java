@@ -15,7 +15,8 @@ import lombok.Data;
         @JsonSubTypes.Type(value = DefectClusterResultVO.class, name = "DEFECT"),
         @JsonSubTypes.Type(value = DupcClusterResultVO.class, name = "DUPC"),
         @JsonSubTypes.Type(value = CcnClusterResultVO.class, name = "CCN"),
-        @JsonSubTypes.Type(value = SecurityClusterResultVO.class, name = "SECURITY")
+        @JsonSubTypes.Type(value = SecurityClusterResultVO.class, name = "SECURITY"),
+        @JsonSubTypes.Type(value = SCAClusterResultVO.class, name = "SCA")
 })
 @ApiModel
 public class BaseClusterResultVO {

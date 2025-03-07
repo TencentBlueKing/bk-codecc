@@ -1,6 +1,7 @@
 package com.tencent.bk.codecc.defect.resources;
 
 import com.google.common.collect.Lists;
+import com.tencent.bk.audit.annotations.AuditEntry;
 import com.tencent.bk.codecc.defect.api.UserCheckerSetRestResource;
 import com.tencent.bk.codecc.defect.auth.CheckerSetExtAuth;
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetRepository;
@@ -31,6 +32,7 @@ import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
 import com.tencent.devops.common.auth.api.pojo.external.ResourceType;
 import com.tencent.devops.common.auth.api.pojo.external.UserGroupRole;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import com.tencent.devops.common.constant.audit.ActionIds;
 import com.tencent.devops.common.web.RestResource;
 import com.tencent.devops.common.web.security.AuthMethod;
 import java.text.Collator;
@@ -75,6 +77,7 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
     }
 
     @Override
+    @AuditEntry(actionId = ActionIds.CREATE_CHECKER_SET)
     @AuthMethod(resourceType = ResourceType.PROJECT, permission = {CodeCCAuthAction.RULESET_CREATE})
     public Result<Boolean> createCheckerSet(String user, String projectId,
             CreateCheckerSetReqVO createCheckerSetReqVO) {
@@ -87,6 +90,7 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
      * 因此permission传空
      */
     @Override
+    @AuditEntry(actionId = ActionIds.UPDATE_CHECKER_SET)
     @AuthMethod(resourceType = ResourceType.PROJECT, permission = {}, roles = UserGroupRole.MANAGER,
             extPassClassName = CheckerSetExtAuth.class)
     public Result<Boolean> updateCheckersOfSet(String checkerSetId, String projectId, String user,

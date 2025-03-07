@@ -16,6 +16,7 @@ import com.tencent.devops.common.util.BeanUtils;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.Data;
@@ -60,7 +61,7 @@ public class BatchDefectProcessReqOldVO {
     private Set<String> sourceAuthor;
 
     @ApiModelProperty("分配给新的处理人")
-    private Set<String> newAuthor;
+    private LinkedHashSet<String> newAuthor;
 
     @ApiModelProperty("忽略告警原因类型")
     private int ignoreReasonType;

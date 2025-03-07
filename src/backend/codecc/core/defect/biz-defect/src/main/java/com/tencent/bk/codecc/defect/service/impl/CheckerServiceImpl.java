@@ -30,18 +30,26 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.tencent.bk.audit.annotations.ActionAuditRecord;
+import com.tencent.bk.audit.annotations.AuditInstanceRecord;
 import com.tencent.bk.codecc.defect.constant.DefectMessageCode;
+import com.tencent.bk.codecc.defect.dao.CheckerListQueryParams;
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerConfigRepository;
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetProjectRelationshipRepository;
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.CustomCheckerProjectRelationshipRepository;
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.IgnoreCheckerRepository;
 import com.tencent.bk.codecc.defect.dao.core.mongotemplate.CheckerDetailDao;
 import com.tencent.bk.codecc.defect.model.CheckerConfigEntity;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
+import com.tencent.bk.codecc.defect.model.CustomCheckerProjectRelationshipEntity;
 import com.tencent.bk.codecc.defect.model.IgnoreCheckerEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerPropsEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
+import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetProjectRelationshipEntity;
 import com.tencent.bk.codecc.defect.service.CheckerService;
+import com.tencent.bk.codecc.defect.service.CommonFilterCheckerService;
 import com.tencent.bk.codecc.defect.service.ICheckerSetBizService;
 import com.tencent.bk.codecc.defect.service.ICheckerSetQueryBizService;
 import com.tencent.bk.codecc.defect.service.ToolBuildInfoService;
@@ -50,11 +58,14 @@ import com.tencent.bk.codecc.defect.vo.CheckerCountListVO;
 import com.tencent.bk.codecc.defect.vo.CheckerDetailListQueryReqVO;
 import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
 import com.tencent.bk.codecc.defect.vo.CheckerListQueryReq;
+import com.tencent.bk.codecc.defect.vo.CheckerManagementPermissionReqVO;
 import com.tencent.bk.codecc.defect.vo.CheckerProps;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerCategory;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerListSortType;
+import com.tencent.bk.codecc.defect.vo.enums.CheckerPermissionType;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerRecommendType;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetSource;
+import com.tencent.bk.codecc.defect.vo.enums.CheckerSource;
 import com.tencent.bk.codecc.task.api.ServiceGrayToolProjectResource;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.api.UserMetaRestResource;
@@ -72,6 +83,7 @@ import com.tencent.devops.common.api.checkerset.CheckerPropVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.CheckerConstants;
@@ -79,10 +91,14 @@ import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
+import com.tencent.devops.common.constant.audit.ActionAuditRecordContents;
+import com.tencent.devops.common.constant.audit.ActionIds;
+import com.tencent.devops.common.constant.audit.ResourceTypes;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import com.tencent.devops.common.service.aop.AbstractI18NResponseAspect;
 import com.tencent.devops.common.service.utils.SpringContextUtil;
 import com.tencent.devops.common.util.BeanUtils;
+import com.tencent.devops.common.util.GsonUtils;
 import com.tencent.devops.common.util.StringCompress;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,6 +110,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -157,6 +174,18 @@ public class CheckerServiceImpl implements CheckerService {
 
     @Autowired
     private ToolMetaCacheService toolMetaCacheService;
+
+    @Autowired
+    private CommonFilterCheckerService commonFilterCheckerService;
+
+    @Autowired
+    private AuthExPermissionApi authExPermissionApi;
+
+    @Autowired
+    private CustomCheckerProjectRelationshipRepository customCheckerProjectRelationshipRepository;
+
+    @Autowired
+    private CheckerSetProjectRelationshipRepository checkerSetProjectRelationshipRepository;
 
     @Override
     public Map<String, CheckerDetailVO> queryAllChecker(String toolName) {
@@ -400,6 +429,7 @@ public class CheckerServiceImpl implements CheckerService {
      * @param toolName
      * @param checkerKey
      * @param paramValue
+     * @param user
      * @return
      */
     @Override
@@ -509,7 +539,8 @@ public class CheckerServiceImpl implements CheckerService {
                 try {
                     checkerDetailVO.setCodeExample(StringCompress.uncompress(codeExample));
                 } catch (Exception e) {
-                    log.error("uncompress code example fail: {}, {}", toolName, checkerKey);
+                    //历史原因，暂时将日志注释
+//                    log.error("uncompress code example fail: {}, {}", toolName, checkerKey);
                     checkerDetailVO.setCodeExample(codeExample);
                 }
             }
@@ -603,12 +634,24 @@ public class CheckerServiceImpl implements CheckerService {
         Map<String, Integer> toolStatusMap = getToolStatusMap(listResult.getData());
 
         //封装分页类
-        List<CheckerDetailEntity> checkerDetailEntityList = checkerDetailDao.findByComplexCheckerCondition(
-                checkerListQueryReq.getKeyWord(), checkerListQueryReq.getCheckerLanguage(),
-                checkerListQueryReq.getCheckerCategory(), checkerListQueryReq.getToolName(),
-                checkerListQueryReq.getTag(), checkerListQueryReq.getSeverity(), checkerListQueryReq.getEditable(),
-                checkerListQueryReq.getCheckerRecommend(), checkerKeySet, checkerListQueryReq.getCheckerSetSelected(),
-                pageNum, pageSize, sortType, sortField, toolStatusMap);
+        CheckerListQueryParams checkerListQueryParams = new CheckerListQueryParams();
+        checkerListQueryParams.setKeyWord(checkerListQueryReq.getKeyWord());
+        checkerListQueryParams.setCheckerLanguage(checkerListQueryReq.getCheckerLanguage());
+        checkerListQueryParams.setCheckerCategory(checkerListQueryReq.getCheckerCategory());
+        checkerListQueryParams.setToolName(checkerListQueryReq.getToolName());
+        checkerListQueryParams.setTag(checkerListQueryReq.getTag());
+        checkerListQueryParams.setSeverity(checkerListQueryReq.getSeverity());
+        checkerListQueryParams.setEditable(checkerListQueryReq.getEditable());
+        checkerListQueryParams.setCheckerSetSelected(checkerListQueryReq.getCheckerSetSelected());
+        checkerListQueryParams.setCheckerRecommend(checkerListQueryReq.getCheckerRecommend());
+        checkerListQueryParams.setToolIntegratedStatusMap(toolStatusMap);
+        checkerListQueryParams.setSelectedCheckerKey(checkerKeySet);
+        checkerListQueryParams.setProjectId(projectId);
+        checkerListQueryParams.setCheckerSource(checkerListQueryParams.getCheckerSource());
+        checkerListQueryParams.setIsOp(checkerListQueryReq.getIsOp());
+        List<CheckerDetailEntity> checkerDetailEntityList =
+            checkerDetailDao.findByComplexCheckerCondition(checkerListQueryParams,
+                pageNum, pageSize, sortType, sortField);
 
         // 获取所有语言
         List<String> langList = Arrays.asList(
@@ -672,9 +715,14 @@ public class CheckerServiceImpl implements CheckerService {
         Map<String, Integer> toolStatusMap = getToolStatusMap(listResult.getData());
 
         // NOCC:VariableDeclarationUsageDistance(设计如此:)
-        List<CheckerDetailEntity> checkerDetailEntityList = checkerDetailDao.findByComplexCheckerCondition(
-                checkerListQueryReq.getKeyWord(), null, null, null, null, null, null, null, null, null, null, null,
-                null, null, toolStatusMap);
+        CheckerListQueryParams checkerListQueryParams = new CheckerListQueryParams();
+        checkerListQueryParams.setKeyWord(checkerListQueryReq.getKeyWord());
+        checkerListQueryParams.setToolIntegratedStatusMap(toolStatusMap);
+        checkerListQueryParams.setProjectId(projectId);
+        checkerListQueryParams.setIsOp(checkerListQueryReq.getIsOp());
+        List<CheckerDetailEntity> checkerDetailEntityList =
+            checkerDetailDao.findByComplexCheckerCondition(checkerListQueryParams,null,null,null,null);
+        
         // NOCC:VariableDeclarationUsageDistance(设计如此:)
         List<CheckerCommonCountVO> checkerCommonCountVOList = new ArrayList<>();
         //1. 语言数量map
@@ -1261,7 +1309,9 @@ public class CheckerServiceImpl implements CheckerService {
                     chooseCheckerPropVO = checkerPropVO;
                 }
             }
-            chooseCheckerPropVO.setLang(mergeCodeLang);
+            if (chooseCheckerPropVO != null) {
+                chooseCheckerPropVO.setLang(mergeCodeLang);
+            }
             mergeTaskCheckers.put(checkerKey, chooseCheckerPropVO);
         });
         return mergeTaskCheckers;
@@ -1413,53 +1463,206 @@ public class CheckerServiceImpl implements CheckerService {
      * @return
      */
     @Override
-    public boolean updateCheckerByCheckerKey(CheckerDetailVO checkerDetailVO) {
+    public boolean updateCheckerByCheckerKey(CheckerDetailVO checkerDetailVO, String userId) {
         // 根据ToolName和CheckerKey获取当前一条规则详情信息
         CheckerDetailEntity checkerDetailEntity = checkerRepository.findFirstByToolNameAndCheckerKey(
                 checkerDetailVO.getToolName(), checkerDetailVO.getCheckerKey());
-        if (checkerDetailEntity != null) {
-            log.info("before: {}", checkerDetailEntity);
+        if (checkerDetailEntity == null) {
+            log.error("req checkerDetailEntity is null ：checker [{}]", checkerDetailVO.getCheckerKey());
+            return false;
+        }
+        log.info("before: {}", checkerDetailEntity);
 
-            Set<String> checkerLanguages = checkerDetailVO.getCheckerLanguage();
-            List<MetadataVO> codeLangMetadataVoList = getCodeLangMetadataVoList();
-            // 获取规则所属语言(数字)
-            List<Integer> languageList = new ArrayList<>();
-            for (String checkerOneLanguage : checkerLanguages) {
-                for (MetadataVO metadataVO : codeLangMetadataVoList) {
-                    String name = metadataVO.getName();
-                    if (checkerOneLanguage.equals(name)) {
-                        languageList.add(Integer.parseInt(metadataVO.getKey()));
+        /*
+         * 用户自定义规则可编辑参数更多：
+         *   1.更新规则实体props
+         *   2.更新使用该规则的所有规则集的checkerProps
+         */
+        if (CheckerSource.CUSTOM.name().equals(checkerDetailEntity.getCheckerSource())
+        && CollectionUtils.isNotEmpty(checkerDetailVO.getCheckerProps())) {
+            updateCheckerSetProps(checkerDetailEntity,checkerDetailVO,userId);
+        }
+
+        Set<String> checkerLanguages = checkerDetailVO.getCheckerLanguage();
+        List<MetadataVO> codeLangMetadataVoList = getCodeLangMetadataVoList();
+        // 获取规则所属语言(数字)
+        List<Integer> languageList = new ArrayList<>();
+        for (String checkerOneLanguage : checkerLanguages) {
+            for (MetadataVO metadataVO : codeLangMetadataVoList) {
+                String name = metadataVO.getName();
+                if (checkerOneLanguage.equals(name)) {
+                    languageList.add(Integer.parseInt(metadataVO.getKey()));
+                }
+            }
+        }
+        long language = 0;
+        for (int i = 0; i < languageList.size(); i++) {
+            language = languageList.get(i) + language;
+        }
+        // 编辑规则对应语言(文字)
+        checkerDetailEntity.setCheckerLanguage(checkerLanguages);
+        // 编辑规则所属语言(数字)
+        checkerDetailEntity.setLanguage(language);
+        // 编辑类别
+        checkerDetailEntity.setCheckerCategory(checkerDetailVO.getCheckerCategory());
+        // 编辑严重级别
+        checkerDetailEntity.setSeverity(checkerDetailVO.getSeverity());
+        // 编辑标签
+        checkerDetailEntity.setCheckerTag(checkerDetailVO.getCheckerTag());
+        // 编辑描述
+        checkerDetailEntity.setCheckerDesc(checkerDetailVO.getCheckerDesc());
+        // 编辑描述详情
+        checkerDetailEntity.setCheckerDescModel(checkerDetailVO.getCheckerDescModel());
+        // 编辑错误示例
+        checkerDetailEntity.setErrExample(checkerDetailVO.getErrExample());
+        // 编辑正确示例
+        checkerDetailEntity.setRightExample(checkerDetailVO.getRightExample());
+        // 编辑更新人
+        checkerDetailEntity.setUpdatedBy(userId);
+        // 编辑时间
+        checkerDetailEntity.setUpdatedDate(System.currentTimeMillis());
+        checkerRepository.save(checkerDetailEntity);
+        return true;
+    }
+
+    /**
+     * 全量更新使用指定规则的所有规则集版本的checkerProps
+     *
+     * @param checkerDetailEntity
+     * @param checkerDetailVO
+     * @param userId
+     * @return boolean
+     */
+    private void updateCheckerSetProps(CheckerDetailEntity checkerDetailEntity,
+                                       CheckerDetailVO checkerDetailVO,
+                                       String userId) {
+        String propsToSet = GsonUtils.toJson(checkerDetailVO.getCheckerProps());
+        // 1.先判断规则配置内容是否有更新，没有更新就不进行下面的规则集全量更新
+        if (propsToSet.equals(checkerDetailEntity.getProps())) {
+            checkerDetailEntity.setProps(GsonUtils.toJson(checkerDetailVO.getCheckerProps()));
+            return;
+        }
+
+        // 2.更新规则实体的配置属性
+        checkerDetailEntity.setProps(GsonUtils.toJson(checkerDetailVO.getCheckerProps()));
+
+        // 3.更新规则集中的规则参数列表
+        //  3.1 查询可用该用户自定义规则的项目列表：规则->项目列表
+        List<CustomCheckerProjectRelationshipEntity> customCheckerProjectRelationshipEntityList =
+            customCheckerProjectRelationshipRepository.findByToolNameAndCheckerName(
+                checkerDetailVO.getToolName(),
+                checkerDetailVO.getCheckerKey()
+            );
+        if (CollectionUtils.isEmpty(customCheckerProjectRelationshipEntityList)) {
+            return;
+        }
+
+        List<CheckerSetEntity> checkerSetEntitiesToUpdate = new ArrayList<>();
+        for (CustomCheckerProjectRelationshipEntity customCheckerProjectRelationshipEntity:
+            customCheckerProjectRelationshipEntityList) {
+            // 3.2 查询每个项目使用的规则集列表：项目->规则集列表
+            List<CheckerSetProjectRelationshipEntity> projectRelationshipEntities =
+                checkerSetProjectRelationshipRepository.findByProjectId(
+                    customCheckerProjectRelationshipEntity.getProjectId());
+            if (CollectionUtils.isEmpty(projectRelationshipEntities)) {
+                continue;
+            }
+
+            for (CheckerSetProjectRelationshipEntity checkerSetProjectRelationshipEntity: projectRelationshipEntities) {
+                List<CheckerSetEntity> checkerSetEntityAllVersionList = checkerSetRepository.findByCheckerSetId(
+                    checkerSetProjectRelationshipEntity.getCheckerSetId());
+                if (CollectionUtils.isEmpty(checkerSetEntityAllVersionList)) {
+                    continue;
+                }
+                for (CheckerSetEntity checkerSetEntity: checkerSetEntityAllVersionList) {
+                    // 3.3 设置每个规则集所有版本中该规则的参数列表
+                    boolean updated = updateCheckerPropsInCheckerSet(checkerSetEntity, checkerDetailVO);
+                    // 如果规则集要更新则更新操作信息
+                    if (updated) {
+                        checkerSetEntity.setUpdatedBy(userId);
+                        checkerSetEntity.setLastUpdateTime(System.currentTimeMillis());
+                        checkerSetEntitiesToUpdate.add(checkerSetEntity);
                     }
                 }
             }
-            long language = 0;
-            for (int i = 0; i < languageList.size(); i++) {
-                language = languageList.get(i) + language;
-            }
-            // 编辑规则对应语言(文字)
-            checkerDetailEntity.setCheckerLanguage(checkerLanguages);
-            // 编辑规则所属语言(数字)
-            checkerDetailEntity.setLanguage(language);
-            // 编辑类别
-            checkerDetailEntity.setCheckerCategory(checkerDetailVO.getCheckerCategory());
-            // 编辑严重级别
-            checkerDetailEntity.setSeverity(checkerDetailVO.getSeverity());
-            // 编辑标签
-            checkerDetailEntity.setCheckerTag(checkerDetailVO.getCheckerTag());
-            // 编辑描述
-            checkerDetailEntity.setCheckerDesc(checkerDetailVO.getCheckerDesc());
-            // 编辑描述详情
-            checkerDetailEntity.setCheckerDescModel(checkerDetailVO.getCheckerDescModel());
-            // 编辑错误示例
-            checkerDetailEntity.setErrExample(checkerDetailVO.getErrExample());
-            // 编辑正确示例
-            checkerDetailEntity.setRightExample(checkerDetailVO.getRightExample());
-            checkerRepository.save(checkerDetailEntity);
-            return true;
-        } else {
-            log.error("req checkerDetailEntity is null ：checker [{}]", checkerDetailVO.getCheckerKey());
         }
-        return false;
+        // 4.保存涉及的所有规则集的规则参数列表更新
+        if (!checkerSetEntitiesToUpdate.isEmpty()) {
+            checkerSetRepository.saveAll(checkerSetEntitiesToUpdate);
+        }
+    }
+
+    /**
+     * 更新给定规则集中指定规则的props
+     *
+     * @param checkerSetEntity
+     * @param checkerDetailVO
+     * @return boolean
+     */
+    private boolean updateCheckerPropsInCheckerSet(CheckerSetEntity checkerSetEntity, CheckerDetailVO checkerDetailVO) {
+        List<CheckerPropsEntity> checkerPropsEntityList = checkerSetEntity.getCheckerProps();
+        if (CollectionUtils.isEmpty(checkerPropsEntityList)) {
+            return false;
+        }
+        boolean updated = false;
+        for (CheckerPropsEntity entity : checkerPropsEntityList) {
+            if (StringUtils.isBlank(entity.getToolName()) || StringUtils.isBlank(entity.getCheckerKey())) {
+                continue;
+            }
+            if (entity.getToolName().equals(checkerDetailVO.getToolName())
+                && entity.getCheckerKey().equals(checkerDetailVO.getCheckerKey())) {
+                entity.setProps(GsonUtils.toJson(checkerDetailVO.getCheckerProps()));
+                updated = true;
+            }
+        }
+        if (updated) {
+            checkerSetEntity.setCheckerProps(checkerPropsEntityList);
+        }
+
+        return updated;
+    }
+
+    /**
+     * 根据checkerKey和ToolName更新用户自定义规则详情
+     *
+     * @param checkerDetailVO
+     * @return
+     */
+    @ActionAuditRecord(
+            actionId = ActionIds.UPDATE_REGEX_RULE,
+            instance = @AuditInstanceRecord(
+                    resourceType = ResourceTypes.CHECKER,
+                    instanceNames = "#checkerDetailVO?.checkerName",
+                    instanceIds = "#projectId"
+            ),
+            content = ActionAuditRecordContents.UPDATE_REGEX_RULE
+    )
+    @Override
+    public boolean updateCustomCheckerByCheckerKey(CheckerDetailVO checkerDetailVO, String projectId, String userId) {
+        String toolName = checkerDetailVO.getToolName();
+        if (toolName != null) {
+            checkerDetailVO.setToolName(toolName.toUpperCase(Locale.ENGLISH));
+        }
+        // 1.根据ToolName和CheckerKey获取规则详情信息
+        CheckerDetailEntity checkerDetailEntity = checkerRepository.findFirstByToolNameAndCheckerKey(
+            checkerDetailVO.getToolName(), checkerDetailVO.getCheckerKey());
+
+        // 2.输入参数校验
+        validateParams(checkerDetailEntity, checkerDetailVO, projectId, userId);
+
+        // 3.更新操作不允许减少规则语言
+        Set<String> oldCheckerLanguage = checkerDetailEntity.getCheckerLanguage();
+        Set<String> newCheckerLanguage = checkerDetailVO.getCheckerLanguage();
+        Set<String> missingLanguages = oldCheckerLanguage.stream()
+            .filter(language -> !newCheckerLanguage.contains(language))
+            .collect(Collectors.toSet());
+        if (!missingLanguages.isEmpty()) {
+            String errMsg = String.format("不能删除语言%s", missingLanguages);
+            log.error(errMsg);
+            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg}, null);
+        }
+
+        return updateCheckerByCheckerKey(checkerDetailVO, userId);
     }
 
     @Override
@@ -1489,4 +1692,183 @@ public class CheckerServiceImpl implements CheckerService {
             }
         }).filter(StringUtils::isNotEmpty).collect(Collectors.toList());
     }
+
+    @Override
+    public List<CheckerDetailEntity> queryCheckerCategoryByCheckerPropVO(List<CheckerPropVO> propVOS) {
+        List<CheckerDetailEntity> checkerDetailEntityList = checkerDetailDao.findByCheckerPropVO(propVOS);
+        if (CollectionUtils.isEmpty(checkerDetailEntityList)) {
+            return new ArrayList<>();
+        }
+        return checkerDetailEntityList;
+    }
+
+    /**
+     * 根据checkerKey和ToolName删除用户自定义规则
+     *
+     * @deprecated 由于规则集的更新采用累加版本方式，删除规则对规则集的处理逻辑将导致原有设计遭到破坏，目前暂时停用删除功能
+     */
+    @Deprecated
+    @Override
+    public Boolean deleteCustomCheckerByCheckerKey(CheckerDetailVO checkerDetailVO, String projectId, String userId) {
+        // 1.查询待删规则
+        CheckerDetailEntity needDeleteCheckerDetailEntity =
+            checkerRepository.findFirstByToolNameAndCheckerKey(checkerDetailVO.getToolName(),
+                checkerDetailVO.getCheckerName());
+
+        // 2.校验参数
+        validateParams(needDeleteCheckerDetailEntity, checkerDetailVO, projectId, userId);
+
+        // 3.若是当前项目创建的规则，且规则已授权给其他项目，则不允许删除，需要先取消其他项目的授权
+        List<CustomCheckerProjectRelationshipEntity> customCheckerProjectRelationshipEntity =
+            customCheckerProjectRelationshipRepository.findByToolNameAndCheckerName(
+                checkerDetailVO.getToolName(),
+                checkerDetailVO.getCheckerName()
+            );
+        // 3.1 获取规则授权的其他项目
+        Set<String> otherRelateProject = customCheckerProjectRelationshipEntity.stream()
+            .map(CustomCheckerProjectRelationshipEntity::getProjectId)
+            .filter(relateProjectId -> !relateProjectId.equals(needDeleteCheckerDetailEntity.getCreatedByProjectId()))
+            .collect(Collectors.toSet());
+
+        if (needDeleteCheckerDetailEntity.getCreatedByProjectId().equals(projectId)
+            && customCheckerProjectRelationshipEntity.size() > 1) {
+            String errMsg = String.format("规则 %s 被其他项目使用: %s ，需要先取消其他项目授权",
+                checkerDetailVO.getCheckerName(), otherRelateProject);
+            log.error(errMsg);
+            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg}, null);
+        }
+
+        // 4. 若是规则已被添加到当前项目使用的规则集中，则不允许删除
+        List<CheckerSetProjectRelationshipEntity> projectRelationshipEntities =
+            checkerSetProjectRelationshipRepository.findByProjectId(projectId);
+        boolean isContainChecker = false;
+        if (CollectionUtils.isNotEmpty(projectRelationshipEntities)) {
+            for (CheckerSetProjectRelationshipEntity checkerSetProjectRelationshipEntity: projectRelationshipEntities) {
+                if (checkerSetProjectRelationshipEntity.getVersion() == null) {
+                    log.error("CheckerSetId: {} 版本号为空，跳过该规则集", checkerSetProjectRelationshipEntity.getCheckerSetId());
+                    continue;
+                }
+                CheckerSetEntity checkerSetEntity = checkerSetRepository.findFirstByCheckerSetIdAndVersion(
+                    checkerSetProjectRelationshipEntity.getCheckerSetId(),
+                    checkerSetProjectRelationshipEntity.getVersion());
+                if (CollectionUtils.isNotEmpty(checkerSetEntity.getCheckerProps())) {
+                    Set<String> checkerKeySet = checkerSetEntity.getCheckerProps().stream()
+                        .map(CheckerPropsEntity::getCheckerKey)
+                        .collect(Collectors.toSet());
+                    isContainChecker = checkerKeySet.contains(checkerDetailVO.getCheckerName());
+                    if (isContainChecker) {
+                        String errMsg = String.format("规则 %s 已被添加到规则集 %s 中，需要先从规则集中删除",
+                            checkerDetailVO.getCheckerName(), checkerSetEntity.getCheckerSetId());
+                        log.error(errMsg);
+                        throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg}, null);
+                    }
+                }
+            }
+        }
+
+        /*
+         * 5.规则删除：
+         *   - 若当前操作的项目为创建规则的项目：规则未授权其他项目 && 规则未添加到当前项目使用的规则集
+         *      -> 删除规则数据，同时删除规则与项目的关系数据
+         *   - 若当前操作的项目非创建规则的项目：规则规则未添加到当前项目使用的规则集
+         *      -> 仅删除规则与项目的关系数据
+         */
+        if (needDeleteCheckerDetailEntity.getCreatedByProjectId().equals(projectId)) {
+            checkerRepository.delete(needDeleteCheckerDetailEntity);
+        }
+        CustomCheckerProjectRelationshipEntity needDeleteCheckerProjectRelationship =
+            customCheckerProjectRelationshipEntity.stream()
+            .filter(entity -> projectId.equals(entity.getProjectId()))
+            .collect(Collectors.toList())
+            .get(0);
+        customCheckerProjectRelationshipRepository.delete(needDeleteCheckerProjectRelationship);
+        return true;
+    }
+
+    @Override
+    public List<CheckerPermissionType> getCheckerManagementPermission(CheckerManagementPermissionReqVO
+                                                                              authManagementPermissionReqVO) {
+        List<CheckerPermissionType> checkerPermissionTypes = new ArrayList<>();
+        String toolName = authManagementPermissionReqVO.getToolName();
+        String checkerKey = authManagementPermissionReqVO.getCheckerKey();
+        String userId = authManagementPermissionReqVO.getUserId();
+        try {
+            if (StringUtils.isBlank(toolName) || StringUtils.isBlank(checkerKey) || StringUtils.isBlank(userId)) {
+                return checkerPermissionTypes;
+            }
+            authManagementPermissionReqVO.setToolName(toolName.toUpperCase(Locale.ENGLISH));
+            CheckerDetailEntity checkerDetailEntity = checkerRepository.findFirstByToolNameAndCheckerKey(
+                authManagementPermissionReqVO.getToolName(),
+                checkerKey);
+            if (checkerDetailEntity == null) {
+                return checkerPermissionTypes;
+            }
+            if (userId.equals(checkerDetailEntity.getCreatedBy())) {
+                checkerPermissionTypes.add(CheckerPermissionType.CREATOR);
+            }
+            String createdByProjectId = checkerDetailEntity.getCreatedByProjectId();
+            if (StringUtils.isNotBlank(createdByProjectId)
+                && createdByProjectId.equals(authManagementPermissionReqVO.getProjectId())) {
+                if (authExPermissionApi.authProjectManager(authManagementPermissionReqVO.getProjectId(), userId)) {
+                    checkerPermissionTypes.add(CheckerPermissionType.MANAGER);
+                }
+            }
+        } catch (Exception e) {
+            String errMsg = String.format("获取规则编辑权限失败，详情: %s", e.getMessage());
+            log.error(errMsg);
+            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, errMsg, e);
+        }
+        return checkerPermissionTypes;
+    }
+
+    /**
+     * 校验参数及用户编辑权限
+     *
+     * @param checkerDetailEntity
+     * @param checkerDetailVO
+     * @param projectId
+     * @param userId
+     */
+    public void validateParams(CheckerDetailEntity checkerDetailEntity,
+                               CheckerDetailVO checkerDetailVO,
+                               String projectId, String userId) {
+        // 1.校验规则是否存在
+        if (checkerDetailEntity == null) {
+            String errMsg = String.format("修改的规则 %s 不存在", checkerDetailVO.getCheckerName());
+            log.error(errMsg);
+            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg}, null);
+        }
+
+        // 2.不允许修改非用户自定义类型规则
+        String checkerSource = checkerDetailEntity.getCheckerSource();
+        if (StringUtils.isBlank(checkerSource) || !CheckerSource.CUSTOM.name().equals(checkerSource)) {
+            String errMsg = String.format("规则 %s 不是用户自定义类型", checkerDetailEntity.getCheckerName());
+            log.error(errMsg);
+            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{errMsg}, null);
+        }
+
+        // 3.规则创建者允许所有编辑权限
+        if (userId.equals(checkerDetailEntity.getCreatedBy())) {
+            return;
+        }
+
+        // 4.非规则创建者，且非创建规则的项目管理员，不允许修改
+        String checkerCreatedByProjectId = checkerDetailEntity.getCreatedByProjectId();
+        if (!checkerCreatedByProjectId.isEmpty() && checkerCreatedByProjectId.equals(projectId)) {
+            boolean havePermission;
+            log.info("management checker version auth user {} | project {}",
+                userId, projectId);
+            havePermission = authExPermissionApi.authProjectManager(checkerCreatedByProjectId, userId);
+            if (!havePermission) {
+                String errMsg = String.format("无权限，用户 %s 不是 %s 项目管理员，也不是规则创建者", userId, projectId);
+                log.error(errMsg);
+                throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, errMsg);
+            }
+        } else {
+            String errMsg = String.format("无权限，项目 %s 不是规则创建项目，用户 %s 也不是规则创建者，", projectId, userId);
+            log.error(errMsg);
+            throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, errMsg);
+        }
+    }
+
 }

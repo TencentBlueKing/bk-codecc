@@ -13,10 +13,8 @@
 package com.tencent.bk.codecc.task.dao.mongotemplate;
 
 import com.google.common.collect.Lists;
-import com.mongodb.BasicDBObject;
 import com.tencent.bk.codecc.task.model.GrayToolProjectEntity;
 import com.tencent.bk.codecc.task.vo.GrayToolProjectReqVO;
-import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
@@ -24,6 +22,7 @@ import org.junit.Assert;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.FindAndReplaceOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.BasicQuery;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -33,7 +32,6 @@ import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.regex.Pattern;
 
 
 /**
@@ -64,6 +62,20 @@ public class GrayToolProjectDao {
         update.set("created_date", System.currentTimeMillis());
         update.set("created_by", user);
         mongoTemplate.upsert(query, update, GrayToolProjectEntity.class);
+    }
+
+    public void findAndReplaceByToolNameAndProjectId(GrayToolProjectEntity entity) {
+        Criteria criteria = Criteria.where("tool_name").is(entity.getToolName())
+                .and("project_id").is(entity.getProjectId());
+        Query query = new Query(criteria);
+        mongoTemplate.findAndReplace(query, entity, FindAndReplaceOptions.options().upsert());
+    }
+
+    public List<GrayToolProjectEntity> findByToolNameAndProjectIdIn(String toolName, List<String> projectIdList) {
+        Criteria criteria = Criteria.where("tool_name").is(toolName).and("project_id").in(projectIdList);
+        Query query = new Query(criteria);
+
+        return mongoTemplate.find(query, GrayToolProjectEntity.class);
     }
 
     /**
@@ -145,5 +157,12 @@ public class GrayToolProjectDao {
         // 仅筛选所有灰度任务池的项目id
         query.addCriteria(Criteria.where("project_id").regex("^GRAY_TASK_POOL_"));
         return mongoTemplate.find(query, GrayToolProjectEntity.class, "t_gray_tool_project");
+    }
+
+    public long batchDeleteInProjectIds(String toolName, List<String> projectIds) {
+        Criteria criteria = Criteria.where("tool_name").is(toolName).and("project_id").in(projectIds);
+        Query query = new Query(criteria);
+
+        return mongoTemplate.remove(query, GrayToolProjectEntity.class).getDeletedCount();
     }
 }

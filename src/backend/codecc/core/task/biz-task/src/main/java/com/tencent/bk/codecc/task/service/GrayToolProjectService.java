@@ -66,6 +66,12 @@ public interface GrayToolProjectService {
 
 
     /**
+     * 批量更新工具的灰度项目信息, 添加 newProjectIds 中独有的灰度项目, 删除 oldProjectIds 中独有的灰度项目
+     */
+    Boolean batchUpdateGrayProject(String userId, String toolName, Set<String> oldProjectIds,
+            Set<String> newProjectIds);
+
+    /**
      * 查询所有信息
      * @param reqVO
      * @return
@@ -85,7 +91,7 @@ public interface GrayToolProjectService {
      * 创建灰度任务池
      * @param toolName
      */
-    void selectGrayTaskPool(String toolName, String stage, String userName);
+    void selectGrayTaskPool(String toolName, String langCode, String stage, String userName);
 
     /**
      * 通过工具名获取灰度任务清单
@@ -98,7 +104,7 @@ public interface GrayToolProjectService {
      * 触发灰度任务池
      * @param toolName
      */
-    TriggerGrayToolVO triggerGrayToolTasks(String toolName, String taskNum);
+    TriggerGrayToolVO triggerGrayToolTasks(String toolName, String taskNum, String langCode);
 
     /**
      * 查询灰度报告

@@ -60,20 +60,39 @@
           >
         </div>
       </div>
-      <span class="table-txt" v-else>
+      <span class="table-txt flex justify-between" v-else>
         <span class="table-txt-num">{{
           $t('第 x / y 规则', { num: tableIndex + 1, count: totalCount })
         }}</span>
-        <span class="table-txt-keyboard fr">
-          <span>{{ $t('当前已支持键盘操作') }}</span>
+        <div>
+          <span class="table-txt-keyboard">
+            <span>{{ $t('当前已支持键盘操作') }}</span>
+            <bk-button
+              text
+              ext-cls="cc-button"
+              size="small"
+              @click="operateDialogVisible = true"
+            >{{ $t('如何操作？') }}
+            </bk-button>
+          </span>
           <bk-button
-            text
-            ext-cls="cc-button"
-            size="small"
-            @click="operateDialogVisible = true"
-          >{{ $t('如何操作？') }}</bk-button
+            class="table-txt-keyboard mr-[10px]"
+            icon="plus"
+            @click="handleCreateChecker"
           >
-        </span>
+            {{$t('创建正则规则') }}
+            <span v-if="!checkerRedPoint" class="red-point"></span>
+          </bk-button>
+          <bk-button
+            v-if="isInnerSite"
+            class="table-txt-keyboard"
+            icon="plus"
+            @click="handleCreateTool"
+          >
+            {{$t('创建检查工具') }}
+            <span v-if="!toolRedPoint" class="red-point"></span>
+          </bk-button>
+        </div>
       </span>
       <bk-table
         ref="ruleListTable"
@@ -215,6 +234,7 @@
           <span class="checker-col">
             <span class="checker-col-label">{{ $t('适用语言：') }}</span>
             <span
+              style="overflow: hidden;"
               class="checker-col-content"
               v-bk-tooltips="{
                 content:
@@ -278,25 +298,20 @@
             <span class="checker-col-label">{{ $t('描述：') }}</span>
             <span class="checker-col-content">
               <div
-                v-for="(desc, index) in checker.checkerDesc &&
-                  checker.checkerDesc.split('\n')"
+                v-for="(desc, index) in checker.checkerDesc && checker.checkerDesc.split('\n')"
                 :key="index"
               >
-                <!-- eslint-disable-next-line -->
                 <span v-html="handleHttp(desc)"></span>
               </div>
             </span>
           </span>
-          <span class="checker-col checker-col-block">
+          <span v-if="!(checker.checkerDesc === checker.checkerDescModel || !checker.checkerDescModel)" class="checker-col checker-col-block">
             <span class="checker-col-label">{{ $t('详细说明：') }}</span>
-            <span class="checker-col-content" v-show="!hasDetail">
+            <span class="checker-col-content">
               <div
-                v-for="(desc, index) in (checker.checkerDescModel &&
-                  checker.checkerDescModel.split('\n')) ||
-                  (checker.checkerDesc && checker.checkerDesc.split('\n'))"
+                v-for="(desc, index) in (checker.checkerDescModel && checker.checkerDescModel.split('\n')) || (checker.checkerDesc && checker.checkerDesc.split('\n'))"
                 :key="index"
               >
-                <!-- eslint-disable-next-line -->
                 <span v-html="handleHttp(desc)"></span>
               </div>
             </span>
@@ -317,6 +332,23 @@
               ></div>
             </span>
           </span>
+          <bk-button
+            :disabled="!isEditAndDelect"
+            type="submit"
+            :title="'基础按钮'"
+            @click="handleEdit(checker)"
+            class="mr10">
+            {{ $t('编 辑') }}
+          </bk-button>
+          <!--          <bk-button-->
+          <!--              :disabled="!isEditAndDelect"-->
+          <!--              :theme="'danger'"-->
+          <!--              type="submit"-->
+          <!--              :title="'基础按钮'"-->
+          <!--              @click="handleDelete(checker)"-->
+          <!--              class="mr10">-->
+          <!--            {{ $t('删 除') }}-->
+          <!--          </bk-button>-->
         </div>
         <div v-show="hasDetail" class="checker-detail" id="checkerDetail">
           {{ checkerTypeDesc }}
@@ -400,6 +432,10 @@
         </bk-button>
       </div>
     </bk-dialog>
+    <create
+      ref="customRules"
+      :refresh-detail="refreshList"
+    ></create>
   </div>
 </template>
 
@@ -411,10 +447,13 @@ import CodeMirror from '@/common/codemirror';
 import { leaveConfirm } from '../../common/leave-confirm';
 import { language } from '../../i18n';
 import DEPLOY_ENV from '@/constants/env';
+import create from './create.vue';
+import { throttle } from 'lodash';
 
 export default {
   components: {
     ccCollapse,
+    create,
   },
   props: {
     isConfig: {
@@ -492,6 +531,10 @@ export default {
       iwikiCodeccTool: window.IWIKI_CODECC_TOOL,
       isInnerSite: DEPLOY_ENV === 'tencent',
       publisher: '',
+      isEditAndDelect: false,
+      permissionList: [],
+      toolRedPoint: window.localStorage.getItem('red-point-checker-tool-20241101'),
+      checkerRedPoint: window.localStorage.getItem('red-point-checker-checker-20241101'),
     };
   },
   computed: {
@@ -509,6 +552,9 @@ export default {
     },
     projectId() {
       return this.$route.params.projectId;
+    },
+    userName() {
+      return this.$store.state.user.username;
     },
   },
   watch: {
@@ -552,13 +598,18 @@ export default {
   created() {
     this.fetchSearch(true);
     this.fetchList();
+    this.$store.dispatch('project/getProjectInfo');
     const vm = this;
     document.onkeydown = keyDown;
     function keyDown(event) {
       const e = event || window.event;
       // if (e.target.nodeName !== 'BODY') return
+      if (vm.$refs.addRegular.visible) return;
       switch (e.code) {
         case 'Enter':
+          if (e.target.getAttribute('class') !== 'bk-form-input') vm.handleRowClick();
+          break;
+        case 'NumpadEnter':
           if (e.target.getAttribute('class') !== 'bk-form-input') vm.handleRowClick();
           break;
         case 'Escape':
@@ -599,6 +650,10 @@ export default {
     // document.onkeydown = null
   },
   methods: {
+    refreshList() {
+      this.fetchSearch(true);
+      this.fetchList();
+    },
     async fetchSearch(isInit, params = {}) {
       const payload = this.isConfig
         ? Object.assign(
@@ -629,20 +684,29 @@ export default {
         }
         if (isInit) {
           this.$nextTick(() => {
+            // 设置默认激活的分类
             this.activeName = this.isConfig
               ? ['checkerCategory', 'toolName']
               : ['checkerLanguage', 'checkerCategory'];
-            this.$refs.ruleListTable.$refs.bodyWrapper.addEventListener(
-              'scroll',
-              (event) => {
-                const dom = event.target;
-                // 是否滚动到底部
-                const hasScrolledToBottom = dom.scrollTop + dom.offsetHeight >= dom.scrollHeight;
-                if (hasScrolledToBottom && this.list.length < this.totalCount) {
-                  this.selectParams.pageNum += 1;
-                }
-              },
-            );
+
+            // 获取表格滚动容器
+            const scrollContainer = this.$refs.ruleListTable.$refs.bodyWrapper;
+
+            // 创建节流函数
+            const handleScroll = throttle((event) => {
+              const dom = event.target;
+              // 判断是否滚动到底部,预留10px的缓冲区
+              const isBottom = dom.scrollTop + dom.offsetHeight + 10 >= dom.scrollHeight;
+
+              console.log('isBottom', isBottom);
+              // 如果滚动到底部且还有更多数据,则加载下一页
+              if (isBottom && this.list.length < this.totalCount) {
+                this.selectParams.pageNum += 1;
+              }
+            }, 600);
+
+            // 监听滚动事件
+            scrollContainer.addEventListener('scroll', handleScroll);
           });
         }
         this.totalCount = res.find(item => item.name === 'total').checkerCountList[0].count;
@@ -710,7 +774,7 @@ export default {
         keyWord: value,
       });
     },
-    handleRowClick(row = this.list[this.tableIndex], index = this.tableIndex) {
+    async handleRowClick(row = this.list[this.tableIndex], index = this.tableIndex) {
       this.sliderIsShow = true;
       this.contentLoading = true;
       this.tableIndex = index;
@@ -781,6 +845,13 @@ export default {
         .finally(() => {
           this.contentLoading = false;
         });
+      await this.checkPermission(row);
+      // 如果是规则创建者或项目管理员就 允许编辑和删除
+      if (row.createdBy === this.userName || this.permissionList.some(item => ['MANAGER', 'CREATOR'].includes(item))) {
+        this.isEditAndDelect = true;
+      } else {
+        this.isEditAndDelect = false;
+      }
     },
     formatTool(tool) {
       return this.toolMap[tool] && this.toolMap[tool].displayName;
@@ -917,6 +988,115 @@ export default {
     },
     handleBeforeClose() {
       return leaveConfirm();
+    },
+    handleCreateChecker() {
+      window.localStorage.setItem('red-point-checker-checker-20241101', 1);
+      this.checkerRedPoint = true;
+      this.$refs.customRules.clearForm();
+      this.$refs.customRules.visible = true;
+      this.$refs.customRules.isCheckerName = false;
+      this.$refs.customRules.title = this.$t('创建正则规则');
+      this.$refs.customRules.isEdit = false;
+    },
+    handleCreateTool() {
+      window.localStorage.setItem('red-point-checker-tool-20241101', 1);
+      this.toolRedPoint = true;
+      window.open(`${window.PAAS_V3_URL}/plugin-center/create?plugin_type=${window.PAAS_V3_APP}`, '_blank');
+    },
+    handleEdit(row) {
+      this.sliderIsShow = false;
+      const { customRules } = this.$refs;
+
+      customRules.visible = true;
+      customRules.isEdit = true;
+      customRules.isCheckerName = true;
+      customRules.title = this.$t('编辑正则规则');
+
+      const { checkerLanguage, severity, props } = row;
+
+      if (checkerLanguage.includes('ALL')) {
+        customRules.allCodeLangSetiing();
+      } else {
+        customRules.formData.checkerLanguage = checkerLanguage;
+        customRules.initialLanguages = checkerLanguage;
+      }
+      if (severity === 4) {
+        customRules.formData.severity = 3;
+      } else {
+        customRules.formData.severity = severity;
+      }
+
+      Object.assign(customRules.formData, {
+        checkerName: row.checkerName,
+        checkerDesc: row.checkerDesc,
+        checkerCategory: row.checkerCategory,
+        checkerTag: row.checkerTag,
+        checkerRecommend: row.checkerRecommend,
+        checkerProps: row.checkerProps,
+        editable: row.editable,
+        errExample: row.errExample,
+        codeExample: row.rightExample,
+        checkGranularity: row.checkGranularity,
+        checkerTypeDesc: row.checkerTypeDesc,
+        checkerDescModel: row.checkerDescModel,
+      });
+
+      if (props) {
+        try {
+          const paramDataList = JSON.parse(props);
+          paramDataList.forEach(({ propName, propValue }) => {
+            if (propName === 'regex') {
+              customRules.paramData.regex = propValue;
+            }
+            if (propName === 'msg') {
+              customRules.paramData.msg = propValue;
+            }
+          });
+        } catch (error) {
+          console.error('Error parsing props:', error);
+          customRules.paramData.regex = '';
+          customRules.paramData.msg = '';
+        }
+      }
+    },
+    // 删除属于高危操作，暂时停用删除功能
+    // handleDelete(row) {
+    //   const params = {
+    //     uid: this.$store.state.user.username,
+    //     toolName: row.toolName,
+    //     checkerName: row.checkerName
+    //   }
+    //   this.$bkInfo({
+    //     title: this.$t('删除规则'),
+    //     subTitle: `${this.$t('删除' + params.checkerName +'后，该规则将无法使用')}`,
+    //     confirmLoading: true,
+    //     confirmFn: async () => {
+    //       await this.$store
+    //           .dispatch('checker/deleteCustomeChecker', params)
+    //           .then((res) => {
+    //             const msg = res.code === '0'
+    //                 ? this.$t('规则删除成功')
+    //                 : this.$t('规则无法删除');
+    //             const theme = res ? 'success' : 'error';
+    //             this.$bkMessage({
+    //               message: msg,
+    //               theme,
+    //             });
+    //             this.refreshList()
+    //             this.sliderIsShow = false
+    //           });
+    //     },
+    //   });
+    // },
+    async checkPermission(row) {
+      const params = {
+        projectId: this.projectId,
+        userId: this.userName,
+        toolName: row.toolName,
+        checkerKey: row.checkerKey,
+      };
+      const res = await this.$store.dispatch('checker/permission', params);
+      this.permissionList = res.data;
     },
   },
 };
@@ -1145,7 +1325,7 @@ export default {
         width: auto;
         max-width: 242px;
         margin-bottom: -2px;
-        overflow: hidden;
+        overflow: visible;
         color: #333;
         text-overflow: ellipsis;
         word-break: break-all;
@@ -1206,6 +1386,7 @@ export default {
 .checker-tag {
   display: inline-block;
   padding: 2px 8px;
+  margin: 0 4px;
   line-height: 20px;
   background: #c9dffa;
   border-radius: 2px;
@@ -1240,5 +1421,9 @@ export default {
   >>> pre.CodeMirror-line {
     color: #a50;
   }
+}
+
+.mr10 {
+  margin-top: 10px;
 }
 </style>

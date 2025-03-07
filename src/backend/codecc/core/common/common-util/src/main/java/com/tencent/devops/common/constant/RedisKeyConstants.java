@@ -182,6 +182,21 @@ public interface RedisKeyConstants {
     String KEY_DEPT_TREE = "DEPT_TREE";
 
     /**
+     * 仅保存BG、业务线、部门层级
+     */
+    String KEY_BG_TO_DEPT_TREE = "BG_TO_DEPT_TREE";
+
+    /**
+     * 保存每个组织架构的类型id
+     */
+    String KEY_DEPT_TYPE_ID = "KEY_DEPT_TYPE_ID";
+
+    /**
+     * 保存每个组织的父组织id
+     */
+    String KEY_DEPT_PARENT_ID = "KEY_DEPT_PARENT_ID";
+
+    /**
      * bg管理员清单
      */
     String KEY_USER_BG_ADMIN = "USER_BG_ADMIN";
@@ -250,7 +265,9 @@ public interface RedisKeyConstants {
 
     /**
      * 统计每天活跃工具数
+     * 已改为从 PREFIX_ANALYZE_FAIL_COUNT + PREFIX_ANALYZE_SUCC_COUNT中获取
      */
+    @Deprecated
     String PREFIX_ACTIVE_TOOL = "ACTIVE_TOOL:";
 
     /**
@@ -332,6 +349,16 @@ public interface RedisKeyConstants {
      * CodCC当前月的活跃用户
      */
     String USER_LOG_MONTH_RETAIN = "USER_LOG_MONTH_RETAIN:";
+
+    /**
+     * 记录单个工具一天覆盖的代码库清单
+     */
+    String TOOL_COVER_CODE_REPO_DAILY = "TOOL_COVER_CODE_REPO_DAILY:";
+
+    /**
+     * 记录单个工具一天新增的代码库清单
+     */
+    String TOOL_NEWADD_CODE_REPO_DAILY = "TOOL_NEWADD_CODE_REPO_DAILY:";
 
     /**
      * PRECI当前周的活跃用户
@@ -434,6 +461,8 @@ public interface RedisKeyConstants {
 
     String GONGFENG_SCAN_CREATE_TASK_MIGRATE = "GONGFENG_SCAN_CREATE_TASK_MIGRATE";
 
+    String NOTIFY_GONGFENG_SCAN_INTERVAL = "NOTIFY_GONGFENG_SCAN_INTERVAL";
+
     /**
      * 提单锁模式
      */
@@ -442,12 +471,81 @@ public interface RedisKeyConstants {
     /**
      * 数据表每日清理
      */
-    String CLEAN_MONGO_DATA_STOP_FLAG  = "CLEAN_MONGO_DATA_STOP_FLAG";
+    String CLEAN_MONGO_DATA_STOP_FLAG = "CLEAN_MONGO_DATA_STOP_FLAG";
 
     /**
      * 规则数据统计【执行时长18小时】
      */
-    String CHECKER_DEFECT_STAT_CONSUMER_STOP_FLAG   = "CHECKER_DEFECT_STAT_CONSUMER_STOP_FLAG";
+    String CHECKER_DEFECT_STAT_CONSUMER_STOP_FLAG = "CHECKER_DEFECT_STAT_CONSUMER_STOP_FLAG";
 
+    /**
+     * 工具侧上报代码仓库信息(/build/defects/repositories) 时，在 t_code_repo_info 表中创建新数据锁
+     */
+    String LOCK_T_CODE_REPO_INFO = "LOCK:T_CODE_REPO_INFO";
+    /**
+     * 任务失效工具告警处理
+     */
+    String TASK_INVALID_TOOL_DEFECT = "TASK_INVALID_TOOL_DEFECT";
 
+    /**
+     * 支持未触发补偿的任务类名
+     */
+    String BK_JOB_NO_TRIGGER_COMPENSATE_CLASS = "BK_JOB_NO_TRIGGER_COMPENSATE_CLASS";
+
+    /**
+     * 用于防止 RandomTestTaskStarterMQ 重复消费
+     */
+    String TEST_TASKS_STARTER_LOCK = "TEST_TASKS_STARTER_LOCK";
+
+    /**
+     * Open Scan 任务创建防重
+     */
+    String OPEN_SCAN_CREATE_TASK_LOCK = "OPEN_SCAN_CREATE_TASK_LOCK";
+
+    /**
+     * Github定时流水线超时时间
+     */
+    String GITHUB_TIMING_PIPELINE_TIMEOUT = "GITHUB_TIMING_PIPELINE_TIMEOUT:";
+
+    /**
+     * Github 使用的插件版本
+     */
+    String GITHUB_CODECC_PLUGIN_VERSION = "GITHUB_CODECC_PLUGIN_VERSION:";
+
+    /**
+     * 异步任务状态,"true":已执行完成，"false":执行中
+     * ASYNC_TASK_STATUS:{key} - true/false
+     */
+    String ASYNC_TASK_STATUS = "ASYNC_TASK_STATUS:";
+
+    /**
+     * 异步任务得出的结果(不需持久化的数据，要配置过期时间)
+     * ASYNC_TASK_RESULT:{key} - string
+     */
+    String ASYNC_TASK_RESULT = "ASYNC_TASK_RESULT:";
+
+    /**
+     * 在 工具上架-随机测试 的获取结果接口中用于限制 eligibleCount 字段只通知一次
+     */
+    String ELIGIBLE_TEST_TASKS_NOTIFY = "ELIGIBLE_TEST_TASKS_NOTIFY";
+
+    /**
+     * 缓存 工具上架 创建的工具名
+     */
+    String BK_TOOL_NAME_SET = "BK_TOOL_NAME_SET";
+
+    /**
+     * 缓存 工具上架 创建的工具名
+     */
+    String DEFECT_QUERY_KEY = "DEFECT_QUERY:";
+
+    /**
+     * 缓存 查询配置某工具的任务的分页索引
+     */
+    String TOOL_TASK_QUERY_CURSOR_KEY = "TOOL_TASK_QUERY_CURSOR";
+
+    /**
+     * 定时任务开关：同步TEG/AMS仓库信息,字符串 "true"为打开，否则为关闭
+     */
+    String SYNC_TEG_AMS_TASK_ENABLE = "SYNC_TEG_AMS_TASK_ENABLE";
 }

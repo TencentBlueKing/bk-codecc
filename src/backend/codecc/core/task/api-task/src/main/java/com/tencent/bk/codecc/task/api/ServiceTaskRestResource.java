@@ -135,7 +135,7 @@ public interface ServiceTaskRestResource {
     @POST
     Result<List<TaskDetailVO>> getTaskDetailListByIdsWithDelete(
             @ApiParam(value = "任务ID清单", required = true)
-            List<Long> taskIds);
+                    QueryTaskListReqVO reqVO);
 
     @ApiOperation("通过taskid查询任务信息，不包含工具信息")
     @Path("/taskInfoWithoutTools/{taskId}")
@@ -201,7 +201,10 @@ public interface ServiceTaskRestResource {
             String disabledReason,
             @ApiParam(value = "当前用户", required = true)
             @QueryParam("userName")
-            String userName
+            String userName,
+            @ApiParam(value = "异步任务Id", required = false)
+            @QueryParam("asyncTaskId")
+            String asyncTaskId
     );
 
     @ApiOperation("检查任务是否存在")
@@ -407,10 +410,10 @@ public interface ServiceTaskRestResource {
     Result<List<Long>> queryTaskIdByCreateFromExcludeGray(
             @ApiParam(value = "来源", required = true)
             List<String> createFrom,
-            @ApiParam(value = "应用code")
-            @QueryParam("pageNum")
-            Integer pageNum,
-            @ApiParam(value = "应用code")
+            @ApiParam(value = "上次查询最后的任务ID")
+            @QueryParam("lastTaskId")
+            Long lastTaskId,
+            @ApiParam(value = "一页多少条记录")
             @QueryParam("pageSize")
             Integer pageSize
     );
@@ -628,4 +631,12 @@ public interface ServiceTaskRestResource {
             @ApiParam(value = "每页数量")
             @QueryParam("pageSize")
             Integer pageSize);
+
+    @ApiOperation("项目禁用后停用任务")
+    @Path("/project/disable/stop")
+    @DELETE
+    Result<Boolean> stopDisableProjectTask(
+            @ApiParam(value = "项目ID", required = true)
+            @QueryParam(value = "projectId")
+            String projectId);
 }

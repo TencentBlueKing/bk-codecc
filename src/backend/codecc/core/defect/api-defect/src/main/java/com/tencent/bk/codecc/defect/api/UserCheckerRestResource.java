@@ -32,6 +32,7 @@ import com.tencent.bk.codecc.defect.vo.checkerset.CheckerSetDifferenceVO;
 import com.tencent.bk.codecc.defect.vo.checkerset.UpdateCheckerSetReqVO;
 import com.tencent.bk.codecc.defect.vo.checkerset.UserCreatedCheckerSetsVO;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerListSortType;
+import com.tencent.bk.codecc.defect.vo.enums.CheckerPermissionType;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -194,6 +195,8 @@ public interface UserCheckerRestResource {
             @ApiParam(value = "规则清单查询条件", required = true)
                     CheckerListQueryReq checkerListQueryReq,
             @ApiParam(value = "项目id", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userId,
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
                     String projectId,
             @ApiParam("页数")
@@ -216,6 +219,8 @@ public interface UserCheckerRestResource {
             @ApiParam(value = "规则数量查询条件", required = true)
                     CheckerListQueryReq checkerListQueryReq,
             @ApiParam(value = "项目id", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userId,
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
                     String projectId);
 
@@ -245,6 +250,56 @@ public interface UserCheckerRestResource {
                     String userId
             );
 
+    @ApiOperation("导入用户自定义规则")
+    @Path("/custom")
+    @POST
+    Result<Boolean> customCheckerImport(
+        @ApiParam(value = "用户名", required = true)
+        @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+        String userName,
+        @ApiParam(value = "项目名", required = true)
+        @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+        String projectId,
+        @ApiParam(value = "规则导入请求对象", required = true)
+        CheckerImportVO checkerImportVO
+    );
+
+    @ApiOperation("编辑用户自定义规则详情")
+    @Path("/updateCustomChecker")
+    @POST
+    Result<Boolean> updateCustomCheckerByCheckerKey(
+        @ApiParam(value = "规则详情请求体", required = true)
+        CheckerDetailVO checkerDetailVO,
+        @ApiParam(value = "项目id", required = true)
+        @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+        String projectId,
+        @ApiParam(value = "用户ID", required = true)
+        @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+        String userId
+    );
+
+    /**
+     * 根据checkerKey和ToolName删除用户自定义规则
+     *
+     * @param checkerDetailVO
+     * @deprecated 由于规则集的更新采用累加版本方式，删除规则对规则集的处理逻辑将导致原有设计遭到破坏，目前暂时停用删除功能
+     * @return
+     */
+    @ApiOperation("删除用户自定义规则")
+    @Path("/deleteCustomChecker")
+    @POST
+    @Deprecated
+    Result<Boolean> deleteCustomCheckerByCheckerKey(
+        @ApiParam(value = "规则详情请求体", required = true)
+        CheckerDetailVO checkerDetailVO,
+        @ApiParam(value = "项目id", required = true)
+        @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+        String projectId,
+        @ApiParam(value = "用户id", required = true)
+        @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+        String userId
+    );
+
     @ApiOperation("获取规则详情列表")
     @Path("/list/preci")
     @POST
@@ -252,4 +307,13 @@ public interface UserCheckerRestResource {
             @ApiParam(value = "规则清单查询条件", required = true)
                     CheckerDetailListQueryReqVO checkerListQueryReq
     );
+
+    @ApiOperation("判断用户是否具有管理项目下的规则权限")
+    @Path("/userManagementPermission")
+    @POST
+    Result<List<CheckerPermissionType>> getCheckerManagementPermission(
+        @ApiParam(value = "规则权限校验条件", required = true)
+        CheckerManagementPermissionReqVO authManagementPermissionReqVO
+    );
+
 }

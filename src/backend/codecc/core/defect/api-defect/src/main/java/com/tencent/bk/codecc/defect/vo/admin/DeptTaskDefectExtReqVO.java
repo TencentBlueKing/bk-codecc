@@ -29,10 +29,7 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ApiModel("导出开源扫描数据统计请求体")
-public class DeptTaskDefectExtReqVO extends DeptTaskDefectReqVO
-{
+public class DeptTaskDefectExtReqVO extends DeptTaskDefectReqVO {
     @ApiModelProperty("按指定规则名筛选告警")
     private List<String> checkerKeyList;
-
-
 }

@@ -1,9 +1,6 @@
 package com.tencent.bk.codecc.defect.dao.defect.mongotemplate;
 
 import com.tencent.bk.codecc.defect.model.statistic.LintStatisticEntity;
-import java.util.List;
-import java.util.Set;
-
 import com.tencent.bk.codecc.defect.vo.GrayDefectStaticVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -15,13 +12,52 @@ import org.springframework.data.mongodb.core.aggregation.GroupOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Repository
 public class LintStatisticDao {
 
     @Autowired
     private MongoTemplate defectMongoTemplate;
+
+    public Map<String, Integer> batchQueryDefectCount(Long taskId, String buildId, List<String> toolNameList) {
+        Criteria criteria = new Criteria();
+        criteria.and("task_id").is(taskId);
+        criteria.and("tool_name").in(toolNameList);
+        criteria.and("build_id").is(buildId);
+
+        Query query = new Query(criteria);
+        query.fields().include("defect_count", "tool_name");
+        List<LintStatisticEntity> lintStatList = defectMongoTemplate.find(query, LintStatisticEntity.class);
+
+        return lintStatList.stream().collect(Collectors.toMap(
+                LintStatisticEntity::getToolName,
+                LintStatisticEntity::getDefectCount
+        ));
+    }
+
+    public Integer queryDefectCount(Long taskId, String toolName, String buildId) {
+        Criteria criteria = new Criteria();
+        criteria.and("task_id").is(taskId);
+        criteria.and("tool_name").is(toolName);
+        criteria.and("build_id").is(buildId);
+
+        Query query = new Query(criteria);
+        query.fields().include("defect_count");
+
+        LintStatisticEntity result = defectMongoTemplate.findOne(query, LintStatisticEntity.class);
+        if (result == null || result.getDefectCount() == null) {
+            return 0;
+        }
+
+        return result.getDefectCount();
+    }
 
     /**
      * 获取各工具相同构建Id的最后一次统计

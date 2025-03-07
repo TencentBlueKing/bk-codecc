@@ -13,14 +13,15 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @EqualsAndHashCode(callSuper = true)
 @Document(collection = "t_user_oauth")
 @CompoundIndexes({
-        @CompoundIndex(name = "user_id_system_id_idx", def = "{'user_id': 1, 'system': 1}", background = true)
+        @CompoundIndex(name = "user_id_system_extra_idx", def = "{'user_id': 1, 'system': 1, 'extra': 1}",
+                unique = true, background = true)
 })
 public class UserOauthInfoEntity extends CommonEntity {
     /**
      * 项目主键id
      */
     @Field("user_id")
-    @Indexed(unique = true)
+    @Indexed
     private String userId;
 
     /**

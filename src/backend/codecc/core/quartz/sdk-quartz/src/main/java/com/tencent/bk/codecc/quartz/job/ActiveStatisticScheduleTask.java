@@ -16,11 +16,19 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_ACTIVE_STAT;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_ACTIVE_STAT;
 
 import com.tencent.bk.codecc.quartz.pojo.QuartzJobContext;
+import com.tencent.devops.common.api.StatisticTaskCodeLineToolVO;
+import com.tencent.devops.common.constant.ComConstants;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * 活跃统计计划任务
@@ -39,7 +47,25 @@ public class ActiveStatisticScheduleTask implements IScheduleTask {
 
     @Override
     public void executeTask(@NotNull QuartzJobContext quartzJobContext) {
-        logger.info("beginning execute ActiveStatistic task.");
-        rabbitTemplate.convertAndSend(EXCHANGE_ACTIVE_STAT, ROUTE_ACTIVE_STAT, "");
+        Map<String, Object> param = quartzJobContext.getJobCustomParam();
+        logger.info("beginning execute ActiveStatistic task. param:{}", param);
+        if (null == param) {
+            logger.error("ActiveStatisticScheduleTask job custom param is null");
+            return;
+        }
+        String createFrom = (String) param.get("createFrom");
+
+        // 将字符串分割并转换为枚举列表
+        List<ComConstants.DefectStatType> dataFromList = Arrays.stream(createFrom.split(ComConstants.COMMA))
+                .map(String::trim)
+                .map(ComConstants.DefectStatType::fromValue)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+
+        StatisticTaskCodeLineToolVO statisticVO = new StatisticTaskCodeLineToolVO();
+        statisticVO.setDataFromList(dataFromList);
+
+        rabbitTemplate.convertAndSend(EXCHANGE_ACTIVE_STAT, ROUTE_ACTIVE_STAT, statisticVO);
     }
 }

@@ -26,4 +26,9 @@ public class CheckerSetCategoryVO {
      * 中文名称
      */
     private String cnName;
+
+    /**
+     * 枚举值名称
+     */
+    private String keyName;
 }

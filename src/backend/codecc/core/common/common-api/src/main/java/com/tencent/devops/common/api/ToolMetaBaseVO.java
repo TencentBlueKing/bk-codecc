@@ -35,6 +35,8 @@ import lombok.Data;
 
 import javax.validation.constraints.Pattern;
 import java.util.List;
+import java.util.Set;
+
 import lombok.EqualsAndHashCode;
 
 /**
@@ -120,4 +122,16 @@ public class ToolMetaBaseVO extends CommonVO {
      */
     @ApiModelProperty("工具镜像版本")
     private List<ToolVersionVO> toolVersions;
+
+    /**
+     * 可以使用该工具的项目(的项目 id)
+     */
+    @ApiModelProperty("可使用该工具的项目")
+    private Set<String> visibleProjects;
+
+    /**
+     * 可以使用该工具的组织(的组织 id, 以 tof 的数据为准)
+     */
+    @ApiModelProperty("可使用该工具的组织")
+    private Set<String> visibleOrgIds;
 }

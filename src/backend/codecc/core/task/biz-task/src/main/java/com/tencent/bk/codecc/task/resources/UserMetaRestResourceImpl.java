@@ -60,8 +60,8 @@ public class UserMetaRestResourceImpl implements UserMetaRestResource
 
     @I18NResponse
     @Override
-    public Result<List<ToolMetaBaseVO>> toolList(Boolean isDetail) {
-        return new Result<>(metaService.toolList(isDetail));
+    public Result<List<ToolMetaBaseVO>> toolList(String projectId, Boolean isDetail) {
+        return new Result<>(metaService.toolList(projectId, isDetail));
     }
 
     @Override

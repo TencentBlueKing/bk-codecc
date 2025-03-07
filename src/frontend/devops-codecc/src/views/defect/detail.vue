@@ -76,17 +76,47 @@
                   v-bk-tooltips="$t('标记处理后重新扫描仍为问题')"
                   class="codecc-icon icon-mark re-mark mr5"
                 ></span>
-                <span
+                <bk-popover
                   v-if="
                     currentFile.defectIssueInfoVO &&
                       currentFile.defectIssueInfoVO.submitStatus &&
                       currentFile.defectIssueInfoVO.submitStatus !== 4
                   "
-                  v-bk-tooltips="$t('已提单')"
-                  class="codecc-icon icon-tapd"
-                ></span>
+                  :disabled="!currentFile.defectIssueInfoVO.submitIssueUrl">
+                  <span class="codecc-icon icon-yititapddan"></span>
+                  <bk-button
+                    v-if="currentFile.defectIssueInfoVO.submitIssueUrl"
+                    slot="content"
+                    text theme="primary"
+                    class="text-[12px]"
+                    @click="goToTAPD(currentFile.defectIssueInfoVO.submitIssueUrl)">
+                    {{ $t('查看TAPD单据') }}
+                  </bk-button>
+                </bk-popover>
               </span>
             </div>
+            <div class="item">
+              <bk-button
+                class="item-button"
+                :icon="row.processProgress === 0 ? 'check-1' : ''"
+                :class="{ 'is-selected': row.processProgress === 0 }"
+                @click="handleIgnoreProcess(0)"
+              >
+                {{ $t('待处理') }}
+              </bk-button>
+            </div>
+
+            <div class="item">
+              <bk-button
+                class="item-button"
+                :icon="row.processProgress === 4 ? 'check-1' : ''"
+                :class="{ 'is-selected': row.processProgress === 4 }"
+                @click="handleIgnoreProcess(4)"
+              >
+                {{ $t('跟进中') }}
+              </bk-button>
+            </div>
+
             <div class="item">
               <bk-button
                 class="item-button"
@@ -108,6 +138,7 @@
                 {{ $t('非工具原因') }}
               </bk-button>
             </div>
+
 
             <div class="item">
               <bk-button
@@ -168,16 +199,55 @@
                   v-bk-tooltips="$t('标记处理后重新扫描仍为问题')"
                   class="codecc-icon icon-mark re-mark mr5"
                 ></span>
-                <span
+                <bk-popover
                   v-if="
                     currentFile.defectIssueInfoVO &&
                       currentFile.defectIssueInfoVO.submitStatus &&
                       currentFile.defectIssueInfoVO.submitStatus !== 4
                   "
-                  v-bk-tooltips="$t('已提单')"
-                  class="codecc-icon icon-tapd"
-                ></span>
+                  :disabled="!currentFile.defectIssueInfoVO.submitIssueUrl">
+                  <span class="codecc-icon icon-yititapddan"></span>
+                  <bk-button
+                    v-if="currentFile.defectIssueInfoVO.submitIssueUrl"
+                    slot="content"
+                    text theme="primary"
+                    class="text-[12px]"
+                    @click="goToTAPD(currentFile.defectIssueInfoVO.submitIssueUrl)">
+                    {{ $t('查看TAPD单据') }}
+                  </bk-button>
+                </bk-popover>
               </span>
+
+              <div v-if="currentFile.ignoreApprovalStatus" class="inline-block">
+                <div class="vertical-line"></div>
+                <div
+                  v-if="currentFile.ignoreApprovalStatus === 1 || currentFile.ignoreApprovalStatus === 2"
+                  class="inline-block mx-[4px] text-[14px] leading-[12px] align-middle">
+                  <img :src="ignoreApprovalIng" class="w-[14px] h-[14px] inline-block relative bottom-[2px]">
+                  <span>忽略审批中</span>
+                </div>
+                <div
+                  v-if="currentFile.ignoreApprovalStatus === 3"
+                  class="inline-block mx-[4px] text-[14px] leading-[12px] align-middle">
+                  <i class="codecc-icon icon-check-circle-fill text-[#2DCB56]"></i>
+                  <span>忽略审批通过</span>
+                </div>
+                <div
+                  v-if="currentFile.ignoreApprovalStatus === 4"
+                  class="inline-block mx-[4px] text-[14px] leading-[12px] align-middle">
+                  <i class="codecc-icon icon-refuse-circle-fill text-[#FF9C01]"></i>
+                  <span>忽略审批被拒</span>
+                </div>
+
+                <span
+                  v-if="currentFile.ignoreApprovalUrl"
+                  v-bk-tooltips="'查看审批单据'"
+                  class="bottom-middle"
+                  @click="handleToApprovalReceipt">
+                  <i class="codecc-icon icon-file" style="font-size: 16px;color: #3A84FF;cursor: pointer;"></i>
+                </span>
+              </div>
+
               <div v-if="isOpenIde && checkerShow()">
                 <div v-if="openIdeDetail.data.length > 0 && openIdeDetail.success && !openIdeDetail.low">
                   <bk-alert class="close-ide" type="success">
@@ -283,7 +353,7 @@
                   {{ $t('取消忽略并标记处理') }}
                 </bk-button>
               </div>
-              <div class="item" v-if="DEPLOY_ENV === 'tencent'">
+              <div class="item" v-if="isInnerSite">
                 <bk-button
                   class="item-button"
                   @click="handleRevertIgnoreAndCommit(entityId)"
@@ -329,7 +399,8 @@
                   )
                 "
                 class="item-button"
-                @click="handleIgnore('IgnoreDefect', false, entityId)"
+                :disabled="[1, 2].includes(currentFile.ignoreApprovalStatus)"
+                @click="handleIgnore('IgnoreApproval|IgnoreDefect', false, entityId)"
               >
                 {{ $t('忽略问题') }}
               </bk-button>
@@ -362,7 +433,7 @@
               class="item"
             >
               <bk-button
-                v-if="DEPLOY_ENV === 'tencent'"
+                v-if="isInnerSite"
                 class="item-button"
                 @click="handleCommit('commit', false, entityId)"
               >{{ $t('提单') }}
@@ -461,6 +532,10 @@
               <dt>{{ $t('版本号') }}</dt>
               <dd>{{ currentFile.revision }}</dd>
             </div>
+            <div class="item disb">
+              <dt>{{ $t('分支') }}</dt>
+              <dd>{{ currentFile.branch ? currentFile.branch : '--' }}</dd>
+            </div>
           </div>
         </div>
       </div>
@@ -505,12 +580,13 @@ import OperateDialog from '@/components/operate-dialog';
 import downloadImg from '@/images/download.png';
 import pushImg from '@/images/push.svg';
 import { openUrlWithInputTimeoutHack } from '@/common/open';
-import marked from 'marked';
+import * as marked from 'marked';
 import Process from '../paas/list/process.vue';
 import Vue from 'vue';
 import AiSuggestion from './ai-suggestion.vue';
 import CheckerDetail from './checker-detail.vue';
 import DEPLOY_ENV from '@/constants/env';
+import ignoreApprovalIng from '@/images/ignore-approval-ing.svg';
 
 export default {
   components: {
@@ -612,7 +688,9 @@ export default {
     return {
       pushImg,
       downloadImg,
+      ignoreApprovalIng,
       isOpenIde: true,
+      isInnerSite: DEPLOY_ENV === 'tencent',
       openIdeDetail: {
         data: [],
         closeMessage: this.$store.state.preci.closeMessage,
@@ -1295,7 +1373,7 @@ export default {
           mark = mark === '0' || mark === 'undefined' ? 1 : 0;
           this.handleMark(mark, false, entityId);
         } else if (type === 'ignore' && !this.prohibitIgnore) {
-          this.handleIgnore('IgnoreDefect', false, entityId);
+          this.handleIgnore('IgnoreApproval|IgnoreDefect', false, entityId);
         }
         return;
       }
@@ -1533,7 +1611,7 @@ export default {
      */
     shareDefect() {
       const { projectId, taskId } = this.$route.params;
-      const { toolName, entityId, defectId, status } = this.currentFile;
+      const { toolName, entityId, status } = this.currentFile;
       let prefix = `${location.host}`;
       if (window.self !== window.top) {
         prefix = `${window.DEVOPS_SITE_URL}/console`;
@@ -1545,7 +1623,7 @@ export default {
 ?entityId=${entityId}&status=${status}`;
       }
       if (this.isPaas) {
-        url = `${prefix}/paas/ignored/${toolName}/list?entityId=${defectId}`;
+        url = `${prefix}/paas/ignored/${toolName}/list?entityId=${entityId}`;
       }
       const input = document.createElement('input');
       document.body.appendChild(input);
@@ -1632,6 +1710,16 @@ export default {
       } else {
         this.checkerDetailVM.$children[0].isShow = !checkerDetailVisible;
       }
+    },
+
+    // 查看审批单据
+    handleToApprovalReceipt() {
+      window.open(this.currentFile.ignoreApprovalUrl, '_blank');
+    },
+
+    // 查看tapd单据
+    goToTAPD(url) {
+      window.open(url, '_blank');
     },
   },
 };
@@ -1926,9 +2014,24 @@ export default {
   }
 }
 
+.icon-yititapddan {
+  font-size: 18px;
+  color: #3A84FF;
+}
+
 .cc-status {
   width: 60px;
-  padding-right: 8px;
+  padding-right: 4px;
+}
+
+.vertical-line {
+  display: inline-block;
+  width: 1px;
+  height: 16px;
+  line-height: 26px;
+  vertical-align: middle;
+  cursor: auto;
+  background: #DCDEE5;
 }
 
 .cc-mark {

@@ -20,6 +20,8 @@ public class ScmBlameVO extends CommonVO {
 
     private long fileUpdateTime;
 
+    private String fileAuthor;
+
     private String fileRelPath;
 
     private String revision;

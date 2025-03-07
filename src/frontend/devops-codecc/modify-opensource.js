@@ -24,6 +24,7 @@ const memberSelectorList = [
   './src/views/task/settings-trigger.vue',
   './src/views/defect/defect-list.vue',
   './src/views/ignore/ignore-operation.vue',
+  './src/views/ignore/ignore-approval-operation.vue',
 ];
 memberSelectorList.forEach((item) => {
   let fileData = fs.readFileSync(item).toString();

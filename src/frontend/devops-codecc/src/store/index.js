@@ -16,6 +16,7 @@ import log from './modules/log';
 import op from './modules/op';
 import ignore from './modules/ignore';
 import paas from './modules/paas';
+import test from './modules/test';
 import http from '@/api';
 import { unifyObjectStyle } from '@/common/util';
 import preci from './modules/preci';
@@ -59,6 +60,7 @@ const store = new Vuex.Store({
     op,
     ignore,
     paas,
+    test,
     preci,
   },
   plugins: [loadedPlugin],
@@ -87,6 +89,7 @@ const store = new Vuex.Store({
     },
     projectId: undefined,
     isRbac: undefined,
+    isProjectManager: undefined,
   },
   // 公共 getters
   getters: {
@@ -137,6 +140,10 @@ const store = new Vuex.Store({
     updateRbacPermission(state, rbacPermission) {
       state.isRbac = rbacPermission;
     },
+
+    updateProjectManagerPermission(state, projectManagerPermission) {
+      state.isProjectManager = projectManagerPermission;
+    },
   },
   actions: {
     /**
@@ -185,6 +192,15 @@ const store = new Vuex.Store({
         .get(`/task/api/user/task/${state.projectId}/isRbacPermission`)
         .then((res) => {
           this.commit('updateRbacPermission', res.data);
+          return res;
+        });
+    },
+
+    getIsProjectManager({ commit }) {
+      return http
+        .get('/task/api/user/isProjectManager')
+        .then((res) => {
+          this.commit('updateProjectManagerPermission', res.data);
           return res;
         });
     },

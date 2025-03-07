@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ScanCodeSummaryRepository extends MongoRepository<ScanCodeSummaryEntity, String> {
 
+    ScanCodeSummaryEntity findFirstByTaskIdAndBuildId(Long taskId, String buildId);
+
 }

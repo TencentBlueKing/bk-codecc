@@ -33,7 +33,7 @@ class ScanFinishEventService @Autowired constructor(
         //检查是否已经通知过
         val redisLock = RedisLock(
             redisTemplate,
-            "SCAN_FINISH_EVENT:TASK_ID:${taskId}:BUILD_ID:${buildId}",
+            "SCAN_FINISH_EVENT:TASK_ID:$taskId:BUILD_ID:$buildId",
             task.timeout?.toLong() ?: TimeUnit.HOURS.toSeconds(24)
         )
 

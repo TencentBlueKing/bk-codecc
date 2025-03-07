@@ -191,17 +191,19 @@
             <!-- <bk-input class="compile-version" v-model="item.targetAuthor" :placeholder="'新处理人'"></bk-input> -->
             <bk-tag-input
               allow-create
-              v-if="IS_ENV_TAI"
+              v-if="IS_ENV_TAI || !isInnerSite"
               class="compile-version"
               v-model="item.targetAuthor"
               :placeholder="$t('新处理人')"
             ></bk-tag-input>
-            <bk-tag-input allow-create
+            <bk-user-selector
               v-else
               class="compile-version"
-              v-model="item.targetAuthor"
+              :api="userApiUrl"
+              name="targetAuthor"
               :placeholder="$t('新处理人')"
-            ></bk-tag-input>
+              v-model="item.targetAuthor"
+            ></bk-user-selector>
             <div class="tool-icon">
               <i
                 class="bk-icon icon-plus"
@@ -280,9 +282,12 @@
 <script>
 import { mapState } from 'vuex';
 import DEPLOY_ENV from '@/constants/env';
+import BkUserSelector from '@blueking/user-selector';
 
 export default {
-  components: {},
+  components: {
+    BkUserSelector,
+  },
   data() {
     return {
       weekList: [
@@ -336,11 +341,14 @@ export default {
       ],
       isInnerSite: DEPLOY_ENV === 'tencent',
       IS_ENV_TAI: window.IS_ENV_TAI,
+      userApiUrl: window.USER_API_URL,
+      initialForm: false,
     };
   },
   computed: {
     ...mapState('task', {
       taskDetail: 'detail',
+      isTaskDetailInit: 'isDetailInit',
     }),
     ...mapState(['isRbac']),
     isEditable() {
@@ -384,14 +392,27 @@ export default {
     },
   },
   watch: {
-    taskDetail(val, oldVal) {
-      this.prohibitIgnore = !!val.prohibitIgnore;
+    taskDetail: {
+      handler(val, oldVal) {
+        this.prohibitIgnore = !!val.prohibitIgnore;
+        this.handleFormDataChange();
+      },
+      deep: true,
+    },
+    isTaskDetailInit(val) {
+      // 由于taskDetail比较特殊，请求在afterEach后触发，因此在state中改变改标识，实现此处的初始化
+      if (val) {
+        window.changeAlert = false;
+      }
     },
   },
   created() {
     this.init();
   },
   methods: {
+    handleFormDataChange() {
+      window.changeAlert = true;
+    },
     init() {
       this.$store.dispatch('defect/getTransferAuthorList').then((res) => {
         this.authorList = res.transferAuthorList
@@ -476,6 +497,9 @@ export default {
             this.$bkMessage({ theme: 'success', message: this.$t('保存成功') });
             this.$store.dispatch('task/detail', { showLoading: true });
           }
+          this.$nextTick(() => {
+            window.changeAlert = false;
+          });
         })
         .catch((e) => {
           this.$bkMessage({ theme: 'error', message: this.$t('保存失败') });
@@ -589,6 +613,7 @@ ${this.taskDetail.pipelineId}/edit#${this.taskDetail.atomCode}`,
       position: relative;
       top: -32px;
       left: 115%;
+      width: 190px;
     }
 
     .compile-version::before {
@@ -603,7 +628,7 @@ ${this.taskDetail.pipelineId}/edit#${this.taskDetail.atomCode}`,
 
     .tool-icon {
       position: relative;
-      top: -63px;
+      top: -72px;
       left: 220%;
 
       .bk-icon {

@@ -95,7 +95,7 @@
         </bk-button>
       </bk-form-item>
     </bk-form>
-    <bk-form form-type="vertical" v-else>
+    <bk-form form-type="vertical" v-else-if="isShow.status === 1">
       <bk-form-item :label="$t('启用任务')">
         <bk-alert type="gray" :show-icon="false">
           <span slot="title">
@@ -122,9 +122,21 @@
       </bk-form-item>
     </bk-form>
 
+    <bk-form form-type="vertical" v-else>
+      <bk-form-item :label="$t('停用任务')">
+        <bk-alert type="gray" :show-icon="false">
+          <span slot="title">
+            <bk-icon class="minus-circle" type="minus-circle" />
+            {{ $t('测试任务无法在此停用和删除') }},
+            <a class="cursor-pointer" @click.prevent="handleToV3">{{ $t('请前往蓝鲸开发者中心') }}</a>
+          </span>
+        </bk-alert>
+      </bk-form-item>
+    </bk-form>
+
     <bk-divider></bk-divider>
 
-    <bk-form form-type="vertical">
+    <bk-form form-type="vertical" v-if="isShow.status !== 3">
       <div class="form-header">{{ $t('删除任务') }}</div>
       <bk-form-item>
         <bk-alert type="warning">
@@ -266,10 +278,21 @@ export default {
       return this.taskDetail.nameCn;
     },
   },
+  watch: {
+    formData: {
+      handler() {
+        this.handleFormDataChange();
+      },
+      deep: true,
+    },
+  },
   mounted() {
     this.getRelatedPipelines();
   },
   methods: {
+    handleFormDataChange() {
+      window.changeAlert = true;
+    },
     // 停用任务
     disable() {
       this.$refs.validateForm.validate().then(() => {
@@ -286,6 +309,9 @@ export default {
               this.$bkMessage({
                 theme: 'success',
                 message: this.$t('停用任务成功'),
+              });
+              this.$nextTick(() => {
+                window.changeAlert = false;
               });
             }
             this.$store.dispatch('task/status');
@@ -336,6 +362,10 @@ ${pipelineId}/edit#${this.taskDetail.atomCode}`,
         .then((res) => {
           this.relatedPipelines = res.data || [];
           this.refreshLoading = false;
+
+          this.$nextTick(() => {
+            window.changeAlert = false;
+          });
         });
     },
     // 删除任务
@@ -369,6 +399,11 @@ ${pipelineId}/edit#${this.taskDetail.atomCode}`,
         .finally(() => {
           this.deleteLoading = false;
         });
+    },
+
+    handleToV3() {
+      const url = `${window.PAAS_V3_URL}/plugin-center/plugin/${window.PAAS_V3_APP}/${this.taskDetail.testTool}/version-manage`;
+      window.open(url, '_blank');
     },
   },
 };

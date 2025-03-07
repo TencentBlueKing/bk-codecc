@@ -30,10 +30,9 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PRO
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TASK_ID;
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
 
-import com.tencent.bk.codecc.defect.vo.GrayBuildNumAndTaskVO;
-import com.tencent.bk.codecc.defect.vo.GrayTaskLogRepoInfoVO;
-import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
+import com.tencent.bk.codecc.defect.vo.BatchLastAnalyzeReqVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
+import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.GetLastAnalysisResultsVO;
@@ -182,5 +181,13 @@ public interface ServiceTaskLogRestResource
             @ApiParam(value = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
                     Long taskId);
+
+    @ApiOperation("批量获取最新分析记录")
+    @Path("/batchGet/taskLogs")
+    @POST
+    Result<Map<Long, Integer>> batchGetAnalyzeFlag(
+            @ApiParam(value = "请求参数", required = true)
+            BatchLastAnalyzeReqVO batchLastAnalyzeReqVO
+    );
 
 }

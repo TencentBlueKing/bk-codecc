@@ -10,12 +10,13 @@
  *
  * Terms of the MIT License:
  * ---------------------------------------------------
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+ *  Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
  * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
@@ -45,10 +46,11 @@ import lombok.Data;
         @JsonSubTypes.Type(value = CCNLastAnalysisResultVO.class, name = "CCN"),
         @JsonSubTypes.Type(value = DUPCLastAnalysisResultVO.class, name = "DUPC"),
         @JsonSubTypes.Type(value = CommonLastAnalysisResultVO.class, name = "COVERITY"),
-        @JsonSubTypes.Type(value = CLOCLastAnalysisResultVO.class, name = "CLOC")
+        @JsonSubTypes.Type(value = CLOCLastAnalysisResultVO.class, name = "CLOC"),
+        @JsonSubTypes.Type(value = SCALastAnalysisResultVO.class, name = "SCA")
 })
-public class BaseLastAnalysisResultVO
-{
+public class BaseLastAnalysisResultVO {
+
     private String pattern;
 
     @ApiModelProperty("分析版本号")

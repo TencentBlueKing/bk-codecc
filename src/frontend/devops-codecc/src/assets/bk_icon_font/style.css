@@ -26,14 +26,32 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-statistics:before {
 	content: "\e1c4";
 }
+.icon-application:before {
+	content: "\e1de";
+}
 .icon-branchs:before {
 	content: "\e1c3";
+}
+.icon-check-circle-fill:before {
+	content: "\e1e5";
+}
+.icon-close-circle-fill:before {
+	content: "\e1e6";
 }
 .icon-codecc:before {
 	content: "\e193";
 }
 .icon-safety-fill:before {
 	content: "\e1c8";
+}
+.icon-help-document:before {
+	content: "\e1e3";
+}
+.icon-table:before {
+	content: "\e1df";
+}
+.icon-remind:before {
+	content: "\e1e2";
 }
 .icon-notify:before {
 	content: "\e101";
@@ -218,6 +236,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-task-line:before {
 	content: "\e1c5";
 }
+.icon-custom-comp-default:before {
+	content: "\e1ed";
+}
 .icon-folders:before {
 	content: "\e1c6";
 }
@@ -226,6 +247,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .icon-copy-line:before {
 	content: "\e1c9";
+}
+.icon-image:before {
+	content: "\e1ef";
 }
 .icon-jump:before {
 	content: "\e1ca";
@@ -241,6 +265,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .icon-operate:before {
 	content: "\e1cf";
+}
+.icon-chakanyuanma:before {
+	content: "\e1f0";
 }
 .icon-angle-left-1:before {
 	content: "\e1d1";
@@ -260,9 +287,54 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-suanfamoxing:before {
 	content: "\e1d6";
 }
+.icon-jiazai:before {
+	content: "\e1e7";
+}
+.icon-fasong:before {
+	content: "\e1ee";
+}
 .icon-default-eng:before {
 	content: "\e1d7";
 }
 .icon-like:before {
 	content: "\e1d9";
+}
+.icon-diff:before {
+	content: "\e1dd";
+}
+.icon-zonglan:before {
+	content: "\e1e0";
+}
+.icon-daimawenti:before {
+	content: "\e1e1";
+}
+.icon-yipinglun:before {
+	content: "\e1e9";
+}
+.icon-yihulveshenpitongguo:before {
+	content: "\e1e8";
+}
+.icon-yititapddan:before {
+	content: "\e1eb";
+}
+.icon-refuse-circle-fill:before {
+	content: "\e1ea";
+}
+.icon-yibiaoji:before {
+	content: "\e1ec";
+}
+.icon-ai:before {
+	content: "\e1f1";
+}
+.icon-close-line:before {
+	content: "\e1f2";
+}
+.icon-check-line:before {
+	content: "\e1f3";
+}
+.icon-arrows-left-line:before {
+	content: "\e1f4";
+}
+.icon-software-components:before {
+	content: "\e1f5";
 }

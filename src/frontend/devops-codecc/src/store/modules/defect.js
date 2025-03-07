@@ -415,5 +415,10 @@ export default {
         .get('/task/api/user/task/listTaskBase', params)
         .then(res => res.data || []);
     },
+    getPreIgnoreApproval({ commit }, params) {
+      return http
+        .post('/defect/api/user/warn/preIgnoreApproval', params)
+        .then(res => res.data || []);
+    },
   },
 };

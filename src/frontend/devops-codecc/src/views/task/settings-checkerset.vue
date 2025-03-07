@@ -48,7 +48,7 @@
         :from="'task'"
         :has-ccn="hasCcnTips(checkerset)"
         :has-new="hasNewTips(checkerset)"
-        :is-new-atom="editDisabled"
+        :is-new-atom="editDisabled || taskDetail.status === 3"
         :is-enable="checkerset.taskUsing"
         :handle-manage="handleCheckerset"
       >
@@ -175,7 +175,8 @@ export default {
       };
       const checkersetMap = {
         openScan: this.$t('内网开源治理'),
-        communityOpenScan: this.$t('外网开源'),
+        communityOpenScan: this.$t('外网开源（待下线）'),
+        communityOpenScanV2: this.$t('外网开源治理'),
         epcScan: 'PCG EPC',
         privateScan: this.$t('内网闭源治理'),
       };

@@ -72,6 +72,17 @@
           >{{ option.name }}</bk-checkbox
           >
         </bk-checkbox-group>
+
+        <bk-row v-for="(item, index) in macroList" :key="item" v-else-if="param.varType === 'MultipleInput'">
+          <bk-col class="macro-section">
+            <bk-input placeholder="-D表示宏定义，-U表示取消宏定义" style="width: 300px;" @blur="multipleInputChange(index)"
+                      v-model="compile.size[index]"></bk-input>
+          </bk-col>
+          <div class="tool-icon">
+            <i class="bk-icon icon-plus" @click="addTool(index)" v-if="index === macroList.length - 1"></i>
+            <i class="bk-icon icon-close" @click="deleteTool(index)" v-if="macroList.length > 1 "></i>
+          </div>
+        </bk-row>
       </bk-form-item>
     </div>
   </div>
@@ -112,6 +123,12 @@ export default {
           },
         ],
       },
+      compile: {
+        size: []
+      },
+      macroList: [
+        {}
+      ],
     };
   },
   computed: {
@@ -119,13 +136,48 @@ export default {
       taskDetail: 'detail',
     }),
   },
-  created() {},
+  created() {
+    // 多选项框输入,解析到列表
+    if (this.param.varType === 'MultipleInput'
+        && this.param.varDefault !== undefined
+        && this.param.varDefault !== '') {
+      this.compile.size = this.param.varDefault;
+      this.macroList = this.compile.size.slice();
+    }
+  },
   methods: {
     handleChange(value) {
       const factor = {};
       factor[this.param.varName] = value;
       this.$emit('handleFactorChange', factor, this.tool);
     },
+    // 添加分级列表
+    addTool(index) {
+      if (this.compile.size[index]) {
+        this.macroList.push("");
+        this.compile.size.push("")
+        this.param.varDefault = this.macroList;
+      }
+    },
+    // 删除分级列表
+    deleteTool(index) {
+      if (this.macroList.length > 1) {
+        this.macroList.splice(index, 1);
+        this.compile.size.splice(index, 1);
+      } else if (this.macroList.length === 1) {
+        this.macroList = [""];
+        this.compile.size = [""];
+      }
+      this.param.varDefault = this.macroList;
+    },
+    multipleInputChange(index) {
+      if (!this.compile.size[index]) {
+        return
+      }
+      this.macroList[index] = this.compile.size[index];
+      this.param.varDefault = this.macroList;
+      this.handleChange(this.macroList);
+    }
   },
 };
 </script>
@@ -139,5 +191,13 @@ export default {
   font-weight: 600;
   line-height: 14px;
   text-align: left;
+}
+.radio-param {
+  .item {
+    margin-right: 16px;
+  }
+}
+.macro-section {
+  height: 45px;
 }
 </style>

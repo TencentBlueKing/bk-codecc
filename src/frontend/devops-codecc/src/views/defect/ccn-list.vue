@@ -294,10 +294,12 @@
               </div>
               <div class="cc-col" v-show="allRenderColumnMap.daterange">
                 <bk-form-item :label="$t('日期')">
-                  <bk-date-picker
-                    v-model="searchParams.daterange"
-                    type="daterange"
-                  ></bk-date-picker>
+                  <date-picker
+                    :date-range="searchParams.daterange"
+                    :handle-change="handleDateChange"
+                    :status-union="searchParams.statusUnion"
+                    :selected="dateType"
+                  ></date-picker>
                 </bk-form-item>
               </div>
               <div class="cc-col" v-if="!isProjectDefect">
@@ -469,7 +471,7 @@
                 >{{ $t('分配') }}</bk-button
                 >
                 <bk-button
-                  v-if="DEPLOY_ENV === 'tencent'"
+                  v-if="isInnerSite"
                   size="small"
                   ext-cls="cc-operate-button"
                   @click="handleCommit('commit', true)"
@@ -756,7 +758,7 @@
                           v-if="
                             props.row.status & 4 &&
                               !props.row.ignoreCommentDefect
-                              && DEPLOY_ENV === 'tencent'
+                              && isInnerSite
                           "
                           class="entry-link"
                           @click.stop="
@@ -859,7 +861,7 @@
                                 props.row.defectIssueInfoVO.submitStatus &&
                                 props.row.defectIssueInfoVO.submitStatus !== 4
                               )
-                              && DEPLOY_ENV === 'tencent'
+                              && isInnerSite
                           "
                           class="entry-link"
                           @click.stop="
@@ -1064,7 +1066,7 @@
                             {{ $t('取消忽略并标记处理') }}
                           </bk-button>
                         </div>
-                        <div class="item" v-if="DEPLOY_ENV === 'tencent'">
+                        <div class="item" v-if="isInnerSite">
                           <bk-button
                             class="item-button"
                             @click="
@@ -1159,7 +1161,7 @@
                               currentLintFile.defectIssueInfoVO.submitStatus &&
                               currentLintFile.defectIssueInfoVO.submitStatus !== 4
                             )
-                            && DEPLOY_ENV === 'tencent'
+                            && isInnerSite
                         "
                       >
                         <bk-button
@@ -1622,6 +1624,7 @@ import DefectPanel from './components/defect-panel.vue';
 // eslint-disable-next-line
 import { export_json_to_excel } from '@/vendor/export2Excel';
 import { language } from '../../i18n';
+import DatePicker from '@/components/date-picker/index.vue';
 import DEPLOY_ENV from '@/constants/env';
 
 // 搜索过滤项缓存
@@ -1629,6 +1632,7 @@ const CCN_SEARCH_OPTION_CACHE = 'search_option_columns_cnn';
 
 export default {
   components: {
+    DatePicker,
     Empty,
     filterSearchOption,
     DefectPanel,
@@ -1676,6 +1680,7 @@ export default {
 
     return {
       contentLoading: false,
+      isInnerSite: DEPLOY_ENV === 'tencent',
       panels: [
         { name: 'defect', label: this.$t('风险函数') },
         { name: 'report', label: this.$t('数据报表') },
@@ -1848,6 +1853,7 @@ export default {
       taskIdList: isProjectDefect ? [] : [Number(taskId)],
       emptyDialogVisible: false,
       IS_ENV_TAI: window.IS_ENV_TAI,
+      dateType: query.dateType || 'createTime',
     };
   },
   computed: {
@@ -2036,6 +2042,12 @@ export default {
           } else if (ignoreTypes.length && !status.includes(4)) {
             // 选了忽略类型，参数同时要选已忽略状态
             status.push(4);
+          }
+          this.$refs.statusTree.setChecked(newVal.statusUnion);
+          if (newVal.statusUnion.includes(2)) {
+            this.dateType = 'fixTime';
+          } else {
+            this.dateType = 'createTime';
           }
           this.searchParams.status = status;
           this.searchParams.ignoreReasonTypes = ignoreTypes;
@@ -3143,8 +3155,10 @@ export default {
         ? authorList[0]
         : this.searchParams.author;
       const multiTaskQuery = this.isProjectDefect;
-      params.startCreateTime = this.formatTime(daterange[0], 'yyyy-MM-dd');
-      params.endCreateTime = this.formatTime(daterange[1], 'yyyy-MM-dd');
+      const startTime = this.dateType === 'createTime' ? 'startCreateTime' : 'startFixTime';
+      const endTime = this.dateType === 'createTime' ? 'endCreateTime' : 'endFixTime';
+      params[startTime] = daterange[0] || '';
+      params[endTime] = daterange[1] || '';
       params.taskIdList = this.taskIdList;
       return { ...params, author, multiTaskQuery };
     },
@@ -3520,7 +3534,7 @@ export default {
 }
 
 >>> .bk-date-picker {
-  width: 345px;
+  width: 298px;
 }
 
 .filepath-dropdown-content {

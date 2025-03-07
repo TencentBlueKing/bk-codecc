@@ -49,6 +49,7 @@ import com.tencent.bk.codecc.defect.vo.CCNDefectVO;
 import com.tencent.bk.codecc.defect.vo.CodeCommentVO;
 import com.tencent.bk.codecc.defect.vo.CountDefectFileRequest;
 import com.tencent.bk.codecc.defect.vo.DefectFileContentSegmentQueryRspVO;
+import com.tencent.bk.codecc.defect.vo.QueryCheckersAndAuthorsRequest;
 import com.tencent.bk.codecc.defect.vo.QueryDefectFileContentSegmentReqVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectIdVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectPageVO;
@@ -180,12 +181,15 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
                 : Sets.newHashSet();
         String startCreateTimeStr = request.getStartCreateTime();
         String endCreateTimeStr = request.getEndCreateTime();
+        String startFixTimeStr = request.getStartFixTime();
+        String endFixTimeStr = request.getEndFixTime();
 
         if (ComConstants.StatisticType.STATUS.name().equalsIgnoreCase(type)) {
             statisticByStatus(
                     taskIdList, author, fileList,
                     defectIds, isSnapshotQuery,
                     startCreateTimeStr, endCreateTimeStr,
+                    startFixTimeStr, endFixTimeStr,
                     response
             );
         } else if (ComConstants.StatisticType.SEVERITY.name().equalsIgnoreCase(type)) {
@@ -194,6 +198,7 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
                     taskIdList, author, statusFilters, fileList,
                     defectIds, isSnapshotQuery,
                     startCreateTimeStr, endCreateTimeStr,
+                    startFixTimeStr, endFixTimeStr,
                     response
             );
         }
@@ -255,7 +260,7 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
         }
 
         //根据文件路径从分析集群获取文件内容
-        FileContentQueryParams queryParams = FileContentQueryParams.queryParams(taskId, "", userId,
+        FileContentQueryParams queryParams = FileContentQueryParams.queryParams(taskId, projectId, userId,
                 ccnDefectEntity.getUrl(), ccnDefectEntity.getRepoId(), ccnDefectEntity.getRelPath(),
                 ccnDefectEntity.getFilePath(), ccnDefectEntity.getRevision(), ccnDefectEntity.getBranch(),
                 ccnDefectEntity.getSubModule(), buildId
@@ -265,8 +270,8 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
                 ccnDefectQueryRspVO);
 
         //设置代码评论
-        if (null != ccnDefectEntity.getCodeComment() &&
-                CollectionUtils.isNotEmpty(ccnDefectEntity.getCodeComment().getCommentList())) {
+        if (null != ccnDefectEntity.getCodeComment()
+                && CollectionUtils.isNotEmpty(ccnDefectEntity.getCodeComment().getCommentList())) {
             CodeCommentVO codeCommentVO = convertCodeComment(ccnDefectEntity.getCodeComment());
             ccnDefectVO.setCodeComment(codeCommentVO);
             ccnDefectQueryRspVO.setCodeComment(codeCommentVO); // todo delete
@@ -280,7 +285,7 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
 
         //获取文件的url
         String url = PathUtils.getFileUrl(ccnDefectEntity.getUrl(), ccnDefectEntity.getBranch(),
-                ccnDefectEntity.getRelPath());
+                ccnDefectEntity.getRevision(), ccnDefectEntity.getRelPath());
         ccnDefectQueryRspVO.setFilePath(StringUtils.isEmpty(url) ? filePath : url);
         int fileNameIndex = filePath.lastIndexOf("/");
         if (fileNameIndex == -1) {
@@ -301,22 +306,20 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
 
     @Override
     public DefectFileContentSegmentQueryRspVO processQueryDefectFileContentSegment(String projectId, String userId,
-            QueryDefectFileContentSegmentReqVO request) {
+                                                                                   QueryDefectFileContentSegmentReqVO request) {
         return new DefectFileContentSegmentQueryRspVO();
     }
 
     @Override
     public QueryWarningPageInitRspVO processQueryWarningPageInitRequest(
             String userId,
-            List<Long> taskIdList,
-            List<String> toolNameList,
-            List<String> dimensionList,
-            Set<String> statusSet,
-            String checkerSet,
-            String buildId,
             String projectId,
-            boolean isMultiTaskQuery
+            QueryCheckersAndAuthorsRequest request
     ) {
+        List<Long> taskIdList = request.getTaskIdList();
+        String buildId = request.getBuildId();
+        boolean isMultiTaskQuery = Boolean.TRUE.equals(request.getMultiTaskQuery());
+
         taskIdList = ParamUtils.allTaskByProjectIdIfEmpty(taskIdList, projectId, userId);
         if (taskIdList.size() > 1 && StringUtils.isNotEmpty(buildId)) {
             throw new IllegalArgumentException("build id must be empty when task list size more than 1");
@@ -497,8 +500,8 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
             } else if (ComConstants.RiskFactor.L.value() == riskFactor) {
                 lowCount++;
             }
-            boolean meetSeverity = CollectionUtils.isNotEmpty(severity) &&
-                    !severity.contains(String.valueOf(riskFactor));
+            boolean meetSeverity = CollectionUtils.isNotEmpty(severity)
+                    && !severity.contains(String.valueOf(riskFactor));
             if (meetSeverity) {
                 it.remove();
                 continue;
@@ -647,6 +650,8 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
         sortType = sortPair.getSecond();
         String startCreateTime = request.getStartCreateTime();
         String endCreateTime = request.getEndCreateTime();
+        String startFixTimeStr = request.getStartFixTime();
+        String endFixTimeStr = request.getEndFixTime();
         Set<String> fileList = request.getFileList();
         String author = request.getAuthor();
         Set<String> defectIds = StringUtils.isNotEmpty(buildId)
@@ -660,6 +665,7 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
                 fileList, riskFactors, defectIds,
                 pageNum, pageSize, sortField, sortType,
                 buildId, startCreateTime, endCreateTime,
+                startFixTimeStr, endFixTimeStr,
                 ignoreReasonTypes
         );
         List<CCNDefectEntity> defectList = defectPair.getFirst();
@@ -685,7 +691,6 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
                     if (Boolean.TRUE.equals(request.getShowTaskNameCn()) && taskNameCnMap != null) {
                         defectVO.setTaskNameCn(taskNameCnMap.get(defectVO.getTaskId()));
                     }
-
                     return defectVO;
                 }).collect(Collectors.toList());
         Pageable pageable = PageRequest.of(pageNum, pageSize, Sort.by(sortType, sortField));
@@ -750,12 +755,14 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
             List<Long> taskIdList, String author, Set<String> fileList,
             Set<String> defectIds, boolean isSnapshotQuery,
             String startTimeStr, String endTimeStr,
+            String startFixTimeStr, String endFixTimeStr,
             CCNDefectQueryRspVO response
     ) {
         List<CCNDefectGroupStatisticVO> aggList = ccnDefectDao.statisticDefectCountByStatus(
                 taskIdList, author, fileList,
                 defectIds, isSnapshotQuery,
-                startTimeStr, endTimeStr
+                startTimeStr, endTimeStr,
+                startFixTimeStr, endFixTimeStr
         );
 
         long existCount = 0;
@@ -795,35 +802,41 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
     private void statisticBySeverity(
             List<Long> taskIdList, String author, Set<Integer> status, Set<String> fileList,
             Set<String> defectIds, boolean isSnapshotQuery,
-            String startTimeStr, String endTimeStr, CCNDefectQueryRspVO response
+            String startTimeStr, String endTimeStr,
+            String startFixTimeStr, String endFixTimeStr,
+            CCNDefectQueryRspVO response
     ) {
 
         long superHighCount = ccnDefectDao.countByCondition(
                 taskIdList, author, status, fileList,
                 Sets.newHashSet(thirdPartySystemCaller.getCCNRiskFactorConfig(ComConstants.RiskFactor.SH)),
                 defectIds, isSnapshotQuery,
-                startTimeStr, endTimeStr
+                startTimeStr, endTimeStr,
+                startFixTimeStr, endFixTimeStr
         );
 
         long highCount = ccnDefectDao.countByCondition(
                 taskIdList, author, status, fileList,
                 Sets.newHashSet(thirdPartySystemCaller.getCCNRiskFactorConfig(ComConstants.RiskFactor.H)),
                 defectIds, isSnapshotQuery,
-                startTimeStr, endTimeStr
+                startTimeStr, endTimeStr,
+                startFixTimeStr, endFixTimeStr
         );
 
         long mediumCount = ccnDefectDao.countByCondition(
                 taskIdList, author, status, fileList,
                 Sets.newHashSet(thirdPartySystemCaller.getCCNRiskFactorConfig(ComConstants.RiskFactor.M)),
                 defectIds, isSnapshotQuery,
-                startTimeStr, endTimeStr
+                startTimeStr, endTimeStr,
+                startFixTimeStr, endFixTimeStr
         );
 
         long lowCount = ccnDefectDao.countByCondition(
                 taskIdList, author, status, fileList,
                 Sets.newHashSet(thirdPartySystemCaller.getCCNRiskFactorConfig(ComConstants.RiskFactor.L)),
                 defectIds, isSnapshotQuery,
-                startTimeStr, endTimeStr
+                startTimeStr, endTimeStr,
+                startFixTimeStr, endFixTimeStr
         );
 
         response.setSuperHighCount(superHighCount);
@@ -843,7 +856,7 @@ public class CCNQueryWarningBizServiceImpl extends AbstractQueryWarningBizServic
     @Override
     @SuppressWarnings("unchecked")
     public ToolDefectPageVO queryDefectsByQueryCondWithPage(long taskId, DefectQueryReqVO reqVO, Integer pageNum,
-            Integer pageSize) {
+                                                            Integer pageSize) {
         log.warn("queryDefectsByQueryCond is unimplemented: taskId: {} reqVO: {}, pageNum: {}, pageSize: {}",
                 taskId, reqVO, pageNum, pageSize);
         CCNDefectQueryRspVO repVo = (CCNDefectQueryRspVO) processQueryWarningRequestCore(reqVO, pageNum, pageSize,

@@ -62,6 +62,9 @@ public class IssueSystemInfoEntity extends CommonEntity {
     @Field("sub_detail_url")
     private String subDetailUrl;
 
+    @Field("issue_detail_url")
+    private String issueDetailUrl;
+
     @Field("issue_status")
     private IssueStatusEntity issueStatus;
 

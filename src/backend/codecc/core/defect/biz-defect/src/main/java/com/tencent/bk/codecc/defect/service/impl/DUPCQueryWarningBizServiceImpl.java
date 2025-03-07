@@ -97,15 +97,11 @@ public class DUPCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
     @Override
     public QueryWarningPageInitRspVO processQueryWarningPageInitRequest(
             String userId,
-            List<Long> taskIdList,
-            List<String> toolNameList,
-            List<String> dimensionList,
-            Set<String> statusSet,
-            String checkerSet,
-            String buildId,
             String projectId,
-            boolean isMultiTaskQuery
+            QueryCheckersAndAuthorsRequest request
     ) {
+        List<String> toolNameList = request.getToolNameList();
+        List<Long> taskIdList = request.getTaskIdList();
         Long taskId = taskIdList.get(0);
         String toolName = toolNameList.get(0);
 
@@ -256,7 +252,7 @@ public class DUPCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         }
 
         // 1. 根据文件路径从分析集群获取文件内容
-        FileContentQueryParams queryParams = FileContentQueryParams.queryParams(taskId, "", userId,
+        FileContentQueryParams queryParams = FileContentQueryParams.queryParams(taskId, projectId, userId,
                 dupcDefectEntity.getUrl(), dupcDefectEntity.getRepoId(),
                 dupcDefectEntity.getRelPath(), dupcDefectEntity.getFilePath(),
                 dupcDefectEntity.getRevision(), dupcDefectEntity.getBranch(),
@@ -305,7 +301,7 @@ public class DUPCQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         //根据文件路径从分析集群获取文件内容
         String content = "";
         if (StringUtils.isNotBlank(dupcDefectEntity.getRelPath())) {
-            FileContentQueryParams queryParams = FileContentQueryParams.queryParams(taskId, "", userId,
+            FileContentQueryParams queryParams = FileContentQueryParams.queryParams(taskId, projectId, userId,
                     dupcDefectEntity.getUrl(), dupcDefectEntity.getRepoId(), dupcDefectEntity.getRelPath(),
                     dupcDefectEntity.getFilePath(), dupcDefectEntity.getRevision(), dupcDefectEntity.getBranch(),
                     dupcDefectEntity.getSubModule(), buildId

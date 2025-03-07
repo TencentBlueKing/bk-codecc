@@ -30,8 +30,8 @@ import com.tencent.devops.common.api.CommonVO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -42,6 +42,7 @@ import java.util.Map;
  * @date 2020/12/29
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @ApiModel("灰度工具项目视图")
 public class GrayToolProjectVO extends CommonVO {
     /**
@@ -53,7 +54,7 @@ public class GrayToolProjectVO extends CommonVO {
     @ApiModelProperty("工具id（存储状态）")
     private String toolName;
 
-    @ApiModelProperty(value = "需灰度工具清单")
+    @ApiModelProperty(value = "需灰度工具清单,注册灰度工具时必填入参")
     private List<String> toolNameList;
 
     /**

@@ -24,6 +24,10 @@ export function getRbacPermission() {
   return store.dispatch('getRbacPermission');
 }
 
+export function getIsProjectManager() {
+  return store.dispatch('getIsProjectManager');
+}
+
 /**
  * 获取工具元数据
  *

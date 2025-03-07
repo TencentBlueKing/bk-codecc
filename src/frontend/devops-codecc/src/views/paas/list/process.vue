@@ -7,7 +7,7 @@
   >
     <p v-if="formData.processProgress === 1" style="color: #979ba5;">{{ $t('后续用户将不再出现此类误报') }}</p>
     <bk-form ref="form" :model="formData" :rules="rules" class="process-form" form-type="vertical">
-      <template v-if="formData.processProgress === 1">
+      <template v-if="formData.processProgress === 1 || formData.processProgress === 4">
         <bk-form-item property="processReason" :label="$t('补充说明')">
           <bk-input type="textarea" :maxlength="255" v-model="formData.processReason"></bk-input>
         </bk-form-item>
@@ -37,6 +37,7 @@
 
 <script>
 import { bus } from '@/common/bus';
+import { mapState } from 'vuex';
 
 export default {
   name: 'Process',
@@ -44,15 +45,10 @@ export default {
     return {
       row: {},
       isProcessShow: false,
-      formData: {
-        processProgress: 3,
-        processReasonType: 6,
-        processReason: '',
-        issueLink: '',
-      },
       statusMap: {
         1: this.$t('已优化工具'),
         2: this.$t('非工具原因'),
+        4: this.$t('跟进中'),
         3: this.$t('其他'),
       },
       /**
@@ -97,6 +93,12 @@ export default {
           name: this.$t('其他'),
         },
       ],
+      formData: {
+        processProgress: 3,
+        processReasonType: 6,
+        processReason: '',
+        issueLink: '',
+      },
     };
   },
   computed: {
@@ -113,13 +115,6 @@ export default {
     },
   },
   watch: {
-    isProcessShow(val) {
-      if (!val) {
-        this.formData.processReasonType = 6;
-        this.formData.processReason = '';
-        this.formData.issueLink = '';
-      }
-    },
     formData: {
       handler(val) {
         this.$nextTick(() => {
@@ -133,25 +128,33 @@ export default {
     handleDefect(id, row) {
       this.row = row;
       this.formData.processProgress = id;
+      this.formData.processReason = row.processReason;
+      this.formData.issueLink = row.issueLink;
       this.processProgress = id;
+      if (id === 0) {
+        this.processDefect(this.row);
+        return;
+      }
       this.isProcessShow = true;
     },
     handleConfirm() {
       this.$refs.form.validate((valid) => {
         if (valid) {
-          const payload = {
-            toolName: this.$route.params.toolName,
-            entityId: this.row.entityId,
-            processProgress: this.formData.processProgress,
-            processReasonType: this.formData.processReasonType,
-            processReason: this.formData.processReason,
-            issueLink: this.formData.issueLink,
-          };
-          this.processDefect(payload, this.row);
+          this.processDefect(this.row);
         }
       });
     },
-    processDefect(payload, row) {
+    processDefect(row) {
+      const payload = {
+        toolName: this.$route.params.toolName,
+        entityId: this.row.entityId,
+        processProgress: this.formData.processProgress,
+        processReasonType: this.formData.processReasonType,
+        processReason: this.formData.processReason,
+        issueLink: this.formData.issueLink,
+      };
+      row.processProgress = null;
+      row.modify = true;
       this.$store.dispatch('paas/processDefect', payload)
         .then((res) => {
           this.isProcessShow = false;
@@ -165,6 +168,7 @@ export default {
             row.processReasonType = payload.processReasonType;
             row.processReason = payload.processReason;
             row.issueLink = payload.issueLink;
+            row.modify = false;
           } else {
             this.$bkMessage({
               theme: 'error',
@@ -187,5 +191,9 @@ export default {
     font-size: 12px;
     line-height: 32px;
   }
+}
+
+::v-deep .bk-dialog-header {
+  padding: 3px 24px 0 !important;
 }
 </style>

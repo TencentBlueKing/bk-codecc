@@ -1,25 +1,19 @@
 package com.tencent.bk.codecc.defect.service;
 
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
-import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetProjectRelationshipEntity;
 import com.tencent.bk.codecc.defect.vo.CheckerCommonCountVO;
 import com.tencent.bk.codecc.defect.vo.CheckerSetListQueryReq;
 import com.tencent.bk.codecc.defect.vo.OtherCheckerSetListQueryReq;
-import com.tencent.bk.codecc.defect.vo.UpdateAllCheckerReq;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
-import com.tencent.devops.common.api.checkerset.CheckerPropVO;
-import com.tencent.devops.common.api.checkerset.CheckerSetManagementReqVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetParamsVO;
-import com.tencent.devops.common.api.checkerset.CheckerSetRelationshipVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
-import com.tencent.devops.common.api.checkerset.CreateCheckerSetReqVO;
-import com.tencent.devops.common.api.checkerset.V3UpdateCheckerSetReqExtVO;
-import com.tencent.devops.common.api.checkerset.V3UpdateCheckerSetReqVO;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.tencent.devops.common.api.checkerset.CheckerSetsVersionInfoVO;
 import org.springframework.data.domain.Page;
-import org.springframework.data.util.Pair;
 
 /**
  * V3规则集服务
@@ -68,6 +62,21 @@ public interface ICheckerSetQueryBizService {
      * @return
      */
     List<CheckerSetVO> getCheckerSetsOfTask(CheckerSetListQueryReq queryCheckerSetReq);
+
+    /**
+     * 查询工具的指定版本规则集列表
+     */
+    List<CheckerSetVO> getBuildCheckerSets(
+            long taskId,
+            String toolName,
+            String dimension,
+            List<CheckerSetsVersionInfoVO> checkerSetVersionList
+    );
+
+    List<CheckerSetVO> getBuildCheckerSetsCore(
+            List<String> toolNameList,
+            List<CheckerSetsVersionInfoVO> checkerSetVersionList
+    );
 
     /**
      * 查询规则集列表

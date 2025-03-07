@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -147,8 +148,9 @@ public class SnapShotServiceImpl implements SnapShotService {
 
     @Override
     public SnapShotVO getTaskToolBuildSnapShot(String projectId, String buildId, long taskId) {
-        SnapShotEntity snapShot = snapShotRepository.findFirstByProjectIdAndBuildIdAndTaskId(
-                projectId, buildId, taskId);
+        // 查询最新的快照（重试扫描同一个buildId下会产生多个快照）
+        Optional<SnapShotEntity> latestSnapShot = snapShotDao.getLatestSnapShot(projectId, buildId, taskId);
+        SnapShotEntity snapShot = latestSnapShot.orElseGet(SnapShotEntity::new);
 
         List<String> toolOrder = toolOrderCache.getUnchecked(MOCK_KEY);
         snapShot.getToolSnapshotList().sort(Comparator.comparingInt(it -> toolOrder.contains(it.getToolNameEn())

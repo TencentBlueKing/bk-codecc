@@ -97,4 +97,22 @@ public class QueryWarningPageInitRspVO {
     @ApiModelProperty("符合条件的告警总数")
     private int totalCount;
 
+    /**
+     * 操作相关
+     */
+    @ApiModelProperty("已提交TAPD单")
+    private int tapdOpsCount;
+
+    @ApiModelProperty("已标记处理")
+    private int maskOpsCount;
+
+    @ApiModelProperty("标记处理后任为问题")
+    private int maskNotFixCount;
+
+    @ApiModelProperty("已评论")
+    private int commentOpsCount;
+
+    @ApiModelProperty("无操作")
+    private int notOpsCount;
+
 }

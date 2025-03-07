@@ -44,6 +44,7 @@ import com.tencent.bk.codecc.defect.utils.TaskLogRepoInfoUtils;
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
+import com.tencent.bk.codecc.defect.vo.UploadToolErrorTaskLogVO;
 import com.tencent.bk.codecc.defect.vo.common.BuildVO;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
@@ -60,7 +61,6 @@ import com.tencent.devops.common.service.IBizService;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -678,5 +678,30 @@ public class TaskLogServiceImpl implements TaskLogService {
             }
         }
         return taskLogVOList;
+    }
+
+    @Override
+    public Boolean uploadToolErrorTaskLog(UploadToolErrorTaskLogVO uploadToolErrorTaskLogVO) {
+        Long taskId = uploadToolErrorTaskLogVO.getTaskId();
+        String toolName = uploadToolErrorTaskLogVO.getToolName();
+        String buildId = uploadToolErrorTaskLogVO.getLandunBuildId();
+
+        TaskLogEntity lastTaskLogEntity = taskLogRepository
+            .findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
+
+        if (lastTaskLogEntity != null) {
+            lastTaskLogEntity.setErrorCode(uploadToolErrorTaskLogVO.getErrorCode());
+            lastTaskLogEntity.setErrorMsg(uploadToolErrorTaskLogVO.getErrorMsg());
+        } else {
+            lastTaskLogEntity = new TaskLogEntity();
+            lastTaskLogEntity.setTaskId(taskId);
+            lastTaskLogEntity.setToolName(toolName);
+            lastTaskLogEntity.setBuildId(buildId);
+            lastTaskLogEntity.setStreamName(uploadToolErrorTaskLogVO.getStreamName());
+            lastTaskLogEntity.setErrorCode(uploadToolErrorTaskLogVO.getErrorCode());
+            lastTaskLogEntity.setErrorMsg(uploadToolErrorTaskLogVO.getErrorMsg());
+        }
+        taskLogRepository.save(lastTaskLogEntity);
+        return true;
     }
 }

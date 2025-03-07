@@ -26,6 +26,8 @@
 
 package com.tencent.devops.common.util
 
+import com.alibaba.fastjson.JSONObject
+import com.alibaba.fastjson.TypeReference
 import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.constant.CommonMessageCode
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -44,10 +46,10 @@ object OkhttpUtils {
     private val logger = LoggerFactory.getLogger(OkhttpUtils::class.java)
 
     val okHttpClient = okhttp3.OkHttpClient.Builder()
-            .connectTimeout(60L, TimeUnit.SECONDS)
-            .readTimeout(30L, TimeUnit.MINUTES)
-            .writeTimeout(30L, TimeUnit.MINUTES)
-            .build()!!
+        .connectTimeout(60L, TimeUnit.SECONDS)
+        .readTimeout(30L, TimeUnit.MINUTES)
+        .writeTimeout(30L, TimeUnit.MINUTES)
+        .build()!!
 
     val shortRunHttpClient = okhttp3.OkHttpClient.Builder()
         .connectTimeout(5L, TimeUnit.SECONDS)
@@ -57,8 +59,8 @@ object OkhttpUtils {
 
     fun doGet(url: String, headers: Map<String, String> = mapOf()): String {
         val requestBuilder = Request.Builder()
-                .url(url)
-                .get()
+            .url(url)
+            .get()
         if (headers.isNotEmpty()) {
             headers.forEach { key, value ->
                 requestBuilder.addHeader(key, value)
@@ -115,6 +117,31 @@ object OkhttpUtils {
         return doGet(url + parameterUrl, headers)
     }
 
+    /**
+     * 将请求中错误信息添加到异常详情
+     */
+    fun doGetWithResp(url: String, headers: Map<String, String> = mapOf()): String {
+        val requestBuilder = Request.Builder()
+            .url(url)
+            .get()
+        headers.forEach { key, value ->
+            requestBuilder.addHeader(key, value)
+        }
+        val request = requestBuilder.build()
+
+        return okHttpClient.newCall(request).execute().use { response ->
+            val responseContent = response.body?.string() ?: "{}"
+            if (!response.isSuccessful) {
+                val result = JSONObject.parseObject(responseContent, object : TypeReference<Map<String, String>>() {})
+                val status = result["status"] ?: "Unknown"
+                val message = result["message"] ?: "No message provided"
+                logger.warn("request failed, url:$url message: ${response.message}")
+                throw CodeCCException(status, message)
+            }
+            responseContent
+        }
+    }
+
     fun doHttp(request: Request): Response {
         return okHttpClient.newCall(request).execute()
     }
@@ -123,14 +150,38 @@ object OkhttpUtils {
         return doHttpPost(url, body, headers, exitFail = true)
     }
 
+    fun <T : Any> doHttpPost(url: String, body: String, headers: Map<String, String> = mapOf(), clz: Class<T>): T? {
+        val response = doHttpPost(url, body, headers, exitFail = true)
+        if (response.isEmpty()) {
+            return null
+        }
+        return JSONObject.parseObject(response, clz)
+    }
+
+    fun <T : Any> doHttpPost(
+        url: String,
+        body: String,
+        headers: Map<String, String> = mapOf(),
+        typeReference: TypeReference<T>
+    ): T? {
+        val response = doHttpPost(url, body, headers, exitFail = true)
+        if (response.isEmpty()) {
+            return null
+        }
+        return JSONObject.parseObject(response, typeReference)
+    }
+
     /**
      * 发起短时间响应的请求
      */
     fun doShortRunHttpPost(url: String, body: String, headers: Map<String, String> = mapOf()): String {
         val requestBuilder = Request.Builder()
             .url(url)
-            .post(RequestBody.create(
-                "application/json; charset=utf-8".toMediaTypeOrNull(), body))
+            .post(
+                RequestBody.create(
+                    "application/json; charset=utf-8".toMediaTypeOrNull(), body
+                )
+            )
         if (headers.isNotEmpty()) {
             headers.forEach { (key, value) ->
                 requestBuilder.addHeader(key, value)
@@ -142,7 +193,8 @@ object OkhttpUtils {
             val responseContent = response.body!!.string()
             if (!response.isSuccessful) {
                 logger.warn(
-                    "request failed, url: $url requestBody: $body message: ${response.message}, content: $responseContent")
+                    "request failed, url: $url requestBody: $body message: ${response.message}, content: $responseContent"
+                )
                 throw CodeCCException(CommonMessageCode.THIRD_PARTY_SYSTEM_FAIL)
             }
             return responseContent
@@ -171,12 +223,14 @@ object OkhttpUtils {
         }
     }
 
-
     fun doHttpDelete(url: String, body: String, headers: Map<String, String> = mapOf()): String {
         val requestBuilder = Request.Builder()
-                .url(url)
-                .delete(RequestBody.create(
-                    "application/json; charset=utf-8".toMediaTypeOrNull(), body))
+            .url(url)
+            .delete(
+                RequestBody.create(
+                    "application/json; charset=utf-8".toMediaTypeOrNull(), body
+                )
+            )
         if (headers.isNotEmpty()) {
             headers.forEach { key, value ->
                 requestBuilder.addHeader(key, value)
@@ -194,12 +248,14 @@ object OkhttpUtils {
         }
     }
 
-
     fun doHttpPut(url: String, body: String, headers: Map<String, String> = mapOf()): String {
         val requestBuilder = Request.Builder()
-                .url(url)
-                .put(RequestBody.create(
-                    "application/json; charset=utf-8".toMediaTypeOrNull(), body))
+            .url(url)
+            .put(
+                RequestBody.create(
+                    "application/json; charset=utf-8".toMediaTypeOrNull(), body
+                )
+            )
         if (headers.isNotEmpty()) {
             headers.forEach { key, value ->
                 requestBuilder.addHeader(key, value)
@@ -219,25 +275,29 @@ object OkhttpUtils {
 
     fun doFileStreamPut(url: String, file: File, headers: Map<String, String> = mapOf()): String {
         val requestBuilder = Request.Builder()
-                .url(url)
-                .put(RequestBody.create(
-                    "application/octet-stream; charset=utf-8".toMediaTypeOrNull(), file))
+            .url(url)
+            .put(
+                RequestBody.create(
+                    "application/octet-stream; charset=utf-8".toMediaTypeOrNull(), file
+                )
+            )
         return doStreamPut(requestBuilder, headers)
     }
 
     fun doFileStreamPut(url: String, content: ByteArray, headers: Map<String, String> = mapOf()): String {
         val requestBuilder = Request.Builder()
-                .url(url)
-                .put(
-                    RequestBody.create(
-                        "application/octet-stream; charset=utf-8".toMediaTypeOrNull(), content
-                    )
+            .url(url)
+            .put(
+                RequestBody.create(
+                    "application/octet-stream; charset=utf-8".toMediaTypeOrNull(), content
                 )
+            )
         return doStreamPut(requestBuilder, headers)
     }
 
     private fun doStreamPut(
-        requestBuilder: Request.Builder, headers: Map<String, String> = mapOf()
+        requestBuilder: Request.Builder,
+        headers: Map<String, String> = mapOf()
     ): String {
         if (headers.isNotEmpty()) {
             headers.forEach { key, value ->
@@ -263,8 +323,8 @@ object OkhttpUtils {
     // NOCC:NestedBlockDepth(设计如此:)
     fun downloadFile(url: String, destPath: File, headers: Map<String, String> = mapOf()) {
         val requestBuilder = Request.Builder()
-                .url(url)
-                .get()
+            .url(url)
+            .get()
 
         if (headers.isNotEmpty()) {
             headers.forEach { key, value ->
@@ -278,11 +338,15 @@ object OkhttpUtils {
                 throw RuntimeException("文件不存在")
             }
             if (!response.isSuccessful) {
-                logger.warn("fail to download the file from $url because of" +
-                        " ${response.message} and code ${response.code}")
+                logger.warn(
+                    "fail to download the file from $url because of" +
+                            " ${response.message} and code ${response.code}"
+                )
+                // NOCC:TooGenericExceptionThrown(设计如此:)
                 throw RuntimeException("获取文件失败")
             }
             if (!destPath.parentFile.exists()) destPath.parentFile.mkdirs()
+            // NOCC:MagicNumber(设计如此:)
             val buf = ByteArray(4096)
             response.body!!.byteStream().use { bs ->
                 var len = bs.read(buf)
@@ -298,8 +362,8 @@ object OkhttpUtils {
 
     fun download(url: String, headers: Map<String, String> = mapOf()): ByteArray {
         val requestBuilder = Request.Builder()
-                .url(url)
-                .get()
+            .url(url)
+            .get()
         if (headers.isNotEmpty()) {
             headers.forEach { key, value ->
                 requestBuilder.addHeader(key, value)
@@ -312,8 +376,11 @@ object OkhttpUtils {
                 throw RuntimeException("文件不存在")
             }
             if (!response.isSuccessful) {
-                logger.warn("fail to download the file from $url " +
-                        "because of ${response.message} and code ${response.code}")
+                logger.warn(
+                    "fail to download the file from $url " +
+                            "because of ${response.message} and code ${response.code}"
+                )
+                // NOCC:TooGenericExceptionThrown(设计如此:)
                 throw RuntimeException("获取文件失败")
             }
             val content = response.body!!.byteStream().use {
@@ -344,6 +411,4 @@ object OkhttpUtils {
             }
         }
     }
-
-
 }

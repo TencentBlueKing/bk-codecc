@@ -18,6 +18,7 @@
       <bk-tab
         ext-cls="cc-panels"
         :label-height="59"
+        :key="currentNavTabKey"
         type="unborder-card"
         :active.sync="currentNavTab"
         @tab-change="changeTab"
@@ -29,6 +30,7 @@
         >
           <span slot="label" @click="handleRedPoint(panel.name)">
             <span>{{ panel.label }}</span>
+            <span v-if="panel.name === 'checker' && !hasRedPointStore" class="red-point"></span>
           </span>
         </bk-tab-panel>
       </bk-tab>
@@ -74,13 +76,14 @@ export default {
         { name: 'ignore', label: this.$t('忽略配置') },
       ],
       iwikiCodeccHome: window.IWIKI_CODECC_HOME,
-      hasRedPointStore: window.localStorage.getItem('redtips-tab-cloc-20200704'),
+      hasRedPointStore: window.localStorage.getItem('red-point-checker-20241101'),
       moreDropdownList: [
         // { name: 'pathShield', label: this.$t('路径屏蔽') },
         { name: 'ignoreList', label: this.$t('忽略配置') },
         // { name: 'operationAudit', label: this.$t('操作审计') },
       ],
       isInnerSite: DEPLOY_ENV === 'tencent',
+      currentNavTabKey: 1,
     };
   },
   computed: {
@@ -97,6 +100,7 @@ export default {
     currentNavTab() {
       const routeName = this.$route.name;
       const navMap = {
+        'task-new': 'task',
         'task-list': 'task',
         'project-defect-list': 'defect',
         'project-ccn-list': 'defect',
@@ -126,9 +130,11 @@ export default {
       }
     },
     handleRedPoint(name) {
-      if (name === 'checker') {
-        window.localStorage.setItem('redtips-tab-cloc-20200704', '1');
+      if (name === 'checker' && !this.hasRedPointStore) {
+        this.currentNavTabKey = 2;
+        window.localStorage.setItem('red-point-checker-20241101', '1');
         this.hasRedPointStore = true;
+        this.$router.push({ name: 'checker-list' });
       }
     },
     triggerHandler(item) {
@@ -216,8 +222,7 @@ export default {
 
   .page-main {
     height: calc(100vh - var(--navTopHeight));
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: hidden auto;
 
     &.has-banner {
       height: calc(100vh - var(--navTopHeight) - var(--bannerHeight));

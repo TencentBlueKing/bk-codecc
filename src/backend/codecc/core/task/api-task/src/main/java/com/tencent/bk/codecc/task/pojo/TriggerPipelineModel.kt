@@ -20,5 +20,5 @@ data class TriggerPipelineModel(
     /**
      * 传递给流水连运行的额外参数
      */
-    val runtimeParam: List<CodeCCRuntimeParam>? = null,
+    val runtimeParam: List<CodeCCRuntimeParam>? = null
 )

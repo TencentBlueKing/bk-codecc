@@ -1,5 +1,5 @@
 <template>
-  <section class="list">
+  <section class="list" :style="{ padding: isIframe ? '0' : '24px' }">
     <search ref="search"></search>
     <table-list></table-list>
   </section>
@@ -15,13 +15,17 @@ export default {
     Search,
     TableList,
   },
+  computed: {
+    isIframe() {
+      return window.self !== window.top;
+    },
+  },
 };
 </script>
 
 <style lang="postcss" scoped>
 .list {
   min-height: 100vh;
-  padding: 24px;
   color: #63656E;
   background: #F5F6FA;
 }

@@ -17,8 +17,8 @@
       />
       <img v-else style="width: 592px" src="../../images/operate-1.png" />
     </div>
-    <div class="operate-txt operate-txt-2">2. {{ $t('问题详情') }}</div>
-    <div>
+    <div class="operate-txt operate-txt-2" v-if="showDetail">2. {{ $t('问题详情') }}</div>
+    <div v-if="showDetail">
       <img
         v-if="isEn"
         style="width: 592px"
@@ -41,6 +41,10 @@ export default {
   name: 'OperateDialog',
   props: {
     visible: Boolean,
+    showDetail: {
+      type: Boolean,
+      default: true,
+    },
   },
   data() {
     return {};

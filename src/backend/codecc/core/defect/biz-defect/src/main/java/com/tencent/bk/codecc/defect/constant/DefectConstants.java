@@ -126,7 +126,6 @@ public interface DefectConstants
         REMOVE
     }
 
-
     /**
      * CodeCC创建任务元素类型
      */

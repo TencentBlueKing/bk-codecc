@@ -50,6 +50,7 @@ import com.tencent.bk.codecc.defect.vo.customtool.ScmBlameVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.checkerset.CheckerPropVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
+import com.tencent.devops.common.api.checkerset.CheckerSetsVersionInfoVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.ScanType;
@@ -66,12 +67,14 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashSet;
+
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Collections;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -137,7 +140,11 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
 
         TaskDetailVO taskVO = thirdPartySystemCaller.getTaskInfo(streamName);
         String createFrom = taskVO.getCreateFrom();
-        BuildEntity buildEntity = buildService.getBuildEntityByBuildId(buildId);
+        BuildEntity buildEntity = buildService.getBuildEntityByBuildIdAndTaskId(buildId, taskId);
+        if (buildEntity == null) {
+            // 原有逻辑，兼容 BuildEntity 不存在 taskId 的情况
+            buildEntity = buildService.getBuildEntityByBuildId(buildId);
+        }
         if (buildEntity == null) {
             throw new CodeCCException(RECORD_NOT_EXITS, new String[]{"buildEntity", buildId});
         }
@@ -169,18 +176,24 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
                 toolName,
                 "",
                 true);
-        // 取出规则集中的规则ID
-        Set<String> checkerKeyList = checkerSetsOfTask.stream()
-                .flatMap(it -> it.getCheckerProps().stream())
-                .filter(it -> toolName.equalsIgnoreCase(it.getToolName()))
-                .map(CheckerPropVO::getCheckerKey)
-                .map(checkerKey -> {
-                    if (checkerKey.contains("-tosa")) {
-                        return checkerKey.replaceAll("-tosa", "");
-                    }
-                    return checkerKey;
-                })
-                .collect(Collectors.toSet());
+
+        // 获取当次构建使用的规则集版本列表
+
+        List<CheckerSetsVersionInfoVO> buildCheckerSetVersionInfo =
+                CollectionUtils.isNotEmpty(buildEntity.getCheckerSetsVersion())
+                        ? buildEntity.getCheckerSetsVersion().stream()
+                        .map(entity -> {
+                            CheckerSetsVersionInfoVO vo = new CheckerSetsVersionInfoVO();
+                            BeanUtils.copyProperties(entity, vo);
+                            return vo;
+                        }).collect(Collectors.toList())
+                        : Collections.emptyList();
+        List<CheckerSetVO> checkerSetsOfBuild =
+                checkerSetQueryBizService.getBuildCheckerSets(taskId, toolName, "", buildCheckerSetVersionInfo);
+
+        // 取出两个规则集中规则key的并集
+        Set<String> checkerKeyList = getUnionCheckerKeys(toolName, checkerSetsOfTask, checkerSetsOfBuild);
+
         List<CheckerDetailEntity> checkerDetailEntityList =
                 checkerRepository.findByToolNameAndCheckerKeyIn(toolName, checkerKeyList);
 
@@ -332,6 +345,58 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
                 System.currentTimeMillis() - beginTime, taskId, toolName, buildId);
 
         return true;
+    }
+
+    /**
+     * 取出指定工具规则集中的checkerKey集合
+     * @param toolName
+     * @param checkerSetsOfTask
+     * @return
+     */
+    private Set<String> filterToolCheckerKeysFromCheckerSets(String toolName, List<CheckerSetVO> checkerSetsOfTask) {
+        return checkerSetsOfTask.stream()
+                .flatMap(it -> it.getCheckerProps().stream())
+                .filter(it -> toolName.equalsIgnoreCase(it.getToolName()))
+                .map(CheckerPropVO::getCheckerKey)
+                .map(checkerKey -> {
+                    if (checkerKey.contains("-tosa")) {
+                        return checkerKey.replaceAll("-tosa", "");
+                    }
+                    return checkerKey;
+                })
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * 获取指定工具两个规则集中checkerKey的并集
+     * @param toolName
+     * @param checkerSetsOfTask
+     * @param checkerSetsOfBuild
+     * @return
+     */
+    private Set<String> getUnionCheckerKeys(
+            String toolName,
+            List<CheckerSetVO> checkerSetsOfTask,
+            List<CheckerSetVO> checkerSetsOfBuild
+    ) {
+        Set<String> checkerKeysFromBuild = filterToolCheckerKeysFromCheckerSets(toolName, checkerSetsOfBuild);
+        Set<String> checkerKeysFromTask = filterToolCheckerKeysFromCheckerSets(toolName, checkerSetsOfTask);
+        HashSet<String> unionCheckerKeys = new HashSet<>(checkerKeysFromBuild);
+        unionCheckerKeys.addAll(checkerKeysFromTask);
+        log.info("当次构建规则数: {}; 当前任务规则数: {}; 合并后规则数: {}",
+                checkerKeysFromBuild.size(), checkerKeysFromTask.size(), unionCheckerKeys.size());
+
+        // 比较两个集合的差异
+        Set<String> uniqueToBuild = new HashSet<>(checkerKeysFromBuild);
+        uniqueToBuild.removeAll(checkerKeysFromTask);
+        Set<String> uniqueToTask = new HashSet<>(checkerKeysFromTask);
+        uniqueToTask.removeAll(checkerKeysFromBuild);
+        if (!uniqueToBuild.isEmpty() || !uniqueToTask.isEmpty()) {
+            log.info("[{}] 工具: 当次构建 和 当前任务 的规则列表不同，告警将取并集; "
+                            + "[规则差异]: build - task = {}, task - build = {}",
+                    toolName, uniqueToBuild, uniqueToTask);
+        }
+        return unionCheckerKeys;
     }
 
     /**
@@ -540,6 +605,10 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
 
                 if (CollectionUtils.isNotEmpty(lintFileEntity.getDefects())) {
                     ScmBlameVO scmBlameVO = fileChangeRecordsMap.get(lintFileEntity.getFile());
+                    if (scmBlameVO == null) {
+                        log.warn("scmBlameVO is null, {}, {}, {},  {}", taskId, toolName, buildId,
+                                lintFileEntity.getFile());
+                    }
                     // 填充文件内的告警的信息，其中如果告警的规则不属于已录入平台的规则，则移除告警
                     List<LintDefectV2Entity> tmpDefectList = lintFileEntity.getDefects().stream()
                             .filter(defect -> fillDefectInfo(taskVO, toolName, defect, lintFileEntity.getFile(),
@@ -888,8 +957,6 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
         if (fileLineAuthorInfo != null) {
             setFileInfo(defectEntity, fileLineAuthorInfo, codeRepoIdMap);
             setAuthor(defectEntity, fileLineAuthorInfo);
-        } else {
-            log.warn("fileLineAuthorInfo is null, {}, {}", filePath, defectEntity.getLineNum());
         }
 
         if (toolName.equals(ComConstants.Tool.BLACKDUCK.name())) {

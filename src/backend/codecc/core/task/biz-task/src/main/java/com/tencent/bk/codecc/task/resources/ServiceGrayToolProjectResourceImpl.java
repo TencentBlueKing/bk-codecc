@@ -19,11 +19,6 @@ public class ServiceGrayToolProjectResourceImpl implements ServiceGrayToolProjec
     @Autowired
     private GrayToolProjectService grayToolProjectService;
 
-//    @Override
-//    public Result<GrayToolProjectVO> getGrayToolProjectInfoByProjectId(String projectId) {
-//        return new Result<>(grayToolProjectService.findGrayInfoByProjectId(projectId));
-//    }
-
     @Override
     public Result<List<GrayToolProjectVO>> getGrayToolProjectDetail(String projectId) {
         return Result.success(grayToolProjectService.getGrayToolListByProjectId(projectId));

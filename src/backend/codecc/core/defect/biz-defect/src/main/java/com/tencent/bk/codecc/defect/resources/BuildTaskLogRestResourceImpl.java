@@ -33,6 +33,9 @@ import com.tencent.bk.codecc.defect.vo.GrayTaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO;
+import com.tencent.bk.codecc.defect.vo.UploadToolErrorTaskLogVO;
+import com.tencent.devops.common.api.constant.CommonMessageCode;
+import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.service.BizServiceFactory;
@@ -44,6 +47,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * 分析任务构建机接口实现
@@ -72,6 +76,23 @@ public class BuildTaskLogRestResourceImpl implements BuildTaskLogRestResource {
         IBizService taskLogService = bizServiceFactory.createBizService(uploadTaskLogStepVO.getToolName(),
                 ComConstants.BusinessType.ANALYZE_TASK.value(), IBizService.class);
         return taskLogService.processBiz(uploadTaskLogStepVO);
+    }
+
+    @Override
+    public Result<Boolean> uploadToolErrorTaskLog(UploadToolErrorTaskLogVO uploadToolErrorTaskLogVO) {
+        if (uploadToolErrorTaskLogVO.getTaskId() == null
+                || StringUtils.isEmpty(uploadToolErrorTaskLogVO.getLandunBuildId())) {
+            throw new CodeCCException(CommonMessageCode.ERROR_INVALID_PARAM_, new String[]{"非法空参数"});
+        }
+        if (StringUtils.isNotEmpty(uploadToolErrorTaskLogVO.getToolName())) {
+            uploadToolErrorTaskLogVO.setToolName(uploadToolErrorTaskLogVO.getToolName().toUpperCase(Locale.ENGLISH));
+        }
+        logger.info("start to report tool error task log taskId:{} buildId:{} toolName:{}",
+            uploadToolErrorTaskLogVO.getTaskId(),
+            uploadToolErrorTaskLogVO.getLandunBuildId(),
+            uploadToolErrorTaskLogVO.getToolName());
+
+        return new Result<>(taskLogService.uploadToolErrorTaskLog(uploadToolErrorTaskLogVO));
     }
 
 

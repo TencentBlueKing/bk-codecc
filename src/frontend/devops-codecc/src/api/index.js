@@ -2,7 +2,7 @@
  * @file axios 封装
  * @author blueking
  */
-
+/* eslint-disable */
 import Vue from 'vue';
 import axios from 'axios';
 import cookie from 'cookie';
@@ -14,6 +14,7 @@ import { messageError } from '@/common/bkmagic';
 import store from '@/store';
 import I18n from '@/i18n';
 // import router from '@/router'
+import { showLoginModal } from '@blueking/login-modal';
 
 // axios 实例
 const axiosInstance = axios.create({
@@ -205,9 +206,31 @@ function handleReject(error, config) {
     const { status, data } = error.response;
     const nextError = { message: error.message, response: error.response };
     if (status === 401) {
-      window.location.href = `${
-        window.PAAS_SERVICE_URL
-      }/?c_url=${encodeURIComponent(window.location.href)}`;
+      if (config.url.includes('/user/userInfo')) {
+        window.location.href = `${
+          window.PAAS_SERVICE_URL
+        }/?c_url=${encodeURIComponent(window.location.href)}`;
+      } else {
+        // 登录成功之后的回调地址，用于执行关闭登录窗口或刷新父窗口页面等动作
+        const successUrl = `${window.location.origin}/static/login_success.html`;
+
+        // 系统的登录页地址
+        const siteLoginUrl = window.PAAS_SERVICE_URL || '';
+        if (!siteLoginUrl) {
+          console.error('Login URL not configured!');
+          return;
+        }
+
+        // 处理登录地址为登录小窗需要的格式，主要是设置c_url参数
+        const [loginBaseUrl] = siteLoginUrl.split('?');
+        const newUrl = loginBaseUrl.includes('login') ? `${loginBaseUrl}/` : `${loginBaseUrl}login/`;
+        const loginUrl = `${newUrl}plain?size=small&c_url=${encodeURIComponent(successUrl)}`;
+        showLoginModal({
+          loginUrl,
+        });
+
+        return;
+      }
       // bus.$emit('show-login-modal')
     } else if (status === 403) {
       bus.$emit('show-permission-dialog');

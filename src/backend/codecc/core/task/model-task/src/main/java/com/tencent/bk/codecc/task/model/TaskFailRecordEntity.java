@@ -81,6 +81,9 @@ public class TaskFailRecordEntity extends CommonEntity
     @Field("err_type")
     private String errType;
 
+    @Field("migrate")
+    private Boolean migrate;
+
     @Field("tool_result")
     private Map<String, ToolRunResult> toolResult;
 

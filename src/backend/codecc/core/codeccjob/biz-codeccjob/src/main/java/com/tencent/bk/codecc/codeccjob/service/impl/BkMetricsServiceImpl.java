@@ -99,14 +99,7 @@ public class BkMetricsServiceImpl implements BkMetricsService {
     private void convertAndSendMessage(BkMetricsMessage bkMetricsMessage) {
         log.info("BkMetricsMessage: {}", bkMetricsMessage);
 
-        rabbitTemplate.convertAndSend(EXCHANGE_BK_METRICS_DAILY_FANOUT, "", JsonUtil.INSTANCE.toJson(bkMetricsMessage),
-                message -> {
-                    MessageProperties messageProperties = message.getMessageProperties();
-                    messageProperties.setHeader("contentType", "application/json");
-                    messageProperties.setHeader("contentEncoding", "UTF-8");
-                    messageProperties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
-                    return message;
-                });
+        rabbitTemplate.convertAndSend(EXCHANGE_BK_METRICS_DAILY_FANOUT, "", bkMetricsMessage);
     }
 
     /**
