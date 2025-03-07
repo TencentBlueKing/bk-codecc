@@ -45,16 +45,19 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_DEFECT_COMMI
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_DEFECT_COMMIT_CLOC_NEW;
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_DEFECT_COMMIT_DUPC_NEW;
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_DEFECT_COMMIT_LINT_NEW;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_DEFECT_COMMIT_SCA_NEW;
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_DEFECT_COMMIT_STAT_NEW;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_DEFECT_COMMIT_CCN_NEW;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_DEFECT_COMMIT_CLOC_NEW;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_DEFECT_COMMIT_DUPC_NEW;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_DEFECT_COMMIT_LINT_NEW;
+import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_DEFECT_COMMIT_SCA_NEW;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_DEFECT_COMMIT_STAT_NEW;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DEFECT_COMMIT_CCN_NEW;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DEFECT_COMMIT_CLOC_NEW;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DEFECT_COMMIT_DUPC_NEW;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DEFECT_COMMIT_LINT_NEW;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DEFECT_COMMIT_SCA_NEW;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DEFECT_COMMIT_STAT_NEW;
 
 /**
@@ -176,6 +179,24 @@ public class CommitDefectNormalProjRabbitMQConfig extends AbstractCommitDefectRa
     }
 
     @Bean
+    public Queue scaNewCommitQueue() {
+        return new Queue(QUEUE_DEFECT_COMMIT_SCA_NEW);
+    }
+
+    @Bean
+    public DirectExchange scaNewDirectExchange() {
+        DirectExchange directExchange = new DirectExchange(EXCHANGE_DEFECT_COMMIT_SCA_NEW);
+        directExchange.setDelayed(true);
+        return directExchange;
+    }
+
+    @Bean
+    public Binding scaNewQueueBind(Queue scaNewCommitQueue, DirectExchange scaNewDirectExchange) {
+        return BindingBuilder.bind(scaNewCommitQueue).to(scaNewDirectExchange).with(ROUTE_DEFECT_COMMIT_SCA_NEW);
+    }
+
+
+    @Bean
     public SimpleMessageListenerContainer lintNewMessageListenerContainer(
             ConnectionFactory connectionFactory,
             LintDefectCommitConsumer lintDefectCommitConsumer,
@@ -222,5 +243,14 @@ public class CommitDefectNormalProjRabbitMQConfig extends AbstractCommitDefectRa
             Jackson2JsonMessageConverter jackson2JsonMessageConverter) throws NoSuchMethodException {
         return messageListenerContainer(connectionFactory, statDefectCommitConsumer, jackson2JsonMessageConverter,
                 CONSUMER_METHOD_NAME, QUEUE_DEFECT_COMMIT_STAT_NEW, CONCURRENT_CONSUMERS, MAX_CONCURRENT_CONSUMERS);
+    }
+
+    @Bean
+    public SimpleMessageListenerContainer scaNewMessageListenerContainer(
+            ConnectionFactory connectionFactory,
+            SCADefectCommitConsumer scaDefectCommitConsumer,
+            Jackson2JsonMessageConverter jackson2JsonMessageConverter) throws NoSuchMethodException {
+        return messageListenerContainer(connectionFactory, scaDefectCommitConsumer, jackson2JsonMessageConverter,
+                CONSUMER_METHOD_NAME, QUEUE_DEFECT_COMMIT_SCA_NEW, CONCURRENT_CONSUMERS, MAX_CONCURRENT_CONSUMERS);
     }
 }

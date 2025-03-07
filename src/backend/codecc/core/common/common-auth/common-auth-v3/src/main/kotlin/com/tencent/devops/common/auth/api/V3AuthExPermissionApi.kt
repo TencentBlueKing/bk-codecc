@@ -1,7 +1,6 @@
 package com.tencent.devops.common.auth.api
 
 import com.tencent.devops.common.auth.api.external.AbstractAuthExPermissionApi
-import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction
 import com.tencent.devops.common.auth.api.pojo.external.model.BkAuthExResourceActionModel
 import com.tencent.devops.common.auth.api.service.AuthTaskService
 import com.tencent.devops.common.auth.pojo.CodeCCAuthServiceCode
@@ -107,6 +106,10 @@ class V3AuthExPermissionApi(
 
     override fun authProjectManager(projectId: String, user: String): Boolean {
         return true
+    }
+
+    override fun getProjectManager(projectId: String): List<String> {
+        return emptyList()
     }
 
     override fun authProjectMultiManager(projectId: String, user: String): Boolean {

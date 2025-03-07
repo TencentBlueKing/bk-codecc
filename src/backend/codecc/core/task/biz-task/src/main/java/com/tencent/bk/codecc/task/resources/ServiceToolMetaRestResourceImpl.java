@@ -90,7 +90,7 @@ public class ServiceToolMetaRestResourceImpl implements ServiceToolMetaRestResou
     @Override
     @I18NResponse
     public Result<List<ToolMetaBaseVO>> toolList(Boolean isDetail) {
-        return new Result<>(metaService.toolList(isDetail));
+        return new Result<>(metaService.toolList(null, isDetail));
     }
 
     @Override

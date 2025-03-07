@@ -33,13 +33,15 @@ public class LintDefectStatisticModelBuilder
     }
 
     /**
-     * 初始化统计数据记录实体类
+     * 根据现有数据，初始化统计数据记录实体类
      *
      * @return 告警统计持久化类
      */
     @Override
-    public LintStatisticEntity convert() {
-        LintStatisticEntity lintStatisticEntity = new LintStatisticEntity();
+    public LintStatisticEntity convert(LintStatisticEntity lintStatisticEntity) {
+        if (lintStatisticEntity == null) {
+            lintStatisticEntity = new LintStatisticEntity();
+        }
         lintStatisticEntity.setTaskId(defectStatisticModel.getTaskId());
         lintStatisticEntity.setBuildId(defectStatisticModel.getBuildId());
         lintStatisticEntity.setTime(System.currentTimeMillis());
@@ -68,14 +70,12 @@ public class LintDefectStatisticModelBuilder
         lintStatisticEntity.setCheckerStatistic(defectStatisticModel.getCheckerStatisticList());
         lintStatisticEntity.setExistAuthorStatistic(
                 Lists.newArrayList(defectStatisticModel.getExistAuthorMap().values()));
-
         // 维度相关统计
         if (defectStatisticModel.getDimensionStatisticModel() != null) {
             DimensionStatisticEntity dimensionStatisticEntity = new DimensionStatisticEntity();
             BeanUtils.copyProperties(defectStatisticModel.getDimensionStatisticModel(), dimensionStatisticEntity);
             lintStatisticEntity.setDimensionStatistic(dimensionStatisticEntity);
         }
-
         return lintStatisticEntity;
     }
 

@@ -46,8 +46,9 @@ public interface IDefectOperateBizService {
 
     /**
      * 删除代码评论
+     * @param defectId
      * @param commentId
      * @param singleCommentId
      */
-    void deleteCodeComment(String commentId, String singleCommentId, String userName);
+    void deleteCodeComment(String defectId, String commentId, String singleCommentId, String userName);
 }

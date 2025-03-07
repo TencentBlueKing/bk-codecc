@@ -26,20 +26,20 @@
 
 package com.tencent.bk.codecc.task.api;
 
-import com.tencent.bk.codecc.task.vo.*;
-import com.tencent.bk.codecc.task.vo.checkerset.UpdateCheckerSet2TaskReqVO;
+import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
+import com.tencent.bk.codecc.task.vo.BatchRegisterVO;
+import com.tencent.bk.codecc.task.vo.ToolConfigBaseVO;
+import com.tencent.bk.codecc.task.vo.ToolConfigInfoVO;
+import com.tencent.bk.codecc.task.vo.ToolConfigInfoWithMetadataVO;
+import com.tencent.bk.codecc.task.vo.ToolTaskInfoVO;
 import com.tencent.bk.codecc.task.vo.checkerset.ClearTaskCheckerSetReqVO;
+import com.tencent.bk.codecc.task.vo.checkerset.UpdateCheckerSet2TaskReqVO;
 import com.tencent.bk.codecc.task.vo.pipeline.PipelineBuildInfoVO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiModelProperty;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import io.swagger.models.auth.In;
-import org.springframework.boot.actuate.integration.IntegrationGraphEndpoint;
-
-import javax.validation.Valid;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -69,8 +69,7 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
 @Path("/service/tool")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public interface ServiceToolRestResource
-{
+public interface ServiceToolRestResource {
     @ApiOperation("更新工具分析步骤及状态")
     @Path("/")
     @PUT

@@ -1,6 +1,6 @@
 <template>
   <div :class="['empty', `empty-${size}`]">
-    <img src="../../images/empty.png" class="empty-img" />
+    <img src="../../images/empty.png" class="empty-img inline-block" />
     <div class="title">{{ title }}</div>
     <div class="desc" v-if="desc">{{ desc }}</div>
     <template v-if="$slots.action">

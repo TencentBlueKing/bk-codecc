@@ -51,6 +51,9 @@ public class OpenSourceCheckerSetVO {
     @ApiModelProperty("可见范围")
     private List<OrgInfoVO> scopes;
 
+    @ApiModelProperty("可见范围-任务创建来源")
+    private List<String> taskCreateFromScopes;
+
     @ApiModelProperty("代码语言/code")
     private String lang;
 

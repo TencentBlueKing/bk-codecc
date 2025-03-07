@@ -24,7 +24,7 @@ public class UserToolDeveloperInfoResourceImpl implements UserToolDeveloperInfoR
         OWNER(2),
         MASTER(4);
 
-        private int value;
+        private final int value;
 
         RoleType(int value) {
             this.value = value;

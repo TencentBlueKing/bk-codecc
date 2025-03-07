@@ -17,6 +17,7 @@ import com.tencent.bk.codecc.defect.model.RedLineMetaEntity;
 import com.tencent.bk.codecc.defect.model.defect.DefectEntity;
 import com.tencent.bk.codecc.defect.model.pipelinereport.RedLineEntity;
 import com.tencent.bk.codecc.defect.model.redline.RedLineExtraParams;
+import com.tencent.bk.codecc.defect.utils.RedLineUtils;
 import com.tencent.bk.codecc.defect.vo.FileDefectGatherVO;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerCategory;
 import com.tencent.bk.codecc.defect.vo.redline.PipelineRedLineCallbackVO;
@@ -191,7 +192,7 @@ public abstract class AbstractRedLineReportService<T extends DefectEntity> imple
     @Override
     public void saveRedLineData(TaskDetailVO taskDetailVO, String toolName, String buildId, List<T> newDefectList,
             RedLineExtraParams<T> extraParams) {
-        if (!ComConstants.BsTaskCreateFrom.BS_PIPELINE.value().equals(taskDetailVO.getCreateFrom())
+        if (!RedLineUtils.INSTANCE.checkIfTaskEnableRedLine(taskDetailVO)
                 || CollectionUtils.isEmpty(taskDetailVO.getToolConfigInfoList())) {
             log.info("task is not create from pipeline: {} {} {}", taskDetailVO.getTaskId(), buildId, toolName);
             return;

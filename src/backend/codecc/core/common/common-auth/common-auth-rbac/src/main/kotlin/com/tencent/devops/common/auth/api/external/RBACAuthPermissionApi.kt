@@ -9,6 +9,7 @@ import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_USER_ID
 import com.tencent.devops.common.api.exception.UnauthorizedException
 import com.tencent.devops.common.api.pojo.Result
 import com.tencent.devops.common.auth.api.AuthPermission
+import com.tencent.devops.common.auth.api.pojo.BkAuthGroup
 import com.tencent.devops.common.auth.api.pojo.external.AuthRoleType
 import com.tencent.devops.common.auth.api.pojo.external.ResourceType
 import com.tencent.devops.common.auth.api.pojo.external.model.BkAuthExResourceActionModel
@@ -59,14 +60,17 @@ class RBACAuthPermissionApi(
      * 查询指定用户特定权限下的流水线清单
      */
     override fun queryPipelineListForUser(user: String, projectId: String, actions: Set<String>): Set<String> {
-        // TODO
-        val newAction = "${rbacAuthProperties.pipeLineResourceType!!}_${actions.first()}"
-        return queryUserResourceByPermission(
+        val newActions = mutableSetOf<String>()
+        actions.forEach {
+            val rbacAction = AuthActionUtil.getPipelineAction(it)
+            newActions.add(rbacAction)
+        }
+        return queryUserResourcesByPermissions(
             projectCode = projectId,
-            action = newAction,
+            actions = newActions.toList(),
             resourceType = rbacAuthProperties.pipeLineResourceType!!,
             userId = user
-        ).toSet()
+        ).flatMap { it.value }.distinct().toSet()
     }
 
     /**
@@ -82,12 +86,12 @@ class RBACAuthPermissionApi(
             val rbacAction = AuthActionUtil.getRbacAction(it)
             newActions.addAll(rbacAction)
         }
-        return queryUserResourceByPermission(
+        return queryUserResourcesByPermissions(
             projectCode = projectId,
-            action = newActions.first(),
+            actions = newActions.toList(),
             resourceType = rbacAuthProperties.rbacResourceType!!,
             userId = user
-        ).toSet()
+        ).flatMap { it.value }.distinct().toSet()
     }
 
     /**
@@ -178,6 +182,19 @@ class RBACAuthPermissionApi(
         return checkProjectManager(projectId, user)
     }
 
+    override fun getProjectManager(projectId: String): List<String> {
+        val response = client.getDevopsService(ServiceProjectAuthResource::class.java, projectId).getProjectUsers(
+            token = getBackendAccessToken(),
+            projectCode = projectId,
+            group = BkAuthGroup.MANAGER
+        )
+        return if (response.isOk()) {
+            response.data ?: emptyList()
+        } else {
+            emptyList()
+        }
+    }
+
     /**
      * 校验是否项目角色
      */
@@ -195,7 +212,7 @@ class RBACAuthPermissionApi(
      */
     override fun authProjectRole(projectId: String, user: String, role: String?): Boolean {
         val url = "${rbacAuthProperties.schemes}://${rbacAuthProperties.url}$baseUrl" +
-                "/open/service/auth/projects/${projectId}/users/${user}/isProjectUsers"
+                "/open/service/auth/projects/$projectId/users/$user/isProjectUsers"
         val headers = getCommonHeaders(projectId)
         val params = mutableMapOf<String, String>()
         // 选填，判断是否有访问项目的权限，只要加入项目下 任意一个组，都会是项目的成员
@@ -237,13 +254,13 @@ class RBACAuthPermissionApi(
         userId: String
     ): List<String> {
         val response = client.getDevopsService(ServicePermissionAuthResource::class.java, projectCode)
-                .getUserResourceByPermission(
-                    userId = userId,
-                    token = getBackendAccessToken(),
-                    action = action,
-                    projectCode = projectCode,
-                    resourceType = resourceType
-                )
+            .getUserResourceByPermission(
+                userId = userId,
+                token = getBackendAccessToken(),
+                action = action,
+                projectCode = projectCode,
+                resourceType = resourceType
+            )
         if (response.isNotOk()) {
             throw UnauthorizedException("getDevopsService failed!")
         }
@@ -261,13 +278,13 @@ class RBACAuthPermissionApi(
         userId: String
     ): Map<AuthPermission, List<String>> {
         val response = client.getDevopsService(ServicePermissionAuthResource::class.java, projectCode)
-                .getUserResourcesByPermissions(
-                    userId = userId,
-                    token = getBackendAccessToken(),
-                    action = actions,
-                    projectCode = projectCode,
-                    resourceType = resourceType
-                )
+            .getUserResourcesByPermissions(
+                userId = userId,
+                token = getBackendAccessToken(),
+                action = actions,
+                projectCode = projectCode,
+                resourceType = resourceType
+            )
         if (response.isNotOk()) {
             throw UnauthorizedException("getDevopsService failed!")
         }
@@ -286,7 +303,7 @@ class RBACAuthPermissionApi(
         resourceCode: String
     ): Boolean {
         val resPermission = client.getDevopsService(ServicePermissionAuthResource::class.java, projectCode)
-                .validateUserResourcePermission(userId, token, null, action, projectCode, resourceCode)
+            .validateUserResourcePermission(userId, token, null, action, projectCode, resourceCode)
         if (resPermission.isNotOk()) {
             throw UnauthorizedException("getDevopsService failed!")
         }
@@ -319,10 +336,9 @@ class RBACAuthPermissionApi(
         userId: String
     ): Result<Boolean> {
         val url = "${rbacAuthProperties.schemes}://${rbacAuthProperties.url}$baseUrl" +
-                "/open/service/auth/projects/projectIds/${projectCode}/checkManager"
+                "/open/service/auth/projects/projectIds/$projectCode/checkManager"
         val headers = getCommonHeaders(projectCode).toMutableMap()
         headers[AUTH_HEADER_DEVOPS_USER_ID] = userId
-
         val result = OkhttpUtils.doGet(url, headers)
         return JsonUtil.to(result, object : TypeReference<Result<Boolean>>() {})
     }
@@ -338,8 +354,8 @@ class RBACAuthPermissionApi(
         userId: String
     ): Result<Boolean> {
         val url = "${rbacAuthProperties.schemes}://${rbacAuthProperties.url}$baseUrl" +
-                "/open/service/auth/permission/projects/${projectCode}" +
-                "/relation/validate/batch?resourceCode=${resourceCode}&resourceType=${resourceType}"
+                "/open/service/auth/permission/projects/$projectCode" +
+                "/relation/validate/batch?resourceCode=$resourceCode&resourceType=$resourceType"
         val headers = getCommonHeaders(projectCode).toMutableMap()
         headers[AUTH_HEADER_DEVOPS_USER_ID] = userId
         val bodyStr = JsonUtil.getObjectMapper().writeValueAsString(actions)
@@ -357,11 +373,11 @@ class RBACAuthPermissionApi(
         resourceType: String
     ): List<String> {
         val url = "${rbacAuthProperties.schemes}://${rbacAuthProperties.url}$baseUrl" +
-            "/open/service/auth/resource/member/${projectId}" +
-            "/getResourceGroupUsers?resourceCode=${resourceCode}&resourceType=${resourceType}"
+                "/open/service/auth/resource/member/$projectId" +
+                "/getResourceGroupUsers?resourceCode=$resourceCode&resourceType=$resourceType"
         val headers = getCommonHeaders(projectId)
 
-        val result = OkhttpUtils.doGet(url, headers)
+        val result = OkhttpUtils.doGetWithResp(url, headers)
         val resultRspObj = JsonUtil.to(result, object : TypeReference<Result<List<String>>>() {})
         return resultRspObj.data!!
     }
@@ -376,11 +392,11 @@ class RBACAuthPermissionApi(
         roleType: AuthRoleType
     ): Set<String> {
         val url = "${rbacAuthProperties.schemes}://${rbacAuthProperties.url}$baseUrl" +
-            "/open/service/auth/resource/member/${projectId}" +
-            "/getResourceUsers?resourceCode=${resourceCode}&resourceType=${resourceType}"
+                "/open/service/auth/resource/member/$projectId" +
+                "/getResourceUsers?resourceCode=$resourceCode&resourceType=$resourceType"
         val headers = getCommonHeaders(projectId)
 
-        val result = OkhttpUtils.doGet(url, headers)
+        val result = OkhttpUtils.doGetWithResp(url, headers)
         val resultRspObj = JsonUtil.to(result, object : TypeReference<Result<List<AuthRoleUserDetail>>>() {})
 
         val userSet = mutableSetOf<String>()
@@ -405,6 +421,7 @@ class RBACAuthPermissionApi(
                     resourceType = rbacAuthProperties.rbacResourceType!!
                 ).toSet()
             }
+
             else -> {
                 queryResourceUsersGroupByRole(
                     projectId = projectId,
@@ -431,6 +448,7 @@ class RBACAuthPermissionApi(
                     resourceType = rbacAuthProperties.pipeLineResourceType!!
                 ).toSet()
             }
+
             else -> {
                 queryResourceUsersGroupByRole(
                     projectId = projectId,

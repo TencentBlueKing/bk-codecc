@@ -50,8 +50,16 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @EqualsAndHashCode(callSuper = true)
 @Document(collection = "t_task_detail")
 @CompoundIndexes({
-        @CompoundIndex(name = "project_id_1_create_from_1", def = "{'project_id': 1, 'create_from': 1}",
-                background = true)
+        @CompoundIndex(
+                name = "project_id_1_create_from_1",
+                def = "{'project_id': 1, 'create_from': 1}",
+                background = true
+        ),
+        @CompoundIndex(
+                name = "test_tool_1_test_stage_1_project_id_1",
+                def = "{'test_tool': 1, 'test_stage': 1, 'project_id': 1}",
+                background = true
+        )
 })
 public class TaskInfoEntity extends CommonEntity {
 
@@ -100,7 +108,7 @@ public class TaskInfoEntity extends CommonEntity {
     private List<String> taskViewer;
 
     /**
-     * 任务状态，0-启用，1-停用
+     * 任务状态，0-启用，1-停用，3-测试
      */
     @Field("status")
     @Indexed(background = true)
@@ -203,6 +211,12 @@ public class TaskInfoEntity extends CommonEntity {
     @Indexed
     @Field("bg_id")
     private int bgId;
+
+    /**
+     * 业务线id
+     */
+    @Field("business_line_id")
+    private Integer businessLineId;
 
     /**
      * 部门id
@@ -471,4 +485,29 @@ public class TaskInfoEntity extends CommonEntity {
      */
     @Field("file_cache_enable")
     private Boolean fileCacheEnable;
+
+    /**
+     * 该任务用于哪个测试阶段, NOP 或者为空代表不是测试任务.
+     * 详见 ComConstants.ToolTestStage
+     */
+    @Field("test_stage")
+    private Integer testStage;
+
+    /**
+     * 该字段只对测试任务有效, 指示该任务测试的是哪个工具
+     */
+    @Field("test_tool")
+    private String testTool;
+
+    /**
+     * 该字段只对测试任务有效, 指示该任务的测试版本
+     */
+    @Field("test_version")
+    private String testVersion;
+
+    /**
+     * 是否参与开源扫描计分
+     */
+    @Field("opensource_score")
+    private Boolean openSourceScore;
 }

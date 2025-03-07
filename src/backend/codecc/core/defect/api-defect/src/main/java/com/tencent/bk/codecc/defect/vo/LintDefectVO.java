@@ -150,6 +150,15 @@ public class LintDefectVO {
     @ApiModelProperty("告警评论")
     private CodeCommentVO codeComment;
 
+    @ApiModelProperty("是否有告警评论")
+    private Boolean hasCodeComment;
+
+    @ApiModelProperty("代码库路径")
+    private String url;
+
+    @ApiModelProperty("分支名称")
+    private String branch;
+
     @ApiModelProperty("版本号")
     private String revision;
 
@@ -164,4 +173,19 @@ public class LintDefectVO {
 
     @ApiModelProperty("提交人")
     private String commitAuthor;
+
+    @ApiModelProperty("忽略审批ID")
+    private String ignoreApprovalId;
+
+    @ApiModelProperty("忽略审批状态 - 0 进行中  1 成功  2失败 - 没有审批记录时为空")
+    private Integer ignoreApprovalStatus;
+
+    @ApiModelProperty("忽略审批链接")
+    private String ignoreApprovalUrl;
+
+    @ApiModelProperty("忽略审批人类型")
+    private String ignoreApproverType;
+
+    @ApiModelProperty("忽略审批 - 自定义审批人")
+    private List<String> customIgnoreApprovers;
 }

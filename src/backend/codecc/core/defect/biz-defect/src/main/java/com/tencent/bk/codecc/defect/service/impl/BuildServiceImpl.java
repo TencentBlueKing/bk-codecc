@@ -12,18 +12,35 @@
  
 package com.tencent.bk.codecc.defect.service.impl;
 
+import com.tencent.bk.codecc.defect.api.ServiceCheckerSetRestResource;
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildRepository;
+import com.tencent.bk.codecc.defect.dao.defect.mongorepository.TaskLogRepository;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.BuildDao;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
+import com.tencent.bk.codecc.defect.model.CheckerSetsVersionInfoEntity;
+import com.tencent.bk.codecc.defect.model.TaskLogEntity;
 import com.tencent.bk.codecc.defect.service.BuildService;
 import com.tencent.bk.codecc.defect.vo.common.BuildVO;
+import com.tencent.bk.codecc.task.vo.TaskDetailVO;
+import com.tencent.devops.common.api.checkerset.CheckerSetVO;
+import com.tencent.devops.common.api.exception.CodeCCException;
+import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.client.Client;
+import com.tencent.devops.common.constant.CommonMessageCode;
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.Collections;
+import java.util.ArrayList;
+
 
 /**
  * 构建逻辑实现层
@@ -35,19 +52,31 @@ import java.util.List;
 public class BuildServiceImpl implements BuildService {
 
     private static final Logger logger = LoggerFactory.getLogger(BuildServiceImpl.class);
-
+    @Autowired
+    private Client client;
     @Autowired
     private BuildDao buildDao;
-
     @Autowired
     private BuildRepository buildRepository;
+    @Autowired
+    private TaskLogRepository taskLogRepository;
 
     @Override
     public BuildVO upsertAndGetBuildInfo(BuildVO buildVO) {
-        logger.info("start to upsert build info, build id: {}", buildVO.getBuildId());
+        logger.info("start to upsert build info, task id,:{} build id: {}",
+                buildVO.getTaskId(), buildVO.getBuildId());
         BuildEntity buildEntity = new BuildEntity();
         BeanUtils.copyProperties(buildVO, buildEntity);
         buildEntity.setBuildNo(buildVO.getBuildNum());
+
+        // 获取当前构建任务使用的规则集和版本信息
+        List<CheckerSetsVersionInfoEntity> checkerSetsVersionInfo = null;
+        Long taskId = buildVO.getTaskId();
+        if (taskId != null) {
+            checkerSetsVersionInfo = getCheckerSetsVersionByTaskId(taskId);
+            buildEntity.setCheckerSetsVersion(checkerSetsVersionInfo);
+        }
+
         buildEntity = buildDao.upsertBuildInfo(buildEntity);
         if (null == buildEntity) {
             return null;
@@ -76,7 +105,81 @@ public class BuildServiceImpl implements BuildService {
     }
 
     @Override
+    public BuildEntity getBuildEntityByBuildIdAndTaskId(String buildId, Long taskId) {
+        return buildRepository.findFirstByBuildIdAndTaskId(buildId, taskId);
+    }
+
+    @Override
     public List<BuildEntity> getBuildEntityInBuildIds(List<String> buildIds) {
         return buildRepository.findByBuildIdIn(buildIds);
+    }
+
+    @Override
+    public String getBuildInfo(String buildId, Long taskId, String toolName, TaskDetailVO taskDetailVO,
+            Set<String> whitePaths) {
+        String buildNum = null;
+        // 先从 t_build 表查 buildNum, 因为后面还需要使用这个 buildEntitys, 可以最大化复用
+        List<BuildEntity> buildEntitys = buildDao.findByBuildId(buildId);
+        if (CollectionUtils.isNotEmpty(buildEntitys)) {
+            // 直接取第一个 entity 的 build number 即可
+            buildNum = buildEntitys.get(0).getBuildNo();
+        }
+        // 查不到再从 t_task_log 查
+        if (buildNum == null) {
+            TaskLogEntity taskLogEntity =
+                    taskLogRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
+            if (taskLogEntity != null) {
+                buildNum = taskLogEntity.getBuildNum();
+            }
+        }
+
+        // 获取白名单
+        // 在新的白名单处理逻辑中, t_build 记录 task id 和 whitePaths
+        Optional<BuildEntity> buildEntity = buildEntitys.stream()
+                .filter(it -> it.getTaskId().equals(taskId))
+                .findFirst();
+        if (buildEntity.isPresent() && buildEntity.get().getWhitePaths() != null) {
+            whitePaths.addAll(buildEntity.get().getWhitePaths());
+        } else if (taskDetailVO != null && taskDetailVO.getWhitePaths() != null) {
+            // 向后兼容. 这是以前获取白名单的方式
+            whitePaths.addAll(taskDetailVO.getWhitePaths());
+        }
+
+        return buildNum;
+    }
+
+    @Override
+    public Set<String> getWhitePaths(String buildId, TaskDetailVO taskVO) {
+        // 新的白名单方案是从 t_build 中获取
+        Set<String> whitePaths = buildDao.getWhitePathsByTaskIdAndBuildId(taskVO.getTaskId(), buildId);
+        if (whitePaths == null) {
+            whitePaths = new HashSet<>();
+            // 向后兼容, 以前是直接使用 t_task_detail 中的白名单信息
+            if (CollectionUtils.isNotEmpty(taskVO.getWhitePaths())) {
+                whitePaths.addAll(taskVO.getWhitePaths());
+            }
+        }
+
+        return whitePaths;
+    }
+
+    private List<CheckerSetsVersionInfoEntity> getCheckerSetsVersionByTaskId(long taskId) {
+        Result<List<CheckerSetVO>> result = client.get(ServiceCheckerSetRestResource.class).getCheckerSets(taskId);
+        if (result.isNotOk() || result.getData() == null) {
+            String errorMsg = "保存构建信息时，获取规则集版本失败: " + taskId;
+            logger.error(errorMsg);
+            throw new CodeCCException(CommonMessageCode.INTERNAL_SERVICE_ERROR, new String[]{errorMsg}, null);
+        }
+        List<CheckerSetVO> taskCheckerSetList = result.getData();
+        List<CheckerSetsVersionInfoEntity> checkerSetsVersionInfoEntityList =
+                new ArrayList<>(Collections.emptyList());
+        if (CollectionUtils.isNotEmpty(taskCheckerSetList)) {
+            for (CheckerSetVO checkerSetVO : taskCheckerSetList) {
+                CheckerSetsVersionInfoEntity checkerSetsVersionInfoEntity = new CheckerSetsVersionInfoEntity();
+                BeanUtils.copyProperties(checkerSetVO, checkerSetsVersionInfoEntity);
+                checkerSetsVersionInfoEntityList.add(checkerSetsVersionInfoEntity);
+            }
+        }
+        return checkerSetsVersionInfoEntityList.isEmpty() ? Collections.emptyList() : checkerSetsVersionInfoEntityList;
     }
 }

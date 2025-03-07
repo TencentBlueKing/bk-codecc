@@ -2,10 +2,13 @@ package com.tencent.bk.codecc.defect.dao.core.mongotemplate;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.tencent.bk.codecc.defect.model.CheckerSetsVersionInfoEntity;
+import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetCatagoryEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
 import com.tencent.bk.codecc.defect.pojo.CheckerMaxVersionAggModel;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetCategory;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetSource;
+import com.tencent.devops.common.api.checkerset.CheckerSetsVersionInfoVO;
 import com.tencent.devops.common.constant.CheckerConstants;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
@@ -52,6 +55,8 @@ public class CheckerSetDao {
 
     @Autowired
     private MongoTemplate defectCoreMongoTemplate;
+
+    private static final String COLLECTION_NAME = "t_checker_set";
 
     /**
      * 更新指定规则集所有版本数据
@@ -342,7 +347,7 @@ public class CheckerSetDao {
             aggOptions.add(limit);
         }
         Aggregation agg = Aggregation.newAggregation(aggOptions);
-        AggregationResults<CheckerSetEntity> queryResult = defectCoreMongoTemplate.aggregate(agg, "t_checker_set",
+        AggregationResults<CheckerSetEntity> queryResult = defectCoreMongoTemplate.aggregate(agg, COLLECTION_NAME,
                 CheckerSetEntity.class);
 
         List<CheckerSetEntity> retList = queryResult.getMappedResults();
@@ -364,6 +369,26 @@ public class CheckerSetDao {
         query.addCriteria(Criteria.where("checker_set_id").in(checkerSetIdList)
                 .and("tool_integrated_status").in(versionList));
         return defectCoreMongoTemplate.find(query, CheckerSetEntity.class);
+    }
+
+    /**
+     * 批量查找指定版本的规则集列表
+     */
+    public List<CheckerSetEntity> findByCheckerSetIdAndVersionIn(
+            Set<String> toolNameSet,
+            List<CheckerSetsVersionInfoVO> checkerSetVersionList
+    ) {
+        List<Criteria> orCriteriaList = new ArrayList<>();
+        for (CheckerSetsVersionInfoVO checkerSetVersion : checkerSetVersionList) {
+            Criteria criteria = Criteria.where("checker_set_id").is(checkerSetVersion.getCheckerSetId())
+                    .and("version").is(checkerSetVersion.getVersion());
+            orCriteriaList.add(criteria);
+        }
+        Criteria cri = new Criteria().orOperator(orCriteriaList.toArray(new Criteria[0]));
+        if (CollectionUtils.isNotEmpty(toolNameSet)) {
+            cri.and("checker_props").elemMatch(Criteria.where("tool_name").in(toolNameSet));
+        }
+        return defectCoreMongoTemplate.find(Query.query(cri), CheckerSetEntity.class);
     }
 
     /**
@@ -390,7 +415,7 @@ public class CheckerSetDao {
         }
         query.addCriteria(criteria);
 
-        return defectCoreMongoTemplate.find(query, CheckerSetEntity.class, "t_checker_set");
+        return defectCoreMongoTemplate.find(query, CheckerSetEntity.class, COLLECTION_NAME);
     }
 
 
@@ -403,7 +428,7 @@ public class CheckerSetDao {
     public CheckerSetEntity queryCheckerSetNameByCheckerSetId(String checkerSetId) {
         CheckerSetEntity checkerSetEntity = defectCoreMongoTemplate
                 .findOne(new Query(Criteria.where("checker_set_id").is(checkerSetId)), CheckerSetEntity.class,
-                        "t_checker_set");
+                        COLLECTION_NAME);
         return checkerSetEntity;
     }
 
@@ -422,7 +447,7 @@ public class CheckerSetDao {
         GroupOperation group = Aggregation.group("checker_set_id").max("version").as("maxVersion");
         AggregationResults<CheckerMaxVersionAggModel> retAgg = defectCoreMongoTemplate.aggregate(
                 Aggregation.newAggregation(match, group),
-                "t_checker_set",
+                COLLECTION_NAME,
                 CheckerMaxVersionAggModel.class
         );
 
@@ -461,5 +486,41 @@ public class CheckerSetDao {
 
         int modifiedCount = ops.execute().getModifiedCount();
         return (long) modifiedCount;
+    }
+
+    /**
+     * OP修改这些信息需要同步该规则集的所有版本
+     */
+    public long updateInfoByCheckerSetId(String updater, String checkerSetId, String checkerSetName, String creator,
+            List<CheckerSetCatagoryEntity> catagories, String checkerSetSource, String description) {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("checker_set_id").is(checkerSetId));
+
+        Update update = new Update();
+        if (StringUtils.isNotBlank(checkerSetName)) {
+            update.set("checker_set_name", checkerSetName);
+        }
+
+        if (StringUtils.isNotBlank(creator)) {
+            update.set("creator", creator);
+        }
+
+        if (CollectionUtils.isNotEmpty(catagories)) {
+            update.set("catagories", catagories);
+        }
+
+        if (StringUtils.isNotBlank(checkerSetSource)) {
+            update.set("checker_set_source", checkerSetSource);
+        }
+
+        if (StringUtils.isNotBlank(description)) {
+            update.set("description", description);
+        }
+        // 审计字段
+        update.set("updated_by", updater);
+        update.set("last_update_time", System.currentTimeMillis());
+
+        return defectCoreMongoTemplate.updateMulti(query, update, CheckerSetEntity.class, COLLECTION_NAME)
+                .getModifiedCount();
     }
 }

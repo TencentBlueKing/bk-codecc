@@ -10,15 +10,17 @@ import com.tencent.devops.common.auth.api.util.AuthActionConvertUtils
 import com.tencent.devops.common.client.Client
 import org.springframework.data.redis.core.RedisTemplate
 
-class GithubAuthExPermissionApi(client: Client,
-                                redisTemplate: RedisTemplate<String, String>,
-                                private val authTaskService: AuthTaskService,
-                                private val properties : GithubAuthProperties)
-    : AbstractAuthExPermissionApi(
+class GithubAuthExPermissionApi(
+    client: Client,
+    redisTemplate: RedisTemplate<String, String>,
+    private val authTaskService: AuthTaskService,
+    private val properties: GithubAuthProperties
+) : AbstractAuthExPermissionApi(
     client,
-    redisTemplate) {
+    redisTemplate
+) {
 
-    override fun  queryPipelineListForUser(user: String, projectId: String, actions: Set<String>): Set<String> {
+    override fun queryPipelineListForUser(user: String, projectId: String, actions: Set<String>): Set<String> {
         val result = client.getDevopsService(ServicePermissionAuthResource::class.java)
             .getUserResourcesByPermissions(
                 user, properties.token ?: "", null, actions.toList(), projectId,
@@ -27,7 +29,7 @@ class GithubAuthExPermissionApi(client: Client,
         if (result.isNotOk() || result.data.isNullOrEmpty()) {
             return emptySet()
         }
-        result.data!!.all { entry -> entry.value.contains("*")}
+        result.data!!.all { entry -> entry.value.contains("*") }
         return authTaskService.queryPipelineListByProjectId(projectId)
     }
 
@@ -59,17 +61,27 @@ class GithubAuthExPermissionApi(client: Client,
         return authTaskService.queryTaskUserListForAction(taskId, projectId, actions)
     }
 
-    override fun validatePipelineBatchPermission(user: String, pipelineId: String, projectId: String, actions: Set<String>): List<BkAuthExResourceActionModel> {
-        val pipelineIds = queryPipelineListForUser(user,projectId,actions)
-        if(pipelineIds.isNotEmpty() && pipelineIds.contains(pipelineId)){
+    override fun validatePipelineBatchPermission(
+        user: String,
+        pipelineId: String,
+        projectId: String,
+        actions: Set<String>
+    ): List<BkAuthExResourceActionModel> {
+        val pipelineIds = queryPipelineListForUser(user, projectId, actions)
+        if (pipelineIds.isNotEmpty() && pipelineIds.contains(pipelineId)) {
             return listOf(BkAuthExResourceActionModel("", "", listOf(), true))
         }
         return listOf(BkAuthExResourceActionModel("", "", listOf(), false))
     }
 
-    override fun validateTaskBatchPermission(user: String, taskId: String, projectId: String, actions: Set<String>): List<BkAuthExResourceActionModel> {
-        val taskIds = queryTaskListForUser(user,projectId,actions)
-        if(taskIds.isNotEmpty() && taskIds.contains(taskId)){
+    override fun validateTaskBatchPermission(
+        user: String,
+        taskId: String,
+        projectId: String,
+        actions: Set<String>
+    ): List<BkAuthExResourceActionModel> {
+        val taskIds = queryTaskListForUser(user, projectId, actions)
+        if (taskIds.isNotEmpty() && taskIds.contains(taskId)) {
             return listOf(BkAuthExResourceActionModel("", "", listOf(), true))
         }
         return listOf(BkAuthExResourceActionModel(isPass = true))
@@ -79,6 +91,10 @@ class GithubAuthExPermissionApi(client: Client,
         return false
     }
 
+    override fun getProjectManager(projectId: String): List<String> {
+        return emptyList()
+    }
+
     override fun authProjectMultiManager(projectId: String, user: String): Boolean {
         return false
     }
@@ -86,6 +102,4 @@ class GithubAuthExPermissionApi(client: Client,
     override fun authProjectRole(projectId: String, user: String, role: String?): Boolean {
         return false
     }
-
-
 }

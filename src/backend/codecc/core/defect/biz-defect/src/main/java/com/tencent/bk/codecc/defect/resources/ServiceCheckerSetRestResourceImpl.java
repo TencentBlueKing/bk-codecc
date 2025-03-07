@@ -13,12 +13,13 @@ import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.web.RestResource;
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import org.apache.commons.collections.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * 规则包接口实现类
@@ -68,6 +69,15 @@ public class ServiceCheckerSetRestResourceImpl implements ServiceCheckerSetRestR
     public Result<Boolean> setRelationships(String checkerSetId, String user,
             CheckerSetRelationshipVO checkerSetRelationshipVO) {
         checkerSetManageBizService.setRelationships(checkerSetId, user, checkerSetRelationshipVO);
+        return new Result<>(true);
+    }
+
+    @Override
+    public Result<Boolean> batchSetRelationships(String user, CheckerSetRelationshipVO checkerSetRelationshipVO) {
+        checkerSetRelationshipVO.getCheckerSetIds().forEach(checkerSetId ->
+                checkerSetManageBizService.setRelationships(checkerSetId, user, checkerSetRelationshipVO)
+        );
+
         return new Result<>(true);
     }
 

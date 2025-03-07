@@ -26,22 +26,22 @@
 
 package com.tencent.bk.codecc.task.resources;
 
+import com.tencent.bk.audit.annotations.AuditEntry;
 import com.tencent.bk.codecc.task.api.BuildToolMetaRestResource;
-import com.tencent.bk.codecc.task.api.BuildToolRestResource;
-import com.tencent.bk.codecc.task.service.AnalyzeConfigService;
 import com.tencent.bk.codecc.task.service.ToolMetaService;
-import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
-import com.tencent.bk.codecc.task.vo.pipeline.PipelineBuildInfoVO;
+import com.tencent.devops.common.api.BKToolBasicInfoVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
 import com.tencent.devops.common.api.constant.CommonMessageCode;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.constant.audit.ActionIds;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import com.tencent.devops.common.web.RestResource;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * 工具元数据注册接口
@@ -59,6 +59,7 @@ public class BuildToolMetaRestResourceImpl implements BuildToolMetaRestResource 
     private ToolMetaCacheService toolMetaCacheService;
 
     @Override
+    @AuditEntry(actionId = ActionIds.REGISTER_TOOL)
     public Result<ToolMetaDetailVO> register(String userName, ToolMetaDetailVO toolMetaDetailVO) {
         return new Result<>(toolMetaService.register(userName, toolMetaDetailVO));
     }
@@ -73,7 +74,12 @@ public class BuildToolMetaRestResourceImpl implements BuildToolMetaRestResource 
         if (StringUtils.isBlank(toolName)) {
             throw new CodeCCException(CommonMessageCode.ERROR_INVALID_PARAM_);
         }
-        return new Result<>(toolMetaCacheService.getToolDetailFromCache(toolName.toUpperCase()));
+        return new Result<>(toolMetaCacheService.getToolDetailFromCache(toolName.toUpperCase(Locale.ENGLISH)));
+    }
+
+    @Override
+    public Result<BKToolBasicInfoVO> getBasicInfo(String toolName) {
+        return new Result<>(toolMetaService.getBKToolBasicInfo(toolName));
     }
 
 }

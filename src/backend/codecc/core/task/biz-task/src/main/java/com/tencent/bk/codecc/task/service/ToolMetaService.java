@@ -27,10 +27,12 @@
 package com.tencent.bk.codecc.task.service;
 
 import com.tencent.bk.codecc.task.vo.gongfeng.ToolVersionExtVO;
+import com.tencent.devops.common.api.BKToolBasicInfoVO;
 import com.tencent.devops.common.api.RefreshDockerImageHashReqVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
+
 import java.util.List;
 
 /**
@@ -92,6 +94,15 @@ public interface ToolMetaService {
      */
     String getSCCLangFilterForPreCI();
 
+    /**
+     * 获取工具基本信息 (for 蓝鲸插件开发者中心)
+     *
+     * @date 2024/10/9
+     * @param toolName
+     * @return com.tencent.devops.common.api.BKToolBasicInfoVO
+     */
+    BKToolBasicInfoVO getBKToolBasicInfo(String toolName);
+
     Boolean updateOpenSourceToolVersionInfo(ToolVersionExtVO reqVO, String userName);
 
     List<ToolMetaDetailVO> getToolsByPattern(String pattern);
@@ -102,5 +113,14 @@ public interface ToolMetaService {
      * @return
      */
     List<ToolMetaDetailVO> getToolsByToolName(List<String> toolNameList);
+
+    /**
+     * 根据 t_tool_meta 的 lang 字段解析出工具支持的语言(cloc lang name)列表
+     *
+     * @date 2024/10/9
+     * @param langDigits
+     * @return java.util.List<java.lang.String>
+     */
+    List<String> getLangNamesByLangDigits(Long langDigits);
 
 }

@@ -6,8 +6,8 @@
       }}</span>
       <!-- <span v-if="data.lastAnalysisResult" class="card-split">|</span> -->
       <!-- <a class="card-analys" href="javascript:;" @click.stop="toLogs">{{$t('分析详情')}}>></a> -->
-      <span v-if="data.lastAnalysisResult" class="card-type">{{
-        toolMap[data.toolName] && toolType[toolMap[data.toolName].type]
+      <span v-if="data.lastAnalysisResult" v-for="(type, index) in data.toolTypes" :key="index" class="card-type">{{
+        toolMap[data.toolName] && toolType[type]
       }}</span>
       <span v-if="data.lastAnalysisResult" class="card-time">
         <span v-if="stepStatus === 3"
@@ -353,6 +353,43 @@
         </bk-row>
       </bk-container>
 
+      <bk-container
+        class="card-content"
+        :col="4"
+        v-else-if="data.toolName === 'PECKER_SCA'"
+      >
+        <bk-row class="card-num">
+          <bk-col>
+            <a @click="toList({}, 'sca-pkg')">
+              {{ data.lastAnalysisResult.packageCount === undefined
+                ? '--'
+                : handleBigNum(data.lastAnalysisResult.packageCount) }}
+            </a>
+          </bk-col>
+          <!-- 隐藏漏洞数 -->
+          <!-- <bk-col>
+            <a @click="toList({}, 'sca-vuln')">
+              {{ data.lastAnalysisResult.newVulCount === undefined
+                ? '--'
+                : handleBigNum(data.lastAnalysisResult.newVulCount) }}
+            </a>
+          </bk-col> -->
+          <bk-col>
+            <a @click="toList({}, 'sca-lic')">
+              {{ data.lastAnalysisResult.licenseCount === undefined
+                ? '--'
+                : handleBigNum(data.lastAnalysisResult.licenseCount) }}
+            </a>
+          </bk-col>
+        </bk-row>
+        <bk-row class="card-txt">
+          <bk-col>{{ $t('组件数') }}</bk-col>
+          <!-- 隐藏漏洞数 -->
+          <!-- <bk-col>{{ $t('漏洞数') }}</bk-col> -->
+          <bk-col>{{ $t('许可证数') }}</bk-col>
+        </bk-row>
+      </bk-container>
+
       <bk-container class="card-content" :col="4" v-else>
         <bk-row class="card-num">
           <bk-col
@@ -507,7 +544,7 @@ export default {
         params,
       });
     },
-    toList(query = {}) {
+    toList(query = {}, name = '') {
       let routerName = '';
       switch (this.data.toolName) {
         case 'CCN':
@@ -527,6 +564,9 @@ export default {
           break;
         case 'PINPOINT':
           routerName = 'defect-coverity-list';
+          break;
+        case 'PECKER_SCA':
+          routerName = `defect-${name}-list`;
           break;
         default:
           routerName = 'defect-lint-list';
@@ -716,6 +756,7 @@ export default {
     }
 
     >>> .empty .empty-img {
+      display: inline-block;
       width: 110px;
     }
   }

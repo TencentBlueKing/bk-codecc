@@ -33,6 +33,7 @@ import org.hibernate.validator.constraints.NotBlank;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 任务代码库配置
@@ -90,5 +91,22 @@ public class TaskCodeLibraryVO
      */
     @ApiModelProperty(value = "项目接入的工具列表")
     private List<ToolConfigParamJsonVO> toolConfigList;
+
+    /**
+     * 获取该任务扫描的所有仓库的 url (的拼接版)
+     *
+     * @date 2024/10/10
+     * @param
+     * @return java.lang.String
+     */
+    public String getRepoUrls() {
+        if (codeInfo == null) {
+            return "";
+        }
+
+        return codeInfo.stream()
+                .map(CodeLibraryInfoVO::getUrl)
+                .collect(Collectors.joining("\n"));     // 如果有多个 url, 每个 url 之间用 \n 分隔
+    }
 
 }

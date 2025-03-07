@@ -384,7 +384,7 @@ public class CommonDataReportBizServiceImpl extends AbstractDataReportBizService
 
             // 设置作者列表
             List<ChartAuthorBaseVO> list =
-                    MapUtils.isNotEmpty(chartAuthorMap) ? new ArrayList<>(chartAuthorMap.values()) : new ArrayList<>();
+                    MapUtils.isNotEmpty(chartAuthorMap) ? getCommonAuthorChart(chartAuthorMap) : new ArrayList<>();
             authorList.setAuthorList(list);
 
         } else {

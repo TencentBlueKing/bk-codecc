@@ -23,6 +23,9 @@ public class QueryCheckersAndAuthorsRequest {
     @QueryParam(value = "dimension")
     private List<String> dimensionList;
 
+    @ApiParam(value = "SCA维度", required = false)
+    private String scaDimension;
+
     @ApiParam(value = "告警状态，多选逗号分割", required = false)
     @QueryParam(value = "status")
     private List<String> statusList;

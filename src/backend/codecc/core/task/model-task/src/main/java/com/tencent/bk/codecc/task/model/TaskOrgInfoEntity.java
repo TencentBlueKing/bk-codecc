@@ -42,6 +42,12 @@ public class TaskOrgInfoEntity {
     private Integer bgId;
 
     /**
+     * 业务线id
+     */
+    @Field("business_line_id")
+    private Integer businessLineId;
+
+    /**
      * 部门id
      */
     @Field("dept_id")
@@ -58,4 +64,10 @@ public class TaskOrgInfoEntity {
      */
     @Field("group_id")
     private Integer groupId;
+
+    /**
+     * 工蜂项目id
+     */
+    @Field("gongfeng_project_id")
+    private Integer gongfengProjectId;
 }

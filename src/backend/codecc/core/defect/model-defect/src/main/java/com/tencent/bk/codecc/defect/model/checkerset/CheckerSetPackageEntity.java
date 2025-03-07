@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.model.checkerset;
 
 
-import com.tencent.bk.codecc.defect.model.common.OrgInfoEntity;
+import com.tencent.codecc.common.db.OrgInfoEntity;
 import com.tencent.codecc.common.db.CommonEntity;
 import java.util.List;
 import java.util.Set;
@@ -75,6 +75,12 @@ public class CheckerSetPackageEntity extends CommonEntity {
      */
     @Field("scopes")
     private List<OrgInfoEntity> scopes;
+
+    /**
+     * 可见范围-任务创建来源
+     */
+    @Field("task_create_from_scopes")
+    private List<String> taskCreateFromScopes;
 
     /**
      * 版本

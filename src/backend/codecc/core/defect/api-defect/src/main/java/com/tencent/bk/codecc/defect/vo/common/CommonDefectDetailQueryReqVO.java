@@ -29,9 +29,9 @@ package com.tencent.bk.codecc.defect.vo.common;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.tencent.bk.codecc.defect.vo.LintDefectDetailQueryReqVO;
+import com.tencent.bk.codecc.defect.vo.sca.SCADefectDetailQueryReqVO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.List;
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;
@@ -46,10 +46,12 @@ import javax.validation.constraints.NotNull;
 @Data
 @ApiModel("公共告警详情查询请求视图")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "pattern", visible = true, defaultImpl = CommonDefectDetailQueryReqVO.class)
-@JsonSubTypes({@JsonSubTypes.Type(value = LintDefectDetailQueryReqVO.class, name = "LINT")
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = LintDefectDetailQueryReqVO.class, name = "LINT"),
+        @JsonSubTypes.Type(value = SCADefectDetailQueryReqVO.class, name = "SCA")
 })
-public class CommonDefectDetailQueryReqVO
-{
+public class CommonDefectDetailQueryReqVO {
+
     @ApiModelProperty(value = "告警主键id", required = true)
     private String entityId;
 

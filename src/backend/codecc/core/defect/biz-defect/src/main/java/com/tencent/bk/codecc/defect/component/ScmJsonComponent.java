@@ -73,6 +73,11 @@ public class ScmJsonComponent {
 
     private static final String FILE_MD5_POSTFIX = "_md5.json";
 
+    /**
+     * SCA 工具副产物，漏洞信息
+     */
+    private static final String RAW_SCA_VUL_POSTFIX = "_tool_scan_sca_vul.json";
+
     @Autowired
     private Client client;
 
@@ -451,6 +456,18 @@ public class ScmJsonComponent {
         String fileIndex = getFileIndex(streamName, toolName, buildId, RAW_HEAD_FILE_POSTFIX);
         String fileContent = readFileContent(fileIndex, false);
         return fileContent;
+    }
+
+    /**
+     * 获取 SCA漏洞文件信息
+     *
+     * @param streamName
+     * @param toolName
+     * @param buildId
+     * @return
+     */
+    public String getRawScaVulIndex(String streamName, String toolName, String buildId) {
+        return getFileIndex(streamName, toolName, buildId, RAW_SCA_VUL_POSTFIX);
     }
 
 }

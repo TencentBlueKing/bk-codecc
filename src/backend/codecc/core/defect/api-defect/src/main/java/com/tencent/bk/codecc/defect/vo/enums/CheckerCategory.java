@@ -12,6 +12,8 @@
 
 package com.tencent.bk.codecc.defect.vo.enums;
 
+import org.apache.commons.lang.StringUtils;
+
 /**
  * 规则类型
  *
@@ -48,7 +50,12 @@ public enum CheckerCategory {
     /**
      * 通用
      */
-    CODE_STATISTIC("代码统计", "Code Metrics");
+    CODE_STATISTIC("代码统计", "Code Metrics"),
+
+    /**
+     * 软件成分
+     */
+    SOFTWARE_COMPOSITION("软件成分", "Software Composition");
 
     private String name;
 
@@ -65,5 +72,17 @@ public enum CheckerCategory {
 
     public String getEnName() {
         return this.enName;
+    }
+
+    public static CheckerCategory getByName(String name) {
+        if (StringUtils.isBlank(name)) {
+            return null;
+        }
+        for (CheckerCategory value : CheckerCategory.values()) {
+            if (value.name().equals(name) || value.name.equals(name)) {
+                return value;
+            }
+        }
+        return null;
     }
 }

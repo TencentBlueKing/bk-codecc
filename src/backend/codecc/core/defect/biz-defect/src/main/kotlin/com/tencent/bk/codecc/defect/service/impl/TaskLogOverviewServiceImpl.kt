@@ -12,7 +12,10 @@ import com.tencent.bk.codecc.defect.dto.WebsocketDTO
 import com.tencent.bk.codecc.defect.model.TaskLogEntity
 import com.tencent.bk.codecc.defect.model.TaskLogOverviewEntity
 import com.tencent.bk.codecc.defect.service.IQueryStatisticBizService
+import com.tencent.bk.codecc.defect.service.TaskInvalidToolDefectService
 import com.tencent.bk.codecc.defect.service.TaskLogOverviewService
+import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller
+import com.tencent.bk.codecc.defect.vo.TaskInvalidToolDefectVO
 import com.tencent.bk.codecc.defect.vo.TaskLogOverviewVO
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO
 import com.tencent.bk.codecc.defect.vo.TaskLogVO
@@ -20,19 +23,29 @@ import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
 import com.tencent.bk.codecc.task.vo.TaskDetailVO
 import com.tencent.bk.codecc.task.vo.TaskOverviewVO
+import com.tencent.devops.common.api.ToolMetaBaseVO
 import com.tencent.devops.common.api.analysisresult.BaseLastAnalysisResultVO
 import com.tencent.devops.common.api.analysisresult.ToolLastAnalysisResultVO
 import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.constant.ComConstants
+import com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom
+import com.tencent.devops.common.constant.ComConstants.DEFAULT_PLUGIN_TIMEOUT_MIN
+import com.tencent.devops.common.constant.ComConstants.ToolType
 import com.tencent.devops.common.constant.RedisKeyConstants
+import com.tencent.devops.common.constant.RedisKeyConstants.TASK_INVALID_TOOL_DEFECT
 import com.tencent.devops.common.redis.lock.RedisLock
 import com.tencent.devops.common.service.BaseDataCacheService
 import com.tencent.devops.common.service.BizServiceFactory
+import com.tencent.devops.common.service.ToolMetaCacheService
 import com.tencent.devops.common.service.utils.I18NUtils
 import com.tencent.devops.common.service.utils.PageableUtils
 import com.tencent.devops.common.web.mq.EXCHANGE_CODECCJOB_TASKLOG_WEBSOCKET
+import com.tencent.devops.common.web.mq.EXCHANGE_TASK_INVALID_TOOL_DEFECT
+import com.tencent.devops.common.web.mq.ROUTE_TASK_INVALID_TOOL_DEFECT
+import com.tencent.devops.common.web.mq.ROUTE_TASK_INVALID_TOOL_DEFECT_OPENSOURCE
 import org.apache.commons.beanutils.BeanUtils
 import org.apache.commons.collections.CollectionUtils
+import org.apache.commons.lang.StringUtils
 import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
 import org.springframework.amqp.rabbit.core.RabbitTemplate
@@ -40,8 +53,14 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Sort
 import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
+import java.time.Duration
+import java.util.Objects
 import java.util.concurrent.TimeUnit
+import java.util.function.Function
+import java.util.stream.Collectors
+import kotlin.streams.toList
 
 @Service
 class TaskLogOverviewServiceImpl @Autowired constructor(
@@ -55,7 +74,10 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
     private val taskLogAndDefectFactory: BizServiceFactory<IQueryStatisticBizService>,
     private val rabbitTemplate: RabbitTemplate,
     private val client: Client,
-    private val codeRepoInfoDao: CodeRepoInfoDao
+    private val codeRepoInfoDao: CodeRepoInfoDao,
+    private val toolMetaCacheService: ToolMetaCacheService,
+    private val thirdPartySystemCaller: ThirdPartySystemCaller,
+    private val taskInvalidToolDefectService: TaskInvalidToolDefectService
 ) : TaskLogOverviewService {
 
     /**
@@ -65,7 +87,10 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
      * @param taskLogOverviewVO
      */
     override fun saveActualExeTools(taskLogOverviewVO: TaskLogOverviewVO): Boolean {
-        logger.info("save task log overview actual tools: ${taskLogOverviewVO.taskId} | ${taskLogOverviewVO.buildId} | ${taskLogOverviewVO.tools.size}")
+        logger.info(
+            "save task log overview actual tools: ${taskLogOverviewVO.taskId} | " +
+                    "${taskLogOverviewVO.buildId} | ${taskLogOverviewVO.tools.size}"
+        )
         var taskLogOverviewEntity: TaskLogOverviewEntity? =
             taskLogOverviewRepository.findFirstByTaskIdAndBuildId(taskLogOverviewVO.taskId, taskLogOverviewVO.buildId)
         if (taskLogOverviewEntity == null) {
@@ -80,8 +105,97 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
         }
         val toolSet = taskLogOverviewVO.tools.toSet()
         taskLogOverviewEntity.toolList = toolSet.toList()
+        taskLogOverviewEntity.autoLanguageScan = taskLogOverviewVO.autoLanguageScan
         taskLogOverviewRepository.save(taskLogOverviewEntity)
+        val originToolSet = if (CollectionUtils.isNotEmpty(taskLogOverviewVO.originScanTools)) {
+            taskLogOverviewVO.originScanTools.toSet()
+        } else {
+            toolSet
+        }
+        handlerTaskInvalidTool(taskLogOverviewVO.taskId, taskLogOverviewVO.buildId, originToolSet)
         return true
+    }
+
+    /**
+     * 处理失效的工具
+     */
+    @Async("asyncTaskInvalidToolDefectHandlerExecutor")
+    fun handlerTaskInvalidTool(taskId: Long, buildId: String, actualTools: Set<String>) {
+        var invalidToolNum = 0
+        var expire = TimeUnit.MINUTES.toMillis(DEFAULT_PLUGIN_TIMEOUT_MIN)
+        try {
+            // 获取任务所有使用过的工具
+            val configTools = thirdPartySystemCaller.getTaskConfigTools(taskId)
+            if (configTools.isEmpty()) {
+                logger.info("handler task invalid tools $taskId $buildId configTools is null")
+                return
+            }
+            // 得到没有执行的工具
+            configTools.removeAll(actualTools)
+            // 过滤非LINT与CCN工具
+            val toolMetaMaps = configTools.stream().map { toolMetaCacheService.getToolBaseMetaCache(it) }
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(ToolMetaBaseVO::getName, Function.identity()))
+            val excludeDefectTools = configTools.stream().filter {
+                val toolMeta = toolMetaMaps[it]
+                toolMeta != null && StringUtils.isNotBlank(toolMeta.type) &&
+                        (ToolType.DIMENSION_FOR_LINT_PATTERN_SET.contains(toolMeta.type) ||
+                                toolMeta.type == ToolType.CCN.name)
+            }.filter {
+                // 对比工具执行时间，查看是否需要再次执行
+                hasNewTaskLogAfterLastExclude(taskId, it, buildId)
+            }.toList()
+
+            if (excludeDefectTools.isEmpty()) {
+                logger.info("handler task invalid tools $taskId $buildId excludeDefectTools is null")
+                return
+            }
+            invalidToolNum = excludeDefectTools.size
+            logger.info("handler task invalid tools $taskId $buildId $excludeDefectTools")
+            // 获取任务来源信息
+            val task = thirdPartySystemCaller.getNullableTaskInfoWithoutToolsByTaskId(taskId)
+            if (task == null) {
+                logger.info("handler task invalid tools $taskId $buildId taskIdInfo empty")
+                return
+            }
+            // 使用
+            if (task.timeout != null && task.timeout > 0) {
+                expire = TimeUnit.SECONDS.toMillis(task.timeout.toLong())
+            }
+            // 根据来源选择处理的分析服务
+            val routeKey = if (StringUtils.isBlank(task.createFrom) ||
+                !BsTaskCreateFrom.GONGFENG_SCAN.value().equals(task.createFrom)) {
+                ROUTE_TASK_INVALID_TOOL_DEFECT
+            } else {
+                ROUTE_TASK_INVALID_TOOL_DEFECT_OPENSOURCE
+            }
+            for (excludeDefectTool in excludeDefectTools) {
+                rabbitTemplate.convertAndSend(
+                    EXCHANGE_TASK_INVALID_TOOL_DEFECT, routeKey,
+                    TaskInvalidToolDefectVO(
+                        taskId, task.createFrom, buildId,
+                        excludeDefectTool, toolMetaMaps[excludeDefectTool]!!.type
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            logger.error("handler task invalid tool cause error. $taskId $buildId $actualTools", e)
+        } finally {
+            // 记录要处理的工具数量
+            if (invalidToolNum != 0) {
+                redisTemplate.opsForValue()
+                        .set("$TASK_INVALID_TOOL_DEFECT:$taskId:$buildId", invalidToolNum.toString())
+                redisTemplate.expire("$TASK_INVALID_TOOL_DEFECT:$taskId:$buildId", Duration.ofMillis(expire))
+            }
+        }
+    }
+
+    private fun hasNewTaskLogAfterLastExclude(taskId: Long, toolName: String, buildId: String): Boolean {
+        val log = taskInvalidToolDefectService.getLatestToolLog(taskId, toolName) ?: return true
+        val lastExcludeTime = log.createdDate ?: return true
+        val taskLogs = taskLogDao.findByTaskIdAndToolNameAndStartTimeGt(taskId, toolName, lastExcludeTime)
+        logger.info("$taskId $toolName $buildId query new task log size: ${taskLogs?.size ?: 0}")
+        return taskLogs != null && taskLogs.isNotEmpty()
     }
 
     /**
@@ -91,8 +205,20 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
      * @param taskId
      * @param buildId
      */
-    override fun getActualExeTools(taskId: Long, buildId: String): List<String>? {
-        return taskLogOverviewRepository.findFirstByTaskIdAndBuildId(taskId, buildId)?.toolList
+    override fun getActualExeTools(taskId: Long, buildId: String): List<String>? =
+        taskLogOverviewRepository.findFirstByTaskIdAndBuildId(taskId, buildId)?.toolList
+
+    /**
+     * 获取当前扫描实际需要执行的工具 与 是否为自动识别语言的扫描
+     *
+     * @param taskId
+     * @param buildId
+     */
+    override fun getAutoScanLangFlagAndExeTools(taskId: Long, buildId: String): Pair<Boolean, List<String>> {
+        val overview = taskLogOverviewRepository.findFirstByTaskIdAndBuildId(taskId, buildId)
+        val toolSet = overview.toolList
+        val autoScanLangFlag = overview.autoLanguageScan
+        return Pair(autoScanLangFlag ?: false, toolSet ?: emptyList())
     }
 
     /**
@@ -135,8 +261,10 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
             toolName,
             buildId
         )
-
-        logger.info("cal status, begin to get lock: $taskId $toolName $buildId ${uploadTaskLogStepVO.triggerFrom} ${uploadTaskLogStepVO.isFinish}")
+        logger.info(
+            "cal status, begin to get lock: $taskId $toolName $buildId " +
+                    "${uploadTaskLogStepVO.triggerFrom} ${uploadTaskLogStepVO.isFinish}"
+        )
         val redisLock = RedisLock(
             redisTemplate,
             "${RedisKeyConstants.TOOL_FINISH_CONFIRM_LOCK}:$taskId:$buildId",
@@ -181,8 +309,8 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
             }
 
             // 工具失败或中断，将任务状态设为失败，这里注意线程安全
-            if (taskLogEntity.flag == ComConstants.StepFlag.FAIL.value()
-                    || taskLogEntity.flag == ComConstants.StepFlag.ABORT.value()
+            if (taskLogEntity.flag == ComConstants.StepFlag.FAIL.value() ||
+                    taskLogEntity.flag == ComConstants.StepFlag.ABORT.value()
             ) {
                 logger.info("cal task status: $taskId $toolName $buildId is fail")
                 taskStatus = ComConstants.ScanStatus.FAIL.code
@@ -198,11 +326,15 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
             taskLogOverviewEntity.taskLogEntityList.add(taskLogEntity)
             taskLogOverviewEntity.taskLogEntityList =
                 taskLogOverviewEntity.taskLogEntityList.distinctBy(TaskLogEntity::getToolName)
-            logger.info("cal status, finally status is $taskStatus: $taskId $toolName $buildId ${System.currentTimeMillis()}")
+            logger.info(
+                "cal status, finally status is $taskStatus: $taskId $toolName $buildId" +
+                        " ${System.currentTimeMillis()}"
+            )
 
             logger.info(
-                "cal status, set start and end time ${uploadTaskLogStepVO.startTime}: ${taskLogOverviewEntity.startTime}" +
-                        " ${uploadTaskLogStepVO.endTime} ${taskLogOverviewEntity.endTime}"
+                "cal status, set start and end time ${uploadTaskLogStepVO.startTime}: " +
+                        "${taskLogOverviewEntity.startTime} ${uploadTaskLogStepVO.endTime}" +
+                        " ${taskLogOverviewEntity.endTime}"
             )
 
             // 设置分析 开始/结束 时间
@@ -374,6 +506,7 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
                 setAnalyzeList(taskLogOverviewVO, taskLogOverviewEntity)
                 BeanUtils.copyProperties(taskLogOverviewVO, taskLogOverviewEntity)
             }
+
             queryByBuildId -> {
                 logger.info("query by buildId: $taskId $buildId")
                 taskLogOverviewEntity =
@@ -382,6 +515,7 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
                 setAnalyzeList(taskLogOverviewVO, taskLogOverviewEntity)
                 BeanUtils.copyProperties(taskLogOverviewVO, taskLogOverviewEntity)
             }
+
             queryByBuildNum -> {
                 logger.info("query by buildNum: $taskId $buildNum")
                 taskLogOverviewEntity =
@@ -390,6 +524,7 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
                 setAnalyzeList(taskLogOverviewVO, taskLogOverviewEntity)
                 BeanUtils.copyProperties(taskLogOverviewVO, taskLogOverviewEntity)
             }
+
             queryLatestByStatus -> {
                 logger.info("query by status: $taskId $status")
                 taskLogOverviewEntity =
@@ -398,6 +533,7 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
                 setAnalyzeList(taskLogOverviewVO, taskLogOverviewEntity)
                 BeanUtils.copyProperties(taskLogOverviewVO, taskLogOverviewEntity)
             }
+
             else -> {
                 logger.info("query other: $taskId")
                 return null
@@ -415,9 +551,8 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
      * @param startTime
      * @param endTime
      */
-    override fun statTaskAnalyzeCount(taskIds: Collection<Long>, status: Int?, startTime: Long?, endTime: Long?): Int {
-        return Math.toIntExact(taskLogOverviewDao.queryTaskAnalyzeCount(taskIds, status, startTime, endTime))
-    }
+    override fun statTaskAnalyzeCount(taskIds: Collection<Long>, status: Int?, startTime: Long?, endTime: Long?): Int =
+        Math.toIntExact(taskLogOverviewDao.queryTaskAnalyzeCount(taskIds, status, startTime, endTime))
 
     /**
      * 取指定工具集中每个工具的最后一次执行成功时间点
@@ -521,6 +656,10 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
         } else {
             Maps.newHashMap()
         }
+    }
+
+    override fun reportPluginErrorInfo(taskId: Long, buildId: String, errorCode: Int?, errorType: Int?) {
+        taskLogOverviewDao.updatePluginErrorInfo(taskId, buildId, errorCode, errorType)
     }
 
     /**
@@ -714,15 +853,11 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
         var status = ComConstants.ScanStatus.SUCCESS.code
         taskLogGroup.forEach {
             when (it.flag) {
-                ComConstants.StepFlag.ABORT.value() -> {
-                    return ComConstants.ScanStatus.FAIL.code
-                }
-                ComConstants.StepFlag.FAIL.value() -> {
-                    return ComConstants.ScanStatus.FAIL.code
-                }
-                ComConstants.StepFlag.PROCESSING.value() -> {
-                    status = ComConstants.ScanStatus.PROCESSING.code
-                }
+                ComConstants.StepFlag.ABORT.value() -> return ComConstants.ScanStatus.FAIL.code
+
+                ComConstants.StepFlag.FAIL.value() -> return ComConstants.ScanStatus.FAIL.code
+
+                ComConstants.StepFlag.PROCESSING.value() -> status = ComConstants.ScanStatus.PROCESSING.code
             }
         }
 

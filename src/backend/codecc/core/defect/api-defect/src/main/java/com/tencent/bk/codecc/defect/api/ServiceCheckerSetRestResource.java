@@ -143,6 +143,17 @@ public interface ServiceCheckerSetRestResource
                     CheckerSetRelationshipVO checkerSetRelationshipVO
     );
 
+    @ApiOperation("批量地将多个规则集关联到一个项目或任务")
+    @Path("/batchSet/relationships")
+    @POST
+    Result<Boolean> batchSetRelationships(
+            @ApiParam(value = "用户 id", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String user,
+            @ApiParam(value = "规则集关联到项目或任务", required = true)
+            CheckerSetRelationshipVO checkerSetRelationshipVO
+    );
+
     @ApiOperation("根据规则ID列表查询规则集")
     @Path("/project/openscan/checkerSet")
     @POST

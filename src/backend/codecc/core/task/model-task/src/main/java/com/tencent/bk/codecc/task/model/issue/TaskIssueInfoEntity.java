@@ -68,4 +68,16 @@ public class TaskIssueInfoEntity extends CommonEntity {
 
     @Field("severities")
     private Set<Integer> severities;
+
+    /**
+     * 授权人，新增字段，非所有数据有
+     */
+    @Field("auth_by")
+    private String authBy;
+
+    /**
+     * 用于存储该授权的时间
+     */
+    @Field("auth_timestamp")
+    private Long authTimestamp;
 }

@@ -82,7 +82,7 @@
           ></div>
         </div>
         <div class="authors-table">
-          <div class="table">
+          <div>
             <bk-table :data="existAuthorsTableData" :outer-border="false">
               <bk-table-column
                 :label="$t('问题处理人')"
@@ -174,7 +174,7 @@
             ></div>
           </div>
           <div class="trend-table small">
-            <div class="table">
+            <div>
               <bk-table
                 :data="trendNewTableData.slice(0, midLength)"
                 :outer-border="false"
@@ -210,7 +210,7 @@
             </div>
           </div>
           <div class="trend-table small">
-            <div class="table">
+            <div>
               <bk-table
                 :data="
                   trendNewTableData.slice(midLength, trendNewTableData.length)
@@ -259,7 +259,7 @@
             ></div>
           </div>
           <div class="trend-table small">
-            <div class="table">
+            <div>
               <bk-table
                 :data="trendFixedTableData.slice(0, midLength)"
                 :outer-border="false"
@@ -310,7 +310,7 @@
             </div>
           </div>
           <div class="trend-table small">
-            <div class="table">
+            <div>
               <bk-table
                 :data="
                   trendFixedTableData.slice(

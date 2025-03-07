@@ -34,6 +34,7 @@ import com.tencent.bk.codecc.task.dao.mongotemplate.BaseDataDao;
 import com.tencent.bk.codecc.task.model.BaseDataEntity;
 import com.tencent.bk.codecc.task.service.BaseDataService;
 import com.tencent.bk.codecc.task.vo.DefaultFilterPathVO;
+import com.tencent.bk.codecc.task.vo.GithubSyncVO;
 import com.tencent.bk.codecc.task.vo.ReleaseDateVO;
 import com.tencent.bk.codecc.task.vo.pipeline.PipelineTaskLimitVO;
 import com.tencent.devops.common.api.BaseDataVO;
@@ -46,11 +47,13 @@ import com.tencent.devops.common.constant.ComConstants.CheckerSetPackageType;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.utils.PageableUtils;
 import com.tencent.devops.common.util.BeanUtils;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import jodd.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -136,7 +139,7 @@ public class BaseDataServiceImpl implements BaseDataService {
 
     @Override
     public List<BaseDataVO> findBaseDataInfoByTypeAndCodeAndValue(String paramType, String paramCode,
-            String paramValue) {
+                                                                  String paramValue) {
         List<BaseDataEntity> baseDataEntityList = baseDataRepository.findAllByParamTypeAndParamCodeAndParamValue(
                 paramType, paramCode, paramValue);
         return null == baseDataEntityList ? new ArrayList<>() : baseDataEntityList.stream()
@@ -229,7 +232,7 @@ public class BaseDataServiceImpl implements BaseDataService {
      * 更新管理员名单
      *
      * @param baseDataVO vo
-     * @param userName user
+     * @param userName   user
      * @return boolean
      */
     @Override
@@ -310,7 +313,7 @@ public class BaseDataServiceImpl implements BaseDataService {
      * 编辑PreCI规则集配置
      *
      * @param userName 用户名
-     * @param reqVO 请求体
+     * @param reqVO    请求体
      * @return boolean
      */
     @Override
@@ -398,7 +401,7 @@ public class BaseDataServiceImpl implements BaseDataService {
     /**
      * 获取内网开源治理发布日期
      *
-     * @param manageType 管理类型 内外网、EPC
+     * @param manageType  管理类型 内外网、EPC
      * @param versionType 版本类型 PRE_PROD:预发布
      * @return vo
      */
@@ -449,6 +452,24 @@ public class BaseDataServiceImpl implements BaseDataService {
             } else {
                 paramCode = ComConstants.PROD_TENCENT_PRIVATE_CHECKER_SET_TIME_GAP;
             }
+        } else if (CheckerSetPackageType.GITHUB_OPEN_SCAN.value().equals(manageType)) {
+            if (ComConstants.ToolIntegratedStatus.PRE_PROD.name().equalsIgnoreCase(versionType)) {
+                paramCode = ComConstants.PRE_PROD_TENCENT_GITHUB_OPENSOURCE_CHECKER_SET_TIME_GAP;
+            } else {
+                paramCode = ComConstants.PROD_TENCENT_GITHUB_OPENSOURCE_CHECKER_SET_TIME_GAP;
+            }
+        } else if (CheckerSetPackageType.TEG_AMS_SCAN.value().equals(manageType)) {
+            if (ComConstants.ToolIntegratedStatus.PRE_PROD.name().equalsIgnoreCase(versionType)) {
+                paramCode = ComConstants.PRE_PROD_TENCENT_TEG_AMS_CHECKER_SET_TIME_GAP;
+            } else {
+                paramCode = ComConstants.PROD_TENCENT_TEG_AMS_CHECKER_SET_TIME_GAP;
+            }
+        } else if (CheckerSetPackageType.COMMUNITY_OPEN_SCAN_V2.value().equals(manageType)) {
+            if (ComConstants.ToolIntegratedStatus.PRE_PROD.name().equalsIgnoreCase(versionType)) {
+                paramCode = ComConstants.PRE_PROD_TENCENT_COMMUNITY_OPENSOURCE_V2_CHECKER_SET_TIME_GAP;
+            } else {
+                paramCode = ComConstants.PROD_TENCENT_COMMUNITY_OPENSOURCE_V2_CHECKER_SET_TIME_GAP;
+            }
         } else {
             // 默认内网开源
             if (ComConstants.ToolIntegratedStatus.PRE_PROD.name().equalsIgnoreCase(versionType)) {
@@ -463,7 +484,7 @@ public class BaseDataServiceImpl implements BaseDataService {
     /**
      * 更新内网开源治理发布日期
      *
-     * @param reqVO 请求体
+     * @param reqVO    请求体
      * @param userName 更新人
      * @return boolean
      */
@@ -506,15 +527,15 @@ public class BaseDataServiceImpl implements BaseDataService {
      * 分页获取系统默认屏蔽路径列表
      *
      * @param paramValue 搜索参数
-     * @param pageNum 页码
-     * @param pageSize 每页数量
-     * @param sortField 排序字段
-     * @param sortType 排序类型
+     * @param pageNum    页码
+     * @param pageSize   每页数量
+     * @param sortField  排序字段
+     * @param sortType   排序类型
      * @return page
      */
     @Override
     public Page<DefaultFilterPathVO> getDefaultFilterPathList(String paramValue, Integer pageNum, Integer pageSize,
-            String sortField, String sortType) {
+                                                              String sortField, String sortType) {
         log.info("getDefaultShieldingPath paramValue: [{}], pageNum: [{}], pageSize:[{}]", paramValue, pageNum,
                 pageSize);
 
@@ -570,7 +591,7 @@ public class BaseDataServiceImpl implements BaseDataService {
      * 新增一条系统默认屏蔽路径
      *
      * @param paramValue 屏蔽路径
-     * @param createBy 新增路径的管理员名称
+     * @param createBy   新增路径的管理员名称
      * @return boolean
      */
     @Override
@@ -629,8 +650,8 @@ public class BaseDataServiceImpl implements BaseDataService {
      * 分页获取流水线任务数限制设置
      *
      * @param paramCode 流水线id
-     * @param pageNum 页码
-     * @param pageSize 页数
+     * @param pageNum   页码
+     * @param pageSize  页数
      * @return page
      */
     @Override
@@ -695,7 +716,7 @@ public class BaseDataServiceImpl implements BaseDataService {
      * 删除流水线任务限制数设置
      *
      * @param entityId 实体id
-     * @param userId 用户id
+     * @param userId   用户id
      * @return boolean
      */
     @Override
@@ -723,7 +744,7 @@ public class BaseDataServiceImpl implements BaseDataService {
      * 配置工具/语言顺序
      *
      * @param paramType 区分工具/语言
-     * @param reqVO 请求体
+     * @param reqVO     请求体
      * @return boolean
      */
     @Override
@@ -758,7 +779,7 @@ public class BaseDataServiceImpl implements BaseDataService {
      */
     @Override
     public Boolean updateByParamTypeAndParamNameAndParamValue(String paramType, String paramName, String paramValue,
-            long updatedDate, String updateBy) {
+                                                              long updatedDate, String updateBy) {
         // 参数判空处理
         if (StringUtil.isBlank(paramName) || StringUtil.isBlank(paramName) || StringUtil.isEmpty(paramValue)) {
             log.error("update paramName or paramValue or paramType is Blank!");
@@ -766,6 +787,93 @@ public class BaseDataServiceImpl implements BaseDataService {
         }
         baseDataDao.updateByParamTypeAndParamNameAndParamValue(paramType, paramName,
                 paramValue, updatedDate, updateBy);
+        return true;
+    }
+
+    /**
+     * 查看GitHub同步仓库
+     * @param paramType 仓库类型
+     * @param pageNum 页码
+     * @param pageSize 页数
+     * @return page
+     */
+    @Override
+    public Page<GithubSyncVO> queryGitHubSyncPage(String paramType, Integer pageNum, Integer pageSize) {
+        Pageable pageable = PageableUtils.getPageable(pageNum, pageSize, "updated_date", Sort.Direction.DESC, "");
+
+        Page<BaseDataEntity> entityPage = baseDataDao.findGitHubSyncPage(paramType, pageable);
+
+        List<BaseDataEntity> baseDataEntityList = entityPage.getRecords();
+
+        if (CollectionUtils.isEmpty(baseDataEntityList)) {
+            return new Page<>(0, 0, 0, Collections.emptyList());
+        }
+
+        List<GithubSyncVO> data = baseDataEntityList.stream().map(item -> {
+            GithubSyncVO githubSyncVO = new GithubSyncVO();
+            BeanUtils.copyProperties(item, githubSyncVO);
+
+            githubSyncVO.setValue(item.getParamValue());
+            return githubSyncVO;
+        }).collect(Collectors.toList());
+
+        return new Page<>(entityPage.getPage(), entityPage.getPageSize(), entityPage.getCount(), data);
+    }
+
+    /**
+     * 更新GitHub同步设置
+     *
+     * @param reqVO 请求体
+     * @return boolean
+     */
+    @Override
+    public Boolean updateGitHubSync(GithubSyncVO reqVO) {
+        log.info("updatePipelineTaskLimit reqVO: {}", JsonUtil.INSTANCE.toJson(reqVO));
+        if (null == reqVO || StringUtils.isEmpty(reqVO.getParamType())
+                || StringUtils.isEmpty(reqVO.getValue())) {
+            log.error("param type value is null or empty!");
+            return false;
+        }
+
+        BaseDataEntity baseDataEntity = baseDataRepository.findByEntityId(reqVO.getEntityId());
+        if (baseDataEntity == null) {
+            baseDataEntity = new BaseDataEntity();
+            baseDataEntity.applyAuditInfoOnCreate(reqVO.getUpdatedBy());
+        } else {
+            baseDataEntity.applyAuditInfoOnUpdate(reqVO.getUpdatedBy());
+        }
+        // param_code 默认与value一致
+        baseDataEntity.setParamCode(reqVO.getValue());
+        baseDataEntity.setParamType(reqVO.getParamType());
+        baseDataEntity.setParamName(reqVO.getParamType());
+        baseDataEntity.setParamValue(reqVO.getValue());
+        baseDataRepository.save(baseDataEntity);
+        log.info("updateGitHubSync finish!");
+        return true;
+    }
+
+    /**
+     * 删除GitHub同步设置
+     * @param entityId 实体id
+     * @param userId 用户id
+     * @return boolean
+     */
+    @Override
+    public Boolean deleteGitHubSync(String entityId, String userId) {
+        log.info("deleteGitHubSync entityId: {}, userId: {}", entityId, userId);
+
+        if (StringUtils.isBlank(entityId) || StringUtils.isBlank(userId)) {
+            log.warn("entityId or userId or paramType is blank! update failed!");
+            return false;
+        }
+
+        BaseDataEntity baseDataEntity = baseDataRepository.findByEntityId(entityId);
+        if (baseDataEntity == null) {
+            log.warn("GitHubSync entityId is not found!");
+            return false;
+        }
+        baseDataRepository.delete(baseDataEntity);
+        log.info("deleteGitHubSync finish!");
         return true;
     }
 }

@@ -67,6 +67,7 @@ allprojects {
         }
         setApplyMavenExclusions(false)
         dependencies {
+            dependency("com.tencent.bk.sdk:spring-boot-bk-audit-starter:${Versions.bkAudit}")
             dependency("org.hashids:hashids:${Versions.hashidsVersion}")
             dependency("javax.ws.rs:javax.ws.rs-api:${Versions.jaxrsVersion}")
             dependency("org.tmatesoft.svnkit:svnkit:${Versions.svnkitVersion}")

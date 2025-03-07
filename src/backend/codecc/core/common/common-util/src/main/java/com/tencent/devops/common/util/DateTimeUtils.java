@@ -1118,4 +1118,15 @@ public class DateTimeUtils {
         calendar.add(Calendar.DATE, -day);
         return new SimpleDateFormat(yyyyMMddFormat).format(calendar.getTime());
     }
+
+    /**
+     * 毫秒数转分钟
+     *
+     * @date 2024/6/11
+     * @param ms
+     * @return long
+     */
+    public static long ms2minute(long ms) {
+        return ms / 1000 / 60;
+    }
 }

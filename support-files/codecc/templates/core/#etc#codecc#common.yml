@@ -159,3 +159,6 @@ cos:
   secretId: __BK_CODECC_COS_SECRET_ID__
   secretKey: __BK_CODECC_COS_SECRET_KEY__
   bucket: __BK_CODECC_COS_BUCKET__
+
+audit:
+  enabled: __BK_AUDIT_ENABLE__

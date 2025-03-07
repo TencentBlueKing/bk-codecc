@@ -491,6 +491,31 @@ public class PathFilterServiceImpl implements PathFilterService
         return filterPathOut;
     }
 
+    @Override
+    public FilterPathOutVO getFilterPath(String pipelineId, String mark) {
+        TaskInfoEntity taskInfo = taskRepository.findFirstByPipelineIdAndMultiPipelineMark(pipelineId, mark);
+        FilterPathOutVO filterPathOut = new FilterPathOutVO();
+        if (taskInfo != null) {
+            filterPathOut.setFilterPaths(taskInfo.getFilterPath());
+            List<String> defaultFilterPath = CollectionUtils.isNotEmpty(taskInfo.getDefaultFilterPath())
+                    ? taskInfo.getDefaultFilterPath() : new ArrayList<>();
+            filterPathOut.setDefaultAddPaths(defaultFilterPath);
+        } else {
+            // 设置默认的屏蔽路径
+            List<BaseDataEntity> baseDataEntities =
+                    baseDataRepository.findAllByParamType(ComConstants.KEY_DEFAULT_FILTER_PATH);
+            if (CollectionUtils.isNotEmpty(baseDataEntities)) {
+                // 所有默认屏蔽路径
+                List<String> pathList = baseDataEntities.stream().map(BaseDataEntity::getParamValue)
+                        .collect(Collectors.toList());
+                // 添加默认列表
+                filterPathOut.setDefaultAddPaths(pathList);
+            } else {
+                filterPathOut.setDefaultAddPaths(Collections.emptyList());
+            }
+        }
+        return filterPathOut;
+    }
 
     /**
      * 获取路径屏蔽树

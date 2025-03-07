@@ -14,7 +14,11 @@ import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import com.tencent.devops.common.web.RestResource;
 import java.util.List;
 import java.util.Set;
+
+import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.ws.rs.PathParam;
 
 @RestResource
 public class BuildCheckerSetRestResourceImpl implements BuildCheckerSetRestResource {

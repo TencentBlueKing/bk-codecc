@@ -160,4 +160,11 @@ public interface BaseDataRepository extends MongoRepository<BaseDataEntity, Obje
     BaseDataEntity findFirstByEntityIdAndParamType(String entityId, String paramType);
 
     void deleteByParamTypeAndParamName(String paramType, String paramName);
+
+    /**
+     * 根据实体id查询指定实体对象
+     * @param entityId id
+     * @return 实体对象
+     */
+    BaseDataEntity findByEntityId(String entityId);
 }

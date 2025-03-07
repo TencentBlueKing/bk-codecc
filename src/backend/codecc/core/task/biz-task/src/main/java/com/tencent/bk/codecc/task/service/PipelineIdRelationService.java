@@ -19,27 +19,22 @@ import java.util.List;
 
 /**
  * 流水线id关联接口
- * 
- * @date 2020/10/28
+ *
  * @version V1.0
+ * @date 2020/10/28
  */
-public interface PipelineIdRelationService 
-{
-    /**
-     * 将记录更新为成功
-     * @param pipelineId
-     * @param triggerDate
-     */
-    void updateSuccessRecord(String pipelineId, LocalDate triggerDate);
+public interface PipelineIdRelationService {
 
     /**
      * 将记录更新为失败或者正在执行
+     *
      * @param pipelineIdRelationshipEntity
      */
     void updateFailOrProcessRecord(PipelineIdRelationshipEntity pipelineIdRelationshipEntity);
 
     /**
      * 查询当日未成功的记录
+     *
      * @return
      */
     List<PipelineIdRelationshipEntity> findAllFailOrProcessRecord();

@@ -28,6 +28,9 @@ package com.tencent.devops.common.auth.api.external
 
 import com.tencent.devops.common.auth.api.pojo.external.AuthRoleType
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction
+import com.tencent.devops.common.auth.api.pojo.external.TaskAuthInfo
+import com.tencent.devops.common.auth.api.pojo.external.model.BkAuthExResourceActionModel
+import com.tencent.devops.common.auth.api.pojo.external.model.BkAuthExSingleResourceModel
 import com.tencent.devops.common.auth.api.service.AuthTaskService
 import com.tencent.devops.common.auth.api.util.AuthActionConvertUtils
 import com.tencent.devops.common.auth.api.util.AuthApiUtils
@@ -43,15 +46,15 @@ import org.springframework.data.redis.core.RedisTemplate
 import kotlin.streams.toList
 
 abstract class AbstractAuthExPermissionApi @Autowired constructor(
-        val client: Client,
-        val redisTemplate: RedisTemplate<String, String>
+    val client: Client,
+    val redisTemplate: RedisTemplate<String, String>
 ) : AuthExPermissionApi {
 
     /**
      * 校验用户是否是管理员
      */
     override fun isAdminMember(
-            user: String
+        user: String
     ): Boolean {
         return AuthApiUtils.isAdminMember(redisTemplate, user)
     }
@@ -70,7 +73,7 @@ abstract class AbstractAuthExPermissionApi @Autowired constructor(
     ): Boolean {
         val authTaskService = SpringContextUtil.getBean(AuthTaskService::class.java)
         var createFromStr = createFrom ?: authTaskService.getTaskCreateFrom(taskId.toLong())
-        if (ComConstants.DefectStatType.GONGFENG_SCAN.value() != createFromStr) {
+        if (ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value() != createFromStr) {
             createFromStr = ComConstants.DefectStatType.USER.value()
         }
         val bgIdStr = redisTemplate.opsForHash<String, String>().get(RedisKeyConstants.KEY_TASK_BG_MAPPING, taskId)
@@ -81,8 +84,10 @@ abstract class AbstractAuthExPermissionApi @Autowired constructor(
         }
 
         logger.info("judge user is bg admin member: $user taskId: $taskId bgId: $bgId")
-        val isMember = redisTemplate.opsForSet().isMember("${RedisKeyConstants.PREFIX_BG_ADMIN}$createFromStr:$user",
-            bgId)
+        val isMember = redisTemplate.opsForSet().isMember(
+            "${RedisKeyConstants.PREFIX_BG_ADMIN}$createFromStr:$user",
+            bgId
+        )
         return if (isMember == true) {
             logger.info("Is bg admin member: $user")
             true
@@ -99,20 +104,21 @@ abstract class AbstractAuthExPermissionApi @Autowired constructor(
         createFrom: String,
         actions: List<CodeCCAuthAction>
     ): Boolean {
-        return checkPipelineDefectOpsPermissions(taskId, projectId, username, actions)
+        return checkPipelineDefectOpsPermissions(taskId, projectId, username, createFrom, actions)
     }
 
     fun checkPipelineDefectOpsPermissions(
-        taskId: Long, projectId: String, username: String,
+        taskId: Long,
+        projectId: String,
+        username: String,
+        createFrom: String,
         actions: List<CodeCCAuthAction>
     ): Boolean {
         // 判断来源是流水线还是CodeCC任务，如果是流水线校验流水线权限
-        val authTaskService = SpringContextUtil.getBean(AuthTaskService::class.java)
-        val createFromStr = authTaskService.getTaskCreateFrom(taskId)
-        if (StringUtils.isBlank(createFromStr)) {
+        if (StringUtils.isBlank(createFrom)) {
             return false
         }
-        if (createFromStr == ComConstants.BsTaskCreateFrom.BS_PIPELINE.value()) {
+        if (createFrom == ComConstants.BsTaskCreateFrom.BS_PIPELINE.value()) {
             val pipelineActions = AuthActionConvertUtils.covert(actions).map { it.actionName }.toSet()
             val result = validatePipelineBatchPermission(
                 username, taskId.toString(),
@@ -126,7 +132,7 @@ abstract class AbstractAuthExPermissionApi @Autowired constructor(
                     return true
                 }
             }
-        } else if (createFromStr == ComConstants.BsTaskCreateFrom.BS_CODECC.value()) {
+        } else if (createFrom == ComConstants.BsTaskCreateFrom.BS_CODECC.value()) {
             val actionsStr = actions.stream().map { it.actionName }.toList().toSet()
             val result = validateTaskBatchPermission(
                 username, taskId.toString(),
@@ -142,6 +148,99 @@ abstract class AbstractAuthExPermissionApi @Autowired constructor(
             }
         }
         return false
+    }
+
+    override fun authDefectOpsPermissions(
+        taskAuthInfos: List<TaskAuthInfo>,
+        projectId: String,
+        username: String,
+        actions: List<CodeCCAuthAction>
+    ): List<BkAuthExResourceActionModel> {
+        val passTaskIds = mutableSetOf<Long>()
+        val pipelineAuthInfos = taskAuthInfos.filter {
+            it.createFrom.isNotBlank() ||
+                    it.createFrom == ComConstants.BsTaskCreateFrom.BS_PIPELINE.value()
+        }
+        if (pipelineAuthInfos.isNotEmpty()) {
+            val pipelineToTaskList = pipelineAuthInfos.groupBy { it.pipelineId }
+            val pipelineActions = AuthActionConvertUtils.covert(actions).map { it.actionName }.toSet()
+            val authResult = validatePipelinesBatchPermission(
+                username,
+                pipelineAuthInfos.map { it.pipelineId },
+                projectId,
+                pipelineActions
+            )
+            for (bkAuthExResourceActionModel in authResult) {
+                if (bkAuthExResourceActionModel.isPass != null && bkAuthExResourceActionModel.isPass &&
+                    !bkAuthExResourceActionModel.resourceId.isNullOrEmpty()
+                ) {
+                    bkAuthExResourceActionModel.resourceId.forEach { resource ->
+                        passTaskIds.addAll(pipelineToTaskList[resource.resourceId]?.map { it.taskId }
+                            ?: emptyList())
+                    }
+                }
+            }
+        }
+
+        val codeccTaskAuthInfos = taskAuthInfos.filter {
+            it.createFrom.isNotBlank() ||
+                    it.createFrom == ComConstants.BsTaskCreateFrom.BS_CODECC.value()
+        }
+        if (codeccTaskAuthInfos.isNotEmpty()) {
+            val actionsStr = actions.stream().map { it.actionName }.toList().toSet()
+            val authResult = validateTasksBatchPermission(
+                username,
+                codeccTaskAuthInfos.map { it.taskId.toString() },
+                projectId,
+                actionsStr
+            )
+            for (bkAuthExResourceActionModel in authResult) {
+                if (bkAuthExResourceActionModel.isPass != null && bkAuthExResourceActionModel.isPass &&
+                    !bkAuthExResourceActionModel.resourceId.isNullOrEmpty()
+                ) {
+                    passTaskIds.addAll(
+                        bkAuthExResourceActionModel.resourceId.filter { StringUtils.isNumeric(it.resourceId) }
+                            .map { it.resourceId!!.toLong() }
+                    )
+                }
+            }
+        }
+        val passResources = passTaskIds.map { BkAuthExSingleResourceModel("", it.toString()) }
+        return listOf(BkAuthExResourceActionModel("", "", passResources, true))
+    }
+
+    override fun validatePipelinesBatchPermission(
+        user: String,
+        pipelineIds: List<String>,
+        projectId: String,
+        actions: Set<String>
+    ): List<BkAuthExResourceActionModel> {
+        val authPipelineIds = queryPipelineListForUser(user, projectId, actions)
+        val passResources = pipelineIds.filter { authPipelineIds.contains(it) }
+            .map { BkAuthExSingleResourceModel("", it) }
+        val noPassResources = pipelineIds.filter { !authPipelineIds.contains(it) }
+            .map { BkAuthExSingleResourceModel("", it) }
+        return listOf(
+            BkAuthExResourceActionModel("", "", passResources, true),
+            BkAuthExResourceActionModel("", "", noPassResources, false)
+        )
+    }
+
+    override fun validateTasksBatchPermission(
+        user: String,
+        taskIds: List<String>,
+        projectId: String,
+        actions: Set<String>
+    ): List<BkAuthExResourceActionModel> {
+        val authTaskIds = queryTaskListForUser(user, projectId, actions)
+        val passResources = taskIds.filter { authTaskIds.contains(it) }
+            .map { BkAuthExSingleResourceModel("", it) }
+        val noPassResources = taskIds.filter { !authTaskIds.contains(it) }
+            .map { BkAuthExSingleResourceModel("", it) }
+        return listOf(
+            BkAuthExResourceActionModel("", "", passResources, true),
+            BkAuthExResourceActionModel("", "", noPassResources, false)
+        )
     }
 
     override fun checkProjectIsRbacPermissionByCache(projectId: String, needRefresh: Boolean?): Boolean {

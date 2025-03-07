@@ -26,6 +26,7 @@
 <script>
 import { mapState } from 'vuex';
 import DEPLOY_ENV from '@/constants/env';
+import { leaveConfirm } from '@/common/leave-confirm';
 export default {
   data() {
     const panels = [
@@ -84,18 +85,33 @@ export default {
           maskClose: true,
           confirmFn: () => {
             const urlPrefix = this.taskDetail.projectId.startsWith('git_')
-              ? window.STREAM_SITE_URL
-              : window.DEVOPS_SITE_URL;
+              ? `${window.STREAM_SITE_URL}/pipeline/`
+              : `${window.DEVOPS_SITE_URL}/pipeline/${this.taskDetail.projectId}/`;
             const urlSuffix = this.taskDetail.projectId.startsWith('git_')
               ? `#${this.taskDetail.projectName}`
               : `/edit#${this.taskDetail.atomCode}`;
-            window.open(`${urlPrefix}/pipeline/${this.taskDetail.pipelineId}${urlSuffix}`, '_blank');
+            window.open(`${urlPrefix}${this.taskDetail.pipelineId}${urlSuffix}`, '_blank');
           },
         });
         return false;
       }
-      this.$router.push({ name: `task-settings-${name}` });
+      if (window.changeAlert) {
+        leaveConfirm().then(() => {
+          this.$router.push({ name: `task-settings-${name}` });
+        });
+      } else {
+        this.$router.push({ name: `task-settings-${name}` });
+      }
     },
+  },
+  beforeRouteLeave(to, from, next) {
+    if (window.changeAlert) {
+      leaveConfirm().then(() => {
+        next();
+      });
+    } else {
+      next();
+    }
   },
 };
 </script>

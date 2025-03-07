@@ -52,4 +52,7 @@ public class PipelineIdRelationshipEntity extends CommonEntity {
 
     @Field("trigger_date")
     private LocalDate triggerDate;
+
+    @Field("migrate")
+    private Boolean migrate;
 }

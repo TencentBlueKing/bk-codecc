@@ -96,9 +96,14 @@
               }}</bk-link>
             </div>
           </bk-popover>
-          <bk-button v-else @click="jumpTo('change')">{{
+          <bk-button v-else @click="jumpTo('oauth')">{{
             $t('授权OAuth')
           }}</bk-button>
+          <bk-link theme="primary" v-if="needRefreshType" @click="handleRefresh">
+            <span class="text-[12px]">
+              {{ needRefreshType === 'change' ? $t('已切换授权点此刷新') : $t('已授权点此刷新') }}
+            </span>
+          </bk-link>
         </bk-form-item>
         <bk-form-item :label="$t('缺陷处理人')" property="resolvers">
           <bk-tag-input
@@ -233,6 +238,7 @@ export default {
         issueSystemInfoVOList: [],
       },
       IS_ENV_TAI: window.IS_ENV_TAI,
+      needRefreshType: null,
     };
   },
   computed: {
@@ -264,15 +270,33 @@ export default {
       );
     },
   },
-  watch: {},
+  watch: {
+    issueData: {
+      handler() {
+        this.handleFormDataChange();
+      },
+      deep: true,
+    },
+  },
   created() {
     this.init();
   },
   methods: {
+    handleFormDataChange() {
+      window.changeAlert = true;
+    },
     async init() {
-      const params = { taskId: this.taskId };
+      const { subSystemId, authTimestamp } = this.$route.query;
+      const params = {
+        taskId: this.taskId,
+        issueSubSystemId: subSystemId,
+        authTimestamp,
+      };
       const issueInfo = (await this.$store.dispatch('task/taskIssue', params)) || {};
       this.issueData = issueInfo;
+      this.$nextTick(() => {
+        window.changeAlert = false;
+      });
     },
     handleToPipeline() {
       if (/^git_\d+$/.test(this.projectId)) {
@@ -294,6 +318,9 @@ ${this.taskDetail.pipelineId}/edit#${this.taskDetail.atomCode}`,
       const res = await this.$store.dispatch('task/updateTaskIssue', payload);
       if (res.code === '0') {
         this.$bkMessage({ theme: 'success', message: this.$t('保存成功') });
+        this.$nextTick(() => {
+          window.changeAlert = false;
+        });
       } else {
         this.$bkMessage({
           theme: 'error',
@@ -307,8 +334,9 @@ ${this.taskDetail.pipelineId}/edit#${this.taskDetail.atomCode}`,
       if (info) {
         if (to === 'tapd') {
           window.open(info.homeUrl);
-        } else if (to === 'change') {
+        } else if (to === 'change' || to === 'oauth') {
           window.open(info.oauthUrl);
+          this.needRefreshType = to;
         }
       }
     },
@@ -323,6 +351,17 @@ ${this.taskDetail.pipelineId}/edit#${this.taskDetail.atomCode}`,
         .filter(item => tools.includes(item.toolName))
         .map(item => item.toolDisplayName);
       return list.join(', ');
+    },
+    async handleRefresh() {
+      this.needRefreshType = null;
+      const { subSystemId, authTimestamp } = this.$route.query;
+      const params = {
+        taskId: this.taskId,
+        issueSubSystemId: subSystemId,
+        authTimestamp,
+      };
+      const issueInfo = (await this.$store.dispatch('task/getLatestRelationship', params)) || {};
+      this.issueData = issueInfo;
     },
   },
 };

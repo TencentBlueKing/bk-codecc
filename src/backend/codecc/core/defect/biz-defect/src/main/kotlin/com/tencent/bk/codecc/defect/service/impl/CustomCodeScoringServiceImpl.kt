@@ -55,11 +55,14 @@ class CustomCodeScoringServiceImpl @Autowired constructor(
     redisTemplate,
     commonKafkaClient,
     clocStatisticRepository,
-        redLineRepository,
-        redLineMetaRepository
+    redLineRepository,
+    redLineMetaRepository
 ) {
 
     override fun scoring(taskDetailVO: TaskDetailVO, buildId: String): MetricsEntity? {
+        var styleExists = false
+        var securityExists = false
+        var ccnExists = false
         logger.info("start to scoring custom: ${taskDetailVO.taskId} $buildId")
         val taskId = taskDetailVO.taskId
         val taskLogList: MutableList<TaskLogEntity> =
@@ -90,12 +93,28 @@ class CustomCodeScoringServiceImpl @Autowired constructor(
         // 遍历当次构建包含的所有工具类型，按照类型触发相应的方法
         toolTypeMap.forEach { (type, taskLogList) ->
             val toolNameList = taskLogList.map { it.toolName }
+            when (type) {
+                ComConstants.ToolType.STANDARD.name -> styleExists = true
+                ComConstants.ToolType.SECURITY.name -> securityExists = true
+                ComConstants.ToolType.CCN.name -> ccnExists = true
+            }
             // 遍历方法匹配查询逻辑
             this::class.java.methods.find { method ->
                 method.declaredAnnotations.find {
                     it.annotationClass.simpleName == type
                 } != null
             }?.invoke(this, taskDetailVO, metricsEntity, toolNameList, lines)
+        }
+
+        // 任务没有对应类型的扫描工具，则不进行对应的算分逻辑，默认设置为100分
+        if (!styleExists) {
+            metricsEntity.codeStyleScore = 100.toDouble()
+        }
+        if (!securityExists) {
+            metricsEntity.codeSecurityScore = 100.toDouble()
+        }
+        if (!ccnExists) {
+            metricsEntity.codeCcnScore = 100.toDouble()
         }
 
         // 最后根据 圈复杂度得分 和 缺陷工具得分计算 度量得分
@@ -264,9 +283,9 @@ class CustomCodeScoringServiceImpl @Autowired constructor(
     ) {
         val scoringConfigs = initScoringConfigs(taskDetailVO, lines)
         if (scoringConfigs.isEmpty()) {
+            metricsEntity.codeStyleScore = 100.toDouble()
             return
         }
-
         val totalLine = scoringConfigs.filter {
             if (it.value.clocLanguage.isEmpty()) {
                 it.key != ComConstants.CodeLang.OTHERS
@@ -300,20 +319,28 @@ class CustomCodeScoringServiceImpl @Autowired constructor(
                 totalLine
             )
         }
-        metricsEntity.averageSeriousStandardThousandDefect =
-            BigDecimal(
-                1000 * metricsEntity.codeStyleSeriousDefectCount.toDouble()
-                        / totalLine.toDouble()
+
+        val totalDefectCount = metricsEntity.codeStyleSeriousDefectCount + metricsEntity.codeStyleNormalDefectCount
+        if (totalDefectCount == 0) {
+            // 如果没有告警，得分改为100，计算过程中出现了99.99分的情况
+            metricsEntity.codeStyleScore = 100.toDouble()
+        }
+
+        metricsEntity.averageSeriousStandardThousandDefect = if (totalLine == 0L) {
+            BigDecimal.ZERO
+        } else {
+            BigDecimal(1000 * metricsEntity.codeStyleSeriousDefectCount.toDouble() /
+                    totalLine.toDouble()
             )
-                    .setScale(2, RoundingMode.HALF_UP)
-                    .toDouble()
-        metricsEntity.averageNormalStandardThousandDefect =
-            BigDecimal(
-                1000 * metricsEntity.codeStyleNormalDefectCount.toDouble()
-                        / totalLine.toDouble()
+        }.setScale(2, RoundingMode.HALF_UP).toDouble()
+
+        metricsEntity.averageNormalStandardThousandDefect = if (totalLine == 0L) {
+            BigDecimal.ZERO
+        } else {
+            BigDecimal(1000 * metricsEntity.codeStyleNormalDefectCount.toDouble() /
+                    totalLine.toDouble()
             )
-                    .setScale(2, RoundingMode.HALF_UP)
-                    .toDouble()
+        }.setScale(2, RoundingMode.HALF_UP).toDouble()
     }
 
     fun scoringConfigLangStandard(
@@ -334,6 +361,7 @@ class CustomCodeScoringServiceImpl @Autowired constructor(
             ComConstants.DefectStatus.NEW.value(),
             ComConstants.NORMAL
         )
+
         // 计算行占比
         val totalDefect = seriousCount * 1.0 + normalCount * 0.5
         val currScore = calCodeStyleScore(
@@ -341,12 +369,17 @@ class CustomCodeScoringServiceImpl @Autowired constructor(
             config.coefficient,
             config.lineCount,
             totalLine
-        ) + metricsEntity.codeStyleScore
+        )
         logger.info(
             "cal ${config.clocLanguage} code style score, totalDefect: $totalDefect " +
                     "| line: ${config.lineCount} | totalLine: $totalLine | score: $currScore"
         )
-        metricsEntity.codeStyleScore = currScore
+        // 若totalLine为0, config.lineCount也一定为0, 则每个StandardScoringConfig计算结果currScore都为100分
+        if (currScore == 100.toDouble()) {
+            metricsEntity.codeStyleScore = currScore
+        } else {
+            metricsEntity.codeStyleScore += currScore
+        }
         metricsEntity.codeStyleSeriousDefectCount += seriousCount
         metricsEntity.codeStyleNormalDefectCount += normalCount
     }
@@ -370,7 +403,12 @@ class CustomCodeScoringServiceImpl @Autowired constructor(
             (totalDefect / line) * 100.toDouble()
         }
         // 计算行占比
-        val linePercentage = line.toDouble() / totalLine.toDouble()
+        val linePercentage: Double = if (totalLine == 0L) {
+            1.toDouble()
+        } else {
+            line.toDouble() / totalLine.toDouble()
+        }
+
         // 计算代码规范评分
         val styleScore = BigDecimal(
             100 * linePercentage * ((0.6.pow(1.toDouble() / languageWaringConfigCount)).pow(hundredWaringCount))

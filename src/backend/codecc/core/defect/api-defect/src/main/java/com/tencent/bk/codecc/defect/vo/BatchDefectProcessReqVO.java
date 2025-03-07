@@ -13,13 +13,15 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
+import com.tencent.devops.common.api.codecc.util.JsonUtil;
 import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import lombok.Data;
@@ -54,6 +56,9 @@ public class BatchDefectProcessReqVO {
     @ApiModelProperty("工具名称")
     private List<String> dimensionList;
 
+    @ApiModelProperty("需要处理的SCA维度")
+    private String scaDimension;
+
     @ApiModelProperty("业务类型：忽略IgnoreDefect、分配AssignDefect、标志修改MarkDefect")
     private String bizType;
 
@@ -73,7 +78,7 @@ public class BatchDefectProcessReqVO {
     private Set<String> sourceAuthor;
 
     @ApiModelProperty("分配给新的处理人")
-    private Set<String> newAuthor;
+    private LinkedHashSet<String> newAuthor;
 
     @ApiModelProperty("忽略告警原因类型")
     private int ignoreReasonType;
@@ -93,6 +98,9 @@ public class BatchDefectProcessReqVO {
     @ApiModelProperty("是否为回复忽略再标记")
     private Boolean revertAndMark;
 
+    @ApiModelProperty("是否强制提交告警到tapd")
+    private Boolean forceSubmit;
+
     public String getToolName() {
         if (getToolNameList() == null || getToolNameList().isEmpty()) {
             return null;
@@ -106,6 +114,31 @@ public class BatchDefectProcessReqVO {
         }
         return String.join(",", getDimensionList());
     }
+
+    /**
+     * 获取 taskIdList 的第一个 task id, 用于审计数据上报, <b>谨慎删除</b>
+     */
+    public Long getFirstTaskId() {
+        if (taskIdList == null || taskIdList.isEmpty()) {
+            return -1L;
+        }
+
+        return taskIdList.get(0);
+    }
+
+    /**
+     * 获取 defectKeySet 的第一个 defect key, 用于审计数据上报, <b>谨慎删除</b>
+     */
+    public String getFirstDefectKey() {
+        if (defectKeySet == null || defectKeySet.isEmpty()) {
+            return "";
+        }
+
+        Optional<String> result = defectKeySet.stream().findFirst();
+        return result.orElse("");
+    }
+
+
 
     public DefectQueryReqVO convertDefectQueryReqVO() {
         String queryDefectCondition = getQueryDefectCondition();

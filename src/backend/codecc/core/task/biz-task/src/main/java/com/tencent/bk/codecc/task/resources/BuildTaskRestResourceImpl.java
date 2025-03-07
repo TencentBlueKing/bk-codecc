@@ -28,6 +28,7 @@
 
 package com.tencent.bk.codecc.task.resources;
 
+import com.tencent.bk.audit.annotations.AuditEntry;
 import com.tencent.bk.codecc.task.api.BuildTaskRestResource;
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
 import com.tencent.bk.codecc.task.service.PathFilterService;
@@ -48,6 +49,7 @@ import com.tencent.bk.codecc.task.vo.pipeline.PipelineTaskVO;
 import com.tencent.bk.codecc.task.vo.scanconfiguration.ScanConfigurationVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.codecc.util.JsonUtil;
+import com.tencent.devops.common.constant.audit.ActionIds;
 import com.tencent.devops.common.web.RestResource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -97,6 +99,7 @@ public class BuildTaskRestResourceImpl implements BuildTaskRestResource {
     }
 
     @Override
+    @AuditEntry(actionId = ActionIds.CREATE_TASK)
     public Result<TaskIdVO> registerPipelineTask(TaskDetailVO taskDetailVO, String projectId, String userName) {
         taskDetailVO.setProjectId(projectId);
         log.info("registerPipelineTask request body: {}", JsonUtil.INSTANCE.toJson(taskDetailVO));
@@ -119,6 +122,7 @@ public class BuildTaskRestResourceImpl implements BuildTaskRestResource {
     }
 
     @Override
+    @AuditEntry(actionId = ActionIds.STOP_TASK)
     public Result<Boolean> stopTask(Long taskId, String disabledReason, String userName) {
         return new Result<>(taskService.stopTask(taskId, disabledReason, userName));
     }
@@ -141,6 +145,11 @@ public class BuildTaskRestResourceImpl implements BuildTaskRestResource {
     @Override
     public Result<FilterPathOutVO> filterPath(Long taskId) {
         return new Result<>(pathFilterService.getFilterPath(taskId));
+    }
+
+    @Override
+    public Result<FilterPathOutVO> filterPath(String pipelineId, String mark) {
+        return new Result<>(pathFilterService.getFilterPath(pipelineId, mark));
     }
 
     @Override
@@ -180,9 +189,8 @@ public class BuildTaskRestResourceImpl implements BuildTaskRestResource {
     }
 
     @Override
-    public Result<Boolean> executeTask(long taskId, String isFirstTrigger,
-            String userName) {
-        return new Result<>(taskService.manualExecuteTask(taskId, isFirstTrigger, userName));
+    public Result<Boolean> executeTask(long taskId, String isFirstTrigger, String userName) {
+        return new Result<>(taskService.manualExecuteTask(taskId, isFirstTrigger, userName, null).getFirst());
     }
 
     @Override

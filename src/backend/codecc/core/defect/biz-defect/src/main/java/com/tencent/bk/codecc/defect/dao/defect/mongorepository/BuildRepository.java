@@ -50,6 +50,15 @@ public interface BuildRepository extends MongoRepository<BuildEntity, String>
     BuildEntity findFirstByBuildId(String buildId);
 
     /**
+     * 根据构建id和任务id进行查询
+     *
+     * @param buildId
+     * @param taskId
+     * @return
+     */
+    BuildEntity findFirstByBuildIdAndTaskId(String buildId, long taskId);
+
+    /**
      * 根据构建id列表进行查询
      *
      * @param buildIds

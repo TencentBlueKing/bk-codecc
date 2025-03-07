@@ -27,6 +27,9 @@
 
 package com.tencent.bk.codecc.defect.service;
 
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_REPO_USER_ID;
+import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.KEY_CREATE_FROM;
+
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildDefectSummaryRepository;
@@ -64,6 +67,7 @@ import com.tencent.bk.codecc.defect.vo.admin.DeptTaskDefectRspVO;
 import com.tencent.bk.codecc.defect.vo.common.CommonDefectDetailQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.common.CommonDefectQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
+import com.tencent.bk.codecc.defect.vo.ignore.IgnoreApprovalVO;
 import com.tencent.bk.codecc.defect.vo.openapi.TaskDefectVO;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.api.UserMetaRestResource;
@@ -89,6 +93,18 @@ import com.tencent.devops.common.util.ListSortUtil;
 import com.tencent.devops.common.util.MD5Utils;
 import com.tencent.devops.common.util.OkhttpUtils;
 import com.tencent.devops.repository.api.ExternalCodeccRepoResource;
+import java.net.URLEncoder;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
@@ -105,19 +121,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.util.Pair;
-
-import java.net.URLEncoder;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_REPO_USER_ID;
-import static com.tencent.devops.common.auth.api.pojo.external.AuthExConstantsKt.KEY_CREATE_FROM;
 
 /**
  * 告警管理抽象类
@@ -144,13 +147,13 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
     @Autowired
     protected PipelineScmService pipelineScmService;
     @Autowired
-    private SCMUtils scmUtils;
-    @Autowired
     protected BuildDefectV2Repository buildDefectV2Repository;
     @Autowired
     protected BuildSnapshotService buildSnapshotService;
     @Autowired
     protected BuildDefectSummaryRepository buildDefectSummaryRepository;
+    @Autowired
+    private SCMUtils scmUtils;
     @Autowired
     private CodeRepoInfoRepository codeRepoRepository;
     @Autowired
@@ -167,6 +170,8 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
     private CLOCStatisticsDao clocStatisticsDao;
     @Autowired
     private LintStatisticRepository lintStatisticRepository;
+    @Autowired
+    private IgnoreApprovalService ignoreApprovalService;
 
     @Override
     public CommonDefectDetailQueryRspVO processGetFileContentSegmentRequest(String projectId, long taskId,
@@ -177,10 +182,10 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
     /**
      * 根据文件路径获取文件名，抽取自#processGetFileContentSegmentRequest
      *
-     * @author neildwu
-     * @date 2023/6/21
      * @param filePath
      * @return java.lang.String
+     * @author neildwu
+     * @date 2023/6/21
      */
     protected String getFileName(String filePath) {
         int fileNameIndex = filePath.lastIndexOf("/");
@@ -236,13 +241,12 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
     }
 
     /**
-     *
      * 根据 taskId 和 toolName 在 t_tool_build_info 这张表中取最新的 buildId.
      *
-     * @date 2023/9/5
      * @param taskId
      * @param toolName
      * @return java.lang.String
+     * @date 2023/9/5
      */
     protected String getLastestBuildIdByTaskIdAndToolName(long taskId, String toolName) {
         ToolBuildInfoEntity buildInfo = toolBuildInfoRepository
@@ -457,7 +461,6 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
     }
 
     protected String getFileContent(FileContentQueryParams queryParams) {
-
         // 取出常用的字段
         long taskId = queryParams.getTaskId();
         String projectId = queryParams.getProjectId();
@@ -470,6 +473,26 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
         String subModule = queryParams.getSubModule();
         String branch = queryParams.getBranch();
         boolean tryBest = queryParams.isTryBestForPrivate();
+        String buildId = queryParams.getBuildId();
+
+        log.info("getFileContent. task info: taskId({}), buildId({}), projectId({}), userId({}), tryBest({})\n"
+                        + "repo info: url({}), repoId({}), filePath({}), relPath({}), "
+                        + "revision({}), subModule({}), branch({})",
+                taskId, buildId, projectId, userId, tryBest,
+                url, repoId, filePath, relPath, revision, subModule, branch);
+
+        // 如果 repoId 不存在，则进行扫库赋值操作
+        if (StringUtils.isBlank(repoId)) {
+            CodeRepoInfoEntity firstCodeRepoInfoEntity =
+                    codeRepoRepository.findFirstByTaskIdAndBuildId(taskId, buildId);
+            List<CodeRepoEntity> repoList = firstCodeRepoInfoEntity.getRepoList();
+            Optional<CodeRepoEntity> optionalCodeRepoEntity = repoList.stream().max(
+                    Comparator.comparing(CodeRepoEntity::getCommitTime)
+            );
+            if (optionalCodeRepoEntity.isPresent()) {
+                repoId = optionalCodeRepoEntity.get().getRepoId();
+            }
+        }
 
         if (StringUtils.isBlank(relPath) && StringUtils.isNotBlank(filePath)
                 && filePath.length() > ComConstants.DEFAULT_LANDUN_WORKSPACE.length()) {
@@ -483,20 +506,17 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
 
         // 查看是否开启缓存
         if (isFileCacheEnable(taskId)) {
-            content = pipelineScmService.getFileContentFromFileCache(taskId, queryParams.getBuildId(),
-                    queryParams.getFilePath());
-        }
-
-        // 缓存命中，直接返回
-        if (content != null) {
-            return content;
+            content = pipelineScmService.getFileContentFromFileCache(taskId, buildId, filePath);
+            // 缓存命中，直接返回
+            if (content != null) {
+                return content;
+            }
         }
 
         ScmType scmType = scmUtils.getScmType(url);
         if (scmType != null) {
             String ref = StringUtils.isBlank(revision) ? branch : revision;
-            content = tryGetGitContent(url, ref, relPath, userId, projectId, queryParams.getBuildId(),
-                    taskId, scmType, tryBest);
+            content = tryGetGitContent(url, ref, relPath, userId, realProjectId, buildId, taskId, scmType, tryBest);
             // 预设成功，直接返回
             if (content != null) {
                 return content;
@@ -625,7 +645,9 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
             int startIndex = url.indexOf("/", headerIndex);
             int endIndex = url.lastIndexOf(".git");
             String projectName = url.substring(startIndex + 1, endIndex);
-
+            if (relPath.startsWith("/")) {
+                relPath = relPath.substring(1);
+            }
             String contentUrl = String.format("https://raw.githubusercontent.com/%s/%s/%s",
                     projectName, ref, relPath);
             return OkhttpUtils.INSTANCE.doShortGet(contentUrl, new HashMap<>());
@@ -638,7 +660,6 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
     /**
      * 利用 ticket id 获取 github 私有库的代码
      *
-     * @date 2023/7/17
      * @param projectId
      * @param url
      * @param buildId
@@ -646,10 +667,12 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
      * @param relPath
      * @param scmType
      * @return
+     * @date 2023/7/17
      */
     private String tryGetPrivateContentByUrl(String projectId, String url, String buildId,
-            long taskId,
-            String relPath, ScmType scmType) {
+            long taskId, String relPath, ScmType scmType) {
+        log.info("try get private content. projectId({}), url({}), task({}[{}]), relPath({}), scmType({})",
+                projectId, url, taskId, buildId, relPath, scmType.name());
         CodeRepoInfoEntity codeRepoInfoEntity = codeRepoRepository.findFirstByTaskIdAndBuildId(taskId, buildId);
         if (codeRepoInfoEntity == null || CollectionUtils.isEmpty(codeRepoInfoEntity.getRepoList())) {
             log.info("cannot find the CodeRepoInfoEntity from codeRepoRepository.");
@@ -950,12 +973,38 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
     }
 
     protected ToolDefectPageVO idListToToolDefectPageVO(long taskId, String toolName, List<String> ids, Integer pageNum,
-                                                        Integer pageSize, long total) {
+            Integer pageSize, long total) {
         pageNum = pageNum == null || pageNum < 0 ? 0 : pageNum;
         pageSize = pageSize == null || pageSize <= 0 ? 100 : pageSize;
         int start = pageNum * pageSize;
         int end = Math.min(start + pageSize, ids.size());
         return new ToolDefectPageVO(taskId, toolName,
                 start >= ids.size() ? Collections.emptyList() : ids.subList(start, end), total);
+    }
+
+    /**
+     * 通过忽略审批ID列表，获取Id对应的实体
+     * @param ignoreApprovalIds
+     * @return
+     */
+    protected Map<String, IgnoreApprovalVO> getIdToIgnoreApproval(List<String> ignoreApprovalIds) {
+        if (CollectionUtils.isEmpty(ignoreApprovalIds)) {
+            return Collections.emptyMap();
+        }
+        List<IgnoreApprovalVO> approvalVOS = ignoreApprovalService.getApprovalListByIds(ignoreApprovalIds);
+        return approvalVOS.stream().collect(Collectors.toMap(IgnoreApprovalVO::getEntityId,
+                Function.identity(), (k, v) -> v));
+    }
+
+    /**
+     * 通过单个忽略审批ID获取实体
+     * @param ignoreApprovalId
+     * @return
+     */
+    protected IgnoreApprovalVO getIgnoreApprovalById(String ignoreApprovalId) {
+        if (StringUtils.isBlank(ignoreApprovalId)) {
+            return null;
+        }
+        return ignoreApprovalService.getApprovalById(ignoreApprovalId);
     }
 }

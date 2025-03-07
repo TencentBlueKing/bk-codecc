@@ -21,6 +21,7 @@ export default {
       enableToolList: [],
       disableToolList: [],
     },
+    isDetailInit: false,
     ignore: {},
     ignoreTree: {},
     codes: {},
@@ -119,6 +120,7 @@ export default {
         .catch(e => e);
     },
     detail({ commit, state, rootState }, config = {}) {
+      state.isDetailInit = false;
       if (config.showLoading) {
         commit('setMainContentLoading', true, { root: true });
       }
@@ -128,6 +130,7 @@ export default {
         .then((res) => {
           const detail = res.data || [];
           commit('updateDetail', detail);
+          state.isDetailInit = true;
           return detail;
         })
         .catch((e) => {
@@ -266,6 +269,9 @@ export default {
     addTool({ commit }, data) {
       return http.post('/task/api/user/task', data);
     },
+    addTestTool({ commit }, data) {
+      return http.post('/task/api/user/test/task', data);
+    },
     changeToolStatus({ commit }, data) {
       return http.put('/task/api/user/tool/status', data);
     },
@@ -366,7 +372,12 @@ export default {
     },
     taskIssue({ commit }, params) {
       return http
-        .get(`/task/api/user/issue/task/${params.taskId}/getTaskIssue`)
+        .get(`/task/api/user/issue/task/${params.taskId}/getTaskIssueByTaskId`, { params })
+        .then(res => res.data || {});
+    },
+    getLatestRelationship({ commit }, params) {
+      return http
+        .get(`/task/api/user/issue/task/${params.taskId}/getLatestRelationship`, { params })
         .then(res => res.data || {});
     },
     updateTaskIssue({ commit }, params) {

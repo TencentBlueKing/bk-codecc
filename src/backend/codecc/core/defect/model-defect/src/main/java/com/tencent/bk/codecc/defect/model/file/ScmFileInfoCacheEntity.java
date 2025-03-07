@@ -53,6 +53,12 @@ public class ScmFileInfoCacheEntity {
     @Field("file_update_time")
     private long fileUpdateTime;
 
+    /**
+     * 文件最后修改人
+     */
+    @Field("file_author")
+    private String fileAuthor;
+
     private String branch;
 
     private String revision;

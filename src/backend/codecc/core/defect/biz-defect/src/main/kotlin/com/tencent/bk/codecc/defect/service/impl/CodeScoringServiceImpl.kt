@@ -115,7 +115,7 @@ class CodeScoringServiceImpl @Autowired constructor(
 
         for (taskLog in taskLogList) {
             val tool = toolMetaCacheServiceImpl.getToolBaseMetaCache(taskLog.toolName)
-            // logger.info("scoring toolName: {} {}", tool.name, tool.type)
+//            logger.info("[CodeScoring] scoring toolName: {} {}", tool.name, tool.type)
             if (taskLog.toolName == ComConstants.Tool.SCC.name) {
                 // 代码行工具
                 languageToLineMap = getCLOCDefectNum(taskId, taskLog.toolName, taskLog.buildId)
@@ -157,8 +157,8 @@ class CodeScoringServiceImpl @Autowired constructor(
                 styleExists = true
             }
         }
-
         val totalLine = languageToLineMap.values.stream().mapToLong { line -> line }.sum()
+        logger.info("fail to scoring, no match scc, $taskId, $buildId")
         val metricsEntity = MetricsEntity()
         metricsEntity.taskId = taskId
         metricsEntity.buildId = buildId
@@ -536,18 +536,20 @@ class CodeScoringServiceImpl @Autowired constructor(
                 totalLine
             )
         }
+        // 四舍五入保留两位小数
+        metricsEntity.codeStyleScore = Math.round(metricsEntity.codeStyleScore * ComConstants.COMMON_NUM_100D) / ComConstants.COMMON_NUM_100D
 
         if (totalLine > 0) {
             metricsEntity.averageSeriousStandardThousandDefect =
                 BigDecimal(
-                    1000 * metricsEntity.codeStyleSeriousDefectCount.toDouble()
+                    ComConstants.COMMON_NUM_1000L * metricsEntity.codeStyleSeriousDefectCount.toDouble()
                             / totalLine.toDouble()
                 )
                         .setScale(2, RoundingMode.HALF_UP)
                         .toDouble()
             metricsEntity.averageNormalStandardThousandDefect =
                 BigDecimal(
-                    1000 * metricsEntity.codeStyleNormalDefectCount.toDouble()
+                    ComConstants.COMMON_NUM_1000L * metricsEntity.codeStyleNormalDefectCount.toDouble()
                             / totalLine.toDouble()
                 )
                         .setScale(2, RoundingMode.HALF_UP)
@@ -586,8 +588,13 @@ class CodeScoringServiceImpl @Autowired constructor(
             totalLine,
             metricsEntity.taskId,
             metricsEntity.buildId
-        ) + metricsEntity.codeStyleScore
-        metricsEntity.codeStyleScore = currScore
+        )
+        // 若totalLine为0, config.lineCount也一定为0, 则每个StandardScoringConfig计算结果currScore都为100分
+        if(currScore == 100.toDouble()){
+            metricsEntity.codeStyleScore = currScore
+        }else{
+            metricsEntity.codeStyleScore += currScore
+        }
         metricsEntity.codeStyleSeriousDefectCount += seriousCount
         metricsEntity.codeStyleNormalDefectCount += normalCount
     }
@@ -615,8 +622,12 @@ class CodeScoringServiceImpl @Autowired constructor(
             } else {
                 (totalDefect / line) * 100.toDouble()
             }
-            // 计算行占比
-            val linePercentage = line.toDouble() / totalLine.toDouble()
+            // 计算行占比 (若totalLine为0, 则line也一定为0)
+            val linePercentage: Double = if(totalLine == 0L){
+                1.toDouble()
+            }else{
+                line.toDouble() / totalLine.toDouble()
+            }
             logger.info(
                 "cal code style $taskId $buildId $totalDefect $languageWaringConfigCount $line " +
                         "$totalLine $hundredWaringCount $linePercentage"
@@ -626,7 +637,7 @@ class CodeScoringServiceImpl @Autowired constructor(
                 100 * linePercentage * ((0.6.pow(1.toDouble() / languageWaringConfigCount)).pow(
                     hundredWaringCount
                 ))
-            ).setScale(2, BigDecimal.ROUND_HALF_UP).toDouble()
+            ).toDouble()
         } catch (e: Exception) {
             logger.error(
                 "calCodeStyleScore fail, task id: $taskId, build id: $buildId, " +

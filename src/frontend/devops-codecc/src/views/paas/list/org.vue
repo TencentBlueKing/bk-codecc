@@ -2,6 +2,7 @@
   <bk-dropdown-menu
     class="dropdown-menu"
     trigger="click"
+    ref="dropdown"
     @show="isDropdownShow = true"
     @hide="isDropdownShow = false">
     <bk-button
@@ -28,6 +29,7 @@
         show-checkbox
         ref="tree"
         :default-checked-keys="ids"
+        :default-checked-nodes="defaultNodes"
         @check-change="handleCheckChange"
       ></bk-big-tree>
     </div>
@@ -50,6 +52,7 @@ export default {
       isHoverShow: false,
       searchVal: '',
       treeData: [],
+      defaultNodes: []
     };
   },
   computed: {
@@ -108,6 +111,20 @@ export default {
       this.$emit('input', []);
       this.$refs.tree && this.$refs.tree.removeChecked({ emitEvent: false });
     },
+    showDropdownByIds(ids) {
+      // 展开菜单
+      this.$refs.dropdown.show()
+      // 获取部门data
+      this.$store.dispatch('getDeptTree').then((res) => {
+        this.treeData = res.treeData || [];
+        // 用异步方法给bk-big-tree赋值
+        this.$refs.tree.setData(this.treeData)
+        // 设置默认勾选值
+        this.defaultNodes = ids
+        // 手动触发更新names
+        this.handleCheckChange(ids)
+      });
+    }
   },
 };
 </script>

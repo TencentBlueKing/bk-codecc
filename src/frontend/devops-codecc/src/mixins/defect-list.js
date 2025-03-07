@@ -294,6 +294,7 @@ export default {
           && !this.dimenList.find(item => this.dimensionStr.includes(item.key))
           && this.toolId !== 'CCN'
           && this.toolId !== 'DUPC'
+          && this.toolId !== 'PECKER_SCA'
         ) {
           const isFromPipeline = this.taskDetail.createFrom.indexOf('pipeline') !== -1;
           const title = isFromPipeline ? this.$t('前往流水线') : '';
@@ -336,7 +337,7 @@ export default {
             subTitle: this.$t('此代码检查任务需要到流水线启动，是否前往流水线？'),
             confirmFn(name) {
               window.open(
-                `${window.DEVOPS_SITE_URL}/console/pipeline/${projectId}/${pipelineId}/edit`,
+                `${window.DEVOPS_SITE_URL}/console/pipeline/${projectId}/${pipelineId}/history`,
                 '_blank',
               );
             },
@@ -571,6 +572,12 @@ export default {
     handleStatusRemote(keyword) {
       this.$refs.statusTree && this.$refs.statusTree.filter(keyword);
     },
+    handleApprovalRemote(keyword) {
+      this.$refs.approvalTree && this.$refs.approvalTree.filter(keyword);
+    },
+    handleOperateRemote(keyword) {
+      this.$refs.operateTree && this.$refs.operateTree.filter(keyword);
+    },
     handleStatusCheckChange(id, checked) {
       let list = id;
       if (id.includes(4)) {
@@ -585,9 +592,44 @@ export default {
           checked: false,
         });
     },
+    handleApprovalCheckChange(id, checked) {
+      let list = id;
+      if (id.includes(1)) {
+        list = [...list, 2];
+      } else {
+        list = list.filter(item => item !== 2);
+      }
+      this.searchParams.ignoreApprovalStatus = [...list];
+    },
+    handleOperateCheckChange(id, checked) {
+      const list = id;
+      this.searchParams.operates = [...list];
+    },
+    handleApprovalValuesChange(options) {
+      this.$refs.approvalTree
+        && this.$refs.approvalTree.setChecked(options.id, {
+          emitEvent: true,
+          checked: false,
+        });
+    },
+    handleOperateValuesChange(options) {
+      this.$refs.operateTree
+        && this.$refs.operateTree.setChecked(options.id, {
+          emitEvent: true,
+          checked: false,
+        });
+    },
     handleStatusClear() {
       this.$refs.statusTree
         && this.$refs.statusTree.removeChecked({ emitEvent: false });
+    },
+    handleOperateClear() {
+      this.$refs.operateTree
+        && this.$refs.operateTree.removeChecked({ emitEvent: false });
+    },
+    handleApprovalClear() {
+      this.$refs.approvalTree
+        && this.$refs.approvalTree.removeChecked({ emitEvent: false });
     },
     goToTask(taskId) {
       this.$router.push({

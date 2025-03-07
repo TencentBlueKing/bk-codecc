@@ -2,11 +2,17 @@ package com.tencent.bk.codecc.defect.service;
 
 import static com.tencent.devops.common.constant.ComConstants.BATCH_DEFECT;
 import static com.tencent.devops.common.constant.ComConstants.FUNC_BATCH_DEFECT;
+import static com.tencent.devops.common.constant.audit.CodeccAuditAttributeNames.TASK_ID;
 
 import com.google.common.collect.Sets;
+import com.tencent.bk.audit.annotations.ActionAuditRecord;
+import com.tencent.bk.audit.annotations.AuditAttribute;
+import com.tencent.bk.audit.annotations.AuditInstanceRecord;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.IgnoredNegativeDefectDao;
 import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
+import com.tencent.bk.codecc.defect.model.sca.SCALicenseEntity;
+import com.tencent.bk.codecc.defect.model.sca.SCASbomPackageEntity;
 import com.tencent.bk.codecc.defect.utils.ParamUtils;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
@@ -14,12 +20,16 @@ import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse.TaskBase;
 import com.tencent.codecc.common.db.CommonEntity;
+import com.tencent.devops.common.api.codecc.util.JsonUtil;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.BusinessType;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import com.tencent.devops.common.constant.audit.ActionAuditRecordContents;
+import com.tencent.devops.common.constant.audit.ActionIds;
+import com.tencent.devops.common.constant.audit.ResourceTypes;
 import com.tencent.devops.common.service.BizServiceFactory;
 import com.tencent.devops.common.service.IBizService;
 import com.tencent.devops.common.service.utils.SpringContextUtil;
@@ -66,6 +76,18 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
     private final int DEL = 2;
 
     @Override
+    @ActionAuditRecord(
+            actionId = ActionIds.PROCESS_DEFECT,
+            instance = @AuditInstanceRecord(
+                    resourceType = ResourceTypes.DEFECT,
+                    instanceIds = "#batchDefectProcessReqVO?.getFirstDefectKey()",
+                    instanceNames = "#batchDefectProcessReqVO?.bizType"
+            ),
+            attributes = {
+                    @AuditAttribute(name = TASK_ID, value = "#batchDefectProcessReqVO?.getFirstTaskId()")
+            },
+            content = ActionAuditRecordContents.PROCESS_DEFECT
+    )
     @OperationHistory(funcId = FUNC_BATCH_DEFECT, operType = BATCH_DEFECT)
     public Result processBiz(BatchDefectProcessReqVO batchDefectProcessReqVO) {
         log.info("begin to batch process: {}", batchDefectProcessReqVO.toString());
@@ -90,7 +112,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
      * @param projectId
      * @param taskIds
      */
-    private void validOpsPermission(String userName, String projectId, List<Long> taskIds) {
+    protected void validOpsPermission(String userName, String projectId, List<Long> taskIds) {
         // 无法校验就通过
         if (StringUtils.isEmpty(userName) || StringUtils.isEmpty(projectId) || CollectionUtils.isEmpty(taskIds)) {
             return;
@@ -108,6 +130,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
             }
             // 组装返回信息
             StringBuilder errorMsg = new StringBuilder();
+            errorMsg.append("对于");
             int index = 0;
             for (TaskBase taskBase : taskBases) {
                 if (index > 0) {
@@ -120,11 +143,32 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
                     break;
                 }
             }
+            errorMsg.append("任务，用户").append(userName);
             throw new CodeCCException(CommonMessageCode.PERMISSION_DENIED, new String[]{errorMsg.toString()});
         }
     }
 
     private Result projectBatchProcess(BatchDefectProcessReqVO batchDefectProcessReqVO) {
+        Set<Long> taskIds = getProjectBatchTaskList(batchDefectProcessReqVO);
+        if (CollectionUtils.isEmpty(taskIds)) {
+            return new Result<>(0, "batch process successful", 0L);
+        }
+        // 校验权限
+        validOpsPermission(batchDefectProcessReqVO.getUserName(), batchDefectProcessReqVO.getProjectId(),
+                new LinkedList<>(taskIds));
+        long effectCount = 0;
+        for (Long taskId : taskIds) {
+            BatchDefectProcessReqVO taskBatchDefectVO = new BatchDefectProcessReqVO();
+            BeanUtils.copyProperties(batchDefectProcessReqVO, taskBatchDefectVO);
+            taskBatchDefectVO.setTaskId(taskId);
+            // todo: 考虑try-catch
+            effectCount += singleTaskBatchProcess(taskBatchDefectVO);
+        }
+        return new Result<Long>(0, "batch process successful", effectCount);
+    }
+
+
+    protected Set<Long> getProjectBatchTaskList(BatchDefectProcessReqVO batchDefectProcessReqVO) {
         if (StringUtils.isBlank(batchDefectProcessReqVO.getProjectId())) {
             throw new CodeCCException(CommonMessageCode.PARAMETER_IS_NULL, new String[]{"projectId"});
         }
@@ -137,25 +181,9 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
         } else {
             taskIds = new HashSet<>(getTaskIdsByDefectKeySet(batchDefectProcessReqVO));
         }
-
-        if (CollectionUtils.isEmpty(taskIds)) {
-            return new Result<Boolean>(0, "batch process successful", true);
-        }
-
-        // 校验权限
-        validOpsPermission(batchDefectProcessReqVO.getUserName(), batchDefectProcessReqVO.getProjectId(),
-                new LinkedList<>(taskIds));
-
-        long effectCount = 0;
-        for (Long taskId : taskIds) {
-            BatchDefectProcessReqVO taskBatchDefectVO = new BatchDefectProcessReqVO();
-            BeanUtils.copyProperties(batchDefectProcessReqVO, taskBatchDefectVO);
-            taskBatchDefectVO.setTaskId(taskId);
-            // todo: 考虑try-catch
-            effectCount += singleTaskBatchProcess(taskBatchDefectVO);
-        }
-        return new Result<Long>(0, "batch process successful", effectCount);
+        return taskIds;
     }
+
 
     protected abstract List<Long> getTaskIdsByDefectKeySet(BatchDefectProcessReqVO batchDefectProcessReqVO);
 
@@ -187,10 +215,10 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
     /**
      * 根据 business type 判断是需要插入 negative defect 还是删除
      *
-     * @date 2024/3/9
-     * @param bizType           业务类型
-     * @param ignoreReasonType  忽略原因类型
+     * @param bizType 业务类型
+     * @param ignoreReasonType 忽略原因类型
      * @return int              0, 不用操作; 1, 插入; 2 删除
+     * @date 2024/3/9
      */
     private int isInsertOrDelete(String bizType, int ignoreReasonType) {
         if (StringUtils.isBlank(bizType)) {
@@ -235,8 +263,12 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
                 defectList == null ? 0 : defectList.size(), batchDefectProcessReqVO.getDefectKeySet().size());
 
         if (CollectionUtils.isNotEmpty(defectList) && defectList.get(0) instanceof LintDefectV2Entity) {
-            int opType = isInsertOrDelete(batchDefectProcessReqVO.getBizType(),
+            int opType = NOP;
+        if (CollectionUtils.isNotEmpty(defectList) && defectList.get(0) instanceof LintDefectV2Entity) {
+            opType = isInsertOrDelete(batchDefectProcessReqVO.getBizType(),
                     batchDefectProcessReqVO.getIgnoreReasonType());
+        }
+
             if (opType == INS) {
                 Result<TaskDetailVO> taskBaseResult = client.get(ServiceTaskRestResource.class)
                         .getTaskInfoById(batchDefectProcessReqVO.getTaskId());
@@ -263,20 +295,15 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
         return CollectionUtils.isNotEmpty(defectList) ? defectList.size() : 0L;
     }
 
-    private long processDefectByPage(BatchDefectProcessReqVO batchDefectProcessReqVO) {
+    protected long processDefectByPage(BatchDefectProcessReqVO batchDefectProcessReqVO) {
         log.info("processDefectByPage start {} {} {}", batchDefectProcessReqVO.getTaskId(),
                 batchDefectProcessReqVO.getToolName(), batchDefectProcessReqVO.getDimension());
 
-        boolean needBatchInsert = false;
-        if (batchDefectProcessReqVO.getBizType().contains(BusinessType.IGNORE_DEFECT.value())
-                && batchDefectProcessReqVO.getIgnoreReasonType() == ComConstants.IgnoreReasonType.ERROR_DETECT.value()
-        ) {
-            needBatchInsert = true;
-        } else if (batchDefectProcessReqVO.getBizType().contains(BusinessType.CHANGE_IGNORE_TYPE.value())) {
-            if (batchDefectProcessReqVO.getIgnoreReasonType() == ComConstants.IgnoreReasonType.ERROR_DETECT.value()) {
-                needBatchInsert = true;
-            }
-        }
+        String bizType = batchDefectProcessReqVO.getBizType();
+        int ignoreReasonType = batchDefectProcessReqVO.getIgnoreReasonType();
+        boolean needBatchInsert = (bizType.contains(BusinessType.IGNORE_DEFECT.value())
+                || bizType.contains(BusinessType.CHANGE_IGNORE_TYPE.value()))
+                && ignoreReasonType == ComConstants.IgnoreReasonType.ERROR_DETECT.value();
 
         List pageDefectList;
         DefectQueryReqVO queryCondObj = getDefectQueryReqVO(batchDefectProcessReqVO);
@@ -289,6 +316,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
             // 分页获取，使用条件过滤加SKIP，避免出现深度分页现象
             DefectQueryReqVO reqVO = new DefectQueryReqVO();
             BeanUtils.copyProperties(queryCondObj, reqVO);
+            // 设置某些操作特殊的查询条件
             reqVO.setNeedBatchInsert(needBatchInsert);
             pageDefectList = getDefectsByQueryCondWithPage(batchDefectProcessReqVO.getTaskId(), reqVO,
                     startFilePath, skip, pageSize);
@@ -387,12 +415,33 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
         } else if (defect instanceof CCNDefectEntity) {
             CCNDefectEntity ccn = (CCNDefectEntity) defect;
             return ccn.getRelPath();
+        } else if ((defect instanceof SCASbomPackageEntity) || (defect instanceof SCALicenseEntity)) {
+            return defect.getEntityId();
         }
         return null;
     }
 
-    private DefectQueryReqVO getDefectQueryReqVO(BatchDefectProcessReqVO batchDefectProcessReqVO) {
-        DefectQueryReqVO queryCondObj =  batchDefectProcessReqVO.convertDefectQueryReqVO();
+
+    protected DefectQueryReqVO getDefectQueryReqVO(BatchDefectProcessReqVO batchDefectProcessReqVO) {
+        // 1.解析批量处理请求中的告警查询条件
+        String queryDefectCondition = batchDefectProcessReqVO.getQueryDefectCondition();
+        DefectQueryReqVO queryCondObj = JsonUtil.INSTANCE.to(queryDefectCondition, DefectQueryReqVO.class);
+        if (queryCondObj == null) {
+            log.error("defect batch op, query obj deserialize fail, json: {}", queryDefectCondition);
+            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID);
+        }
+
+        // 2.设置是否为恢复忽略再标记
+        queryCondObj.setRevertAndMark(batchDefectProcessReqVO.getRevertAndMark());
+
+        // 3.设置是否需要过滤掉正在审核的告警
+        boolean needFilterApprovalDefect =
+                batchDefectProcessReqVO.getBizType().contains(BusinessType.IGNORE_DEFECT.value())
+                        || batchDefectProcessReqVO.getBizType().contains(BusinessType.IGNORE_APPROVAL.value());
+        queryCondObj.setNeedFilterApprovalDefect(needFilterApprovalDefect);
+        log.info("defect batch op, query obj: {}", queryCondObj);
+
+        // 4.设置业务处理类型对应处理的告警状态
         Set<String> statusAllows = new HashSet<>(getStatusCondition(queryCondObj));
         Set<String> retainStatus = CollectionUtils.isEmpty(queryCondObj.getStatus()) ? statusAllows
                 : queryCondObj.getStatus().stream().filter(statusAllows::contains).collect(Collectors.toSet());
@@ -400,7 +449,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
             retainStatus = Sets.newHashSet("-1");
         }
         queryCondObj.setStatus(retainStatus);
-        log.info("defect batch op, query obj: {}", queryCondObj);
+
         return queryCondObj;
     }
 
@@ -417,6 +466,9 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
         }
         Pair<ComConstants.BusinessType, ComConstants.ToolType> typePair =
                 getBusinessTypeToolTypePair();
+        if (typePair == null) {
+            return;
+        }
         ComConstants.BusinessType businessType = typePair.getFirst();
         ComConstants.ToolType toolType = typePair.getSecond();
         for (BatchDefectProcessHandler handler : handlers.values()) {

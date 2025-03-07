@@ -45,6 +45,9 @@ public class TaskListReqVO {
     @ApiModelProperty(value = "true, 展示已停用任务; false, 展示启用任务")
     private Boolean showDisabledTask;
 
+    @ApiModelProperty(value = "选择展示的任务类型. 1, 启用任务; 2, 停用任务; 3, 测试任务")
+    private Integer showTaskType;
+
     @ApiModelProperty("任务状态集合")
     private List<TaskListStatus> taskStatusList;
 }

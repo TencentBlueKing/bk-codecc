@@ -35,7 +35,6 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import javax.validation.constraints.Pattern;
 import java.util.List;
 import java.util.Map;
 
@@ -117,6 +116,9 @@ public class ToolMetaDetailVO extends ToolMetaBaseVO {
 
     @ApiModelProperty(value = "工具二进制相关信息")
     private Binary binary;
+
+    @ApiModelProperty(value = "工具是否需要 git diff 信息")
+    private Boolean gitDiffRequired = false;
 
     @Data
     public static class Binary {

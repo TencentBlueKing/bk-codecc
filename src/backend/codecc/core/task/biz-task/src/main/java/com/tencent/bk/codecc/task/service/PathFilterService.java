@@ -81,6 +81,15 @@ public interface PathFilterService
 
 
     /**
+     * 获取屏蔽路径信息
+     * @param pipelineId
+     * @param mark
+     * @return
+     */
+    FilterPathOutVO getFilterPath(String pipelineId,String mark);
+
+
+    /**
      * 路径屏蔽树
      *
      * @param taskId

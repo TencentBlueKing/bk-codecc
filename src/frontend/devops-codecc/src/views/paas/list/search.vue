@@ -102,7 +102,7 @@
 
       <section class="search-list">
         <span class="search-name">{{ $t('组织') }}</span>
-        <org class="search-select" v-model="searchValue.organizationIds"></org>
+        <org ref="orgTreeRef" class="search-select" v-model="organizationIdList"></org>
       </section>
 
       <section class="search-list">
@@ -152,6 +152,9 @@ export default {
         endDate: '',
         processProgresses: [],
       },
+      organizationIdList: [],
+      treeData: [],
+      typeIdMap: {},
       daterange: [],
       optional: {},
       fromList: [
@@ -216,6 +219,10 @@ export default {
           name: this.$t('待处理'),
         },
         {
+          id: 4,
+          name: this.$t('跟进中'),
+        },
+        {
           id: 1,
           name: this.$t('已优化工具'),
         },
@@ -255,6 +262,24 @@ export default {
       this.getList();
       this.getCount();
     },
+    organizationIdList(selectList) {
+      // 后端按照 BG、部门、中心 顺序处理数组。过滤事业线的id
+      let scopes = []
+      // 遍历组件传来的组织架构数组
+      selectList.forEach(organize => {
+        let organization = []
+        // 6:BG、1:部门、7:中心
+        // 后端按照数组顺序解析组织架构
+        organize.forEach(id => {
+          const type = this.typeIdMap.get(id);
+          if (type === '6' || type === '1' || type === '7') {
+            organization.push(parseInt(id));
+          }
+        });
+        scopes.push(organization)
+      })
+      this.searchValue.organizationIds = scopes
+    },
     searchValue: {
       handler() {
         this.getList();
@@ -270,14 +295,17 @@ export default {
     this.init();
   },
   mounted() {
+    this.orgTreeRef = this.$refs.orgTreeRef;
     bus.$on('refresh-paas-count', () => {
       this.getStatistics();
     });
   },
   methods: {
     init() {
+      this.getRouteQuery();
       this.getStatistics();
       this.getOptional();
+      this.getOrganizationType();
     },
     getStatistics() {
       const { toolName } = this.$route.params;
@@ -325,6 +353,45 @@ export default {
         this.listData = res;
       });
     },
+    async getRouteQuery() {
+      // 从路由路径中提取查询参数
+      const { bgId, startDate, endDate, deptIds } = this.$route.query;
+      // 检查是否存在必要的查询参数
+      if (bgId !== undefined) {
+        // 设置搜索值和日期范围
+        this.searchValue.startDate = startDate || '';
+        this.searchValue.endDate = endDate || '';
+        this.daterange = [this.searchValue.startDate, this.searchValue.endDate];
+        // 准备部门 ID 数组
+        let deptIdArray = deptIds;
+        if (deptIds !== undefined && !Array.isArray(deptIds)) {
+          deptIdArray = [deptIds];
+        }
+        // 根据部门 ID 显示下拉框
+        this.$nextTick(() => {
+          this.$refs.orgTreeRef.showDropdownByIds(deptIdArray || [bgId]);
+        });
+      }
+    },
+    async getOrganizationType() {
+      await this.$store.dispatch('getDeptTree').then((res) => {
+        this.treeData = res.treeData || [];
+      });
+      this.typeIdMap = this.buildNodeMap(this.treeData)
+    },
+
+    buildNodeMap(treeData, nodeMap = new Map()) {
+      for (const node of treeData) {
+        // 将当前节点的 id 和 typeId 存入 nodeMap
+        nodeMap.set(node.id, node.typeId);
+
+        // 如果当前节点有子节点,则递归遍历子节点
+        if (node.children) {
+          this.buildNodeMap(node.children, nodeMap);
+        }
+      }
+      return nodeMap;
+    }
   },
 };
 </script>

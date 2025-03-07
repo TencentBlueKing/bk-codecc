@@ -31,9 +31,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.TransferAuthorRepository;
-import com.tencent.bk.codecc.defect.dao.defect.mongorepository.TaskLogRepository;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
-import com.tencent.bk.codecc.defect.model.TaskLogEntity;
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity;
 import com.tencent.bk.codecc.defect.model.defect.CommonDefectEntity;
 import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
@@ -51,6 +49,14 @@ import com.tencent.devops.common.constant.ComConstants.DefectStatus;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
 import com.tencent.devops.common.util.FileUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.util.Pair;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -59,13 +65,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.util.Pair;
 
 /**
  * 告警上报抽象类
@@ -81,8 +80,6 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
     @Autowired
     protected RedisTemplate<String, String> redisTemplate;
     @Autowired
-    private TaskLogRepository taskLogRepository;
-    @Autowired
     private TransferAuthorRepository transferAuthorRepository;
     @Autowired
     private ThirdPartySystemCaller thirdPartySystemCaller;
@@ -94,10 +91,10 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
     private CheckerRepository checkerRepository;
     @Autowired
     private ReallocateDefectAuthorService reallocateDefectAuthorService;
-
     @Autowired
     private DefectFilePathClusterService defectFilePathClusterService;
-
+    @Autowired
+    private BuildService buildService;
     @Autowired
     private Client client;
 
@@ -135,10 +132,6 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
         String toolName = uploadDefectVO.getToolName();
         String buildId = uploadDefectVO.getBuildId();
 
-        TaskLogEntity taskLogEntity = taskLogRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName,
-                buildId);
-        String buildNum = taskLogEntity.getBuildNum();
-
         TaskDetailVO taskDetailVO = thirdPartySystemCaller.getTaskInfoWithoutToolsByTaskId(taskId);
         Set<String> filterPathSet = filterPathService.getFilterPaths(taskDetailVO, toolName);
         TransferAuthorEntity transferAuthorEntity = transferAuthorRepository.findFirstByTaskId(taskId);
@@ -148,9 +141,7 @@ public abstract class AbstractPlatformUploadDefectBizService extends AbstractUpl
         }
 
         Set<String> whitePaths = new HashSet<>();
-        if (CollectionUtils.isNotEmpty(taskDetailVO.getWhitePaths())) {
-            whitePaths.addAll(taskDetailVO.getWhitePaths());
-        }
+        String buildNum = buildService.getBuildInfo(buildId, taskId, toolName, taskDetailVO,whitePaths);
 
         log.info("begin to save defect");
         String redisKeyForAuthorReassign = String.format(

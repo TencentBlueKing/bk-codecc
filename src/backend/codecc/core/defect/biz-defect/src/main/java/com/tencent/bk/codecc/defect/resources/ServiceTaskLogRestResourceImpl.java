@@ -28,6 +28,7 @@ package com.tencent.bk.codecc.defect.resources;
 
 import com.tencent.bk.codecc.defect.api.ServiceTaskLogRestResource;
 import com.tencent.bk.codecc.defect.service.TaskLogService;
+import com.tencent.bk.codecc.defect.vo.BatchLastAnalyzeReqVO;
 import com.tencent.bk.codecc.defect.vo.BatchTaskLogQueryVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogRepoInfoVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
@@ -42,10 +43,12 @@ import com.tencent.devops.common.service.IBizService;
 import com.tencent.devops.common.web.RestResource;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -149,6 +152,17 @@ public class ServiceTaskLogRestResourceImpl implements ServiceTaskLogRestResourc
     @Override
     public Result<Map<String, TaskLogRepoInfoVO>> getLastAnalyzeRepoInfo(Long taskId) {
         return new Result<>(taskLogService.getLastAnalyzeRepoInfo(taskId));
+    }
+
+    @Override
+    public Result<Map<Long, Integer>> batchGetAnalyzeFlag(BatchLastAnalyzeReqVO batchLastAnalyzeReqVO) {
+        Map<Long, Integer> result = new HashMap<>();
+        batchLastAnalyzeReqVO.getTaskIdAndBuildIdMap().forEach((taskId, buildId) -> {
+            TaskLogVO taskLogVO = taskLogService.getBuildTaskLog(taskId, batchLastAnalyzeReqVO.getToolName(), buildId);
+            result.put(taskLogVO.getTaskId(), taskLogVO.getFlag());
+        });
+
+        return new Result<>(result);
     }
 
 }

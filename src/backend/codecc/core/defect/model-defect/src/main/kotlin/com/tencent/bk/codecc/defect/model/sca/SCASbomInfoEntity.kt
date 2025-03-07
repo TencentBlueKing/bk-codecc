@@ -1,0 +1,31 @@
+package com.tencent.bk.codecc.defect.model.sca
+
+import com.tencent.bk.codecc.defect.model.sca.sbom.SbomInfo
+import com.tencent.codecc.common.db.CommonEntity
+import org.springframework.data.mongodb.core.index.CompoundIndex
+import org.springframework.data.mongodb.core.index.CompoundIndexes
+import org.springframework.data.mongodb.core.mapping.Document
+import org.springframework.data.mongodb.core.mapping.Field
+import org.springframework.data.mongodb.core.mapping.Sharded
+
+
+/**
+ * SBOM 生成信息
+ */
+@CompoundIndexes(
+    CompoundIndex(name = "idx_task_id_1_tool_name_1", def = "{'task_id':1, 'tool_name':1}", background = true),
+)
+@Sharded(shardKey = ["task_id"])
+@Document(collection = "t_sca_sbom_info")
+data class SCASbomInfoEntity(
+    /**
+     * 任务ID
+     */
+    @Field("task_id")
+    var taskId: Long,
+    /**
+     * 工具名称
+     */
+    @Field("tool_name")
+    var toolName: String
+) : SbomInfo()

@@ -26,14 +26,18 @@
 
 package com.tencent.bk.codecc.defect.resources;
 
+import com.tencent.bk.audit.annotations.AuditEntry;
 import com.tencent.bk.codecc.defect.api.UserCheckerRestResource;
+import com.tencent.bk.codecc.defect.service.CheckerImportService;
 import com.tencent.bk.codecc.defect.service.CheckerService;
 import com.tencent.bk.codecc.defect.service.ICheckerSetBizService;
 import com.tencent.bk.codecc.defect.service.IConfigCheckerPkgBizService;
 import com.tencent.bk.codecc.defect.vo.CheckerCommonCountVO;
 import com.tencent.bk.codecc.defect.vo.CheckerDetailListQueryReqVO;
 import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
+import com.tencent.bk.codecc.defect.vo.CheckerImportVO;
 import com.tencent.bk.codecc.defect.vo.CheckerListQueryReq;
+import com.tencent.bk.codecc.defect.vo.CheckerManagementPermissionReqVO;
 import com.tencent.bk.codecc.defect.vo.ConfigCheckersPkgReqVO;
 import com.tencent.bk.codecc.defect.vo.GetCheckerListRspVO;
 import com.tencent.bk.codecc.defect.vo.checkerset.AddCheckerSet2TaskReqVO;
@@ -41,16 +45,21 @@ import com.tencent.bk.codecc.defect.vo.checkerset.CheckerSetDifferenceVO;
 import com.tencent.bk.codecc.defect.vo.checkerset.UpdateCheckerSetReqVO;
 import com.tencent.bk.codecc.defect.vo.checkerset.UserCreatedCheckerSetsVO;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerListSortType;
+import com.tencent.bk.codecc.defect.vo.enums.CheckerPermissionType;
 import com.tencent.devops.common.api.annotation.I18NResponse;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.OpAuthApi;
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import com.tencent.devops.common.constant.audit.ActionIds;
 import com.tencent.devops.common.web.RestResource;
 import com.tencent.devops.common.web.security.AuthMethod;
+
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 
@@ -63,6 +72,8 @@ import org.springframework.data.domain.Sort;
 @Slf4j
 @RestResource
 public class UserCheckerRestResourceImpl implements UserCheckerRestResource {
+    @Autowired
+    private CheckerImportService checkerImportService;
 
     @Autowired
     private IConfigCheckerPkgBizService configCheckerPkgBizService;
@@ -135,12 +146,17 @@ public class UserCheckerRestResourceImpl implements UserCheckerRestResource {
     @I18NResponse
     public Result<List<CheckerDetailVO>> queryCheckerDetailList(
             CheckerListQueryReq checkerListQueryReq,
+            String userId,
             String projectId,
             Integer pageNum,
             Integer pageSize,
             Sort.Direction sortType,
             CheckerListSortType sortField
     ) {
+        // isOp为true可查看项目之外的自定义规则，需要判断是否为OP管理员
+        if (checkerListQueryReq.getIsOp() && !opAuthApi.isOpAdminMember(userId)) {
+            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, new String[]{"op admin member"});
+        }
         return new Result<>(checkerService.queryCheckerDetailList(checkerListQueryReq, projectId, pageNum,
                 pageSize, sortType, sortField));
     }
@@ -148,7 +164,11 @@ public class UserCheckerRestResourceImpl implements UserCheckerRestResource {
 
     @Override
     public Result<List<CheckerCommonCountVO>> queryCheckerCountList(CheckerListQueryReq checkerListQueryReq,
-            String projectId) {
+            String userId, String projectId) {
+        // isOp为true可查看项目之外的自定义规则，需要判断是否为OP管理员
+        if (checkerListQueryReq.getIsOp() && !opAuthApi.isOpAdminMember(userId)) {
+            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, new String[]{"op admin member"});
+        }
         return new Result<>(checkerService.queryCheckerCountListNew(checkerListQueryReq, projectId));
     }
 
@@ -163,7 +183,43 @@ public class UserCheckerRestResourceImpl implements UserCheckerRestResource {
         if (!opAuthApi.isOpAdminMember(userId)) {
             throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, new String[]{"op admin member"});
         }
-        return new Result<>(checkerService.updateCheckerByCheckerKey(checkerDetailVO));
+        return new Result<>(checkerService.updateCheckerByCheckerKey(checkerDetailVO, userId));
+    }
+
+    @AuditEntry(actionId = ActionIds.CREATE_REGEX_RULE)
+    @Override
+    public Result<Boolean> customCheckerImport(String userName, String projectId, CheckerImportVO checkerImportVO) {
+        // 校验输入参数
+        if (CollectionUtils.isEmpty(checkerImportVO.getCheckerDetailVOList())) {
+            String errMsg = "输入规则不能为空";
+            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_NULL, new String[]{errMsg}, null);
+        }
+
+        if (StringUtils.isBlank(checkerImportVO.getToolName())) {
+            String errMsg = "输入工具名不能为空";
+            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_NULL, new String[]{errMsg}, null);
+        }
+
+        return new Result<>(checkerImportService.customCheckerImport(userName, projectId, checkerImportVO));
+    }
+
+    @AuditEntry(actionId = ActionIds.UPDATE_REGEX_RULE)
+    @Override
+    public Result<Boolean> updateCustomCheckerByCheckerKey(CheckerDetailVO checkerDetailVO,
+                                                           String projectId, String userId) {
+        return new Result<>(checkerService.updateCustomCheckerByCheckerKey(checkerDetailVO, projectId, userId));
+    }
+
+    /**
+     * 根据checkerKey和ToolName删除用户自定义规则
+     *
+     * @deprecated 由于规则集的更新采用累加版本方式，删除规则对规则集的处理逻辑将导致原有设计遭到破坏，目前暂时停用删除功能
+     */
+    @Deprecated
+    @Override
+    public Result<Boolean> deleteCustomCheckerByCheckerKey(CheckerDetailVO checkerDetailVO,
+                                                           String projectId, String userId) {
+        return new Result<>(checkerService.deleteCustomCheckerByCheckerKey(checkerDetailVO, projectId, userId));
     }
 
 
@@ -172,4 +228,11 @@ public class UserCheckerRestResourceImpl implements UserCheckerRestResource {
             CheckerDetailListQueryReqVO checkerListQueryReq) {
         return new Result<>(checkerService.queryCheckerDetailList(checkerListQueryReq));
     }
+
+    @Override
+    public Result<List<CheckerPermissionType>> getCheckerManagementPermission(
+        CheckerManagementPermissionReqVO authManagementPermissionReqVO) {
+        return new Result<>(checkerService.getCheckerManagementPermission(authManagementPermissionReqVO));
+    }
+
 }

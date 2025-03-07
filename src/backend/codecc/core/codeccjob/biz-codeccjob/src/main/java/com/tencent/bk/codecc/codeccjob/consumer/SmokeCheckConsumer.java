@@ -171,7 +171,7 @@ public class SmokeCheckConsumer {
 
                 // 设置强制全量扫描
                 QueryTaskListReqVO reqVO = new QueryTaskListReqVO();
-                reqVO.setTaskIds(taskIdSet);
+                reqVO.setTaskIds(taskIds);
                 reqVO.setToolName(toolName);
                 Result<Boolean> result = client.get(ServiceToolBuildInfoResource.class).batchSetForceFullScan(reqVO);
                 if (result.isNotOk() || result.getData() == null || !result.getData()) {

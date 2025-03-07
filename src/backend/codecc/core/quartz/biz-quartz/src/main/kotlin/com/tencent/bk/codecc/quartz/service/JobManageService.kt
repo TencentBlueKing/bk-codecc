@@ -76,7 +76,22 @@ interface JobManageService {
     /**
      * 刷新开源的cron表达式
      */
-    fun refreshOpensourceCronExpression(period : Int, startTime : Int)
+    fun refreshOpensourceCronExpression(period: Int, startTime: Int)
 
     fun findJobListByClassName(className: String): List<JobInfoVO>
+
+    /**
+     * 更新最近一次 & 下一次执行时间
+     */
+    fun updateLastAndNextTriggerTime(jobName: String, triggerTime: Long, nextTime: Long)
+
+    /**
+     * 查询指定ClassName与Tag且在时间段内未运行的任务
+     */
+    fun findByNextTimeInInterval(
+        classNames: List<String>,
+        tag: String,
+        startTime: Long,
+        endTime: Long
+    ): List<JobInfoVO>?
 }

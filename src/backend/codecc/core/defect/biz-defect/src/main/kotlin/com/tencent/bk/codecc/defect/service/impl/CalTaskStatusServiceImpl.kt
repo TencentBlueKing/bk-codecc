@@ -1,6 +1,7 @@
 package com.tencent.bk.codecc.defect.service.impl
 
 import com.tencent.bk.codecc.defect.pojo.HandlerDTO
+import com.tencent.bk.codecc.defect.service.TaskLogOverviewService
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
 import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.constant.ComConstants
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component
 class CalTaskStatusServiceImpl @Autowired constructor(
     private val client: Client,
     private val taskLogService: TaskLogServiceImpl,
-    private val taskLogOverviewService: TaskLogOverviewServiceImpl
+    private val taskLogOverviewService: TaskLogOverviewService
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(CalTaskStatusServiceImpl::class.java)
@@ -27,6 +28,14 @@ class CalTaskStatusServiceImpl @Autowired constructor(
      */
     fun getTaskStatus(handlerDTO: HandlerDTO) {
         with(handlerDTO) {
+            val pair = taskLogOverviewService.getAutoScanLangFlagAndExeTools(taskId, buildId)
+            // 如果是自动识别语言的扫描，直接设置扫描中
+            if (pair.first) {
+                logger.info("auto lang scan end: $taskId $buildId")
+                scanStatus = ComConstants.ScanStatus.PROCESSING
+                return
+            }
+
             val taskLogVOList = taskLogService.getCurrBuildInfo(taskId, buildId)
             // 获取任务扫描工具
             val result = client.get(ServiceTaskRestResource::class.java).getTaskToolList(taskId)

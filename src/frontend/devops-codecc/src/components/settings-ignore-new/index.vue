@@ -3,8 +3,6 @@
     v-model="createVisible"
     :theme="'primary'"
     :width="579"
-    @confirm="save"
-    @cancel="cancel"
     :before-close="handleBeforeClose"
     :position="{ top: 100, left: 5 }"
   >
@@ -12,6 +10,7 @@
       type="unborder-card"
       :label-height="42"
       class="create-tab"
+      :active.sync="tabSelect"
       @tab-change="changeTab"
     >
       <bk-tab-panel
@@ -98,6 +97,10 @@
       </div>
       <!-- /系统默认 -->
     </bk-tab>
+    <template #footer>
+      <bk-button theme="primary" @click="save" :disabled="saveDisabled">确定</bk-button>
+      <bk-button @click="cancel">取消</bk-button>
+    </template>
   </bk-dialog>
 </template>
 
@@ -119,14 +122,13 @@ export default {
         { name: 'choose', label: this.$t('选择路径'), count: 10 },
         { name: 'input', label: this.$t('手动输入'), count: 20 },
       ],
-      active: 'choose',
       formData: {
         searchData: '',
         name: '',
         paths: [{ customPath: '' }],
       },
       paths: [{}],
-      tabSelect: '',
+      tabSelect: 'choose',
       postData: {
         taskId: '',
         pathType: 'CUSTOM',
@@ -139,6 +141,7 @@ export default {
       allPathNode: [],
       repeat: 0,
       allNode: [],
+      isHasChecked: false,
       rules: {
         customPath: [
           {
@@ -175,6 +178,17 @@ export default {
       },
       set(value) {
         this.$emit('visibleChange', value);
+      },
+    },
+    saveDisabled: {
+      get() {
+        if (this.tabSelect === 'choose' && !this.isHasChecked) {
+          return true;
+        }
+        if (this.tabSelect === 'input' && !this.formData.paths.every(item => !!item.customPath)) {
+          return true;
+        }
+        return false;
       },
     },
   },
@@ -349,7 +363,8 @@ export default {
     filterMethod(keyword, node) {
       return node.name.toLowerCase().indexOf(keyword.toLowerCase()) > -1;
     },
-    handleCheckChange() {
+    handleCheckChange(values) {
+      this.isHasChecked = values.length > 0;
       window.changeAlert = true;
     },
     handleBeforeClose() {

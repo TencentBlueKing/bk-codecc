@@ -36,8 +36,10 @@ public class CommonDefectStatisticModelBuilder extends AbstractDefectStatisticMo
      * @return 告警统计持久化类
      */
     @Override
-    public CommonStatisticEntity convert() {
-        CommonStatisticEntity commonStatisticEntity = new CommonStatisticEntity();
+    public CommonStatisticEntity convert(CommonStatisticEntity commonStatisticEntity) {
+        if (commonStatisticEntity == null) {
+            commonStatisticEntity = new CommonStatisticEntity();
+        }
         commonStatisticEntity.setTaskId(defectStatisticModel.getTaskId());
         commonStatisticEntity.setToolName(defectStatisticModel.getToolName());
         commonStatisticEntity.setTime(System.currentTimeMillis());
@@ -64,14 +66,12 @@ public class CommonDefectStatisticModelBuilder extends AbstractDefectStatisticMo
         commonStatisticEntity.setExistPromptAuthors(defectStatisticModel.getOldPromptAuthors());
         commonStatisticEntity.setExistNormalAuthors(defectStatisticModel.getOldNormalAuthors());
         commonStatisticEntity.setExistSeriousAuthors(defectStatisticModel.getOldSeriousAuthors());
-
         // 维度相关统计
         if (defectStatisticModel.getDimensionStatisticModel() != null) {
             DimensionStatisticEntity dimensionStatisticEntity = new DimensionStatisticEntity();
             BeanUtils.copyProperties(defectStatisticModel.getDimensionStatisticModel(), dimensionStatisticEntity);
             commonStatisticEntity.setDimensionStatistic(dimensionStatisticEntity);
         }
-
         return commonStatisticEntity;
     }
 

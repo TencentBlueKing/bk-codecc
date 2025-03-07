@@ -14,25 +14,33 @@ package com.tencent.bk.codecc.defect.dao.defect.mongotemplate;
 
 import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.model.CodeRepoFromAnalyzeLogEntity;
+import com.tencent.bk.codecc.defect.model.CodeRepoStatisticEntity;
 import com.tencent.bk.codecc.defect.pojo.CodeRepoStatisticModel;
+import com.tencent.devops.common.constant.ComConstants;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.CountOperation;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.aggregation.LimitOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.aggregation.SkipOperation;
+import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.aggregation.UnwindOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 代码仓库总表持久类
@@ -42,6 +50,8 @@ import java.util.List;
  */
 @Repository
 public class CodeRepoStatisticDao {
+
+    private static final String CODE_REPO_STATISTIC = "t_code_repo_statistic";
 
     @Autowired
     private MongoTemplate defectMongoTemplate;
@@ -64,7 +74,7 @@ public class CodeRepoStatisticDao {
                 .withOptions(new AggregationOptions.Builder().allowDiskUse(true).build());
 
         List<CodeRepoStatisticModel> countResult =
-                defectMongoTemplate.aggregate(agg, "t_code_repo_statistic", CodeRepoStatisticModel.class)
+                defectMongoTemplate.aggregate(agg, CODE_REPO_STATISTIC, CodeRepoStatisticModel.class)
                         .getMappedResults();
         if (CollectionUtils.isNotEmpty(countResult)) {
             return countResult.get(0).getUrlCount();
@@ -81,7 +91,7 @@ public class CodeRepoStatisticDao {
      */
     public long getBranchCount(long endTime, String createFrom) {
         Criteria criteria = getCodeRepoStatTrendCriteria(endTime, createFrom, "branch_first_scan");
-        return defectMongoTemplate.count(new Query(criteria), "t_code_repo_statistic");
+        return defectMongoTemplate.count(new Query(criteria), CODE_REPO_STATISTIC);
     }
 
     /**
@@ -139,5 +149,52 @@ public class CodeRepoStatisticDao {
         AggregationResults<CodeRepoFromAnalyzeLogEntity> results =
                 defectMongoTemplate.aggregate(agg, "t_code_repo_from_analyzelog", CodeRepoFromAnalyzeLogEntity.class);
         return results.getMappedResults();
+    }
+
+    /**
+     * 按url分组分页获取url
+     */
+    public List<String> distinctUrlByDataFrom(String dataFrom, Integer pageNum, Integer pageSize)  {
+        int page = (pageNum == null || pageNum <= 0) ? 0 : pageNum - 1;
+        int size = (pageSize == null || pageSize <= 0 || pageSize > ComConstants.COMMON_NUM_10000)
+                ? ComConstants.SMALL_PAGE_SIZE : pageSize;
+
+        MatchOperation match = Aggregation.match(Criteria.where("data_from").is(dataFrom));
+        GroupOperation group = Aggregation.group("url").first("url").as("url");
+        SortOperation sort = Aggregation.sort(Sort.Direction.ASC, "url");
+
+        SkipOperation skip = Aggregation.skip((long) page * size);
+        LimitOperation limit = Aggregation.limit(size);
+
+        Aggregation agg = Aggregation.newAggregation(match, group, sort, skip, limit)
+                .withOptions(new AggregationOptions.Builder().allowDiskUse(true).build());
+        return defectMongoTemplate.aggregate(agg, CODE_REPO_STATISTIC, CodeRepoStatisticEntity.class)
+                .getMappedResults().stream().map(CodeRepoStatisticEntity::getUrl).collect(Collectors.toList());
+    }
+
+    /**
+     * 指定查询
+     * @param createFrom 来源
+     * @see com.tencent.devops.common.constant.ComConstants.DefectStatType
+     * @return list
+     */
+    public List<CodeRepoStatisticEntity> findByCreateFromAndUrls(String createFrom, List<String> urls) {
+        List<Criteria> criteriaList = Lists.newArrayList();
+
+        if (StringUtils.isNotEmpty(createFrom)) {
+            criteriaList.add(Criteria.where("data_from").is(createFrom));
+        }
+
+        if (CollectionUtils.isNotEmpty(urls)) {
+            criteriaList.add(Criteria.where("url").in(urls));
+        }
+
+        Criteria criteria = new Criteria();
+        if (CollectionUtils.isEmpty(criteriaList)) {
+            return Collections.emptyList();
+        }
+        criteria.andOperator(criteriaList.toArray(new Criteria[0]));
+        Query query = new Query(criteria);
+        return defectMongoTemplate.find(query, CodeRepoStatisticEntity.class, CODE_REPO_STATISTIC);
     }
 }

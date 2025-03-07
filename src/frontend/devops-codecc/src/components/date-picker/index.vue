@@ -8,9 +8,9 @@
       >
         {{ localVal ? localVal : $t('请选择') }}
       </div>
-      <i :class="['bk-icon icon-angle-down', { 'icon-flip': visable }]"></i>
+      <i :class="['bk-icon icon-angle-down', { 'icon-flip': visible }]"></i>
     </bk-button>
-    <div class="picker-dropdown-content" v-if="visable">
+    <div class="picker-dropdown-content" v-if="visible">
       <div class="bk-button-group">
         <bk-button
           v-for="(item, index) in filterTypeList"
@@ -51,14 +51,18 @@ export default {
       type: String,
       default: 'createTime',
     },
+    statusUnion: {
+      type: Array,
+      default: [],
+    },
     handleChange: Function,
   },
   data() {
     return {
       localDaterange: [],
-      visable: false,
+      visible: false,
       filterTypeList: [
-        { key: 'createTime', name: this.$t('创建日期') },
+        { key: 'createTime', name: this.$t('提交日期') },
         { key: 'fixTime', name: this.$t('修复日期') },
       ],
     };
@@ -72,7 +76,7 @@ export default {
       ) {
         result = `${
           this.selected === 'createTime'
-            ? this.$t('创建日期')
+            ? this.$t('提交日期')
             : this.$t('修复日期')
         }：${this.dateRange.join(' - ')}`;
       }
@@ -81,10 +85,10 @@ export default {
   },
   methods: {
     toggleShow() {
-      this.visable = !this.visable;
+      this.visible = !this.visible;
     },
     hiddenDropdown() {
-      this.visable = false;
+      this.visible = false;
     },
     selectType(type) {
       this.selected = type;
@@ -106,6 +110,20 @@ export default {
         this.handleChange(target, this.selected);
       } else {
         this.handleChange([], this.selected);
+      }
+      // 勾选
+      if (this.selected === 'fixTime') {
+        const that = this;
+        if (!this.statusUnion.includes(2)) {
+          const subTitleTxt = this.$t('只有已修复问题包含修复日期字段。筛选条件暂未选择“已修复”状态，是否自动选中？');
+          this.$bkInfo({
+            subTitle: subTitleTxt,
+            maskClose: true,
+            confirmFn: async () => {
+              that.statusUnion.push(2);
+            },
+          });
+        }
       }
       this.hiddenDropdown();
     },

@@ -38,6 +38,7 @@ import com.tencent.bk.codecc.defect.vo.ChartAverageListVO;
 import com.tencent.bk.codecc.defect.vo.ChartAverageVO;
 import com.tencent.bk.codecc.defect.vo.common.CommonDataReportRspVO;
 import com.tencent.bk.codecc.defect.vo.report.CCNChartAuthorVO;
+import com.tencent.bk.codecc.defect.vo.report.ChartAuthorBaseVO;
 import com.tencent.bk.codecc.defect.vo.report.ChartAuthorListVO;
 import com.tencent.devops.common.api.pojo.GlobalMessage;
 import com.tencent.devops.common.constant.ComConstants;
@@ -52,11 +53,13 @@ import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.PriorityQueue;
 
 import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_DATA_REPORT_DATE;
 
@@ -136,13 +139,58 @@ public class CCNDataReportBizServiceImpl extends AbstractDataReportBizService {
 
         ChartAuthorListVO chartAuthorListVO = new ChartAuthorListVO();
         if (MapUtils.isNotEmpty(chartAuthorMap)) {
-            chartAuthorListVO.setAuthorList(new ArrayList<>(chartAuthorMap.values()));
+            chartAuthorListVO.setAuthorList(getCCNAuthorChart(chartAuthorMap));
             super.setTotalChartAuthor(chartAuthorListVO);
         }
 
         return chartAuthorListVO;
     }
 
+    /**
+     * 逻辑同 getCommonAuthorChart, 适配 CCN 工具.
+     */
+    private List<ChartAuthorBaseVO> getCCNAuthorChart(Map<String, CCNChartAuthorVO> origin) {
+        // 根据 total 值升序排列
+        Comparator<CCNChartAuthorVO> comparator = Comparator.comparingInt(CCNChartAuthorVO::getTotal);
+        // 用优先队列临时维护告警前 25 多的归属人
+        PriorityQueue<CCNChartAuthorVO> chartCache = new PriorityQueue<>(comparator);
+
+        CCNChartAuthorVO other = new CCNChartAuthorVO(OTHER_AUTHOR_NAME);
+        origin.forEach((k, v) -> {
+            // No Author 的告警直接归入 other 名下
+            if (DEFAULT_AUTHOR.equals(k)) {
+                other.add(v);
+                return;
+            }
+
+            if (chartCache.size() < MAX_QUEUE_LEN) {
+                // 队列未满 25 人, 直接入队
+                chartCache.add(v);
+            } else {
+                CCNChartAuthorVO minAuthor = chartCache.peek();
+                if (minAuthor.getTotal() < v.getTotal()) {
+                    // 如果当前遍历的告警总数多于队首的告警总数, 则队首出队, 归入 other, 当前告警人入队
+                    other.add(minAuthor);
+                    chartCache.poll();
+                    chartCache.add(v);
+                } else {
+                    other.add(v);
+                }
+            }
+        });
+
+        List<ChartAuthorBaseVO> result = new ArrayList<>();
+        while (!chartCache.isEmpty()) {
+            result.add(chartCache.poll());
+        }
+        // 将 result 做一个翻转, 如此得到一个根据 total 值从大到小排列的 list
+        Collections.reverse(result);
+        if (other.getTotal() != null && other.getTotal() > 0) {
+            result.add(other);
+        }
+
+        return result;
+    }
 
     /**
      * 获取平均复杂度列表

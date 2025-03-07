@@ -33,10 +33,12 @@
     >
       <p class="f18">{{ $t('暂无权限，请联系任务管理员添加权限。') }}</p>
       <template slot="footer">
-        <bk-button
-          theme="primary"
-          @click="confirmPermission"
-        >{{ $t('确定') }}</bk-button>
+        <bk-button theme="primary" @click="confirmPermission">
+          {{ $t('去申请') }}
+        </bk-button>
+        <bk-button @click="handleClickLink">
+          {{ $t('取消') }}
+        </bk-button>
       </template>
     </bk-dialog>
     <!-- 新版本更新 -->
@@ -301,7 +303,14 @@ export default {
       this.permissionDialogVisible = false;
       if (this.taskId && this.isInnerSite) {
         this.$router.push({ name: 'task-settings-authority' });
+      } else {
+        window.open(`${window.DEVOPS_SITE_URL}/console/permission/apply?project_code=${this.projectId}&projectName=${
+            this.projectId}&resourceType=project&resourceName=${this.projectId}&iamResourceCode=${
+            this.projectId}&iamRelatedResourceType=project`, '_blank')
       }
+    },
+    handleClickLink() {
+      this.permissionDialogVisible = false;
     },
     reload() {
       this.isRouterAlive = false;

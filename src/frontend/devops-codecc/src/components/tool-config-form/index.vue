@@ -242,7 +242,7 @@ export default {
       },
       formData: {
         repoHashId: '',
-        branch: 'master',
+        branch: '',
         toolParams: {},
         toolConfigList: [],
         aliasName: '',
@@ -283,7 +283,7 @@ export default {
       return this.$route.params.taskId;
     },
     isGitRepo() {
-      const gitRepoType = ['CODE_GIT', 'CODE_GITLAB', 'GITHUB'];
+      const gitRepoType = ['CODE_GIT', 'CODE_TGIT', 'CODE_GITLAB', 'GITHUB'];
       return (
         gitRepoType.indexOf(this.repoSelected.type) !== -1
         || this.taskDetail.createFrom === 'gongfeng_scan'

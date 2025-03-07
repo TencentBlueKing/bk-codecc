@@ -296,6 +296,9 @@ export default {
       leaveConfirm().then(() => {
         this.$router.push({
           name: 'ignoreList',
+          query: {
+            active: 'ignore-type',
+          },
         });
       });
     },
@@ -364,6 +367,9 @@ export default {
               });
               this.$router.push({
                 name: 'ignoreList',
+                query: {
+                  active: 'ignore-type',
+                },
               });
             }
           });

@@ -5,24 +5,15 @@ const TaskLog = () => import(/* webpackChunkName: 'task-log' */ '../views/task/l
 
 // 任务设置模块，使用嵌套路由方式
 const TaskSettings = () => import(/* webpackChunkName: 'task-settings-code' */ '../views/task/settings');
-const TaskSettingsCode = () => import(
-  /* webpackChunkName: 'task-settings-code' */ '../views/task/settings-code');
-const TaskSettingsAuthority = () => import(
-  /* webpackChunkName: 'task-settings' */ '../views/task/settings-authority');
-const TaskSettingsTrigger = () => import(
-  /* webpackChunkName: 'task-settings' */ '../views/task/settings-trigger');
-const TaskSettingsReport = () => import(
-  /* webpackChunkName: 'task-settings' */ '../views/task/settings-report');
-const TaskSettingsIssue = () => import(
-  /* webpackChunkName: 'task-settings' */ '../views/task/settings-issue');
-const TaskSettingsIgnore = () => import(
-  /* webpackChunkName: 'task-settings' */ '../views/task/settings-ignore');
-const TaskSettingsRecord = () => import(
-  /* webpackChunkName: 'task-settings' */ '../views/task/settings-record');
-const TaskSettingsManage = () => import(
-  /* webpackChunkName: 'task-settings' */ '../views/task/settings-manage');
-const TaskSettingsCheckerset = () => import(
-  /* webpackChunkName: 'task-settings' */ '../views/task/settings-checkerset');
+const TaskSettingsCode = () => import(/* webpackChunkName: 'task-settings-code' */ '../views/task/settings-code');
+const TaskSettingsAuthority = () => import(/* webpackChunkName: 'task-settings' */ '../views/task/settings-authority');
+const TaskSettingsTrigger = () => import(/* webpackChunkName: 'task-settings' */ '../views/task/settings-trigger');
+const TaskSettingsReport = () => import(/* webpackChunkName: 'task-settings' */ '../views/task/settings-report');
+const TaskSettingsIssue = () => import(/* webpackChunkName: 'task-settings' */ '../views/task/settings-issue');
+const TaskSettingsIgnore = () => import(/* webpackChunkName: 'task-settings' */ '../views/task/settings-ignore');
+const TaskSettingsRecord = () => import(/* webpackChunkName: 'task-settings' */ '../views/task/settings-record');
+const TaskSettingsManage = () => import(/* webpackChunkName: 'task-settings' */ '../views/task/settings-manage');
+const TaskSettingsCheckerset = () => import(/* webpackChunkName: 'task-settings' */ '../views/task/settings-checkerset');
 
 const routes = [
   {

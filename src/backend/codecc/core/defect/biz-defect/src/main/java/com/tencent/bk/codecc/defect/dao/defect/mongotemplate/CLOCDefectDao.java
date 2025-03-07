@@ -16,20 +16,29 @@ import com.google.common.collect.Lists;
 import com.mongodb.client.result.UpdateResult;
 import com.tencent.bk.codecc.defect.dto.CodeLineModel;
 import com.tencent.bk.codecc.defect.model.defect.CLOCDefectEntity;
+import com.tencent.bk.codecc.defect.vo.ClocStatisticInfoVO;
+import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.util.ThreadUtils;
-import java.util.Arrays;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.*;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * cloc信息持久类
@@ -60,6 +69,61 @@ public class CLOCDefectDao
                 .set("comment", clocDefectEntity.getComment())
                 .set("language", clocDefectEntity.getLanguage());
         return defectMongoTemplate.upsert(query, update, CLOCDefectEntity.class);
+    }
+
+    public List<CLOCDefectEntity> findAllInTaskIds(List<Long> taskIds) {
+        Query query = new Query();
+        query.addCriteria(
+                Criteria.where("task_id").in(taskIds)
+                        .and("tool_name").is("SCC")
+                        .and("status").is("ENABLED")
+        );
+
+        return defectMongoTemplate.find(query, CLOCDefectEntity.class);
+    }
+
+    /**
+     * 批量查询 cloc 信息
+     *
+     * @date 2024/7/11
+     * @param taskIds
+     * @param langs
+     * @return java.util.List<com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity>
+     */
+    public List<ClocStatisticInfoVO> batchQueryClocInfo(List<Long> taskIds, List<String> langs) {
+        Query query = new Query();
+        query.addCriteria(
+                Criteria.where("task_id").in(taskIds)
+                        .and("language").in(langs)
+                        .and("tool_name").is("SCC")
+                        .and("status").is("ENABLED")
+        );
+
+        List<CLOCDefectEntity> origin = defectMongoTemplate.find(query, CLOCDefectEntity.class);
+        Map<Long, ClocStatisticInfoVO> clocMap = new HashMap<>();
+        for (CLOCDefectEntity entity : origin) {
+            long sumCode = (entity.getCode() == null) ? 0 : entity.getCode();
+            long sumBlank = (entity.getBlank() == null) ? 0 : entity.getBlank();
+            long sumComment = ((entity.getComment() == null) ? 0 : entity.getComment())
+                    + ((entity.getEfficientComment() == null) ? 0 : entity.getEfficientComment());
+
+            ClocStatisticInfoVO tmp;
+            if (clocMap.containsKey(entity.getTaskId())) {
+                tmp = clocMap.get(entity.getTaskId());
+                tmp.setSumCode(tmp.getSumCode() + sumCode);
+                tmp.setSumBlank(tmp.getSumBlank() + sumBlank);
+                tmp.setSumComment(tmp.getSumComment() + sumComment);
+            } else {
+                tmp = new ClocStatisticInfoVO();
+                tmp.setTaskId(entity.getTaskId());
+                tmp.setSumCode(sumCode);
+                tmp.setSumBlank(sumBlank);
+                tmp.setSumComment(sumComment);
+            }
+            clocMap.put(entity.getTaskId(), tmp);
+        }
+
+        return new ArrayList<>(clocMap.values());
     }
 
     /**

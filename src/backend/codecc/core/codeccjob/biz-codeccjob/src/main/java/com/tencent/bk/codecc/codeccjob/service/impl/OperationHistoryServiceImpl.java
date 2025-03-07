@@ -30,6 +30,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.LintDefectV2Repository;
 import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.OperationHistoryRepository;
 import com.tencent.bk.codecc.codeccjob.dao.defect.mongotemplate.CCNDefectDao;
 import com.tencent.bk.codecc.codeccjob.dao.defect.mongotemplate.DefectDao;
@@ -59,9 +60,11 @@ import com.tencent.devops.common.constant.ComConstants.DefectStatus;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.web.aop.model.OperationHistoryDTO;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +91,8 @@ public class OperationHistoryServiceImpl implements OperationHistoryService {
      * 最大展示告警id数
      */
     private static final int MAX_SHOW_DEFECT_ID_COUNT = 50;
+    @Autowired
+    private LintDefectV2Repository lintDefectV2Repository;
     @Autowired
     private OperationHistoryRepository operationHistoryRepository;
     @Autowired
@@ -180,9 +185,30 @@ public class OperationHistoryServiceImpl implements OperationHistoryService {
             // 适配某些工具不传维度
             String dimension = operaHisDTO.getDimension();
             if (StringUtils.isBlank(dimension)) {
-                if (StringUtils.isNotEmpty(operaHisDTO.getToolName())) {
-                    dimension = toolMetaCacheService.getToolBaseMetaCache(operaHisDTO.getToolName()).getType();
+                List<String> toolNameList;
+                List<String> defectV2EntityIds;
+
+                // 根据工具名判断如何处理
+                if (StringUtils.isBlank(operaHisDTO.getToolName())) {
+                    // 根据 defectKey 查询工具名
+                    defectV2EntityIds = (Arrays.asList(paramArray[0].split(ComConstants.STRING_SPLIT)));
+                    toolNameList = lintDefectV2Dao.findToolNameListByIds(defectV2EntityIds);
                 } else {
+                    // 解析工具名
+                    toolNameList = (Arrays.asList(operaHisDTO.getToolName()
+                            .split(ComConstants.STRING_SPLIT)));
+                }
+
+                // 根据工具查询维度
+                Set<String> dimensionList = toolNameList.stream()
+                        .map(toolName -> toolMetaCacheService.getToolBaseMetaCache(toolName).getType())
+                        .filter(Objects::nonNull) // 过滤可能为 null 的维度
+                        .collect(Collectors.toSet());
+
+                // 将维度列表转换为逗号分隔的字符串
+                dimension = String.join(ComConstants.STRING_SPLIT, dimensionList);
+
+                if (StringUtils.isBlank(dimension)) {
                     log.warn("toolName or dimension is empty!!");
                     return paramArray;
                 }

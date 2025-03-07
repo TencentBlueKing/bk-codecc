@@ -60,6 +60,7 @@ object Versions {
     const val kotlinxVersion = "1.6.0"
     const val cosVersion = "5.6.185"
     const val xzVersion = "1.9"
+    const val bkAudit = "1.0.8"
 
     // Devops 依赖版本
     const val devopsVersion = "1.13.0"

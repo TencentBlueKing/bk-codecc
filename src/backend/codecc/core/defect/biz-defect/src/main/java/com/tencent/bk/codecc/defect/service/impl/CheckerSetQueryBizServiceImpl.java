@@ -29,12 +29,13 @@ import com.tencent.bk.codecc.task.vo.TaskBaseVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.devops.common.api.annotation.I18NResponse;
-import com.tencent.devops.common.api.checkerset.CheckerPropVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetCategoryVO;
-import com.tencent.devops.common.api.checkerset.CheckerSetCodeLangVO;
-import com.tencent.devops.common.api.checkerset.CheckerSetParamsVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVersionVO;
+import com.tencent.devops.common.api.checkerset.CheckerSetsVersionInfoVO;
+import com.tencent.devops.common.api.checkerset.CheckerSetParamsVO;
+import com.tencent.devops.common.api.checkerset.CheckerPropVO;
+import com.tencent.devops.common.api.checkerset.CheckerSetCodeLangVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
@@ -613,7 +614,9 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
                 String resourceCode = categoryMap.get(category.getCnName());
                 if (!ObjectUtils.isEmpty(resourceCode)) {
                     String message = I18NUtils.getMessage(resourceCode);
-                    checkerSetVO.getCatagories().add(new CheckerSetCategoryVO(category.getEnName(), message));
+                    CheckerSetCategory checkerSetCategory = CheckerSetCategory.getByName(category.getCnName());
+                    String keyName = (checkerSetCategory == null) ? message : checkerSetCategory.name();
+                    checkerSetVO.getCatagories().add(new CheckerSetCategoryVO(category.getEnName(), message, keyName));
                 }
             }
         }
@@ -934,12 +937,40 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
 
                 if (!ObjectUtils.isEmpty(resourceCode)) {
                     String message = I18NUtils.getMessage(resourceCode);
-                    checkerSetVO.getCatagories().add(new CheckerSetCategoryVO(message, message));
+                    CheckerSetCategory checkerSetCategory = CheckerSetCategory.getByName(category.getCnName());
+                    String keyName = (checkerSetCategory == null) ? message : checkerSetCategory.name();
+                    checkerSetVO.getCatagories().add(new CheckerSetCategoryVO(message, message, keyName));
                 }
             }
         }
         return checkerSetVO;
     }
+
+    public List<CheckerSetVO> getBuildCheckerSets(
+            long taskId,
+            String toolName,
+            String dimension,
+            List<CheckerSetsVersionInfoVO> checkerSetVersionList
+    ) {
+        List<String> toolNameSet = ParamUtils.getTools(toolName, dimension, taskId, "", true);
+
+        return getBuildCheckerSetsCore(toolNameSet, checkerSetVersionList);
+    }
+
+    public List<CheckerSetVO> getBuildCheckerSetsCore(
+            List<String> toolNameList,
+            List<CheckerSetsVersionInfoVO> checkerSetVersionList
+    ) {
+        if (CollectionUtils.isEmpty(checkerSetVersionList)) {
+            return Collections.emptyList();
+        }
+        List<CheckerSetEntity> specificVersionCheckerSets =
+                checkerSetDao.findByCheckerSetIdAndVersionIn(new HashSet<>(toolNameList), checkerSetVersionList);
+
+        return specificVersionCheckerSets.stream().map(it -> mapToVO(it, true))
+                .sorted(Comparator.comparing(CheckerSetVO::getCodeLang)).collect(Collectors.toList());
+    }
+
 
     @Override
     public List<CheckerSetVO> getTaskCheckerSets(
@@ -1058,10 +1089,9 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
         CheckerSetParamsVO checkerSetParams = new CheckerSetParamsVO();
         checkerSetParams.setCatatories(Lists.newArrayList());
         for (CheckerSetCategory checkerSetCategory : CheckerSetCategory.values()) {
-            CheckerSetCategoryVO categoryVO = new CheckerSetCategoryVO();
             String message = I18NUtils.getMessage(checkerSetCategory.getI18nResourceCode());
-            categoryVO.setCnName(message);
-            categoryVO.setEnName(checkerSetCategory.name());
+            CheckerSetCategoryVO categoryVO =
+                    new CheckerSetCategoryVO(message, message, checkerSetCategory.name());
             checkerSetParams.getCatatories().add(categoryVO);
         }
 
@@ -1143,7 +1173,9 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
                     String resourceCode = categoryMap.get(category.getCnName());
                     if (!ObjectUtils.isEmpty(resourceCode)) {
                         String message = I18NUtils.getMessage(resourceCode);
-                        checkerSetVO.getCatagories().add(new CheckerSetCategoryVO(message, message));
+                        CheckerSetCategory checkerSetCategory = CheckerSetCategory.getByName(category.getCnName());
+                        String keyName = (checkerSetCategory == null) ? message : checkerSetCategory.name();
+                        checkerSetVO.getCatagories().add(new CheckerSetCategoryVO(message, message, keyName));
                     }
                 }
             }
@@ -1698,6 +1730,7 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
             CheckerSetCategoryVO categoryVO = new CheckerSetCategoryVO();
             categoryVO.setCnName(checkerSetCategory.getName());
             categoryVO.setEnName(checkerSetCategory.name());
+            categoryVO.setKeyName(checkerSetCategory.name());
             checkerSetParams.getCatatories().add(categoryVO);
         }
 
@@ -1707,6 +1740,7 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
             CheckerSetCategoryVO categoryVO = new CheckerSetCategoryVO();
             categoryVO.setCnName(checkerSetSource.getNameCn());
             categoryVO.setEnName(checkerSetSource.name());
+            categoryVO.setKeyName(checkerSetSource.name());
             checkerSetParams.getCheckerSetSource().add(categoryVO);
         }
 

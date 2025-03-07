@@ -1,28 +1,29 @@
 package com.tencent.bk.codecc.defect.model.issue;
 
+import java.util.Set;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-
-import java.util.Set;
 
 @Data
 @Document(collection = "t_defect_issue_info")
 @CompoundIndexes({
-    @CompoundIndex(
-        name = "task_id_1_tool_name_1_status_1",
-        def = "{'task_id': 1, 'tool_name': 1, 'status': 1}",
-        background = true),
-    @CompoundIndex(
-        name = "task_id_1_defect_entity_1",
-        def = "{'task_id': 1, 'defect_entity_id': 1}",
-        background = true,
-        unique = true)
+        @CompoundIndex(
+                name = "task_id_1_tool_name_1_status_1",
+                def = "{'task_id': 1, 'tool_name': 1, 'status': 1}",
+                background = true),
+        @CompoundIndex(
+                name = "task_id_1_defect_entity_1",
+                def = "{'task_id': 1, 'defect_entity_id': 1}",
+                background = true,
+                unique = true)
 })
 public class DefectIssueInfoEntity {
+
     @Id
     private String entityId;
 
@@ -32,6 +33,7 @@ public class DefectIssueInfoEntity {
     @Field("tool_name")
     private String toolName;
 
+    @Indexed(background = true)
     @Field("defect_entity_id")
     private String defectEntityId;
 

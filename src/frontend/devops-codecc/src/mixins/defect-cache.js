@@ -39,6 +39,7 @@ export default {
     },
     preloadCache(list = [], userConfig = {}) {
       const { cacheKey, index, length, interval, forward, forceUpdate } = this.initCacheConfig(userConfig);
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
       const vm = this;
       let curForward = forward;
       let count = 0;

@@ -35,7 +35,9 @@ import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * cloc统计持久类
@@ -145,7 +147,7 @@ public class CLOCStatisticsDao {
      * @return list
      */
     public List<CLOCStatisticEntity> batchStatClocStatisticByTaskId(Collection<Long> taskIds,
-                                                                    List<String> lastBuildIds) {
+            List<String> lastBuildIds) {
         MatchOperation match =
                 Aggregation.match(Criteria.where("task_id").in(taskIds)
                         .and("build_id").in(lastBuildIds)
@@ -172,4 +174,5 @@ public class CLOCStatisticsDao {
                 defectMongoTemplate.aggregate(agg, "t_cloc_statistic", CLOCStatisticEntity.class);
         return queryResult.getMappedResults();
     }
+
 }

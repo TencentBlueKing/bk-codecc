@@ -113,4 +113,9 @@ public interface TaskMessageCode
     String TRIGGER_NOT_FOUND = "2301017";
 
     String TOOL_CONFIG_NOT_FOUND = "2301018";
+
+    /**
+     * 更新工具状态失败
+     */
+    String TOOL_STATUS_UPDATE_FAIL = "2301019";
 }

@@ -38,6 +38,7 @@ import com.tencent.bk.codecc.defect.vo.FileDefectGatherVO;
 import com.tencent.bk.codecc.defect.vo.GetFileContentSegmentReqVO;
 import com.tencent.bk.codecc.defect.vo.ListToolNameRequest;
 import com.tencent.bk.codecc.defect.vo.ListToolNameResponse;
+import com.tencent.bk.codecc.defect.vo.PreIgnoreApprovalCheckVO;
 import com.tencent.bk.codecc.defect.vo.QueryCheckersAndAuthorsRequest;
 import com.tencent.bk.codecc.defect.vo.QueryDefectFileContentSegmentReqVO;
 import com.tencent.bk.codecc.defect.vo.QueryFileDefectGatherRequest;
@@ -328,6 +329,21 @@ public interface UserDefectRestResource {
     @Path("/batch")
     @POST
     Result<List<BatchDefectProcessRspVO>> batchDefectProcess(
+            @ApiParam(value = "项目ID", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId,
+            @ApiParam(value = "用户名", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userName,
+            @ApiParam(value = "批量告警处理请求信息", required = true)
+            @Valid
+            BatchDefectProcessReqVO batchDefectProcessReqVO
+    );
+
+    @ApiOperation("提前获取忽略审核")
+    @Path("/preIgnoreApproval")
+    @POST
+    Result<PreIgnoreApprovalCheckVO> preCheckIgnoreApproval(
             @ApiParam(value = "项目ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId,

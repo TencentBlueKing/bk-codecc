@@ -14,7 +14,6 @@ package com.tencent.bk.codecc.defect.consumer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Lists;
-import com.tencent.bk.codecc.defect.component.DefectConsumerRetryLimitComponent;
 import com.tencent.bk.codecc.defect.component.RiskConfigCache;
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.DUPCDefectRepository;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.DUPCDefectDao;
@@ -42,6 +41,15 @@ import com.tencent.devops.common.constant.ComConstants.ToolPattern;
 import com.tencent.devops.common.redis.lock.RedisLock;
 import com.tencent.devops.common.service.utils.ToolParamUtils;
 import com.tencent.devops.common.web.mq.ConstantsKt;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
+import org.bson.BsonSerializationException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
+import org.springframework.stereotype.Component;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,14 +60,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
-import org.bson.BsonSerializationException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.util.Pair;
-import org.springframework.stereotype.Component;
 
 /**
  * DUPC告警提交消息队列的消费者
@@ -155,10 +155,7 @@ public class DUPCDefectCommitConsumer extends AbstractDefectCommitConsumer {
             List<DUPCDefectEntity> defectList = defectJsonFileEntity.getDefects();
             if (CollectionUtils.isNotEmpty(defectList)) {
                 Set<String> filterPaths = filterPathService.getFilterPaths(taskVO, toolName);
-                Set<String> whitePathSet = new HashSet<>();
-                if (CollectionUtils.isNotEmpty(taskVO.getWhitePaths())) {
-                    whitePathSet.addAll(taskVO.getWhitePaths());
-                }
+                Set<String> whitePaths = buildService.getWhitePaths(buildId, taskVO);
 
                 Iterator<DUPCDefectEntity> iterator = defectList.iterator();
                 while (iterator.hasNext()) {
@@ -167,7 +164,7 @@ public class DUPCDefectCommitConsumer extends AbstractDefectCommitConsumer {
                     fillDefectInfo(dupcDefectEntity, commitDefectVO, curTime, fileChangeRecordsMap, codeRepoIdMap);
 
                     // 更新告警状态
-                    updateDefectStatus(dupcDefectEntity, oldDefectMap, filterPaths, whitePathSet, curTime, m);
+                    updateDefectStatus(dupcDefectEntity, oldDefectMap, filterPaths, whitePaths, curTime, m);
                 }
             }
 

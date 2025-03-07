@@ -27,6 +27,7 @@
 package com.tencent.bk.codecc.task.service.impl;
 
 import com.tencent.bk.codecc.task.service.UserManageService;
+import com.tencent.bk.codecc.task.utils.OrgInfoUtils;
 import com.tencent.bk.codecc.task.vo.DevopsProjectOrgVO;
 import com.tencent.bk.codecc.task.vo.DevopsProjectVO;
 import com.tencent.bk.codecc.task.vo.UserVO;
@@ -97,6 +98,7 @@ public class UserManageServiceImpl implements UserManageService {
     public DevopsProjectOrgVO getDevopsProjectOrg(String projectId) {
         DevopsProjectOrgVO projectOrgVO = new DevopsProjectOrgVO();
         try {
+            /*
             com.tencent.devops.project.pojo.Result<ProjectVO> projectResult =
                     client.getShortRunDevopsService(ServiceProjectResource.class).get(projectId);
             if (projectResult.isNotOk() || projectResult.getData() == null) {
@@ -105,7 +107,13 @@ public class UserManageServiceImpl implements UserManageService {
             }
 
             ProjectVO projectVO = projectResult.getData();
+            */
+            com.tencent.devops.common.api.pojo.ProjectVO projectVO = OrgInfoUtils.getBkCiProjectVO(projectId);
+            if (projectVO == null) {
+                return projectOrgVO;
+            }
             String bgId = projectVO.getBgId();
+            String businessLineId = projectVO.getBusinessLineId();
             String deptId = projectVO.getDeptId();
             String centerId = projectVO.getCenterId();
 
@@ -117,6 +125,9 @@ public class UserManageServiceImpl implements UserManageService {
             projectOrgVO.setBgId(Integer.parseInt(Objects.requireNonNull(bgId)));
             projectOrgVO.setDeptId(Integer.parseInt(StringUtils.isBlank(deptId) ? "0" : deptId));
             projectOrgVO.setCenterId(Integer.parseInt(StringUtils.isBlank(centerId) ? "0" : centerId));
+            if (null != businessLineId) {
+                projectOrgVO.setBusinessLineId(Integer.parseInt(businessLineId));
+            }
 
             return projectOrgVO;
         } catch (Exception e) {

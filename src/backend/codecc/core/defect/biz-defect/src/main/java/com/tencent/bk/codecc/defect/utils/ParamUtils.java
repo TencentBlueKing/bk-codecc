@@ -2,6 +2,8 @@ package com.tencent.bk.codecc.defect.utils;
 
 import static com.tencent.devops.common.constant.ComConstants.TOOL_LICENSE_WHITE_LIST;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -13,6 +15,7 @@ import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CCNDefectDao;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.model.BuildDefectSummaryEntity;
 import com.tencent.bk.codecc.defect.service.BuildSnapshotService;
+import com.tencent.bk.codecc.defect.service.impl.SCAAnalyzeTaskBizServiceImpl;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerCategory;
 import com.tencent.bk.codecc.task.api.ServiceBaseDataResource;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
@@ -27,20 +30,21 @@ import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
-import com.tencent.devops.common.auth.api.pojo.external.PipelineAuthAction;
+import com.tencent.devops.common.auth.api.pojo.external.TaskAuthInfo;
 import com.tencent.devops.common.auth.api.pojo.external.model.BkAuthExResourceActionModel;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
-import com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
 import com.tencent.devops.common.constant.ComConstants.FOLLOW_STATUS;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 import com.tencent.devops.common.constant.ComConstants.ToolType;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import com.tencent.devops.common.pipeline.pojo.element.Element;
+import com.tencent.devops.common.pipeline.pojo.element.market.MarketBuildAtomElement;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import com.tencent.devops.common.service.utils.SpringContextUtil;
+import com.tencent.devops.common.util.DateTimeUtils;
 import com.tencent.devops.common.util.List2StrUtil;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -50,9 +54,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
@@ -60,13 +64,16 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.util.Pair;
 
 @Slf4j
 public class ParamUtils {
 
     private static volatile Comparator<String> TOOL_ORDER_COMPARATOR_CACHE = null;
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * 工具许可项目白名单缓存(即只有指定的项目才能使用该工具，用于某些收费工具对特定项目使用)
@@ -277,6 +284,7 @@ public class ParamUtils {
          安全漏洞：SECURITY
          代码规范：STANDARD
          圈复杂度：CCN
+         软件成分：SCA
          ===========================*/
         for (String dimension : dimensionList) {
             switch (dimension) {
@@ -292,12 +300,47 @@ public class ParamUtils {
                 case "CCN":
                     retSet.add(CheckerCategory.COMPLEXITY.name());
                     break;
+                case "SCA":
+                    retSet.add(CheckerCategory.SOFTWARE_COMPOSITION.name());
+                    break;
                 default:
                     break;
             }
         }
 
         return Lists.newArrayList(retSet);
+    }
+
+
+    /**
+     * 转换规则类型到工具类型
+     * @param checkerCategoryName
+     * @return
+     */
+    public static String getDimensionByCheckerCategory(String checkerCategoryName) {
+        if (StringUtils.isBlank(checkerCategoryName)) {
+            return null;
+        }
+        /*===========================
+         前端dimension
+         代码缺陷：DEFECT
+         安全漏洞：SECURITY
+         代码规范：STANDARD
+         圈复杂度：CCN
+         ===========================*/
+        CheckerCategory checkerCategory = CheckerCategory.getByName(checkerCategoryName);
+        switch (checkerCategory) {
+            case CODE_DEFECT:
+                return "DEFECT";
+            case SECURITY_RISK:
+                return "SECURITY";
+            case CODE_FORMAT:
+                return "STANDARD";
+            case COMPLEXITY:
+                return "CCN";
+            default:
+                return null;
+        }
     }
 
     /**
@@ -320,6 +363,7 @@ public class ParamUtils {
             boolean checkToolRemoved
     ) {
         if (CollectionUtils.isEmpty(taskIdList)) {
+            log.info("task id list is empty");
             return Maps.newHashMap();
         }
 
@@ -340,12 +384,12 @@ public class ParamUtils {
             retMap.entrySet().removeIf(entry -> {
                 List<String> toolNameListBySingleTask = entry.getValue();
                 toolNameListBySingleTask.retainAll(toolNameList);
-
                 return CollectionUtils.isEmpty(toolNameListBySingleTask);
             });
         }
 
         if (MapUtils.isEmpty(retMap)) {
+            log.info("get task tool map empty, task id {}, tool name list {}", taskIdList, toolNameList);
             return retMap;
         }
 
@@ -362,6 +406,8 @@ public class ParamUtils {
         );
 
         if (CollectionUtils.isEmpty(toolNameListByChecker)) {
+            log.info("tool name list by checker is empty, task id {}, tool name list {}",
+                    taskIdList, toolNameList);
             return Maps.newHashMap();
         }
 
@@ -444,18 +490,31 @@ public class ParamUtils {
             String username
     ) {
         AuthExPermissionApi authExPermissionApi = SpringContextUtil.Companion.getBean(AuthExPermissionApi.class);
-        List<Long> hasPermissionsTaskIds = new LinkedList<>();
         List<TaskBase> taskBases = getTaskInfoWithToolConfig(taskIdList, false);
         Map<Long, TaskBase> taskIdToBaseMap = CollectionUtils.isNotEmpty(taskBases)
                 ? taskBases.stream().collect(Collectors.toMap(TaskBase::getTaskId, it -> it)) : Collections.emptyMap();
         List<CodeCCAuthAction> actions = Lists.newArrayList(CodeCCAuthAction.DEFECT_MANAGE);
-        for (Long taskId : taskIdList) {
-            String createFrom = taskIdToBaseMap.get(taskId) != null && StringUtils.isNotBlank(
-                    taskIdToBaseMap.get(taskId).getCreateFrom()) ? taskIdToBaseMap.get(taskId).getCreateFrom() : "";
-            boolean hasPermissions = authExPermissionApi.authDefectOpsPermissions(taskId, projectId, username,
-                    createFrom, actions);
-            if (hasPermissions) {
-                hasPermissionsTaskIds.add(taskId);
+        List<TaskAuthInfo> taskAuthInfos = taskIdList.stream().map(it -> {
+            TaskBase taskBase = taskIdToBaseMap.get(it);
+            String pipelineId = taskBase != null && StringUtils.isNotBlank(taskBase.getPipelineId())
+                    ? taskBase.getPipelineId() : "";
+            String createFrom = taskBase != null && StringUtils.isNotBlank(taskBase.getCreateFrom())
+                    ? taskBase.getCreateFrom() : "";
+            return new TaskAuthInfo(it, pipelineId, createFrom);
+        }).collect(Collectors.toList());
+        List<BkAuthExResourceActionModel> authResult = authExPermissionApi.authDefectOpsPermissions(taskAuthInfos,
+                projectId, username, actions);
+        if (CollectionUtils.isEmpty(authResult)) {
+            return Collections.emptyList();
+        }
+        List<Long> hasPermissionsTaskIds = new ArrayList<>();
+        for (BkAuthExResourceActionModel bkAuthExResourceActionModel : authResult) {
+            if (BooleanUtils.isTrue(bkAuthExResourceActionModel.isPass())
+                    && CollectionUtils.isNotEmpty(bkAuthExResourceActionModel.getResourceId())) {
+                hasPermissionsTaskIds.addAll(bkAuthExResourceActionModel.getResourceId().stream()
+                        .filter(it -> StringUtils.isNumeric(it.getResourceId()))
+                        .map(it -> Long.valueOf(it.getResourceId()))
+                        .collect(Collectors.toList()));
             }
         }
         return hasPermissionsTaskIds;
@@ -591,7 +650,6 @@ public class ParamUtils {
                 ? (tool, task) -> tool != null && task != null && !checkToolRemoved(tool.getToolName(), task)
                 : (tool, task) -> tool != null && task != null;
         Map<Long, List<String>> retMap = Maps.newHashMap();
-
         // 若是普通查，任务关联的工具配置不能是下架的
         if (StringUtils.isEmpty(buildId)) {
             for (TaskBase taskBase : taskBaseList) {
@@ -613,14 +671,12 @@ public class ParamUtils {
                     .filter(x -> checkToolRemovedFunc.apply(x, taskBase))
                     .map(ToolConfigInfoVO::getToolName)
                     .collect(Collectors.toList());
-
             BuildSnapshotService buildSnapshotService = SpringContextUtil.Companion.getBean(BuildSnapshotService.class);
             BuildDefectSummaryEntity summary = buildSnapshotService.getSummary(taskBase.getTaskId(), buildId);
             // 所有配置过的工具与快照当时的交集
             if (summary != null && summary.getToolList() != null) {
                 toolNameList.retainAll(summary.getToolList());
             }
-
             if (CollectionUtils.isNotEmpty(toolNameList)) {
                 retMap.put(taskBase.getTaskId(), toolNameList);
             }
@@ -659,7 +715,7 @@ public class ParamUtils {
                     null);
         } else if (toolStatus == ToolIntegratedStatus.T.value()) {
             // 测试项目应该可以看到测试、灰度、预发布、发布的规则并进行配置
-            versionList =  Arrays.asList(
+            versionList = Arrays.asList(
                     ToolIntegratedStatus.T.value(),
                     ToolIntegratedStatus.G.value(),
                     ToolIntegratedStatus.PRE_PROD.value(),
@@ -679,5 +735,184 @@ public class ParamUtils {
                     null));
         }
         return versionList;
+    }
+
+    /**
+     * 获取告警状态过滤条件，默认为待修复
+     * @param status
+     * @return
+     */
+    public static Set<Integer> getStatusFilter(Set<String> status) {
+        if (CollectionUtils.isEmpty(status)) {
+            return Sets.newHashSet(ComConstants.DefectStatus.NEW.value());
+        }
+
+        Set<Integer> intStatusSet = status.stream()
+                .map(Integer::valueOf)
+                .collect(Collectors.toSet());
+
+        // 前端传入: 1/2/4/8
+        if (intStatusSet.contains(ComConstants.DefectStatus.PATH_MASK.value())) {
+            intStatusSet.add(ComConstants.DefectStatus.CHECKER_MASK.value());
+            intStatusSet.add(
+                    ComConstants.DefectStatus.CHECKER_MASK.value() | ComConstants.DefectStatus.PATH_MASK.value());
+        }
+        return intStatusSet;
+    }
+
+    public static Set<Integer> convertStringSet2IntegerSet(Set<String> stringSet) {
+        if (stringSet == null || stringSet.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        try {
+            return stringSet.stream()
+                    .map(Integer::parseInt)
+                    .collect(Collectors.toSet()); // 使用 toSet() 代替 toCollection(HashSet::new)
+        } catch (NumberFormatException e) {
+            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID);
+        }
+    }
+
+    public static Set<String> getStatusProcessed(Set<String> condStatusList) {
+        HashSet<String> newStatus = new HashSet<>();
+        if (CollectionUtils.isEmpty(condStatusList)) {
+            newStatus.add(String.valueOf(ComConstants.DefectStatus.NEW.value()));
+            return newStatus;
+        }
+        newStatus.addAll(condStatusList);
+
+        // 前端传入: 1/2/4/8
+        if (condStatusList.contains(String.valueOf(ComConstants.DefectStatus.PATH_MASK.value()))) {
+            newStatus.add(String.valueOf(ComConstants.DefectStatus.CHECKER_MASK.value()));
+            newStatus.add(String.valueOf(
+                    ComConstants.DefectStatus.CHECKER_MASK.value() | ComConstants.DefectStatus.PATH_MASK.value()));
+        }
+        return newStatus;
+    }
+
+    /**
+     * 状态后置处理
+     *
+     * @param statusFilter 前端传入的值是1、2、4、8
+     * @param isSnapshotQuery 是否快照查询
+     * @param ignoreReasonTypes 忽略类型
+     * @return
+     */
+    public static Criteria getStatusCriteria(
+            Set<Integer> statusFilter,
+            boolean isSnapshotQuery,
+            Set<Integer> ignoreReasonTypes
+    ) {
+        if (CollectionUtils.isEmpty(statusFilter)) {
+            return new Criteria();
+        }
+
+        // 若是快照查，选中待修复就必须补偿上已修复；真实状态会在postHandleDefect()后置处理
+        if (isSnapshotQuery) {
+            Integer newStatusStr = ComConstants.DefectStatus.NEW.value();
+            Integer fixedStatusStr = ComConstants.DefectStatus.FIXED.value();
+            if (statusFilter.contains(newStatusStr)) {
+                statusFilter.add(newStatusStr);
+                statusFilter.add(fixedStatusStr);
+            } else {
+                // 快照查，不存在已修复
+                statusFilter.remove(fixedStatusStr);
+            }
+        }
+
+        if (CollectionUtils.isEmpty(statusFilter)) {
+            return null;
+        }
+
+        LinkedList<Criteria> rootCriteriaList = Lists.newLinkedList();
+
+        // 忽略类型处理
+        boolean hasIgnore = statusFilter.contains(ComConstants.DefectStatus.IGNORE.value());
+
+        if (hasIgnore) {
+            if (CollectionUtils.isNotEmpty(ignoreReasonTypes)) {
+                rootCriteriaList.add(
+                        Criteria.where("status").bits().allSet(ComConstants.DefectStatus.IGNORE.value())
+                                .and("ignore_reason_type").in(ignoreReasonTypes)
+                );
+            } else {
+                rootCriteriaList.add(
+                        Criteria.where("status").bits().allSet(ComConstants.DefectStatus.IGNORE.value())
+                );
+            }
+
+            statusFilter.remove(ComConstants.DefectStatus.IGNORE.value());
+            statusFilter.remove(ComConstants.DefectStatus.IGNORE.value() | ComConstants.DefectStatus.NEW.value());
+        }
+
+        if (CollectionUtils.isNotEmpty(statusFilter)) {
+            Set<Integer> condStatusSet = statusFilter.stream()
+                    .map(x -> x | ComConstants.DefectStatus.NEW.value())
+                    .collect(Collectors.toSet());
+
+            rootCriteriaList.add(Criteria.where("status").in(condStatusSet));
+        }
+
+        return rootCriteriaList.size() == 1 ? rootCriteriaList.get(0)
+                : new Criteria().orOperator(rootCriteriaList.toArray(new Criteria[]{}));
+    }
+
+    /**
+     * 根据查询字段和时间范围定制查询规则
+     *
+     * @param field 查询字段
+     * @param startTimeStr 查询起始时间
+     * @param endTimeStr 查询结束时间
+     * @return 查询规则
+     */
+    public static Criteria getStartEndTimeStampCri(String field, String startTimeStr, String endTimeStr) {
+        long minTime = 0L;
+        long maxTime = 0L;
+        if (StringUtils.isNotEmpty(startTimeStr)) {
+            minTime = DateTimeUtils.getTimeStamp(startTimeStr + " 00:00:00");
+            maxTime = StringUtils.isEmpty(endTimeStr) ? System.currentTimeMillis()
+                    : DateTimeUtils.getTimeStamp(endTimeStr + " 23:59:59");
+        }
+
+        if (minTime != 0 && maxTime == 0) {
+            return new Criteria().and(field).gte(minTime);
+        } else if (minTime == 0 && maxTime != 0) {
+            return new Criteria().and(field).lt(maxTime).gt(0);
+        } else if (minTime != 0 && maxTime != 0) {
+            return new Criteria().and(field).lt(maxTime).gte(minTime);
+        }
+        return null;
+    }
+
+    /**
+     * 从流水线模板的 element 中获取 attributeName 属性值
+     */
+    public static Object getCodeCCAttributeFromElement(Element element, String attributeName) {
+        if (element instanceof MarketBuildAtomElement) {
+            MarketBuildAtomElement marketElement = (MarketBuildAtomElement) element;
+            Map<String, Object> data = marketElement.getData();
+
+            if (!data.containsKey("input")) {
+                return null;
+            } else {
+                Map<String, Object> inputTerm = (Map<String, Object>) data.get("input");
+
+                if (inputTerm.containsKey(attributeName)) {
+                    Object value = inputTerm.get(attributeName);
+                    if (value instanceof Boolean) {
+                        return (Boolean) value;
+                    } else if (value instanceof Number) {
+                        return ((Number) value).longValue();
+                    } else {
+                        return value; // 返回原始对象
+                    }
+                } else {
+                    return null;
+                }
+            }
+        } else {
+            return null;
+        }
     }
 }

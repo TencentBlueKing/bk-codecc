@@ -37,11 +37,11 @@ import com.tencent.bk.codecc.task.service.TaskService;
 import com.tencent.bk.codecc.task.vo.FilterPathOutVO;
 import com.tencent.bk.codecc.task.vo.GetLatestBuildIdMapRequest;
 import com.tencent.bk.codecc.task.vo.GetTaskStatusAndCreateFromResponse;
-import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigRequest;
-import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.TaskIdVO;
+import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigRequest;
+import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse;
 import com.tencent.bk.codecc.task.vo.TaskListVO;
 import com.tencent.bk.codecc.task.vo.TaskStatisticVO;
 import com.tencent.bk.codecc.task.vo.checkerset.UpdateCheckerSet2TaskReqVO;
@@ -79,6 +79,7 @@ import org.springframework.context.annotation.Conditional;
 @RestResource
 @Conditional(CommunityCondition.class)
 public class ServiceTaskRestResourceImpl implements ServiceTaskRestResource {
+
     @Autowired
     private TaskService taskService;
 
@@ -116,8 +117,8 @@ public class ServiceTaskRestResourceImpl implements ServiceTaskRestResource {
     }
 
     @Override
-    public Result<List<TaskDetailVO>> getTaskDetailListByIdsWithDelete(List<Long> taskIds) {
-        return new Result<>(taskService.getTaskDetailListByIdsWithDelete(taskIds));
+    public Result<List<TaskDetailVO>> getTaskDetailListByIdsWithDelete(QueryTaskListReqVO reqVO) {
+        return new Result<>(taskService.getTaskDetailListByIdsWithDelete(reqVO));
     }
 
     @Override
@@ -152,9 +153,9 @@ public class ServiceTaskRestResourceImpl implements ServiceTaskRestResource {
 
     @Override
     public Result<Boolean> stopSingleTaskByPipeline(String pipelineId, String multiPipelineMark,
-                                                    String disabledReason, String userName) {
+            String disabledReason, String userName, String asyncTaskId) {
         return new Result<>(taskService.stopSinglePipelineTask(pipelineId, multiPipelineMark, disabledReason,
-            userName));
+                userName, asyncTaskId));
     }
 
     @Override
@@ -215,6 +216,7 @@ public class ServiceTaskRestResourceImpl implements ServiceTaskRestResource {
 
     /**
      * 即将废弃 - 逻辑先注释
+     *
      * @param user
      * @param projectId
      * @param pipelineId
@@ -225,9 +227,9 @@ public class ServiceTaskRestResourceImpl implements ServiceTaskRestResource {
     @Override
     @Deprecated
     public Result<Boolean> updatePipelineTaskCheckerSets(String user, String projectId, String pipelineId, Long taskId,
-                                                         UpdateCheckerSet2TaskReqVO updateCheckerSet2TaskReqVO) {
+            UpdateCheckerSet2TaskReqVO updateCheckerSet2TaskReqVO) {
         return new Result<>(pipelineService.updateCheckerSets(user, projectId, pipelineId, taskId,
-            updateCheckerSet2TaskReqVO.getToolCheckerSets()));
+                updateCheckerSet2TaskReqVO.getToolCheckerSets()));
     }
 
     @Override
@@ -254,7 +256,7 @@ public class ServiceTaskRestResourceImpl implements ServiceTaskRestResource {
 
     @Override
     public Result<Boolean> authorTransfer(Long taskId, List<ScanConfigurationVO.TransferAuthorPair> transferAuthorPairs,
-                                                                             String userId) {
+            String userId) {
         taskService.authorTransferForApi(taskId, transferAuthorPairs, userId);
         return new Result<>(true);
     }
@@ -265,7 +267,7 @@ public class ServiceTaskRestResourceImpl implements ServiceTaskRestResource {
     }
 
     @Override
-    public Result<List<Long>> queryTaskIdByCreateFromExcludeGray(List<String> createFrom, Integer pageNum,
+    public Result<List<Long>> queryTaskIdByCreateFromExcludeGray(List<String> createFrom, Long lastTaskId,
             Integer pageSize) {
         return new Result<>(Collections.emptyList());
     }
@@ -361,7 +363,7 @@ public class ServiceTaskRestResourceImpl implements ServiceTaskRestResource {
 
     @Override
     public Result<List<Long>> getTaskIdListForHotColdDataSeparation(Long lastTaskId, Integer limit) {
-        return new Result<>(taskService.getTaskIdListForHotColdDataSeparation(lastTaskId,limit));
+        return new Result<>(taskService.getTaskIdListForHotColdDataSeparation(lastTaskId, limit));
     }
 
     @Override
@@ -381,8 +383,14 @@ public class ServiceTaskRestResourceImpl implements ServiceTaskRestResource {
 
     @Override
     public Result<List<Long>> getTaskIdNeProjectIdWithPage(String filterProjectId, Integer pageNum,
-                                                                      Integer pageSize) {
+            Integer pageSize) {
         return new Result<>(taskService.getTaskIdNeProjectIdWithPage(filterProjectId, pageNum, pageSize));
+    }
+
+    @Override
+    public Result<Boolean> stopDisableProjectTask(String projectId) {
+        taskService.stopDisableProjectTask(projectId);
+        return new Result<>(true);
     }
 
     @Override

@@ -28,7 +28,6 @@ package com.tencent.bk.codecc.task.api;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.tencent.bk.codecc.task.enums.TaskSortType;
-import com.tencent.bk.codecc.task.vo.CreateTaskConfigVO;
 import com.tencent.bk.codecc.task.vo.FilterPathInputVO;
 import com.tencent.bk.codecc.task.vo.FilterPathOutVO;
 import com.tencent.bk.codecc.task.vo.ListTaskNameCnRequest;
@@ -57,7 +56,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
-import java.util.Map;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -165,13 +163,14 @@ public interface UserTaskRestResource {
     Result<TaskIdVO> registerDevopsTask(
             @ApiParam(value = "任务信息", required = true)
             @Valid
-                    TaskDetailVO taskDetailVO,
+            TaskDetailVO taskDetailVO,
             @ApiParam(value = "项目ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
-                    String projectId,
+            String projectId,
             @ApiParam(value = "当前用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
-                    String userName);
+            String userName
+    );
 
 
     @ApiOperation("修改任务扫描触发配置")

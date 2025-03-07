@@ -21,6 +21,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 导入规则VO
@@ -42,4 +43,17 @@ public class CheckerImportVO {
 
     @ApiModelProperty(value = "腾讯规范规则集列表")
     private List<CheckerSetVO> standardCheckerSetList;
+
+    /**
+     * 获取 checkerDetailVOList 中所有规则的规则名, 用于审计数据上报, <b>谨慎删除</b>
+     */
+    public String getCheckerNames() {
+        if (checkerDetailVOList == null || checkerDetailVOList.isEmpty()) {
+            return "";
+        }
+
+        return checkerDetailVOList.stream()
+                .map(CheckerDetailVO::getCheckerName)
+                .collect(Collectors.joining(", "));
+    }
 }

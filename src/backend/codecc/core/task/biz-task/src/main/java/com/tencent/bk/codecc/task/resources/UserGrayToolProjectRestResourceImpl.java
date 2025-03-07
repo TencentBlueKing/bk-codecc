@@ -92,16 +92,16 @@ public class UserGrayToolProjectRestResourceImpl implements UserGrayToolProjectR
 //    }
 
     @Override
-    public Result<Boolean> createGrayTaskPool(String toolName, String stage, String user)
+    public Result<Boolean> createGrayTaskPool(String toolName, String langCode, String stage, String user)
     {
-        grayToolProjectService.selectGrayTaskPool(toolName, stage, user);
+        grayToolProjectService.selectGrayTaskPool(toolName, langCode, stage, user);
         return new Result<>(true);
     }
 
     @Override
-    public Result<TriggerGrayToolVO> triggerGrayTaskPool(String toolName, String taskNum)
+    public Result<TriggerGrayToolVO> triggerGrayTaskPool(String toolName, String taskNum, String langCode)
     {
-        return new Result<>(grayToolProjectService.triggerGrayToolTasks(toolName, taskNum));
+        return new Result<>(grayToolProjectService.triggerGrayToolTasks(toolName, taskNum, langCode));
     }
 
 //    @Override

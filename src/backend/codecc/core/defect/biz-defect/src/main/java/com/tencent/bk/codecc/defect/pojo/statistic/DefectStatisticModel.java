@@ -4,6 +4,8 @@ import com.tencent.bk.codecc.defect.model.DUPCDefectJsonFileEntity;
 import com.tencent.bk.codecc.defect.model.defect.DUPCDefectEntity;
 import com.tencent.bk.codecc.defect.model.defect.DefectEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
+import com.tencent.bk.codecc.defect.model.sca.SCALicenseEntity;
+import com.tencent.bk.codecc.defect.model.sca.SCASbomAggregateModel;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +23,6 @@ public class DefectStatisticModel<T extends DefectEntity> {
 
     /**
      * 向下兼容构造器
-     *
      * @param taskDetailVO
      * @param toolName
      * @param averageCcn
@@ -30,6 +31,7 @@ public class DefectStatisticModel<T extends DefectEntity> {
      * @param defectList
      * @param riskConfigMap
      * @param defectJsonFileEntity
+     * @param fastIncrementFlag
      */
     public DefectStatisticModel(
             TaskDetailVO taskDetailVO,
@@ -42,15 +44,63 @@ public class DefectStatisticModel<T extends DefectEntity> {
             DUPCDefectJsonFileEntity<DUPCDefectEntity> defectJsonFileEntity,
             Boolean fastIncrementFlag
     ) {
-        this.taskDetailVO = taskDetailVO;
-        this.toolName = toolName;
-        this.averageCcn = averageCcn;
-        this.buildId = buildId;
-        this.toolBuildStackEntity = toolBuildStackEntity;
-        this.defectList = defectList;
-        this.riskConfigMap = riskConfigMap;
-        this.defectJsonFileEntity = defectJsonFileEntity;
-        this.fastIncrementFlag = fastIncrementFlag;
+        this(taskDetailVO, toolName, averageCcn, buildId, toolBuildStackEntity, defectList, riskConfigMap,
+                defectJsonFileEntity, null, fastIncrementFlag, null, null);
+    }
+
+    /**
+     * 向下兼容构造器
+     * @param taskDetailVO
+     * @param toolName
+     * @param averageCcn
+     * @param buildId
+     * @param toolBuildStackEntity
+     * @param defectList
+     * @param riskConfigMap
+     * @param defectJsonFileEntity
+     * @param newCountCheckers
+     * @param fastIncrementFlag
+     */
+    public DefectStatisticModel(
+            TaskDetailVO taskDetailVO,
+            String toolName,
+            float averageCcn,
+            String buildId,
+            ToolBuildStackEntity toolBuildStackEntity,
+            List<T> defectList,
+            Map<String, String> riskConfigMap,
+            DUPCDefectJsonFileEntity<DUPCDefectEntity> defectJsonFileEntity,
+            List<String> newCountCheckers,
+            Boolean fastIncrementFlag
+    ) {
+        this(taskDetailVO, toolName, averageCcn, buildId, toolBuildStackEntity, defectList, riskConfigMap,
+                defectJsonFileEntity, newCountCheckers, fastIncrementFlag, null, null);
+    }
+
+    /**
+     * 向下兼容构造器
+     * @param taskDetailVO
+     * @param toolName
+     * @param buildId
+     * @param toolBuildStackEntity
+     * @param defectList
+     * @param fastIncrementFlag
+     * @param sbomAggregateModel
+     * @param scaLicenses
+     */
+    public DefectStatisticModel(
+            TaskDetailVO taskDetailVO,
+            String toolName,
+            String buildId,
+            ToolBuildStackEntity toolBuildStackEntity,
+            List<T> defectList,
+            Boolean fastIncrementFlag,
+            SCASbomAggregateModel sbomAggregateModel,
+            List<SCALicenseEntity> scaLicenses
+
+    ) {
+        this(taskDetailVO, toolName, 0f, buildId, toolBuildStackEntity, defectList, null,
+                null, null, fastIncrementFlag, sbomAggregateModel, scaLicenses);
     }
 
     private TaskDetailVO taskDetailVO;
@@ -88,4 +138,14 @@ public class DefectStatisticModel<T extends DefectEntity> {
      * 超快增量标识
      */
     private Boolean fastIncrementFlag;
+
+    /**
+     * 仅限于SCA工具，其他工具传 null
+     */
+    private SCASbomAggregateModel sbomAggregateModel;
+
+    /**
+     * 仅限于SCA工具，其他工具传 null
+     */
+    private List<SCALicenseEntity> scaLicenses;
 }

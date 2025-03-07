@@ -1,4 +1,3 @@
-
 <template>
   <div class="table-list">
     <div class="total-count">{{ $t('共{0}问题', [totalCount]) }}</div>
@@ -16,11 +15,12 @@
       @row-click="handleRowClick">
       <bk-table-column :label="$t('项目')" prop="projectName" min-width="100"></bk-table-column>
       <bk-table-column :label="$t('任务')" show-overflow-tooltip prop="taskNameCn" min-width="100"></bk-table-column>
-      <bk-table-column :label="$t('问题位置')" prop="repo" show-overflow-tooltip min-width="300">
+      <!-- <bk-table-column :label="$t('问题位置')" prop="repo" show-overflow-tooltip min-width="300">
         <template slot-scope="props">
           <span>{{ props.row.fileLink + ":" + props.row.lineNum }}</span>
         </template>
-      </bk-table-column>
+      </bk-table-column> -->
+      <bk-table-column :label="$t('问题描述')" show-overflow-tooltip prop="message" min-width="300"></bk-table-column>
       <bk-table-column :label="$t('规则')" show-overflow-tooltip prop="checker" min-width="100"></bk-table-column>
       <bk-table-column :label="$t('规则发布者')" prop="publisher" min-width="100"></bk-table-column>
       <bk-table-column :label="$t('级别')" prop="severity">
@@ -47,20 +47,11 @@
           <span class="dot" :class="`status-${props.row.processProgress}`"></span>
           <span>{{ statusMap[props.row.processProgress] }}</span>
           <bk-icon
-            v-if="props.row.processProgress === 2 || props.row.processProgress === 3"
+            v-if="props.row.processProgress !== 0 && !props.row.modify"
+            :key="props.row"
             v-bk-tooltips="{
-              allowHTML: false,
-              content: reasonMap[props.row.processReasonType]
-                + `${props.row.processReason ? ': ' + props.row.processReason : ''}`
-            }"
-            type="info-circle" />
-          <bk-icon
-            v-else-if="props.row.processProgress === 1 && (props.row.processReason || props.row.issueLink) "
-            v-bk-tooltips="{
-              allowHTML: false,
-              content: props.row.processReason +
-                `${props.row.processReason && props.row.issueLink ? ':' : ''}`
-                + props.row.issueLink
+              allowHTML: true,
+              content: handleIssueLink(props.row)
             }"
             type="info-circle" />
         </template>
@@ -146,6 +137,14 @@ export default {
       },
       statusList: [
         {
+          id: 0,
+          name: this.$t('待处理'),
+        },
+        {
+          id: 4,
+          name: this.$t('跟进中'),
+        },
+        {
           id: 1,
           name: this.$t('已优化工具'),
         },
@@ -162,6 +161,7 @@ export default {
         0: this.$t('待处理'),
         1: this.$t('已优化工具'),
         2: this.$t('非工具原因'),
+        4: this.$t('跟进中'),
         3: this.$t('其他'),
       },
       reasonMap: {
@@ -227,6 +227,13 @@ export default {
     });
   },
   methods: {
+    handleIssueLink({ processProgress, processReasonType, processReason, issueLink }) {
+      if (processProgress === 2 || processProgress === 3) {
+        return `${this.reasonMap[processReasonType]}${processReason ? `: ${processReason}` : ''}`;
+      }
+      const link = issueLink ? `<a href="${issueLink}" target="_blank">${issueLink}</a>` : '';
+      return `${processReason}${processReason && issueLink ? '<br />' : ''}${link}`;
+    },
     handleDefect(id, row) {
       this.$refs.process.handleDefect(id, row);
     },
@@ -363,7 +370,7 @@ export default {
 
 
 <style>
-@import url('@/views/defect/codemirror.css');
+@import url('../../defect/codemirror.css');
 </style>
 
 <style lang="postcss" scoped>

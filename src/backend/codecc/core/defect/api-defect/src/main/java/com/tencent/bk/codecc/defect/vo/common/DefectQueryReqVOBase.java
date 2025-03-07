@@ -2,6 +2,8 @@ package com.tencent.bk.codecc.defect.vo.common;
 
 import com.tencent.devops.common.constant.ComConstants;
 import io.swagger.annotations.ApiModelProperty;
+
+import java.util.List;
 import java.util.Set;
 import lombok.Data;
 
@@ -84,6 +86,12 @@ public class DefectQueryReqVOBase {
 
     @ApiModelProperty("是否跨任务查询")
     private Boolean multiTaskQuery;
+
+    @ApiModelProperty("忽略审核状态")
+    private List<Integer> ignoreApprovalStatus;
+
+    @ApiModelProperty("忽略审核ID")
+    private String ignoreApprovalId;
 
     @Data
     public static class CheckerSet {

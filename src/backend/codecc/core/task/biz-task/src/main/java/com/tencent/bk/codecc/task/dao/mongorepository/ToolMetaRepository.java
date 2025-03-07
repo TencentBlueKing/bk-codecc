@@ -66,6 +66,8 @@ public interface ToolMetaRepository extends MongoRepository<ToolMetaEntity, Stri
      */
     ToolMetaEntity findByDebugPipelineId(String debugPipelineId);
 
+    ToolMetaEntity findFirstByNameAndDebugPipelineId(String toolName, String debugPipelineId);
+
     boolean existsByName(String name);
 
     /**

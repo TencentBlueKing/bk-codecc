@@ -28,6 +28,7 @@
 package com.tencent.bk.codecc.defect.dao.defect.mongotemplate;
 
 import com.tencent.bk.codecc.defect.model.*;
+import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.statistic.LintStatisticEntity;
 import com.tencent.devops.common.constant.ComConstants;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.BulkOperations;
@@ -374,4 +376,22 @@ public class LintDefectDao {
         return results.getMappedResults();
     }
 
+    /**
+     * 统计指定工具当天创建多少个告警
+     */
+    public long findByToolAndTaskIdInAndCreateTime(List<Long> taskIds, String toolName, long startTime, long endTime) {
+        if (CollectionUtils.isEmpty(taskIds)) {
+            return 0;
+        }
+        log.info("findByToolAndTaskIdInAndCreateTime start, size: {}", taskIds.size());
+        long time = System.currentTimeMillis();
+
+        Criteria criteria =
+                Criteria.where("task_id").in(taskIds).and("tool_name").is(toolName).and("create_time").gte(startTime)
+                        .lte(endTime);
+        long defectCount =
+                defectMongoTemplate.count(new Query(criteria), LintDefectV2Entity.class, "t_lint_defect_v2");
+        log.info("findByToolAndTaskIdInAndCreateTime finish, {}", System.currentTimeMillis() - time);
+        return defectCount;
+    }
 }

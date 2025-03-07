@@ -174,7 +174,7 @@
   </div>
 </template>
 
-<script>
+<script lang="jsx">
 import { mapState } from 'vuex';
 import Empty from '@/components/empty';
 import DEPLOY_ENV from '@/constants/env';

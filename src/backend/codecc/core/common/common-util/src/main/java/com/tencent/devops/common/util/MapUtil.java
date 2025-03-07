@@ -47,4 +47,35 @@ public class MapUtil {
         }
         return total;
     }
+
+    /**
+     * 判断两个MAP是否相等
+     * @param map1
+     * @param map2
+     * @return
+     */
+    public static boolean areMapsEqual(Map<Long, List<String>> map1, Map<Long, List<String>> map2) {
+        // 检查大小是否相等
+        if (map1.size() != map2.size()) {
+            return false;
+        }
+
+        // 遍历map1中的每个条目
+        for (Map.Entry<Long, List<String>> entry : map1.entrySet()) {
+            Long key = entry.getKey();
+            List<String> value = entry.getValue();
+
+            // 检查map2中是否存在相同的键
+            if (!map2.containsKey(key)) {
+                return false;
+            }
+
+            // 比较两个列表是否相等
+            List<String> value2 = map2.get(key);
+            if (!value.equals(value2)) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

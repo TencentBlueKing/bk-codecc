@@ -75,50 +75,43 @@
         </div>
       </section>
     </main>
-    <div class="task-filter-bar" v-if="isFilter">
+    <div class="task-filter-bar flex justify-between" v-if="isFilter">
       <div class="mr40">
-        <bk-radio-group size="small" v-model="searchInfo.showDisabledTask">
-          <bk-radio-button :value="false">{{ $t('已启用任务') }}</bk-radio-button>
-          <bk-radio-button :value="true">{{ $t('已停用任务') }}</bk-radio-button>
+        <bk-radio-group size="small" v-model="searchInfo.showTaskType">
+          <bk-radio-button v-for="item in taskTypeList" :key="item.value" :value="item.value">
+            {{ item.name }}
+          </bk-radio-button>
         </bk-radio-group>
       </div>
-      <div class="task-filter-select" v-if="!searchInfo.showDisabledTask">
-        <label>{{ $t('状态') }}</label>
-        <bk-select
-          v-model="searchInfo.taskStatusList"
-          style="width: 240px"
-          multiple
-        >
-          <bk-option
-            v-for="option in statusList"
-            :key="option.id"
-            :id="option.id"
-            :name="option.name"
+      <div class="inline-flex">
+        <div class="task-filter-select mr-[40px]" v-if="searchInfo.showTaskType !== 1">
+          <label>{{ $t('状态') }}</label>
+          <bk-select
+            v-model="searchInfo.taskStatusList"
+            style="width: 240px"
+            multiple
           >
-          </bk-option>
-        </bk-select>
-      </div>
-      <!-- <div class="task-filter-select">
-                <label>{{$t('代码库')}}</label>
-                <bk-select v-model="searchInfo.codelib" style="width: 240px;" searchable>
-                    <bk-option v-for="option in codelibList"
-                        :key="option.id"
-                        :id="option.id"
-                        :name="option.name">
-                    </bk-option>
-                </bk-select>
-            </div> -->
-      <div class="task-filter-select" v-if="!searchInfo.showDisabledTask">
-        <label>{{ $t('任务来源') }}</label>
-        <bk-select v-model="searchInfo.taskSource" style="width: 240px">
-          <bk-option
-            v-for="option in sourceList"
-            :key="option.id"
-            :id="option.id"
-            :name="option.name"
-          >
-          </bk-option>
-        </bk-select>
+            <bk-option
+              v-for="option in statusList"
+              :key="option.id"
+              :id="option.id"
+              :name="option.name"
+            >
+            </bk-option>
+          </bk-select>
+        </div>
+        <div class="task-filter-select" v-if="searchInfo.showTaskType !== 1">
+          <label>{{ $t('任务来源') }}</label>
+          <bk-select v-model="searchInfo.taskSource" style="width: 240px">
+            <bk-option
+              v-for="option in sourceList"
+              :key="option.id"
+              :id="option.id"
+              :name="option.name"
+            >
+            </bk-option>
+          </bk-select>
+        </div>
       </div>
     </div>
   </div>
@@ -164,6 +157,7 @@ export default {
       },
       pipelineSite: `${window.DEVOPS_SITE_URL}/console/pipeline`,
       streamSite: window.STREAM_SITE_URL,
+      hasTestTask: false,
     };
   },
   computed: {
@@ -179,6 +173,27 @@ export default {
       return /^git_\d+$/.test(this.projectId);
     },
     ...mapState(['isRbac']),
+    taskTypeList() {
+      return this.hasTestTask
+        ? [
+          { value: 0, name: this.$t('已启用任务') },
+          { value: 1, name: this.$t('已停用任务') },
+          { value: 3, name: this.$t('测试任务') },
+        ]
+        : [
+          { value: 0, name: this.$t('已启用任务') },
+          { value: 1, name: this.$t('已停用任务') },
+        ];
+    },
+  },
+  beforeCreate() {
+    this.$store.dispatch(
+      'test/hasTestTask',
+      { projectId: this.$route.params.projectId },
+    )
+      .then((res) => {
+        this.hasTestTask = res.data;
+      });
   },
   methods: {
     hideFeedBackMenu() {
@@ -243,7 +258,6 @@ export default {
   .task-filter-select {
     display: flex;
     align-items: center;
-    margin-right: 40px;
 
     label {
       margin-right: 16px;

@@ -56,8 +56,8 @@
           class="checkerset-panel"
           ref="checkersetPanel"
           v-for="classify in classifyCodeList"
-          :key="classify.enName"
-          :name="classify.enName"
+          :key="classify.keyName"
+          :name="classify.keyName"
           :label="classify.cnName"
           render-directive="if"
         >
@@ -182,7 +182,7 @@ export default {
         pageSize: 20,
       },
       classifyCode: 'all',
-      classifyCodeList: [{ cnName: this.$t('所有'), enName: 'all' }],
+      classifyCodeList: [{ cnName: this.$t('所有'), enName: 'all', keyName: 'all' }],
       checkerSetList: [],
       codeLangs: [],
     };

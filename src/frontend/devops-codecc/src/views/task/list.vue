@@ -55,7 +55,7 @@
           ></div>
         </div>
       </div>
-      <div slot="empty" v-else-if="isSearch && !searchInfo.showDisabledTask">
+      <div slot="empty" v-else-if="isSearch && searchInfo.showTaskType !== 1">
         <div class="codecc-table-empty-text">
           <img src="../../images/empty-search.png" class="empty-img" />
           <div>{{ $t('搜索结果为空') }}</div>
@@ -157,6 +157,7 @@ export default {
     ToolBar,
   },
   data() {
+    const { query } = this.$route;
     return {
       retryTask: {},
       isShowDisused: false,
@@ -171,7 +172,8 @@ export default {
         taskStatus: '',
         taskStatusList: [],
         taskSource: '',
-        showDisabledTask: false,
+        showTaskType: Number(query.taskType) || 0,
+        // showDisabledTask: false,
       },
       pageInfo: {
         pageable: true,
@@ -340,7 +342,7 @@ export default {
           });
       } else {
         window.open(
-          `${window.DEVOPS_SITE_URL}/console/pipeline/${this.projectId}/${task.pipelineId}/edit`,
+          `${window.DEVOPS_SITE_URL}/console/pipeline/${this.projectId}/${task.pipelineId}/history`,
           '_blank',
         );
       }
@@ -355,7 +357,7 @@ export default {
           maskClose: true,
           confirmFn(name) {
             window.open(
-              `${window.DEVOPS_SITE_URL}/console/pipeline/${projectId}/${pipelineId}/edit`,
+              `${window.DEVOPS_SITE_URL}/console/pipeline/${projectId}/${pipelineId}/history`,
               '_blank',
             );
           },

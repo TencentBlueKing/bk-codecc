@@ -12,33 +12,34 @@
 
 package com.tencent.bk.codecc.defect.component;
 
-import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_CLUSTER_ALLOCATION;
-import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_CLUSTER_ALLOCATION_OPENSOURCE;
-import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CLUSTER_ALLOCATION;
-import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CLUSTER_ALLOCATION_OPENSOURCE;
-
 import com.google.common.io.Files;
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectNewInputModel;
 import com.tencent.bk.codecc.defect.pojo.DefectClusterDTO;
 import com.tencent.bk.codecc.defect.pojo.FileMD5SingleModel;
 import com.tencent.bk.codecc.defect.pojo.FileMD5TotalModel;
+import com.tencent.bk.codecc.defect.service.BuildService;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.codecc.util.JsonUtil;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.utils.SpringContextUtil;
-import java.io.File;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.amqp.rabbit.AsyncRabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.File;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_CLUSTER_ALLOCATION_OPENSOURCE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CLUSTER_ALLOCATION;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CLUSTER_ALLOCATION_OPENSOURCE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_CLUSTER_ALLOCATION;
 
 /**
  * 新版告警跟踪抽象类
@@ -51,6 +52,8 @@ public abstract class AbstractDefectTracingComponent<T> {
 
     @Autowired
     public ScmJsonComponent scmJsonComponent;
+    @Autowired
+    private BuildService buildService;
 
     /**
      * 分批执行聚类跟踪
@@ -68,9 +71,9 @@ public abstract class AbstractDefectTracingComponent<T> {
             Set<String> relPathList,
             Set<String> filePathList,
             Set<String> filterPathSet) {
+        String buildId = defectClusterDTO.getCommitDefectVO().getBuildId();
         String inputFileName = String.format("%s_%s_%s_%s_aggregate_input_data.json", taskDetailVO.getNameEn(),
-                defectClusterDTO.getCommitDefectVO().getToolName()
-                , defectClusterDTO.getCommitDefectVO().getBuildId(), chunkNo);
+                defectClusterDTO.getCommitDefectVO().getToolName(), buildId, chunkNo);
         String inputFilePath = scmJsonComponent.index(inputFileName, ScmJsonComponent.AGGREGATE);
         log.info("aggregate inputFilePath : {}", inputFilePath);
         File inputFile = new File(inputFilePath);
@@ -80,13 +83,12 @@ public abstract class AbstractDefectTracingComponent<T> {
         try {
             //写入输入数据
             if (!inputFile.exists()) {
-                inputFile.getParentFile().mkdirs();
-                inputFile.createNewFile();
+                boolean mkParentDir = inputFile.getParentFile().mkdirs();
+                if (!inputFile.createNewFile()) {
+                    log.error("SOMETHING ERROR, 创建输入文件失败. 创建父目录: {}", mkParentDir);
+                }
             }
-            Set<String> whitePaths = new HashSet<>();
-            if (CollectionUtils.isNotEmpty(taskDetailVO.getWhitePaths())) {
-                whitePaths.addAll(taskDetailVO.getWhitePaths());
-            }
+            Set<String> whitePaths = buildService.getWhitePaths(buildId, taskDetailVO);
             AggregateDefectNewInputModel<T> aggregateDefectNewInputModel =
                     new AggregateDefectNewInputModel<>(filePathList,
                             relPathList,

@@ -24,5 +24,9 @@ github:
 codecc:
   paramJsonRelateCheckerSetTools: __BK_CODECC_PARAM_JSON_RELATE_CHECKER_SET_TOOLS__
   codeLangRelateCheckerSetTools: __BK_CODECC_CODE_LANG_RELATE_CHECKER_SET_TOOLS__
-
+  llm:
+    bkaidev: __BK_CODECC_LLM_BKAIDEV_HOST__
+    appcode: __BK_CODECC_LLM_APP_CODE__
+    appsecret: __BK_CODECC_LLM_APP_SECRET__
+    model: __BK_CODECC_LLM_MODEL__
 

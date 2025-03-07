@@ -196,7 +196,7 @@
             <bk-button theme="primary" disabled>{{ $t('立即检查') }}</bk-button>
           </bk-popover>
           <bk-popover
-            v-if="projectId.startsWith('CLOSED_SOURCE_')"
+            v-else-if="projectId.startsWith('CLOSED_SOURCE_')"
             theme="light"
             :content="$t('由工蜂创建的闭源仓库扫描任务，暂不支持立即检查')"
             placement="bottom"
@@ -256,6 +256,7 @@
             class="menu"
             @select="handleMenuSelect"
             :default-active="activeMenu.id"
+            :before-nav-change="handleNavChange"
             :toggle-active="true"
             item-hover-bg-color="#e1ecff"
             item-hover-color="#3a84ff"
@@ -356,6 +357,7 @@ import { getToolStatus } from '@/common/util';
 // import Record from '@/components/operate-record/index'
 import taskWebsocket from '@/common/taskWebSocket';
 import crumbRecords from '@/components/crumb-records';
+import { leaveConfirm } from '@/common/leave-confirm';
 
 export default {
   components: {
@@ -504,6 +506,13 @@ export default {
           icon: 'codecc-icon icon-statistics',
           href: this.$router.resolve({ name: 'defect-cloc-list', params }).href,
         },
+        {
+          id: 'sca',
+          name: this.$t('软件成分'),
+          routeName: 'defect-sca',
+          icon: 'codecc-icon icon-software-components',
+          href: this.$router.resolve({ name: 'defect-sca-pkg-list', params }).href,
+        },
       ];
 
       return menuBase;
@@ -594,6 +603,16 @@ export default {
     'status.status'(newValue, oldValue) {
       if (newValue === 2) {
         this.coldTaskVisible = true;
+      }
+    },
+    'taskDetail.projectId'(val) {
+      const { projectId } = this.$route.params;
+      if (val !== projectId && val && this.taskDetail.createFrom === 'gongfeng_scan') {
+        this.$router.replace({
+          params: {
+            projectId: val,
+          },
+        });
       }
     },
   },
@@ -692,7 +711,7 @@ export default {
           maskClose: true,
           confirmFn(name) {
             window.open(
-              `${window.DEVOPS_SITE_URL}/console/pipeline/${projectId}/${pipelineId}/edit`,
+              `${window.DEVOPS_SITE_URL}/console/pipeline/${projectId}/${pipelineId}/history`,
               '_blank',
             );
           },
@@ -813,6 +832,13 @@ export default {
               && item.key !== 'SCC');
           this.dimension = (list[0] && list[0].key) || 'DEFECT';
         });
+    },
+    async handleNavChange() {
+      if (window.changeAlert) {
+        const next = await leaveConfirm();
+        return next;
+      }
+      return true;
     },
   },
 };

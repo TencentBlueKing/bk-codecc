@@ -112,6 +112,11 @@
         }}</span>
       </template>
     </bk-table-column>
+    <bk-table-column :label="$t('分支')" prop="branch" width="110" show-overflow-tooltip>
+      <template slot-scope="props">
+        <span>{{ props.row.branch ? props.row.branch : '--' }}</span>
+      </template>
+    </bk-table-column>
     <bk-table-column :label="$t('状态')" prop="status" width="110">
       <template slot-scope="props">
         <div>
@@ -121,22 +126,60 @@
           <span
             v-if="props.row.status === 1 && props.row.mark === 1"
             v-bk-tooltips="$t('已标记处理')"
-            class="codecc-icon icon-mark mr5"
+            class="codecc-icon icon-mark"
           ></span>
           <span
             v-if="props.row.status === 1 && props.row.markButNoFixed"
             v-bk-tooltips="$t('标记处理后重新扫描仍为问题')"
-            class="codecc-icon icon-mark re-mark mr5"
+            class="codecc-icon icon-mark re-mark"
           ></span>
-          <span
+          <bk-popover
             v-if="
               props.row.defectIssueInfoVO &&
                 props.row.defectIssueInfoVO.submitStatus &&
                 props.row.defectIssueInfoVO.submitStatus !== 4
             "
-            v-bk-tooltips="$t('已提单')"
-            class="codecc-icon icon-tapd"
-          ></span>
+            :disabled="!props.row.defectIssueInfoVO.submitIssueUrl"
+            placement="bottom">
+            <span class="codecc-icon icon-yititapddan"></span>
+            <bk-button
+              v-if="props.row.defectIssueInfoVO.submitIssueUrl"
+              slot="content"
+              text theme="primary"
+              class="text-[12px]"
+              @click="goToTAPD(props.row.defectIssueInfoVO.submitIssueUrl)">
+              {{ $t('查看TAPD单据') }}
+            </bk-button>
+          </bk-popover>
+          <img
+            v-if="props.row.hasCodeComment"
+            :src="commented"
+            v-bk-tooltips="$t('已评论')"
+            class="img-icon" />
+          <img
+            v-if="
+              props.row.ignoreApprovalStatus &&
+                (props.row.ignoreApprovalStatus === 1 || props.row.ignoreApprovalStatus === 2)
+            "
+            :src="ignoreApprovalIng"
+            v-bk-tooltips="$t('忽略审批中')"
+            class="img-icon" />
+          <img
+            v-if="
+              props.row.ignoreApprovalStatus &&
+                props.row.ignoreApprovalStatus === 3
+            "
+            :src="ignoreApprovalPass"
+            v-bk-tooltips="$t('忽略审批通过')"
+            class="img-icon" />
+          <img
+            v-if="
+              props.row.ignoreApprovalStatus &&
+                props.row.ignoreApprovalStatus === 4
+            "
+            :src="ignoreApprovalRefuse"
+            v-bk-tooltips="$t('忽略审批被拒')"
+            class="img-icon" />
         </div>
       </template>
     </bk-table-column>
@@ -205,7 +248,7 @@
                 {{ $t('取消忽略并标记处理') }}
               </p>
               <p
-                v-if="props.row.status & 4 && !props.row.ignoreCommentDefect && DEPLOY_ENV === 'tencent'"
+                v-if="props.row.status & 4 && !props.row.ignoreCommentDefect && isInnerSite"
                 class="entry-link"
                 @click.stop="handleRevertIgnoreAndCommit(props.row.entityId)"
               >
@@ -233,10 +276,18 @@
                 <div>
                   <span class="guide-flag"></span>
                   <span
-                    class="entry-link ignore-item"
-                    @click.stop="
-                      handleIgnore('IgnoreDefect', false, props.row.entityId)
-                    "
+                    :class="[
+                      'entry-link',
+                      'ignore-item',
+                      [1, 2].includes(props.row.ignoreApprovalStatus) ? 'disabled' : ''
+                    ]"
+                    @click.stop="handleIgnore(
+                      'IgnoreApproval|IgnoreDefect',
+                      false,
+                      props.row.entityId,
+                      null,
+                      props.row.ignoreApprovalStatus
+                    )"
                   >{{ $t('忽略问题') }}</span
                   >
                 </div>
@@ -275,7 +326,7 @@
                       props.row.defectIssueInfoVO.submitStatus !== 4
                     )
                     &&
-                    DEPLOY_ENV === 'tencent'
+                    isInnerSite
                 "
                 class="entry-link"
                 @click.stop="handleCommit('commit', false, props.row.entityId)"
@@ -311,12 +362,21 @@ import defectTable from '@/mixins/defect-table';
 import { array2Str } from '@/common/util';
 import { language } from '../../i18n';
 import DEPLOY_ENV from '@/constants/env';
+import ignoreApprovalPass from '@/images/ignore-approval-pass.svg';
+import ignoreApprovalRefuse from '@/images/ignore-approval-refuse.svg';
+import ignoreApprovalIng from '@/images/ignore-approval-ing.svg';
+import commented from '@/images/commented.svg';
 
 export default {
   mixins: [defectTable],
   data() {
     return {
+      ignoreApprovalPass,
+      ignoreApprovalRefuse,
+      ignoreApprovalIng,
+      commented,
       array2Str,
+      isInnerSite: DEPLOY_ENV === 'tencent',
     };
   },
   computed: {
@@ -405,6 +465,18 @@ export default {
   &.re-mark {
     color: #facc48;
   }
+}
+
+.icon-yititapddan {
+  font-size: 14px;
+  color: #3A84FF;
+}
+
+.img-icon {
+  display: inline-block;
+  width: 14px;
+  margin-top: -1px;
+  margin-right: -1px;
 }
 
 >>> .bk-table {

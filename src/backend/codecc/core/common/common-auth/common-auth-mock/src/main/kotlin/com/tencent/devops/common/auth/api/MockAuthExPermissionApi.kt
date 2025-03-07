@@ -53,6 +53,10 @@ class MockAuthExPermissionApi(
         return true
     }
 
+    override fun getProjectManager(projectId: String): List<String> {
+        return emptyList()
+    }
+
     override fun authProjectMultiManager(projectId: String, user: String): Boolean {
         return true
     }

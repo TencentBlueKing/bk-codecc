@@ -127,5 +127,8 @@ export default {
         },
       });
     },
+    goToTAPD(url) {
+      window.open(url, '_blank');
+    },
   },
 };

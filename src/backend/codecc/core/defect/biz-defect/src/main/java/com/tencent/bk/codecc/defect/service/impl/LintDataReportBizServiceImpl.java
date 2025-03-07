@@ -53,6 +53,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -126,7 +127,6 @@ public class LintDataReportBizServiceImpl extends AbstractDataReportBizService {
         final ChartAuthorListVO authorList = new ChartAuthorListVO();
 
         Map<String, CommonChartAuthorVO> newChartAuthorMap = new HashMap<>();
-        Map<String, CommonChartAuthorVO> historyChartAuthorMap = new HashMap<>();
         Map<String, CommonChartAuthorVO> chartAuthorMap = new HashMap<>();
 
         int pageNum = 0;
@@ -160,11 +160,14 @@ public class LintDataReportBizServiceImpl extends AbstractDataReportBizService {
         }
         while (pageNum < totalPage);
 
-        newAuthorList.setAuthorList(new ArrayList<>(newChartAuthorMap.values()));
-        List<ChartAuthorBaseVO> authorVoList = new ArrayList<>(historyChartAuthorMap.values());
-        authorVoList.sort(Comparator.comparingInt(ChartAuthorBaseVO::getTotal));
+        newAuthorList.setAuthorList(getCommonAuthorChart(newChartAuthorMap));
+        log.info("start get personal defect counts.");
+        authorList.setAuthorList(getCommonAuthorChart(chartAuthorMap));
+        log.info("result: {}", authorList.getAuthorList());
+
+        // 无效数据
+        List<ChartAuthorBaseVO> authorVoList = new ArrayList<>();
         historyAuthorList.setAuthorList(authorVoList);
-        authorList.setAuthorList(new ArrayList<>(chartAuthorMap.values()));
 
         curStatistic.setTime(System.currentTimeMillis());
 
@@ -266,9 +269,8 @@ public class LintDataReportBizServiceImpl extends AbstractDataReportBizService {
             Map<String, CommonChartAuthorVO> chartAuthorMap,
             LintDefectV2Entity defect
     ) {
-        String defaultAuthor = "No Author";
-        String author = CollectionUtils.isEmpty(defect.getAuthor()) ? defaultAuthor
-                : IterableUtils.getFirst(defect.getAuthor(), defaultAuthor);
+        String author = CollectionUtils.isEmpty(defect.getAuthor()) ? DEFAULT_AUTHOR
+                : IterableUtils.getFirst(defect.getAuthor(), DEFAULT_AUTHOR);
 
         CommonChartAuthorVO authorVO = chartAuthorMap.get(author);
         if (authorVO == null) {

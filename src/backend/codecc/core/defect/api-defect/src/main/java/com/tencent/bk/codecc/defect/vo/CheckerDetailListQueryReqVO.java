@@ -14,7 +14,9 @@ package com.tencent.bk.codecc.defect.vo;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 import java.util.Set;
@@ -27,11 +29,15 @@ import java.util.Set;
  */
 @Data
 @ApiModel("查询规则清单首页实体类")
+@AllArgsConstructor
+@NoArgsConstructor
 public class CheckerDetailListQueryReqVO {
     @ApiModelProperty("带查询工具规则列表")
     private List<ToolCheckers> toolCheckerList;
 
     @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class ToolCheckers {
         private String toolName;
 

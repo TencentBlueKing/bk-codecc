@@ -19,6 +19,7 @@ import com.tencent.bk.codecc.defect.model.defect.CCNDefectEntity;
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity;
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectInputModel;
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectOutputModel;
+import com.tencent.bk.codecc.defect.service.DefectCommitService;
 import com.tencent.bk.codecc.defect.service.impl.CCNFilterPathBizServiceImpl;
 import com.tencent.bk.codecc.defect.vo.CommitDefectVO;
 import com.tencent.bk.codecc.task.vo.FilterPathInputVO;
@@ -92,9 +93,12 @@ public class NewCCNDefectTracingComponent extends AbstractDefectTracingComponent
         //如果代码没有变化，直接检查是否被路径屏蔽，然后将original入库
         if (CollectionUtils.isEmpty(defectList)) {
             Set<String> whitePaths = new HashSet<>();
-            if (CollectionUtils.isNotEmpty(taskVO.getWhitePaths())) {
+            if (buildEntity.getWhitePaths() != null) {
+                whitePaths.addAll(buildEntity.getWhitePaths());
+            } else if (CollectionUtils.isNotEmpty(taskVO.getWhitePaths())) {
                 whitePaths.addAll(taskVO.getWhitePaths());
             }
+
             List<CCNDefectEntity> upsertDefectList = updateOriginalDefectStatus(originalDefectList, currentDefectList,
                     filterPaths, whitePaths, buildEntity, transferAuthorList);
             saveDefects(taskId, toolName, filterPaths, whitePaths, buildEntity, upsertDefectList);

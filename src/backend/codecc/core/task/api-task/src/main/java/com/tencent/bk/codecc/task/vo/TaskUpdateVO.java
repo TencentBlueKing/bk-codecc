@@ -54,6 +54,9 @@ public class TaskUpdateVO
     @ApiModelProperty(value = "代码语言")
     private Long codeLang;
 
+    @ApiModelProperty(value = "工具特定参数")
+    private List<ToolConfigParamJsonVO> devopsToolParams;
+
     @ApiModelProperty(value = "任务负责人/管理员")
     private List<String> taskOwner;
 

@@ -27,11 +27,19 @@
 package com.tencent.bk.codecc.defect.resources;
 
 import com.tencent.bk.codecc.defect.api.ServiceCheckerRestResource;
+import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.service.CheckerService;
+import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
 import com.tencent.bk.codecc.defect.vo.QueryTaskCheckerDimensionRequest;
+import com.tencent.devops.common.api.checkerset.CheckerPropVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.service.ToolMetaCacheService;
+import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.web.RestResource;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -46,6 +54,9 @@ public class ServiceCheckerRestResourceImpl implements ServiceCheckerRestResourc
     @Autowired
     private CheckerService checkerService;
 
+    @Autowired
+    private ToolMetaCacheService toolMetaCacheService;
+
     @Override
     public Result<List<String>> queryDimensionByToolChecker(
             QueryTaskCheckerDimensionRequest request
@@ -57,5 +68,25 @@ public class ServiceCheckerRestResourceImpl implements ServiceCheckerRestResourc
                         request.getToolNameList()
                 )
         );
+    }
+
+    @Override
+    public Result<List<CheckerDetailVO>> queryCheckerDetailByCheckerPropVO(List<CheckerPropVO> propVOS) {
+        if (CollectionUtils.isEmpty(propVOS)) {
+            return new Result<>(new ArrayList<>());
+        }
+        List<CheckerDetailEntity> checkerDetailEntityList = checkerService.queryCheckerCategoryByCheckerPropVO(propVOS);
+        if (CollectionUtils.isEmpty(checkerDetailEntityList)) {
+            return new Result<>(new ArrayList<>());
+        }
+
+        List<CheckerDetailVO> checkerDetailVOList = checkerDetailEntityList.stream()
+                .map(it -> {
+                    CheckerDetailVO checkerDetailVO = new CheckerDetailVO();
+                    BeanUtils.copyProperties(it, checkerDetailVO);
+                    return checkerDetailVO;
+                }).collect(Collectors.toList());
+
+        return new Result<>(checkerDetailVOList);
     }
 }

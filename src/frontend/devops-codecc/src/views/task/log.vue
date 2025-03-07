@@ -606,8 +606,14 @@ export default {
       };
     },
     expendRowKey() {
-      const row = this.logList[0] || {};
-      return [row.buildId];
+      let row = this.logList[0] || {};
+      if (this.$route.query.buildNum) {
+        row = this.logList.find(item => item.buildNum === this.$route.query.buildNum);
+      }
+      if (row?.buildId && this.$route.query.showLog) {
+        this.showLog(row.buildId, row.buildNum);
+      }
+      return [row?.buildId];
     },
   },
   watch: {

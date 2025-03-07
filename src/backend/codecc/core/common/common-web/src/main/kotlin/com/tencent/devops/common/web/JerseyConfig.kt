@@ -29,6 +29,7 @@ package com.tencent.devops.common.web
 import com.tencent.devops.common.api.annotation.UserLogin
 import com.tencent.devops.common.web.handler.AllExceptionMapper
 import com.tencent.devops.common.web.handler.ClientExceptionMapper
+import com.tencent.devops.common.web.handler.CodeCCErrorCodeExceptionMapper
 import com.tencent.devops.common.web.handler.CodeCCExceptionMapper
 import com.tencent.devops.common.web.handler.ErrorCodeExceptionMapper
 import com.tencent.devops.common.web.handler.IOExceptionMapper
@@ -68,6 +69,7 @@ open class JerseyConfig : ResourceConfig(), ApplicationContextAware, Initializin
         register(AllExceptionMapper::class.java)
         register(MultiPartFeature::class.java)
         register(ErrorCodeExceptionMapper::class.java)
+        register(CodeCCErrorCodeExceptionMapper::class.java)
         register(PermissionAuthDynamicFeature::class.java)
         register(ValidateProjectDynamicFeature::class.java)
         register(ValidationExceptionMapper::class.java)

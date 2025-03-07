@@ -13,8 +13,7 @@ import lombok.Data;
  */
 @Data
 @ApiModel("圈复杂度数据报表作者信息视图")
-public class CCNChartAuthorVO extends ChartAuthorBaseVO
-{
+public class CCNChartAuthorVO extends ChartAuthorBaseVO {
     @ApiModelProperty("超高级别数量")
     private Integer superHigh;
 
@@ -27,11 +26,7 @@ public class CCNChartAuthorVO extends ChartAuthorBaseVO
     @ApiModelProperty("低级别数量")
     private Integer low;
 
-    //@ApiModelProperty("提示语")
-    //private String tips;
-
-    public CCNChartAuthorVO()
-    {
+    public CCNChartAuthorVO() {
         total = 0;
         superHigh = 0;
         high = 0;
@@ -39,28 +34,36 @@ public class CCNChartAuthorVO extends ChartAuthorBaseVO
         low = 0;
     }
 
+    public CCNChartAuthorVO(String author) {
+        authorName = author;
+        total = 0;
+        superHigh = 0;
+        high = 0;
+        medium = 0;
+        low = 0;
+    }
+
+    public void add(CCNChartAuthorVO b) {
+        this.total += b.getTotal();
+        this.superHigh += b.getSuperHigh();
+        this.high += b.getHigh();
+        this.medium += b.getMedium();
+        this.low += b.getLow();
+    }
+
     @Override
-    public Integer getTotal()
-    {
+    public Integer getTotal() {
         return superHigh + high + medium + low;
     }
 
-    public void count(int severity)
-    {
-        if (severity == ComConstants.RiskFactor.SH.value())
-        {
+    public void count(int severity) {
+        if (severity == ComConstants.RiskFactor.SH.value()) {
             superHigh++;
-        }
-        else if (severity ==  ComConstants.RiskFactor.H.value())
-        {
+        } else if (severity == ComConstants.RiskFactor.H.value()) {
             high++;
-        }
-        else if (severity ==  ComConstants.RiskFactor.M.value())
-        {
+        } else if (severity == ComConstants.RiskFactor.M.value()) {
             medium++;
-        }
-        else if (severity ==  ComConstants.RiskFactor.L.value())
-        {
+        } else if (severity == ComConstants.RiskFactor.L.value()) {
             low++;
         }
     }

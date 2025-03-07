@@ -2,7 +2,10 @@ package com.tencent.devops.common.auth.api.external
 
 import com.tencent.devops.common.auth.api.pojo.external.AuthRoleType
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction
+import com.tencent.devops.common.auth.api.pojo.external.TaskAuthInfo
 import com.tencent.devops.common.auth.api.pojo.external.model.BkAuthExResourceActionModel
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 interface AuthExPermissionApi {
 
@@ -55,9 +58,29 @@ interface AuthExPermissionApi {
     /**
      * 批量校验权限
      */
+    fun validatePipelinesBatchPermission(
+        user: String,
+        pipelineIds: List<String>,
+        projectId: String,
+        actions: Set<String>
+    ): List<BkAuthExResourceActionModel>
+
+    /**
+     * 批量校验权限
+     */
     fun validateTaskBatchPermission(
         user: String,
         taskId: String,
+        projectId: String,
+        actions: Set<String>
+    ): List<BkAuthExResourceActionModel>
+
+    /**
+     * 批量校验权限
+     */
+    fun validateTasksBatchPermission(
+        user: String,
+        taskIds: List<String>,
         projectId: String,
         actions: Set<String>
     ): List<BkAuthExResourceActionModel>
@@ -72,8 +95,7 @@ interface AuthExPermissionApi {
     /**
      * 校验用户是否是管理员
      */
-    fun getAdminMembers(
-    ): List<String>
+    fun getAdminMembers(): List<String>
 
     /**
      * 校验用户是否是BG管理员
@@ -93,6 +115,30 @@ interface AuthExPermissionApi {
      */
     fun authProjectManager(projectId: String, user: String): Boolean
 
+
+    /**
+     * 校验是否项目管理员(不抛出鉴权异常)，如果失败就是false
+     *
+     * @param projectId
+     * @param user
+     * @return
+     */
+    fun authProjectManagerNotThrow(projectId: String, user: String): Boolean {
+        return try {
+            authProjectManager(projectId, user)
+        } catch (e: Exception) {
+            logger.error("auth project manager cause error. ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * 获取项目管理员列表
+     *
+     * @param projectId
+     */
+    fun getProjectManager(projectId: String): List<String>
+
     /**
      * 校验是否项目角色
      */
@@ -106,8 +152,23 @@ interface AuthExPermissionApi {
     /**
      * 校验代码问题操作权限
      */
-    fun authDefectOpsPermissions(taskId: Long, projectId: String, username: String, createFrom: String,
-                                 actions: List<CodeCCAuthAction>): Boolean
+    fun authDefectOpsPermissions(
+        taskId: Long,
+        projectId: String,
+        username: String,
+        createFrom: String,
+        actions: List<CodeCCAuthAction>
+    ): Boolean
+
+    /**
+     * 校验代码问题操作权限
+     */
+    fun authDefectOpsPermissions(
+        taskAuthInfos: List<TaskAuthInfo>,
+        projectId: String,
+        username: String,
+        actions: List<CodeCCAuthAction>
+    ): List<BkAuthExResourceActionModel>
 
     /**
      * 判断项目是否已迁移到RBAC
@@ -132,4 +193,8 @@ interface AuthExPermissionApi {
         userId: String,
         action: String
     ): Boolean
+
+    companion object {
+        private val logger: Logger = LoggerFactory.getLogger(AuthExPermissionApi::class.java)
+    }
 }

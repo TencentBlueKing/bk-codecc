@@ -261,6 +261,9 @@ public interface LintDefectV2Repository extends MongoRepository<LintDefectV2Enti
     @Query(fields = "{'defect_instances': 0}", value = "{'task_id': ?0, '_id': {'$in': ?1}}")
     List<LintDefectV2Entity> findNoneInstancesFieldByTaskIdAndEntityIdIn(Long taskId, Set<String> entityIdSet);
 
+    @Query(fields = "{'defect_instances': 0}", value = "{'task_id': {'$in': ?0}, '_id': {'$in': ?1}}")
+    List<LintDefectV2Entity> findNoneInstancesFieldByTaskIdInAndEntityIdIn(List<Long> taskIds, Set<String> entityIdSet);
+
     @Query(fields = "{'status':1, 'author': 1, 'severity': 1}")
     List<LintDefectV2Entity> findCheckReportBizFieldByTaskIdAndToolName(long taskId, String toolName);
 }

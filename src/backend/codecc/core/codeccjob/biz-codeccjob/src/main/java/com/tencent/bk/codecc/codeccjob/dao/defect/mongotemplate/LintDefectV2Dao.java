@@ -37,10 +37,14 @@ import com.tencent.bk.codecc.defect.vo.admin.DefectCountModel;
 import com.tencent.codecc.common.db.MongoPageHelper;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.DefectStatus;
+
+import com.tencent.devops.common.constant.IgnoreApprovalConstants.ApproverStatus;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -56,11 +60,13 @@ import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
 import org.springframework.data.mongodb.core.aggregation.LimitOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.aggregation.SkipOperation;
 import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.query.BasicQuery;
@@ -84,7 +90,8 @@ public class LintDefectV2Dao {
 
     public void batchUpdateDefectAuthor(long taskId, List<LintDefectV2Entity> defectList) {
         if (CollectionUtils.isNotEmpty(defectList)) {
-            BulkOperations ops = defectMongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, LintDefectV2Entity.class);
+            BulkOperations ops = defectMongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED,
+                    LintDefectV2Entity.class);
             defectList.forEach(defectEntity -> {
                 Query query = new Query();
                 query.addCriteria(Criteria.where("_id").is(new ObjectId(defectEntity.getEntityId()))
@@ -105,7 +112,8 @@ public class LintDefectV2Dao {
      */
     public void batchUpdateDefectStatusExcludeBit(long taskId, List<LintDefectV2Entity> defectList) {
         if (CollectionUtils.isNotEmpty(defectList)) {
-            BulkOperations ops = defectMongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, LintDefectV2Entity.class);
+            BulkOperations ops = defectMongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED,
+                    LintDefectV2Entity.class);
             defectList.forEach(defectEntity -> {
                 Update update = new Update();
                 update.set("status", defectEntity.getStatus());
@@ -123,6 +131,16 @@ public class LintDefectV2Dao {
         }
     }
 
+    /**
+     * 查询告警列表
+     * @param taskId
+     * @param toolName
+     * @param excludeStatusSet
+     * @param filterPaths
+     * @param pageSize
+     * @param lastId
+     * @return
+     */
     public List<LintDefectV2Entity> findDefectsByFilePath(Long taskId,
             String toolName,
             Set<Integer> excludeStatusSet,
@@ -493,5 +511,49 @@ public class LintDefectV2Dao {
         query.skip(skip).limit(limit);
 
         return defectMongoTemplate.find(query, LintDefectV2Entity.class);
+    }
+
+    /**
+     * 根据ids查询工具列表
+     *
+     * @param ids id
+     * @return 工具列表
+     */
+    public List<String> findToolNameListByIds(List<String> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+
+        Query query = new Query(Criteria.where("_id").in(ids));
+        return defectMongoTemplate.findDistinct(query, "tool_name", "t_lint_defect_v2", String.class);
+    }
+
+    /**
+     * 通过任务ID与ApprovalId更新告警的审批状态等信息
+     * @param taskIds
+     * @param ignoreApprovalId
+     * @param ignoreApprovalStatus
+     * @param userName
+     * @return
+     */
+    public Long updateIgnoreApprovalStatusByTaskIdsAndApprovalId(List<Long> taskIds, String ignoreApprovalId,
+            Integer ignoreApprovalStatus, Integer ignoreTypeId, String ignoreReason, String userName) {
+        if (CollectionUtils.isEmpty(taskIds) || StringUtils.isEmpty(ignoreApprovalId)) {
+            return 0L;
+        }
+        Query query = Query.query(Criteria.where("task_id").in(taskIds)
+                .and("ignore_approval_id").is(ignoreApprovalId));
+        Update update = Update.update("ignore_approval_status", ignoreApprovalStatus)
+                .set("updated_date", System.currentTimeMillis())
+                .set("updated_by", userName);
+        if (ignoreApprovalStatus != null && ignoreApprovalStatus == ApproverStatus.SUBMIT_SUCC.status()) {
+            // 更新忽略状态
+            update.set("status", DefectStatus.NEW.value() | DefectStatus.IGNORE.value())
+                    .set("ignore_reason_type", ignoreTypeId)
+                    .set("ignore_time", System.currentTimeMillis())
+                    .set("ignore_reason", ignoreReason)
+                    .set("ignore_author", userName);
+        }
+        return defectMongoTemplate.updateMulti(query, update, LintDefectV2Entity.class).getModifiedCount();
     }
 }

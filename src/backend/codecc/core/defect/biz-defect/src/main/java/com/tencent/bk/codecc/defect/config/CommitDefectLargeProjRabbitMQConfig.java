@@ -27,7 +27,12 @@
 package com.tencent.bk.codecc.defect.config;
 
 import com.tencent.bk.codecc.defect.condition.AsyncReportCondition;
-import com.tencent.bk.codecc.defect.consumer.*;
+import com.tencent.bk.codecc.defect.consumer.CCNDefectCommitConsumer;
+import com.tencent.bk.codecc.defect.consumer.CLOCDefectCommitConsumer;
+import com.tencent.bk.codecc.defect.consumer.DUPCDefectCommitConsumer;
+import com.tencent.bk.codecc.defect.consumer.LintDefectCommitConsumer;
+import com.tencent.bk.codecc.defect.consumer.SCADefectCommitConsumer;
+import com.tencent.bk.codecc.defect.consumer.StatDefectCommitConsumer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
@@ -36,12 +41,28 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 
-import static com.tencent.devops.common.web.mq.ConstantsKt.*;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_DEFECT_COMMIT_CCN_LARGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_DEFECT_COMMIT_CLOC_LARGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_DEFECT_COMMIT_DUPC_LARGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_DEFECT_COMMIT_LINT_LARGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_DEFECT_COMMIT_SCA_LARGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_DEFECT_COMMIT_STAT_LARGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_DEFECT_COMMIT_CCN_LARGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_DEFECT_COMMIT_CLOC_LARGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_DEFECT_COMMIT_DUPC_LARGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_DEFECT_COMMIT_LINT_LARGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_DEFECT_COMMIT_SCA_LARGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_DEFECT_COMMIT_STAT_LARGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DEFECT_COMMIT_CCN_LARGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DEFECT_COMMIT_CLOC_LARGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DEFECT_COMMIT_DUPC_LARGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DEFECT_COMMIT_LINT_LARGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DEFECT_COMMIT_SCA_LARGE;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DEFECT_COMMIT_STAT_LARGE;
 
 /**
  * 工厂类自动配置
@@ -52,8 +73,8 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.*;
 @Configuration
 @Slf4j
 @Conditional(AsyncReportCondition.class)
-public class CommitDefectLargeProjRabbitMQConfig extends AbstractCommitDefectRabbitMQConfig
-{
+public class CommitDefectLargeProjRabbitMQConfig extends AbstractCommitDefectRabbitMQConfig {
+
     /**
      * 大项目并发消费者数
      */
@@ -65,160 +86,171 @@ public class CommitDefectLargeProjRabbitMQConfig extends AbstractCommitDefectRab
     private static final int LARGE_PROJ_MAX_CONCURRENT_CONSUMERS = 1;
 
     @Bean
-    public Queue lintLargeProjCommitQueue()
-    {
+    public Queue lintLargeProjCommitQueue() {
         return new Queue(QUEUE_DEFECT_COMMIT_LINT_LARGE);
     }
 
     @Bean
-    public DirectExchange lintLargeProjExchange()
-    {
+    public DirectExchange lintLargeProjExchange() {
         DirectExchange directExchange = new DirectExchange(EXCHANGE_DEFECT_COMMIT_LINT_LARGE);
         directExchange.setDelayed(true);
         return directExchange;
     }
 
     @Bean
-    public Binding lintLargeProjQueueBind(Queue lintLargeProjCommitQueue, DirectExchange lintLargeProjExchange)
-    {
+    public Binding lintLargeProjQueueBind(Queue lintLargeProjCommitQueue, DirectExchange lintLargeProjExchange) {
         return BindingBuilder.bind(lintLargeProjCommitQueue).to(lintLargeProjExchange)
-            .with(ROUTE_DEFECT_COMMIT_LINT_LARGE);
+                .with(ROUTE_DEFECT_COMMIT_LINT_LARGE);
     }
 
     @Bean
-    public Queue ccnLargeProjCommitQueue()
-    {
+    public Queue ccnLargeProjCommitQueue() {
         return new Queue(QUEUE_DEFECT_COMMIT_CCN_LARGE);
     }
 
     @Bean
-    public DirectExchange ccnLargeProjExchange()
-    {
+    public DirectExchange ccnLargeProjExchange() {
         DirectExchange directExchange = new DirectExchange(EXCHANGE_DEFECT_COMMIT_CCN_LARGE);
         directExchange.setDelayed(true);
         return directExchange;
     }
 
     @Bean
-    public Binding ccnLargeProjQueueBind(Queue ccnLargeProjCommitQueue, DirectExchange ccnLargeProjExchange)
-    {
+    public Binding ccnLargeProjQueueBind(Queue ccnLargeProjCommitQueue, DirectExchange ccnLargeProjExchange) {
         return BindingBuilder.bind(ccnLargeProjCommitQueue).to(ccnLargeProjExchange)
-            .with(ROUTE_DEFECT_COMMIT_CCN_LARGE);
+                .with(ROUTE_DEFECT_COMMIT_CCN_LARGE);
     }
 
     @Bean
-    public Queue dupcLargeProjCommitQueue()
-    {
+    public Queue dupcLargeProjCommitQueue() {
         return new Queue(QUEUE_DEFECT_COMMIT_DUPC_LARGE);
     }
 
     @Bean
-    public DirectExchange dupcLargeProjExchange()
-    {
+    public DirectExchange dupcLargeProjExchange() {
         DirectExchange directExchange = new DirectExchange(EXCHANGE_DEFECT_COMMIT_DUPC_LARGE);
         directExchange.setDelayed(true);
         return directExchange;
     }
 
     @Bean
-    public Binding dupcLargeProjQueueBind(Queue dupcLargeProjCommitQueue, DirectExchange dupcLargeProjExchange)
-    {
+    public Binding dupcLargeProjQueueBind(Queue dupcLargeProjCommitQueue, DirectExchange dupcLargeProjExchange) {
         return BindingBuilder.bind(dupcLargeProjCommitQueue).to(dupcLargeProjExchange)
-            .with(ROUTE_DEFECT_COMMIT_DUPC_LARGE);
+                .with(ROUTE_DEFECT_COMMIT_DUPC_LARGE);
     }
 
     @Bean
-    public Queue clocLargeProjCommitQueue()
-    {
+    public Queue clocLargeProjCommitQueue() {
         return new Queue(QUEUE_DEFECT_COMMIT_CLOC_LARGE);
     }
 
     @Bean
-    public DirectExchange clocLargeProjExchange()
-    {
+    public DirectExchange clocLargeProjExchange() {
         DirectExchange directExchange = new DirectExchange(EXCHANGE_DEFECT_COMMIT_CLOC_LARGE);
         directExchange.setDelayed(true);
         return directExchange;
     }
 
     @Bean
-    public Binding clocLargeProjQueueBind(Queue clocLargeProjCommitQueue, DirectExchange clocLargeProjExchange)
-    {
+    public Binding clocLargeProjQueueBind(Queue clocLargeProjCommitQueue, DirectExchange clocLargeProjExchange) {
         return BindingBuilder.bind(clocLargeProjCommitQueue).to(clocLargeProjExchange)
-            .with(ROUTE_DEFECT_COMMIT_CLOC_LARGE);
+                .with(ROUTE_DEFECT_COMMIT_CLOC_LARGE);
     }
 
     @Bean
-    public Queue statLargeProjCommitQueue()
-    {
+    public Queue statLargeProjCommitQueue() {
         return new Queue(QUEUE_DEFECT_COMMIT_STAT_LARGE);
     }
 
     @Bean
-    public DirectExchange statLargeProjExchange()
-    {
+    public DirectExchange statLargeProjExchange() {
         DirectExchange directExchange = new DirectExchange(EXCHANGE_DEFECT_COMMIT_STAT_LARGE);
         directExchange.setDelayed(true);
         return directExchange;
     }
 
     @Bean
-    public Binding statLargeProjQueueBind(Queue statLargeProjCommitQueue, DirectExchange statLargeProjExchange)
-    {
-        return BindingBuilder.bind(statLargeProjCommitQueue).to(statLargeProjExchange).with(ROUTE_DEFECT_COMMIT_STAT_LARGE);
+    public Binding statLargeProjQueueBind(Queue statLargeProjCommitQueue, DirectExchange statLargeProjExchange) {
+        return BindingBuilder.bind(statLargeProjCommitQueue).to(statLargeProjExchange)
+                .with(ROUTE_DEFECT_COMMIT_STAT_LARGE);
+    }
+
+
+    @Bean
+    public Queue scaLargeProjCommitQueue() {
+        return new Queue(QUEUE_DEFECT_COMMIT_SCA_LARGE);
+    }
+
+    @Bean
+    public DirectExchange scaLargeProjExchange() {
+        DirectExchange directExchange = new DirectExchange(EXCHANGE_DEFECT_COMMIT_SCA_LARGE);
+        directExchange.setDelayed(true);
+        return directExchange;
+    }
+
+    @Bean
+    public Binding scaLargeProjQueueBind(Queue statLargeProjCommitQueue, DirectExchange statLargeProjExchange) {
+        return BindingBuilder.bind(statLargeProjCommitQueue).to(statLargeProjExchange)
+                .with(ROUTE_DEFECT_COMMIT_SCA_LARGE);
     }
 
     @Bean
     public SimpleMessageListenerContainer lintLargeProjMessageListenerContainer(
             ConnectionFactory connectionFactory,
             LintDefectCommitConsumer lintDefectCommitConsumer,
-            Jackson2JsonMessageConverter jackson2JsonMessageConverter) throws NoSuchMethodException
-    {
+            Jackson2JsonMessageConverter jackson2JsonMessageConverter) throws NoSuchMethodException {
         return messageListenerContainer(connectionFactory, lintDefectCommitConsumer, jackson2JsonMessageConverter,
                 CONSUMER_METHOD_NAME, QUEUE_DEFECT_COMMIT_LINT_LARGE,
-            LARGE_PROJ_CONCURRENT_CONSUMERS, LARGE_PROJ_MAX_CONCURRENT_CONSUMERS);
+                LARGE_PROJ_CONCURRENT_CONSUMERS, LARGE_PROJ_MAX_CONCURRENT_CONSUMERS);
     }
 
     @Bean
     public SimpleMessageListenerContainer ccnLargeProjMessageListenerContainer(
             ConnectionFactory connectionFactory,
             CCNDefectCommitConsumer ccnDefectCommitConsumer,
-            Jackson2JsonMessageConverter jackson2JsonMessageConverter) throws NoSuchMethodException
-    {
+            Jackson2JsonMessageConverter jackson2JsonMessageConverter) throws NoSuchMethodException {
         return messageListenerContainer(connectionFactory, ccnDefectCommitConsumer, jackson2JsonMessageConverter,
                 CONSUMER_METHOD_NAME, QUEUE_DEFECT_COMMIT_CCN_LARGE,
-            LARGE_PROJ_CONCURRENT_CONSUMERS, LARGE_PROJ_MAX_CONCURRENT_CONSUMERS);
+                LARGE_PROJ_CONCURRENT_CONSUMERS, LARGE_PROJ_MAX_CONCURRENT_CONSUMERS);
     }
 
     @Bean
     public SimpleMessageListenerContainer dupcLargeProjMessageListenerContainer(
             ConnectionFactory connectionFactory,
             DUPCDefectCommitConsumer dupcDefectCommitConsumer,
-            Jackson2JsonMessageConverter jackson2JsonMessageConverter) throws NoSuchMethodException
-    {
+            Jackson2JsonMessageConverter jackson2JsonMessageConverter) throws NoSuchMethodException {
         return messageListenerContainer(connectionFactory, dupcDefectCommitConsumer, jackson2JsonMessageConverter,
                 CONSUMER_METHOD_NAME, QUEUE_DEFECT_COMMIT_DUPC_LARGE,
-            LARGE_PROJ_CONCURRENT_CONSUMERS, LARGE_PROJ_MAX_CONCURRENT_CONSUMERS);
+                LARGE_PROJ_CONCURRENT_CONSUMERS, LARGE_PROJ_MAX_CONCURRENT_CONSUMERS);
     }
 
     @Bean
     public SimpleMessageListenerContainer clocLargeProjMessageListenerContainer(
             ConnectionFactory connectionFactory,
             CLOCDefectCommitConsumer clocDefectCommitConsumer,
-            Jackson2JsonMessageConverter jackson2JsonMessageConverter) throws NoSuchMethodException
-    {
+            Jackson2JsonMessageConverter jackson2JsonMessageConverter) throws NoSuchMethodException {
         return messageListenerContainer(connectionFactory, clocDefectCommitConsumer, jackson2JsonMessageConverter,
                 CONSUMER_METHOD_NAME, QUEUE_DEFECT_COMMIT_CLOC_LARGE,
-            LARGE_PROJ_CONCURRENT_CONSUMERS, LARGE_PROJ_MAX_CONCURRENT_CONSUMERS);
+                LARGE_PROJ_CONCURRENT_CONSUMERS, LARGE_PROJ_MAX_CONCURRENT_CONSUMERS);
     }
 
     @Bean
     public SimpleMessageListenerContainer statLargeProjMessageListenerContainer(
             ConnectionFactory connectionFactory,
             StatDefectCommitConsumer statDefectCommitConsumer,
-            Jackson2JsonMessageConverter jackson2JsonMessageConverter) throws NoSuchMethodException
-    {
+            Jackson2JsonMessageConverter jackson2JsonMessageConverter) throws NoSuchMethodException {
         return messageListenerContainer(connectionFactory, statDefectCommitConsumer, jackson2JsonMessageConverter,
-                CONSUMER_METHOD_NAME, QUEUE_DEFECT_COMMIT_STAT_LARGE, LARGE_PROJ_CONCURRENT_CONSUMERS, LARGE_PROJ_MAX_CONCURRENT_CONSUMERS);
+                CONSUMER_METHOD_NAME, QUEUE_DEFECT_COMMIT_STAT_LARGE, LARGE_PROJ_CONCURRENT_CONSUMERS,
+                LARGE_PROJ_MAX_CONCURRENT_CONSUMERS);
+    }
+
+    @Bean
+    public SimpleMessageListenerContainer scaLargeProjMessageListenerContainer(
+            ConnectionFactory connectionFactory,
+            SCADefectCommitConsumer scaDefectCommitConsumer,
+            Jackson2JsonMessageConverter jackson2JsonMessageConverter) throws NoSuchMethodException {
+        return messageListenerContainer(connectionFactory, scaDefectCommitConsumer, jackson2JsonMessageConverter,
+                CONSUMER_METHOD_NAME, QUEUE_DEFECT_COMMIT_SCA_LARGE, LARGE_PROJ_CONCURRENT_CONSUMERS,
+                LARGE_PROJ_MAX_CONCURRENT_CONSUMERS);
     }
 }

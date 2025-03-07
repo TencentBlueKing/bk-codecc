@@ -33,10 +33,10 @@
       <div class="disf">
         <div class="pipeline-label disf"><span>{{ $t('任务语言') }}</span></div>
         <div class="inner-height"><span
-            :class="index === 0 ? '' : 'lang'"
-            class="fs14"
-            v-for="(lang, index) in formatLang(taskDetail.codeLang)"
-            :key="lang"
+          :class="index === 0 ? '' : 'lang'"
+          class="fs14"
+          v-for="(lang, index) in formatLang(taskDetail.codeLang)"
+          :key="lang"
         >{{ lang }}</span></div>
       </div>
       <bk-form :label-width="130">
@@ -197,7 +197,7 @@ export default {
     },
     toolConfigParams() {
       const toolConfigParams = [];
-      const toolParamList = ['PYLINT', 'GOML'];
+      const toolParamList = ['PYLINT', 'GOML', 'BKCHECK'];
       Object.keys(this.toolMap).forEach((key) => {
         const toolParams = this.taskDetail.enableToolList.find(item => item.toolName === key);
         if (toolParamList.includes(key) && toolParams) {
@@ -207,11 +207,15 @@ export default {
             paramsList = paramsList.map((item) => {
               const { varName } = item;
               if (paramJson && paramJson[varName]) {
-                item.varDefault = paramJson[varName];
+                item.varDefault = JSON.parse(paramJson[varName]);
               }
               return item;
             });
             this.toolMap[key].paramsList = paramsList;
+            // 如果是bkcheck第一个参数是MetricsUri平台不需要展示，需要给清除
+            if (key === 'BKCHECK') {
+              this.toolMap[key].paramsList.shift();
+            }
             toolConfigParams.push(this.toolMap[key]);
           } catch (error) {
             // console.error(error);
@@ -233,11 +237,21 @@ export default {
       return this.$route.params.projectId;
     },
   },
-  watch: {},
+  watch: {
+    formData: {
+      handler() {
+        this.handleFormDataChange();
+      },
+      deep: true,
+    },
+  },
   created() {
     this.init();
   },
   methods: {
+    handleFormDataChange() {
+      window.changeAlert = true;
+    },
     formatLang(num) {
       return this.toolMeta.LANG.map(lang => (lang.key & num ? lang.name : '')).filter(name => name);
     },
@@ -251,6 +265,9 @@ export default {
       res.codeLang = this.toolMeta.LANG.map(lang => lang.key & res.codeLang).filter(lang => lang > 0);
       this.formData = res;
       this.codeMessage = await this.$store.dispatch('task/getCodeMessage');
+      this.$nextTick(() => {
+        window.changeAlert = false;
+      });
     },
     handleLangChange(newValue) {
       const newCodeLang = newValue || this.formData.codeLang;
@@ -296,6 +313,9 @@ export default {
                     theme: 'success',
                     message: this.$t('修改成功'),
                   });
+                  this.$nextTick(() => {
+                    window.changeAlert = false;
+                  });
                 }
               })
               .catch((e) => {
@@ -319,25 +339,11 @@ export default {
       );
     },
     getParamsValue() {
-      const tools = this.toolConfigParams.map((item) => {
-        const { name, paramsList } = item;
-        const paramObj = {};
-        let varName = '';
-        let chooseValue = '';
-        paramsList.forEach((param) => {
-          const key = param.varName;
-          // eslint-disable-next-line
-          varName = param.varName;
-          paramObj[key] = (this.paramsValue[name] && this.paramsValue[name][key])
-            || param.varDefault;
-          chooseValue = paramObj[key];
-        });
-        const paramJson = Object.keys(paramObj).length
-          ? JSON.stringify(paramObj)
-          : '';
-        return { toolName: name, paramJson, varName, chooseValue };
-      });
-      return tools;
+      return this.toolConfigParams.flatMap(({ name: toolName, paramsList }) => paramsList.map(({ varName, varDefault = '' }) => {
+        let chooseValue = (this.paramsValue[toolName]?.[varName]) ?? varDefault;
+        chooseValue = Array.isArray(chooseValue) ? JSON.stringify(chooseValue) : String(chooseValue);
+        return { toolName, varName, chooseValue };
+      }));
     },
     handleToPipeline() {
       if (/^git_\d+$/.test(this.projectId)) {

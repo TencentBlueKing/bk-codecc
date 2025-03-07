@@ -28,9 +28,11 @@ package com.tencent.bk.codecc.defect.model;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+
+import java.util.List;
 
 /**
  * 构建信息表
@@ -40,12 +42,14 @@ import org.springframework.data.mongodb.core.mapping.Field;
  */
 @Data
 @Document(collection = "t_build")
+@CompoundIndex(name = "build_id_1_task_id_1",  def = "{'build_id': 1, 'task_id': 1}", background = true)
 public class BuildEntity {
-
     @Id
     private String entityId;
 
-    @Indexed
+    @Field("task_id")
+    private Long taskId;
+
     @Field("build_id")
     private String buildId;
 
@@ -57,4 +61,18 @@ public class BuildEntity {
 
     @Field("build_user")
     private String buildUser;
+
+    @Field("white_paths")
+    private List<String> whitePaths;
+
+    /**
+     * 保存当次构建各工具使用的规则集及版本
+     */
+    @Field("checker_sets_version")
+    private List<CheckerSetsVersionInfoEntity> checkerSetsVersion;
+    /**
+     * 是否重新分配处理人
+     */
+    @Field("reallocate")
+    private Boolean reallocate;
 }

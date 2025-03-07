@@ -1,6 +1,10 @@
 @import url('./main-content-outer.css');
 @import url('./main-content-inner.css');
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --siderWidth: 220px;
   --navTopHeight: 60px;
@@ -191,6 +195,7 @@ a:hover {
 }
 
 .codecc-table-empty-text .empty-img {
+  display: inline-block;
   width: 220px;
 
   /* height: 56px; */
@@ -387,4 +392,8 @@ a:hover {
 
 .border-right {
   border-right: 1px solid #dcdee5;
+}
+
+::before, ::after {
+  box-sizing: content-box;
 }

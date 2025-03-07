@@ -150,7 +150,6 @@ public class BizServiceFactory<T> {
         return createBizService(toolNameList, dimensionList, BizServiceFlag.CORE, businessType, clz);
     }
 
-
     /**
      * 为不同工具/维度构造业务逻辑器
      *
@@ -173,29 +172,33 @@ public class BizServiceFactory<T> {
             return createBizService(ToolPattern.LINT.name(), flag, businessType, clz);
         }
 
-        // 任意一项多选
-        if ((CollectionUtils.isNotEmpty(toolNameList) && toolNameList.size() > 1)
-                || (CollectionUtils.isNotEmpty(dimensionList) && dimensionList.size() > 1)) {
+        // 维度多选
+        if ((CollectionUtils.isNotEmpty(dimensionList) && dimensionList.size() > 1)) {
             return createBizService(ToolPattern.LINT.name(), flag, businessType, clz);
         }
 
-        // 其中一项单选：优先按工具处理
+        // 优先按工具处理，工具可能有多个
         if (CollectionUtils.isNotEmpty(toolNameList)) {
             String toolName = toolNameList.get(0);
-
             if (ToolType.DUPC_CCN_SCC_CLOC_SET.contains(toolName)) {
                 return createBizService(toolName, flag, businessType, clz);
             } else {
-                return createBizService(ToolPattern.LINT.name(), flag, businessType, clz);
+                // 根据工具维度抉择是SCA还是LINT （都支持多工具）
+                ToolMetaCacheService toolMetaCache = SpringContextUtil.Companion.getBean(ToolMetaCacheService.class);
+                String pattern = toolMetaCache.getToolPattern(toolName);
+                if (StringUtils.isNotBlank(pattern) && ToolPattern.SCA.name().equals(pattern)) {
+                    return createBizService(ToolPattern.SCA.name(), flag, businessType, clz);
+                } else {
+                    return createBizService(ToolPattern.LINT.name(), flag, businessType, clz);
+                }
             }
         }
 
-        // 其中一项单选：其次按维度处理
+        // 其次按维度处理, 只有单个
         if (CollectionUtils.isNotEmpty(dimensionList)) {
             String dimension = dimensionList.get(0);
-
             if (ToolType.DIMENSION_FOR_LINT_PATTERN_SET.contains(dimension)) {
-                return createBizService(ToolPattern.LINT.name(), flag, businessType, clz);
+                return createBizService("", ToolPattern.LINT.name(), flag, businessType, clz);
             } else {
                 return createBizService("", dimension, flag, businessType, clz);
             }

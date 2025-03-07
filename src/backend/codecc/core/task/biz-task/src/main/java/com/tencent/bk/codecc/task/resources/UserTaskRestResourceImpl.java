@@ -28,6 +28,7 @@ package com.tencent.bk.codecc.task.resources;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Lists;
+import com.tencent.bk.audit.annotations.AuditEntry;
 import com.tencent.bk.codecc.task.api.UserTaskRestResource;
 import com.tencent.bk.codecc.task.enums.EmailType;
 import com.tencent.bk.codecc.task.enums.TaskSortType;
@@ -65,6 +66,7 @@ import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.auth.api.pojo.external.CodeCCAuthAction;
 import com.tencent.devops.common.auth.api.pojo.external.ResourceType;
 import com.tencent.devops.common.client.Client;
+import com.tencent.devops.common.constant.audit.ActionIds;
 import com.tencent.devops.common.web.RestResource;
 import com.tencent.devops.common.web.condition.CommunityCondition;
 import com.tencent.devops.common.web.security.AuthMethod;
@@ -153,6 +155,7 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
 
 
     @Override
+    @AuditEntry(actionId = ActionIds.CREATE_TASK)
     @AuthMethod(resourceType = ResourceType.PROJECT, permission = {CodeCCAuthAction.CREATE})
     public Result<TaskIdVO> registerDevopsTask(TaskDetailVO taskDetailVO, String projectId, String userName) {
         taskDetailVO.setProjectId(projectId);
@@ -206,12 +209,14 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
     }
 
     @Override
+    @AuditEntry(actionId = ActionIds.STOP_TASK)
     @AuthMethod(permission = {CodeCCAuthAction.TASK_MANAGE})
     public Result<Boolean> stopTask(Long taskId, String disabledReason, String userName) {
         return new Result<>(taskService.stopTask(taskId, disabledReason, userName));
     }
 
     @Override
+    @AuditEntry(actionId = ActionIds.DELETE_TASK)
     @AuthMethod(permission = {CodeCCAuthAction.TASK_MANAGE})
     public Result<Boolean> deleteTask(String projectId, Long taskId, String userName) {
         return new Result<>(taskService.deleteTask(projectId, taskId, userName));
@@ -236,9 +241,8 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
 
     @Override
     @AuthMethod(permission = {CodeCCAuthAction.ANALYZE})
-    public Result<Boolean> executeTask(long taskId, String isFirstTrigger,
-                                                                          String userName) {
-        return new Result<>(taskService.manualExecuteTask(taskId, isFirstTrigger, userName));
+    public Result<Boolean> executeTask(long taskId, String isFirstTrigger, String userName) {
+        return new Result<>(taskService.manualExecuteTask(taskId, isFirstTrigger, userName, null).getFirst());
     }
 
     @Override

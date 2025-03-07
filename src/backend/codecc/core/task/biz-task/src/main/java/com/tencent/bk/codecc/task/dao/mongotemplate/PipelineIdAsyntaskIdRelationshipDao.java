@@ -1,5 +1,6 @@
 package com.tencent.bk.codecc.task.dao.mongotemplate;
 
+import com.mongodb.client.result.DeleteResult;
 import com.tencent.bk.codecc.task.dao.mongorepository.PipelineIdAsyntaskIdRelationshipRepository;
 import com.tencent.bk.codecc.task.model.PipelineIdAsyntaskIdRelationshipEntity;
 import com.tencent.bk.codecc.task.pojo.PipelineIdAsyntaskIdRelationshipModel;
@@ -71,9 +72,9 @@ public class PipelineIdAsyntaskIdRelationshipDao {
                         .and("pipeline_id").is(pipelineId)
         );
 
-        mongoTemplate.remove(query, PipelineIdAsyntaskIdRelationshipEntity.class);
+        DeleteResult result = mongoTemplate.remove(query, PipelineIdAsyntaskIdRelationshipEntity.class);
 
-        return Boolean.TRUE;
+        return result.getDeletedCount() > 0;
     }
 
     public Set<String> getPipelineIdSetByAsynTaskId(Long taskId) {

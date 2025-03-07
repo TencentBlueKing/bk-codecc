@@ -1,5 +1,6 @@
 package com.tencent.bk.codecc.defect.model;
 
+import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
@@ -9,8 +10,6 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-
-import java.util.List;
 import org.springframework.data.mongodb.core.mapping.Sharded;
 
 /**
@@ -32,6 +31,43 @@ import org.springframework.data.mongodb.core.mapping.Sharded;
 @Sharded(shardKey = "task_id")
 public class TaskLogOverviewEntity {
 
+    @Id
+    private String entityId;
+    @Field("task_id")
+    private Long taskId;
+    @Field("build_id")
+    private String buildId;
+    @Field("build_num")
+    private String buildNum;
+    @Field("status")
+    private Integer status;
+    @Indexed(name = "start_time", background = true)
+    @Field("start_time")
+    private Long startTime;
+    @Field("end_time")
+    private Long endTime;
+    @DBRef
+    @Field("task_log_list")
+    private List<TaskLogEntity> taskLogEntityList;
+    @Field("tool_list")
+    private List<String> toolList;
+    /**
+     * 插件错误码
+     */
+    @Field("plugin_error_code")
+    private Integer pluginErrorCode;
+    /**
+     * 插件类型
+     */
+    @Field("plugin_error_type")
+    private Integer pluginErrorType;
+
+    /**
+     * 是否为自动识别语言的扫描
+     */
+    @Field("auto_language_scan")
+    private Boolean autoLanguageScan;
+
     public TaskLogOverviewEntity(
             String entityId,
             Long taskId,
@@ -46,33 +82,4 @@ public class TaskLogOverviewEntity {
         this.startTime = startTime;
         this.taskLogEntityList = taskLogEntityList;
     }
-
-    @Id
-    private String entityId;
-
-    @Field("task_id")
-    private Long taskId;
-
-    @Field("build_id")
-    private String buildId;
-
-    @Field("build_num")
-    private String buildNum;
-
-    @Field("status")
-    private Integer status;
-
-    @Indexed(name = "start_time",background = true)
-    @Field("start_time")
-    private Long startTime;
-
-    @Field("end_time")
-    private Long endTime;
-
-    @DBRef
-    @Field("task_log_list")
-    private List<TaskLogEntity> taskLogEntityList;
-
-    @Field("tool_list")
-    private List<String> toolList;
 }

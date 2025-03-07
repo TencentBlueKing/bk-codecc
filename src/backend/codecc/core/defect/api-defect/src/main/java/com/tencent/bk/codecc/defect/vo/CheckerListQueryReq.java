@@ -14,6 +14,7 @@ package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.enums.CheckerCategory;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerRecommendType;
+import com.tencent.bk.codecc.defect.vo.enums.CheckerSource;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -62,4 +63,10 @@ public class CheckerListQueryReq {
 
     @ApiModelProperty("是否规则集选中")
     private Set<Boolean> checkerSetSelected;
+
+    @ApiModelProperty("规则创建来源")
+    private Set<CheckerSource> checkerSource;
+
+    @ApiModelProperty("查询请求是否来源于op")
+    private Boolean isOp = false;
 }

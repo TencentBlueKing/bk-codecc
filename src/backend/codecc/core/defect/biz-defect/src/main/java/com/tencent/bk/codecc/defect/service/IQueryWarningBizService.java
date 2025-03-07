@@ -31,6 +31,7 @@ import com.tencent.bk.codecc.defect.vo.DefectFileContentSegmentQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.GetFileContentSegmentReqVO;
 import com.tencent.bk.codecc.defect.vo.GrayBuildNumAndTaskVO;
 import com.tencent.bk.codecc.defect.vo.GrayDefectStaticVO;
+import com.tencent.bk.codecc.defect.vo.QueryCheckersAndAuthorsRequest;
 import com.tencent.bk.codecc.defect.vo.QueryDefectFileContentSegmentReqVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectIdVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectPageVO;
@@ -42,8 +43,10 @@ import com.tencent.bk.codecc.defect.vo.common.CommonDefectDetailQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.common.CommonDefectQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
 import com.tencent.bk.codecc.defect.vo.common.QueryWarningPageInitRspVO;
+
 import java.util.List;
 import java.util.Set;
+
 import org.springframework.data.domain.Sort;
 
 /**
@@ -71,8 +74,14 @@ public interface IQueryWarningBizService {
      * @param queryWarningDetailReq
      * @return
      */
-    CommonDefectDetailQueryRspVO processQueryWarningDetailRequest(String projectId, Long taskId, String userId,
-            CommonDefectDetailQueryReqVO queryWarningDetailReq, String sortField, Sort.Direction sortType);
+    CommonDefectDetailQueryRspVO processQueryWarningDetailRequest(
+            String projectId,
+            Long taskId,
+            String userId,
+            CommonDefectDetailQueryReqVO queryWarningDetailReq,
+            String sortField,
+            Sort.Direction sortType
+    );
 
     /**
      * 多工具告警详情查询(不带代码片段)
@@ -94,33 +103,27 @@ public interface IQueryWarningBizService {
     /**
      * 获取文件内容片段极简接口
      *
-     * @date 2023/6/30
      * @param projectId
      * @param userId
      * @param request
      * @return com.tencent.bk.codecc.defect.vo.common.CommonDefectDetailQueryRspVO
+     * @date 2023/6/30
      */
     DefectFileContentSegmentQueryRspVO processQueryDefectFileContentSegment(String projectId, String userId,
-            QueryDefectFileContentSegmentReqVO request);
+                                                                            QueryDefectFileContentSegmentReqVO request);
 
     /**
      * 查询某项目的所有的缺陷类型，用于初始化多工具告警管理页面的缺陷类型下拉列表控件
      *
-     * @param taskIdList
-     * @param toolNameList
-     * @param statusSet
+     * @param userId
+     * @param projectId
+     * @param request
      * @return
      */
     QueryWarningPageInitRspVO processQueryWarningPageInitRequest(
             String userId,
-            List<Long> taskIdList,
-            List<String> toolNameList,
-            List<String> dimensionList,
-            Set<String> statusSet,
-            String checkerSet,
-            String buildId,
             String projectId,
-            boolean isMultiTaskQuery
+            QueryCheckersAndAuthorsRequest request
     );
 
     /**
@@ -142,7 +145,7 @@ public interface IQueryWarningBizService {
      * @return
      */
     CommonDefectDetailQueryRspVO processGetFileContentSegmentRequest(String projectId, long taskId, String userId,
-            GetFileContentSegmentReqVO reqModel);
+                                                                     GetFileContentSegmentReqVO reqModel);
 
     /**
      * 根据前端传入的条件过滤告警
@@ -154,8 +157,8 @@ public interface IQueryWarningBizService {
      * @return
      */
     Set<String> filterDefectByCondition(long taskId, List<?> defectList, Set<String> allChecker,
-            DefectQueryReqVO queryCondObj, CommonDefectQueryRspVO defectQueryRspVO,
-            List<String> toolNameSet);
+                                        DefectQueryReqVO queryCondObj, CommonDefectQueryRspVO defectQueryRspVO,
+                                        List<String> toolNameSet);
 
     /**
      * 按组织架构查询任务告警
@@ -172,13 +175,13 @@ public interface IQueryWarningBizService {
      * @return resp
      */
     ToolDefectRspVO processDeptDefectList(DeptTaskDefectReqVO deptTaskDefectReqVO, Integer pageNum, Integer pageSize,
-            String sortField, Sort.Direction sortType);
+                                          String sortField, Sort.Direction sortType);
 
     /**
      * 按前端条件查询对应工具的告警id
      *
      * @param taskId 任务id
-     * @param reqVO 查询条件
+     * @param reqVO  查询条件
      * @return 工具告警id
      */
     List<ToolDefectIdVO> queryDefectsByQueryCond(long taskId, DefectQueryReqVO reqVO);
@@ -187,11 +190,11 @@ public interface IQueryWarningBizService {
      * 按前端条件查询对应工具的告警id分页列表
      *
      * @param taskId 任务id
-     * @param reqVO 查询条件
+     * @param reqVO  查询条件
      * @return 工具告警id
      */
     ToolDefectPageVO queryDefectsByQueryCondWithPage(long taskId, DefectQueryReqVO reqVO, Integer pageNum,
-            Integer pageSize);
+                                                     Integer pageSize);
 
     /**
      * 统计待修复告警对应的文件总数

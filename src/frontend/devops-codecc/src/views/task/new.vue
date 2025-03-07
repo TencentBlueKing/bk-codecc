@@ -8,7 +8,7 @@
             @click="$router.push({ name: 'task-list' })"
           ><i class="bk-icon icon-angle-left f20"></i>{{ $t('返回') }}</span
           >
-          {{ $t('接入任务') }}
+          {{ isTestTask ? $t('新建测试任务') : $t('新建任务') }}
         </div>
         <h2 class="main-title"></h2>
         <div class="new-task-content">
@@ -33,7 +33,11 @@
                 property="codeLang"
                 :rules="formRules.codeLang"
               >
+                <span v-if="isTestTask" class="text-[12px]">
+                  {{ codeLangDisplay.join('; ') }}
+                </span>
                 <bk-checkbox-group
+                  v-else
                   v-model="formData.codeLang"
                   @change="handleLangChange"
                   class="checkbox-lang"
@@ -46,6 +50,14 @@
                   >{{ lang.fullName }}</bk-checkbox
                   >
                 </bk-checkbox-group>
+              </bk-form-item>
+              <bk-form-item
+                :label="$t('multi.规则集')"
+                v-if="isTestTask"
+              >
+                <div v-for="item in checkerSetList" :key="item.entityId" class="text-[12px]">
+                  {{ item.checkerSetName }}
+                </div>
               </bk-form-item>
               <bk-form-item
                 :label="$t('multi.规则集')"
@@ -96,7 +108,7 @@
           <bk-button
             theme="primary"
             :loading="buttonLoading"
-            @click="handleCompletelClick"
+            @click="handleCompleteClick"
           >{{ $t('完成') }}</bk-button
           >
         </div>
@@ -150,6 +162,7 @@ export default {
       formValidator: {},
       buttonLoading: false,
       paramsValue: {},
+      checkerSetList: [],
     };
   },
   computed: {
@@ -162,11 +175,21 @@ export default {
     },
     toolConfigParams() {
       const toolConfigParams = [];
-      const toolParamList = ['GOML'];
+      const toolParamList = ['GOML', 'BKCHECK'];
       Object.keys(this.toolMap).forEach((key) => {
         if (toolParamList.includes(key) && this.toolList.includes(key)) {
           try {
             this.toolMap[key].paramsList = this.toolMap[key] && JSON.parse(this.toolMap[key].params);
+            // 如果是bkcheck第一个参数是MetricsUri平台不需要展示，需要给清除
+            if (key === 'BKCHECK') {
+              this.toolMap[key].paramsList.shift()
+            }
+            // 如果paramsList里面varType是bool类型，需要把varDefault的字符串转成bool类型
+            for (const param of this.toolMap[key].paramsList) {
+              if (param.varType === 'BOOLEAN') {
+                param.varDefault = JSON.parse(param.varDefault)
+              }
+            }
             toolConfigParams.push(this.toolMap[key]);
           } catch (error) {
             console.error(error);
@@ -177,6 +200,15 @@ export default {
     },
     toolCnList() {
       return this.toolList.map(item => this.toolMap[item] && this.toolMap[item].displayName);
+    },
+    isTestTask() {
+      return this.$route.query.isTestTask;
+    },
+    codeLangDisplay() {
+      return this.formData.codeLang.map((lang) => {
+        const { fullName } = this.toolMeta.LANG.find(item => Number(item.key) === lang);
+        return fullName;
+      });
     },
   },
   created() {
@@ -191,6 +223,15 @@ export default {
         this.checkerset = res;
       });
       this.$store.dispatch('project/getProjectInfo');
+      if (this.isTestTask && this.$route.query.toolName) {
+        this.$store.dispatch('test/getToolList', this.$route.query.toolName).then((res) => {
+          console.log('🚀 ~ this.$store.dispatch ~ res:', res);
+          this.checkerSetList = res?.checkerSetList || [];
+          const language = Array.from(new Set(this.checkerSetList.map(item => item.codeLang)));
+          console.log('🚀 ~ this.$store.dispatch ~ language:', language);
+          this.formData.codeLang = language;
+        });
+      }
     },
     handleLangChange(newValue) {
       const [formItem0, formItem] = this.$refs.basicForm.formItems;
@@ -233,9 +274,11 @@ export default {
     handleToolChange(toolList) {
       this.toolList = toolList;
     },
-    handleCompletelClick() {
-      if (!this.$refs.checkerSetList.handleValidate()) return false; // 规则集验证
-      this.handleLangChange();
+    handleCompleteClick() {
+      if (!this.isTestTask) {
+        if (!this.$refs.checkerSetList.handleValidate()) return false; // 规则集验证
+        this.handleLangChange();
+      }
       this.$refs.basicForm.validate().then(
         (validator) => {
           let hasError = false;
@@ -264,16 +307,26 @@ export default {
       const checkerSetList = this.$refs.checkerSetList.getCheckerset();
       const devopsToolParams = this.getParamsValue();
       const codeLang = String(this.formData.codeLang.reduce((n1, n2) => n1 + n2, 0));
-      const postData = {
+      let postData = {
         ...this.formData,
         ...codeData,
         checkerSetList,
         codeLang,
         devopsToolParams,
       };
+      if (this.isTestTask) {
+        postData = {
+          ...postData,
+          testStage: 1,
+          checkerSetList: this.checkerSetList,
+          testTool: this.$route.query.toolName,
+          testVersion: this.$route.query.version,
+        };
+      }
       this.buttonLoading = true;
+      const url = this.isTestTask ? 'task/addTestTool' : 'task/addTool';
       this.$store
-        .dispatch('task/addTool', postData)
+        .dispatch(url, postData)
         .then((res) => {
           // 成功则进入一下步
           this.$router.push({
@@ -289,33 +342,21 @@ export default {
           this.buttonLoading = false;
         });
     },
+    getParamsValue() {
+      return this.toolConfigParams.flatMap(({ name: toolName, paramsList }) =>
+          paramsList.map(({ varName, varDefault = '' }) => {
+            let chooseValue = (this.paramsValue[toolName]?.[varName]) ?? varDefault;
+            chooseValue = Array.isArray(chooseValue) ? JSON.stringify(chooseValue) : String(chooseValue);
+            return { toolName, varName, chooseValue };
+          })
+      );
+    },
     handleFactorChange(factor, toolName) {
       this.paramsValue[toolName] = Object.assign(
         {},
         this.paramsValue[toolName],
         factor,
       );
-    },
-    getParamsValue() {
-      const tools = this.toolConfigParams.map((item) => {
-        const { name, paramsList } = item;
-        const paramObj = {};
-        let varName = '';
-        let chooseValue = '';
-        paramsList.forEach((param) => {
-          const key = param.varName;
-          // eslint-disable-next-line
-          varName = param.varName;
-          paramObj[key] = (this.paramsValue[name] && this.paramsValue[name][key])
-            || param.varDefault;
-          chooseValue = paramObj[key];
-        });
-        const paramJson = Object.keys(paramObj).length
-          ? JSON.stringify(paramObj)
-          : '';
-        return { toolName: name, paramJson, varName, chooseValue };
-      });
-      return tools;
     },
   },
 };

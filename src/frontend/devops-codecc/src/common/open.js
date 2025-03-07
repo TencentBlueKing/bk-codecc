@@ -21,28 +21,27 @@ export function openUrlWithInputTimeoutHack(url, failCb, successCb) {
   location.href = url;
 
   // Note: timeout could vary as per the browser version, have a higher value
-  const timeout = setTimeout(function () {
+  const timeout = setTimeout(() => {
     console.log('setTimeout');
     failCb && failCb();
     handler.remove();
     document.body.removeChild(target);
-  }, 1000)
+  }, 1000);
 }
 
 function _registerEvent(target, eventType, cb) {
   if (target.addEventListener) {
     target.addEventListener(eventType, cb);
     return {
-      remove: function () {
+      remove() {
         target.removeEventListener(eventType, cb);
-      }
-    }
-  } else {
-    target.attachEvent(eventType, cb);
-    return {
-      remove: function () {
-        target.detachEvent(eventType, cb);
-      }
-    }
+      },
+    };
   }
+  target.attachEvent(eventType, cb);
+  return {
+    remove() {
+      target.detachEvent(eventType, cb);
+    },
+  };
 }

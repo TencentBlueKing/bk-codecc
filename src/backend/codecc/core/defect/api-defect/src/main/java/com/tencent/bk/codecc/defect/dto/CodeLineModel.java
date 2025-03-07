@@ -9,24 +9,27 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package com.tencent.bk.codecc.defect.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 代码行数视图
- * 
- * @date 2020/3/31
+ *
  * @version V1.0
+ * @date 2020/3/31
  */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @ApiModel("代码行数视图")
-public class CodeLineModel
-{
+public class CodeLineModel {
+
     @ApiModelProperty("语言名称")
     private String language;
 
@@ -38,4 +41,13 @@ public class CodeLineModel
 
     @ApiModelProperty("有效注释行")
     private Long efficientCommentLine;
+
+    @ApiModelProperty("空白行")
+    private Long blankLine;
+
+    @ApiModelProperty("语言值")
+    private Long langValue;
+
+    @ApiModelProperty("文件数")
+    private Long fileNum;
 }

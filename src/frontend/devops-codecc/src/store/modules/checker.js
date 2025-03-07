@@ -34,5 +34,52 @@ export default {
           console.error(e);
         });
     },
+    create({ commit, rootState }, params) {
+      const { uid, ...param } = params;
+      return http
+        .post('/defect/api/user/checker/custom', param)
+        .then((res) => {
+          const data = res || {};
+          return data;
+        })
+        .catch((e) => {
+          console.error(e);
+        });
+    },
+    deleteCustomeChecker({ commit, rootState }, params) {
+      const { uid, ...param } = params;
+      return http
+        .post('/defect/api/user/checker/deleteCustomChecker', param)
+        .then((res) => {
+          const data = res || {};
+          return data;
+        })
+        .catch((e) => {
+          console.error(e);
+        });
+    },
+    updateCustomeChecker({ commit, rootState }, params) {
+      const { uid, ...param } = params;
+      return http
+        .post('/defect/api/user/checker/updateCustomChecker', param)
+        .then((res) => {
+          const data = res || {};
+          return data;
+        })
+        .catch((e) => {
+          console.error(e);
+        });
+    },
+    permission({ commit, rootState }, params) {
+      return http
+        .post('/defect/api/user/checker/userManagementPermission', params)
+        .then((res) => {
+          const data = res || {};
+          return data;
+        })
+        .catch((e) => {
+          console.error(e);
+        });
+    },
   },
 };

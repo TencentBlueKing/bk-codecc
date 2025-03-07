@@ -42,6 +42,7 @@ import com.tencent.bk.codecc.defect.vo.DefectFileContentSegmentQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.DefectFilesInfoVO;
 import com.tencent.bk.codecc.defect.vo.DefectInstanceVO;
 import com.tencent.bk.codecc.defect.vo.DefectQueryRspVO;
+import com.tencent.bk.codecc.defect.vo.QueryCheckersAndAuthorsRequest;
 import com.tencent.bk.codecc.defect.vo.QueryDefectFileContentSegmentReqVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectIdVO;
@@ -246,8 +247,11 @@ public class CommonQueryWarningBizServiceImpl extends AbstractQueryWarningBizSer
     }
 
     @Override
-    public DefectFileContentSegmentQueryRspVO processQueryDefectFileContentSegment(String projectId, String userId,
-            QueryDefectFileContentSegmentReqVO request) {
+    public DefectFileContentSegmentQueryRspVO processQueryDefectFileContentSegment(
+            String projectId,
+            String userId,
+            QueryDefectFileContentSegmentReqVO request
+    ) {
         return new DefectFileContentSegmentQueryRspVO();
     }
 
@@ -260,14 +264,8 @@ public class CommonQueryWarningBizServiceImpl extends AbstractQueryWarningBizSer
     @Deprecated
     public QueryWarningPageInitRspVO processQueryWarningPageInitRequest(
             String userId,
-            List<Long> taskIdList,
-            List<String> toolNameList,
-            List<String> dimensionList,
-            Set<String> statusSet,
-            String checkerSet,
-            String buildId,
             String projectId,
-            boolean isMultiTaskQuery
+            QueryCheckersAndAuthorsRequest request
     ) {
         return new QueryWarningPageInitRspVO();
         /*long beginTime = System.currentTimeMillis();  // NOCC:VariableDeclarationUsageDistance(设计如此:)
@@ -967,7 +965,7 @@ public class CommonQueryWarningBizServiceImpl extends AbstractQueryWarningBizSer
 
     @Override
     public ToolDefectPageVO queryDefectsByQueryCondWithPage(long taskId, DefectQueryReqVO reqVO, Integer pageNum,
-            Integer pageSize) {
+                                                            Integer pageSize) {
         // DEFECT 已不走这个类
         log.warn("queryDefectsByQueryCond is unimplemented: taskId: {} reqVO: {}, pageNum: {}, pageSize: {}",
                 taskId, reqVO, pageNum, pageSize);

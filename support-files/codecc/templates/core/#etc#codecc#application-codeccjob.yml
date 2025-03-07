@@ -23,3 +23,10 @@ server:
 
 devopsGateway:
   idchost: __BK_CODECC_DEVOPS_IDC_HOST__
+
+itsm:
+  codecc:
+    appcode: __BK_CODECC_ITSM_APP_CODE__
+    appsecret: __BK_CODECC_ITSM_APP_SECRET__
+    username: __BK_CODECC_ITSM_USERNAME__
+    accessToken: __BK_CODECC_ITSM_ACCESS_TOKEN__

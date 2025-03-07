@@ -24,7 +24,6 @@ import com.tencent.bk.codecc.defect.model.ignore.IgnoreCommentDefectModel;
 import com.tencent.bk.codecc.defect.model.ignore.IgnoreCommentDefectSubModel;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
 import com.tencent.bk.codecc.defect.pojo.FileMD5TotalModel;
-import com.tencent.bk.codecc.defect.service.CLOCUploadStatisticService;
 import com.tencent.bk.codecc.defect.service.IHeadFileService;
 import com.tencent.bk.codecc.defect.service.IIgnoreDefectService;
 import com.tencent.bk.codecc.defect.service.statistic.CLOCDefectStatisticService;
@@ -41,6 +40,12 @@ import com.tencent.devops.common.constant.ComConstants.ToolPattern;
 import com.tencent.devops.common.util.PathUtils;
 import com.tencent.devops.common.util.ThreadUtils;
 import com.tencent.devops.common.web.mq.ConstantsKt;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -57,11 +62,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 /**
  * DUPC告警提交消息队列的消费者
@@ -76,8 +76,6 @@ public class CLOCDefectCommitConsumer extends AbstractDefectCommitConsumer {
     private CLOCDefectDao clocDefectDao;
     @Autowired
     private CLOCDefectRepository clocDefectRepository;
-    @Autowired
-    private CLOCUploadStatisticService clocUploadStatisticService;
     @Autowired
     private CLOCDefectStatisticService clocDefectStatisticService;
     @Autowired
@@ -372,10 +370,8 @@ public class CLOCDefectCommitConsumer extends AbstractDefectCommitConsumer {
         // 获取路径黑/白名单
         TaskDetailVO taskVO = thirdPartySystemCaller.getTaskInfo(streamName);
         Set<String> filterPaths = filterPathService.getFilterPaths(taskVO, toolName);
-        Set<String> whitePaths = new HashSet<>();
-        if (CollectionUtils.isNotEmpty(taskVO.getWhitePaths())) {
-            whitePaths.addAll(taskVO.getWhitePaths());
-        }
+        Set<String> whitePaths = buildService.getWhitePaths(buildId, taskVO);
+
         List<String> pathMaskDefectList = new ArrayList<>();
         List<CLOCLanguageVO> languageVOList = clocLanguageMap.entrySet()
                 .stream()

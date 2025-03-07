@@ -31,22 +31,26 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_FAST_INCREME
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_FAST_INCREMENT_DUPC;
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_FAST_INCREMENT_LINT;
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_FAST_INCREMENT_STAT;
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_FAST_INCREMENT_SCA;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_FAST_INCREMENT_CCN;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_FAST_INCREMENT_CLOC;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_FAST_INCREMENT_DUPC;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_FAST_INCREMENT_LINT;
+import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_FAST_INCREMENT_SCA;
 import static com.tencent.devops.common.web.mq.ConstantsKt.QUEUE_FAST_INCREMENT_STAT;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_FAST_INCREMENT_CCN;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_FAST_INCREMENT_CLOC;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_FAST_INCREMENT_DUPC;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_FAST_INCREMENT_LINT;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_FAST_INCREMENT_STAT;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_FAST_INCREMENT_SCA;
 
 import com.tencent.bk.codecc.defect.condition.AsyncReportCondition;
 import com.tencent.bk.codecc.defect.consumer.CCNFastIncrementConsumer;
 import com.tencent.bk.codecc.defect.consumer.CLOCFastIncrementConsumer;
 import com.tencent.bk.codecc.defect.consumer.DUPCFastIncrementConsumer;
 import com.tencent.bk.codecc.defect.consumer.LintFastIncrementConsumer;
+import com.tencent.bk.codecc.defect.consumer.SCAFastIncrementConsumer;
 import com.tencent.bk.codecc.defect.consumer.StatFastIncrementConsumer;
 import com.tencent.devops.common.service.IConsumer;
 import lombok.extern.slf4j.Slf4j;
@@ -216,6 +220,34 @@ public class FastIncrementRabbitMQConfig
             StatFastIncrementConsumer statFastIncrementConsumer,
             Jackson2JsonMessageConverter jackson2JsonMessageConverter) {
         return getSimpleMessageListenerContainer(QUEUE_FAST_INCREMENT_STAT, statFastIncrementConsumer,
+                connectionFactory, jackson2JsonMessageConverter);
+    }
+
+    @Bean
+    public Queue scaFastIncrementQueue() {
+        return new Queue(QUEUE_FAST_INCREMENT_SCA);
+    }
+
+    @Bean
+    public DirectExchange scaFastIncrementDirectExchange() {
+        DirectExchange directExchange = new DirectExchange(EXCHANGE_FAST_INCREMENT_SCA);
+        directExchange.setDelayed(true);
+        return directExchange;
+    }
+
+    @Bean
+    public Binding scaFastIncrementQueueBind(Queue scaFastIncrementQueue,
+            DirectExchange scaFastIncrementDirectExchange) {
+        return BindingBuilder.bind(scaFastIncrementQueue).to(scaFastIncrementDirectExchange)
+                .with(ROUTE_FAST_INCREMENT_SCA);
+    }
+
+    @Bean
+    public SimpleMessageListenerContainer scaFastIncrementMessageListenerContainer(
+            ConnectionFactory connectionFactory,
+            SCAFastIncrementConsumer scaFastIncrementConsumer,
+            Jackson2JsonMessageConverter jackson2JsonMessageConverter) {
+        return getSimpleMessageListenerContainer(QUEUE_FAST_INCREMENT_SCA, scaFastIncrementConsumer,
                 connectionFactory, jackson2JsonMessageConverter);
     }
 

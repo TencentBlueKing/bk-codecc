@@ -65,6 +65,10 @@ import org.springframework.data.mongodb.core.mapping.Sharded;
                 name = "idx_task_id_1_tool_name_1_status_1_checker_1_file_name_1_line_num_1",
                 def = "{'task_id': 1, 'tool_name': 1, 'status': 1, 'checker': 1, 'file_name': 1, 'line_num': 1}",
                 background = true
+        ),
+        @CompoundIndex(
+                name = "idx_task_id_1_ignore_approval_id_1", def = "{'task_id': 1, 'ignore_approval_id': 1}",
+                background = true
         )
 })
 @Sharded(shardKey = "task_id")
@@ -314,4 +318,16 @@ public class LintDefectV2Entity extends CommonSpecialEntity {
      */
     @Field("ignore_build_id")
     private String ignoreBuildId;
+
+    /**
+     * 记录忽略审核ID
+     */
+    @Field("ignore_approval_id")
+    private String ignoreApprovalId;
+
+    /**
+     * 记录忽略审核状态，查询时方便
+     */
+    @Field("ignore_approval_status")
+    private Integer ignoreApprovalStatus;
 }

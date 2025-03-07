@@ -333,7 +333,10 @@ export default {
       return `${baseHeight}px`;
     },
     isDisableTask() {
-      return this.task.status;
+      return this.task.status === 1;
+    },
+    isTestTask() {
+      return this.task.status === 3;
     },
     isPipelineTask() {
       return this.task.createFrom === 'bs_pipeline';

@@ -27,15 +27,16 @@
 package com.tencent.bk.codecc.task.dao.mongorepository;
 
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 /**
  * 代码检查任务持久层代码
@@ -44,8 +45,13 @@ import org.springframework.stereotype.Repository;
  * @date 2019/4/24
  */
 @Repository
-public interface TaskRepository extends MongoRepository<TaskInfoEntity, String>
-{
+public interface TaskRepository extends MongoRepository<TaskInfoEntity, String> {
+
+    List<TaskInfoEntity> findByProjectIdAndTestStageGreaterThanAndTestTool(String projectId, Integer testStage,
+            String testTool);
+
+    List<TaskInfoEntity> findByProjectIdAndTestStageAndTestTool(String projectId, Integer testStage, String testTool);
+
     /**
      * 根据业务id查询相应代码扫描任务
      *
@@ -159,7 +165,7 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String>
      *
      * @return
      */
-    @Query("{}")
+    @Query(value = "{}", fields = "{'create_from': 1, 'project_id': 1, 'task_id': 1, 'bg_id': 1}")
     Page<TaskInfoEntity> findTasksByPage(Pageable pageable);
 
     /**
@@ -358,4 +364,7 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String>
 
     @Query(fields = "{'task_id': 1, 'status': 1, 'create_from': 1}")
     TaskInfoEntity findStatusAndCreateFromByTaskId(Long taskId);
+
+    @Query(fields = "{'task_id': 1}")
+    List<TaskInfoEntity> findTaskIdByProjectIdAndStatus(String projectId,Integer status);
 }

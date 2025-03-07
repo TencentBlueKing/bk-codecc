@@ -49,7 +49,7 @@ public interface MetaService {
      * @param isDetail
      * @return
      */
-    List<ToolMetaBaseVO> toolList(Boolean isDetail);
+    List<ToolMetaBaseVO> toolList(String projectId, Boolean isDetail);
 
     /**
      * 查询工具

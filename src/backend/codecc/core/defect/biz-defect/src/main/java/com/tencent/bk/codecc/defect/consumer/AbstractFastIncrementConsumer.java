@@ -22,11 +22,8 @@ import com.tencent.bk.codecc.defect.dao.defect.mongorepository.TaskLogRepository
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ToolBuildInfoRepository;
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.ToolBuildStackRepository;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.ToolBuildInfoDao;
-import com.tencent.bk.codecc.defect.model.TaskLogEntity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.CodeRepoInfoEntity;
-import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
-import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
 import com.tencent.bk.codecc.defect.service.BuildService;
 import com.tencent.bk.codecc.defect.service.file.ScmFileInfoService;
 import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
@@ -37,17 +34,22 @@ import com.tencent.devops.common.auth.api.service.AuthTaskService;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.DefectConsumerType;
 import com.tencent.devops.common.constant.ComConstants.DefectStatus;
+import com.tencent.devops.common.constant.RedisKeyConstants;
+import com.tencent.devops.common.redis.lock.RedisLock;
 import com.tencent.devops.common.service.IConsumer;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.web.aop.annotation.EndReport;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 告警提交消息队列的消费者抽象类
@@ -79,6 +81,8 @@ public abstract class AbstractFastIncrementConsumer implements IConsumer<Analyze
     public AuthTaskService authTaskService;
     @Autowired
     public RabbitTemplate rabbitTemplate;
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
     @Autowired
     public TransferAuthorRepository transferAuthorRepository;
     @Autowired
@@ -245,26 +249,37 @@ public abstract class AbstractFastIncrementConsumer implements IConsumer<Analyze
     protected void upsertCodeRepoInfo(AnalyzeConfigInfoVO analyzeConfigInfoVO) {
         long taskId = analyzeConfigInfoVO.getTaskId();
         String buildId = analyzeConfigInfoVO.getBuildId();
-
-        // 校验构建号对应的仓库信息是否已存在
-        CodeRepoInfoEntity codeRepoInfo = codeRepoRepository.findFirstByTaskIdAndBuildId(taskId, buildId);
-        if (codeRepoInfo == null) {
-            // 更新仓库列表和构建ID
-            List<CodeRepoEntity> codeRepoEntities = Lists.newArrayList();
-            List<CodeRepoVO> codeRepoList = analyzeConfigInfoVO.getCodeRepos();
-            if (CollectionUtils.isNotEmpty(codeRepoList)) {
-                for (CodeRepoVO codeRepoVO : codeRepoList) {
-                    CodeRepoEntity codeRepoEntity = new CodeRepoEntity();
-                    BeanUtils.copyProperties(codeRepoVO, codeRepoEntity);
-                    codeRepoEntities.add(codeRepoEntity);
-                }
+        final String lockKey = RedisKeyConstants.LOCK_T_CODE_REPO_INFO + ":" + taskId + ":" + buildId;
+        RedisLock locker = new RedisLock(redisTemplate, lockKey, TimeUnit.SECONDS.toSeconds(20));
+        try {
+            if (!locker.tryLock()) {
+                log.info("upsertCodeRepoInfo: the lock already exists: {}", lockKey);
+                return;
             }
-            codeRepoInfo = new CodeRepoInfoEntity(taskId, buildId, codeRepoEntities,
-                    analyzeConfigInfoVO.getRepoWhiteList(), null, analyzeConfigInfoVO.getRepoRelativePathList());
-            Long currentTime = System.currentTimeMillis();
-            codeRepoInfo.setUpdatedDate(currentTime);
-            codeRepoInfo.setCreatedDate(currentTime);
-            codeRepoRepository.save(codeRepoInfo);
+            // 校验构建号对应的仓库信息是否已存在
+            CodeRepoInfoEntity codeRepoInfo = codeRepoRepository.findFirstByTaskIdAndBuildId(taskId, buildId);
+            if (codeRepoInfo == null) {
+                // 更新仓库列表和构建ID
+                List<CodeRepoEntity> codeRepoEntities = Lists.newArrayList();
+                List<CodeRepoVO> codeRepoList = analyzeConfigInfoVO.getCodeRepos();
+                if (CollectionUtils.isNotEmpty(codeRepoList)) {
+                    for (CodeRepoVO codeRepoVO : codeRepoList) {
+                        CodeRepoEntity codeRepoEntity = new CodeRepoEntity();
+                        BeanUtils.copyProperties(codeRepoVO, codeRepoEntity);
+                        codeRepoEntities.add(codeRepoEntity);
+                    }
+                }
+                codeRepoInfo = new CodeRepoInfoEntity(taskId, buildId, codeRepoEntities,
+                        analyzeConfigInfoVO.getRepoWhiteList(), null, analyzeConfigInfoVO.getRepoRelativePathList());
+                Long currentTime = System.currentTimeMillis();
+                codeRepoInfo.setUpdatedDate(currentTime);
+                codeRepoInfo.setCreatedDate(currentTime);
+                codeRepoRepository.save(codeRepoInfo);
+            }
+        } finally {
+            if (locker.isLocked()) {
+                locker.unlock();
+            }
         }
     }
 }

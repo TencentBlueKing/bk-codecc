@@ -95,4 +95,14 @@ public class FactoryConfiguration
     {
         return new BizServiceFactory<>();
     }
+
+    @Bean
+    public BizServiceFactory<ISCAQueryWarningService> scaQueryWarningBizServiceFactory() {
+        return new BizServiceFactory<>();
+    }
+
+    @Bean
+    public BizServiceFactory<ISCABatchDefectProcessBizService> scaBatchDefectProcessBizServiceFactory() {
+        return new BizServiceFactory<>();
+    }
 }

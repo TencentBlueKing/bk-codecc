@@ -54,8 +54,22 @@ public class CommonChartAuthorVO extends ChartAuthorBaseVO
     //@ApiModelProperty("提示语")
     //private String tips;
 
-    public CommonChartAuthorVO()
-    {
+    public void add(CommonChartAuthorVO b) {
+        this.serious += b.getSerious();
+        this.normal += b.getNormal();
+        this.prompt += b.getPrompt();
+        this.total += b.getTotal();
+    }
+
+    public CommonChartAuthorVO(String author) {
+        authorName = author;
+        total = 0;
+        serious = 0;
+        normal = 0;
+        prompt = 0;
+    }
+
+    public CommonChartAuthorVO() {
         total = 0;
         serious = 0;
         normal = 0;

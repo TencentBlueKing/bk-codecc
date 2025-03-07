@@ -194,7 +194,22 @@ object CommonMessageCode {
     const val NOT_ALLOW_MULTI_GRAY_TOOL_RULE = "2300033"
 
     /**
+     * 记录的生效范围重复
+     */
+    const val RECORD_RANGE_IS_DUPLICATED = "2300034"
+
+    /**
+     * 批量请求过多
+     */
+    const val BATCH_REQUEST_TOO_MANY = "2303035"
+
+    /**
+     * 表示资源资源未找到的状态码
+     */
+    const val RESOURCE_NOT_FOUND = "2121036"
+
+    /**
      * 操作的数量为空
      */
-    const val MODIFY_ZERO_ENTITY = "2300034"
+    const val MODIFY_ZERO_ENTITY = "2300037"
 }

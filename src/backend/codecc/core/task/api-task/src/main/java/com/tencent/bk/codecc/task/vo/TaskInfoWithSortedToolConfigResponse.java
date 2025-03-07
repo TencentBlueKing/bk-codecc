@@ -19,6 +19,7 @@ public class TaskInfoWithSortedToolConfigResponse {
 
         private long taskId;
         private String projectId;
+        private String pipelineId;
         private String nameCn;
         private String createFrom;
         private List<ToolConfigInfoVO> toolConfigInfoList;

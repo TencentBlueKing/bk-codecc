@@ -83,7 +83,15 @@
                 :target-list="formData.rtxReceiverList"
                 :list="taskMemberData"
                 :visible="isCustomReceiverShow"
+                @updateTargetList="(value) => handleUpdateTargetList(value, 'message')"
               ></custom-receiver>
+              <template #footer>
+                <bk-button
+                  theme="primary"
+                  :disabled="messageReceiverDisabled"
+                  @click="() => handleConfirmCustomReceiver('message')">确定</bk-button>
+                <bk-button @click="() => handleCloseCustomReceiver('message')">取消</bk-button>
+              </template>
             </bk-dialog>
           </bk-form>
         </div>
@@ -275,7 +283,15 @@
                 :target-list="formData.emailReceiverList"
                 :list="taskMemberData"
                 :visible="isEmailReceiverShow"
+                @updateTargetList="(value) => handleUpdateTargetList(value, 'email')"
               ></custom-receiver>
+              <template #footer>
+                <bk-button
+                  theme="primary"
+                  :disabled="emailReceiverDisabled"
+                  @click="() => handleConfirmCustomReceiver('email')">确定</bk-button>
+                <bk-button @click="() => handleCloseCustomReceiver('email')">取消</bk-button>
+              </template>
             </bk-dialog>
             <bk-form-item :label="$t('抄送人')">
               <bk-tag-input
@@ -429,6 +445,8 @@ export default {
         tosaReportDate: [],
         tosaReportTime: '00:00',
       },
+      messageReceiverDisabled: true,
+      emailReceiverDisabled: true,
       rules: {
         message: [
           {
@@ -561,24 +579,35 @@ export default {
     },
   },
   watch: {
-    isEmailReceiverShow: {
-      handler(newVal, oldVal) {
-        if (oldVal) {
-          this.formData.emailReceiverList = this.$refs.emailMember.selectedList;
-        }
-      },
-      deep: true,
-    },
-    isCustomReceiverShow: {
-      handler(newVal, oldVal) {
-        if (oldVal) {
-          this.formData.rtxReceiverList = this.$refs.reportMember.selectedList;
-        }
+    formData: {
+      handler() {
+        this.handleFormDataChange();
       },
       deep: true,
     },
   },
   methods: {
+    handleFormDataChange() {
+      window.changeAlert = true;
+    },
+    handleCloseCustomReceiver(type) {
+      if (type === 'message') {
+        this.isCustomReceiverShow = false;
+      }
+      if (type === 'email') {
+        this.isEmailReceiverShow = false;
+      }
+    },
+    handleConfirmCustomReceiver(type) {
+      if (type === 'email') {
+        this.isEmailReceiverShow = false;
+        this.formData.emailReceiverList = this.$refs.emailMember.selectedList;
+      }
+      if (type === 'message') {
+        this.isCustomReceiverShow = false;
+        this.formData.rtxReceiverList = this.$refs.reportMember.selectedList;
+      }
+    },
     getUserList() {
       axios
         .get(
@@ -601,6 +630,9 @@ export default {
       this.formData.reportTime = this.formTime(this.formData.reportTime);
       // this.formData.tosaReportTime = this.formTime(this.formData.tosaReportTime)
       this.instantReportStatus = 2 - this.formData.instantReportStatus;
+      this.$nextTick(() => {
+        window.changeAlert = false;
+      });
     },
     handleCustomReceiver(value, option) {
       if (value === '2') {
@@ -610,6 +642,14 @@ export default {
     handleEmailReceiver(value, option) {
       if (value === '2') {
         this.isEmailReceiverShow = true;
+      }
+    },
+    handleUpdateTargetList(newTargetList, type) {
+      const isDisabled = newTargetList.length === 0;
+      if (type === 'message') {
+        this.messageReceiverDisabled = isDisabled;
+      } else if (type === 'email') {
+        this.emailReceiverDisabled = isDisabled;
       }
     },
     selectedWeek(id) {
@@ -653,6 +693,7 @@ export default {
     send() {},
     save() {
       const [activeName] = this.activeName;
+      let isSave = false;
       if (activeName) {
         this.$refs[activeName].validate().then((validator) => {
           this.buttonLoading = true;
@@ -667,6 +708,7 @@ export default {
                   theme: 'success',
                   message: this.$t('保存成功'),
                 });
+                isSave = true;
               }
             })
             .catch((e) => {
@@ -683,6 +725,11 @@ export default {
                   this.formData.reportTime = this.formTime(this.formData.reportTime);
                   // this.formData.tosaReportTime = this.formTime(this.formData.tosaReportTime)
                   // this.instantReportStatus = 2 - this.formData.instantReportStatus
+                  if (isSave) {
+                    this.$nextTick(() => {
+                      window.changeAlert = false;
+                    });
+                  }
                 });
               this.buttonLoading = false;
             });
