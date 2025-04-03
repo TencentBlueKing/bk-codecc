@@ -198,7 +198,7 @@ public class BizServiceFactory<T> {
         if (CollectionUtils.isNotEmpty(dimensionList)) {
             String dimension = dimensionList.get(0);
             if (ToolType.DIMENSION_FOR_LINT_PATTERN_SET.contains(dimension)) {
-                return createBizService("", ToolPattern.LINT.name(), flag, businessType, clz);
+                return createBizService(ToolPattern.LINT.name(), flag, businessType, clz);
             } else {
                 return createBizService("", dimension, flag, businessType, clz);
             }
