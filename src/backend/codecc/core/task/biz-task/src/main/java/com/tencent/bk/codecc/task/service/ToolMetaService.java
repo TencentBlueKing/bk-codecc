@@ -107,6 +107,8 @@ public interface ToolMetaService {
 
     List<ToolMetaDetailVO> getToolsByPattern(String pattern);
 
+    List<ToolMetaDetailVO> getToolsByType(String type);
+
     /**
      * 根据工具名称列表获取工具详情
      * @param toolNameList

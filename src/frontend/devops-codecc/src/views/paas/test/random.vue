@@ -52,10 +52,15 @@
               <span class="text-[12px]">{{ $t('测试已通过') }}</span>
             </span>
             <span v-if="process === 'fail'">
+              <bk-popconfirm
+                :content="$t('随机测试的指标未达到建议值，是否确认跳过？')"
+                width="288"
+                @confirm="skipTest">
+                <bk-button class="ml-[15px]">{{ $t('跳过') }}</bk-button>
+              </bk-popconfirm>
               <bk-icon class="text-[14px] text-[#FF5A5A] pl-[15px]" type="close-circle-shape" />
               <span class="text-[12px]">{{ $t('测试未通过') }}</span>
             </span>
-          </bk-form-item>
           </bk-form-item>
         </bk-form>
       </section>
@@ -143,6 +148,9 @@ export default {
           this.process = 'testing';
         }
       }
+    },
+    skipTest() {
+      this.process = 'success';
     },
   },
 };

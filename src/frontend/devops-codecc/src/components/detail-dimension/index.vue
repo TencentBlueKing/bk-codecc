@@ -426,7 +426,8 @@
         :col="5"
         :gutter="4"
         v-else-if="
-          item.baseClusterResultVO &&
+          scaList.length > 0 &&
+            item.baseClusterResultVO &&
             item.baseClusterResultVO.type === 'SCA' &&
             item.baseClusterResultVO
         "
@@ -489,6 +490,9 @@ export default {
     }),
     ...mapState('task', {
       taskDetail: 'detail',
+    }),
+    ...mapState('defect', {
+      scaList: 'scaList',
     }),
     handleOpenHref() {
       return window.IWIKI_OPEN_SCORE;

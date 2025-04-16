@@ -93,6 +93,13 @@ public interface ToolMetaRepository extends MongoRepository<ToolMetaEntity, Stri
     List<ToolMetaEntity> findByPattern(String pattern);
 
     /**
+     * 按照Pattern查询工具列表
+     * @param type
+     * @return
+     */
+    List<ToolMetaEntity> findByType(String type);
+
+    /**
      * 按照名字查询工具元数据
      * @param name
      * @return

@@ -1045,4 +1045,19 @@ public class ToolMetaServiceImpl implements ToolMetaService {
         }
         return vos;
     }
+
+    @Override
+    public List<ToolMetaDetailVO> getToolsByType(String type) {
+        List<ToolMetaEntity> entities = toolMetaRepository.findByType(type);
+        if (CollectionUtils.isEmpty(entities)) {
+            return Collections.emptyList();
+        }
+        List<ToolMetaDetailVO> vos = new ArrayList<>();
+        for (ToolMetaEntity entity : entities) {
+            ToolMetaDetailVO vo = new ToolMetaDetailVO();
+            BeanUtils.copyProperties(entity, vo);
+            vos.add(vo);
+        }
+        return vos;
+    }
 }
