@@ -37,6 +37,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
@@ -65,5 +66,15 @@ public interface UserToolMetaRestResource {
     @Path("/preCI/sccLangFilter")
     @GET
     Result<String> getSCCLangFilterForPreCI();
+
+
+    @ApiOperation("根据工具类型获取工具列表")
+    @Path("/{type}/list")
+    @GET
+    Result<List<ToolMetaDetailVO>> getToolListByType(
+            @ApiParam(value = "工具类型")
+            @PathParam("type")
+            String type
+    );
 
 }

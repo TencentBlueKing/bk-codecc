@@ -55,4 +55,9 @@ public class UserToolMetaRestResourceImpl implements UserToolMetaRestResource {
     public Result<String> getSCCLangFilterForPreCI() {
         return new Result<>(toolMetaService.getSCCLangFilterForPreCI());
     }
+
+    @Override
+    public Result<List<ToolMetaDetailVO>> getToolListByType(String type) {
+        return new Result<>(toolMetaService.getToolsByType(type));
+    }
 }

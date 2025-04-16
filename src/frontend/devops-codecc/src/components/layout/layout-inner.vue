@@ -418,6 +418,9 @@ export default {
       taskDetail: 'detail',
       status: 'status',
     }),
+    ...mapState('defect', {
+      scaList: 'scaList',
+    }),
     ...mapState('tool', {
       toolMap: 'mapList',
     }),
@@ -506,14 +509,18 @@ export default {
           icon: 'codecc-icon icon-statistics',
           href: this.$router.resolve({ name: 'defect-cloc-list', params }).href,
         },
-        {
-          id: 'sca',
-          name: this.$t('软件成分'),
-          routeName: 'defect-sca',
-          icon: 'codecc-icon icon-software-components',
-          href: this.$router.resolve({ name: 'defect-sca-pkg-list', params }).href,
-        },
       ];
+      const scaMenusConfig = {
+        id: 'sca',
+        name: this.$t('软件成分'),
+        routeName: 'defect-sca',
+        icon: 'codecc-icon icon-software-components',
+        href: this.$router.resolve({ name: 'defect-sca-pkg-list', params }).href,
+      };
+      // 若scaList不为空，则展示软件成分
+      if (this.scaList.length > 0) {
+        menuBase.push(scaMenusConfig);
+      }
 
       return menuBase;
     },
@@ -637,6 +644,7 @@ export default {
   mounted() {
     this.initWebSocket();
     this.initProgressWebSocket();
+    this.initScaList();
   },
   beforeDestroy() {
     taskWebsocket.disconnect();
@@ -783,6 +791,9 @@ export default {
           this.initProgressWebSocket();
         }, 1000);
       }
+    },
+    initScaList() { // 初始化scaList 用于软件成分的展示
+      this.$store.dispatch('defect/getScaList');
     },
     toggleCrumbList(isShow) {
       if (this.hasRecords) {

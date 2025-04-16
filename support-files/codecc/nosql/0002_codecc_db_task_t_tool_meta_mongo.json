@@ -1502,3 +1502,91 @@
   "updated_date" : 1570003800241,
   "updated_by" : "system_admin"
 }
+{
+  "_id" : {"$oid": "603f43f83ca6b80cbff6fa47"},
+  "_class" : "com.tencent.bk.codecc.task.model.ToolMetaEntity",
+  "name" : "REGEXSCAN",
+  "pattern" : "LINT",
+  "display_name" : "RegexScan",
+  "type" : "STANDARD",
+  "lang" : 1073807359,
+  "brief_introduction" : "正则匹配工具。\\n支持自定义添加新规则：新建规则 - 填写正则表达式等规则参数 - 创建成功，即可在项目扫描方案中选择规则来扫描。",
+  "graphic_details" : "",
+  "status" : "P",
+  "privated" : false,
+  "docker_trigger_shell" : "/bin/bash##-c##\"cd /usr/codecc/tool_scan && /usr/codecc/tool_scan/tool/scan --input={input.json} --output={output.json}\"",
+  "docker_image_url" : "hub.bktencent.com/blueking/regex_scan",
+  "docker_image_version" : "latest",
+  "debug_pipeline_id" : "p-6246697ea1074b53a058e2b7eb4c4cd3",
+  "tool_env" : "",
+  "tool_run_type" : "docker",
+  "tool_image_revision" : "sha256:540e25586b83c5f0607e9b3b24b44b19923e013c40f152b4dec9d5194891e9ce",
+  "tool_versions" : [
+    {
+      "version_type" : "P",
+      "docker_trigger_shell" : "/bin/bash##-c##\"cd /usr/codecc/tool_scan && /usr/codecc/tool_scan/tool/scan --input={input.json} --output={output.json}\"",
+      "docker_image_url" : "hub.bktencent.com/blueking/regex_scan",
+      "docker_image_version" : "latest",
+      "foreign_docker_image_version" : "latest",
+      "docker_image_hash" : "sha256:540e25586b83c5f0607e9b3b24b44b19923e013c40f152b4dec9d5194891e9ce",
+      "create_date" : 1744794000000,
+      "created_by" : "admin",
+      "updated_date" : 1744794000000,
+      "updated_by" : "admin"
+    },
+    {
+      "version_type" : "T",
+      "docker_trigger_shell" : "/bin/bash##-c##\"cd /usr/codecc/tool_scan && /usr/codecc/tool_scan/tool/scan --input={input.json} --output={output.json}\"",
+      "docker_image_url" : "hub.bktencent.com/blueking/regex_scan",
+      "docker_image_version" : "latest",
+      "foreign_docker_image_version" : "latest",
+      "docker_image_hash" : "sha256:540e25586b83c5f0607e9b3b24b44b19923e013c40f152b4dec9d5194891e9ce",
+      "create_date" : 1744794000000,
+      "created_by" : "admin",
+      "updated_date" : 1744794000000,
+      "updated_by" : "admin"
+    },
+    {
+      "version_type" : "G",
+      "docker_trigger_shell" : "/bin/bash##-c##\"cd /usr/codecc/tool_scan && /usr/codecc/tool_scan/tool/scan --input={input.json} --output={output.json}\"",
+      "docker_image_url" : "hub.bktencent.com/blueking/regex_scan",
+      "docker_image_version" : "latest",
+      "foreign_docker_image_version" : "latest",
+      "docker_image_hash" : "sha256:540e25586b83c5f0607e9b3b24b44b19923e013c40f152b4dec9d5194891e9ce",
+      "create_date" : 1744794000000,
+      "created_by" : "admin",
+      "updated_date" : 1744794000000,
+      "updated_by" : "admin"
+    }
+  ],
+  "last_tool_versions" : [
+    {
+      "version_type" : "P",
+      "docker_trigger_shell" : "/bin/bash##-c##\"cd /usr/codecc/tool_scan && /usr/codecc/tool_scan/tool/scan --input={input.json} --output={output.json}\"",
+      "docker_image_url" : "hub.bktencent.com/blueking/regex_scan",
+      "docker_image_version" : "latest",
+      "foreign_docker_image_version" : "latest",
+      "docker_image_hash" : "sha256:540e25586b83c5f0607e9b3b24b44b19923e013c40f152b4dec9d5194891e9ce",
+      "create_date" : 1744794000000,
+      "created_by" : "admin",
+      "updated_date" : 1744794000000,
+      "updated_by" : "admin"
+    },
+    {
+      "version_type" : "G",
+      "docker_trigger_shell" : "/bin/bash##-c##\"cd /usr/codecc/tool_scan && /usr/codecc/tool_scan/tool/scan --input={input.json} --output={output.json}\"",
+      "docker_image_url" : "hub.bktencent.com/blueking/regex_scan",
+      "docker_image_version" : "latest",
+      "foreign_docker_image_version" : "latest",
+      "docker_image_hash" : "sha256:540e25586b83c5f0607e9b3b24b44b19923e013c40f152b4dec9d5194891e9ce",
+      "create_date" : 1744794000000,
+      "created_by" : "admin",
+      "updated_date" : 1744794000000,
+      "updated_by" : "admin"
+    }
+  ],
+  "create_date" : 1744794000000,
+  "created_by" : "admin",
+  "updated_date" : 1744794000000,
+  "updated_by" : "admin"
+}

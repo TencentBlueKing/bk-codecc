@@ -23,6 +23,7 @@ export default {
       blockInfoList: [{}],
     },
     records: {},
+    scaList: [],
   },
   mutations: {
     updateLintList(state, list) {
@@ -39,6 +40,9 @@ export default {
     },
     updateOperateRecords(state, records) {
       state.records = records;
+    },
+    updateScaList(state, list) {
+      state.scaList = list;
     },
   },
   actions: {
@@ -419,6 +423,15 @@ export default {
       return http
         .post('/defect/api/user/warn/preIgnoreApproval', params)
         .then(res => res.data || []);
+    },
+    getScaList({ commit }) {
+      return http
+        .get('/task/api/user/toolmeta/SCA/list')
+        .then((res) => {
+          const list = res.data || [];
+          commit('updateScaList', list);
+          return list;
+        });
     },
   },
 };

@@ -1,7 +1,7 @@
 <template>
   <div
     class="code-fullscreen full-active"
-    v-bkloading="{ isLoading: isLoading, opacity: 0.3 }"
+    v-bkloading="{ isLoading: isLoading || isGetFileInfo, opacity: 0.3 }"
   >
     <div class="col-aside-left">
       <div class="col-aside-left-header">
@@ -762,7 +762,7 @@ export default {
       aiSuggestionVM: null,
       checkerDetailVisible: false,
       checkerDetailVM: null,
-      isInnerSite: DEPLOY_ENV === 'tencent',
+      isGetFileInfo: false,
     };
   },
   computed: {
