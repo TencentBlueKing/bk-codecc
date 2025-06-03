@@ -477,6 +477,14 @@ public interface ServiceTaskRestResource {
             String projectId
     );
 
+    @ApiOperation("获取项目id下的任务id")
+    @Path("/projectId/{projectId}/taskIds")
+    @GET
+    Result<List<Long>> getTaskIdsByProjectId(
+            @ApiParam(value = "批量查询参数", required = true)
+            @PathParam("projectId")
+            String projectId
+    );
 
     @ApiOperation("分页获取有效任务的projectId")
     @Path("/projectId/pageList")

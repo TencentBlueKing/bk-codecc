@@ -31,20 +31,12 @@
         </bk-form-item>
 
         <bk-form-item :label="$t('新处理人')">
-          <bk-tag-input
-            v-if="IS_ENV_TAI"
-            class="input-width"
-            v-model="form.targetAuthor"
-            @change="handleTargetAuthorChange"
+          <UserSelector
             allow-create
-          ></bk-tag-input>
-
-          <bk-member-selector
-            v-else
             class="input-width"
-            v-model="form.targetAuthor"
-            @change="handleTargetAuthorChange"
-          ></bk-member-selector>
+            :value.sync="form.targetAuthor"
+            @update:value="handleTargetAuthorChange"
+          />
         </bk-form-item>
       </bk-form>
     </div>
@@ -71,7 +63,11 @@
 </template>
 
 <script>
+import UserSelector from '@/components/user-selector/index.vue';
 export default {
+  components: {
+    UserSelector,
+  },
   props: {
     changeAuthorType: {
       type: Number,
@@ -82,7 +78,6 @@ export default {
   },
   data() {
     return {
-      IS_ENV_TAI: window.IS_ENV_TAI,
       isShow: false,
       confirmLoading: false,
       form: {

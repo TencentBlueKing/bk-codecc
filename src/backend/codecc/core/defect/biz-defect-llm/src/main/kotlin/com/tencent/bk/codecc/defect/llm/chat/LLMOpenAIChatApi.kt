@@ -39,5 +39,4 @@ internal class LLMOpenAIChatApi(private val requester: HttpRequester) {
             }
         }
     }
-
 }

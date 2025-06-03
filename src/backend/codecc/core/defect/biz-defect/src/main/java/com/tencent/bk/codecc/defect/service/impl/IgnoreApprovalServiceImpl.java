@@ -2,6 +2,7 @@ package com.tencent.bk.codecc.defect.service.impl;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.collect.Lists;
+import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.IgnoreApprovalConstants;
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.IgnoreApprovalConfigRepository;
@@ -19,8 +20,11 @@ import com.tencent.devops.common.api.pojo.Page;
 import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import com.tencent.devops.common.constant.IgnoreApprovalConstants.ApproverType;
 import com.tencent.devops.common.service.utils.PageableUtils;
 import com.tencent.devops.common.util.BeanUtils;
+import java.util.Arrays;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +59,9 @@ public class IgnoreApprovalServiceImpl implements IgnoreApprovalService {
 
     @Autowired
     private LintDefectV2Dao lintDefectV2Dao;
+
+    @Autowired
+    private ThirdPartySystemCaller thirdPartySystemCaller;
 
     @Override
     public boolean savaApprovalConfig(String projectId, String userName,
@@ -111,12 +118,15 @@ public class IgnoreApprovalServiceImpl implements IgnoreApprovalService {
             return false;
         }
         // 审核人类型校验
-        IgnoreApprovalConstants.ApproverType approverType =
-                IgnoreApprovalConstants.ApproverType.getByType(approvalConfigVO.getApproverType());
-        if (approverType == null) {
+        if (CollectionUtils.isEmpty(approvalConfigVO.getApproverTypes())) {
+            return false;
+        }
+        List<ApproverType> approverTypes = approvalConfigVO.getApproverTypes().stream()
+                .map(ApproverType::getByType).filter(Objects::nonNull).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(approverTypes)) {
             return false;
         } else {
-            return approverType != IgnoreApprovalConstants.ApproverType.CUSTOM_APPROVER
+            return !approverTypes.contains(ApproverType.CUSTOM_APPROVER)
                     || !CollectionUtils.isEmpty(approvalConfigVO.getCustomApprovers());
         }
     }
@@ -318,8 +328,9 @@ public class IgnoreApprovalServiceImpl implements IgnoreApprovalService {
         ignoreApprovalRepository.save(ignoreApproval);
 
         // 更新告警数据
-        List<Long> taskIds = ParamUtils.allTaskByProjectIdIfEmpty(ignoreApproval.getTaskIds(),
-                ignoreApproval.getProjectId(), ignoreApproval.getIgnoreAuthor());
+        List<Long> taskIds = !CollectionUtils.isEmpty(ignoreApproval.getTaskIds()) ? ignoreApproval.getTaskIds()
+                : thirdPartySystemCaller.getTaskIdsByProjectId(ignoreApproval.getProjectId());
+
         if (CollectionUtils.isEmpty(taskIds)) {
             log.error("updateApprovalAndDefectWhenCallback tasks is empty. approvalId: {}", approvalId);
             return;
@@ -365,7 +376,7 @@ public class IgnoreApprovalServiceImpl implements IgnoreApprovalService {
         if (reqVO == null || StringUtils.isBlank(reqVO.getName()) || CollectionUtils.isEmpty(reqVO.getDimensions())
                 || CollectionUtils.isEmpty(reqVO.getSeverities()) || CollectionUtils.isEmpty(reqVO.getIgnoreTypeIds())
                 || StringUtils.isBlank(reqVO.getProjectScopeType()) || StringUtils.isBlank(reqVO.getTaskScopeType())
-                || StringUtils.isBlank(reqVO.getApproverType())) {
+                || !CollectionUtils.isEmpty(reqVO.getApproverTypes())) {
             log.error("reportRepoInfo param valid fail");
             throw new CodeCCException(CommonMessageCode.PARAMETER_IS_NULL);
         }
@@ -384,7 +395,7 @@ public class IgnoreApprovalServiceImpl implements IgnoreApprovalService {
         ignoreApprovalConfigEntity.setProjectScopeType(reqVO.getProjectScopeType());
         ignoreApprovalConfigEntity.setProjectId(reqVO.getProjectId());
         ignoreApprovalConfigEntity.setTaskScopeType(reqVO.getTaskScopeType());
-        ignoreApprovalConfigEntity.setApproverType(reqVO.getApproverType());
+        ignoreApprovalConfigEntity.setApproverTypes(reqVO.getApproverTypes());
         ignoreApprovalConfigEntity.setLimitedProjectIds(reqVO.getLimitedProjectIds());
         ignoreApprovalConfigEntity.setTaskScopeList(reqVO.getTaskScopeList());
         ignoreApprovalConfigEntity.setCustomApprovers(reqVO.getCustomApprovers());

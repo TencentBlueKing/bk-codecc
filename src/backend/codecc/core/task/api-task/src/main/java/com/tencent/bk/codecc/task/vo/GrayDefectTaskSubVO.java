@@ -56,4 +56,7 @@ public class GrayDefectTaskSubVO {
 
     @ApiModelProperty("最近分析状态")
     private String analyzeDate;
+
+    @ApiModelProperty("本次构建id")
+    private String buildId;
 }

@@ -60,6 +60,9 @@ import java.util.stream.Stream;
 
 import static com.tencent.devops.common.constant.ComConstants.BATCH_DEFECT;
 import static com.tencent.devops.common.constant.ComConstants.FUNC_BATCH_DEFECT;
+import static com.tencent.devops.common.constant.ComConstants.KEY_UNDERLINE;
+import static com.tencent.devops.common.constant.ComConstants.SEPARATOR_SEMICOLON;
+import static com.tencent.devops.common.constant.ComConstants.STRING_DELIMITER;
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_CODECC_DEFECT_IGNORE_APPROVAL;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CODECC_DEFECT_IGNORE_APPROVAL;
 
@@ -269,7 +272,7 @@ public class LintBatchIgnoreApprovalBizServiceImpl extends AbstractLintBatchDefe
         for (ApprovalIdToTasksVO ignoreApprovalIdToTask : ignoreApprovalIdToTasks) {
             String ignoreApprovalId = ignoreApprovalIdToTask.getApprovalId();
             String defectMatchId = ignoreApprovalIdToTask.getDefectMatchId();
-            String ignoreConfigId = Arrays.stream(defectMatchId.split("_")).findFirst().orElse(null);
+            String ignoreConfigId = Arrays.stream(defectMatchId.split("\\|")).findFirst().orElse(null);
             if (StringUtils.isEmpty(ignoreConfigId) || !idToApprovalDetail.containsKey(ignoreConfigId)) {
                 log.warn("process ignore approval {} not exist", ignoreConfigId);
                 continue;
@@ -515,7 +518,6 @@ public class LintBatchIgnoreApprovalBizServiceImpl extends AbstractLintBatchDefe
         validOpsPermission(batchDefectProcessReqVO.getUserName(), batchDefectProcessReqVO.getProjectId(),
                 new LinkedList<>(taskIds));
 
-
         boolean isSelectAll = ComConstants.CommonJudge.COMMON_Y.value()
                 .equalsIgnoreCase(batchDefectProcessReqVO.getIsSelectAll());
 
@@ -619,7 +621,7 @@ public class LintBatchIgnoreApprovalBizServiceImpl extends AbstractLintBatchDefe
             if (configVO == null) {
                 continue;
             }
-            defectVO.setIgnoreApproverType(configVO.getApproverType());
+            defectVO.setIgnoreApproverTypes(configVO.getApproverTypes());
             defectVO.setCustomIgnoreApprovers(configVO.getCustomApprovers());
             defectVO.setSeverity(defectVO.getSeverity() == ComConstants.PROMPT_IN_DB ? ComConstants.PROMPT
                     : defectVO.getSeverity()
@@ -667,7 +669,7 @@ public class LintBatchIgnoreApprovalBizServiceImpl extends AbstractLintBatchDefe
                 if (configVO == null) {
                     continue;
                 }
-                defectVO.setIgnoreApproverType(configVO.getApproverType());
+                defectVO.setIgnoreApproverTypes(configVO.getApproverTypes());
                 defectVO.setCustomIgnoreApprovers(configVO.getCustomApprovers());
                 defectVO.setSeverity(defectVO.getSeverity() == ComConstants.PROMPT_IN_DB ? ComConstants.PROMPT
                         : defectVO.getSeverity()
@@ -706,23 +708,32 @@ public class LintBatchIgnoreApprovalBizServiceImpl extends AbstractLintBatchDefe
         if (approvalConfigVO == null) {
             return null;
         }
-        String suffix = IgnoreApprovalConstants.DEFAULT_ID_SUFFIX;
-        if (ApproverType.CHECKER_PUBLISHER.type().equals(approvalConfigVO.getApproverType())) {
-            // 规则发布者，需要记录发布者，不同的发布者，需要发不同的单
-            suffix = defectChecker.getPublisher();
-        } else if (ApproverType.TASK_MANAGER.type().equals(approvalConfigVO.getApproverType())) {
-            // 任务管理员，记录任务ID
-            suffix = String.valueOf(defect.getTaskId());
-        } else if (ApproverType.BG_SECURITY_MANAGER.type().equals(approvalConfigVO.getApproverType())) {
-            // BG管理员，记录BgID
-            Integer bgId = taskDetailVO == null ? -1 : taskDetailVO.getBgId();
-            Integer businessLineId = taskDetailVO == null || taskDetailVO.getBusinessLineId() == null ? -1
-                    : taskDetailVO.getBusinessLineId();
-            Integer deptId = taskDetailVO == null ? -1 : taskDetailVO.getDeptId();
-            suffix = Stream.of(bgId, businessLineId, deptId).map(String::valueOf)
-                    .collect(Collectors.joining("_"));
-        }
-        return approvalConfigVO.getEntityId() + "_" + suffix + "_" + opsId;
+        // 格式如下：CONFIG_ID|TYPE1|TYPE2:TYPE_PARAM|TYPE3|...|OPS_ID
+        StringBuilder defectMatchIdStr = new StringBuilder(approvalConfigVO.getEntityId() + "|");
+        ApproverType.getSortedTypeList().forEach(approverType -> {
+            if (!approvalConfigVO.getApproverTypes().contains(approverType)) {
+                return;
+            }
+            defectMatchIdStr.append(approverType);
+            if (ApproverType.CHECKER_PUBLISHER.type().equals(approverType)) {
+                // 规则发布者，需要记录发布者，不同的发布者，需要发不同的单
+                defectMatchIdStr.append(SEPARATOR_SEMICOLON).append(defectChecker.getPublisher());
+            } else if (ApproverType.TASK_MANAGER.type().equals(approverType)) {
+                // 任务管理员，记录任务ID
+                defectMatchIdStr.append(SEPARATOR_SEMICOLON).append(defect.getTaskId());
+            } else if (ApproverType.BG_SECURITY_MANAGER.type().equals(approverType)) {
+                // BG管理员，记录BgID
+                Integer bgId = taskDetailVO == null ? -1 : taskDetailVO.getBgId();
+                Integer businessLineId = taskDetailVO == null || taskDetailVO.getBusinessLineId() == null ? -1
+                        : taskDetailVO.getBusinessLineId();
+                Integer deptId = taskDetailVO == null ? -1 : taskDetailVO.getDeptId();
+                defectMatchIdStr.append(SEPARATOR_SEMICOLON).append(Stream.of(bgId, businessLineId, deptId)
+                        .map(String::valueOf).collect(Collectors.joining(KEY_UNDERLINE)));
+            }
+            defectMatchIdStr.append(STRING_DELIMITER);
+        });
+        defectMatchIdStr.append(opsId);
+        return defectMatchIdStr.toString();
     }
 
     /**
@@ -799,6 +810,7 @@ public class LintBatchIgnoreApprovalBizServiceImpl extends AbstractLintBatchDefe
     @Data
     @AllArgsConstructor
     static class ApprovalProcessVO {
+
         private List<ApprovalIdToTasksVO> ignoreApprovalIdToTasks;
 
         private List<IgnoreApprovalConfigVO> approvalConfigs;

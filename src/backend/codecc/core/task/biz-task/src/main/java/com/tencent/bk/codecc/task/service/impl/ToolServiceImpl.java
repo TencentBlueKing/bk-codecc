@@ -29,7 +29,6 @@ package com.tencent.bk.codecc.task.service.impl;
 
 import static com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
 import static com.tencent.devops.common.constant.ComConstants.CommonJudge;
-import static com.tencent.devops.common.constant.ComConstants.DefectStatType;
 import static com.tencent.devops.common.constant.ComConstants.FOLLOW_STATUS;
 import static com.tencent.devops.common.constant.ComConstants.FUNC_TOOL_SWITCH;
 import static com.tencent.devops.common.constant.ComConstants.PipelineToolUpdateType;
@@ -51,6 +50,7 @@ import com.tencent.bk.codecc.task.dao.mongotemplate.CommonTaskDao;
 import com.tencent.bk.codecc.task.dao.mongotemplate.DeletedTaskDao;
 import com.tencent.bk.codecc.task.dao.mongotemplate.TaskDao;
 import com.tencent.bk.codecc.task.dao.mongotemplate.ToolDao;
+import com.tencent.bk.codecc.task.dao.mongotemplate.ToolMetaDao;
 import com.tencent.bk.codecc.task.model.TaskInfoEntity;
 import com.tencent.bk.codecc.task.model.ToolCheckerSetEntity;
 import com.tencent.bk.codecc.task.model.ToolConfigInfoEntity;
@@ -134,6 +134,8 @@ public class ToolServiceImpl implements ToolService {
     private String maxHour;
     @Autowired
     private ToolDao toolDao;
+    @Autowired
+    private ToolMetaDao toolMetaDao;
     @Autowired
     private TaskDao taskDao;
     @Autowired

@@ -75,10 +75,14 @@
         <span class="pipeline-label">{{ $t('处理人转换') }}</span>
         <div v-if="authorList" class="handler-replace">
           <div v-for="(item, index) in authorList" :key="index">
-            <span class="fs14">{{ item.targetAuthor.join() || '--' }}</span>
-            <span class="fs14 ml10" v-if="item.targetAuthor.join()">{{
-              $t('(原处理人 ') + item.sourceAuthor + ')'
-            }}</span>
+            <bk-user-display-name
+              class="fs14"
+              :user-id="item.targetAuthor">
+            </bk-user-display-name>
+            <span v-if="item.targetAuthor.length > 0" class="fs14 ml10">
+              <span>{{ $t('(原处理人 ') }}</span>
+              (<bk-user-display-name :user-id="item.sourceAuthor"></bk-user-display-name>)
+            </span>
           </div>
         </div>
       </div>
@@ -189,21 +193,12 @@
           >
             <bk-input v-model="item.sourceAuthor"></bk-input>
             <!-- <bk-input class="compile-version" v-model="item.targetAuthor" :placeholder="'新处理人'"></bk-input> -->
-            <bk-tag-input
+            <UserSelector
               allow-create
-              v-if="IS_ENV_TAI || !isInnerSite"
               class="compile-version"
-              v-model="item.targetAuthor"
               :placeholder="$t('新处理人')"
-            ></bk-tag-input>
-            <bk-user-selector
-              v-else
-              class="compile-version"
-              :api="userApiUrl"
-              name="targetAuthor"
-              :placeholder="$t('新处理人')"
-              v-model="item.targetAuthor"
-            ></bk-user-selector>
+              :value.sync="item.targetAuthor"
+            />
             <div class="tool-icon">
               <i
                 class="bk-icon icon-plus"
@@ -282,11 +277,11 @@
 <script>
 import { mapState } from 'vuex';
 import DEPLOY_ENV from '@/constants/env';
-import BkUserSelector from '@blueking/user-selector';
+import UserSelector from '@/components/user-selector/index.vue';
 
 export default {
   components: {
-    BkUserSelector,
+    UserSelector,
   },
   data() {
     return {
@@ -340,7 +335,6 @@ export default {
         this.$t('周日'),
       ],
       isInnerSite: DEPLOY_ENV === 'tencent',
-      IS_ENV_TAI: window.IS_ENV_TAI,
       userApiUrl: window.USER_API_URL,
       initialForm: false,
     };
@@ -628,7 +622,7 @@ ${this.taskDetail.pipelineId}/edit#${this.taskDetail.atomCode}`,
 
     .tool-icon {
       position: relative;
-      top: -72px;
+      top: -62px;
       left: 220%;
 
       .bk-icon {

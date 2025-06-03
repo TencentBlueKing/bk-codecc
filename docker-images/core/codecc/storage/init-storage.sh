@@ -11,15 +11,15 @@ if [[ "$BK_CODECC_STORAGE_TYPE" == "bkrepo" ]];then
     # get authorization header
     authorization=$(echo -n $BK_CODECC_STORAGE_BKREPO_ADMIN_USERNAME:$BK_CODECC_STORAGE_BKREPO_ADMIN_PASSWORD | base64)
     #create bkrepo project for codecc
-    curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' --header "Authorization: Basic $authorization" -d "{
+    curl -X POST --header 'Content-Type: application/json' --header 'Accept:application/json' --header "X-Bk-Tenant-Id:$BK_CODECC_STORAGE_BKREPO_TENANT_ID" --header "Authorization: Basic $authorization" -d "{
         \"name\": \"$BK_CODECC_STORAGE_BKREPO_PROJECT\",
         \"displayName\": \"$BK_CODECC_STORAGE_BKREPO_PROJECT\",
         \"description\": \"codecc project\"
     }" "$BK_CODECC_STORAGE_BKREPO_HOST/repository/api/project/create"
 
     #create bkrepo project repo for codecc
-    curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' --header "Authorization: Basic $authorization" -d "{
-        \"projectId\": \"$BK_CODECC_STORAGE_BKREPO_PROJECT\",
+    curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' --header "X-Bk-Tenant-Id:$BK_CODECC_STORAGE_BKREPO_TENANT_ID" --header "Authorization: Basic $authorization" -d "{
+        \"projectId\": \"$BK_CODECC_STORAGE_BKREPO_TENANT_ID.$BK_CODECC_STORAGE_BKREPO_PROJECT\",
         \"name\": \"$BK_CODECC_STORAGE_BKREPO_REPO\",
         \"type\": \"GENERIC\",
         \"category\": \"LOCAL\",
@@ -27,8 +27,8 @@ if [[ "$BK_CODECC_STORAGE_TYPE" == "bkrepo" ]];then
     }" "$BK_CODECC_STORAGE_BKREPO_HOST/repository/api/repo/create"
 
     #create bkrepo project repo user for codecc
-    curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' --header "Authorization: Basic $authorization" -d "{
-        \"projectId\": \"$BK_CODECC_STORAGE_BKREPO_PROJECT\",
+    curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' --header "X-Bk-Tenant-Id:$BK_CODECC_STORAGE_BKREPO_TENANT_ID" --header "Authorization: Basic $authorization" -d "{
+        \"projectId\": \"$BK_CODECC_STORAGE_BKREPO_TENANT_ID.$BK_CODECC_STORAGE_BKREPO_PROJECT\",
         \"repoName\": \"$BK_CODECC_STORAGE_BKREPO_REPO\",
         \"name\": \"$BK_CODECC_STORAGE_BKREPO_USERNAME\",
         \"pwd\": \"$BK_CODECC_STORAGE_BKREPO_PASSWORD\",

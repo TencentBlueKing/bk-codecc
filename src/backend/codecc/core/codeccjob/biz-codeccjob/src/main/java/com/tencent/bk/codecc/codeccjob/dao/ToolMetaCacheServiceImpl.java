@@ -31,6 +31,7 @@ import com.google.common.collect.Maps;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
+import com.tencent.devops.common.api.ToolOption;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
@@ -244,6 +245,11 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
         }
         return toolMetaBasicDimensionMap.get(dimension).stream().map(ToolMetaBaseVO::getName)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ToolOption> getToolOptionsByToolName(String toolName) {
+        return null;
     }
 
     @Override

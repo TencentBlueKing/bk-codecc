@@ -31,13 +31,13 @@ import static com.tencent.devops.common.constant.RedisKeyConstants.GLOBAL_TOOL_D
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.task.api.ServiceToolMetaRestResource;
 import com.tencent.bk.codecc.task.dao.mongorepository.ToolMetaRepository;
 import com.tencent.bk.codecc.task.model.ToolMetaEntity;
 import com.tencent.bk.codecc.task.model.ToolVersionEntity;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
+import com.tencent.devops.common.api.ToolOption;
 import com.tencent.devops.common.api.ToolVersionVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.GlobalMessage;
@@ -92,7 +92,7 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
     /**
      * 工具基础信息缓存
      */
-    private Map<String, ToolMetaBaseVO> toolMetaBasicMap = Maps.newConcurrentMap();
+    private final Map<String, ToolMetaBaseVO> toolMetaBasicMap = Maps.newConcurrentMap();
 
     /**
      * 工具维度基础信息缓存
@@ -357,6 +357,16 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
         }
     }
 
+    @Override
+    public List<ToolOption> getToolOptionsByToolName(String toolName) {
+        if (toolMetaBasicMap.containsKey(toolName)) {
+            return toolMetaBasicMap.get(toolName).getToolOptions();
+        } else {
+            ToolMetaBaseVO toolMetaBaseVO = getToolBaseMetaCache(toolName);
+            return toolMetaBaseVO.getToolOptions();
+        }
+    }
+
     /**
      * 从缓存中获取所有工具
      *
@@ -372,7 +382,8 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
             toolMetaDetails = Lists.newArrayList();
             for (Map.Entry<String, ToolMetaBaseVO> entry : toolMetaBasicMap.entrySet()) {
                 ToolMetaDetailVO toolMetaDetailVO = new ToolMetaDetailVO();
-                BeanUtils.copyProperties(entry.getValue(), toolMetaDetailVO);
+                BeanUtils.copyProperties(entry.getValue(), toolMetaDetailVO, "toolOptions");
+                toolMetaDetailVO.setToolOptions(entry.getValue().getToolOptions());
                 toolMetaDetails.add(toolMetaDetailVO);
             }
         } else {
@@ -389,12 +400,6 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
         Map<String, ToolMetaBaseVO> toolCacheCopy = Maps.newHashMap();
         if (CollectionUtils.isNotEmpty(toolMetaDetails)) {
             for (ToolMetaDetailVO toolMetaDetailVO : toolMetaDetails) {
-//                if (Boolean.FALSE.equals(isAdmin)
-//                && !ComConstants.ToolIntegratedStatus.P.name().equals(toolMetaDetailVO.getStatus()))
-//                {
-//                    continue;
-//                }
-
                 ToolMetaBaseVO toolMetaVO;
                 if (Boolean.TRUE.equals(isDetail)) {
                     toolMetaVO = toolMetaDetailVO;
@@ -433,11 +438,8 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
      *
      * @param toolMetaEntity
      */
-    private ToolMetaBaseVO cacheToolBaseMeta(ToolMetaEntity toolMetaEntity) {
-        ToolMetaBaseVO newToolMetaBaseVO = new ToolMetaBaseVO();
-        BeanUtils.copyProperties(toolMetaEntity, newToolMetaBaseVO);
-        List<ToolVersionVO> versionVOList = getToolVersionVOs(toolMetaEntity);
-        newToolMetaBaseVO.setToolVersions(versionVOList);
+    private void cacheToolBaseMeta(ToolMetaEntity toolMetaEntity) {
+        ToolMetaBaseVO newToolMetaBaseVO = copyToolBaseMeta(toolMetaEntity);
         toolMetaBasicMap.put(newToolMetaBaseVO.getName(), newToolMetaBaseVO);
 
         // 缓存维度基础信息
@@ -455,8 +457,6 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
 
         toolDimensionSet.add(newToolMetaBaseVO);
         toolMetaBasicDimensionMap.put(dimensionMapKey, toolDimensionSet);
-
-        return newToolMetaBaseVO;
     }
 
     /**
@@ -467,13 +467,53 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
     public void cacheToolBaseMeta(String toolName) {
         ToolMetaEntity toolMetaEntity = toolMetaRepository.findFirstByName(toolName);
         if (toolMetaEntity != null) {
-            ToolMetaBaseVO newToolMetaBaseVO = new ToolMetaBaseVO();
-            BeanUtils.copyProperties(toolMetaEntity, newToolMetaBaseVO);
-            List<ToolVersionVO> versionVOList = getToolVersionVOs(toolMetaEntity);
-            newToolMetaBaseVO.setToolVersions(versionVOList);
+            ToolMetaBaseVO newToolMetaBaseVO = copyToolBaseMeta(toolMetaEntity);
             toolMetaBasicMap.put(newToolMetaBaseVO.getName(), newToolMetaBaseVO);
             log.info("cache tool success. {}", toolName);
         }
+    }
+
+    // 将 ToolMetaEntity 的内容复制到 ToolMetaBaseVO
+    private ToolMetaBaseVO copyToolBaseMeta(ToolMetaEntity toolMetaEntity) {
+        ToolMetaBaseVO toolMetaBaseVO = new ToolMetaBaseVO();
+        if (toolMetaEntity == null) {
+            return toolMetaBaseVO;
+        }
+
+        BeanUtils.copyProperties(toolMetaEntity, toolMetaBaseVO, "toolOptions", "toolVersions");
+
+        toolMetaBaseVO.setToolOptions(getToolOptions(toolMetaEntity));
+        toolMetaBaseVO.setToolVersions(getToolVersionVOs(toolMetaEntity));
+
+        return toolMetaBaseVO;
+    }
+
+    private List<ToolOption> getToolOptions(ToolMetaEntity toolMetaEntity) {
+        List<ToolOption> result = new ArrayList<>();
+        if (CollectionUtils.isEmpty(toolMetaEntity.getToolOptions())) {
+            return result;
+        }
+        toolMetaEntity.getToolOptions().forEach(toolOptionEntity -> {
+            ToolOption toolOption = new ToolOption();
+            BeanUtils.copyProperties(toolOptionEntity, toolOption, "varOptionList");
+
+            if (CollectionUtils.isNotEmpty(toolOptionEntity.getVarOptionList())) {
+                List<ToolOption.VarOption> varOptions = new ArrayList<>();
+                toolOptionEntity.getVarOptionList().forEach(varOptionEntity -> {
+                    ToolOption.VarOption varOption = new ToolOption.VarOption(
+                            varOptionEntity.getName(),
+                            varOptionEntity.getId()
+                    );
+
+                    varOptions.add(varOption);
+                });
+                toolOption.setVarOptionList(varOptions);
+            }
+
+            result.add(toolOption);
+        });
+
+        return result;
     }
 
 }

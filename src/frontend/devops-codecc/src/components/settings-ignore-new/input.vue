@@ -9,6 +9,7 @@
     @confirm="save"
     @cancel="cancel"
     :position="{ top: 100, left: 5 }"
+    render-directive="if"
   >
     <bk-transfer
       :title="title"

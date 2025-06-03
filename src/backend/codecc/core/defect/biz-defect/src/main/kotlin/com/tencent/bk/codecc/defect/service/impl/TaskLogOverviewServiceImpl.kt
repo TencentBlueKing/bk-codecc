@@ -662,6 +662,22 @@ class TaskLogOverviewServiceImpl @Autowired constructor(
         taskLogOverviewDao.updatePluginErrorInfo(taskId, buildId, errorCode, errorType)
     }
 
+    override fun findPreviousByTaskIdAndEntityId(taskId: Long, buildNum: String): TaskLogOverviewVO? {
+        val taskLogOverviewVO = TaskLogOverviewVO()
+        var taskLogOverviewEntity =
+            taskLogOverviewDao.findPreviousByTaskIdAndEntityId(taskId, buildNum) ?: return null
+        BeanUtils.copyProperties(taskLogOverviewVO, taskLogOverviewEntity)
+        return taskLogOverviewVO
+    }
+
+    override fun findByTaskIdAndBuild(taskId: Long, buildId: String): TaskLogOverviewVO? {
+        val taskLogOverviewVO = TaskLogOverviewVO()
+        var taskLogOverviewEntity =
+            taskLogOverviewDao.findByTaskIdAndBuildId(taskId, buildId) ?: return null
+        BeanUtils.copyProperties(taskLogOverviewVO, taskLogOverviewEntity)
+        return taskLogOverviewVO
+    }
+
     /**
      * 工具确认执行状态
      * 当一个工具在上报完 工具状态 完后触发 AOP 进行 任务状态 计算

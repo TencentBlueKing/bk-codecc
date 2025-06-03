@@ -203,7 +203,6 @@ export default {
             this.treeList[0].expanded = false;
           }
         }
-        window.changeAlert = true;
       },
       deep: true,
     },
@@ -365,7 +364,6 @@ export default {
     },
     handleCheckChange(values) {
       this.isHasChecked = values.length > 0;
-      window.changeAlert = true;
     },
     handleBeforeClose() {
       return leaveConfirm();

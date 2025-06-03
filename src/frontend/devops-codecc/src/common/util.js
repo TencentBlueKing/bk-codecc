@@ -481,6 +481,24 @@ export function urlJoin(...args) {
     .replace(/([^:]\/)\/+/g, '$1');
 }
 
+export function getQueryParams(urlStr) {
+  let url = '';
+  if (typeof urlStr === 'undefined') {
+    url = decodeURI(location.search);
+  } else {
+    url = `?${urlStr.split('?')[1]}`;
+  }
+  const queryObj = {};
+  if (url.indexOf('?') !== -1) {
+    const str = url.substr(1);
+    const strs = str.split('&');
+    for (const item of strs) {
+      queryObj[item.split('=')[0]] = decodeURI(item.split('=')[1]);
+    }
+  }
+  return queryObj;
+}
+
 export function numToThousand(num) {
   if (!num || num <= 0) {
     return 0;

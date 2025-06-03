@@ -1,7 +1,9 @@
 package com.tencent.bk.codecc.defect.dao.defect.mongotemplate;
 
+import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.model.statistic.LintStatisticEntity;
 import com.tencent.bk.codecc.defect.vo.GrayDefectStaticVO;
+import com.tencent.devops.common.constant.ComConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
@@ -15,6 +17,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -96,5 +99,36 @@ public class LintStatisticDao {
         Aggregation aggregation = Aggregation.newAggregation(match, as);
         return defectMongoTemplate.aggregate(aggregation,
                 "t_lint_statistic", GrayDefectStaticVO.class).getMappedResults();
+    }
+
+    /**
+     * 根据工具名称，任务编号范围，时间范围获取LintStatistic分析报告
+     * @param toolName 工具名称
+     * @param taskIdSet 任务编号范围
+     * @param startTime 起始时间
+     * @param endTime 结束时间
+     * @return lint分析报告列表
+     */
+    public List<LintStatisticEntity> getLintScanStatisticList(
+            String toolName,
+            List<Long> taskIdSet,
+            Long startTime,
+            Long endTime
+    ) {
+        List<LintStatisticEntity> results = new ArrayList<>();
+        // 按一万条分片task集合
+        List<List<Long>> taskIdsList = Lists.partition(taskIdSet, ComConstants.COMMON_NUM_10000);
+        for (List<Long> taskIds : taskIdsList) {
+            Query query = Query.query(Criteria.where("tool_name").is(toolName));
+            query.addCriteria(Criteria.where("task_id").in(taskIds));
+            query.addCriteria(Criteria.where("time").gte(startTime).lt(endTime));
+            query.fields().include(
+                    "total_serious", "total_normal", "defect_count", "time", "task_id", "defect_change"
+            );
+            List<LintStatisticEntity> batchResult =
+                    defectMongoTemplate.find(query, LintStatisticEntity.class);
+            results.addAll(batchResult);
+        }
+        return results;
     }
 }

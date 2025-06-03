@@ -1522,7 +1522,7 @@ export default {
         .then((res) => {
           if (res.code === '0') {
             let message = '';
-            let isIgnoreApproval = false;
+            const isIgnoreApproval = false;
             const list = res.data || [];
             if (this.operateParams.bizType === 'ChangeIgnoreType') {
               message = this.$t('修改忽略类型成功');
@@ -1539,19 +1539,19 @@ export default {
                     index: 0,
                   });
                 }
-                if (item.failCount) {
-                  sortMessage.push({
-                    text: this.$t(`剩余x个问题由于状态原因${typeMap[item.bizType]}失败。`, [item.failCount || 0]),
-                    index: 1,
-                  });
-                }
-                if (item.bizType === 'IgnoreApproval' && item.count !== 0) {
-                  isIgnoreApproval = true;
-                  sortMessage.push({
-                    text: this.$t('另外x个问题正在忽略审批中。', [item.count]),
-                    index: 2,
-                  });
-                }
+                // if (item.failCount) {
+                //   sortMessage.push({
+                //     text: this.$t(`剩余x个问题由于状态原因${typeMap[item.bizType]}失败。`, [item.failCount || 0]),
+                //     index: 1,
+                //   });
+                // }
+                // if (item.bizType === 'IgnoreApproval' && item.count !== 0) {
+                //   isIgnoreApproval = true;
+                //   sortMessage.push({
+                //     text: this.$t('另外x个问题正在忽略审批中。', [item.count]),
+                //     index: 2,
+                //   });
+                // }
                 message = sortMessage
                   .sort((a, b) => a.index - b.index)
                   .map(item => item.text)

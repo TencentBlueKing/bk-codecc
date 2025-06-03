@@ -224,4 +224,21 @@ public interface UserTestTaskRestResource {
             @ApiParam(value = "请求视图", required = true)
             QueryTestReportReqVO queryTestReportReqVO
     );
+
+    // 临时接口, 不上生产, 只在灰度环境执行, 执行完成之后回退代码
+    @GET
+    @Path("/migrateCodeccToolsToBkplugins/{env}/{pgId}")
+    Result<Boolean> migrate(
+            @ApiParam(value = "当前用户", required = true)
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userName,
+            @ApiParam(value = "标记环境: stag(测试)/prod(生产)", required = true)
+            @PathParam(value = "env")
+            String env,
+            @PathParam(value = "pgId")
+            String pdId,
+            @ApiParam("可选, 如果没填就是全量迁移, 填了就是迁移特定的工具")
+            @QueryParam("toolName")
+            String toolName
+    );
 }

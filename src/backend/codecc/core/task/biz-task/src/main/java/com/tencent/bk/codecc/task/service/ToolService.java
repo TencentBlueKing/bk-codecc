@@ -38,7 +38,6 @@ import com.tencent.bk.codecc.task.vo.checkerset.ToolCheckerSetVO;
 import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import java.util.List;
-import java.util.Set;
 
 /**
  * 工具管理服务接口

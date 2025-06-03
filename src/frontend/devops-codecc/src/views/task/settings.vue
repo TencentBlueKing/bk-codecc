@@ -67,6 +67,11 @@ export default {
     },
   },
   created() {
+    // 若无权限访问，则重定向到基础信息页面，防止activeTab与内容不一致
+    if (!this.panels.find(panel => panel.name === this.active)) {
+      this.$router.replace({ name: 'task-settings-code' });
+      return;
+    }
     const { panel } = this.$route.query;
     if (panel) {
       this.$router.push({ name: `task-settings-${panel}` });

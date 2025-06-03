@@ -98,6 +98,14 @@ public class ToolMetaEntity extends CommonEntity
     private String params;
 
     /**
+     * 工具的自定义参数列表, params 的新版实现.
+     * 后续接入的工具统一使用 tool_options 来实现自定义参数.
+     * 字段具体说明见 CodeCC 工具开发规范
+     */
+    @Field("tool_options")
+    private List<ToolOptionEntity> toolOptions;
+
+    /**
      * 工具的图标
      */
     @Field("logo")
@@ -236,4 +244,10 @@ public class ToolMetaEntity extends CommonEntity
      */
     @Field("git_diff_required")
     private Boolean gitDiffRequired;
+
+    /**
+     * 租户 id, 只有开启了多租户模式才会有该字段
+     */
+    @Field("tenant_id")
+    private String tenantId;
 }

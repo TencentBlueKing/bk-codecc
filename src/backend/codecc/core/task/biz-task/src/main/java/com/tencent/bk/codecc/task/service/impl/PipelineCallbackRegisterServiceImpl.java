@@ -95,7 +95,7 @@ public class PipelineCallbackRegisterServiceImpl implements PipelineCallbackRegi
             String secret = UUID.randomUUID().toString();
             PipelineCallbackEvent callbackEvent = new PipelineCallbackEvent(
                     CallBackEvent.BUILD_END,
-                    getCallbackUrl(),
+                    getCallbackUrl(projectId),
                     secret,
                     CODECC_PIPELINE_END_CALLBACK,
                     CallBackNetWorkRegionType.DEVNET
@@ -114,8 +114,8 @@ public class PipelineCallbackRegisterServiceImpl implements PipelineCallbackRegi
         return null;
     }
 
-    private String getCallbackUrl() {
-        return "http://" + codeccHost + "/ms/task/api/service/task/pipeline/callback";
+    private String getCallbackUrl(String projectId) {
+        return "http://" + codeccHost + "/ms/task/api/service/task/pipeline/callback?x-devops-project-id=" + projectId;
     }
 
     private RedisLock getRegisterRedisLock(String pipelineId, String event) {

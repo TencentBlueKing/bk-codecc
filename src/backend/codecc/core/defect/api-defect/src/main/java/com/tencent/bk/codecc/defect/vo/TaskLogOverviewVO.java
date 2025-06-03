@@ -10,6 +10,8 @@ import lombok.Data;
 @ApiModel("工具执行记录请求对象")
 public class TaskLogOverviewVO {
 
+    @ApiModelProperty(value = "实体编号")
+    private String entityId;
     @ApiModelProperty(value = "工具分析信息")
     List<TaskLogVO> taskLogVOList;
     @ApiModelProperty(value = "代码库字符串信息")

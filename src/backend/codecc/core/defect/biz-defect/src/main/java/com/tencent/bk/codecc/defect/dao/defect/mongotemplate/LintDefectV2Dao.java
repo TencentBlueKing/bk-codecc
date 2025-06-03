@@ -50,8 +50,10 @@ import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.DateTimeUtils;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -87,6 +89,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
+import com.mongodb.client.MongoCursor;
 
 /**
  * lint类工具持久层代码
@@ -388,7 +391,6 @@ public class LintDefectV2Dao {
         // 若是跨任务查询
         Duration timeout = null;
         if (MapUtils.isNotEmpty(taskToolMap) && taskToolMap.size() > 1) {
-            query.withHint("idx_task_id_1_tool_name_1_status_1_checker_1_file_name_1_line_num_1");
             timeout = Duration.ofSeconds(60L);
         }
 
@@ -1469,8 +1471,7 @@ public class LintDefectV2Dao {
             return 0L;
         }
         Query query = Query.query(criteria);
-        // 指定索引
-        query.withHint("idx_taskid_1_toolname_1_status_1_ignore_reason_type_1");
+
         return defectMongoTemplate.count(query, LintDefectV2Entity.class);
     }
 
@@ -1931,5 +1932,23 @@ public class LintDefectV2Dao {
                 .set("updated_by", userName)
                 .unset("code_comment");
         defectMongoTemplate.updateFirst(query, update, LintDefectV2Entity.class);
+    }
+
+    /**
+     * 在指定taskIds范围下查询有安全漏洞的任务
+     * @param taskIdSet 任务范围
+     * @return list
+     */
+    public List<Long> getUnsafeTaskIdListByTaskIds(Collection<Long> taskIdSet, List<String> securityToolNameList) {
+        ArrayList<Long> result = new ArrayList<>();
+        List<List<Long>> taskIdsList = Lists.partition(new ArrayList<>(taskIdSet), ComConstants.COMMON_NUM_10000);
+        for (List<Long> taskIds : taskIdsList) {
+            Query query = Query.query(Criteria.where("task_id").in(taskIds));
+            query.addCriteria(Criteria.where("tool_name").in(securityToolNameList));
+            query.addCriteria(Criteria.where("status").in(ComConstants.DefectStatus.NEW.value()));
+            List<Long> unsafeTaskId = defectMongoTemplate.findDistinct(query, "task_id", COLLECTION_NAME, Long.class);
+            result.addAll(unsafeTaskId);
+        }
+        return result;
     }
 }

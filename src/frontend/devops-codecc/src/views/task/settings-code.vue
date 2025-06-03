@@ -62,7 +62,9 @@
       </tool-config-form>
       <div class="disf">
         <span class="pipeline-label disf">{{ $t('创建人') }}</span>
-        <span class="fs14">{{ formData.createdBy }}</span>
+        <span class="fs14">
+          <bk-user-display-name :user-id="formData.createdBy"></bk-user-display-name>
+        </span>
       </div>
       <div class="disf">
         <span class="pipeline-label disf">{{ $t('创建时间') }}</span>

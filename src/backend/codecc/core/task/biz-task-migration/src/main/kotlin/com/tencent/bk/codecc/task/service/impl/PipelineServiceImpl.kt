@@ -61,6 +61,7 @@ import com.tencent.devops.common.pipeline.enums.ChannelCode
 import com.tencent.devops.common.pipeline.pojo.element.Element
 import com.tencent.devops.common.pipeline.pojo.element.trigger.TimerTriggerElement
 import com.tencent.devops.common.service.ToolMetaCacheService
+import com.tencent.devops.common.service.utils.SpringContextUtil
 import com.tencent.devops.process.api.service.ServiceBuildResource
 import com.tencent.devops.process.api.service.ServicePipelineResource
 import com.tencent.devops.repository.api.ServiceRepositoryResource
@@ -72,6 +73,7 @@ import com.tencent.devops.repository.pojo.GithubRepository
 import com.tencent.devops.store.api.atom.ServiceMarketAtomResource
 import com.tencent.devops.store.api.container.ServiceContainerAppResource
 import com.tencent.devops.store.pojo.atom.InstallAtomReq
+import feign.RequestInterceptor
 import lombok.extern.slf4j.Slf4j
 import net.sf.json.JSONArray
 import org.slf4j.LoggerFactory
@@ -299,6 +301,14 @@ open class PipelineServiceImpl @Autowired constructor(
         } else if (ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value() == createFrom) {
             channelCode = ChannelCode.GONGFENGSCAN
         }
+
+        val interceptor = SpringContextUtil.getBean(
+            RequestInterceptor::class.java,
+            "devopsRequestInterceptor"
+        )
+        logger.info("Interceptor: $interceptor")
+
+        logger.info("manualStartup: $userName | $projectId | $pipelineId | $valueMap | $channelCode")
         val buildIdResult = client.getDevopsService(ServiceBuildResource::class.java).manualStartup(
             userName, projectId, pipelineId, valueMap, channelCode
         )

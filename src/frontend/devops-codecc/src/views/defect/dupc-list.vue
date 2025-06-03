@@ -62,12 +62,16 @@
               <div class="cc-col">
                 <bk-form-item :label="$t('处理人')">
                   <bk-select v-model="searchParams.author" searchable>
+                    <template #trigger>
+                      <SelectTrigger v-model="searchParams.author" />
+                    </template>
                     <bk-option
                       v-for="(author, index) in searchFormData.authorList"
                       :key="index"
                       :id="author"
                       :name="author"
                     >
+                      <bk-user-display-name :user-id="author"></bk-user-display-name>
                     </bk-option>
                   </bk-select>
                 </bk-form-item>
@@ -298,9 +302,7 @@
             </bk-table-column>
             <bk-table-column :label="$t('相关作者')" prop="authorList">
               <template slot-scope="props">
-                <span v-bk-tooltips="props.row.authorList">{{
-                  props.row.authorList
-                }}</span>
+                <bk-user-display-name :user-id="props.row.authorList"></bk-user-display-name>
               </template>
             </bk-table-column>
             <bk-table-column
@@ -378,6 +380,7 @@ import { mapState } from 'vuex';
 import util from '@/mixins/defect-list';
 import dupcDetail from './dupc-detail';
 import Empty from '@/components/empty';
+import SelectTrigger from '@/components/select-trigger/index.vue';
 // import filterSearchOption from './filter-search-option'
 // eslint-disable-next-line
 import { export_json_to_excel } from '@/vendor/export2Excel';
@@ -389,6 +392,7 @@ export default {
   components: {
     dupcDetail,
     Empty,
+    SelectTrigger,
     // filterSearchOption,
   },
   mixins: [util],
@@ -823,7 +827,7 @@ export default {
         JSON.stringify(this.selectedOptionColumn)
       );
     },
-    downloadExcel() {
+    async downloadExcel() {
       const params = this.getSearchParams();
       params.pageSize = 300000;
       if (this.totalCount > 300000) {
@@ -834,16 +838,22 @@ export default {
         });
         return;
       }
-      this.exportLoading = true;
-      this.$store
-        .dispatch('defect/lintList', params)
-        .then((res) => {
-          const list = res && res.defectList && res.defectList.content;
-          this.generateExcel(list);
-        })
-        .finally(() => {
-          this.exportLoading = false;
-        });
+      try {
+        this.exportLoading = true;
+        const res = await this.$store.dispatch('defect/lintList', params);
+        const list = res && res.defectList && res.defectList.content;
+        // display name 处理
+        const userIds = [...new Set(list.map(item => item.authorList))];
+        const dataMap = await this.$store.dispatch('displayname/batchGetDisplayName', userIds);
+        for (const row of list) {
+          row.authorList = dataMap.get(row.authorList)?.display_name || row.author;
+        }
+        this.generateExcel(list);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        this.exportLoading = false;
+      }
     },
     generateExcel(list = []) {
       const tHeader = [

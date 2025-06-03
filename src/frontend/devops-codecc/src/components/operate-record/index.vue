@@ -30,7 +30,8 @@
             :label="$t('操作人')"
             prop="operator"
             width="100"
-          ></bk-table-column>
+          >
+          </bk-table-column>
           <bk-table-column
             :label="$t('操作类型')"
             prop="operTypeName"

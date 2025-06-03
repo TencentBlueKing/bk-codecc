@@ -216,155 +216,27 @@ class PipelineUtils {
     }
 
     fun getNewCodeElement(codeElementData: CodeElementData): Element {
-        return when (codeElementData.scmType) {
-            GIT_SCM_TYPE -> MarketBuildAtomElement(
-                name = "下载代码",
-                id = null,
-                status = null,
-                atomCode = GIT_ATOM_CODE,
-                version = GIT_ATOM_CODE_VERSION,
-                data = mapOf("input" to mapOf(
-                    "repositoryType" to "ID",
-                    "repositoryHashId" to codeElementData.repoHashId,
-                    "repositoryName" to "",
-                    "pullType" to "BRANCH",
-                    "branchName" to (codeElementData.branch),
-                    "tagName" to "",
-                    "commitId" to "",
-                    "localPath" to (codeElementData.relPath ?: ""),
-                    "includePath" to "",
-                    "excludePath" to "",
-                    "fetchDepth" to "",
-                    "strategy" to CodePullStrategy.FRESH_CHECKOUT,
-                    "enableSubmodule" to true,
-                    "enableSubmoduleRemote" to false,
-                    "enableSubmoduleRecursive" to true,
-                    "enableVirtualMergeBranch" to false,
-                    "enableAutoCrlf" to false,
-                    "enableGitLfs" to false,
-                    "enableGitClean" to true,
-                    "rebuildToNew" to "false",
-                    "autoCrlf" to "false",
-                    "scmType" to GIT_SCM_TYPE
-                )))
-            SVN_SCM_TYPE -> if (SVN_SCM_TYPE_OLD) {
-                CodeSvnElement(
-                    name = "下载代码",
-                    id = null,
-                    status = null,
-                    repositoryHashId = codeElementData.repoHashId,
-                    svnPath = "",
-                    path = codeElementData.relPath ?: "",
-                    strategy = CodePullStrategy.FRESH_CHECKOUT,
-                    svnDepth = SvnDepth.infinity,
-                    enableSubmodule = false,
-                    specifyRevision = false,
-                    revision = ""
-                )
-            } else {
-                MarketBuildAtomElement(
-                    name = "下载代码",
-                    id = null,
-                    status = null,
-                    atomCode = SVN_ATOM_CODE,
-                    version = SVN_ATOM_CODE_VERSION,
-                    data = mapOf("input" to mapOf(
-                        "repositoryType" to "ID",
-                        "repositoryHashId" to codeElementData.repoHashId,
-                        "repositoryName" to "",
-                        "svnPath" to "",
-                        "codePath" to (codeElementData.relPath ?: ""),
-                        "strategy" to CodePullStrategy.FRESH_CHECKOUT,
-                        "svnDepth" to "infinity",
-                        "enableSubmodule" to true,
-                        "specifyRevision" to false,
-                        "reversion" to ""
-                    )))
-            }
-            GITHUB_SCM_TYPE -> if (GITHUB_SCM_TYPE_OLD) {
-                GithubElement(
-                    name = "下载代码",
-                    id = null,
-                    status = null,
-                    repositoryType = RepositoryType.ID,
-                    repositoryHashId = codeElementData.repoHashId,
-                    gitPullMode = GitPullMode(GitPullModeType.BRANCH, codeElementData.branch),
-                    path = codeElementData.relPath ?: ",",
-                    enableSubmodule = true,
-                    enableVirtualMergeBranch = false
-                )
-            } else {
-                MarketBuildAtomElement(
-                    name = "下载代码",
-                    id = null,
-                    status = null,
-                    atomCode = GITHUB_ATOM_CODE,
-                    version = GITHUB_ATOM_CODE_VERSION,
-                    data = mapOf("input" to mapOf(
-                        "repositoryType" to "ID",
-                        "repositoryHashId" to codeElementData.repoHashId,
-                        "aliasName" to "",
-                        "pullType" to "BRANCH",
-                        "refName" to codeElementData.branch,
-                        "localPath" to (codeElementData.relPath ?: ""),
-                        "strategy" to CodePullStrategy.FRESH_CHECKOUT,
-                        "enableSubmodule" to true,
-                        "enableVirtualMergeBranch" to false,
-                        "enableGitLfsClean" to false,
-                        "enableGitClean" to false,
-                        "enableGitCleanIgnore" to true,
-                        "enableGitCleanNested" to false,
-                        "enableTrace" to false,
-                        "setSafeDirectory" to false,
-                    )))
-            }
-            GIT_URL_TYPE -> MarketBuildAtomElement(
-                name = "拉取代码",
-                atomCode = GIT_COMMON_ATOM_CODE,
-                version = GIT_COMMON_ATOM_CODE_VERSION,
-                data = mapOf(
-                    "input" to
-                            mapOf(
-                                "username" to codeElementData.userName,
-                                "password" to codeElementData.passWord,
-                                "refName" to codeElementData.branch,
-                                "commitId" to "",
-                                "enableAutoCrlf" to false,
-                                "enableGitClean" to true,
-                                "enableSubmodule" to false,
-                                "enableSubmoduleRemote" to false,
-                                "enableVirtualMergeBranch" to false,
-                                "excludePath" to "",
-                                "fetchDepth" to "",
-                                "includePath" to "",
-                                "localPath" to "",
-                                "paramMode" to "SIMPLE",
-                                "pullType" to "BRANCH",
-                                "repositoryUrl" to codeElementData.url,
-                                "strategy" to "FRESH_CHECKOUT",
-                                "tagName" to ""
-                            ),
-                    "output" to mapOf()
-                )
-
-            )
-            else -> {
-                CodeGitlabElement(
-                    name = "下载代码",
-                    id = null,
-                    status = null,
-                    repositoryHashId = codeElementData.repoHashId,
-                    branchName = if (codeElementData.branch.isBlank()) "" else codeElementData.branch,
-                    revision = null,
-                    strategy = CodePullStrategy.FRESH_CHECKOUT,
-                    path = codeElementData.relPath,
-                    enableSubmodule = null,
-                    gitPullMode = null,
-                    repositoryType = null,
-                    repositoryName = null
-                )
-            }
-        }
+        return MarketBuildAtomElement(
+            name = "checkout",
+            atomCode = "checkout",
+            version = "1.*",
+            data = mapOf("input" to mapOf(
+                "repositoryType" to "ID",
+                "repositoryHashId" to codeElementData.repoHashId,
+                "pullType" to "BRANCH",
+                "refName" to (codeElementData.branch),
+                "localPath" to (codeElementData.relPath ?: ""),
+                "strategy" to "FRESH_CHECKOUT",
+                "enableGitLfs" to false,
+                "enableGitLfsClean" to true,
+                "enableSubmodule" to true,
+                "enableSubmoduleRemote" to false,
+                "enableSubmoduleRecursive" to true,
+                "enableVirtualMergeBranch" to false,
+                "enableGitClean" to true,
+                "autoCrlf" to "false",
+            ))
+        )
     }
 
     fun getOldCodeElement(registerVO: BatchRegisterVO?, relPath: String?): Element? {

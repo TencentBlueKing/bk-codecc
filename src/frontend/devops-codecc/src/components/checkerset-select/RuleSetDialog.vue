@@ -124,7 +124,8 @@
                   {{ checkerSet.description || $t('暂无描述') }}
                 </p>
                 <p class="other-msg">
-                  <span>{{ $t('由x发布', { name: checkerSet.creator }) }}</span>
+                  {{ $t('发布者') }}
+                  <bk-user-display-name :user-id="checkerSet.creator"></bk-user-display-name>
                   <span>{{
                     $t('共x条规则', { sum: checkerSet.checkerCount || 0 })
                   }}</span>

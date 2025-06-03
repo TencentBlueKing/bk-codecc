@@ -8,10 +8,13 @@ import io.swagger.annotations.ApiParam;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TENANT_ID;
 
 /**
  * 基础数据接口类
@@ -33,4 +36,11 @@ public interface UserBaseDataRestResource {
             @PathParam(value = "paramCode")
                     String paramCode);
 
+    @ApiOperation("获取租户 id")
+    @Path("/tenantId")
+    @GET
+    Result<String> getTenantId(
+            @HeaderParam(AUTH_HEADER_DEVOPS_TENANT_ID)
+            String tenantId
+    );
 }

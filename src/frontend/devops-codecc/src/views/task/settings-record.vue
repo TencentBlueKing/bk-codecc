@@ -17,7 +17,11 @@
       :label="$t('操作人')"
       prop="operator"
       width="200"
-    ></bk-table-column>
+    >
+      <template slot-scope="props">
+        <bk-user-display-name :user-id="props.row.operator"></bk-user-display-name>
+      </template>
+    </bk-table-column>
     <bk-table-column
       :label="$t('操作类型')"
       prop="operTypeName"

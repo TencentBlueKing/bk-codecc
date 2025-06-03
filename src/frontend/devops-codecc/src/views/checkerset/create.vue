@@ -120,9 +120,7 @@
               <span class="fs12">{{ projectName }}</span>
             </bk-form-item>
             <bk-form-item :label="$t('发布者')" class="mt10">
-              <span class="fs12">{{
-                newCheckersetParams.creator || '--'
-              }}</span>
+              <bk-user-display-name :user-id="newCheckersetParams.creator"></bk-user-display-name>
             </bk-form-item>
             <bk-form-item :label="$t('更新时间')" class="mt10">
               <span class="fs12">{{

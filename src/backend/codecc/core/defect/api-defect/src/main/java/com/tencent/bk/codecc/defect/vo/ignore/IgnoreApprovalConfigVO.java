@@ -84,7 +84,7 @@ public class IgnoreApprovalConfigVO extends CommonVO {
      * 自定义
      */
     @ApiModelProperty(value = "审批人类型")
-    private String approverType;
+    private List<String> approverTypes;
 
     /**
      * 自定义审批人列表

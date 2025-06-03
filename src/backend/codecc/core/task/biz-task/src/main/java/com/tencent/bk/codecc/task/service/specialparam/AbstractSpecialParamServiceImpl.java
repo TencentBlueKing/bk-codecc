@@ -11,16 +11,6 @@ import org.json.JSONObject;
  */
 public class AbstractSpecialParamServiceImpl implements ISpecialParamService
 {
-    /**
-     * 修改工具配置影响规则时清空规则集
-     * @param reqParamJsonObj
-     * @param currentParamJsonObj
-     */
-    @Override
-    public boolean paramJsonModified(JSONObject reqParamJsonObj, JSONObject currentParamJsonObj)
-    {
-        return false;
-    }
 
     /**
      * 特殊参数是否相同

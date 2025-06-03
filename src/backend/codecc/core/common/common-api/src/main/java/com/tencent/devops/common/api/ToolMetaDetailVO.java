@@ -105,9 +105,6 @@ public class ToolMetaDetailVO extends ToolMetaBaseVO {
     @ApiModelProperty(value = "工具历史版本号列表")
     private List<String> toolHistoryVersion;
 
-    @ApiModelProperty(value = "工具支持的参数列表")
-    private List<ToolOption> toolOptions;
-
     @ApiModelProperty(value = "用户自定义关注的工具信息")
     private CustomToolInfo customToolInfo;
 
@@ -155,37 +152,6 @@ public class ToolMetaDetailVO extends ToolMetaBaseVO {
 
         @ApiModelProperty(value = "依赖的环境命令版本")
         private String dependVersion;
-    }
-
-    @Data
-    public static class ToolOption {
-        @ApiModelProperty(value = "参数名", required = true)
-        private String varName;
-
-        @ApiModelProperty(value = "参数类型，可选值：NUMBER,STRING,BOOLEAN,RADIO,CHECKBOX，"
-                + "分别表示：数字，字符串，布尔值，单选框，复选框", required = true)
-        private String varType;
-
-        @ApiModelProperty(value = "参数展示名，不填展示varName")
-        private String labelName;
-
-        @ApiModelProperty(value = "参数默认值")
-        private String varDefault;
-
-        @ApiModelProperty(value = "参数说明")
-        private String varTips;
-
-        @ApiModelProperty(value = "参数是否必填：true必填，false非必填")
-        private boolean varRequired;
-
-        @ApiModelProperty(value = "varType为RADIO或CHECKBOX时必填，表示单选框或复选框的选项列表")
-        private List<VarOption> varOptionList;
-    }
-
-    @Data
-    public static class VarOption {
-        private String name;
-        private String id;
     }
 
     @Data

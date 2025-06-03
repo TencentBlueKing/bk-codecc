@@ -206,6 +206,8 @@
                       :list="searchFormData.authorList"
                       :max-data="1"
                       :trigger="'focus'"
+                      :tpl="renderDisplayNameTagInputOption"
+                      :tag-tpl="renderDisplayNameTagInputTag"
                       :allow-create="true"
                     >
                     </bk-tag-input>
@@ -216,12 +218,16 @@
                       searchable
                       :loading="selectLoading.otherParamsLoading"
                     >
+                      <template #trigger>
+                        <SelectTrigger v-model="searchParams.author" />
+                      </template>
                       <bk-option
                         v-for="author in searchFormData.authorList"
                         :key="author.id"
                         :id="author.id"
                         :name="author.name"
                       >
+                        <bk-user-display-name :user-id="author.name"></bk-user-display-name>
                       </bk-option>
                     </bk-select>
 
@@ -414,18 +420,18 @@
                         :key="item.buildId"
                         :id="item.buildId"
                         :name="`#${item.buildNum} ${item.branch} ${
-                          item.buildUser
+                          usersMap.get(item.buildUser)?.display_name || item.buildUser
                         } ${formatDate(item.buildTime) || ''}${$t('触发')}`"
                       >
                         <div
                           class="cc-ellipsis"
                           :title="`#${item.buildNum} ${item.branch} ${
-                            item.buildUser
+                            usersMap.get(item.buildUser)?.display_name || item.buildUser
                           } ${formatDate(item.buildTime) || ''}${$t('触发')}`"
                         >
                           {{
                             `#${item.buildNum} ${item.branch} ${
-                              item.buildUser
+                              usersMap.get(item.buildUser)?.display_name || item.buildUser
                             } ${formatDate(item.buildTime) || ''}${$t('触发')}`
                           }}
                         </div>
@@ -526,7 +532,7 @@
                   </bk-form-item>
                 </div>
 
-                <div class="cc-col" v-show="allRenderColumnMap.approval">
+                <div class="cc-col" v-show="allRenderColumnMap.approval && isInnerSite">
                   <bk-form-item :label="$t('审批')">
                     <bk-select
                       ref="approvalSelect"
@@ -830,24 +836,14 @@
               property="sourceAuthor"
               :label="$t('原处理人')"
             >
-              <bk-input
-                v-model="operateParams.sourceAuthor"
-                :disabled="operateParams.changeAuthorType === 1"
-                style="width: 290px"
-              ></bk-input>
+              <bk-user-display-name :user-id="operateParams.sourceAuthor"></bk-user-display-name>
             </bk-form-item>
             <bk-form-item :label="$t('新处理人')">
-              <bk-tag-input
+              <UserSelector
                 allow-create
-                v-if="IS_ENV_TAI"
-                v-model="operateParams.targetAuthor"
+                :value.sync="operateParams.targetAuthor"
                 style="width: 290px"
-              ></bk-tag-input>
-              <bk-tag-input allow-create
-                v-else
-                v-model="operateParams.targetAuthor"
-                style="width: 290px"
-              ></bk-tag-input>
+              />
             </bk-form-item>
           </bk-form>
         </div>
@@ -870,7 +866,7 @@
             theme="primary"
             type="button"
             :disabled="authorEditDialogLoading"
-            @click.native="authorEditDialogVisible = false"
+            @click.native="handleCloseAuthorDialog"
           >
             {{ $t('取消') }}
           </bk-button>
@@ -1086,7 +1082,7 @@
   </div>
 </template>
 
-<script>
+<script lang="jsx">
 import _ from 'lodash';
 import { bus } from '@/common/bus';
 import { format } from 'date-fns';
@@ -1096,6 +1092,7 @@ import { getClosest, toggleClass } from '@/common/util';
 import { export_json_to_excel } from '@/vendor/export2Excel';
 import util from '@/mixins/defect-list';
 import defectCache from '@/mixins/defect-cache';
+import displayNameTagInputTpl from '@/mixins/display-name-tag-input-tpl';
 import detail from './detail';
 import tableDefect from './table-defect';
 import Empty from '@/components/empty';
@@ -1108,6 +1105,8 @@ import DatePicker from '@/components/date-picker/index.vue';
 import DEPLOY_ENV from '@/constants/env';
 import FoldAlert from './components/fold-alert.vue';
 import ignore from '@/store/modules/ignore';
+import UserSelector from '@/components/user-selector/index.vue';
+import SelectTrigger from '@/components/select-trigger/index.vue';
 
 // 搜索过滤项缓存
 const SEARCH_OPTION_CACHE = 'search_option_columns_defect';
@@ -1123,8 +1122,10 @@ export default {
     ChartPanel,
     DefectPanel,
     FoldAlert,
+    UserSelector,
+    SelectTrigger,
   },
-  mixins: [util, defectCache],
+  mixins: [util, defectCache, displayNameTagInputTpl],
   data() {
     const isProjectDefect = this.$route.name === 'project-defect-list';
     this.getDefaultOption = () => (isProjectDefect
@@ -1393,7 +1394,6 @@ export default {
       taskIdList: isProjectDefect ? [] : [Number(taskId)],
       isProjectDefect,
       emptyDialogVisible: false,
-      IS_ENV_TAI: window.IS_ENV_TAI,
       dateType: query.dateType || 'createTime',
       isInnerSite: DEPLOY_ENV === 'tencent',
       approverList: [],
@@ -1409,6 +1409,9 @@ export default {
     }),
     ...mapState('project', {
       projectVisitable: 'visitable',
+    }),
+    ...mapState('displayname', {
+      usersMap: 'usersMap',
     }),
     visitable() {
       return this.projectVisitable || !this.isProjectDefect;
@@ -1888,7 +1891,7 @@ export default {
       this.setTableHeight();
     },
 
-    downloadExcel() {
+    async downloadExcel() {
       if (this.tableLoading) {
         this.$bkMessage({
           message: this.$t('问题列表加载中，请等待列表加载完再尝试导出。'),
@@ -1904,17 +1907,28 @@ export default {
         });
         return;
       }
-      this.exportLoading = true;
-      this.$store
-        .dispatch('defect/lintList', params)
-        .then((res) => {
-          const listKey = clusterType === 'defect' ? 'defectList' : 'fileList';
-          const list = res && res[listKey] && res[listKey].records;
-          this.generateExcel(list, clusterType);
-        })
-        .finally(() => {
-          this.exportLoading = false;
-        });
+      try {
+        this.exportLoading = true;
+        const res = await this.$store.dispatch('defect/lintList', params);
+        const listKey = clusterType === 'defect' ? 'defectList' : 'fileList';
+        const list = res && res[listKey] && res[listKey].records;
+        // display name 处理
+        const userIds = [...new Set([
+          ...list.map(item => item.author).flat(),
+          ...list.map(item => item.ignoreAuthor),
+        ])];
+        const dataMap = await this.$store.dispatch('displayname/batchGetDisplayName', userIds);
+        for (const row of list) {
+          row.author = row.author.map(id => dataMap.get(id)?.display_name || id);
+          row.ignoreAuthor = dataMap.get(row.ignoreAuthor)?.display_name || row.ignoreAuthor;
+        }
+
+        this.generateExcel(list, clusterType);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        this.exportLoading = false;
+      }
     },
     generateExcel(list = [], clusterType) {
       const { isProjectDefect } = this;
@@ -2004,10 +2018,13 @@ export default {
       // }
       let ignoreStr = '';
       if (status & 4 && ignoreReasonType) {
-        const ignoreName = this.ignoreList.find(item => item.ignoreTypeId === ignoreReasonType)?.name;
+        const ignoreName = this.getIgnoreName(ignoreReasonType);
         ignoreName && (ignoreStr = `-${ignoreName}`);
       }
       return `${statusMap[key]}${ignoreStr}`;
+    },
+    getIgnoreName(ignoreReasonType) {
+      return this.ignoreList.find(item => item.ignoreTypeId === ignoreReasonType)?.name || '';
     },
     // 处理表格数据
     formatJson(filterVal, list, clusterType) {
@@ -2050,16 +2067,7 @@ export default {
           );
         }
         if (j === 'ignoreReasonType') {
-          if (item[j] === 1) {
-            return this.$t('工具误报');
-          }
-          if (item[j] === 2) {
-            return this.$t('设计如此');
-          }
-          if (item[j] === 4) {
-            return this.$t('其他');
-          }
-          return '';
+          return this.getIgnoreName(item[j]);
         }
         if (j === 'dimension') {
           // const { dimension } = this.searchParams;
@@ -2102,9 +2110,13 @@ export default {
     async fetchBuildList() {
       if (this.visitable === false) return;
       this.selectLoading.buildListLoading = true;
-      this.buildList = await this.$store.dispatch('defect/getBuildList', {
+      const list = await this.$store.dispatch('defect/getBuildList', {
         taskId: this.taskId,
       });
+      // display name 处理
+      const userIds = [...new Set(list.map(item => item.buildUser))];
+      await this.$store.dispatch('displayname/batchGetDisplayName', userIds);
+      this.buildList = list;
       this.selectLoading.buildListLoading = false;
     },
     getSearchParams() {
@@ -2657,6 +2669,7 @@ export default {
           }
         })
         .finally(() => {
+          window.changeAlert = false;
           this.detailLoading = false;
         });
     },
@@ -2753,6 +2766,7 @@ export default {
         })
         .finally(() => {
           this.tableLoading = false;
+          this.handleClearWindowAlert();
         });
     },
     handleIgnore(ignoreType, batchFlag, entityId, filePath, ignoreApprovalStatus) {
@@ -2820,7 +2834,7 @@ export default {
         .then((res) => {
           if (res.code === '0') {
             let message = '';
-            let isIgnoreApproval = false;
+            const isIgnoreApproval = false;
             const list = res.data || [];
             if (this.operateParams.bizType === 'ChangeIgnoreType') {
               message = this.$t('修改忽略类型成功');
@@ -2838,19 +2852,19 @@ export default {
                     index: 0,
                   });
                 }
-                if (item.failCount) {
-                  sortMessage.push({
-                    text: this.$t(`剩余x个问题由于状态原因${typeMap[item.bizType]}失败。`, [item.failCount || 0]),
-                    index: 1,
-                  });
-                }
-                if (item.bizType === 'IgnoreApproval' && item.count !== 0) {
-                  isIgnoreApproval = true;
-                  sortMessage.push({
-                    text: this.$t('另外x个问题正在忽略审批中。', [item.count]),
-                    index: 2,
-                  });
-                }
+                // if (item.failCount) {
+                //   sortMessage.push({
+                //     text: this.$t(`剩余x个问题由于状态原因${typeMap[item.bizType]}失败。`, [item.failCount || 0]),
+                //     index: 1,
+                //   });
+                // }
+                // if (item.bizType === 'IgnoreApproval' && item.count !== 0) {
+                //   isIgnoreApproval = true;
+                //   sortMessage.push({
+                //     text: this.$t('另外x个问题正在忽略审批中。', [item.count]),
+                //     index: 2,
+                //   });
+                // }
                 message = sortMessage
                   .sort((a, b) => a.index - b.index)
                   .map(item => item.text)
@@ -2893,7 +2907,6 @@ export default {
 
             this.operateParams.ignoreReason = '';
             this.operateParams.ignoreReasonType = '';
-            this.$nextTick(() => window.changeAlert = false);
             if (this.defectDetailDialogVisible) {
               this.handleFileListRowClick(this.defectList[this.fileIndex]);
             }
@@ -2904,6 +2917,7 @@ export default {
         })
         .finally(() => {
           this.tableLoading = false;
+          this.handleClearWindowAlert();
         });
     },
     handleIgnoreCancel() {
@@ -2911,6 +2925,7 @@ export default {
       this.operateParams.ignoreReasonType = '';
       this.ignoreReasonDialogVisible = false;
       this.isShowDetailDialog = true;
+      this.handleClearWindowAlert();
     },
     toLogs() {
       this.changeHandlerVisible = false;
@@ -3208,6 +3223,10 @@ export default {
       this.$store.dispatch('ignore/fetchApproverList').then((res) => {
         this.approverList = res?.data?.APPROVER_TYPE;
       });
+    },
+    handleCloseAuthorDialog() {
+      this.authorEditDialogVisible = false;
+      this.handleClearWindowAlert();
     },
   },
 };

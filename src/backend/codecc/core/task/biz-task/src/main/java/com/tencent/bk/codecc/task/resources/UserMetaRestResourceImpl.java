@@ -36,9 +36,14 @@ import com.tencent.bk.codecc.task.vo.OpenScanAndPreProdCheckerSetMapVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
 import com.tencent.devops.common.api.annotation.I18NResponse;
+import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.constant.CommonMessageCode;
+import com.tencent.devops.common.util.MultenantUtils;
 import com.tencent.devops.common.web.RestResource;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.List;
 import java.util.Map;
@@ -50,35 +55,45 @@ import java.util.Map;
  * @date 2019/4/19
  */
 @RestResource
-public class UserMetaRestResourceImpl implements UserMetaRestResource
-{
+public class UserMetaRestResourceImpl implements UserMetaRestResource {
     @Autowired
     private MetaService metaService;
 
     @Autowired
     private PipelineService pipelineService;
 
+    @Value("${codecc.enableMultiTenant:#{false}}")
+    private Boolean enableMultiTenant;
+
     @I18NResponse
     @Override
     public Result<List<ToolMetaBaseVO>> toolList(String projectId, Boolean isDetail) {
+        if (enableMultiTenant) {
+            Pair<String, String> tp = MultenantUtils.splitProjectId(projectId);
+            if (tp == null) {
+                throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID,
+                        new String[]{"多租户场景下, projectId 格式错误."});
+            }
+
+            String tenantId = tp.getRight();
+
+            return new Result<>(metaService.toolList(tenantId, projectId, isDetail));
+        }
         return new Result<>(metaService.toolList(projectId, isDetail));
     }
 
     @Override
-    public Result<ToolMetaDetailVO> toolDetail(String toolName)
-    {
+    public Result<ToolMetaDetailVO> toolDetail(String toolName) {
         return new Result<>(metaService.queryToolDetail(toolName));
     }
 
     @Override
-    public Result<Map<String, List<MetadataVO>>> metadatas(String metadataType)
-    {
+    public Result<Map<String, List<MetadataVO>>> metadatas(String metadataType) {
         return new Result<>(metaService.queryMetadatas(metadataType));
     }
 
     @Override
-    public Result<List<BuildEnvVO>> getBuildEnv(String os)
-    {
+    public Result<List<BuildEnvVO>> getBuildEnv(String os) {
         return new Result<>(pipelineService.getBuildEnv(os));
     }
 

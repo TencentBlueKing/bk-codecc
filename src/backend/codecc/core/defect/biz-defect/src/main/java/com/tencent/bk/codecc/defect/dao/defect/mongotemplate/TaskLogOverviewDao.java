@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
+import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -260,6 +261,33 @@ public class TaskLogOverviewDao {
                 .and("build_id").is(buildId));
         Update update = Update.update("plugin_error_code", errorCode).set("plugin_error_type", errorType);
         defectMongoTemplate.updateFirst(query, update, TaskLogOverviewEntity.class);
+    }
+
+    /**
+     * 查询指定构建号的上一个分析记录
+     * build_num: 字符串数字存在字典序问题："9" > "11"
+     */
+    public TaskLogOverviewEntity findPreviousByTaskIdAndEntityId(Long taskId, String entityId) {
+        Query query = new Query();
+        query.addCriteria(
+                Criteria.where("task_id").is(taskId)
+                        .and("_id").lt(new ObjectId(entityId))
+        );
+        query.with(Sort.by(Sort.Direction.DESC, "_id"));
+        return defectMongoTemplate.findOne(query, TaskLogOverviewEntity.class);
+    }
+
+    /**
+     * 查询任务记录
+     *
+     * @param taskId 任务id
+     * @param buildId 构建id
+     * @return object
+     */
+    public TaskLogOverviewEntity findByTaskIdAndBuildId(Long taskId, String buildId) {
+        Criteria criteria = Criteria.where("task_id").is(taskId)
+                .and("build_id").is(buildId);
+        return defectMongoTemplate.findOne(Query.query(criteria), TaskLogOverviewEntity.class);
     }
 
     /**

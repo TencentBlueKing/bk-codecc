@@ -36,7 +36,7 @@ public class TaskCreateFromUtils {
         // 闭源
         if (DefectStatType.CLOSED_SOURCE_SCAN.value().equals(createFrom)) {
             return baseCriteria.is(GONGFENG_SCAN.value()).and("project_id")
-                    .regex(ComConstants.GONGFENG_PRIVATYE_PROJECT_PREFIX);
+                    .regex(ComConstants.GONGFENG_PRIVATE_PROJECT_PREFIX);
             // 开源
         } else if (DefectStatType.OPEN_SOURCE_SCAN.value().equals(createFrom)) {
             return baseCriteria.is(GONGFENG_SCAN.value()).and("project_id")

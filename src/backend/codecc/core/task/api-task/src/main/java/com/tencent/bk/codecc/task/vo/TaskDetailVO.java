@@ -169,6 +169,14 @@ public class TaskDetailVO extends TaskBaseVO {
     @ApiModelProperty(value = "工具特定参数")
     private List<ToolConfigParamJsonVO> devopsToolParams;
 
+    /**
+     * 目的: 在保证向后兼容的前提下, 升级工具自定义参数体系, 详见 TAPD 121208909
+     * 如果 devopsToolParamVersion = v2, 则使用新的处理逻辑;
+     * 否则还是走原来的那套逻辑
+     */
+    @ApiModelProperty(value = "工具自定义参数体系版本")
+    private String devopsToolParamVersion;
+
     @ApiModelProperty(value = "编译类型")
     private String projectBuildType;
 

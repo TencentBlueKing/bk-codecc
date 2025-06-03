@@ -13,9 +13,14 @@ import com.tencent.bk.codecc.defect.pojo.AggregateDefectOutputModelV2
 import com.tencent.bk.codecc.defect.pojo.DefectClusterDTO
 import com.tencent.bk.codecc.defect.service.DefectFilePathClusterService
 import com.tencent.bk.codecc.defect.vo.CommitDefectVO
+import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
+import com.tencent.bk.codecc.task.constant.TaskMessageCode
+import com.tencent.bk.codecc.task.vo.TaskDetailVO
 import com.tencent.devops.common.api.codecc.util.JsonUtil
 import com.tencent.devops.common.api.exception.CodeCCException
+import com.tencent.devops.common.api.pojo.codecc.Result
 import com.tencent.devops.common.api.util.UUIDUtil
+import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.constant.ComConstants.DefectStatus
 import com.tencent.devops.common.constant.ComConstants.Tool
@@ -24,6 +29,7 @@ import com.tencent.devops.common.constant.RedisKeyConstants
 import org.apache.commons.lang.BooleanUtils
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.util.Pair
 import org.springframework.stereotype.Component
@@ -43,6 +49,12 @@ class LintDefectCommitComponent @Autowired constructor(
     companion object {
         private val logger = LoggerFactory.getLogger(LintDefectCommitComponent::class.java)
     }
+
+    @Value("\${codecc.enableMultiTenant:#{null}}")
+    private val enableMultiTenant: Boolean? = null
+
+    @Autowired
+    private lateinit var client: Client
 
     @ExperimentalUnsignedTypes
     override fun processCluster(defectClusterDTO: DefectClusterDTO) {
@@ -67,6 +79,14 @@ class LintDefectCommitComponent @Autowired constructor(
                 "[lint cluster process] current json file, $commonlog, current defect size: ${inputDefects.size}, " +
                         "rel path set size: ${relPathSet?.size}, file path set size: ${filePathSet?.size}"
             )
+
+            if (enableMultiTenant == true) {
+                val taskOwner = getTaskOwner(taskId)
+                // 多租户场景下需要对 author 做处理
+                aggregateDefectNewInputModel.defectList.forEach {
+                    it.author = listOf(taskOwner)
+                }
+            }
 
             // 2. 获取原有告警清单
             var queryOrSaveBeginTime = System.currentTimeMillis()
@@ -635,6 +655,15 @@ class LintDefectCommitComponent @Autowired constructor(
                 }
             }
         }
+    }
+
+    private fun getTaskOwner(taskId: Long): String {
+        val result: Result<TaskDetailVO> = client.get(ServiceTaskRestResource::class.java).getTaskInfoById(taskId)
+        if (result.isNotOk() || result.data == null) {
+            return ""
+        }
+
+        return result.data!!.taskOwner?.first() ?: ""
     }
 
     /**

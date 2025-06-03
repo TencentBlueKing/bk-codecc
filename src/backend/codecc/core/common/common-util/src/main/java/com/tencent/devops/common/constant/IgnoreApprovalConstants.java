@@ -1,5 +1,7 @@
 package com.tencent.devops.common.constant;
 
+import java.util.Comparator;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import org.apache.commons.lang.StringUtils;
 
@@ -69,7 +71,7 @@ public interface IgnoreApprovalConstants {
         GONGFENG_PUBLIC("GONGFENG_PUBLIC", new String[]{ComConstants.GONGFENG_PROJECT_ID_PREFIX,
                 ComConstants.OTEAM_PROJECT_ID}),
 
-        GONGFENG_PRIVATE("GONGFENG_PRIVATE", new String[]{ComConstants.GONGFENG_PRIVATYE_PROJECT_PREFIX}),
+        GONGFENG_PRIVATE("GONGFENG_PRIVATE", new String[]{ComConstants.GONGFENG_PRIVATE_PROJECT_PREFIX}),
 
         GITHUB("GITHUB", new String[]{ComConstants.GITHUB_PROJECT_PREFIX});
 
@@ -114,36 +116,40 @@ public interface IgnoreApprovalConstants {
         /**
          * 项目管理员
          */
-        PROJECT_MANAGER("PROJECT_MANAGER", "项目管理员"),
+        PROJECT_MANAGER("PROJECT_MANAGER", "项目管理员", 1),
         /**
          * 任务管理员
          */
-        TASK_MANAGER("TASK_MANAGER", "任务管理员"),
+        TASK_MANAGER("TASK_MANAGER", "任务管理员", 2),
         /**
          * 规则发布者
          */
-        CHECKER_PUBLISHER("CHECKER_PUBLISHER", "规则发布者"),
+        CHECKER_PUBLISHER("CHECKER_PUBLISHER", "规则发布者", 3),
         /**
          * 忽略人LEADER
          */
-        IGNORE_AUTHOR_LEADER("IGNORE_AUTHOR_LEADER", "忽略人直属Leader"),
+        IGNORE_AUTHOR_LEADER("IGNORE_AUTHOR_LEADER", "忽略人直属Leader", 4),
         /**
          * 自定义忽略人
          */
-        CUSTOM_APPROVER("CUSTOM_APPROVER", "自定义"),
+        CUSTOM_APPROVER("CUSTOM_APPROVER", "自定义", 5),
         /**
          * BG安全负责人
          */
-        BG_SECURITY_MANAGER("BG_SECURITY_MANAGER", "BG安全负责人");
+        BG_SECURITY_MANAGER("BG_SECURITY_MANAGER", "BG安全负责人", 6);
 
         private final String type;
 
         @Getter
         private final String cnName;
 
-        ApproverType(String type, String cnName) {
+        @Getter
+        private final int sort;
+
+        ApproverType(String type, String cnName, int sort) {
             this.type = type;
             this.cnName = cnName;
+            this.sort = sort;
         }
 
         public String type() {
@@ -172,6 +178,13 @@ public interface IgnoreApprovalConstants {
                 }
             }
             return ComConstants.EMPTY_STRING;
+        }
+
+        public static List<String> getSortedTypeList() {
+            return Arrays.stream(ApproverType.values())
+                    .sorted(Comparator.comparingInt(ApproverType::getSort))
+                    .map(ApproverType::type)
+                    .collect(Collectors.toList());
         }
     }
 

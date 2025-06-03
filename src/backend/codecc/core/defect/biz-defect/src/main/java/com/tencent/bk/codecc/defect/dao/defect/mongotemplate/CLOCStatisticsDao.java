@@ -13,11 +13,15 @@
 package com.tencent.bk.codecc.defect.dao.defect.mongotemplate;
 
 import com.mongodb.bulk.BulkWriteResult;
+import com.mongodb.client.MongoCursor;
+import com.tencent.bk.codecc.defect.model.statistic.CCNStatisticEntity;
 import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
+import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.ScanStatType;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.web.aop.annotation.ActiveStatistic;
 import org.apache.commons.collections.CollectionUtils;
+import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.BulkOperations;
@@ -173,6 +177,18 @@ public class CLOCStatisticsDao {
         AggregationResults<CLOCStatisticEntity> queryResult =
                 defectMongoTemplate.aggregate(agg, "t_cloc_statistic", CLOCStatisticEntity.class);
         return queryResult.getMappedResults();
+    }
+
+    public List<Document> getClocScanStatisticList(
+            String toolName,
+            List<Long> taskIds,
+            Long startTime,
+            Long endTime
+    ) {
+        Query query = Query.query(Criteria.where("tool_name").is(toolName));
+        query.addCriteria(Criteria.where("task_id").in(taskIds));
+        query.addCriteria(Criteria.where("updated_date").gte(startTime).lt(endTime));
+        return defectMongoTemplate.find(query, Document.class,"t_cloc_statistic");
     }
 
 }

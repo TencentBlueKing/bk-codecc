@@ -20,6 +20,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * 批量告警处理的请求对象
@@ -78,11 +79,19 @@ public class BatchDefectProcessReqOldVO {
     @ApiModelProperty(value = "数据迁移是否成功", required = false)
     private Boolean dataMigrationSuccessful;
 
+    /**
+     * 将老的BatchDefectProcessReqOldVO转为新的BatchDefectProcessReqVO
+     * @return
+     */
     public BatchDefectProcessReqVO toBatchDefectProcessReqVO() {
         BatchDefectProcessReqVO reqVO = new BatchDefectProcessReqVO();
         BeanUtils.copyProperties(this, reqVO);
-        reqVO.setToolNameList(Collections.singletonList(this.getToolName()));
-        reqVO.setDimensionList(Collections.singletonList(this.getDimension()));
+        if (StringUtils.isNotBlank(this.getToolName())) {
+            reqVO.setToolNameList(Collections.singletonList(this.getToolName()));
+        }
+        if (StringUtils.isNotBlank(this.getDimension())) {
+            reqVO.setDimensionList(Collections.singletonList(this.getDimension()));
+        }
         return reqVO;
     }
 }

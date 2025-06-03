@@ -25,6 +25,8 @@ devopsGateway:
   idchost: __BK_CODECC_DEVOPS_IDC_HOST__
 
 itsm:
+  version: __BK_CODECC_ITSM_VERSION__
+  serviceId: __BK_CODECC_ITSM_SERVICE_ID__
   codecc:
     appcode: __BK_CODECC_ITSM_APP_CODE__
     appsecret: __BK_CODECC_ITSM_APP_SECRET__

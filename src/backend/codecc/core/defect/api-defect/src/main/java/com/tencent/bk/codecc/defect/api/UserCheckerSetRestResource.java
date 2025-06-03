@@ -258,6 +258,7 @@ public interface UserCheckerSetRestResource {
             AuthManagementPermissionReqVO authManagementPermissionReqVO
     );
 
+    // TODO: 这个规则集是否需要做多租户改造
     @ApiOperation("全量更新规则集的规则")
     @Path("/checkers/all")
     @POST

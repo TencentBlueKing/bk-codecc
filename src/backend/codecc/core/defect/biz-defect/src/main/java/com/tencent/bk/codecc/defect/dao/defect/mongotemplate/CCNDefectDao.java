@@ -834,8 +834,7 @@ public class CCNDefectDao {
                 .and("status").is(ignoreStatus)
                 .and("ignore_reason_type").is(ignoreTypeId);
         Query query = Query.query(criteria);
-        // 指定索引
-        query.withHint("idx_taskid_1_status_1_ignore_reason_type_1");
+
         return defectMongoTemplate.count(query, CCNDefectEntity.class);
     }
 

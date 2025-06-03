@@ -193,6 +193,7 @@ import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import com.tencent.devops.common.constant.ToolConstants;
 import com.tencent.devops.common.constant.audit.ActionAuditRecordContents;
 import com.tencent.devops.common.constant.audit.ActionIds;
 import com.tencent.devops.common.constant.audit.ResourceTypes;
@@ -238,6 +239,7 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -2583,6 +2585,81 @@ public class TaskServiceImpl implements TaskService {
     }
 
     /**
+     * 更新 t_tool_config 中的工具配置信息 (v2 版)
+     *
+     * @param targetToolConfigs 将要保存 t_tool_config 表中的工具配置信息列表
+     * @param sourceToolConfigs 从 TaskDetailVO 的 DevopsToolParams 字段取出, 是请求传来的工具配置信息
+     * @param taskId
+     * @param userName
+     */
+    private void updateToolConfigInfosV2(
+            List<ToolConfigInfoEntity> targetToolConfigs,
+            List<ToolConfigParamJsonVO> sourceToolConfigs,
+            Long taskId,
+            String userName
+    ) {
+        // 将 sourceToolConfigs 中的工具配置根据工具名分组
+        Map<String, List<ToolConfigParamJsonVO>> devopsToolParamMap = sourceToolConfigs.stream()
+                .filter(it -> StringUtils.isNotBlank(it.getToolName()))
+                .collect(Collectors.groupingBy(ToolConfigParamJsonVO::getToolName));
+
+        // 记录 sourceToolConfigs 中已经被更新到 targetToolConfigs 的工具
+        Set<String> updatedTools = new HashSet<>();
+        targetToolConfigs.forEach(targetConfig -> {
+            String toolName = targetConfig.getToolName();
+            if (StringUtils.isNotBlank(toolName)
+                    || !devopsToolParamMap.containsKey(toolName)) {
+                return;
+            }
+            updatedTools.add(toolName);
+
+            org.json.JSONObject targetJson;
+            try {
+                targetJson = StringUtils.isBlank(targetConfig.getParamJson())
+                        ? new org.json.JSONObject() : new org.json.JSONObject(targetConfig.getParamJson());
+            } catch (JSONException e) {
+                log.error("create target JSONObject(paramJson: {}) error: {}",
+                        targetConfig.getParamJson(), e.getMessage());
+                return;
+            }
+
+            // 此处的配置更新沿用了原来的思路: 对于一个字段, 如果用户在新的工具配置中没有该字段的有效配置值, 在记录中还是保存原来的配置
+            devopsToolParamMap.get(toolName).forEach(it -> {
+                if (StringUtils.isBlank(it.getVarName()) || it.getChooseValue() == null) {
+                    return;
+                }
+
+                targetJson.put(it.getVarName(), it.getChooseValue());
+            });
+
+            targetConfig.setParamJson(targetJson.toString());
+            targetConfig.applyAuditInfoOnUpdate(userName);
+        });
+
+        // 处理 sourceToolConfigs 中还没被更新进 targetToolConfigs 的工具配置, 防御性编程
+        devopsToolParamMap.forEach((toolName, toolConfigs) -> {
+            if (updatedTools.contains(toolName)) {
+                return;
+            }
+            updatedTools.add(toolName);
+
+            org.json.JSONObject newToolConfigJson = new org.json.JSONObject();
+            toolConfigs.forEach(it -> newToolConfigJson.put(it.getVarName(), it.getChooseValue()));
+
+            ToolConfigInfoEntity newToolConfig = ToolConfigInfoEntity.builder()
+                    .taskId(taskId)
+                    .toolName(toolName)
+                    .paramJson(newToolConfigJson.toString())
+                    .build();
+            newToolConfig.applyAuditInfoOnCreate(userName);
+
+            targetToolConfigs.add(newToolConfig);
+        });
+
+        toolRepository.saveAll(targetToolConfigs);
+    }
+
+    /**
      * 更新工具配置信息
      *
      * @param taskDetailVO
@@ -2594,8 +2671,12 @@ public class TaskServiceImpl implements TaskService {
         // 提交更新任务工具的配置信息
         List<ToolConfigParamJsonVO> updateToolConfigList = taskDetailVO.getDevopsToolParams();
 
-        //根据原有的和提交的，更新工具参数
+        if (ToolConstants.ToolParamsVersion.V2.getValue().equals(taskDetailVO.getDevopsToolParamVersion())) {
+            updateToolConfigInfosV2(toolConfigList, updateToolConfigList, taskDetailVO.getTaskId(), userName);
+            return;
+        }
 
+        //根据原有的和提交的，更新工具参数
         if (CollectionUtils.isNotEmpty(toolConfigList) && CollectionUtils.isNotEmpty(updateToolConfigList)) {
             //提交参数map
             Map<String, String> paramMap = updateToolConfigList.stream().collect(Collectors.toMap(
@@ -3591,6 +3672,12 @@ public class TaskServiceImpl implements TaskService {
         return taskBaseVOList;
     }
 
+    @Override
+    public List<Long> queryTasIdByProjectId(String projectId) {
+        log.info("project id query param: projectId: {}", projectId);
+        return taskDao.findTaskIdByProjectId(projectId);
+    }
+
     /**
      * 分页获取有效任务的项目id
      *
@@ -3750,7 +3837,9 @@ public class TaskServiceImpl implements TaskService {
                 BsTaskCreateFrom.BS_CODECC.value()
         );
 
-        if (projectId.startsWith(ComConstants.GONGFENG_PROJECT_ID_PREFIX)) {
+        if (projectId.startsWith(ComConstants.GONGFENG_PROJECT_ID_PREFIX)
+                || projectId.startsWith(ComConstants.GONGFENG_PRIVATE_PROJECT_PREFIX)
+                || projectId.startsWith(ComConstants.GITHUB_PROJECT_PREFIX)) {
             createFromList.add(BsTaskCreateFrom.GONGFENG_SCAN.value());
         }
 

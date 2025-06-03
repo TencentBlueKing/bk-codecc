@@ -11,12 +11,14 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
  * 封装BkRepo的接口调用
  */
+@Slf4j
 @AllArgsConstructor
 public class BkRepoApi {
 
@@ -33,6 +35,8 @@ public class BkRepoApi {
 
     public String genericSimpleUpload(String filepath, File file) {
         String url = String.format("%s/generic/%s/%s/%s", bkrepoHost, project, repo, trimFilePath(filepath));
+        log.info("genericSimpleUpload url: {}", url);
+        log.info("header: {}", getUploadHeaders());
         OkhttpUtils.INSTANCE.doFileStreamPut(url, file, getUploadHeaders());
         return url + "?download=true";
     }
@@ -85,6 +89,7 @@ public class BkRepoApi {
     private Map<String, String> getUploadHeaders() {
         Map<String, String> headers = new HashMap<>(getAuthHeaders());
         headers.put("X-BKREPO-OVERWRITE", "true");
+        headers.putAll(getAuthHeaders());
         return headers;
     }
 

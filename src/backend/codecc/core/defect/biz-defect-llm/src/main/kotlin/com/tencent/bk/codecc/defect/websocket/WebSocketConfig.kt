@@ -44,8 +44,7 @@ class WebSocketConfig : WebSocketMessageBrokerConfigurer {
                     val bkTicket = req.servletRequest.getHeader(AUTH_HEADER_DEVOPS_BK_TICKET)
                     LLMConstants.BK_TICKET_FOR_USER.put(user, bkTicket)
                     logger.info("before connect websocket: /websocket/user/warn, " +
-                            "bk_ticket: $bkTicket, user: $user, " +
-                            "taskId: $taskId, projectId: $projectId")
+                            "user: $user, " + "taskId: $taskId, projectId: $projectId")
                     return true
                 }
 

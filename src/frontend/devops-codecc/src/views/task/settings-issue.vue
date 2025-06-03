@@ -28,11 +28,11 @@
       </div>
       <div class="pipeline-item">
         <span class="pipeline-label">{{ $t('缺陷处理人') }}</span>
-        <span>{{ issueData.resolvers && issueData.resolvers.join(',') }}</span>
+        <bk-user-display-name :user-id="issueData?.resolvers"></bk-user-display-name>
       </div>
       <div class="pipeline-item">
         <span class="pipeline-label">{{ $t('缺陷抄送人') }}</span>
-        <span>{{ issueData.receivers && issueData.receivers.join(',') }}</span>
+        <bk-user-display-name :user-id="issueData?.receivers"></bk-user-display-name>
       </div>
       <div class="pipeline-item">
         <span class="pipeline-label">{{ $t('发现版本') }}</span>
@@ -106,28 +106,17 @@
           </bk-link>
         </bk-form-item>
         <bk-form-item :label="$t('缺陷处理人')" property="resolvers">
-          <bk-tag-input
+          <UserSelector
             allow-create
-            v-if="IS_ENV_TAI"
-            v-model="issueData.resolvers"
+            :value.sync="issueData.resolvers"
             :placeholder="$t('默认为问题处理人')"
-          ></bk-tag-input>
-          <bk-tag-input allow-create
-            v-else
-            v-model="issueData.resolvers"
-            :placeholder="$t('默认为问题处理人')"
-          ></bk-tag-input>
+          />
         </bk-form-item>
         <bk-form-item :label="$t('缺陷抄送人')">
-          <bk-tag-input
+          <UserSelector
             allow-create
-            v-if="IS_ENV_TAI"
-            v-model="issueData.receivers"
-          ></bk-tag-input>
-          <bk-tag-input allow-create
-            v-else
-            v-model="issueData.receivers"
-          ></bk-tag-input>
+            :value.sync="issueData.receivers"
+          />
         </bk-form-item>
         <bk-form-item :label="$t('发现版本')">
           <bk-input v-model="issueData.findByVersion"></bk-input>
@@ -205,9 +194,12 @@
 
 <script>
 import { mapState } from 'vuex';
+import UserSelector from '@/components/user-selector/index.vue';
 
 export default {
-  components: {},
+  components: {
+    UserSelector,
+  },
   data() {
     return {
       rules: {
@@ -237,7 +229,6 @@ export default {
       issueData: {
         issueSystemInfoVOList: [],
       },
-      IS_ENV_TAI: window.IS_ENV_TAI,
       needRefreshType: null,
     };
   },

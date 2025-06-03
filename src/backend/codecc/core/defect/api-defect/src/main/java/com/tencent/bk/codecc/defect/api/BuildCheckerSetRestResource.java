@@ -122,4 +122,13 @@ public interface BuildCheckerSetRestResource {
             @PathParam("toolName")
             String toolName
     );
+
+    @ApiOperation("按照类型查询具体详细规则列表")
+    @Path("/package/{type}/checkerName/list")
+    @GET
+    Result<Set<String>> getPackageCheckerNameByType(
+            @ApiParam(value = "规则类型", required = true)
+            @PathParam("type")
+            String type
+    );
 }

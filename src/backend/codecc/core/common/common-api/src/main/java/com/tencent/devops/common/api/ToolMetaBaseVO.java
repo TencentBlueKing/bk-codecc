@@ -29,6 +29,7 @@ package com.tencent.devops.common.api;
 
 import com.tencent.devops.common.api.annotation.I18NFieldMarker;
 import com.tencent.devops.common.api.annotation.I18NModuleCode;
+import com.tencent.devops.common.constant.ToolConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -49,6 +50,12 @@ import lombok.EqualsAndHashCode;
 @Data
 @ApiModel("工具完整信息视图")
 public class ToolMetaBaseVO extends CommonVO {
+    /**
+     * 标记发送该请求的来源, 默认来源: BKCI
+     */
+    @ApiModelProperty("请求来源")
+    private String requestSource = ToolConstants.RegisterRequestSource.BKCI.getName();
+
     /**
      * 工具模型,LINT、COMPILE、TSCLUA、CCN、DUPC，决定了工具的接入、告警、报表的处理及展示类型
      */
@@ -106,6 +113,14 @@ public class ToolMetaBaseVO extends CommonVO {
     private String params;
 
     /**
+     * 工具的自定义参数列表, params 的新版实现.
+     * 后续接入的工具统一使用 tool_options 来实现自定义参数.
+     * 字段具体说明见 CodeCC 工具开发规范
+     */
+    @ApiModelProperty("工具的自定义参数列表")
+    private List<ToolOption> toolOptions;
+
+    /**
      * 工具版本号
      */
     @ApiModelProperty("工具版本")
@@ -134,4 +149,7 @@ public class ToolMetaBaseVO extends CommonVO {
      */
     @ApiModelProperty("可使用该工具的组织")
     private Set<String> visibleOrgIds;
+
+    @ApiModelProperty("租户id")
+    private String tenantId;
 }

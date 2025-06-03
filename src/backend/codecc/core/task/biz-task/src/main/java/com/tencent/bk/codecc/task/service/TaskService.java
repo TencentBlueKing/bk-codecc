@@ -578,6 +578,8 @@ public interface TaskService {
 
     List<TaskBaseVO> queryTaskListByProjectId(String projectId);
 
+    List<Long> queryTasIdByProjectId(String projectId);
+
     List<String> queryProjectIdPage(Set<String> createFrom, Integer pageNum, Integer pageSize);
 
     List<Long> queryTaskIdPageByProjectId(String projectId, Integer pageNum, Integer pageSize);

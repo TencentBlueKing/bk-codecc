@@ -146,17 +146,11 @@
               </bk-option>
             </bk-select>
             <template v-if="isCustomApprover">
-              <bk-tag-input
+              <UserSelector
                 allow-create
-                v-if="IS_ENV_TAI"
                 style="width: 420px; margin-left: 10px"
-                v-model="formData.customApprovers"
-              ></bk-tag-input>
-              <bk-tag-input allow-create
-                v-else
-                style="width: 420px; margin-left: 10px"
-                v-model="formData.customApprovers"
-              ></bk-tag-input>
+                :value.sync="formData.customApprovers"
+              />
             </template>
           </div>
         </bk-form-item>
@@ -176,7 +170,11 @@ import { leaveConfirm } from '@/common/leave-confirm';
 import { getTaskList } from '@/common/preload';
 import { deepClone } from '@/common/util';
 import { mapState } from 'vuex';
+import UserSelector from '@/components/user-selector/index.vue';
 export default {
+  components: {
+    UserSelector,
+  },
   props: {
     entityId: {
       type: String,

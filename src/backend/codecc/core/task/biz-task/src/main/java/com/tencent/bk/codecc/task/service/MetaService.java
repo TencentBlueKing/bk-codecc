@@ -32,6 +32,8 @@ import com.tencent.bk.codecc.task.vo.OpenScanAndEpcToolNameMapVO;
 import com.tencent.bk.codecc.task.vo.OpenScanAndPreProdCheckerSetMapVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -50,6 +52,10 @@ public interface MetaService {
      * @return
      */
     List<ToolMetaBaseVO> toolList(String projectId, Boolean isDetail);
+
+    default List<ToolMetaBaseVO> toolList(String tenantId, String projectId, Boolean isDetail) {
+        return new ArrayList<>();
+    }
 
     /**
      * 查询工具

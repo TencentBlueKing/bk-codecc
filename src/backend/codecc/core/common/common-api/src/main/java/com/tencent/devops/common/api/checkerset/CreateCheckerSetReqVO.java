@@ -60,4 +60,9 @@ public class CreateCheckerSetReqVO
      * 版本号
      */
     private Integer version;
+
+    /**
+     * 租户 id
+     */
+    private String tenantId;
 }

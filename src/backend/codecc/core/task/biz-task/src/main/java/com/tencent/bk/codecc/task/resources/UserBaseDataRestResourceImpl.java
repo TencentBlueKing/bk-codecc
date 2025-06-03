@@ -24,4 +24,8 @@ public class UserBaseDataRestResourceImpl implements UserBaseDataRestResource {
         return new Result<>(baseDataService.findBaseDataByCode(paramCode));
     }
 
+    @Override
+    public Result<String>  getTenantId(String tenantId) {
+        return new Result<>(tenantId);
+    }
 }

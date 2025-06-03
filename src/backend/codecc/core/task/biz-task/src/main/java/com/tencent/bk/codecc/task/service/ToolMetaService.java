@@ -30,6 +30,7 @@ import com.tencent.bk.codecc.task.vo.gongfeng.ToolVersionExtVO;
 import com.tencent.devops.common.api.BKToolBasicInfoVO;
 import com.tencent.devops.common.api.RefreshDockerImageHashReqVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
+import com.tencent.devops.common.api.ToolOption;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
 
@@ -56,6 +57,8 @@ public interface ToolMetaService {
      * @return
      */
     List<ToolMetaDetailVO> queryToolMetaDataList(String projectId, Long taskId);
+
+    List<ToolMetaDetailVO> queryToolMetaDataList(String tenantId, String projectId, Long taskId);
 
     Boolean validateToolType(String toolType);
 
@@ -86,6 +89,7 @@ public interface ToolMetaService {
      */
     List<ToolMetaDetailVO> queryAllToolMetaDataList();
 
+    List<ToolOption> findToolOptionsByToolName(String toolName);
 
     /**
      * 获取preci自动语言过滤器
@@ -124,5 +128,19 @@ public interface ToolMetaService {
      * @return java.util.List<java.lang.String>
      */
     List<String> getLangNamesByLangDigits(Long langDigits);
+
+
+    /**
+     * 查询所有工具的name、pattern、type
+     * @return list
+     */
+    List<ToolMetaDetailVO> obtainAllToolMetaDataList();
+
+    /**
+     * 根据工具类型获取工具名称
+     * @param type 工具类型
+     * @return 工具名称列表
+     */
+    List<String> queryToolMetaNameListDataByType(String type);
 
 }

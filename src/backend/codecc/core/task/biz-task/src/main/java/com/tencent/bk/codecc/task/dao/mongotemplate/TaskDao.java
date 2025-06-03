@@ -27,6 +27,7 @@
 package com.tencent.bk.codecc.task.dao.mongotemplate;
 
 import com.google.common.collect.Lists;
+import com.mongodb.client.MongoCursor;
 import com.tencent.bk.codecc.task.constant.TaskConstants;
 import com.tencent.bk.codecc.task.model.DeletedTaskInfoEntity;
 import com.tencent.bk.codecc.task.model.TaskIdInfo;
@@ -71,6 +72,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -729,6 +731,12 @@ public class TaskDao implements CommonTaskDao {
                 : taskIdInfoList.stream().map(TaskIdInfo::getTaskId).collect(Collectors.toList());
     }
 
+    public List<Long> findTaskIdByProjectId(String projectId) {
+        Query query = Query.query(Criteria.where("project_id").is(projectId)
+                .and("status").is(ComConstants.Status.ENABLE.value()));
+        return mongoTemplate.findDistinct(query, "task_id", TaskInfoEntity.class, Long.class);
+    }
+
     /**
      * 以"大于lastTaskId、升序"的形式分页获取task部分信息
      *
@@ -988,5 +996,28 @@ public class TaskDao implements CommonTaskDao {
         query.with(pageable);
         return mongoTemplate.find(query, TaskIdInfo.class, "t_task_detail").stream().map(
                 TaskIdInfo::getTaskId).collect(Collectors.toList());
+    }
+
+    /**
+     *  根据插件编号获取任务编号
+     * @param bkPluginIds 蓝盾插件编号
+     * @return 任务集合
+     */
+    public List<Long> findTaskIdByBkPluginIds(List<Integer> bkPluginIds) {
+        if (bkPluginIds.isEmpty()) {
+            log.info("findTaskIdByBkPluginIds bkPluginIds is empty!");
+            return Collections.emptyList();
+        }
+
+        Criteria criteria = new Criteria();
+        criteria.and("create_from").is(ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value())
+                .and("pipeline_id").ne(ComConstants.EMPTY_STRING)
+                .and("gongfeng_project_id").in(bkPluginIds)
+                .and("status").is(Status.ENABLE.value())
+                .orOperator(Criteria.where("project_id").is(ComConstants.OTEAM_PROJECT_ID)
+                ,Criteria.where("project_id").regex(ComConstants.GONGFENG_PROJECT_ID_PREFIX));
+
+        Query query = new Query(criteria);
+        return mongoTemplate.findDistinct(query, "task_id", "t_task_detail", Long.class);
     }
 }

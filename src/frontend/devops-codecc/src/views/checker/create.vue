@@ -1,12 +1,12 @@
 <template>
   <bk-dialog v-model="visible" :title="title" width="800px" padding="30px 15px" z-index="500" ref="dialog" @cancel="handelClose()" :header-position="'left'">
-    <hr style="color: #D3D3D3; width: 103.2%; margin-top: -5px">
+    <hr style=" width: 103.2%; margin-top: -5px;color: #D3D3D3">
     <bk-form :label-width="100" :model="formData" :rules="rules" ref="formData" style="margin-top: 27px">
       <bk-form-item :label="$t('规则名称')" :required="true" :property="'checkerName'" error-display-type="normal">
         <bk-input
           :disabled="isCheckerName"
           v-model.trim="formData.checkerName"
-          :placeholder="$t('仅支持英文大小写，例如AndroidSandBoxPath')">
+          :placeholder="$t('仅支持英文大小写，例如{0}', ['AndroidSandBoxPath'])">
         </bk-input>
       </bk-form-item>
       <bk-form-item :label="$t('适用语言')" :required="true" :property="'checkerLanguage'" error-display-type="normal">
@@ -70,7 +70,7 @@
       <bk-form-item :label="$t('标签')" :required="true" :property="'checkerTag'" error-display-type="normal">
         <bk-tag-input
           v-model="formData.checkerTag"
-          :placeholder="$t('支持输入多个标签，用回车键间隔，例如Android、UE、Unity3D')"
+          :placeholder="$t('支持输入多个标签，用回车键间隔，例如{0}', ['Android、UE、Unity3D'])"
           :list="checkerTagList"
           :allow-create="allowCreate"
           :allow-auto-match="false"
@@ -80,12 +80,18 @@
         </bk-tag-input>
       </bk-form-item>
       <bk-form-item :label="$t('参数')">
-        <div style="margin-left: 10px; display: flex; flex-direction: column; gap: 1px;">
+        <div style=" display: flex;margin-left: 10px; flex-direction: column; gap: 1px;">
           <bk-form-item label-width="50" label-right-align label="regex:">
-            <bk-input v-model.trim="paramData.regex" :placeholder="$t('请输入需要匹配出问题代码的正则表达式，例如：\\sgoto\\s')"></bk-input>
+            <bk-input
+              v-model.trim="paramData.regex"
+              :placeholder="$t('请输入需要匹配出问题代码的正则表达式，例如：{0}', ['\'\\\\sgoto\\\\s\''])">
+            </bk-input>
           </bk-form-item>
           <bk-form-item label-width="50" label-right-align label="msg:" style="margin-top: 2px;">
-            <bk-input v-model.trim="paramData.msg" :placeholder="$t('请输入匹配出问题代码后给用户的情况，例如：禁止使用goto')"></bk-input>
+            <bk-input
+              v-model.trim="paramData.msg"
+              :placeholder="$t('请输入匹配出问题代码后给用户的情况，例如：禁止使用{0}', ['goto'])">
+            </bk-input>
           </bk-form-item>
         </div>
       </bk-form-item>
@@ -277,7 +283,7 @@ export default {
           if (res.code === '0') {
             this.$bkMessage({
               theme: 'success',
-              message: '创建正则规则成功',
+              message: this.$t('创建正则规则成功'),
               offsetY: 80,
             });
             this.isLoading = false;

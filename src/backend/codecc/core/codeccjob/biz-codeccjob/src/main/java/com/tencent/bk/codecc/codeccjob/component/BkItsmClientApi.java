@@ -47,6 +47,9 @@ public class BkItsmClientApi {
     @Value("${codecc.public.url}")
     private String codeccUrl;
 
+    @Value("${itsm.serviceId:#{null}}")
+    private String serviceId;
+
     public static final String RUNNING_STATUS = "RUNNING";
 
     public static final String OPERATE_TERMINATE = "TERMINATE";
@@ -69,6 +72,7 @@ public class BkItsmClientApi {
             String bodyTemplate = systemInfoVO.getCreateTicketBody();
             String body = bodyTemplate.replace("{bk_app_code}", appCode)
                     .replace("{bk_app_secret}", appSecret)
+                    .replace("{service_id}", serviceId)
                     .replace("{creator}", approvalVO.getIgnoreAuthor())
                     .replace("{approval_id}", approvalVO.getApprovalId())
                     .replace("{project_id}", approvalVO.getProjectId())
@@ -76,10 +80,12 @@ public class BkItsmClientApi {
                     .replace("{severities}", approvalConfig.getSeverities().stream().map(String::valueOf)
                             .collect(Collectors.joining(ComConstants.COMMA)))
                     .replace("{ignore_reason_type}", approvalVO.getIgnoreTypeName())
+                    .replace("{ignore_reason}", approvalVO.getIgnoreReason())
                     .replace("{ignore_count}", approvalVO.getDefectCount() != null
                             ? String.valueOf(approvalVO.getDefectCount()) : "0")
                     .replace("{defect_detail_url}", getDetailUrl(approvalVO, approvalConfig))
-                    .replace("{approver_type}", approvalConfig.getApproverType())
+                    .replace("{approver_types}",
+                            String.join(ComConstants.COMMA, approvalConfig.getApproverTypes()))
                     .replace("{approvers}", CollectionUtils.isEmpty(approvers)
                             ? ComConstants.EMPTY_STRING : String.join(ComConstants.COMMA, approvers));
             CodeCCItsmRespVO<CodeCCItsmCreateTicketResp> response = OkhttpUtils.INSTANCE.doHttpPost(url,

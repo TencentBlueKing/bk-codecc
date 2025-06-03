@@ -121,15 +121,10 @@
         </bk-form-item>
         <bk-form-item :label="$t('附加通知人')">
           <!-- <bk-input v-model="formData.notify.extReceiver"></bk-input> -->
-          <bk-tag-input
+          <UserSelector
             allow-create
-            v-if="IS_ENV_TAI"
-            v-model="formData.notify.extReceiver"
-          ></bk-tag-input>
-          <bk-tag-input allow-create
-            v-else
-            v-model="formData.notify.extReceiver"
-          ></bk-tag-input>
+            :value.sync="formData.notify.extReceiver"
+          />
         </bk-form-item>
         <bk-form-item :label="$t('通知方式')">
           <bk-checkbox-group v-model="formData.notify.notifyTypes">
@@ -153,7 +148,11 @@
 <script>
 import { leaveConfirm } from '@/common/leave-confirm';
 import { deepClone } from '@/common/util';
+import UserSelector from '@/components/user-selector/index.vue';
 export default {
+  components: {
+    UserSelector,
+  },
   props: {
     id: {
       type: Number,
@@ -235,7 +234,6 @@ export default {
           },
         ],
       },
-      IS_ENV_TAI: window.IS_ENV_TAI,
     };
   },
   computed: {

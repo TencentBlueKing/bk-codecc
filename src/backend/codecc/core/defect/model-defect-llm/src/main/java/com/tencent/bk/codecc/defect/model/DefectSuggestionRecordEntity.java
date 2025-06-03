@@ -45,7 +45,7 @@ public class DefectSuggestionRecordEntity extends CommonEntity {
      * 创建时间
      */
     @Field("created_after_date")
-    @Indexed(name="createdDateIndex", expireAfter = "P7D")
+    @Indexed(name = "createdDateIndex", expireAfter = "P7D")
     private Long createdAfterDate;
 
     /**

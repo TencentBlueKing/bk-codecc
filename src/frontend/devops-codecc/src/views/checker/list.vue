@@ -222,7 +222,7 @@
           <span class="checker-top">
             <span class="checker-col">
               <span class="checker-col-label">{{ $t('发布者：') }}</span>
-              <span class="checker-col-content">{{ publisher }}</span>
+              <bk-user-display-name :user-id="publisher"></bk-user-display-name>
             </span>
             <span class="checker-col">
               <span class="checker-col-label">{{ $t('更新时间：') }}</span>

@@ -464,7 +464,7 @@
                 {{ $t('处理人') }}
               </dt>
               <dd>
-                {{ currentFile.author && currentFile.author.join(',') }}
+                <bk-user-display-name :user-id="currentFile.author"></bk-user-display-name>
                 <span
                   v-if="(currentFile.status & 1 || currentFile.status & 4) && !isPaas"
                   @click.stop="handleAuthor(1, entityId, currentFile.author)"
@@ -485,7 +485,7 @@
             </div>
             <div class="item">
               <dt>{{ $t('提交人') }}</dt>
-              <dd>{{ currentFile.commitAuthor}}</dd>
+              <bk-user-display-name :user-id="currentFile.commitAuthor"></bk-user-display-name>
             </div>
           </div>
           <div class="block" v-if="currentFile.status & 4">
@@ -495,7 +495,7 @@
             </div>
             <div class="item">
               <dt>{{ $t('忽略人') }}</dt>
-              <dd>{{ currentFile.ignoreAuthor }}</dd>
+              <bk-user-display-name :user-id="currentFile.ignoreAuthor"></bk-user-display-name>
             </div>
             <div class="item disb">
               <dt>{{ $t('忽略原因') }}</dt>
@@ -1215,7 +1215,7 @@ export default {
       } else {
         defectList = [detailVO];
       }
-      defectList.forEach((defect) => {
+      defectList.forEach(async (defect) => {
         if (
           this.currentTrace.fileMd5
           && this.currentTrace.fileMd5 !== defect.fileMd5
@@ -1236,11 +1236,15 @@ export default {
           mainClass = 'main';
           // 评论
           if (detailVO.codeComment) {
+            // display name 处理
+            const userIds = [...new Set(detailVO.codeComment.commentList.map(item => item.userName))];
+            const dataMap = await this.$store.dispatch('displayname/batchGetDisplayName', userIds);
+
             for (const comment of detailVO.codeComment.commentList) {
               checkerComment += `<p class="comment-item">
                 <span class="info">
                   <i class="codecc-icon icon-commenter"></i>
-                  <span>${comment.userName}</span>
+                  <span>${dataMap.get(comment.userName)?.display_name || comment.userName}</span>
                   <span title="${comment.comment}">
                     ${comment.comment}
                   </span>

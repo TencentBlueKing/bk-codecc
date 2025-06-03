@@ -188,7 +188,7 @@ open class WebSocketConfig @Autowired constructor(
 
     private fun isAutoProject(projectId: String): Boolean {
         return projectId.startsWith(ComConstants.GONGFENG_PROJECT_ID_PREFIX) ||
-                projectId.startsWith(ComConstants.GONGFENG_PRIVATYE_PROJECT_PREFIX) ||
+                projectId.startsWith(ComConstants.GONGFENG_PRIVATE_PROJECT_PREFIX) ||
                 projectId == "CUSTOMPROJ_TEG_CUSTOMIZED"
     }
 }

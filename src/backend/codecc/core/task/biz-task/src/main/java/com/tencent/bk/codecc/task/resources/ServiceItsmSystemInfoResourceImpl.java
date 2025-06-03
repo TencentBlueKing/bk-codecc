@@ -17,7 +17,7 @@ public class ServiceItsmSystemInfoResourceImpl implements ServiceItsmSystemInfoR
     private ItsmSystemInfoService itsmSystemInfoService;
 
     @Override
-    public Result<ItsmSystemInfoVO> getSystemInfo(String system) {
-        return new Result<>(StringUtils.isBlank(system) ? null : itsmSystemInfoService.getSystemInfo(system));
+    public Result<ItsmSystemInfoVO> getSystemInfo(String system, Integer version) {
+        return new Result<>(StringUtils.isBlank(system) ? null : itsmSystemInfoService.getSystemInfo(system, version));
     }
 }

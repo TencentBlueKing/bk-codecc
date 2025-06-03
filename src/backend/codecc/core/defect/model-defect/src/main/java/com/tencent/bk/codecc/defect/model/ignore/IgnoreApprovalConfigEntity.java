@@ -88,8 +88,8 @@ public class IgnoreApprovalConfigEntity extends CommonEntity {
      * 忽略人LEADER
      * 自定义
      */
-    @Field("approver_type")
-    private String approverType;
+    @Field("approver_types")
+    private List<String> approverTypes;
 
     /**
      * 自定义审批人列表

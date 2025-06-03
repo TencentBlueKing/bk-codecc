@@ -34,6 +34,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -74,6 +75,19 @@ public class ToolMetaDao
         query.fields().include("name", "display_name", "lang", "description", "brief_introduction", "type");
 
         return mongoTemplate.findOne(query, ToolMetaEntity.class);
+    }
+
+    public ToolMetaEntity findToolOptionsByToolName(String toolName) {
+        Query query = new Query(Criteria.where("name").is(toolName));
+        query.fields().include("name", "tool_options");
+
+        return mongoTemplate.findOne(query, ToolMetaEntity.class);
+    }
+
+    public List<ToolMetaEntity> findAllToolMetasSelectingNameTypePattern() {
+        Query query = new Query();
+        query.fields().include("name", "type", "pattern");
+        return mongoTemplate.find(query, ToolMetaEntity.class);
     }
 
 }

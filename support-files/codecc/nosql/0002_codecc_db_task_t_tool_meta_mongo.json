@@ -53,7 +53,8 @@
   "create_date" : 1591000272202,
   "created_by" : "admin",
   "updated_date" : 1591603087190,
-  "updated_by" : "admin"
+  "updated_by" : "admin",
+  "tenant_id" : "system"
 }
 
 
@@ -117,7 +118,8 @@
   "create_date" : 1556610726,
   "created_by" : "system_admin",
   "updated_date" : 1556610717,
-  "updated_by" : "system_admin"
+  "updated_by" : "system_admin",
+  "tenant_id" : "system"
 }
 
 
@@ -207,7 +209,99 @@
     }
   ],
   "updated_date" : 1617110749243,
-  "updated_by" : "admin"
+  "updated_by" : "admin",
+  "tenant_id" : "system"
+}
+
+
+{
+  "_id" : {"$oid": "6870b646523379c36e2018d0"},
+  "_class": "com.tencent.bk.codecc.task.model.ToolMetaEntity",
+  "name" : "CHECKSTEST",
+  "pattern" : "LINT",
+  "display_name" : "Checkstest",
+  "type" : "STANDARD",
+  "lang" : 4,
+  "brief_introduction" : "用于检查Java源代码是否符合编码规范。它可以找到类和方法设计问题，还能够检查代码布局和格式问题",
+  "description" : "用于检查Java源代码是否符合编码规范。它可以找到类和方法设计问题，还能够检查代码布局和格式问题",
+  "graphic_details" : "",
+  "status" : "P",
+  "privated" : false,
+  "docker_trigger_shell" : "/bin/bash##-c##\"cd /usr/codecc/tool_scan; python3 ./sdk/src/scan.py --input={input.json} --output={output.json}\"",
+  "docker_image_url" : "bkcodecc/checkstyle_scan",
+  "docker_image_version" : "latest",
+  "debug_pipeline_id" : "p-d766c18509094d0a81863c3446551b7a",
+  "tool_scan_command" : "/bin/bash##-c##\"python3 ./sdk/src/scan.py --input={input.json} --output={output.json}\"",
+  "tool_env" : "",
+  "tool_run_type" : "local",
+  "tool_image_revision" : "sha256:613fe2022c041bf382200fb63f6547dae21d0913d3179e7a79f3865b1de63a8d",
+  "tool_versions" : [
+    {
+      "version_type" : "P",
+      "docker_trigger_shell" : "/bin/bash##-c##\"cd /usr/codecc/tool_scan; python3 ./sdk/src/scan.py --input={input.json} --output={output.json}\"",
+      "docker_image_url" : "bkcodecc/checkstyle_scan",
+      "docker_image_version" : "latest",
+      "foreign_docker_image_version" : "latest",
+      "docker_image_hash" : "sha256:1976106d360830c0a3ac44fb1f14306fb143c5e20ddd7b4bda403024e3cf26fb",
+      "create_date" : 1617110749250,
+      "created_by" : "admin",
+      "updated_date" : 1617115109935,
+      "updated_by" : "admin"
+    },
+    {
+      "version_type" : "T",
+      "docker_trigger_shell" : "/bin/bash##-c##\"cd /usr/codecc/tool_scan; python3 ./sdk/src/scan.py --input={input.json} --output={output.json}\"",
+      "docker_image_url" : "bkcodecc/checkstyle_scan",
+      "docker_image_version" : "latest",
+      "foreign_docker_image_version" : "latest",
+      "docker_image_hash" : "sha256:1976106d360830c0a3ac44fb1f14306fb143c5e20ddd7b4bda403024e3cf26fb",
+      "create_date" : 1617110749250,
+      "created_by" : "admin",
+      "updated_date" : 1617110749250,
+      "updated_by" : "admin"
+    },
+    {
+      "version_type" : "G",
+      "docker_trigger_shell" : "/bin/bash##-c##\"cd /usr/codecc/tool_scan; python3 ./sdk/src/scan.py --input={input.json} --output={output.json}\"",
+      "docker_image_url" : "bkcodecc/checkstyle_scan",
+      "docker_image_version" : "latest",
+      "foreign_docker_image_version" : "latest",
+      "docker_image_hash" : "sha256:1976106d360830c0a3ac44fb1f14306fb143c5e20ddd7b4bda403024e3cf26fb",
+      "create_date" : 1617110749250,
+      "created_by" : "admin",
+      "updated_date" : 1617111377125,
+      "updated_by" : "admin"
+    }
+  ],
+  "last_tool_versions" : [
+    {
+      "version_type" : "P",
+      "docker_trigger_shell" : "/bin/bash##-c##\"cd /usr/codecc/tool_scan; python3 ./sdk/src/scan.py --input={input.json} --output={output.json}\"",
+      "docker_image_url" : "bkcodecc/checkstyle_scan",
+      "docker_image_version" : "latest",
+      "foreign_docker_image_version" : "latest",
+      "docker_image_hash" : "sha256:bf2399829de9bb452503b73120a078185274d1ea0abb79d4a8b4e714809b72bf",
+      "create_date" : 1615538151957,
+      "created_by" : "admin",
+      "updated_date" : 1617115109935,
+      "updated_by" : "admin"
+    },
+    {
+      "version_type" : "G",
+      "docker_trigger_shell" : "/bin/bash##-c##\"cd /usr/codecc/tool_scan; python3 ./sdk/src/scan.py --input={input.json} --output={output.json}\"",
+      "docker_image_url" : "bkcodecc/checkstyle_scan",
+      "docker_image_version" : "latest",
+      "foreign_docker_image_version" : "latest",
+      "docker_image_hash" : "sha256:e2fa006c0c4f30f753e8a08553d1fc295ca1c88b624fb67773c0736c52ca59d5",
+      "create_date" : 1617106517873,
+      "created_by" : "admin",
+      "updated_date" : 1617111377125,
+      "updated_by" : "admin"
+    }
+  ],
+  "updated_date" : 1617110749243,
+  "updated_by" : "admin",
+  "tenant_id" : "putongoa"
 }
 
 
@@ -270,7 +364,8 @@
   "create_date" : 1570003800241,
   "created_by" : "system_admin",
   "updated_date" : 1570003800241,
-  "updated_by" : "system_admin"
+  "updated_by" : "system_admin",
+  "tenant_id" : "system"
 }
 
 
@@ -360,7 +455,8 @@
   "create_date" : 1556610725,
   "created_by" : "system_admin",
   "updated_date" : 1618389059902,
-  "updated_by" : ""
+  "updated_by" : "",
+  "tenant_id" : "system"
 }
 
 
@@ -451,7 +547,8 @@
   "create_date" : 1556610726,
   "created_by" : "system_admin",
   "updated_date" : 1616137245598,
-  "updated_by" : "admin"
+  "updated_by" : "admin",
+  "tenant_id" : "system"
 }
 
 
@@ -515,7 +612,8 @@
   "create_date" : 1556610726,
   "created_by" : "system_admin",
   "updated_date" : 1556610717,
-  "updated_by" : "system_admin"
+  "updated_by" : "system_admin",
+  "tenant_id" : "system"
 }
 
 
@@ -608,7 +706,8 @@
   "create_date" : 1556610725,
   "created_by" : "system_admin",
   "updated_date" : 1617103927327,
-  "updated_by" : "brooklin"
+  "updated_by" : "brooklin",
+  "tenant_id" : "system"
 }
 
 
@@ -701,7 +800,8 @@
   "create_date" : 1556610725,
   "created_by" : "system_admin",
   "updated_date" : 1616725423837,
-  "updated_by" : "chuckchwang"
+  "updated_by" : "chuckchwang",
+  "tenant_id" : "system"
 }
 
 
@@ -761,7 +861,8 @@
   "create_date" : 1595506228619,
   "created_by" : "",
   "updated_date" : 1595510340262,
-  "updated_by" : "admin"
+  "updated_by" : "admin",
+  "tenant_id" : "system"
 }
 
 {
@@ -824,7 +925,8 @@
   "create_date" : 1556610726,
   "created_by" : "system_admin",
   "updated_date" : 1556610717,
-  "updated_by" : "system_admin"
+  "updated_by" : "system_admin",
+  "tenant_id" : "system"
 }
 
 
@@ -887,7 +989,8 @@
   "create_date" : 1556610726,
   "created_by" : "system_admin",
   "updated_date" : 1606826719565,
-  "updated_by" : ""
+  "updated_by" : "",
+  "tenant_id" : "system"
 }
 
 
@@ -947,7 +1050,8 @@
   "create_date" : 1594708373163,
   "created_by" : "admin",
   "updated_date" : 1598619205900,
-  "updated_by" : "admin"
+  "updated_by" : "admin",
+  "tenant_id" : "system"
 }
 
 
@@ -1025,7 +1129,8 @@
   "create_date" : 1556610725,
   "created_by" : "system_admin",
   "updated_date" : 1615555081605,
-  "updated_by" : "admin"
+  "updated_by" : "admin",
+  "tenant_id" : "system"
 }
 
 
@@ -1085,7 +1190,8 @@
   "create_date" : 1614957303867,
   "created_by" : "admin",
   "updated_date" : 1615274573472,
-  "updated_by" : "admin"
+  "updated_by" : "admin",
+  "tenant_id" : "system"
 }
 
 
@@ -1141,7 +1247,8 @@
   ],
   "tool_image_revision" : "sha256:e4d458a060d90dad2cf552c1e80068d39c7d2059cea551d55613657b50572c54",
   "create_date" : 1592880736325,
-  "created_by" : "admin"
+  "created_by" : "admin",
+  "tenant_id" : "system"
 }
 
 {
@@ -1230,7 +1337,8 @@
     }
   ],
   "create_date" : 1586485440000,
-  "created_by" : "admin"
+  "created_by" : "admin",
+  "tenant_id" : "system"
 }
 
 {
@@ -1290,7 +1398,8 @@
     "create_date" : 1592453769134,
     "created_by" : "admin",
     "updated_date" : 1632745097129,
-    "updated_by" : "admin"
+    "updated_by" : "admin",
+  "tenant_id" : "system"
 }
 
 {
@@ -1350,7 +1459,8 @@
     "create_date" : 1592880736325,
     "created_by" : "admin",
     "updated_date" : 1632750051937,
-    "updated_by" : "admin"
+    "updated_by" : "admin",
+    "tenant_id" : "system"
 }
 
 {
@@ -1440,7 +1550,8 @@
     "create_date" : 1571803777729,
     "created_by" : "admin",
     "updated_date" : 1640161640009,
-    "updated_by" : "admin"
+    "updated_by" : "admin",
+    "tenant_id" : "system"
 }
 {
   "_id" : {"$oid": "605dd16673a3da7d46867fb6"},
@@ -1500,7 +1611,8 @@
   "create_date" : 1570003800241,
   "created_by" : "system_admin",
   "updated_date" : 1570003800241,
-  "updated_by" : "system_admin"
+  "updated_by" : "system_admin",
+  "tenant_id" : "system"
 }
 {
   "_id" : {"$oid": "603f43f83ca6b80cbff6fa47"},

@@ -2,6 +2,8 @@ package com.tencent.devops.common.service;
 
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
+import com.tencent.devops.common.api.ToolOption;
+
 import java.util.Locale;
 
 import java.util.List;
@@ -81,6 +83,7 @@ public interface ToolMetaCacheService {
      */
     List<String> getToolDetailByDimension(String dimension);
 
+    List<ToolOption> getToolOptionsByToolName(String toolName);
 
     /**
      * 获取工具国际化展示名字

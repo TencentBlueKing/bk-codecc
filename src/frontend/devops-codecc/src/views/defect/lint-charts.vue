@@ -109,7 +109,11 @@
                 :label="$t('问题处理人')"
                 prop="authorName"
                 align="center"
-              ></bk-table-column>
+              >
+                <template slot-scope="{ row }">
+                  <bk-user-display-name :user-id="row.authorName"></bk-user-display-name>
+                </template>
+              </bk-table-column>
               <bk-table-column :label="$t('总数')" prop="total" align="center">
                 <template slot-scope="{ row }">
                   <a
@@ -346,13 +350,22 @@ export default {
     handleHref(query) {
       this.resolveHref('defect-lint-list', query);
     },
-    downloadExcel() {
+    async downloadExcel() {
       const excelData1 = this.getExcelData(
         [this.$t('日期'), this.$t('待修复问题数')],
         ['tips', 'count'],
         this.trendTableData,
         this.$t('待修复问题数量趋势'),
       );
+
+      // display name 处理
+      const userIds = [...new Set(this.newAuthorsTableData.map(item => item.authorName))];
+      const dataMap = await this.$store.dispatch('displayname/batchGetDisplayName', userIds);
+      const authorExportData = this.newAuthorsTableData.map(item => ({
+        ...item,
+        authorName: dataMap.get(item.authorName)?.display_name || item.authorName,
+      }));
+
       const excelData2 = this.getExcelData(
         [
           this.$t('问题处理人'),
@@ -362,7 +375,7 @@ export default {
           this.$t('提示'),
         ],
         ['authorName', 'total', 'serious', 'normal', 'prompt'],
-        this.newAuthorsTableData,
+        authorExportData,
         this.$t('待修复问题处理人分布'),
       );
       const excelData = [excelData1, excelData2];

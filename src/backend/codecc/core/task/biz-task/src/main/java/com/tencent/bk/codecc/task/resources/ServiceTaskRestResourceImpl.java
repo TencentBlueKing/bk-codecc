@@ -308,6 +308,11 @@ public class ServiceTaskRestResourceImpl implements ServiceTaskRestResource {
     }
 
     @Override
+    public Result<List<Long>> getTaskIdsByProjectId(String projectId) {
+        return new Result<>(taskService.queryTasIdByProjectId(projectId));
+    }
+
+    @Override
     public Result<List<String>> queryProjectIdPage(Set<String> createFrom, Integer pageNum, Integer pageSize) {
         return new Result<>(taskService.queryProjectIdPage(createFrom, pageNum, pageSize));
     }

@@ -325,6 +325,6 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
 
     @Override
     public Result<Boolean> isRbacPermission(String projectId, Boolean needRefresh) {
-        return new Result<>(false);
+        return new Result<>(true);
     }
 }

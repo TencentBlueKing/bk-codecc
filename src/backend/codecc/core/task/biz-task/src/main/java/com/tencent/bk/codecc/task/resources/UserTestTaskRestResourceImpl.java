@@ -102,4 +102,9 @@ public class UserTestTaskRestResourceImpl implements UserTestTaskRestResource {
     public Result<Integer> countTestReport(String toolName, Integer stage, QueryTestReportReqVO queryTestReportReqVO) {
         return new Result<>(0);
     }
+
+    @Override
+    public Result<Boolean> migrate(String userName, String env, String pdId, String toolName) {
+        return new Result<>(null);
+    }
 }

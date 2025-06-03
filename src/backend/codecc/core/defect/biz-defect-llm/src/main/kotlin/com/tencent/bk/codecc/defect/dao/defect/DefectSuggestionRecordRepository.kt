@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository
 interface DefectSuggestionRecordRepository : MongoRepository<DefectSuggestionRecordEntity, String> {
 
     fun findByDefectId(defectId: String): List<DefectSuggestionRecordEntity?>?
+    fun findFirstByDefectId(defectId: String): DefectSuggestionRecordEntity?
 }

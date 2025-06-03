@@ -15,17 +15,6 @@ import org.springframework.stereotype.Service;
 @Service("ESLINTSpecialParamBizService")
 public class ESLINTSpecialParamServiceImpl extends AbstractSpecialParamServiceImpl
 {
-    /**
-     * 修改工具配置影响规则时清空规则集
-     *
-     * @param reqParamJsonObj
-     * @param currentParamJsonObj
-     */
-    @Override
-    public boolean paramJsonModified(JSONObject reqParamJsonObj, JSONObject currentParamJsonObj)
-    {
-        return !reqParamJsonObj.getString(ComConstants.PARAM_ESLINT_RC).equals(currentParamJsonObj.getString(ComConstants.PARAM_ESLINT_RC));
-    }
 
     /**
      * 特殊参数是否相同

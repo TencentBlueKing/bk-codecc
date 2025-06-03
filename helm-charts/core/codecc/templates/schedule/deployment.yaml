@@ -2,7 +2,7 @@
 apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
 kind: Deployment
 metadata:
-  name: {{ include "common.names.fullname" . }}-schedule
+  name: {{ include "codecc.names.fullname" . }}-schedule
   labels: {{- include "codecc.labels.standard" . | nindent 4 }}
     app.kubernetes.io/name: schedule
     app.kubernetes.io/component: microservice
@@ -75,6 +75,8 @@ spec:
               value: {{ .Values.config.bkCodeccStorageBkrepoPassword }}
             - name: BK_CODECC_STORAGE_BKREPO_PROJECT
               value: {{ .Values.config.bkCodeccStorageBkrepoProject }}
+            - name: BK_CODECC_STORAGE_BKREPO_TENANT_ID
+              value: {{ .Values.config.bkCodeccStorageBkrepoTenantId }}
             - name: BK_CODECC_STORAGE_BKREPO_REPO
               value: {{ .Values.config.bkCodeccStorageBkrepoRepo }}
             - name: BK_CODECC_STORAGE_BKREPO_HOST
@@ -112,7 +114,7 @@ spec:
             - name: JVM_OPTIONS
               value: {{ .Values.schedule.env.JVM_OPTIONS }}
             - name: SERVICE_PREFIX
-              value: {{ include "common.names.fullname" . }}-
+              value: {{ include "codecc.names.fullname" . }}-
             - name: SERVICE_SUFFIX
               value: {{ .Values.config.bkCodeccServiceSuffix }}
             - name: CODECC_PROFILE
@@ -161,7 +163,7 @@ spec:
         - name: storage
           {{- if .Values.persistence.enabled }}
           persistentVolumeClaim:
-            claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{- else }}{{ template "common.names.fullname" . }}-storage{{- end }}
+            claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{- else }}{{ template "codecc.names.fullname" . }}-storage{{- end }}
           {{- else }}
           emptyDir: {}
           {{- end }}
@@ -177,7 +179,7 @@ spec:
         {{ else if eq .Values.config.bkCodeccStorageType "bkrepo-csi" }}
         - name: bkrepo-csi-data
           persistentVolumeClaim:
-            claimName: {{ include "common.names.fullname" . }}-csi-bkrepo-pvc
+            claimName: {{ include "codecc.names.fullname" . }}-csi-bkrepo-pvc
         {{ else }}
         - name: shared-data
           emptyDir: {}

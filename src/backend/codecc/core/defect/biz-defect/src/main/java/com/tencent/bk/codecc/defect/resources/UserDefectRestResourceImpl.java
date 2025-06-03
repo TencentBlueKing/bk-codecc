@@ -37,6 +37,7 @@ import com.tencent.bk.codecc.defect.service.IDefectOperateBizService;
 import com.tencent.bk.codecc.defect.service.IIgnoreTypeService;
 import com.tencent.bk.codecc.defect.service.IQueryWarningBizService;
 import com.tencent.bk.codecc.defect.service.IStatQueryWarningService;
+import com.tencent.bk.codecc.defect.service.MultiTenantService;
 import com.tencent.bk.codecc.defect.service.TaskLogService;
 import com.tencent.bk.codecc.defect.service.impl.CLOCQueryWarningBizServiceImpl;
 import com.tencent.bk.codecc.defect.service.impl.LintBatchIgnoreApprovalBizServiceImpl;
@@ -83,6 +84,7 @@ import com.tencent.devops.common.service.IBizService;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.List2StrUtil;
+import com.tencent.devops.common.util.MultenantUtils;
 import com.tencent.devops.common.web.RestResource;
 import com.tencent.devops.common.web.aop.annotation.OperationHistory;
 import com.tencent.devops.common.web.condition.CommunityCondition;
@@ -91,6 +93,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
@@ -98,6 +101,7 @@ import org.springframework.data.util.Pair;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -455,6 +459,7 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
                 ComConstants.BATCH_PROCESSOR_INFIX + bizType,
                 IBizService.class
         );
+
         return service.processBiz(batchDefectProcessReqVO);
     }
 

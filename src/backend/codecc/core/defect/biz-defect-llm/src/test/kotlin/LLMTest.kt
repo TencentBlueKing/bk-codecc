@@ -32,16 +32,13 @@ class LLMTest {
 
     @Test
     fun testStream() {
-
         var apiAuthVO = ApiAuthVO(
             bkAppCode = "",
             bkAppSecret = "",
             bkTicket = "",
             host = "",
             apiKey = ""
-
         )
-
         var apiChatVO = ApiChatVO(
             userChatPrompt = LLMConstants.DEFECT_SUGGESTIONS_USER_CHAT_PROMPT,
             assistantChatPrompt = LLMConstants.DEFECT_SUGGESTIONS_ASSISTANT_CHAT_PROMPT,
@@ -75,7 +72,6 @@ class LLMTest {
                     "\\\"USE_AFTER_FREE\\\",\\n  \\\"prompt\\\" : " +
                     "\\\"找在内存或资源被释放或关闭后使用这些内存或资源的情况\\\"\\n} ]"
         )
-
         val request = chatCompletionRequest {
             host = apiAuthVO.host
             sessionId = "codecc_scan"
@@ -102,10 +98,7 @@ class LLMTest {
                 }
             }
         }
-
-
         val http = transport()
-
         val chat: LLMChat = LLMChatApi(http)
         val authorStr = JsonUtil.toJson(apiAuthVO).replace("\\s+".toRegex(), "")
         runBlocking {

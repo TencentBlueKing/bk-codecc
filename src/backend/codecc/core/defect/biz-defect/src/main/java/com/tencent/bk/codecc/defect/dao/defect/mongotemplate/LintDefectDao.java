@@ -394,4 +394,13 @@ public class LintDefectDao {
         log.info("findByToolAndTaskIdInAndCreateTime finish, {}", System.currentTimeMillis() - time);
         return defectCount;
     }
+
+    public LintStatisticEntity findByToolNameAndTaskIdAndBuild(String toolName, Long taskId, String buildId) {
+        Criteria criteria = Criteria.where("tool_name").is(toolName)
+                .and("task_id").is(taskId)
+                .and("build_id").is(buildId);
+        Query query = new Query(criteria);
+        query.fields().include("checker_statistic");
+        return defectMongoTemplate.findOne(query, LintStatisticEntity.class);
+    }
 }

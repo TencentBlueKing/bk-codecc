@@ -11,7 +11,6 @@ dependencies {
     api(project(":core:defect:model-defect-llm"))
 
     api("io.ktor:ktor-client-core-jvm:2.2.1")
-//    api("io.ktor:ktor-client-core-jvm:2.3.2")
     api("io.ktor:ktor-client-okhttp:2.2.1")
     api("io.ktor:ktor-network:2.2.1")
     api("io.ktor:ktor-client-logging:2.2.1")

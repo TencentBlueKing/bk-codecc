@@ -103,7 +103,7 @@ include_dict = {
     '__BK_CODECC_REDIS_HOST__': '{{ include "codecc.redis.host" . }}',
     '__BK_CODECC_REDIS_PASSWORD__': '{{ include "codecc.redis.password" . }}',
     '__BK_CODECC_REDIS_PORT__': '{{ include "codecc.redis.port" . }}',
-    '__BK_CODECC_SERVICE_PERFIX__': '{{ include "common.names.fullname" . }}-'
+    '__BK_CODECC_SERVICE_PERFIX__': '{{ include "codecc.names.fullname" . }}-'
 }
 
 # 读取变量映射

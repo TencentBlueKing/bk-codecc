@@ -4,7 +4,7 @@
       <bk-tab-panel name="ignore-type" :label="$t('忽略类型')">
         <ignore-type />
       </bk-tab-panel>
-      <bk-tab-panel name="ignore-approval" :label="$t('忽略审批')">
+      <bk-tab-panel v-if="isInnerSite" name="ignore-approval" :label="$t('忽略审批')">
         <ignore-approval />
       </bk-tab-panel>
     </bk-tab>
@@ -15,6 +15,7 @@
 import IgnoreType from './ignore-type.vue';
 import IgnoreApproval from './ignore-approval.vue';
 import router from '@/router';
+import DEPLOY_ENV from '@/constants/env';
 
 export default {
   components: {
@@ -24,6 +25,7 @@ export default {
   data() {
     return {
       active: this.$route.query?.active || 'ignore-type',
+      isInnerSite: DEPLOY_ENV === 'tencent',
     };
   },
   methods: {

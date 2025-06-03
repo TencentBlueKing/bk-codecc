@@ -1,4 +1,11 @@
 {{/*
+Create a default fully qualified app name.
+*/}}
+{{- define "codecc.names.fullname" -}}
+bk-codecc
+{{- end -}}
+
+{{/*
 Return the proper Docker Image Registry Secret Names
 */}}
 {{- define "codecc.imagePullSecrets" -}}
@@ -10,7 +17,7 @@ Create the name of the service account to use
 */}}
 {{- define "codecc.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create -}}
-    {{ default (printf "%s-foo" (include "common.names.fullname" .)) .Values.serviceAccount.name }}
+    {{ default (printf "%s-foo" (include "codecc.names.fullname" .)) .Values.serviceAccount.name }}
 {{- else -}}
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}

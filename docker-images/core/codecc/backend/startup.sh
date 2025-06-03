@@ -23,6 +23,7 @@ java -server \
      -XX:+HeapDumpOnOutOfMemoryError \
      -XX:HeapDumpPath=oom.hprof \
      -XX:ErrorFile=$CODECC_LOGS_DIR/error_sys.log \
+     -XX:+TieredCompilation \
      -Dspring.profiles.active=$CODECC_PROFILE \
      -Dserver.prefix=$SERVICE_PREFIX \
      -Dserver.namespace=$NAMESPACE \

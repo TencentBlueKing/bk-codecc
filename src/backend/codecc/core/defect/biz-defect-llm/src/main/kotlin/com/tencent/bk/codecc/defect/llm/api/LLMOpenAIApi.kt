@@ -15,7 +15,9 @@ import com.tencent.bk.codecc.defect.vo.ApiAuthVO
 import com.tencent.bk.codecc.defect.vo.ApiChatVO
 import com.tencent.devops.common.codecc.util.JsonUtil
 import com.tencent.devops.common.constant.ComConstants.EMPTY_STRING
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -135,7 +137,7 @@ object LLMOpenAIApi {
         val authorStr = JsonUtil.toJson(apiAuthVO).replace("\\s+".toRegex(), EMPTY_STRING)
 
         return flow {
-            chatApi.chatCompletions(requestBody, authorStr).collect { chunkRsp ->
+            chatApi.chatCompletions(requestBody, authorStr).buffer(Channel.UNLIMITED).collect { chunkRsp ->
                 emit(json.encodeToString(BkChatCompletionChunk.serializer(), chunkRsp))
             }
         }

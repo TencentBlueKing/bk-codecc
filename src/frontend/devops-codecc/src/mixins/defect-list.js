@@ -642,5 +642,11 @@ export default {
     handleBeforeClose() {
       return leaveConfirm();
     },
+    /** 重置window.changeAlert */
+    handleClearWindowAlert() {
+      this.$nextTick(() => {
+        window.changeAlert = false;
+      });
+    },
   },
 };

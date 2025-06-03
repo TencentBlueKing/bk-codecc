@@ -149,8 +149,8 @@ public class ScanSlaConsumer {
             return ComConstants.EMPTY_STRING;
         } else if (projectId.startsWith(ComConstants.CUSTOMPROJ_ID_PREFIX)) {
             return ComConstants.CUSTOMPROJ_ID_PREFIX;
-        } else if (projectId.startsWith(ComConstants.GONGFENG_PRIVATYE_PROJECT_PREFIX)) {
-            return ComConstants.GONGFENG_PRIVATYE_PROJECT_PREFIX;
+        } else if (projectId.startsWith(ComConstants.GONGFENG_PRIVATE_PROJECT_PREFIX)) {
+            return ComConstants.GONGFENG_PRIVATE_PROJECT_PREFIX;
         } else if (projectId.startsWith(ComConstants.GONGFENG_PROJECT_ID_PREFIX)) {
             return ComConstants.GONGFENG_PROJECT_ID_PREFIX;
         } else if (projectId.startsWith(ComConstants.GRAY_PROJECT_PREFIX)) {

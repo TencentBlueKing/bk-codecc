@@ -45,7 +45,9 @@
                         @click="clickGutterLine(index, item)"
                       >
                         <td>{{ item.startLines }}-{{ item.endLines }}</td>
-                        <td>{{ item.author || '' }}</td>
+                        <td>
+                          <bk-user-display-name :user-id="item.author"></bk-user-display-name>
+                        </td>
                         <td>{{ getTargetChunksBySourceChunk(item).length }}</td>
                       </tr>
                     </tbody>
@@ -116,7 +118,9 @@
                         <td>{{ index + 1 }}</td>
                         <td>{{ item.fileName }}</td>
                         <td>{{ item.startLines }}-{{ item.endLines }}</td>
-                        <td>{{ item.author || '' }}</td>
+                        <td>
+                          <bk-user-display-name :user-id="item.author"></bk-user-display-name>
+                        </td>
                       </tr>
                     </tbody>
                   </table>

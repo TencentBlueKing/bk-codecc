@@ -184,7 +184,7 @@ public class LintDefectVO {
     private String ignoreApprovalUrl;
 
     @ApiModelProperty("忽略审批人类型")
-    private String ignoreApproverType;
+    private List<String> ignoreApproverTypes;
 
     @ApiModelProperty("忽略审批 - 自定义审批人")
     private List<String> customIgnoreApprovers;

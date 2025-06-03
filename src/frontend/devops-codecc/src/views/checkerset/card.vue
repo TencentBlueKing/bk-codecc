@@ -89,9 +89,7 @@
       <label class="col-label">{{ $t('工具数') }}</label>
     </section>
     <section class="item-creator">
-      <p class="col-value" :title="checkerset.creator">
-        {{ checkerset.creator }}
-      </p>
+      <bk-user-display-name :user-id="checkerset.creator"></bk-user-display-name>
       <label class="col-label">{{ $t('发布者') }}</label>
     </section>
     <section class="item-labels">

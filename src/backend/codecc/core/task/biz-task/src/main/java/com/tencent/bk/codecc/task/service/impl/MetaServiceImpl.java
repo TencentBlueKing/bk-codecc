@@ -74,6 +74,8 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -85,6 +87,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * @version V1.0
  * @date 2019/4/25
  */
+@ConditionalOnProperty(name = "codecc.enableMultiTenant", havingValue = "false", matchIfMissing = true)
 @Service
 @Slf4j
 public class MetaServiceImpl implements MetaService {

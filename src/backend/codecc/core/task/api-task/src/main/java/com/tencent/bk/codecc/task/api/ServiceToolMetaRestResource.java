@@ -111,4 +111,14 @@ public interface ServiceToolMetaRestResource {
             @ApiParam(value = "工具名称列表", required = true)
             List<String> toolNameList
     );
+
+
+    @ApiOperation("根据工具type获取工具名称列表")
+    @Path("/toolName/toolType/{toolType}/list")
+    @GET
+    Result<List<String>> queryToolMetaNameListDataByType(
+        @ApiParam(value = "类型", required = true)
+        @PathParam("toolType")
+        String type
+    );
 }

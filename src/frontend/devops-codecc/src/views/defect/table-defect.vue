@@ -67,16 +67,14 @@
           @mouseleave="handleAuthorIndex(-1)"
           @click.stop="handleAuthor(1, props.row.entityId, props.row.author)"
         >
-          <span>{{ array2Str(props.row.author) }}</span>
+          <bk-user-display-name :user-id="array2Str(props.row.author)"></bk-user-display-name>
           <span
             v-if="hoverAuthorIndex === props.$index"
             class="bk-icon icon-edit2 fs18"
           ></span>
         </div>
         <div v-else>
-          <span>
-            {{ array2Str(props.row.author) }}
-          </span>
+          <bk-user-display-name :user-id="array2Str(props.row.author)"></bk-user-display-name>
         </div>
       </template>
     </bk-table-column>

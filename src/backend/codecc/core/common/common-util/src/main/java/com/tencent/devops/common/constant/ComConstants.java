@@ -558,7 +558,7 @@ public interface ComConstants {
     /**
      * 闭源扫描项目id前缀
      */
-    String GONGFENG_PRIVATYE_PROJECT_PREFIX = "CLOSED_SOURCE_";
+    String GONGFENG_PRIVATE_PROJECT_PREFIX = "CLOSED_SOURCE_";
     /**
      * GIHUB开源扫描项目id前缀
      */
@@ -760,6 +760,10 @@ public interface ComConstants {
     long DEFAULT_PLUGIN_TIMEOUT_MIN = 900;
 
     long MAX_PLUGIN_TIMEOUT_MIN = 10800;
+    /**
+     * 默认BG的默认ID
+     */
+    int DEFAULT_BG_ID = -1;
 
     /**
      * 业务类型
@@ -918,6 +922,10 @@ public interface ComConstants {
         SCC,
         BLACKDUCK,
         WOODPECKER_COMMITSCAN,
+        XCHECK,
+        SCSCANNER,
+        CODEAUDIT,
+        PECKER_SECURITY,
 
         BKCHECK,
 
@@ -2179,7 +2187,7 @@ public interface ComConstants {
         }
 
         public static String getGongfengScanType(String projectId) {
-            if (projectId.startsWith(GONGFENG_PRIVATYE_PROJECT_PREFIX)) {
+            if (projectId.startsWith(GONGFENG_PRIVATE_PROJECT_PREFIX)) {
                 // 闭源扫描
                 return CLOSED_SOURCE_SCAN.value();
             } else if (projectId.startsWith(GITHUB_PROJECT_PREFIX)) {
@@ -2778,6 +2786,5 @@ public interface ComConstants {
     enum ItsmSystem {
         BK_ITSM;
     }
-
 
 }

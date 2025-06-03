@@ -13,21 +13,6 @@ import org.springframework.stereotype.Service;
 @Service("GOMLSpecialParamBizService")
 public class GOMLSpecialParamServiceImpl extends AbstractSpecialParamServiceImpl
 {
-    /**
-     * 修改工具配置影响规则时清空规则集
-     *
-     * @param reqParamJsonObj
-     * @param currentParamJsonObj
-     */
-    @Override
-    public boolean paramJsonModified(JSONObject reqParamJsonObj, JSONObject currentParamJsonObj)
-    {
-        String reqGoPath = reqParamJsonObj.getString(ComConstants.PARAM_GOML_GO_PATH);
-        String reqRelPath = reqParamJsonObj.getString(ComConstants.PARAM_GOML_REL_PATH);
-        String currentGoPath = reqParamJsonObj.getString(ComConstants.PARAM_GOML_GO_PATH);
-        String currentRelPath = reqParamJsonObj.getString(ComConstants.PARAM_GOML_GO_PATH);
-        return !!reqGoPath.equals(currentGoPath) || !reqRelPath.equals(currentRelPath);
-    }
 
     /**
      * 特殊参数是否相同

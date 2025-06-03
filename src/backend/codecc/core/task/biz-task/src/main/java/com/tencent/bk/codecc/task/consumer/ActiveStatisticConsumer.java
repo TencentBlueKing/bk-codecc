@@ -87,8 +87,9 @@ public class ActiveStatisticConsumer {
             log.info("ActiveStatistic begin date: {}", date);
             long endTime = DateTimeUtils.getTimeStampEnd(date);
 
+            // 大部分status字段为null，故认为状态不为D的都是有效的工具
             List<ToolMetaEntity> toolMetaEntities =
-                    toolMetaRepository.findByStatus(ComConstants.ToolIntegratedStatus.P.name());
+                    toolMetaRepository.findByStatusIsNot(ComConstants.ToolIntegratedStatus.D.name());
             String toolOrder = toolMetaEntities.stream().map(ToolMetaEntity::getName)
                     .collect(Collectors.joining(ComConstants.COMMA));
 

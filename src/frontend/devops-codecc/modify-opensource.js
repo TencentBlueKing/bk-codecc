@@ -21,6 +21,7 @@ magicVueList.forEach((item) => {
 // 人员选择器处理
 const memberSelectorList = [
   './src/views/defect/ccn-list.vue',
+  './src/views/defect/coverity-list.vue',
   './src/views/task/settings-issue.vue',
   './src/views/task/settings-report.vue',
   './src/views/task/settings-trigger.vue',
@@ -45,10 +46,6 @@ fs.writeFileSync('./src/constants/env.js', deployEnv);
 const NoticeList = ['./src/router/index.js'];
 NoticeList.forEach((item) => {
   let fileData = fs.readFileSync(item).toString();
-  const noticeStr = `    // 获取公告
-    if (!window.IS_ENV_TAI) {
-      getNotice();
-    }`;
-  fileData = fileData.replace(noticeStr, '');
+  fileData = fileData.replace(/getNotice\(\);/g, '');
   fs.writeFileSync(item, fileData);
 });

@@ -39,6 +39,7 @@ config = {
     http_port = __BK_CODECC_CONSUL_HTTP_PORT__,
     domain = "__BK_CODECC_CONSUL_DOMAIN__",
     tag = "__BK_CODECC_CONSUL_DISCOVERY_TAG__",
+    codecc_tag = "__BK_CODECC_CONSUL_DISCOVERY_TAG__",
     suffix = "",
     nodes_url = "/v1/catalog/nodes"
   },
@@ -50,6 +51,7 @@ config = {
     http_port = __BK_CODECC_CONSUL_HTTP_PORT__,
     domain = "__BK_CODECC_CONSUL_DOMAIN__",
     tag = "__BK_CODECC_CONSUL_DISCOVERY_TAG__",
+    codecc_tag = "__BK_CODECC_CONSUL_DISCOVERY_TAG__",
     suffix = "",
     nodes_url = "/v1/catalog/nodes"
   },
@@ -78,7 +80,18 @@ config = {
     app_secret = "__BK_CI_APP_TOKEN__"
   },
   bkci = {host = "__BK_CI_FQDN__", port = 80},
+  tenant = {
+      enabled = true
+  },
+  bk_login = {
+      host = "__BK_API_TENANT_HOST__",
+      path = "__BK_LOGIN_PATH__"
+  },
+  apigw = {
+      app_code = "__BK_CI_APP_CODE__",
+      app_secret = "__BK_CI_APP_TOKEN__"
+  }
 }
-  
+
 require("init_common")
 require("ip_whitelist")

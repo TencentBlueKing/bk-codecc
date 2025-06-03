@@ -141,16 +141,22 @@
                     :max-data="1"
                     :trigger="'focus'"
                     :allow-create="true"
+                    :tpl="renderDisplayNameTagInputOption"
+                    :tag-tpl="renderDisplayNameTagInputTag"
                   >
                   </bk-tag-input>
 
                   <bk-select v-else v-model="searchParams.author" searchable>
+                    <template #trigger>
+                      <SelectTrigger v-model="searchParams.author" />
+                    </template>
                     <bk-option
                       v-for="author in searchFormData.authorList"
                       :key="author.id"
                       :id="author.id"
                       :name="author.name"
                     >
+                      <bk-user-display-name :user-id="author.name"></bk-user-display-name>
                     </bk-option>
                   </bk-select>
                 </bk-form-item>
@@ -314,17 +320,19 @@
                       :key="item.buildId"
                       :id="item.buildId"
                       :name="`#${item.buildNum} ${item.branch} ${
-                        item.buildUser
+                        usersMap.get(item.buildUser)?.display_name || item.buildUser
                       } ${formatDate(item.buildTime) || ''}${$t('触发')}`"
                     >
                       <div
                         class="cc-ellipsis"
                         :title="`#${item.buildNum} ${item.branch} ${
-                          item.buildUser
+                          usersMap.get(item.buildUser)?.display_name || item.buildUser
                         } ${formatDate(item.buildTime) || ''}${$t('触发')}`"
                       >
                         {{
-                          `#${item.buildNum} ${item.branch} ${item.buildUser} ${
+                          `#${item.buildNum} ${item.branch} ${
+                            usersMap.get(item.buildUser)?.display_name || item.buildUser
+                          } ${
                             formatDate(item.buildTime) || ''
                           }${$t('触发')}`
                         }}
@@ -614,7 +622,7 @@
                     "
                   >
                     <!-- <span>{{props.row.authorList && props.row.authorList.join(';')}}</span> -->
-                    <span>{{ props.row.author }}</span>
+                    <bk-user-display-name :user-id="props.row.author"></bk-user-display-name>
                     <span
                       v-if="hoverAuthorIndex === props.$index"
                       class="bk-icon icon-edit2 fs18"
@@ -1206,7 +1214,7 @@
                           {{ $t('处理人') }}
                         </dt>
                         <dd>
-                          {{ currentLintFile.author }}
+                          <bk-user-display-name :user-id="currentLintFile.author"></bk-user-display-name>
                           <span
                             v-if="
                               currentLintFile.status & 1 ||
@@ -1239,7 +1247,7 @@
                       </div>
                       <div class="item">
                         <dt>{{ $t('提交人') }}</dt>
-                        <dd>{{ currentLintFile.commitAuthor}}</dd>
+                        <bk-user-display-name :user-id="currentLintFile.commitAuthor"></bk-user-display-name>
                       </div>
                     </div>
                     <div class="block" v-if="currentLintFile.status & 4">
@@ -1251,7 +1259,7 @@
                       </div>
                       <div class="item">
                         <dt>{{ $t('忽略人') }}</dt>
-                        <dd>{{ currentLintFile.ignoreAuthor }}</dd>
+                        <bk-user-display-name :user-id="currentLintFile.ignoreAuthor"></bk-user-display-name>
                       </div>
                       <div class="item disb">
                         <dt>{{ $t('忽略原因') }}</dt>
@@ -1354,24 +1362,14 @@
               property="sourceAuthor"
               :label="$t('原处理人')"
             >
-              <bk-input
-                v-model="operateParams.sourceAuthor"
-                :disabled="operateParams.changeAuthorType === 1"
-                style="width: 290px"
-              ></bk-input>
+              <bk-user-display-name :user-id="operateParams.sourceAuthor"></bk-user-display-name>
             </bk-form-item>
             <bk-form-item :label="$t('新处理人')">
-              <bk-tag-input
+              <UserSelector
                 allow-create
-                v-if="IS_ENV_TAI"
-                v-model="operateParams.targetAuthor"
+                :value.sync="operateParams.targetAuthor"
                 style="width: 290px"
-              ></bk-tag-input>
-              <bk-tag-input allow-create
-                v-else
-                v-model="operateParams.targetAuthor"
-                style="width: 290px"
-              ></bk-tag-input>
+              />
             </bk-form-item>
           </bk-form>
         </div>
@@ -1395,7 +1393,7 @@
             theme="primary"
             type="button"
             :disabled="authorEditDialogLoading"
-            @click.native="authorEditDialogVisible = false"
+            @click.native="handleCloseAuthorDialog"
           >
             {{ $t('取消') }}
           </bk-button>
@@ -1610,12 +1608,13 @@
   </div>
 </template>
 
-<script>
+<script lang="jsx">
 import _ from 'lodash';
 import { mapState } from 'vuex';
 import { bus } from '@/common/bus';
 import { getClosest, toggleClass, formatDiff, hasClass } from '@/common/util';
 import util from '@/mixins/defect-list';
+import displayNameTagInputTpl from '@/mixins/display-name-tag-input-tpl';
 import CodeMirror from '@/common/codemirror';
 import Empty from '@/components/empty';
 import filterSearchOption from './filter-search-option';
@@ -1626,6 +1625,8 @@ import { export_json_to_excel } from '@/vendor/export2Excel';
 import { language } from '../../i18n';
 import DatePicker from '@/components/date-picker/index.vue';
 import DEPLOY_ENV from '@/constants/env';
+import UserSelector from '@/components/user-selector/index.vue';
+import SelectTrigger from '@/components/select-trigger/index.vue';
 
 // 搜索过滤项缓存
 const CCN_SEARCH_OPTION_CACHE = 'search_option_columns_cnn';
@@ -1636,8 +1637,10 @@ export default {
     Empty,
     filterSearchOption,
     DefectPanel,
+    UserSelector,
+    SelectTrigger,
   },
-  mixins: [util],
+  mixins: [util, displayNameTagInputTpl],
   data() {
     const isProjectDefect = this.$route.name === 'project-ccn-list';
     this.getDefaultOption = () => (isProjectDefect
@@ -1852,7 +1855,6 @@ export default {
       isProjectDefect,
       taskIdList: isProjectDefect ? [] : [Number(taskId)],
       emptyDialogVisible: false,
-      IS_ENV_TAI: window.IS_ENV_TAI,
       dateType: query.dateType || 'createTime',
     };
   },
@@ -1865,6 +1867,9 @@ export default {
     }),
     ...mapState('project', {
       projectVisitable: 'visitable',
+    }),
+    ...mapState('displayname', {
+      usersMap: 'usersMap',
     }),
     visitable() {
       return this.projectVisitable || !this.isProjectDefect;
@@ -2253,9 +2258,13 @@ export default {
     },
     async getBuildList() {
       if (this.visitable === false) return;
-      this.buildList = await this.$store.dispatch('defect/getBuildList', {
+      const list = await this.$store.dispatch('defect/getBuildList', {
         taskId: this.$route.params.taskId,
       });
+      // display name 处理
+      const userIds = [...new Set(list.map(item => item.buildUser))];
+      await this.$store.dispatch('displayname/batchGetDisplayName', userIds);
+      this.buildList = list;
     },
     fetchLintParams() {
       if (this.visitable === false) return;
@@ -2599,6 +2608,7 @@ export default {
           this.isAddingIgnore = false;
           this.fetchSeverityParams();
           this.fetchStatusParams();
+          this.handleClearWindowAlert();
         });
     },
     handleIgnoreCancel() {
@@ -2606,6 +2616,7 @@ export default {
       this.operateParams.ignoreReasonType = '';
       this.ignoreReasonDialogVisible = false;
       this.isAddingIgnore = false;
+      this.handleClearWindowAlert();
     },
     handleComment(id) {
       // 暂不做评论修
@@ -2689,7 +2700,7 @@ export default {
       this.buildLintHints(codeViewer, showDefectDetail);
     },
     // 创建问题提示块
-    buildLintHints(codeViewer, showDefectDetail) {
+    async buildLintHints(codeViewer, showDefectDetail) {
       let checkerComment = '';
       const { trimBeginLine } = this.lintDetail;
       const { ccn, startLines, endLines, entityId } = this.currentLintFile;
@@ -2726,12 +2737,16 @@ export default {
                     </div>`;
 
       if (this.commentList.length) {
+        const userIds = [...new Set(this.commentList.map(item => item.userName))];
+        const dataMap = await this.$store.dispatch('displayname/batchGetDisplayName', userIds);
         for (let i = 0; i < this.commentList.length; i++) {
           checkerComment += `
                             <p class="comment-item">
                                 <span class="info">
                                     <i class="codecc-icon icon-user-fill"></i>
-                                    <span>${this.commentList[i].userName}</span>
+                                    <span>
+                                      ${dataMap.get(this.commentList[i].userName)?.display_name || this.commentList[i].userName}
+                                    </span>
                                     <span title="${
   this.commentList[i].comment
 }">${this.commentList[i].comment}</span>
@@ -3095,6 +3110,7 @@ export default {
         })
         .finally(() => {
           this.tableLoading = false;
+          this.handleClearWindowAlert();
         });
     },
     handleCommentConfirm() {
@@ -3186,7 +3202,7 @@ export default {
       );
       this.setTableHeight();
     },
-    downloadExcel() {
+    async downloadExcel() {
       if (this.tableLoading) {
         this.$bkMessage({
           message: this.$t('问题列表加载中，请等待列表加载完再尝试导出。'),
@@ -3201,16 +3217,22 @@ export default {
         });
         return;
       }
-      this.exportLoading = true;
-      this.$store
-        .dispatch('defect/lintList', params)
-        .then((res) => {
-          const list = res && res.defectList && res.defectList.content;
-          this.generateExcel(list);
-        })
-        .finally(() => {
-          this.exportLoading = false;
-        });
+      try {
+        this.exportLoading = true;
+        const res = await this.$store.dispatch('defect/lintList', params);
+        const list = res && res.defectList && res.defectList.content;
+        // display name 处理
+        const userIds = [...new Set(list.map(item => item.author))];
+        const dataMap = await this.$store.dispatch('displayname/batchGetDisplayName', userIds);
+        for (const row of list) {
+          row.author = dataMap.get(row.author)?.display_name || row.author;
+        }
+        this.generateExcel(list);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        this.exportLoading = false;
+      }
     },
     generateExcel(list = []) {
       const { isProjectDefect } = this;
@@ -3450,6 +3472,10 @@ export default {
       document.execCommand('copy');
       document.body.removeChild(input);
       this.$bkMessage({ theme: 'success', message: this.$t('复制成功') });
+    },
+    handleCloseAuthorDialog() {
+      this.authorEditDialogVisible = false;
+      this.handleClearWindowAlert();
     },
   },
 };

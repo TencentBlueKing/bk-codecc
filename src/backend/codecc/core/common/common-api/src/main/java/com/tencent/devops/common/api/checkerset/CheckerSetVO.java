@@ -209,4 +209,27 @@ public class CheckerSetVO extends CommonVO {
      * preci默认规则集
      */
     private Boolean preCIDefault;
+
+
+    // 下面的字段都只用于后端结果排序，不用于前端展示
+    /**
+     * checkerSetName 跟用户在快速搜索栏中输入的内容的 levenshtein 编辑距离
+     */
+    @JsonIgnore
+    private Long levDis;
+    /**
+     * 该规则集是否默认规则集
+     */
+    @JsonIgnore
+    private boolean isDefault;
+    /**
+     * 该规则集是否推荐规则集
+     */
+    @JsonIgnore
+    private boolean isRecommend;
+
+    /**
+     * 租户 id
+     */
+    private String tenantId;
 }

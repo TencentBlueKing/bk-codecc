@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "common.names.fullname" . }}-report
+  name: {{ include "codecc.names.fullname" . }}-report
   labels: {{- include "codecc.labels.standard" . | nindent 4 }}
     app.kubernetes.io/name: report
     app.kubernetes.io/component: microservice

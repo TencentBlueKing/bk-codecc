@@ -40,13 +40,11 @@ public class OtherCheckerSetListQueryReq {
     @ApiModelProperty("排序字段")
     private String sortField;
 
-    @ApiModelProperty("排序字段")
+    @ApiModelProperty("排序方向")
     private Sort.Direction sortType;
 
-    @ApiModelProperty("排序字段")
     int pageNum;
 
-    @ApiModelProperty("排序字段")
     int pageSize;
 
     @ApiModelProperty("项目是否已安装")
