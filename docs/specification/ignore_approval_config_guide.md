@@ -36,7 +36,7 @@
     "get_ticket_status_body" : "{\"bk_app_secret\":\"{bk_app_secret}\",\"bk_app_code\":\"{bk_app_code}\",\"sn\":{sn},\"bk_username\":\"{bk_username}\",\"access_token\":\"{access_token}\"}",
     "get_ticket_status_url" : "https://bk-itsm.sample.com/prod/v2/itsm/ticket_approval_result",
     "operate_ticket_body" : "{\"bk_app_secret\":\"{bk_app_secret}\",\"bk_app_code\":\"{bk_app_code}\",\"sn\":\"{sn}\",\"operator\":\"{operator}\",\"action_type\":\"{action_type}\",\"action_message\":\"{action_message}\",\"bk_username\":\"{bk_username}\",\"access_token\":\"{access_token}\"}",
-    "operate_ticket_url" : "https://bk-itsm.sample.woa.com/prod/v2/itsm/operate_ticket"
+    "operate_ticket_url" : "https://bk-itsm.sample.com/prod/v2/itsm/operate_ticket"
 }
 ```
 ### 4.Helmfile 添加服务启动配置
