@@ -21,7 +21,6 @@ magicVueList.forEach((item) => {
 // 人员选择器处理
 const memberSelectorList = [
   './src/views/defect/ccn-list.vue',
-  './src/views/defect/coverity-list.vue',
   './src/views/task/settings-issue.vue',
   './src/views/task/settings-report.vue',
   './src/views/task/settings-trigger.vue',

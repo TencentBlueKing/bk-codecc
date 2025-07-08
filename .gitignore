@@ -39,3 +39,6 @@ build.yml
 build/
 bkci-slim.tar.gz
 
+
+
+pre-*-bkcodeai

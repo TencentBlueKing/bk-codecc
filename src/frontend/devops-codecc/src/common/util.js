@@ -488,12 +488,15 @@ export function getQueryParams(urlStr) {
   } else {
     url = `?${urlStr.split('?')[1]}`;
   }
-  const queryObj = {};
+  const dangerousKeys = ['__proto__', 'prototype', 'constructor'];
+  const queryObj = Object.create(null);
   if (url.indexOf('?') !== -1) {
     const str = url.substr(1);
     const strs = str.split('&');
     for (const item of strs) {
-      queryObj[item.split('=')[0]] = decodeURI(item.split('=')[1]);
+      const key = item.split('=')[0];
+      if (dangerousKeys.includes(key)) continue;
+      queryObj[key] = decodeURI(item.split('=')[1]);
     }
   }
   return queryObj;

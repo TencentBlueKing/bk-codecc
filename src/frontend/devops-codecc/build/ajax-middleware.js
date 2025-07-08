@@ -12,8 +12,12 @@ import chalk from 'chalk';
 const requestHandler = (req) => {
   const pathName = req.path || '';
 
-  const mockFilePath = `${path.join(__dirname, '../mock/ajax', pathName)}.js`;
-  if (!fs.existsSync(mockFilePath)) {
+  const rootDir = path.resolve(__dirname, '../mock/ajax');
+  if (!fs.existsSync(mockFilePath)) {	  const mockFilePath = path.resolve(rootDir, `${pathName}.js`);
+
+  // Validate that the resolved path is within the intended directory
+  if (!mockFilePath.startsWith(rootDir) || !fs.existsSync(mockFilePath)) {
+    console.log(chalk.red('Invalid or non-existent mock file path:', mockFilePath));
     return false;
   }
 
