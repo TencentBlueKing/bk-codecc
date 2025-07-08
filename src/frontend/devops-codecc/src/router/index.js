@@ -181,10 +181,6 @@ router.afterEach(async (to, from) => {
     if (!store.state.tool.mapList.CCN && to.meta && !to.meta.notNeedToolList) {
       getToolList();
     }
-    // 获取公告
-    if (!window.IS_ENV_TAI) {
-      
-    }
     preloading = true;
     await preload();
     preloading = false;
