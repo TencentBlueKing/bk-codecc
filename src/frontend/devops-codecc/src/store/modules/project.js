@@ -58,8 +58,13 @@ export default {
       if (!rootState.projectId) {
         return;
       }
+      // 由小写字母+数字+中划线组成
+      const { projectId } = rootState;
+      if (!/^[a-z0-9-]+$/.test(projectId)) {
+        throw new Error('非法的项目ID');
+      }
       axios.get(
-        `${window.DEVOPS_SITE_URL}/ms/project/api/user/projects/${rootState.projectId}`,
+        `${window.DEVOPS_SITE_URL}/ms/project/api/user/projects/${projectId}`,
         { withCredentials: true },
       )
         .then((res) => {

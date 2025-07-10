@@ -45,6 +45,10 @@ fs.writeFileSync('./src/constants/env.js', deployEnv);
 const NoticeList = ['./src/router/index.js'];
 NoticeList.forEach((item) => {
   let fileData = fs.readFileSync(item).toString();
-  fileData = fileData.replace(/getNotice\(\);/g, '');
+  const noticeStr = `    // 获取公告
+    if (!window.IS_ENV_TAI) {
+      getNotice();
+    }`;
+  fileData = fileData.replace(noticeStr, '');
   fs.writeFileSync(item, fileData);
 });

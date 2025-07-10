@@ -481,27 +481,6 @@ export function urlJoin(...args) {
     .replace(/([^:]\/)\/+/g, '$1');
 }
 
-export function getQueryParams(urlStr) {
-  let url = '';
-  if (typeof urlStr === 'undefined') {
-    url = decodeURI(location.search);
-  } else {
-    url = `?${urlStr.split('?')[1]}`;
-  }
-  const dangerousKeys = ['__proto__', 'prototype', 'constructor'];
-  const queryObj = Object.create(null);
-  if (url.indexOf('?') !== -1) {
-    const str = url.substr(1);
-    const strs = str.split('&');
-    for (const item of strs) {
-      const key = item.split('=')[0];
-      if (dangerousKeys.includes(key)) continue;
-      queryObj[key] = decodeURI(item.split('=')[1]);
-    }
-  }
-  return queryObj;
-}
-
 export function numToThousand(num) {
   if (!num || num <= 0) {
     return 0;
