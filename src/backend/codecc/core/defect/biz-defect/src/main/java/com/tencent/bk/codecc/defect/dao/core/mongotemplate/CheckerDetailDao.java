@@ -240,7 +240,7 @@ public class CheckerDetailDao {
         if (CollectionUtils.isNotEmpty(checkerListQueryParams.getSelectedCheckerKey())) {
             //添加字段
             AddFieldOperation addField = new AddFieldOperation(new Document("checkerSetSelected",
-                new Document("$in", new Object[]{"$checker_key", checkerListQueryParams.getSelectedCheckerKey()})));
+                new Document("$in", Arrays.asList("$checker_key", checkerListQueryParams.getSelectedCheckerKey()))));
             if (null != pageNum || null != pageSize || null != sortType || null != sortField) {
                 Integer queryPageNum = pageNum == null || pageNum - 1 < 0 ? 0 : pageNum - 1;
                 Integer queryPageSize = pageSize == null || pageSize <= 0 ? 10 : pageSize;

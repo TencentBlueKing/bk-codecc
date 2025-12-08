@@ -12,8 +12,7 @@
  
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -23,19 +22,19 @@ import lombok.Data;
  * @version V1.0
  */
 @Data
-@ApiModel("lint类的统计视图")
+@Schema(description = "lint类的统计视图")
 public class LintStatisticVO extends StatisticVO
 {
-    @ApiModelProperty("文件数量")
+    @Schema(description = "文件数量")
     private int fileCount;
 
-    @ApiModelProperty("文件变化数量")
+    @Schema(description = "文件变化数量")
     private int fileChange;
 
-    @ApiModelProperty("新增告警数量")
+    @Schema(description = "新增告警数量")
     private int newDefectCount;
 
-    @ApiModelProperty("历史告警数量")
+    @Schema(description = "历史告警数量")
     private int historyDefectCount;
 
 }

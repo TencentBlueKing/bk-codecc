@@ -12,8 +12,7 @@
  
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.Set;
@@ -25,33 +24,33 @@ import java.util.Set;
  * @version V1.0
  */
 @Data
-@ApiModel("运行失败记录视图")
+@Schema(description = "运行失败记录视图")
 public class TaskFailRecordVO
 {
-    @ApiModelProperty("任务id")
+    @Schema(description = "任务id")
     private Long taskId;
 
-    @ApiModelProperty("流水线id")
+    @Schema(description = "流水线id")
     private String pipelineId;
 
-    @ApiModelProperty("项目id")
+    @Schema(description = "项目id")
     private String projectId;
 
-    @ApiModelProperty("构建id")
+    @Schema(description = "构建id")
     private String buildId;
 
-    @ApiModelProperty("母机ip")
+    @Schema(description = "母机ip")
     private String machineIp;
 
-    @ApiModelProperty("构建id")
+    @Schema(description = "构建id")
     private Boolean retryFlag;
 
-    @ApiModelProperty("上报时间")
+    @Schema(description = "上报时间")
     private Long uploadTime;
 
-    @ApiModelProperty("任务耗时")
+    @Schema(description = "任务耗时")
     private Long timeCost;
 
-    @ApiModelProperty("失败原子环节")
+    @Schema(description = "失败原子环节")
     private String failAtomName;
 }

@@ -28,14 +28,13 @@ package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.devops.common.api.CommonVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.Map;
 
@@ -47,7 +46,7 @@ import java.util.Map;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("批量接入请求体")
+@Schema(description = "批量接入请求体")
 public class BatchRegisterVO extends CommonVO
 {
 
@@ -55,84 +54,84 @@ public class BatchRegisterVO extends CommonVO
      * 任务id
      */
     @Min(value = 10000L, message = "任务主键数值不正确")
-    @ApiModelProperty(value = "任务主键id", required = true)
+    @Schema(description = "任务主键id", required = true)
     private long taskId;
 
     /**
      * 代码库hashid
      */
-    @ApiModelProperty(value = "代码库hashid", required = true)
+    @Schema(description = "代码库hashid", required = true)
     private String repoHashId;
 
     /**
      * 代码库别名
      */
-    @ApiModelProperty(value = "代码库别名", required = true)
+    @Schema(description = "代码库别名", required = true)
     private String aliasName;
 
     /**
      * 代码库路径
      */
-    @ApiModelProperty(value = "代码库路径", required = true)
+    @Schema(description = "代码库路径", required = true)
     private String repositoryUrl;
 
     /**
      * scm类型
      */
-    @ApiModelProperty(value = "scm类型", required = true)
+    @Schema(description = "scm类型", required = true)
     private String scmType;
 
     /**
      * 分支名
      */
-    @ApiModelProperty(value = "分支名", required = true)
+    @Schema(description = "分支名", required = true)
     private String branch;
 
     /**
      * 操作系统各类型
      */
-    @ApiModelProperty(value = "操作系统类型", required = true)
+    @Schema(description = "操作系统类型", required = true)
     private String osType;
 
     /**
      * 构建环境
      */
-    @ApiModelProperty(value = "构建环境", required = true)
+    @Schema(description = "构建环境", required = true)
     private Map<String, String> buildEnv;
 
     /**
      * 构建脚本类型
      */
-    @ApiModelProperty(value = "构建脚本类型", required = true)
+    @Schema(description = "构建脚本类型", required = true)
     private String projectBuildType;
 
     /**
      * 脚本内容
      */
-    @ApiModelProperty(value = "脚本内容", required = true)
+    @Schema(description = "脚本内容", required = true)
     private String projectBuildCommand;
 
     /**
      * 扫描类型
      */
-    @ApiModelProperty(value = "扫描类型", required = true)
+    @Schema(description = "扫描类型", required = true)
     private String scanType;
 
     /**
      * 工具清单
      */
-    @ApiModelProperty(value = "工具清单", required = true)
+    @Schema(description = "工具清单", required = true)
     private List<ToolConfigInfoVO> tools;
 
     /**
      * 代码库用户名凭证
      */
-    @ApiModelProperty(value = "用户名", required = false)
+    @Schema(description = "用户名", required = false)
     private String userName;
 
     /**
      * 密码
      */
-    @ApiModelProperty(value = "密码", required = false)
+    @Schema(description = "密码", required = false)
     private String passWord;
 }

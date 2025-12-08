@@ -28,8 +28,7 @@ package com.tencent.bk.codecc.defect.vo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.bk.codecc.defect.vo.common.ToolSnapShotVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -43,38 +42,38 @@ import java.util.List;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("lint类工具快照视图")
+@Schema(description = "lint类工具快照视图")
 public class LintSnapShotVO extends ToolSnapShotVO
 {
-    @ApiModelProperty("最近一次分析，接入后新增文件总的缺陷告警个数")
+    @Schema(description = "最近一次分析，接入后新增文件总的缺陷告警个数")
     @JsonProperty("newfile_total_defect_count")
     private int newFileTotalDefectCount;
 
-    @ApiModelProperty("最近一次分析，接入后新增文件变化的缺陷个数")
+    @Schema(description = "最近一次分析，接入后新增文件变化的缺陷个数")
     @JsonProperty("newfile_changed_defect_count")
     private int newFileChangedDefectCount;
 
-    @ApiModelProperty("最近一次分析，接入后新增文件总个数")
+    @Schema(description = "最近一次分析，接入后新增文件总个数")
     @JsonProperty("newfile_total_count")
     private int newFileTotalCount;
 
-    @ApiModelProperty("最近一次分析，接入后新增文件变化的个数")
+    @Schema(description = "最近一次分析，接入后新增文件变化的个数")
     @JsonProperty("newfile_changed_count")
     private int newFileChangedCount;
 
-    @ApiModelProperty("严重")
+    @Schema(description = "严重")
     @JsonProperty("total_new_serious")
     private int totalNewSerious;
 
-    @ApiModelProperty("一般")
+    @Schema(description = "一般")
     @JsonProperty("total_new_normal")
     private int totalNewNormal;
 
-    @ApiModelProperty("提示")
+    @Schema(description = "提示")
     @JsonProperty("total_new_prompt")
     private int totalNewPrompt;
 
-    @ApiModelProperty("未修复告警作者清单")
+    @Schema(description = "未修复告警作者清单")
     @JsonProperty("author_list")
     private List<NotRepairedAuthorVO> authorList;
 

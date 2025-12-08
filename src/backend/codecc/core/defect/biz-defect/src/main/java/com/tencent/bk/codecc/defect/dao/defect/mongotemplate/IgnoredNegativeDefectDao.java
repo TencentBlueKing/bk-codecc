@@ -1,5 +1,6 @@
 package com.tencent.bk.codecc.defect.dao.defect.mongotemplate;
 
+import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.IgnoredNegativeDefectRepository;
 import com.tencent.bk.codecc.defect.model.defect.IgnoredNegativeDefectEntity;
@@ -214,11 +215,13 @@ public class IgnoredNegativeDefectDao {
         return defectMongoTemplate.find(query, IgnoredNegativeDefectEntity.class);
     }
 
-    public void batchDelete(Set<String> defectKeySet) {
+    public long batchDelete(Set<String> defectKeySet) {
         Criteria criteria = Criteria.where("defect_id").in(defectKeySet);
         Query query = Query.query(criteria);
 
-        defectMongoTemplate.remove(query, IgnoredNegativeDefectEntity.class);
+        DeleteResult deleteResult = defectMongoTemplate.remove(query, IgnoredNegativeDefectEntity.class);
+
+        return deleteResult.getDeletedCount();
     }
 
     /**

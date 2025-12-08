@@ -3,7 +3,7 @@ package com.tencent.bk.codecc.defect.vo.checkerset;
 import com.tencent.bk.codecc.task.vo.checkerset.ToolCheckerSetVO;
 import com.tencent.devops.common.api.CommonVO;
 import com.tencent.devops.common.constant.ComConstants;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -20,7 +20,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("添加规则集到任务请求体视图")
+@Schema(description = "添加规则集到任务请求体视图")
 public class AddCheckerSet2TaskReqVO extends CommonVO
 {
     /**

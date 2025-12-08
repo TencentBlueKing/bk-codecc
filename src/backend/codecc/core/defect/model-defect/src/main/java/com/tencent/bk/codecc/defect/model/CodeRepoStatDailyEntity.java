@@ -13,6 +13,7 @@
 package com.tencent.bk.codecc.defect.model;
 
 import lombok.Data;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -27,6 +28,9 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Data
 @Document(collection = "t_code_repo_stat_daily")
 public class CodeRepoStatDailyEntity {
+
+    @Id
+    private String entityId;
 
     /**
      * 统计日期

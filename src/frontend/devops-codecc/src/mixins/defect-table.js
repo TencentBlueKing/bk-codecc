@@ -1,4 +1,6 @@
 import { bus } from '@/common/bus';
+import DEPLOY_ENV from '@/constants/env';
+
 export default {
   props: {
     type: {
@@ -74,11 +76,12 @@ export default {
         4: this.$t('提示'),
       },
       hoverAuthorIndex: -1,
+      isInnerSite: DEPLOY_ENV === 'tencent',
     };
   },
   created() {
     bus.$on('handleNextGuide', () => {
-      if (!localStorage.getItem('guide2End')) {
+      if (!localStorage.getItem('guide2End') && this.isInnerSite) {
         const index = this.list.findIndex(item => item.status === 1);
         document.getElementsByClassName('guide-icon')[index]?.click();
         setTimeout(() => {

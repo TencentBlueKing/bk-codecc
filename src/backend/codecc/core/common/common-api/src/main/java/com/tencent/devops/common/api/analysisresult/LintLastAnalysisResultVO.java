@@ -26,8 +26,7 @@
 
 package com.tencent.devops.common.api.analysisresult;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -41,43 +40,43 @@ import java.util.List;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("lint类工具最近一次分析结果")
+@Schema(description = "lint类工具最近一次分析结果")
 public class LintLastAnalysisResultVO extends BaseLastAnalysisResultVO
 {
-    @ApiModelProperty("文件总数")
+    @Schema(description = "文件总数")
     private Integer fileCount;
 
-    @ApiModelProperty("文件变化数")
+    @Schema(description = "文件变化数")
     private Integer fileChange;
 
-    @ApiModelProperty("新告警总数")
+    @Schema(description = "新告警总数")
     private Integer newDefectCount;
 
-    @ApiModelProperty("历史告警总数")
+    @Schema(description = "历史告警总数")
     private Integer historyDefectCount;
 
 
-    @ApiModelProperty("新增严重告警总数")
+    @Schema(description = "新增严重告警总数")
     private Integer totalNewSerious;
 
-    @ApiModelProperty("新增一般告警总数")
+    @Schema(description = "新增一般告警总数")
     private Integer totalNewNormal;
 
-    @ApiModelProperty("新增提示告警总数")
+    @Schema(description = "新增提示告警总数")
     private Integer totalNewPrompt;
 
-    @ApiModelProperty("所有严重警告总数")
+    @Schema(description = "所有严重警告总数")
     private Integer totalSerious;
 
-    @ApiModelProperty("所有一般警告总数")
+    @Schema(description = "所有一般警告总数")
     private Integer totalNormal;
 
-    @ApiModelProperty("所有提示警告总数")
+    @Schema(description = "所有提示警告总数")
     private Integer totalPrompt;
     
-    @ApiModelProperty("新增告警的处理人统计")
+    @Schema(description = "新增告警的处理人统计")
     private List<NotRepairedAuthorVO> authorStatistic;
     
-    @ApiModelProperty("存量告警的处理人统计")
+    @Schema(description = "存量告警的处理人统计")
     private List<NotRepairedAuthorVO> existAuthorStatistic;
 }

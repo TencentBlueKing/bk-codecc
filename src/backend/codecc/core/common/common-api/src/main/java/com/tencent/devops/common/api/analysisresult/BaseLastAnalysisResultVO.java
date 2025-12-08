@@ -29,8 +29,7 @@ package com.tencent.devops.common.api.analysisresult;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -40,7 +39,7 @@ import lombok.Data;
  * @date 2019/5/2
  */
 @Data
-@ApiModel("公共告警详情查询请求视图")
+@Schema(description = "公共告警详情查询请求视图")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "pattern", visible = true)
 @JsonSubTypes({@JsonSubTypes.Type(value = LintLastAnalysisResultVO.class, name = "LINT"),
         @JsonSubTypes.Type(value = CCNLastAnalysisResultVO.class, name = "CCN"),
@@ -53,15 +52,15 @@ public class BaseLastAnalysisResultVO {
 
     private String pattern;
 
-    @ApiModelProperty("分析版本号")
+    @Schema(description = "分析版本号")
     private String analysisVersion;
 
-    @ApiModelProperty("统计的时间")
+    @Schema(description = "统计的时间")
     private long time;
 
-    @ApiModelProperty("告警总数")
+    @Schema(description = "告警总数")
     private Integer defectCount;
 
-    @ApiModelProperty("告警变化数")
+    @Schema(description = "告警变化数")
     private Integer defectChange;
 }

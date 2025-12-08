@@ -9,6 +9,29 @@
     :model="formData"
     ref="codeForm"
   >
+    <div v-if="scenes !== 'manage-edit'">
+      <tool-compile-form
+          v-show="shownTool"
+          ref="editData"
+          :code-message="toolParams"
+          :is-tool-manage="isToolManage"
+          :shown-tool="shownTool"
+      />
+    </div>
+    <div :class="isToolManage ? 'active' : ''" v-else>
+      <template>
+        <tool-compile-form
+            v-show="shownTool"
+            ref="editData"
+            class="pb20"
+            style="width: 50%"
+            :code-message="codeMessage"
+            :is-tool-manage="isToolManage"
+            :shown-tool="shownTool"
+
+        />
+      </template>
+    </div>
     <div class="disf">
       <span class="pipeline-label">{{ $t('代码仓库') }}</span>
       <!-- <span class="fs14">{{ formData.aliasName || codeMessage.repoUrl || '--' }}</span> -->
@@ -33,26 +56,6 @@
         </li>
       </ul>
     </div>
-    <div v-if="scenes !== 'manage-edit'">
-      <tool-compile-form
-        v-show="shownTool"
-        ref="editData"
-        :code-message="toolParams"
-        :is-tool-manage="isToolManage"
-      />
-    </div>
-    <div :class="isToolManage ? 'active' : ''" v-else>
-      <template>
-        <tool-compile-form
-          v-show="shownTool"
-          ref="editData"
-          class="pb20"
-          style="width: 50%"
-          :code-message="codeMessage"
-          :is-tool-manage="isToolManage"
-        />
-      </template>
-    </div>
   </div>
   <bk-form
     v-else
@@ -61,6 +64,29 @@
     :model="formData"
     ref="codeForm"
   >
+    <div v-if="scenes !== 'manage-edit'">
+      <tool-compile-form
+          v-show="shownTool"
+          ref="editData"
+          :code-message="toolParams"
+          :is-tool-manage="isToolManage"
+          :shown-tool="shownTool"
+      />
+    </div>
+    <div :class="isToolManage ? 'active' : ''" v-else>
+      <template>
+        <tool-compile-form
+            v-show="shownTool"
+            ref="editData"
+            class="pb20"
+            style="width: 50%"
+            :code-message="codeMessage"
+            :is-tool-manage="isToolManage"
+            :shown-tool="shownTool"
+        />
+      </template>
+    </div>
+    <div style="height: 20px"></div>
     <bk-form-item
       :label="$t('代码仓库')"
       :required="true"
@@ -112,27 +138,6 @@
                 </bk-option>
             </bk-select> -->
     </bk-form-item>
-    <div style="height: 20px"></div>
-    <div v-if="scenes !== 'manage-edit'">
-      <tool-compile-form
-        v-show="shownTool"
-        ref="editData"
-        :code-message="toolParams"
-        :is-tool-manage="isToolManage"
-      />
-    </div>
-    <div :class="isToolManage ? 'active' : ''" v-else>
-      <template>
-        <tool-compile-form
-          v-show="shownTool"
-          ref="editData"
-          class="pb20"
-          style="width: 50%"
-          :code-message="codeMessage"
-          :is-tool-manage="isToolManage"
-        />
-      </template>
-    </div>
     <bk-form-item class="footer" v-if="scenes !== 'register-add'">
       <bk-button v-if="scenes === 'manage-add'" @click="handlePrev">{{
         $t('上一步')
@@ -216,6 +221,10 @@ export default {
       type: Array,
       default: [],
     },
+    showContent: {
+      type: Boolean,
+      default: false,
+    }
   },
   data() {
     return {
@@ -282,6 +291,11 @@ export default {
     taskId() {
       return this.$route.params.taskId;
     },
+    needBuildTools() {
+      return Object.values(this.toolMap)
+          .filter(item => item.scriptInputEnabled === true)
+          .map(item => item.name);
+    },
     isGitRepo() {
       const gitRepoType = ['CODE_GIT', 'CODE_TGIT', 'CODE_GITLAB', 'GITHUB'];
       return (
@@ -309,23 +323,17 @@ export default {
       return Object.assign({}, toolParams);
     },
     shownTool() {
-      let shownTool = false;
-      this.tools.forEach((toolName) => {
-        if (
-          [
-            'COVERITY',
-            'KLOCWORK',
-            'PINPOINT',
-            'CODEQL',
-            'CLANG',
-            'SPOTBUGS',
-          ].includes(toolName)
-          && this.hasScript
-        ) {
-          shownTool = true;
-        }
-      });
-      return shownTool;
+      // 默认不展示脚本输入框
+      let shouldShowTool = false;
+      // 特殊情况：如果只有BKCHECK工具且不显示内容，则不展示工具
+      if (this.tools.includes('BKCHECK') && this.tools.filter(tool => this.needBuildTools.includes(tool)).length === 1 && !this.showContent) {
+        return shouldShowTool;
+      }
+      // 检查是否有需要构建脚本的工具
+      shouldShowTool = this.hasScript && this.tools.some(toolName =>
+          this.needBuildTools.includes(toolName)
+      );
+      return shouldShowTool;
     },
     hasScript() {
       // 非编译语言不显示脚本框
@@ -477,11 +485,12 @@ export default {
           projectBuildType: receiveData.projectBuildType || '',
           projectBuildCommand: receiveData.projectBuildCommand || '',
         };
-      if (!this.hasScript) {
+      if (!this.hasScript && this.showContent) {
         data.osType = '';
         data.buildEnv = '';
         data.projectBuildType = '';
-        data.projectBuildCommand = '';
+        // 默认值。设置空字符串，后端校验不会更新故用默认值代替
+        data.projectBuildCommand = this.$t('工具将通过调用编译脚本来编译您的代码，以追踪深层次的缺陷');
       }
       return data;
     },

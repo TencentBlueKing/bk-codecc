@@ -3,6 +3,7 @@
     v-model="createVisible"
     :theme="'primary'"
     :width="579"
+    :mask-close="false"
     :before-close="handleBeforeClose"
     :position="{ top: 100, left: 5 }"
   >
@@ -173,7 +174,6 @@ export default {
     },
     createVisible: {
       get() {
-        window.changeAlert = false;
         return this.visible;
       },
       set(value) {
@@ -208,7 +208,6 @@ export default {
     },
   },
   created() {
-    window.changeAlert = false;
     this.$store.dispatch('task/ignoreTree');
   },
   methods: {

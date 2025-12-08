@@ -26,12 +26,11 @@
 
 package com.tencent.bk.codecc.schedule.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.ToString;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * 实时获取日志的请求体
@@ -40,12 +39,12 @@ import javax.validation.constraints.NotNull;
  * @date 2019/10/10
  */
 @Data
-@ApiModel("实时获取日志的请求体")
+@Schema(description = "实时获取日志的请求体")
 public class TailLogRspVO
 {
-    @ApiModelProperty(value = "日志内容", required = true)
+    @Schema(description = "日志内容", required = true)
     private String content;
 
-    @ApiModelProperty(value = "当前日志的最大行号，作为下次读日志的起始行号", required = true)
+    @Schema(description = "当前日志的最大行号，作为下次读日志的起始行号", required = true)
     private Long maxLineNum;
 }

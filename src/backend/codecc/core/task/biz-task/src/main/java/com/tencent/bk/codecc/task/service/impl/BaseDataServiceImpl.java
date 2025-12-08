@@ -470,6 +470,12 @@ public class BaseDataServiceImpl implements BaseDataService {
             } else {
                 paramCode = ComConstants.PROD_TENCENT_COMMUNITY_OPENSOURCE_V2_CHECKER_SET_TIME_GAP;
             }
+        } else if (CheckerSetPackageType.BK_SEC_SCAN.value().equals(manageType)) {
+            if (ComConstants.ToolIntegratedStatus.PRE_PROD.name().equalsIgnoreCase(versionType)) {
+                paramCode = ComConstants.PRE_PROD_BK_SEC_CHECKER_SET_TIME_GAP;
+            } else {
+                paramCode = ComConstants.PROD_BK_SEC_CHECKER_SET_TIME_GAP;
+            }
         } else {
             // 默认内网开源
             if (ComConstants.ToolIntegratedStatus.PRE_PROD.name().equalsIgnoreCase(versionType)) {
@@ -875,5 +881,42 @@ public class BaseDataServiceImpl implements BaseDataService {
         baseDataRepository.delete(baseDataEntity);
         log.info("deleteGitHubSync finish!");
         return true;
+    }
+
+    @Override
+    public Boolean updatePlatformVersion(String version, String user, String code) {
+        log.info("updatePlatformVersion param version: {}, user: {}, code: {}", version, user, code);
+        if (StringUtils.isBlank(version) || StringUtils.isBlank(user) || StringUtils.isBlank(code)) {
+            log.error("param version or code is blank!");
+            return false;
+        }
+        BaseDataEntity baseDataEntity =
+                baseDataRepository.findFirstByParamTypeAndParamCode(ComConstants.KEY_PLATFORM_VERSION, code);
+        if (baseDataEntity == null) {
+            baseDataEntity = new BaseDataEntity();
+            baseDataEntity.applyAuditInfoOnCreate(user);
+        } else {
+            baseDataEntity.applyAuditInfoOnUpdate(user);
+        }
+        baseDataEntity.setParamType(ComConstants.KEY_PLATFORM_VERSION);
+        baseDataEntity.setParamCode(code);
+        baseDataEntity.setParamValue(version);
+        baseDataRepository.save(baseDataEntity);
+        return true;
+    }
+
+    @Override
+    public String getPlatformNowVersion(String code) {
+        log.info("getPlatformNowVersion code: {}", code);
+        if (code == null) {
+            throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, new String[]{"code"}, null);
+        }
+        BaseDataEntity baseDataEntity
+                = baseDataRepository.findFirstByParamTypeAndParamCode(ComConstants.KEY_PLATFORM_VERSION, code);
+
+        if (baseDataEntity == null || StringUtils.isBlank(baseDataEntity.getParamValue())) {
+            return null;
+        }
+        return baseDataEntity.getParamValue();
     }
 }

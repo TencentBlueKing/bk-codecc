@@ -21,6 +21,7 @@ import com.tencent.bk.codecc.defect.vo.CheckerCommonCountVO;
 import com.tencent.bk.codecc.defect.vo.CheckerCountListVO;
 import com.tencent.bk.codecc.defect.vo.CheckerSetListQueryReq;
 import com.tencent.bk.codecc.defect.vo.OtherCheckerSetListQueryReq;
+import com.tencent.bk.codecc.defect.vo.checkerset.TaskUsageDetailVO;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetCategory;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetSource;
 import com.tencent.bk.codecc.task.api.ServiceBaseDataResource;
@@ -30,6 +31,7 @@ import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.BaseDataVO;
+import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.annotation.I18NResponse;
 import com.tencent.devops.common.api.checkerset.CheckerSetCategoryVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
@@ -59,6 +61,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -1951,5 +1954,42 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
         }
     }
 
+    @Override
+    public Page<TaskUsageDetailVO> getCheckerSetTaskUsageDetail(String projectId, String checkerSetId) {
+        log.info("getCheckerSetTaskUsageDetail, projectId: [{}], checkerSetId: [{}]", projectId, checkerSetId);
+        List<CheckerSetTaskRelationshipEntity> relationships =
+                checkerSetTaskRelationshipRepository.findByCheckerSetIdAndProjectIdIn(checkerSetId,
+                        Collections.singleton(projectId));
+        if (relationships.isEmpty()) {
+            return new PageImpl<>(Collections.emptyList());
+        }
 
+        List<Long> taskIds =
+                relationships.stream().map(CheckerSetTaskRelationshipEntity::getTaskId).collect(Collectors.toList());
+
+        QueryTaskListReqVO taskListReqVO = new QueryTaskListReqVO();
+        // 查出全部
+        taskListReqVO.setTaskIds(taskIds);
+        List<TaskDetailVO> taskDetailVOS =
+                client.get(ServiceTaskRestResource.class).getTaskDetailListByIdsWithDelete(taskListReqVO).getData();
+        if (taskDetailVOS == null) {
+            log.error("getCheckerSetTaskUsageDetail, taskDetailVOS is null");
+            return new PageImpl<>(Collections.emptyList());
+        }
+        if (taskDetailVOS.size() != taskIds.size()) {
+            log.warn("task info size not match, taskIds: {}, taskDetailVOS: {}", taskIds, taskDetailVOS);
+        }
+
+        List<TaskUsageDetailVO> taskUsageDetailVOList = taskDetailVOS.stream()
+                .map(taskDetailVO -> {
+                    TaskUsageDetailVO vo = new TaskUsageDetailVO();
+                    BeanUtils.copyProperties(taskDetailVO, vo);
+                    return vo;
+                })
+                // 按任务ID倒序
+                .sorted(Comparator.comparingLong(TaskUsageDetailVO::getTaskId).reversed())
+                .collect(Collectors.toCollection(LinkedList::new));
+
+        return new PageImpl<>(taskUsageDetailVOList);
+    }
 }

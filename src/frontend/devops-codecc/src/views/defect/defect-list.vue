@@ -151,7 +151,7 @@
                 </div>
                 <div class="cc-col">
                   <bk-form-item :label="$t('single.规则集')">
-                    <bk-select v-model="searchParams.checkerSet" searchable>
+                    <bk-select v-model="searchParams.checkerSets" searchable multiple>
                       <bk-option
                         v-for="checkerSet in searchFormData.checkerSetList"
                         :key="checkerSet.checkerSetId"
@@ -218,16 +218,12 @@
                       searchable
                       :loading="selectLoading.otherParamsLoading"
                     >
-                      <template #trigger>
-                        <SelectTrigger v-model="searchParams.author" />
-                      </template>
                       <bk-option
                         v-for="author in searchFormData.authorList"
                         :key="author.id"
                         :id="author.id"
                         :name="author.name"
                       >
-                        <bk-user-display-name :user-id="author.name"></bk-user-display-name>
                       </bk-option>
                     </bk-select>
 
@@ -814,6 +810,7 @@
         width="560"
         theme="primary"
         header-position="left"
+        :mask-close="false"
         :before-close="handleBeforeClose"
         :title="
           operateParams.changeAuthorType === 1
@@ -879,6 +876,7 @@
         :position="ignoreDialogPositionConfig"
         theme="primary"
         header-position="left"
+        :mask-close="false"
         :title="ignoreReasonDialogTitle"
         :before-close="handleBeforeClose"
         @cancel="handleIgnoreCancel"
@@ -909,7 +907,7 @@
                 v-model="operateParams.ignoreReasonType"
                 class="ignore-list"
               >
-                <div v-for="ignore in ignoreList" :key="ignore.ignoreTypeId">
+                <div v-for="ignore in ignoreList.filter(i => i.status !== 2)" :key="ignore.ignoreTypeId">
                   <bk-radio
                     class="cc-radio"
                     :value="ignore.ignoreTypeId"
@@ -1013,6 +1011,7 @@
         width="560"
         theme="primary"
         header-position="left"
+        :mask-close="false"
         :before-close="handleBeforeClose"
         :title="$t('问题评论')"
       >
@@ -1106,7 +1105,6 @@ import DEPLOY_ENV from '@/constants/env';
 import FoldAlert from './components/fold-alert.vue';
 import ignore from '@/store/modules/ignore';
 import UserSelector from '@/components/user-selector/index.vue';
-import SelectTrigger from '@/components/select-trigger/index.vue';
 
 // 搜索过滤项缓存
 const SEARCH_OPTION_CACHE = 'search_option_columns_defect';
@@ -1123,7 +1121,6 @@ export default {
     DefectPanel,
     FoldAlert,
     UserSelector,
-    SelectTrigger,
   },
   mixins: [util, defectCache, displayNameTagInputTpl],
   data() {
@@ -1134,7 +1131,7 @@ export default {
         { id: 'dimension', name: this.$t('维度'), isChecked: true },
         { id: 'toolName', name: this.$t('工具'), isChecked: true },
         {
-          id: 'checkerSet',
+          id: 'checkerSets',
           name: this.$t('single.规则集'),
           isChecked: true,
         },
@@ -1143,7 +1140,7 @@ export default {
         { id: 'dimension', name: this.$t('维度'), isChecked: true },
         { id: 'toolName', name: this.$t('工具'), isChecked: true },
         {
-          id: 'checkerSet',
+          id: 'checkerSets',
           name: this.$t('single.规则集'),
           isChecked: true,
         },
@@ -1157,7 +1154,7 @@ export default {
         { id: 'daterange', name: this.$t('日期'), isChecked: val },
         { id: 'status', name: this.$t('状态'), isChecked: val },
         { id: 'severity', name: this.$t('级别'), isChecked: val },
-        { id: 'approval', name: this.$t('审批'), isChecked: val },
+        ...(this.isInnerSite ? [{ id: 'approval', name: this.$t('审批'), isChecked: val }] : []),
         { id: 'operate', name: this.$t('操作'), isChecked: val },
       ]
       : [
@@ -1167,7 +1164,7 @@ export default {
         { id: 'path', name: this.$t('路径'), isChecked: val },
         { id: 'status', name: this.$t('状态'), isChecked: val },
         { id: 'severity', name: this.$t('级别'), isChecked: val },
-        { id: 'approval', name: this.$t('审批'), isChecked: val },
+        ...(this.isInnerSite ? [{ id: 'approval', name: this.$t('审批'), isChecked: val }] : []),
         { id: 'operate', name: this.$t('操作'), isChecked: val },
       ]);
 
@@ -1256,7 +1253,7 @@ export default {
         toolName: toolId ? toolId.split(',') : toolId,
         dimension: query.dimension || '',
         checker: query.checker || '',
-        checkerSet: query.checkerSet || '',
+        checkerSets: [],
         author: query.author,
         severity: this.numToArray(query.severity),
         status,
@@ -1491,13 +1488,14 @@ export default {
     operateTreeData() {
       const { isProjectDefect } = this;
       const { tapdOpsCount, maskOpsCount, maskNotFixCount, commentOpsCount, notOpsCount } = this.searchFormData;
+      const innerOperateList = this.isInnerSite ? [{
+        id: 'ISSUE_SUBMIT',
+        name: `${this.$t('已提 TAPD 单')}${
+          isProjectDefect ? '' : `(${tapdOpsCount || 0})`
+        }`,
+      }] : [];
       const operateList = [
-        {
-          id: 'ISSUE_SUBMIT',
-          name: `${this.$t('已提 TAPD 单')}${
-            isProjectDefect ? '' : `(${tapdOpsCount || 0})`
-          }`,
-        },
+        ...innerOperateList,
         {
           id: 'MARK',
           name: `${this.$t('已标记处理')}${
@@ -1554,8 +1552,8 @@ export default {
       return { cacheKey };
     },
     statusRelevantParams() {
-      const { checkerSet, checker, author, fileList, buildId, daterange } = this.searchParams;
-      return { checkerSet, checker, author, fileList, buildId, daterange };
+      const { checkerSets, checker, author, fileList, buildId, daterange } = this.searchParams;
+      return { checkerSets, checker, author, fileList, buildId, daterange };
     },
     severityRelevantParams() {
       const { status } = this.searchParams;
@@ -1742,7 +1740,7 @@ export default {
         this.fetchOperateParams();
       }
     },
-    'searchParams.checkerSet'(val, oldVal) {
+    'searchParams.checkerSets'(val, oldVal) {
       if (!_.isEqual(val, oldVal)) {
         this.fetchOtherParams();
       }
@@ -1816,7 +1814,7 @@ export default {
       this.customOption = defaultOptionColumn;
     }
     this.selectedOptionColumn = _.cloneDeep(defaultOptionColumn);
-    this.guideFlag = Boolean(localStorage.getItem('guideEnd') || '');
+    this.guideFlag = Boolean(localStorage.getItem('guideEnd') || !this.isInnerSite);
   },
   mounted() {
     const memberNeverShow = JSON.parse(window.localStorage.getItem('memberNeverShow'));
@@ -1830,6 +1828,11 @@ export default {
       : (this.isSearchDropdown = lintSearchExpend);
     this.openDetail(); // 打开详情
     this.keyOperate();
+    // 主动给 body 设置焦点，确保键盘事件能触发
+    this.$nextTick(() => {
+      document.body.setAttribute('tabindex', '-1');
+      document.body.focus();
+    });
   },
   beforeDestroy() {
     document.onkeydown = null;
@@ -2121,17 +2124,17 @@ export default {
     },
     getSearchParams() {
       const { dimension, toolName, taskIdList, isProjectDefect } = this;
-      const { daterange, authorList } = this.searchParams;
+      const { daterange, authorList, checkerSets } = this.searchParams;
       const author = isProjectDefect ? authorList[0] : this.searchParams.author;
       const { isSelectAll } = this;
-      const checkerSet = this.searchFormData.checkerSetList
-        .find(checkerSet => checkerSet.checkerSetId === this.searchParams.checkerSet);
+      const checkerSetList = this.searchFormData.checkerSetList
+        .filter(checkerSet => checkerSets.includes(checkerSet.checkerSetId));
       const params = {
         ...this.searchParams,
         dimensionList: dimension,
         toolNameList: toolName,
         isSelectAll,
-        checkerSet,
+        checkerSets: checkerSetList,
         taskIdList,
         author,
         multiTaskQuery: isProjectDefect,
@@ -2202,6 +2205,7 @@ export default {
       this.searchFormData = Object.assign(this.searchFormData, {
         checkerSetList,
       });
+      this.searchParams.checkerSets = this.$route.query.checkerSet ? this.$route.query.checkerSet.split(',') : [];
     },
     async fetchStatusParams() {
       if (this.visitable === false) return;
@@ -2238,13 +2242,15 @@ export default {
     async fetchOtherParams() {
       if (this.visitable === false) return;
       this.selectLoading.otherParamsLoading = true;
-      const { status, checkerSet, buildId } = this.searchParams;
+      const { status, checkerSets, buildId } = this.searchParams;
       const { taskIdList, dimension, toolName, isProjectDefect } = this;
+      const checkerSetList = this.searchFormData.checkerSetList
+        .filter(checkerSet => checkerSets.includes(checkerSet.checkerSetId));
       const params = {
         dimensionList: dimension,
         toolNameList: toolName,
         statusList: status,
-        checkerSet,
+        checkerSets: checkerSetList,
         buildId,
         taskIdList,
         multiTaskQuery: isProjectDefect,
@@ -2253,7 +2259,14 @@ export default {
       const { authorList = [], checkerList = [], filePathTree = {} } = res;
       const newAuthorList = authorList.filter(item => item !== this.user.username);
       newAuthorList.unshift(this.user.username);
-      const newList = newAuthorList.map(item => ({ id: item, name: item }));
+      const dataMap = await this.$store.dispatch(
+        'displayname/batchGetDisplayName',
+        newAuthorList,
+      );
+      const newList = newAuthorList.map(author => ({
+        id: author,
+        name: dataMap.get(author)?.display_name || author,
+      }));
       this.searchFormData = Object.assign(this.searchFormData, {
         authorList: newList,
         checkerList,
@@ -2490,7 +2503,8 @@ export default {
       this.defectDetailSearchParams.entityId = '';
       this.defectDetailSearchParams.entityId = row.entityId;
       this.defectDetailSearchParams.defectId = row.defectId;
-      this.defectDetailSearchParams.filePath = row.filePath;
+      this.defectDetailSearchParams.filePath = row.filePath || row.fileName;
+      this.defectDetailSearchParams.toolName = row.toolName;
     },
     handleCodeFullScreen(type) {
       this.$nextTick(() => {
@@ -2692,7 +2706,6 @@ export default {
       });
     },
     handleAuthor(changeAuthorType, entityId, author) {
-      window.changeAlert = false;
       this.authorEditDialogVisible = true;
       this.operateParams.changeAuthorType = changeAuthorType;
       if (author !== undefined) {
@@ -2792,7 +2805,6 @@ export default {
       if (ignoreType === 'RevertIgnore') {
         this.handleIgnoreConfirm();
       } else {
-        window.changeAlert = false;
         this.ignoreReasonDialogVisible = true;
       }
     },
@@ -2905,8 +2917,7 @@ export default {
             }
             this.initParams();
 
-            this.operateParams.ignoreReason = '';
-            this.operateParams.ignoreReasonType = '';
+            this.initIgnoreDialog();
             if (this.defectDetailDialogVisible) {
               this.handleFileListRowClick(this.defectList[this.fileIndex]);
             }
@@ -2921,11 +2932,15 @@ export default {
         });
     },
     handleIgnoreCancel() {
-      this.operateParams.ignoreReason = '';
-      this.operateParams.ignoreReasonType = '';
+      this.initIgnoreDialog();
       this.ignoreReasonDialogVisible = false;
       this.isShowDetailDialog = true;
       this.handleClearWindowAlert();
+    },
+    /** 初始化忽略对话框 */
+    initIgnoreDialog() {
+      this.operateParams.ignoreReason = '';
+      this.operateParams.ignoreReasonType = '';
     },
     toLogs() {
       this.changeHandlerVisible = false;

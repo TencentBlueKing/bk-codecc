@@ -30,10 +30,10 @@ import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.api.pojo.codecc.Result
 import com.tencent.devops.common.service.utils.I18NUtils
 import org.slf4j.LoggerFactory
-import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
-import javax.ws.rs.ext.ExceptionMapper
-import javax.ws.rs.ext.Provider
+import jakarta.ws.rs.core.MediaType
+import jakarta.ws.rs.core.Response
+import jakarta.ws.rs.ext.ExceptionMapper
+import jakarta.ws.rs.ext.Provider
 
 @Provider
 class CodeCCExceptionMapper : ExceptionMapper<CodeCCException> {

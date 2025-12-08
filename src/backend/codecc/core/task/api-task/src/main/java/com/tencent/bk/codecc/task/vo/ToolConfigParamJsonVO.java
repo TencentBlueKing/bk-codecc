@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -39,43 +38,43 @@ import java.util.List;
  * @date 2019/6/13
  */
 @Data
-@ApiModel("工具配置参数")
+@Schema(description = "工具配置参数")
 public class ToolConfigParamJsonVO
 {
-    @ApiModelProperty(value = "配置信息对应的项目ID", required = true)
+    @Schema(description = "配置信息对应的项目ID", required = true)
     private Long taskId;
 
-    @ApiModelProperty(value = "工具的名称", required = true)
+    @Schema(description = "工具的名称", required = true)
     private String toolName;
 
-    @ApiModelProperty(value = "选中的值", required = true)
+    @Schema(description = "选中的值", required = true)
     private String chooseValue;
 
-    @ApiModelProperty(value = "键")
+    @Schema(description = "键")
     private Long key;
 
-    @ApiModelProperty(value = "显示名称")
+    @Schema(description = "显示名称")
     private String labelName;
 
-    @ApiModelProperty(value = "参数类型")
+    @Schema(description = "参数类型")
     private String varType;
 
-    @ApiModelProperty(value = "参数名称", required = true)
+    @Schema(description = "参数名称", required = true)
     private String varName;
 
-    @ApiModelProperty(value = "参数默认值")
+    @Schema(description = "参数默认值")
     private String varDefault;
 
-    @ApiModelProperty(value = "参数操作")
+    @Schema(description = "参数操作")
     private String varOptions;
 
-    @ApiModelProperty(value = "参数提示")
+    @Schema(description = "参数提示")
     private String varTips;
 
-    @ApiModelProperty(value = "是否必要请求")
+    @Schema(description = "是否必要请求")
     private Boolean varRequired;
 
-    @ApiModelProperty(value = "参数列表")
+    @Schema(description = "参数列表")
     private List<VarOptionListEntity> varOptionList;
 
     @Data

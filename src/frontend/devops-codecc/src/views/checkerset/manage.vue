@@ -118,6 +118,7 @@ export default {
           legacy: this.detailInfo.legacy,
           codeLangList: this.detailInfo.codeLangList,
           toolList: this.detailInfo.toolList,
+          sourceProjectId: this.detailInfo.projectId,
         };
         return conf;
       }

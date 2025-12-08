@@ -1,8 +1,7 @@
 package com.tencent.bk.codecc.task.vo.pipeline;
 
 import com.tencent.devops.common.api.CodeRepoVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -14,18 +13,18 @@ import java.util.List;
  * @date 2019/11/18
  */
 @Data
-@ApiModel("流水线CodeCC原子视图")
+@Schema(description = "流水线CodeCC原子视图")
 public class PipelineBuildInfoVO
 {
-    @ApiModelProperty(value = "代码仓库repoId列表，V2插件使用")
+    @Schema(description = "代码仓库repoId列表，V2插件使用")
     private List<String> repoIds;
 
-    @ApiModelProperty(value = "本次扫描的代码仓库列表，V3插件使用")
+    @Schema(description = "本次扫描的代码仓库列表，V3插件使用")
     private List<CodeRepoVO> codeRepos;
 
-    @ApiModelProperty(value = "扫描白名单列表")
+    @Schema(description = "扫描白名单列表")
     private List<String> repoWhiteList;
 
-    @ApiModelProperty(value = "拉取代码库相对子路径")
+    @Schema(description = "拉取代码库相对子路径")
     private List<String> repoRelativePathList;
 }

@@ -36,12 +36,12 @@ class CommitIdDefectCommitComponent @Autowired constructor(
     private val defectIdGenerator: DefectIdGenerator,
     private val toolBuildStackRepository: ToolBuildStackRepository,
     private val lintFilterPathBizServiceImpl: LintFilterPathBizServiceImpl,
-    private val redisTemplate: RedisTemplate<String,String>
+    private val newAggregateDebugService: AggregateDebugService,
 ) : LintDefectCommitComponent(
     lintDefectV2Dao,
     clusterLintCompareProcess,
     newLintDefectTracingComponent,
-    redisTemplate,
+    newAggregateDebugService,
     defectFilePathClusterService,
     scmJsonComponent
 ) {

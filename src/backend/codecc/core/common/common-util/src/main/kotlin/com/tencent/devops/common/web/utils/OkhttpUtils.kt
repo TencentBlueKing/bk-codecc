@@ -26,8 +26,8 @@
 
 package com.tencent.devops.common.util
 
-import com.alibaba.fastjson.JSONObject
-import com.alibaba.fastjson.TypeReference
+import com.alibaba.fastjson2.JSONObject
+import com.alibaba.fastjson2.TypeReference
 import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.constant.CommonMessageCode
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -71,7 +71,7 @@ object OkhttpUtils {
         okHttpClient.newCall(request).execute().use { response ->
             val responseContent = response.body!!.string()
             if (!response.isSuccessful) {
-                logger.warn("request failed, url:$url message: ${response.message}")
+                logger.warn("request failed, url: $url, message: ${response.message}")
                 throw CodeCCException(CommonMessageCode.THIRD_PARTY_SYSTEM_FAIL)
             }
             return responseContent

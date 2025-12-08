@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.defect.dto;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,27 +26,27 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ApiModel("代码行数视图")
+@Schema(description = "代码行数视图")
 public class CodeLineModel {
 
-    @ApiModelProperty("语言名称")
+    @Schema(description = "语言名称")
     private String language;
 
-    @ApiModelProperty("代码行数")
+    @Schema(description = "代码行数")
     private Long codeLine;
 
-    @ApiModelProperty("注释行")
+    @Schema(description = "注释行")
     private Long commentLine;
 
-    @ApiModelProperty("有效注释行")
+    @Schema(description = "有效注释行")
     private Long efficientCommentLine;
 
-    @ApiModelProperty("空白行")
+    @Schema(description = "空白行")
     private Long blankLine;
 
-    @ApiModelProperty("语言值")
+    @Schema(description = "语言值")
     private Long langValue;
 
-    @ApiModelProperty("文件数")
+    @Schema(description = "文件数")
     private Long fileNum;
 }

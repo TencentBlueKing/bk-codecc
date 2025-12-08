@@ -3,6 +3,7 @@ package com.tencent.bk.codecc.defect.resources;
 import com.google.common.collect.Lists;
 import com.tencent.bk.audit.annotations.AuditEntry;
 import com.tencent.bk.codecc.defect.api.UserCheckerSetRestResource;
+import com.tencent.bk.codecc.defect.auth.CheckerSetListExtAuth;
 import com.tencent.bk.codecc.defect.auth.CheckerSetExtAuth;
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetRepository;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
@@ -15,6 +16,7 @@ import com.tencent.bk.codecc.defect.vo.OtherCheckerSetListQueryReq;
 import com.tencent.bk.codecc.defect.vo.QueryTaskCheckerSetsRequest;
 import com.tencent.bk.codecc.defect.vo.QueryTaskCheckerSetsResponse;
 import com.tencent.bk.codecc.defect.vo.UpdateAllCheckerReq;
+import com.tencent.bk.codecc.defect.vo.checkerset.TaskUsageDetailVO;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetPermissionType;
 import com.tencent.devops.common.api.annotation.I18NResponse;
 import com.tencent.devops.common.api.checkerset.AuthManagementPermissionReqVO;
@@ -126,8 +128,11 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
 
     @Override
     @I18NResponse
-    @AuthMethod(resourceType = ResourceType.PROJECT, permission = {CodeCCAuthAction.RULESET_LIST})
-    public Result<List<CheckerSetVO>> getCheckerSets(CheckerSetListQueryReq queryCheckerSetReq) {
+    @AuthMethod(
+            resourceType = ResourceType.PROJECT,
+            permission = {CodeCCAuthAction.RULESET_LIST},
+            extPassClassName = CheckerSetListExtAuth.class
+    )public Result<List<CheckerSetVO>> getCheckerSets(CheckerSetListQueryReq queryCheckerSetReq) {
         if (queryCheckerSetReq.getTaskId() != null) {
             return new Result<>(checkerSetQueryBizService.getCheckerSetsOfTask(queryCheckerSetReq));
         } else {
@@ -361,5 +366,10 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
     @Override
     public Result<List<CheckerSetVO>> getCheckerSetsForPreCI() {
         return new Result<>(checkerSetQueryBizService.queryCheckerDetailForPreCI());
+    }
+
+    @Override
+    public Result<Page<TaskUsageDetailVO>> getTaskUsageList(String projectId, String checkerSetId) {
+        return Result.success(checkerSetQueryBizService.getCheckerSetTaskUsageDetail(projectId, checkerSetId));
     }
 }

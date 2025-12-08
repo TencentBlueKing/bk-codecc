@@ -12,8 +12,7 @@
  
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -23,21 +22,21 @@ import lombok.Data;
  * @version V1.0
  */
 @Data
-@ApiModel("扫描出告警的任务视图")
+@Schema(description = "扫描出告警的任务视图")
 public class GrayDefectTaskSubVO {
-    @ApiModelProperty("任务id")
+    @Schema(description = "任务id")
     private Long taskId;
 
-    @ApiModelProperty("上次告警数")
+    @Schema(description = "上次告警数")
     private Integer lastDefectCount;
 
-    @ApiModelProperty("扫描耗时")
+    @Schema(description = "扫描耗时")
     private Long lastElapsedTime;
 
-    @ApiModelProperty("本次告警数")
+    @Schema(description = "本次告警数")
     private Integer currentDefectCount;
 
-    @ApiModelProperty("本次耗时")
+    @Schema(description = "本次耗时")
     private Long currentElapsedTime;
 
     /**
@@ -45,18 +44,18 @@ public class GrayDefectTaskSubVO {
      * int TASK_FLAG_FAIL = 2;  失败
      * int TASK_FLAG_PROCESSING = 3;  进行中
      */
-    @ApiModelProperty("任务状态")
+    @Schema(description = "任务状态")
     private int taskState;
 
-    @ApiModelProperty("仓库url")
+    @Schema(description = "仓库url")
     private String gitUrl;
 
-    @ApiModelProperty("codecc链接")
+    @Schema(description = "codecc链接")
     private String codeccUrl;
 
-    @ApiModelProperty("最近分析状态")
+    @Schema(description = "最近分析状态")
     private String analyzeDate;
 
-    @ApiModelProperty("本次构建id")
+    @Schema(description = "本次构建id")
     private String buildId;
 }

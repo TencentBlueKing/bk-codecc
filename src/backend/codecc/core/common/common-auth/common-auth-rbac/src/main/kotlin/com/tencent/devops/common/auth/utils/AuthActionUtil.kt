@@ -15,7 +15,7 @@ object AuthActionUtil {
         CodeCCAuthAction.DEFECT_VIEW.actionName to listOf(TaskAuthAction.VIEW_DEFECT.actionId),
         CodeCCAuthAction.REPORT_VIEW.actionName to listOf(TaskAuthAction.VIEW_REPORT.actionId),
         CodeCCAuthAction.TASK_MANAGE.actionName to
-            listOf(TaskAuthAction.SETTING.actionId, TaskAuthAction.MANAGE.actionId)
+                listOf(TaskAuthAction.SETTING.actionId, TaskAuthAction.MANAGE.actionId)
     )
 
     /**

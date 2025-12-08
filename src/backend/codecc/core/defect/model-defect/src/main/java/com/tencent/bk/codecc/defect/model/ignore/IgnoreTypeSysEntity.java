@@ -21,7 +21,10 @@ public class IgnoreTypeSysEntity extends CommonEntity {
     @Field("ignore_type_id")
     private Integer ignoreTypeId;
     /**
-     * 状态： 0启用，1不启用
+     * 状态:
+     * 0 启用
+     * 1 不启用
+     * 2 后台启用 (该忽略类型不能被用户选中, 只能由后台直接赋值)
      */
     @Field("status")
     private Integer status;

@@ -16,10 +16,10 @@ import com.tencent.devops.common.web.RestResource;
 import java.util.List;
 import java.util.Set;
 
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.ws.rs.PathParam;
+import jakarta.ws.rs.PathParam;
 
 @RestResource
 public class BuildCheckerSetRestResourceImpl implements BuildCheckerSetRestResource {

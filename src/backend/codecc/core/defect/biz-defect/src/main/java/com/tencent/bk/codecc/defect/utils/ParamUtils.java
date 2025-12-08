@@ -1,6 +1,7 @@
 package com.tencent.bk.codecc.defect.utils;
 
 import static com.tencent.devops.common.constant.ComConstants.TOOL_LICENSE_WHITE_LIST;
+import static com.tencent.devops.common.constant.ToolConstants.LLM_NEGATIVE_DEFECT_FILTER;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,6 +21,7 @@ import com.tencent.bk.codecc.defect.vo.enums.CheckerCategory;
 import com.tencent.bk.codecc.task.api.ServiceBaseDataResource;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.api.ServiceToolRestResource;
+import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigRequest;
 import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse;
 import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse.TaskBase;
@@ -54,6 +56,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -66,6 +70,8 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.util.Pair;
 
@@ -97,6 +103,24 @@ public class ParamUtils {
                     return projectIdSet;
                 }
             });
+
+    // 检查工具是否开启 LLM 误报过滤
+    public static boolean enableLLMNegativeDefectFilter(TaskDetailVO taskVO, String toolName) {
+        if (StringUtils.isBlank(toolName)) {
+            return false;
+        }
+
+        return taskVO.getToolConfigInfoList().stream()
+                .filter(it -> toolName.equals(it.getToolName()) && StringUtils.isNotBlank(it.getParamJson()))
+                .anyMatch(it -> {
+                    try {
+                        JSONObject jsonObject = new JSONObject(it.getParamJson());
+                        return jsonObject.optBoolean(LLM_NEGATIVE_DEFECT_FILTER, false);
+                    } catch (JSONException e) {
+                        return false;
+                    }
+                });
+    }
 
     /**
      * 根据前端传入条件，转换为后端工具列表 （兼容老业务，toolName以及dimension是逗号分割）
@@ -914,5 +938,81 @@ public class ParamUtils {
         } else {
             return null;
         }
+    }
+
+    /**
+     * 从流水线模板的 input 解析字符串集合字段
+     */
+    public static Set<String> parseStringSet(Map<String, Object> inputTerm, String key) {
+        return Optional.ofNullable(inputTerm.get(key))
+                .filter(obj -> obj instanceof List)
+                .map(list -> ((List<?>) list).stream()
+                        .map(Object::toString)
+                        .collect(Collectors.toCollection(HashSet::new)))
+                .orElse(new HashSet<>());
+    }
+
+    /**
+     * 从流水线模板的 input 解析整数集合字段
+     */
+    public static Set<Integer> parseIntegerSet(Map<String, Object> inputTerm, String key) {
+        return Optional.ofNullable(inputTerm.get(key))
+                .filter(obj -> obj instanceof List)
+                .map(list -> ((List<?>) list).stream()
+                        .map(obj -> {
+                            if (obj instanceof Number) {
+                                return ((Number) obj).intValue();
+                            } else if (obj instanceof String) {
+                                String numStr = (String) obj;
+                                if (!StringUtils.isNumeric(numStr)) {
+                                    return null;
+                                }
+                                return Integer.parseInt(numStr);
+                            }
+                            return null;
+                        })
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toCollection(HashSet::new)))
+                .orElse(new HashSet<>());
+    }
+
+    /**
+     * 从流水线模板的 input 解析整数字段
+     */
+    public static Integer parseInteger(Map<String, Object> inputTerm, String key, Integer defaultValue) {
+        return Optional.ofNullable(inputTerm.get(key))
+                .map(obj -> {
+                    if (obj instanceof Number) {
+                        return ((Number) obj).intValue();
+                    } else if (obj instanceof String) {
+                        String numStr = (String) obj;
+                        if (!StringUtils.isNumeric(numStr)) {
+                            return defaultValue;
+                        }
+                        return Integer.parseInt(numStr);
+                    }
+                    return defaultValue;
+                })
+                .orElse(defaultValue);
+    }
+
+    /**
+     * 从流水线模板的 input 解析Long类型字段
+     */
+    public static Long parseLong(Map<String, Object> inputTerm, String key) {
+        return Optional.ofNullable(inputTerm.get(key))
+                .map(obj -> {
+                    if (obj instanceof Number) {
+                        return ((Number) obj).longValue();
+                    } else if (obj instanceof String) {
+                        try {
+                            return Long.parseLong((String) obj);
+                        } catch (NumberFormatException e) {
+                            return null;
+                        }
+                    }
+                    return null;
+                })
+                .orElse(null);
     }
 }

@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -39,31 +38,31 @@ import java.util.List;
  * @date 2020/05/26
  */
 @Data
-@ApiModel("文件告警收敛")
+@Schema(description = "文件告警收敛")
 public class FileDefectGatherVO
 {
-    @ApiModelProperty(value = "文件名")
+    @Schema(description = "文件名")
     private String fileName;
 
-    @ApiModelProperty(value = "文件总数")
+    @Schema(description = "文件总数")
     private Integer fileCount;
 
-    @ApiModelProperty(value = "告警总数")
+    @Schema(description = "告警总数")
     private Integer defectCount;
 
-    @ApiModelProperty(value = "收敛文件列表")
+    @Schema(description = "收敛文件列表")
     private List<GatherFile> gatherFileList;
 
     @Data
     public static class GatherFile
     {
-        @ApiModelProperty(value = "文件路径")
+        @Schema(description = "文件路径")
         private String filePath;
 
-        @ApiModelProperty(value = "文件相对路径")
+        @Schema(description = "文件相对路径")
         private String relPath;
 
-        @ApiModelProperty(value = "告警总数")
+        @Schema(description = "告警总数")
         private Integer total;
     }
 }

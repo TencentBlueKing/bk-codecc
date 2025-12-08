@@ -29,7 +29,7 @@ package com.tencent.bk.codecc.defect.dao.defect.mongotemplate;
 import com.google.common.base.CaseFormat;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.tencent.devops.common.codecc.util.JsonUtil;
+import com.tencent.devops.common.constant.DefectConstants;
 import com.tencent.devops.common.constant.IgnoreApprovalConstants.ApproverStatus;
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository;
 import com.tencent.bk.codecc.defect.dto.IgnoreTypeStatModel;
@@ -45,12 +45,10 @@ import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVOBase.CheckerSet;
 import com.tencent.codecc.common.db.MongoPageHelper;
 import com.tencent.devops.common.api.pojo.Page;
 import com.tencent.devops.common.constant.ComConstants;
-import com.tencent.devops.common.constant.ComConstants.DefectStatus;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.DateTimeUtils;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -89,7 +87,9 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
-import com.mongodb.client.MongoCursor;
+
+import static com.tencent.devops.common.constant.DefectConstants.IgnoreReasonType.LLM_NEGATIVE_JUDGE;
+import static com.tencent.devops.common.constant.DefectConstants.IgnoreReasonType.UNDEFINED;
 
 /**
  * lint类工具持久层代码
@@ -105,6 +105,7 @@ public class LintDefectV2Dao {
 
     // 公共的分页大小
     private static final int PAGE_SIZE = 1000;
+    private static final int UPDATE_PAGE_SIZE = 500;
 
     @Autowired
     private MongoTemplate defectMongoTemplate;
@@ -116,6 +117,89 @@ public class LintDefectV2Dao {
     public boolean saveAll(List<LintDefectV2Entity> entities) {
         lintDefectV2Repository.saveAll(entities);
         return true;
+    }
+
+    private void batchCancelLLMIgnoreByPage(List<String> defectIds) {
+        Criteria criteria = Criteria.where("_id").in(defectIds)
+                .and("status").bits().allSet(Collections.singletonList(DefectConstants.DefectStatus.IGNORE.exp()))
+                .and("ignore_reason_type").is(LLM_NEGATIVE_JUDGE.value());
+        Query query = new Query(criteria);
+        Update update = new Update();
+        update.bitwise("status").xor(DefectConstants.DefectStatus.IGNORE.value())
+                .unset("ignore_reason_type")
+                .unset("ignore_time")
+                .unset("ignore_reason")
+                .set("updated_date", System.currentTimeMillis());
+        defectMongoTemplate.updateMulti(query, update, LintDefectV2Entity.class);
+    }
+
+    /**
+     * 批量将这些 defect id 中, ignore_reason_type = LLM_NEGATIVE_JUDGE 的告警的 status 从 IGNORE 转成 NEW
+     * 即取消大模型的误报判断
+     */
+    public void batchCancelLLMIgnore(List<String> defectIds) {
+        if (defectIds.isEmpty()) {
+            return;
+        }
+        if (defectIds.size() <= UPDATE_PAGE_SIZE) {
+            batchCancelLLMIgnoreByPage(defectIds);
+        } else {
+            // 去重
+            List<String> distinctIds = new ArrayList<>(new HashSet<>(defectIds));
+
+            List<List<String>> partitions = Lists.partition(distinctIds, UPDATE_PAGE_SIZE);
+            partitions.forEach(this::batchCancelLLMIgnoreByPage);
+        }
+    }
+
+    /**
+     * 批量将告警的 status 改成 "已忽略", ignore_reason_type 改成 "LLM误报过滤", 根据 defectId2IgnoreReason 修改 ignore_reason
+     */
+    public void batchUpdateLLMIgnoreReason(Map<String, String> defectId2IgnoreReason) {
+        if (defectId2IgnoreReason.isEmpty()) {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+
+        Criteria reasonTypeCriteria = new Criteria().orOperator(
+                Criteria.where("ignore_reason_type").exists(false),
+                Criteria.where("ignore_reason_type").in(LLM_NEGATIVE_JUDGE.value(), UNDEFINED.value())
+        );
+        Criteria statusCriteria = new Criteria().orOperator(
+                Criteria.where("status").is(DefectConstants.DefectStatus.NEW.value()),
+                Criteria.where("status").bits()
+                        .allSet(Collections.singletonList(DefectConstants.DefectStatus.IGNORE.exp()))
+        );
+
+        BulkOperations ops =
+                defectMongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, LintDefectV2EntityTracking.class);
+        int i = 0;
+        for (Map.Entry<String, String> entry : defectId2IgnoreReason.entrySet()) {
+            String id = entry.getKey();
+            String reason = entry.getValue();
+
+            Criteria criteria = Criteria.where("_id").is(id)
+                    .andOperator(reasonTypeCriteria, statusCriteria);
+            Query query = new Query(criteria);
+            Update update = new Update();
+            update.bitwise("status").or(DefectConstants.DefectStatus.IGNORE.value());
+            update.set("ignore_reason", reason);
+            update.set("ignore_reason_type", LLM_NEGATIVE_JUDGE.value());
+            update.set("ignore_time", now);
+            update.set("updated_date", now);
+            ops.updateOne(query, update);
+            i++;
+            if (i >= UPDATE_PAGE_SIZE) {
+                ops.execute();
+                ops = defectMongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, LintDefectV2EntityTracking.class);
+                i = 0;
+            }
+        }
+
+        if (i > 0) {
+            ops.execute();
+        }
     }
 
     /**
@@ -448,7 +532,7 @@ public class LintDefectV2Dao {
             boolean isAggregate
     ) {
         String checker = defectQueryReqVO.getChecker();
-        CheckerSet checkerSet = defectQueryReqVO.getCheckerSet();
+        List<CheckerSet> checkerSets = defectQueryReqVO.getCheckerSets();
         String author = defectQueryReqVO.getAuthor();
         Set<String> fileList = defectQueryReqVO.getFileList();
         Set<String> conditionSeverity = defectQueryReqVO.getSeverity();
@@ -467,7 +551,8 @@ public class LintDefectV2Dao {
         }
 
         // 传入规则查，但db没有匹配的
-        if ((StringUtils.isNotEmpty(checker) || checkerSet != null) && CollectionUtils.isEmpty(pkgChecker)) {
+        if ((StringUtils.isNotEmpty(checker) || CollectionUtils.isNotEmpty(checkerSets))
+                && CollectionUtils.isEmpty(pkgChecker)) {
             return magicEmptyCriteria;
         }
 
@@ -615,12 +700,13 @@ public class LintDefectV2Dao {
             rootCriteria.and("ignore_approval_id").is(defectQueryReqVO.getIgnoreApprovalId());
         }
 
-        long langValue = defectQueryReqVO.getCheckerSet() != null ? defectQueryReqVO.getCheckerSet().getCodeLang() : 0L;
-
+        List<Long> langValues = CollectionUtils.isNotEmpty(defectQueryReqVO.getCheckerSets())
+                ? defectQueryReqVO.getCheckerSets().stream().filter(it -> it != null && it.getCodeLang() > 0)
+                .map(CheckerSet::getCodeLang).collect(Collectors.toList()) : null;
         // 按选定规则集的语言过滤
-        if (langValue > 0) {
+        if (CollectionUtils.isNotEmpty(langValues)) {
             Criteria langValueCri = new Criteria();
-            langValueCri.orOperator(Criteria.where("lang_value").is(langValue),
+            langValueCri.orOperator(Criteria.where("lang_value").in(langValues),
                     Criteria.where("lang_value").exists(false),
                     Criteria.where("lang_value").is(null));
             andOpList.add(langValueCri);
@@ -687,9 +773,9 @@ public class LintDefectV2Dao {
             switch (opsType) {
                 case MARK:
                     if (CollectionUtils.isEmpty(status)
-                            || status.contains(String.valueOf(DefectStatus.NEW.value()))) {
+                            || status.contains(String.valueOf(ComConstants.DefectStatus.NEW.value()))) {
                         orCri.add(Criteria.where("mark").gt(ComConstants.MarkStatus.NOT_MARKED.value())
-                                .and("status").is(DefectStatus.NEW.value()));
+                                .and("status").is(ComConstants.DefectStatus.NEW.value()));
                     }
                     break;
                 case COMMENT:
@@ -699,12 +785,12 @@ public class LintDefectV2Dao {
                     List<Criteria> andCri = new ArrayList<>();
                     andCri.add(Criteria.where("code_comment").exists(false));
                     andCri.add(new Criteria().orOperator(
-                            Criteria.where("status").ne(DefectStatus.NEW.value()),
+                            Criteria.where("status").ne(ComConstants.DefectStatus.NEW.value()),
                             Criteria.where("mark_but_no_fixed").is(false),
                             Criteria.where("mark_but_no_fixed").exists(false)
                     ));
                     andCri.add(new Criteria().orOperator(
-                            Criteria.where("status").ne(DefectStatus.NEW.value()),
+                            Criteria.where("status").ne(ComConstants.DefectStatus.NEW.value()),
                             Criteria.where("mark").is(ComConstants.MarkStatus.NOT_MARKED.value()),
                             Criteria.where("mark").exists(false)
                     ));
@@ -725,9 +811,9 @@ public class LintDefectV2Dao {
                     break;
                 case MARK_NOT_FIXED:
                     if (CollectionUtils.isEmpty(status)
-                            || status.contains(String.valueOf(DefectStatus.NEW.value()))) {
+                            || status.contains(String.valueOf(ComConstants.DefectStatus.NEW.value()))) {
                         orCri.add(Criteria.where("mark_but_no_fixed").is(true)
-                                .and("status").is(DefectStatus.NEW.value()));
+                                .and("status").is(ComConstants.DefectStatus.NEW.value()));
                     }
                     break;
                 default:
@@ -782,8 +868,8 @@ public class LintDefectV2Dao {
         }
         // 若是快照查，选中待修复就必须补偿上已修复；真实状态会在postHandleLintDefect()后置处理
         if (StringUtils.isNotEmpty(buildId)) {
-            String newStatusStr = String.valueOf(DefectStatus.NEW.value());
-            String fixedStatusStr = String.valueOf(DefectStatus.FIXED.value());
+            String newStatusStr = String.valueOf(ComConstants.DefectStatus.NEW.value());
+            String fixedStatusStr = String.valueOf(ComConstants.DefectStatus.FIXED.value());
             if (statusFilter.contains(newStatusStr)) {
                 statusFilter.add(newStatusStr);
                 statusFilter.add(fixedStatusStr);
@@ -799,27 +885,29 @@ public class LintDefectV2Dao {
 
         LinkedList<Criteria> criteriaList = Lists.newLinkedList();
         // 如果查询已忽略告警，且已忽略类型不为空，需添加忽略类型查询
-        boolean hasIgnore = statusFilter.contains(String.valueOf(DefectStatus.IGNORE.value()));
+        boolean hasIgnore = statusFilter.contains(String.valueOf(ComConstants.DefectStatus.IGNORE.value()));
 
         if (hasIgnore) {
             if (CollectionUtils.isNotEmpty(ignoreReasonTypes)) {
                 criteriaList.addLast(
-                        Criteria.where("status").bits().allSet(DefectStatus.IGNORE.value())
+                        Criteria.where("status").bits().allSet(ComConstants.DefectStatus.IGNORE.value())
                                 .and("ignore_reason_type").in(ignoreReasonTypes)
                 );
             } else {
                 criteriaList.addLast(
-                        Criteria.where("status").bits().allSet(DefectStatus.IGNORE.value())
+                        Criteria.where("status").bits().allSet(ComConstants.DefectStatus.IGNORE.value())
                 );
             }
 
-            statusFilter.remove(String.valueOf(DefectStatus.IGNORE.value()));
-            statusFilter.remove(String.valueOf(DefectStatus.IGNORE.value() | DefectStatus.NEW.value()));
+            statusFilter.remove(String.valueOf(ComConstants.DefectStatus.IGNORE.value()));
+            statusFilter.remove(String.valueOf(
+                    ComConstants.DefectStatus.IGNORE.value() | ComConstants.DefectStatus.NEW.value()
+            ));
         }
 
         if (CollectionUtils.isNotEmpty(statusFilter)) {
             Set<Integer> condStatusSet = statusFilter.stream()
-                    .map(it -> Integer.parseInt(it) | DefectStatus.NEW.value())
+                    .map(it -> Integer.parseInt(it) | ComConstants.DefectStatus.NEW.value())
                     .collect(Collectors.toSet());
             criteriaList.addFirst(Criteria.where("status").in(condStatusSet));
         }
@@ -950,10 +1038,10 @@ public class LintDefectV2Dao {
         }
         Query query = Query.query(Criteria.where("task_id").is(taskId)
                 .and("tool_name").in(toolName)
-                .and("status").is(DefectStatus.NEW.value()));
+                .and("status").is(ComConstants.DefectStatus.NEW.value()));
         long curTime = System.currentTimeMillis();
         Update update = new Update();
-        update.set("status", ComConstants.DefectStatus.NEW.value() | DefectStatus.CHECKER_MASK.value());
+        update.set("status", ComConstants.DefectStatus.NEW.value() | ComConstants.DefectStatus.CHECKER_MASK.value());
         update.set("exclude_time", curTime);
         update.set("updated_date", curTime);
         return defectMongoTemplate.updateMulti(query, update, LintDefectV2Entity.class).getModifiedCount();
@@ -1087,7 +1175,8 @@ public class LintDefectV2Dao {
 
         // 状态过滤
         if (CollectionUtils.isNotEmpty(statusSet)) {
-            Set<Integer> condStatusSet = statusSet.stream().map(it -> Integer.valueOf(it) | DefectStatus.NEW.value())
+            Set<Integer> condStatusSet = statusSet.stream()
+                    .map(it -> Integer.valueOf(it) | ComConstants.DefectStatus.NEW.value())
                     .collect(Collectors.toSet());
             rootCriteria.and("status").in(condStatusSet);
         }
@@ -1330,7 +1419,7 @@ public class LintDefectV2Dao {
      */
     public List<DefectCountModel> statisticLintDefect(Set<Long> taskIdList, String toolName) {
         Criteria criteria = new Criteria();
-        criteria.and("task_id").in(taskIdList).and("status").is(DefectStatus.NEW.value());
+        criteria.and("task_id").in(taskIdList).and("status").is(ComConstants.DefectStatus.NEW.value());
         if (StringUtils.isNotEmpty(toolName)) {
             criteria.and("tool_name").is(toolName);
         }
@@ -1354,23 +1443,23 @@ public class LintDefectV2Dao {
      * @param insertList
      * @param batchSize 每一批大小
      */
-    public void doBatchInsert(List<LintDefectV2Entity> insertList, int batchSize) {
+    public List<LintDefectV2Entity> doBatchInsert(List<LintDefectV2Entity> insertList, int batchSize) {
         if (CollectionUtils.isEmpty(insertList)) {
-            return;
+            return null;
         }
 
+        List<LintDefectV2Entity> result = new ArrayList<>();
         if (insertList.size() > batchSize) {
             List<List<LintDefectV2Entity>> partitionList = Lists.partition(insertList, batchSize);
-            partitionList.forEach(onePartition ->
-                    defectMongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, LintDefectV2Entity.class)
-                            .insert(onePartition)
-                            .execute()
-            );
+            partitionList.forEach(onePartition -> {
+                List<LintDefectV2Entity> afterSave = lintDefectV2Repository.saveAll(onePartition);
+                result.addAll(afterSave);
+            });
         } else {
-            defectMongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, LintDefectV2Entity.class)
-                    .insert(insertList)
-                    .execute();
+            return lintDefectV2Repository.saveAll(insertList);
         }
+
+        return result;
     }
 
     /**
@@ -1508,13 +1597,13 @@ public class LintDefectV2Dao {
         if (criteria == null) {
             return Collections.emptyList();
         }
-        criteria.and("status").is(DefectStatus.NEW.value());
+        criteria.and("status").is(ComConstants.DefectStatus.NEW.value());
         return statisticTaskIdByCri(criteria);
     }
 
     public List<Long> statisticTaskIdByNewDefectId(Set<String> entityIds) {
         Criteria criteria = Criteria.where("_id").in(entityIds.stream().map(ObjectId::new).collect(Collectors.toSet()))
-                .and("status").is(DefectStatus.NEW.value());
+                .and("status").is(ComConstants.DefectStatus.NEW.value());
         return statisticTaskIdByCri(criteria);
     }
 
@@ -1561,7 +1650,7 @@ public class LintDefectV2Dao {
     public List<LintDefectV2Entity> findHistoryNewDefectByPageNoSkip(Long taskId, String toolName,
             Long newDefectJudgeTime, Integer pageSize) {
         List<Criteria> criList = new ArrayList<>();
-        criList.add(Criteria.where("task_id").is(taskId).and("status").is(DefectStatus.NEW.value())
+        criList.add(Criteria.where("task_id").is(taskId).and("status").is(ComConstants.DefectStatus.NEW.value())
                 .and("tool_name").is(toolName));
         criList.add(Criteria.where("line_update_time").lt(newDefectJudgeTime).gt(0));
         Query query = Query.query(new Criteria().andOperator(criList.toArray(new Criteria[]{})));
@@ -1576,6 +1665,20 @@ public class LintDefectV2Dao {
                 .and("status").is(ComConstants.DefectStatus.NEW.value() | ComConstants.DefectStatus.IGNORE.value())
                 .and("ignore_reason_type").is(ignoreType));
         query.limit(pageSize);
+        return defectMongoTemplate.find(query, LintDefectV2Entity.class);
+    }
+
+    /**
+     * 查被忽略的告警, 只返回
+     * @param defectIds
+     * @return
+     */
+    public List<LintDefectV2Entity> findIgnoreInfoByDefectIdIn(List<String> defectIds) {
+        Criteria criteria = Criteria.where("_id").in(defectIds)
+                .and("status").bits().allSet(Collections.singletonList(DefectConstants.DefectStatus.IGNORE.exp()));
+        Query query = Query.query(criteria);
+        query.fields().include("status", "ignore_reason_type", "ignore_reason", "_id");
+
         return defectMongoTemplate.find(query, LintDefectV2Entity.class);
     }
 
@@ -1605,7 +1708,7 @@ public class LintDefectV2Dao {
         return Criteria.where("task_id").is(taskId)
                 .and("tool_name").is(toolName)
                 .and("ignore_reason_type").is(ignoreReasonType)
-                .and("status").bits().allSet(DefectStatus.IGNORE.value());
+                .and("status").bits().allSet(ComConstants.DefectStatus.IGNORE.value());
     }
 
     public List<LintDefectV2Entity> findAllIgnoreDefectForSnapshot(Long taskId, String toolName,
@@ -1788,7 +1891,8 @@ public class LintDefectV2Dao {
         query.addCriteria(
                 Criteria.where("task_id").is(taskId)
                         .and("tool_name").is(toolName)
-                        .and("status").is(DefectStatus.NEW.value() | DefectStatus.IGNORE.value())
+                        .and("status")
+                        .is(ComConstants.DefectStatus.NEW.value() | ComConstants.DefectStatus.IGNORE.value())
         );
         query.with(pageable);
 
@@ -1902,7 +2006,7 @@ public class LintDefectV2Dao {
                 .set("updated_by", userName);
         if (ignoreApprovalStatus != null && ignoreApprovalStatus == ApproverStatus.SUBMIT_SUCC.status()) {
             // 更新忽略状态
-            update.set("status", DefectStatus.NEW.value() | DefectStatus.IGNORE.value())
+            update.set("status", ComConstants.DefectStatus.NEW.value() | ComConstants.DefectStatus.IGNORE.value())
                     .set("ignore_reason_type", ignoreTypeId)
                     .set("ignore_time", System.currentTimeMillis())
                     .set("ignore_reason", ignoreReason)
@@ -1932,6 +2036,26 @@ public class LintDefectV2Dao {
                 .set("updated_by", userName)
                 .unset("code_comment");
         defectMongoTemplate.updateFirst(query, update, LintDefectV2Entity.class);
+    }
+
+    /**
+     * 统计告警数
+     */
+    public Long countLintDefectByStatus(
+            Long taskId, Set<String> toolNames, Integer status, String timeField, long timeStart, long timeEnd
+    ) {
+        Criteria criteria = Criteria.where("task_id").is(taskId);
+        if (CollectionUtils.isNotEmpty(toolNames)) {
+            criteria.and("tool_name").in(toolNames);
+        }
+        if (null != status && status > 0) {
+            criteria.and("status").is(status);
+        }
+        if (StringUtils.isNotEmpty(timeField)) {
+            criteria.and(timeField).gte(timeStart).lte(timeEnd);
+        }
+        Query query = Query.query(criteria);
+        return defectMongoTemplate.count(query, LintDefectV2Entity.class);
     }
 
     /**

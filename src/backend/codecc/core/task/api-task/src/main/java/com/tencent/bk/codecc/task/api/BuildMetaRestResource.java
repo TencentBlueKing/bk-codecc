@@ -34,20 +34,20 @@ import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * 元数据的接口类
@@ -55,60 +55,60 @@ import javax.ws.rs.core.MediaType;
  * @version V1.0
  * @date 2019/4/19
  */
-@Api(tags = {"META"}, description = "元数据查询")
+@Tag(name = "META", description = "元数据查询")
 @Path("/build/meta")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface BuildMetaRestResource {
 
-    @ApiOperation("查询工具列表")
+    @Operation(summary = "查询工具列表")
     @Path("/toolList")
     @GET
     Result<List<ToolMetaBaseVO>> toolList(
-            @ApiParam(value = "是否查询详细信息")
+            @Parameter(description = "是否查询详细信息")
             @QueryParam("isDetail")
             Boolean isDetail);
 
-    @ApiOperation("查询元数据")
+    @Operation(summary = "查询元数据")
     @Path("/metadatas")
     @GET
     Result<Map<String, List<MetadataVO>>> metadatas(
-            @ApiParam(value = "元数据类型", required = true)
+            @Parameter(description = "元数据类型", required = true)
             @QueryParam("metadataType")
             String metadataType);
 
-    @ApiOperation("更新工具状态元数据")
+    @Operation(summary = "更新工具状态元数据")
     @Path("/tools/{toolName}/integratedStatus/update")
     @PUT
     Result<String> updateToolIntegratedToStatus(
-            @ApiParam(value = "用户名", required = true)
+            @Parameter(description = "用户名", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userName,
-            @ApiParam(value = "工具镜像版本", required = false)
+            @Parameter(description = "工具镜像版本", required = false)
             @HeaderParam(AUTH_HEADER_DEVOPS_TOOL_IMAGE_TAG)
             String toolImageTag,
-            @ApiParam(value = "工具名称")
+            @Parameter(description = "工具名称")
             @PathParam("toolName")
             String toolName,
-            @ApiParam(value = "源状态")
+            @Parameter(description = "源状态")
             @QueryParam("fromStatus")
             ToolIntegratedStatus fromStatus,
-            @ApiParam(value = "目标状态")
+            @Parameter(description = "目标状态")
             @QueryParam("toStatus")
             ToolIntegratedStatus toStatus
     );
 
-    @ApiOperation("回滚工具状态元数据")
+    @Operation(summary = "回滚工具状态元数据")
     @Path("/tools/{toolName}/integratedStatus/revert")
     @PUT
     Result<String> revertToolIntegratedStatus(
-            @ApiParam(value = "用户名", required = true)
+            @Parameter(description = "用户名", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userName,
-            @ApiParam(value = "工具名称")
+            @Parameter(description = "工具名称")
             @PathParam("toolName")
             String toolName,
-            @ApiParam(value = "状态")
+            @Parameter(description = "状态")
             @QueryParam("status")
             ToolIntegratedStatus status
     );

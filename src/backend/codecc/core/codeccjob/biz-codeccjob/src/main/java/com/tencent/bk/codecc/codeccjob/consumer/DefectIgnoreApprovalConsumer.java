@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.codeccjob.consumer;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.tencent.bk.codecc.codeccjob.component.BkItsmClientApi;
 import com.tencent.bk.codecc.codeccjob.dao.core.mongorepository.BgSecurityApproverRepository;
 import com.tencent.bk.codecc.codeccjob.dao.core.mongorepository.IgnoreApprovalConfigRepository;

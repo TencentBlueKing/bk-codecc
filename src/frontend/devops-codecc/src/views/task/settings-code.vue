@@ -57,7 +57,6 @@
         :tools="configData"
         :code-lang="formData.codeLang"
         @saveBasic="submitData"
-        @handleFactorChange="handleFactorChange"
       >
       </tool-config-form>
       <div class="disf">
@@ -111,13 +110,19 @@
         </bk-form-item>
         <bk-form :label-width="130">
           <div v-for="toolParam in toolConfigParams" :key="toolParam.name">
-            <tool-params-form
-              v-for="param in toolParam.paramsList"
-              :key="param.key"
-              :param="param"
-              :tool="toolParam.name"
-            >
-            </tool-params-form>
+            <div class="container">
+              <div class="title">
+                {{ toolParam.displayName }}
+              </div>
+              <tool-params-form
+                v-for="param in toolParam.paramsList"
+                :key="param.key"
+                :param="param"
+                :tool="toolParam.name"
+                @handleFactorChange="handleFactorChange"
+              >
+              </tool-params-form>
+            </div>
           </div>
         </bk-form>
         <bk-form-item label-width="0" class="cc-code-message">
@@ -127,9 +132,9 @@
             :code-message="codeMessage"
             :tools="configData"
             :code-lang="formData.codeLang"
+            :show-content="showContent"
             :is-tool-manage="taskDetail.createFrom === 'bs_pipeline'"
             @saveBasic="submitData"
-            @handleFactorChange="handleFactorChange"
           >
           </tool-config-form>
         </bk-form-item>
@@ -150,6 +155,8 @@ export default {
   },
   data() {
     return {
+      /** 表单数据是否正在初始化 */
+      isDataInitialing: false,
       formData: {},
       formRules: {
         nameCn: [
@@ -180,6 +187,7 @@ export default {
       paramsValue: {},
       buttonLoading: false,
       codeMessage: {},
+      showContent: false,
     };
   },
   computed: {
@@ -199,28 +207,57 @@ export default {
     },
     toolConfigParams() {
       const toolConfigParams = [];
-      const toolParamList = ['PYLINT', 'GOML', 'BKCHECK'];
       Object.keys(this.toolMap).forEach((key) => {
         const toolParams = this.taskDetail.enableToolList.find(item => item.toolName === key);
-        if (toolParamList.includes(key) && toolParams) {
+        // SCC工具是所有任务都有工具，所以前端也默认过滤掉
+        if (key !== 'SCC' && this.toolMap[key].status !== 'D' && toolParams && toolParams.paramJson) {
           try {
             const paramJson = toolParams.paramJson && JSON.parse(toolParams.paramJson);
-            let paramsList = this.toolMap[key] && JSON.parse(this.toolMap[key].params);
+            let paramsList = this.toolMap[key] && this.toolMap[key].params && JSON.parse(this.toolMap[key].params);
+            if (!paramsList) {
+              return;
+            }
             paramsList = paramsList.map((item) => {
-              const { varName } = item;
-              if (paramJson && paramJson[varName]) {
-                item.varDefault = JSON.parse(paramJson[varName]);
+              const { varName, varType } = item;
+              const paramValue = paramJson?.[varName];
+              if (paramValue) {
+                // 后面统一数组存储格式，逗号分隔，现在有bkcheck宏定义在插件有数组转换MultipleInput
+                // item.varDefault = ['STRING', 'RADIO'].includes(varType) ? paramValue : JSON.parse(paramValue);
+                if (['STRING', 'RADIO'].includes(varType)) {
+                  item.varDefault = paramValue;
+                } else if (['CHECKBOX', 'ITEM_EDIT'].includes(varType)) {
+                  // 复选框是逗号分隔的字符串格式数组
+                  item.varDefault = paramValue.split(',');
+                } else {
+                  // 自建任务bkcheck宏定义还是json数组
+                  item.varDefault = JSON.parse(paramValue);
+                }
+              }
+              if (['CHECKBOX', 'ITEM_EDIT'].includes(varType) && !paramValue) {
+                item.varDefault = [];
               }
               return item;
             });
             this.toolMap[key].paramsList = paramsList;
-            // 如果是bkcheck第一个参数是MetricsUri平台不需要展示，需要给清除
+            // BKCHECK特殊处理
             if (key === 'BKCHECK') {
-              this.toolMap[key].paramsList.shift();
+              // 定义需要删除的参数列表，MetricsUri平台不需要展示，需要给清除
+              const paramsToRemove = ['MetricsUri', 'bkcheckCompileScan'];
+              // 如果不是C_CPP语言不支持宏定义，添加bkcheckCustomMacros到删除列表
+              if (!this.formData.codeLang.includes(2)) {
+                paramsToRemove.push('bkcheckCustomMacros');
+              }
+              // 使用filter()过滤掉需要删除的参数[2](@ref)[3](@ref)[9](@ref)
+              this.toolMap[key].paramsList = this.toolMap[key].paramsList.filter(param => !paramsToRemove.includes(param.varName));
+              // 查看bkcheck扫描参数，需要读取该参数赋值启动脚本框
+              const targetParam = this.toolMap[key].paramsList.find(param => param.varName === 'bkcheckCompileScan');
+              if (targetParam) {
+                this.showContent = targetParam.varDefault;
+              }
             }
             toolConfigParams.push(this.toolMap[key]);
           } catch (error) {
-            // console.error(error);
+            console.error(error);
           }
         }
       });
@@ -241,7 +278,7 @@ export default {
   },
   watch: {
     formData: {
-      handler() {
+      handler(val) {
         this.handleFormDataChange();
       },
       deep: true,
@@ -252,12 +289,14 @@ export default {
   },
   methods: {
     handleFormDataChange() {
+      if (this.isDataInitialing) return;
       window.changeAlert = true;
     },
     formatLang(num) {
       return this.toolMeta.LANG.map(lang => (lang.key & num ? lang.name : '')).filter(name => name);
     },
     async init() {
+      this.isDataInitialing = true;
       const params = { taskId: this.$route.params.taskId, showLoading: true };
       const res = await this.$store.dispatch('task/basicInfo', params);
       if (!this.toolMeta.LANG.length) {
@@ -268,7 +307,7 @@ export default {
       this.formData = res;
       this.codeMessage = await this.$store.dispatch('task/getCodeMessage');
       this.$nextTick(() => {
-        window.changeAlert = false;
+        this.isDataInitialing = false;
       });
     },
     handleLangChange(newValue) {
@@ -339,11 +378,23 @@ export default {
         this.paramsValue[toolName],
         factor,
       );
+      // bkcheck编译扫描动态展示出来
+      if (this.paramsValue[toolName] && 'bkcheckCompileScan' in this.paramsValue[toolName]) {
+        this.showContent = this.paramsValue[toolName].bkcheckCompileScan;
+      }
     },
     getParamsValue() {
-      return this.toolConfigParams.flatMap(({ name: toolName, paramsList }) => paramsList.map(({ varName, varDefault = '' }) => {
-        let chooseValue = (this.paramsValue[toolName]?.[varName]) ?? varDefault;
-        chooseValue = Array.isArray(chooseValue) ? JSON.stringify(chooseValue) : String(chooseValue);
+      return this.toolConfigParams.flatMap(({ name: toolName, paramsList }) => paramsList.flatMap(({ varName, varDefault = '' }) => {
+        let chooseValue = this.paramsValue[toolName]?.[varName] ?? varDefault;
+        if (!Array.isArray(chooseValue)) {
+          chooseValue = String(chooseValue);
+        } else {
+          // 过滤无效参数
+          chooseValue = chooseValue.filter(item => item != null
+                && item !== ''
+                && (typeof item !== 'string' || item.trim() !== ''));
+          chooseValue = chooseValue.length === 0 ? '[]' : JSON.stringify(chooseValue);
+        }
         return { toolName, varName, chooseValue };
       }));
     },
@@ -447,5 +498,27 @@ ${this.taskDetail.pipelineId}/edit#${this.taskDetail.atomCode}`,
 >>> .cc-code-message > .bk-label {
   min-height: 0;
   line-height: 0;
+}
+
+.container {
+  position: relative;
+  left: 60px;
+  width: 688px;
+  padding: 20px;
+  margin: 10px 0;
+  white-space: pre-line; /* 保留换行符，合并连续空格 */
+  border: 1px dashed #dcdee5;
+
+  .title {
+    position: absolute;
+    top: -30px;
+    left: 10px;
+    padding: 0 6px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 900;
+    color: black;
+    background-color: white;
+  }
 }
 </style>

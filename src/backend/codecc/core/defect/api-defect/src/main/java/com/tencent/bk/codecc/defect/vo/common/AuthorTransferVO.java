@@ -26,11 +26,10 @@
 
 package com.tencent.bk.codecc.defect.vo.common;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 /**
@@ -40,19 +39,19 @@ import java.util.List;
  * @date 2019/5/28
  */
 @Data
-@ApiModel("公共批量转换作者视图")
+@Schema(description = "公共批量转换作者视图")
 public class AuthorTransferVO
 {
-    @ApiModelProperty("任务主键")
+    @Schema(description = "任务主键")
     private long taskId;
 
-    @ApiModelProperty("处理人转换关系表")
+    @Schema(description = "处理人转换关系表")
     private List<TransferAuthorPair> transferAuthorList;
 
-    @ApiModelProperty(value = "生效的工具列表")
+    @Schema(description = "生效的工具列表")
     private List<String> effectiveTools;
 
-    @ApiModelProperty(value = "工具名")
+    @Schema(description = "工具名")
     private String toolName;
 
     @Data

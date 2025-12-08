@@ -98,6 +98,14 @@ interface AuthExPermissionApi {
     fun getAdminMembers(): List<String>
 
     /**
+     * 校验用户是否是工具开发者
+     */
+    fun isToolDeveloper(
+        user: String,
+        taskId: String,
+    ): Boolean
+
+    /**
      * 校验用户是否是BG管理员
      */
     fun isBgAdminMember(

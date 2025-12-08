@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -36,27 +35,27 @@ import lombok.Data;
  * @date 2019/5/14
  */
 @Data
-@ApiModel("重复代码块信息")
+@Schema(description = "重复代码块信息")
 public class CodeBlockVO
 {
-    @ApiModelProperty("文件")
+    @Schema(description = "文件")
     private String sourceFile;
 
-    @ApiModelProperty("文件名")
+    @Schema(description = "文件名")
     private String fileName;
 
-    @ApiModelProperty("开始行数")
+    @Schema(description = "开始行数")
     private long startLines;
 
-    @ApiModelProperty("结束行数")
+    @Schema(description = "结束行数")
     private long endLines;
 
-    @ApiModelProperty("作者")
+    @Schema(description = "作者")
     private String author;
 
-    @ApiModelProperty("最后执行时间")
+    @Schema(description = "最后执行时间")
     private Long latestDatetime;
 
-    @ApiModelProperty("代码块的签名")
+    @Schema(description = "代码块的签名")
     private String fingerPrint;
 }

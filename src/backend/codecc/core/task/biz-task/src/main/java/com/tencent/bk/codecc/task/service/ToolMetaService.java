@@ -143,4 +143,9 @@ public interface ToolMetaService {
      */
     List<String> queryToolMetaNameListDataByType(String type);
 
+    /**
+     * 更新脚本输入框开关
+     */
+    Boolean updateScriptInputSwitch(String user, String toolName, Boolean enabled);
+
 }

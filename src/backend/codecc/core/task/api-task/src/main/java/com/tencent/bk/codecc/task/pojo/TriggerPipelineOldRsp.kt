@@ -1,14 +1,13 @@
 package com.tencent.bk.codecc.task.pojo
 
-import io.swagger.annotations.ApiModelProperty
-
+import io.swagger.v3.oas.annotations.media.Schema
 data class TriggerPipelineOldRsp(
-    @ApiModelProperty("显示页面路径")
+    @get:Schema(description = "显示页面路径")
     val displayAddress: String,
-    @ApiModelProperty("构建id")
+    @get:Schema(description = "构建id")
     val buildId: String,
-    @ApiModelProperty("任务id")
+    @get:Schema(description = "任务id")
     val taskId: Long,
-    @ApiModelProperty("工具清单")
+    @get:Schema(description = "工具清单")
     val toolList: List<String>
 )

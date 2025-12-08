@@ -28,18 +28,18 @@ package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.bk.codecc.defect.vo.TreeNodeVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import net.sf.json.JSONArray;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Set;
 
@@ -51,32 +51,32 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TAS
  * @version V1.0
  * @date 2019/5/20
  */
-@Api(tags = {"SERVICE_DEFECT"}, description = "告警模块树服务")
+@Tag(name = "SERVICE_DEFECT", description = "告警模块树服务")
 @Path("/service/tree")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface ServiceDefectTreeResource
 {
 
-    @ApiOperation("获取告警文件树")
+    @Operation(summary = "获取告警文件树")
     @Path("/taskId/{taskId}")
     @POST
     Result<TreeNodeVO> getTreeNode(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @PathParam(value = "taskId")
                     Long taskId,
-            @ApiParam(value = "工具名称", required = true)
+            @Parameter(description = "工具名称", required = true)
                     List<String> toolNames);
 
 
-    @ApiOperation("批量获取工具报表信息")
+    @Operation(summary = "批量获取工具报表信息")
     @Path("/dataReport/list")
     @POST
     Result<JSONArray> getBatchDataReports(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
                     Long taskId,
-            @ApiParam(value = "工具名称", required = true)
+            @Parameter(description = "工具名称", required = true)
                     Set<String> toolNames
     );
 

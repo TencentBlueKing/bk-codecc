@@ -252,12 +252,29 @@ public class ToolMetaCacheServiceImpl implements ToolMetaCacheService {
         if (StringUtils.isBlank(dimension)) {
             return null;
         }
-        if (toolMetaBasicDimensionMap.get(dimension) == null
-                || CollectionUtils.isEmpty(toolMetaBasicDimensionMap.get(dimension))) {
-            loadToolBaseCache();
+        
+        // 双重检查，避免并发竞态条件
+        Set<ToolMetaBaseVO> dimensionSet = toolMetaBasicDimensionMap.get(dimension);
+        if (dimensionSet == null || CollectionUtils.isEmpty(dimensionSet)) {
+            synchronized (this) {
+                // 再次检查，防止重复加载
+                dimensionSet = toolMetaBasicDimensionMap.get(dimension);
+                if (dimensionSet == null || CollectionUtils.isEmpty(dimensionSet)) {
+                    loadToolBaseCache();
+                    dimensionSet = toolMetaBasicDimensionMap.get(dimension);
+                }
+            }
         }
-        return toolMetaBasicDimensionMap.get(dimension).stream()
-                .map(ToolMetaBaseVO::getName).collect(Collectors.toList());
+        
+        // 防御性检查：如果加载后仍然为空，返回空列表
+        if (dimensionSet == null) {
+            log.warn("Tool dimension set is still null after loading cache for dimension: {}", dimension);
+            return Lists.newArrayList();
+        }
+        
+        return dimensionSet.stream()
+                .map(ToolMetaBaseVO::getName)
+                .collect(Collectors.toList());
     }
 
     @Override

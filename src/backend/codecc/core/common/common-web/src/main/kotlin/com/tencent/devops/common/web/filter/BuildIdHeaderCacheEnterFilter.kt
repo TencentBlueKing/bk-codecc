@@ -5,9 +5,9 @@ import com.tencent.devops.common.api.auth.TRACE_HEADER_BUILD_ID
 import com.tencent.devops.common.util.TraceBuildIdThreadCacheUtils
 import com.tencent.devops.common.web.RequestFilter
 import org.slf4j.LoggerFactory
-import javax.ws.rs.container.ContainerRequestContext
-import javax.ws.rs.container.ContainerRequestFilter
-import javax.ws.rs.ext.Provider
+import jakarta.ws.rs.container.ContainerRequestContext
+import jakarta.ws.rs.container.ContainerRequestFilter
+import jakarta.ws.rs.ext.Provider
 
 /**
  * 请求入口过滤器，为Build接口增加Build_id的Header

@@ -29,6 +29,7 @@
 
 package com.tencent.bk.codecc.task.service.impl;
 
+import com.tencent.bk.codecc.task.model.TaskInfoEntity;
 import com.tencent.bk.codecc.task.service.GrayToolProjectService;
 import com.tencent.bk.codecc.task.vo.GrayReportVO;
 import com.tencent.bk.codecc.task.vo.GrayToolProjectReqVO;
@@ -61,7 +62,7 @@ public class GrayToolProjectServiceImpl implements GrayToolProjectService {
     }
 
     @Override
-    public GrayToolProjectVO findByProjectIdAndToolName(String projectId, String toolName) {
+    public GrayToolProjectVO findByProjectIdAndToolName(String projectId, String toolName, TaskInfoEntity taskInfo) {
         GrayToolProjectVO projectVO = new GrayToolProjectVO();
         projectVO.setStatus(ToolIntegratedStatus.P.value());
         projectVO.setToolName(toolName);

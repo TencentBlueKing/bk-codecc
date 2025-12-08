@@ -16,12 +16,6 @@ class OpAuthApi @Autowired constructor(
          */
         val KEY_OP_ADMIN_MEMBER = "OP_ADMIN_MEMBER"
 
-        /**
-         * OP工具管理员名单
-         */
-        val KEY_OP_TOOL_ADMIN_MEMBER = "OP_TOOL_ADMIN_MEMBER"
-
-
         private val logger = LoggerFactory.getLogger(AbstractAuthExPermissionApi::class.java)
     }
 

@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -40,31 +39,31 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("操作历史记录视图")
+@Schema(description = "操作历史记录视图")
 public class OperationHistoryVO extends CommonVO
 {
-    @ApiModelProperty(value = "任务id")
+    @Schema(description = "任务id")
     private long taskId;
 
-    @ApiModelProperty(value = "功能id")
+    @Schema(description = "功能id")
     private String funcId;
 
-    @ApiModelProperty(value = "操作类型")
+    @Schema(description = "操作类型")
     private String operType;
 
-    @ApiModelProperty(value = "操作类型名称")
+    @Schema(description = "操作类型名称")
     private String operTypeName;
 
-    @ApiModelProperty(value = "操作消息")
+    @Schema(description = "操作消息")
     private String operMsg;
 
-    @ApiModelProperty(value = "操作时间")
+    @Schema(description = "操作时间")
     private long time;
 
-    @ApiModelProperty(value = "工具名称")
+    @Schema(description = "工具名称")
     private String toolName;
 
-    @ApiModelProperty(value = "操作者")
+    @Schema(description = "操作者")
     private String operator;
 
 }

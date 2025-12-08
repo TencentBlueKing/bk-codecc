@@ -26,29 +26,28 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.hibernate.validator.constraints.NotEmpty;
 
 
 @Data
-@ApiModel("获取文件内容片段的请求对象")
+@Schema(description = "获取文件内容片段的请求对象")
 public class GetFileContentSegmentReqVO
 {
-    @ApiModelProperty(value = "工具名称", required = true)
+    @Schema(description = "工具名称", required = true)
     private String toolName;
 
-    @ApiModelProperty(value = "工具维度", required = true)
+    @Schema(description = "工具维度", required = true)
     private String dimension;
 
-    @ApiModelProperty(value = "文件完整路径", required = true)
+    @Schema(description = "文件完整路径", required = true)
     @NotEmpty(message = "文件路径不能为空")
     private String filePath;
 
-    @ApiModelProperty(value = "开始行")
+    @Schema(description = "开始行")
     private int beginLine;
 
-    @ApiModelProperty(value = "结束行")
+    @Schema(description = "结束行")
     private int endLine;
 }

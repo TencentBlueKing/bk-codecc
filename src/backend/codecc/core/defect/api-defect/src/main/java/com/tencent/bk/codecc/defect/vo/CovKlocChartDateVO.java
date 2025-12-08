@@ -1,38 +1,37 @@
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
-@ApiModel("用于统计每一类缺陷状态的个数")
+@Schema(description = "用于统计每一类缺陷状态的个数")
 public class CovKlocChartDateVO
 {
-    @ApiModelProperty("日期")
+    @Schema(description = "日期")
     private String date;
 
-    @ApiModelProperty("显示日期")
+    @Schema(description = "显示日期")
     private String tips;
 
-    @ApiModelProperty("待修复告警趋势-待修复数量")
+    @Schema(description = "待修复告警趋势-待修复数量")
     private int unFixCount;
 
-    @ApiModelProperty("每天新增-总数量")
+    @Schema(description = "每天新增-总数量")
     private int newCount;
 
-    @ApiModelProperty("每天新增-待修复的数量[ newCount, reopen ]")
+    @Schema(description = "每天新增-待修复的数量[ newCount, reopen ]")
     private int existCount;
 
-    @ApiModelProperty("每天关闭-总数量[ repairedCount, ignoreCount, excludedCount ]")
+    @Schema(description = "每天关闭-总数量[ repairedCount, ignoreCount, excludedCount ]")
     private int closedCount;
 
-    @ApiModelProperty("每天关闭-修复数量")
+    @Schema(description = "每天关闭-修复数量")
     private int repairedCount;
 
-    @ApiModelProperty("每天关闭-忽略数量")
+    @Schema(description = "每天关闭-忽略数量")
     private int ignoreCount;
 
-    @ApiModelProperty("每天关闭-过滤屏蔽数量")
+    @Schema(description = "每天关闭-过滤屏蔽数量")
     private int excludedCount;
 
     public CovKlocChartDateVO() {

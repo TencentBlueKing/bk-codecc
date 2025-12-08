@@ -118,6 +118,9 @@ start_codecc__springboot (){
     if [ -n "${!k-}" ]; then java_env+=("$k=${!k}"); fi  # 如果定义, 则传递.
   done
   java_argv+=(
+    "--add-opens" "java.base/java.time=ALL-UNNAMED"
+    "--add-opens" "java.base/java.lang=ALL-UNNAMED"
+    "--add-opens" "java.base/java.util=ALL-UNNAMED"
     "-Ddevops_gateway=$DEVOPS_GATEWAY"
     "-Dserver.port=$API_PORT"  # 强制覆盖配置文件里的端口.
     "-Dbksvc=bk-codecc-$MS_NAME"

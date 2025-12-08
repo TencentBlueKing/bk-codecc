@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.task.dao.mongotemplate.I18NMessageDao;
 import com.tencent.bk.codecc.task.model.I18NMessageEntity;
 import com.tencent.bk.codecc.task.pojo.I18NQueryModel;
+import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.service.aop.AbstractI18NResponseAspect;
 import com.tencent.devops.common.service.aop.I18NReflection;
 import com.tencent.devops.common.service.aop.I18NReflection.FieldMetaData;
@@ -11,6 +12,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.tencent.devops.common.service.utils.I18NUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,12 +57,15 @@ public class I18NResponseAspect extends AbstractI18NResponseAspect {
 
     private List<I18NMessageEntity> getI18NMessage(I18NReflection i18nReflection, Locale locale) {
         try {
-            // 英文不区分地区信息
-            String localString = Locale.ENGLISH.getLanguage().equals(locale.getLanguage())
-                    ? locale.getLanguage()
-                    : locale.toString();
+            // 只关注语言类型, 不区分地区信息
+            String language = locale.getLanguage().toLowerCase(Locale.ENGLISH);
+            // 不支持该语言
+            if (!I18NUtils.I18N_SUPPORT_LANG.contains(language)) {
+                return Lists.newArrayList();
+            }
+
             List<I18NQueryModel> queryModelList = i18nReflection.getFieldMetaDataList().stream()
-                    .map(x -> new I18NQueryModel(x.getModuleCode(), x.getKeySet(), localString))
+                    .map(x -> new I18NQueryModel(x.getModuleCode(), x.getKeySet(), language))
                     .collect(Collectors.toList());
 
             return i18nMessageDao.query(queryModelList);

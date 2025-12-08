@@ -28,8 +28,7 @@ package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.bk.codecc.task.vo.checkerset.ToolCheckerSetVO;
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -41,71 +40,71 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("工具配置信息")
+@Schema(description = "工具配置信息")
 public class ToolConfigInfoVO extends CommonVO
 {
     /**
      * 配置信息对应的项目ID
      */
-    @ApiModelProperty(value = "配置信息对应的项目ID", required = true)
+    @Schema(description = "配置信息对应的项目ID", required = true)
     private long taskId;
 
     /**
      * 工具的名称
      */
-    @ApiModelProperty(value = "工具的名称", required = true)
+    @Schema(description = "工具的名称", required = true)
     private String toolName;
 
     /**
      * 工具当前任务执行步骤
      */
-    @ApiModelProperty(value = "工具当前任务执行步骤", required = true)
+    @Schema(description = "工具当前任务执行步骤", required = true)
     private int curStep;
 
     /**
      * 工具当前任务步骤的状态，成功/失败
      */
-    @ApiModelProperty(value = "工具当前任务步骤的状态，成功/失败", required = true)
+    @Schema(description = "工具当前任务步骤的状态，成功/失败", required = true)
     private int stepStatus;
 
     /**
      * 扫描类型 0:全量扫描  1:增量扫描
      */
-    @ApiModelProperty(value = "扫描类型 0:全量扫描  1:增量扫描", required = true, allowableValues = "{0,1}")
+    @Schema(description = "扫描类型 0:全量扫描  1:增量扫描", required = true, allowableValues = "{0,1}")
     private String scanType;
 
-    @ApiModelProperty(value = "工具框架化参数总和")
+    @Schema(description = "工具框架化参数总和")
     private String paramJson;
 
     /**
      * 跟进状态 对照PREFIX_FOLLOW_STATUS
      */
-    @ApiModelProperty(value = "跟进状态", required = true)
+    @Schema(description = "跟进状态", required = true)
     private int followStatus;
 
     /**
      * 上次跟进状态
      */
-    @ApiModelProperty(value = "上次跟进状态", required = true)
+    @Schema(description = "上次跟进状态", required = true)
     private int lastFollowStatus;
 
 
-    @ApiModelProperty(value = "工具显示名称")
+    @Schema(description = "工具显示名称")
     private String displayName;
 
-    @ApiModelProperty(value = "分析完成时间")
+    @Schema(description = "分析完成时间")
     private long endTime;
 
-    @ApiModelProperty(value = "启动时间")
+    @Schema(description = "启动时间")
     private long startTime;
 
-    @ApiModelProperty("规则集")
+    @Schema(description = "规则集")
     private ToolCheckerSetVO checkerSet;
 
-    @ApiModelProperty("最新一次构建号")
+    @Schema(description = "最新一次构建号")
     private String latestBuildNo;
 
-    @ApiModelProperty("当前构建id")
+    @Schema(description = "当前构建id")
     private String currentBuildId;
 
 }

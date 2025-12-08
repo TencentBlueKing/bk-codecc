@@ -215,6 +215,7 @@ if [[ $ALL -eq 1 || $INIT -eq 1 ]] ; then
     rm -rf tmp/*
     mkdir -p tmp
     cp -rf entrance/init-entrance.sh tmp/
+    cp -rf entrance/bk-ci-gen-jwt-token.sh tmp/
     docker build -f entrance/init.Dockerfile -t $REGISTRY/$NAMESPACE/${PERFIX}entrance-init:$VERSION tmp --no-cache --network=host
     if [[ $PUSH -eq 1 ]] ; then
         docker push $REGISTRY/$NAMESPACE/${PERFIX}entrance-init:$VERSION

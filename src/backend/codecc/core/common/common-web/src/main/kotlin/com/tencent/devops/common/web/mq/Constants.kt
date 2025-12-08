@@ -163,6 +163,7 @@ const val EXCHANGE_CHECK_THREAD_ALIVE = "exchange.check.thread.alive"
 const val ROUTE_CHECK_THREAD_ALIVE = "route.check.thread.alive"
 const val QUEUE_CHECK_THREAD_ALIVE = "queue.check.thread.alive"
 
+
 const val EXCHANGE_CODECC_GENERAL_NOTIFY = "exchange.codecc.general.notify"
 const val ROUTE_CODECC_EMAIL_NOTIFY = "route.codecc.email.notify"
 const val QUEUE_CODECC_EMAIL_NOTIFY = "queue.codecc.email.notify"
@@ -268,11 +269,15 @@ const val EXCHANGE_TOOL_REFRESH_FOLLOWSTATUS = "exchange.tool.refresh.followstat
 const val ROUTE_TOOL_REFRESH_FOLLOWSTATUS = "route.tool.refresh.followstatus"
 const val QUEUE_TOOL_REFRESH_FOLLOWSTATUS = "queue.tool.refresh.followstatus"
 
+const val EXCHANGE_ADMIN_PRIVILEGE_REFRESH = "exchange.admin.privilege.refresh"
+const val ROUTE_ADMIN_PRIVILEGE_REFRESH = "route.admin.privilege.refresh"
+const val QUEUE_ADMIN_PRIVILEGE_REFRESH = "queue.admin.privilege.refresh"
+
 const val EXCHANGE_SCORING_OPENSOURCE = "exchange.scoring.opensource"
 const val ROUTE_SCORING_OPENSOURCE = "route.scoring.opensource"
 const val QUEUE_SCORING_OPENSOURCE = "queue.scoring.opensource"
 
-const val EXCHANGE_ATOM_MONITOR_DATA_REPORT_FANOUT = "engine.atom.monitor.data.report.fanout"
+const val EXCHANGE_PIPELINE_FAILED_EVENT = "exchange.pipeline.failed.event"
 
 const val EXCHANGE_CLOSE_DEFECT_STATISTIC = "exchange.close.defect.statistic"
 const val ROUTE_CLOSE_DEFECT_STATISTIC = "route.close.defect.statistic"
@@ -365,6 +370,11 @@ const val QUEUE_SCAN_FINISH_FOR_SCAN_SLA = "queue.scan.finish.scan_sla"
 const val QUEUE_SCAN_FINISH_FOR_TEST_REPORT = "queue.scan.finish.test.report"
 const val QUEUE_SCAN_FINISH_FOR_SYNC_GITHUB_TIMING_DEFECT = "queue.scan.finish.sync.github.timing.defect"
 const val QUEUE_SCAN_FINISH_FOR_CALLBACK = "queue.scan.finish.callback"
+const val QUEUE_SCAN_FINISH_FOR_IDC_SYNC = "queue.scan.finish.idc.sync"
+
+const val EXCHANGE_BK_METRICS_DAILY_DEFECT_STATISTIC = "exchange.metrics.daily.defect.statistic"
+const val ROUTE_BK_METRICS_DAILY_DEFECT_STATISTIC = "route.metrics.daily.defect.statistic"
+const val QUEUE_BK_METRICS_DAILY_DEFECT_STATISTIC = "queue.metrics.daily.defect.statistic"
 
 const val EXCHANGE_CODECCJOB_TASKLOG_WEBSOCKET = "exchange.codeccjob.tasklog.websocket"
 const val QUEUE_CODECCJOB_TASKLO_WEBSOCKET = "queue.codeccjob.tasklog.websocket."
@@ -437,10 +447,62 @@ const val EXCHANGE_CODECC_CALLBACK_EVENT = "exchange.codecc.callback.event"
 const val ROUTE_CODECC_CALLBACK_EVENT = "route.codecc.callback.event"
 const val QUEUE_CODECC_CALLBACK_EVENT = "queue.codecc.callback.event"
 
+const val EXCHANGE_CODECC_CLIENT_ADMIN_AI_GENERATE = "exchange.codecc.client.admin.ai.generate"
+const val QUEUE_CODECC_CLIENT_ADMIN_AI_GENERATE = "queue.codecc.client.admin.ai.generate"
+const val ROUTE_CODECC_CLIENT_ADMIN_AI_GENERATE = "route.codecc.client.admin.ai.generate"
+
+const val EXCHANGE_CODECC_CLIENT_ADMIN_BK_EMAIL = "exchange.codecc.client.admin.bk.email"
+const val QUEUE_CODECC_CLIENT_ADMIN_BK_EMAIL = "queue.codecc.client.admin.bk.email"
+const val ROUTE_CODECC_CLIENT_ADMIN_BK_EMAIL = "route.codecc.client.admin.bk.email"
+
+const val EXCHANGE_CODECC_CLIENT_STREAM_CONTENT_SAVE = "exchange.codecc.client.stream.content.save"
+const val QUEUE_CODECC_CLIENT_STREAM_CONTENT_SAVE = "queue.codecc.client.stream.content.save"
+const val ROUTE_CODECC_CLIENT_STREAM_CONTENT_SAVE = "route.codecc.client.stream.content.save"
+
 const val EXCHANGE_CODECC_DEFECT_IGNORE_APPROVAL = "exchange.codecc.defect.ignore.approval"
 const val ROUTE_CODECC_DEFECT_IGNORE_APPROVAL = "route.codecc.defect.ignore.approval"
 const val QUEUE_CODECC_DEFECT_IGNORE_APPROVAL = "queue.codecc.defect.ignore.approval"
 
+const val EXCHANGE_LLM_FILTER_PROGRESS = "exchange.llm.filter.progress"
+const val ROUTE_LLM_FILTER_PROGRESS = "route.llm.filter.progress"
+const val QUEUE_LLM_FILTER_PROGRESS = "queue.llm.filter.progress"
+
 const val EXCHANGE_CODECC_IGNORE_APPROVAL_TIMING_CHECK = "exchange.codecc.ignore.approval.timing.check"
 const val ROUTE_CODECC_IGNORE_APPROVAL_TIMING_CHECK = "route.codecc.ignore.approval.timing.check"
 const val QUEUE_CODECC_IGNORE_APPROVAL_TIMING_CHECK = "queue.codecc.ignore.approval.timing.check"
+
+// 保存忽略信息队列
+const val EXCHANGE_SAVE_IGNORE_RAG_INFO = "exchange.save.ignore.rag.info"
+const val QUEUE_SAVE_IGNORE_RAG_INFO = "queue.save.ignore.rag.info"
+const val ROUTE_SAVE_IGNORE_RAG_INFO = "route.save.ignore.rag.info"
+
+// 删除忽略信息队列
+const val EXCHANGE_DELETE_IGNORE_RAG_INFO = "exchange.delete.ignore.rag.info"
+const val QUEUE_DELETE_IGNORE_RAG_INFO = "queue.delete.ignore.rag.info"
+const val ROUTE_DELETE_IGNORE_RAG_INFO = "route.delete.ignore.rag.info"
+
+const val EXCHANGE_LLM_NEGATIVE_DEFECT_LEARN = "exchange.llm.negative.defect.learn"
+const val QUEUE_LLM_NEGATIVE_DEFECT_LEARN = "queue.llm.negative.defect.learn"
+const val ROUTE_LLM_NEGATIVE_DEFECT_LEARN = "route.llm.negative.defect.learn"
+
+const val EXCHANGE_LLM_NEGATIVE_DEFECT_FILTER = "exchange.llm.negative.defect.filter"
+const val QUEUE_LLM_NEGATIVE_DEFECT_FILTER = "queue.llm.negative.defect.filter"
+const val ROUTE_LLM_NEGATIVE_DEFECT_FILTER = "route.llm.negative.defect.filter"
+
+// 告警过滤队列
+const val EXCHANGE_DEFECT_FILTER_LLM = "exchange.defect.filter.llm"
+const val QUEUE_DEFECT_FILTER_LLM = "queue.defect.filter.llm"
+const val ROUTE_DEFECT_FILTER_LLM = "route.defect.filter.llm"
+
+// 告警过滤死信队列
+const val EXCHANGE_DEFECT_FILTER_LLM_DEAD = "exchange.defect.filter.llm.dead"
+const val QUEUE_DEFECT_FILTER_LLM_DEAD = "queue.defect.filter.llm.dead"
+const val ROUTE_DEFECT_FILTER_LLM_DEAD = "route.defect.filter.llm.dead"
+
+// 告警过滤应答队列
+const val QUEUE_DEFECT_FILTER_REPLY = "queue.defect.filter.reply"
+
+// 流水线构建完回调发现没有任务信息时发消息
+const val EXCHANGE_PIPELINE_CALLBACK_NO_TASK = "exchange.pipeline.callback.no.task"
+const val QUEUE_PIPELINE_CALLBACK_NO_TASK = "queue.pipeline.callback.no.task"
+const val ROUTE_PIPELINE_CALLBACK_NO_TASK = "route.pipeline.callback.no.task"

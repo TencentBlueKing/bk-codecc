@@ -12,8 +12,7 @@
  
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -23,22 +22,22 @@ import lombok.Data;
  * @version V1.0
  */
 @Data
-@ApiModel("通用告警视图")
+@Schema(description = "通用告警视图")
 public class CommonStatisticVO extends StatisticVO
 {
-    @ApiModelProperty("新增告警个数")
+    @Schema(description = "新增告警个数")
     private int newCount;
 
-    @ApiModelProperty("遗留告警个数")
+    @Schema(description = "遗留告警个数")
     private int existCount;
 
-    @ApiModelProperty("修复告警个数")
+    @Schema(description = "修复告警个数")
     private int fixedCount;
 
-    @ApiModelProperty("忽略告警个数")
+    @Schema(description = "忽略告警个数")
     private int excludeCount;
 
-    @ApiModelProperty("关闭告警个数")
+    @Schema(description = "关闭告警个数")
     private int closeCount;
 
 }

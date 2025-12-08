@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.task.vo.scanconfiguration;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.List;
  * @date 2019/11/8
  */
 @Data
-@ApiModel("扫描触发配置视图")
+@Schema(description = "扫描触发配置视图")
 public class ScanConfigurationVO extends CommonVO
 {
     /**

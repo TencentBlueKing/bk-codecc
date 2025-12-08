@@ -149,8 +149,8 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
     }
 
     @Override
-    public Result<TaskOverviewVO> getTaskOverview(Long taskId, String buildNum, String orderBy) {
-        return new Result<>(taskService.getTaskOverview(taskId, buildNum, orderBy));
+    public Result<TaskOverviewVO> getTaskOverview(Long taskId, String buildId, String buildNum, String orderBy) {
+        return new Result<>(taskService.getTaskOverview(taskId, buildId, buildNum, orderBy));
     }
 
 
@@ -170,7 +170,7 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
 
 
     @Override
-    @AuthMethod(permission = {CodeCCAuthAction.TASK_MANAGE})
+    @AuthMethod(permission = {CodeCCAuthAction.SETTING})
     public Result<Boolean> updateTask(TaskUpdateVO taskUpdateVO, Long taskId, String projectId, String userName) {
         return new Result<>(taskService.updateTask(taskUpdateVO, taskId, userName));
     }
@@ -234,7 +234,7 @@ public class UserTaskRestResourceImpl implements UserTaskRestResource {
     }
 
     @Override
-    @AuthMethod(permission = {CodeCCAuthAction.TASK_MANAGE})
+    @AuthMethod(permission = {CodeCCAuthAction.SETTING})
     public Result<Boolean> updateCodeLibrary(Long taskId, String userName, TaskDetailVO taskDetailVO) throws JsonProcessingException {
         return new Result<>(taskService.updateCodeLibrary(taskId, userName, taskDetailVO));
     }

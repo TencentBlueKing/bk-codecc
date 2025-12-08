@@ -12,6 +12,9 @@ data class ApiAuthVO(
     @JsonProperty("host")
     val host: String? = null,
 
+    @JsonProperty("path")
+    val path: String? = null,
+
     @JsonProperty("bk_ticket")
     val bkTicket: String? = null,
 

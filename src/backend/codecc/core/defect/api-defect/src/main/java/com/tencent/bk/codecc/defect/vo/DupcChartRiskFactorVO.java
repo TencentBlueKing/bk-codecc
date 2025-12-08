@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -36,23 +35,23 @@ import lombok.Data;
  * @date 2019/5/28
  */
 @Data
-@ApiModel("风险系数对应告警数的图表")
+@Schema(description = "风险系数对应告警数的图表")
 public class DupcChartRiskFactorVO
 {
 
-    @ApiModelProperty("极高风险")
+    @Schema(description = "极高风险")
     private int superHighCount;
 
-    @ApiModelProperty("高风险")
+    @Schema(description = "高风险")
     private int highCount;
 
-    @ApiModelProperty("中风险")
+    @Schema(description = "中风险")
     private int mediumCount;
 
-    @ApiModelProperty("低风险")
+    @Schema(description = "低风险")
     private int lowCount;
 
-    @ApiModelProperty("总数")
+    @Schema(description = "总数")
     private int totalCount;
 
 }

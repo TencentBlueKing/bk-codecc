@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,7 +11,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ApiModel("按照规则维度查询告警数返回体")
+@Schema(description = "按照规则维度查询告警数返回体")
 public class CheckerStatisticRspVO {
     private List<CheckerStatisticVO> currentStatisticList;
     private List<CheckerStatisticVO> lastStatisticList;

@@ -14,7 +14,7 @@ package com.tencent.bk.codecc.task.dao.mongotemplate;
 
 import com.tencent.bk.codecc.task.constant.TaskConstants;
 import com.tencent.bk.codecc.task.model.GrayTaskCategoryEntity;
-import io.swagger.models.auth.In;
+
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;

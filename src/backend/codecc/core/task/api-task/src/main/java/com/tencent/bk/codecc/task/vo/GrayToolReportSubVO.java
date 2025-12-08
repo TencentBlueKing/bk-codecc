@@ -12,8 +12,7 @@
  
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -22,25 +21,25 @@ import lombok.Data;
  * @date 2021/1/8
  * @version V1.0
  */
-@ApiModel("灰度报告子视图")
+@Schema(description = "灰度报告子视图")
 @Data
 public class GrayToolReportSubVO
 {
-    @ApiModelProperty("灰度总数")
+    @Schema(description = "灰度总数")
     private Integer grayNum;
 
-    @ApiModelProperty("总执行次数")
+    @Schema(description = "总执行次数")
     private Integer totalNum;
 
-    @ApiModelProperty("成功执行次数")
+    @Schema(description = "成功执行次数")
     private Integer successNum;
 
-    @ApiModelProperty("成功执行次数")
+    @Schema(description = "成功执行次数")
     private String successRatio;
 
-    @ApiModelProperty("告警数")
+    @Schema(description = "告警数")
     private Integer defectCount;
 
-    @ApiModelProperty("耗时")
+    @Schema(description = "耗时")
     private Long elapsedTime;
 }

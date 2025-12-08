@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.IgnoredNegativeDefectDao;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
+import com.tencent.bk.codecc.defect.service.IIgnoredNegativeDefectService;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
@@ -35,6 +36,9 @@ import java.util.Set;
 public class LintBatchChangeIgnoreTypeBizServiceImpl extends AbstractLintBatchDefectProcessBizService {
     @Autowired
     private LintDefectV2Dao defectDao;
+
+    @Autowired
+    private IIgnoredNegativeDefectService iIgnoredNegativeDefectService;
 
     @Autowired
     private IgnoredNegativeDefectDao ignoredNegativeDefectDao;
@@ -76,9 +80,11 @@ public class LintBatchChangeIgnoreTypeBizServiceImpl extends AbstractLintBatchDe
                 throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
             }
 
-            ignoredNegativeDefectDao.batchInsert(defectList, batchDefectProcessReqVO, taskBaseResult.getData());
+            iIgnoredNegativeDefectService.batchInsertIgnoredDefects(defectList,
+                    batchDefectProcessReqVO, taskBaseResult.getData());
         } else {
-            ignoredNegativeDefectDao.batchDelete(batchDefectProcessReqVO.getDefectKeySet());
+            iIgnoredNegativeDefectService.batchDeleteIgnoredDefects(batchDefectProcessReqVO.getTaskId(),
+                    batchDefectProcessReqVO.getDefectKeySet());
         }
     }
 

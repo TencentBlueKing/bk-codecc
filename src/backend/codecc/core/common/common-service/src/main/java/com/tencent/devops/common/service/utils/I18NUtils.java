@@ -1,11 +1,14 @@
 package com.tencent.devops.common.service.utils;
 
+import com.google.common.collect.ImmutableSet;
 import com.tencent.devops.common.service.aop.AbstractI18NResponseAspect;
 import java.text.MessageFormat;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Set;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ObjectUtils;
 
@@ -14,6 +17,8 @@ public class I18NUtils {
 
     public static final Locale CN = Locale.SIMPLIFIED_CHINESE;
     public static final Locale EN = Locale.ENGLISH;
+    public static final Set<String> I18N_SUPPORT_LANG = ImmutableSet.of("zh", "en", "ja");
+
     private static final String I18N_ERROR_MESSAGE = "[I18N_ERR]";
 
     /**
@@ -81,6 +86,11 @@ public class I18NUtils {
         try {
             if (locale == null) {
                 locale = AbstractI18NResponseAspect.getLocale();
+            }
+
+            // 目前只有中文会指定 zh_CH, 其他语言不区分地区信息
+            if (!CN.getLanguage().equalsIgnoreCase(locale.getLanguage())) {
+                locale = new Locale(locale.getLanguage());
             }
 
             ResourceBundle resourceBundle = ResourceBundle.getBundle("i18n/message", locale);

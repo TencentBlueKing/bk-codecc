@@ -28,8 +28,7 @@ package com.tencent.bk.codecc.defect.vo.common;
 
 import com.tencent.bk.codecc.defect.vo.CheckerCustomVO;
 import com.tencent.bk.codecc.defect.vo.TreeNodeVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -42,77 +41,77 @@ import lombok.Data;
  * @date 2019/5/27
  */
 @Data
-@ApiModel("公共规则类型与作者视图")
+@Schema(description = "公共规则类型与作者视图")
 public class QueryWarningPageInitRspVO {
     /**
      * 代码规则展示维度
      */
-    @ApiModelProperty("规则列表")
+    @Schema(description = "规则列表")
     private List<CheckerCustomVO> checkerList;
 
-    @ApiModelProperty("作者清单")
+    @Schema(description = "作者清单")
     private Collection<String> authorList;
 
     /**
      * 代码缺陷展示数量
      */
-    @ApiModelProperty("规则列表")
+    @Schema(description = "规则列表")
     private Map<String, Integer> checkerMap;
 
-    @ApiModelProperty("作者列表")
+    @Schema(description = "作者列表")
     private Map<String, Integer> authorMap;
 
 
 
-    @ApiModelProperty("文件路径树")
+    @Schema(description = "文件路径树")
     private TreeNodeVO filePathTree;
 
-    @ApiModelProperty("严重规则数")
+    @Schema(description = "严重规则数")
     private int seriousCount;
 
-    @ApiModelProperty("正常规则数")
+    @Schema(description = "正常规则数")
     private int normalCount;
 
-    @ApiModelProperty("提示规则数")
+    @Schema(description = "提示规则数")
     private int promptCount;
 
-    @ApiModelProperty("待修复告警数")
+    @Schema(description = "待修复告警数")
     private int existCount;
 
-    @ApiModelProperty("已修复告警数")
+    @Schema(description = "已修复告警数")
     private int fixCount;
 
-    @ApiModelProperty("已忽略告警数")
+    @Schema(description = "已忽略告警数")
     private int ignoreCount;
 
-    @ApiModelProperty("已屏蔽告警数")
+    @Schema(description = "已屏蔽告警数")
     private int maskCount;
 
-    @ApiModelProperty("新增文件数")
+    @Schema(description = "新增文件数")
     private int newCount;
 
-    @ApiModelProperty("历史文件数")
+    @Schema(description = "历史文件数")
     private int historyCount;
 
-    @ApiModelProperty("符合条件的告警总数")
+    @Schema(description = "符合条件的告警总数")
     private int totalCount;
 
     /**
      * 操作相关
      */
-    @ApiModelProperty("已提交TAPD单")
+    @Schema(description = "已提交TAPD单")
     private int tapdOpsCount;
 
-    @ApiModelProperty("已标记处理")
+    @Schema(description = "已标记处理")
     private int maskOpsCount;
 
-    @ApiModelProperty("标记处理后任为问题")
+    @Schema(description = "标记处理后任为问题")
     private int maskNotFixCount;
 
-    @ApiModelProperty("已评论")
+    @Schema(description = "已评论")
     private int commentOpsCount;
 
-    @ApiModelProperty("无操作")
+    @Schema(description = "无操作")
     private int notOpsCount;
 
 }

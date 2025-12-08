@@ -1,6 +1,6 @@
 package com.tencent.devops.common.auth.api
 
-import com.alibaba.fastjson.JSONObject
+import com.alibaba.fastjson2.JSONObject
 import com.tencent.devops.auth.api.service.ServicePermissionAuthResource
 import com.tencent.devops.auth.pojo.dto.GrantInstanceDTO
 import com.tencent.devops.common.auth.api.external.AuthExRegisterApi
@@ -32,22 +32,20 @@ class GithubAuthExRegisterApi(
     }
 
     private fun registerCodeCCTaskPermission(user: String, pipelineId: String, action: String, projectId: String) {
-        val grantInstanceDTO = GrantInstanceDTO(
-            properties.pipelineResourceType ?: "pipelineId",
-            pipelineId,
-            null,
-            action,
-            user
-        )
-        val result = client.getDevopsService(ServicePermissionAuthResource::class.java).grantInstancePermission(
-            user, properties.token ?: "", projectId, grantInstanceDTO
-        )
-        if (result.isNotOk()) {
-            logger.error(
-                "registerCodeCCTaskPermission $user $pipelineId $action $projectId fail," +
-                        " result ${JSONObject.toJSONString(result)}"
-            )
-        }
+//        val result = client.getDevopsService(ServicePermissionAuthResource::class.java).resourceCreateRelation(
+//            userId = user,
+//            token = properties.token ?: "",
+//            projectCode = projectId,
+//            resourceType = properties.pipelineResourceType ?: "pipeline",
+//            resourceCode = pipelineId,
+//            resourceName = pipelineId
+//        )
+//        if (result.isNotOk()) {
+//            logger.error(
+//                "registerCodeCCTaskPermission $user $pipelineId $action $projectId fail," +
+//                        " result ${JSONObject.toJSONString(result)}"
+//            )
+//        }
     }
 
     override fun deleteCodeCCTask(taskId: String, projectId: String): Boolean {

@@ -28,18 +28,17 @@ package com.tencent.bk.codecc.schedule.api;
 
 import com.tencent.bk.codecc.schedule.vo.TailLogRspVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
 
@@ -49,45 +48,45 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PRO
  * @version V2.0
  * @date 2019/09/28
  */
-@Api(tags = {"SERVICE_DISPATCH"}, description = "分析服务调度接口")
+@Tag(name = "SERVICE_DISPATCH", description = "分析服务调度接口")
 @Path("/build")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface BuildScheduleRestResource {
-    @ApiOperation(value = "推入分析任务")
+    @Operation(summary = "推入分析任务")
     @Path("/push/streamName/{streamName}/toolName/{toolName}/buildId/{buildId}")
     @GET
     Result<Boolean> push(
-            @ApiParam(value = "任务英文名", required = true)
+            @Parameter(description = "任务英文名", required = true)
             @PathParam("streamName")
                     String streamName,
-            @ApiParam(value = "工具名", required = true)
+            @Parameter(description = "工具名", required = true)
             @PathParam("toolName")
                     String toolName,
-            @ApiParam(value = "构建ID", required = true)
+            @Parameter(description = "构建ID", required = true)
             @PathParam("buildId")
                     String buildId,
-            @ApiParam(value = "构建ID")
+            @Parameter(description = "构建ID")
             @QueryParam("createFrom")
                     String createFrom,
-            @ApiParam(value = "任务所属蓝盾项目", required = true)
+            @Parameter(description = "任务所属蓝盾项目", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
                     String projectId);
 
-    @ApiOperation(value = "实时获取日志")
+    @Operation(summary = "实时获取日志")
     @Path("/log/streamName/{streamName}/toolName/{toolName}/buildId/{buildId}/beginLine/{beginLine}")
     @GET
     Result<TailLogRspVO> tailLog(
-            @ApiParam(value = "任务英文名", required = true)
+            @Parameter(description = "任务英文名", required = true)
             @PathParam("streamName")
                     String streamName,
-            @ApiParam(value = "工具名", required = true)
+            @Parameter(description = "工具名", required = true)
             @PathParam("toolName")
                     String toolName,
-            @ApiParam(value = "构建ID", required = true)
+            @Parameter(description = "构建ID", required = true)
             @PathParam("buildId")
                     String buildId,
-            @ApiParam(value = "开始行", required = true)
+            @Parameter(description = "开始行", required = true)
             @PathParam("beginLine")
                     long beginLine);
 }

@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -39,39 +38,42 @@ import lombok.NoArgsConstructor;
  * @date 2019/10/16
  */
 @Data
-@ApiModel("告警提交的请求体")
+@Schema(description = "告警提交的请求体")
 @AllArgsConstructor
 @NoArgsConstructor
 public class CommitDefectVO {
 
-    @ApiModelProperty(value = "任务ID", required = true)
+    @Schema(description = "任务ID", required = true)
     private long taskId;
 
-    @ApiModelProperty(value = "流名称", required = true)
+    @Schema(description = "流名称", required = true)
     private String streamName;
 
-    @ApiModelProperty(value = "工具名称", required = true)
+    @Schema(description = "工具名称", required = true)
     private String toolName;
 
-    @ApiModelProperty(value = "构建Id", required = true)
+    @Schema(description = "构建Id", required = true)
     private String buildId;
 
-    @ApiModelProperty(value = "触发来源,用于保存任务手动触发的触发人")
+    @Schema(description = "触发来源,用于保存任务手动触发的触发人")
     private String triggerFrom;
 
-    @ApiModelProperty(value = "备注信息")
+    @Schema(description = "备注信息")
     private String message;
 
-    @ApiModelProperty(value = "创建来源")
+    @Schema(description = "创建来源")
     private String createFrom;
 
-    @ApiModelProperty(value = "重新提交次数")
+    @Schema(description = "重新提交次数")
     private Integer recommitTimes;
 
-    @ApiModelProperty("告警文件大小，用于MQ投递决策")
+    @Schema(description = "告警文件大小，用于MQ投递决策")
     private Long defectFileSize;
 
-    @ApiModelProperty("是否重新分配")
+    @Schema(description = "是否重新分配")
     private boolean isReallocate;
+
+    @Schema(description = "LLM 误报过滤开关")
+    private Boolean enableLLMNegativeDefectFilter;
 
 }

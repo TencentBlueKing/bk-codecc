@@ -1,7 +1,6 @@
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,18 +14,18 @@ import java.util.Set;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ApiModel("开源治理或EPC规则集所有对应工具映射")
+@Schema(description = "开源治理或EPC规则集所有对应工具映射")
 public class OpenScanAndEpcToolNameMapVO {
 
     /**
      * 开源治理规则集对应的工具
      */
-    @ApiModelProperty("开源治理规则集对应的工具")
+    @Schema(description = "开源治理规则集对应的工具")
     HashMap<String, Set<String>> openScan;
 
     /**
      * EPC规则集对应的工具
      */
-    @ApiModelProperty("EPC规则集对应的工具")
+    @Schema(description = "EPC规则集对应的工具")
     HashMap<String, Set<String>> epcScan;
 }

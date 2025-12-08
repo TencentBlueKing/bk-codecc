@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.task.model;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.springframework.data.mongodb.core.mapping.Field;
 

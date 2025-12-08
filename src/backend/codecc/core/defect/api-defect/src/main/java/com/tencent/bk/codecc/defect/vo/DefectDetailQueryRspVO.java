@@ -13,7 +13,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.common.CommonDefectDetailQueryRspVO;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -27,6 +27,6 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class DefectDetailQueryRspVO extends CommonDefectDetailQueryRspVO
 {
-    @ApiModelProperty("告警详情")
+    @Schema(description = "告警详情")
     private DefectDetailVO defectDetailVO;
 }

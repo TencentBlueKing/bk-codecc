@@ -12,9 +12,10 @@ dependencies {
     api("org.quartz-scheduler:quartz")
     api("org.quartz-scheduler:quartz-jobs")
     api("org.reflections:reflections")
-    api("org.codehaus.groovy:groovy:2.5.3")
+    api("org.codehaus.groovy:groovy:${Versions.groovyVersion}")
     api(group = "com.tencent.bk.devops.ci.common", name="common-redis"){
         isChanging = true
+        exclude(group = "redis.clients", module = "jedis")  // 排除 Jedis，使用 Lettuce
     }
 }
 

@@ -7,7 +7,7 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_IGNORE_EMAIL
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_CODECC_RTX_NOTIFY_SEND;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_IGNORE_EMAIL_SEND;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -61,6 +61,7 @@ import com.tencent.devops.common.util.ThreadPoolUtil;
 import com.tencent.devops.common.web.validate.ValidateProject;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -350,8 +351,10 @@ public class IgnoreTypeServiceImpl implements IIgnoreTypeService {
     @Override
     public List<IgnoreTypeProjectConfigVO> queryIgnoreTypeProjectList(String projectId, String userName) {
         //获取系统列表
+        List<Integer> sysStatuses = Arrays.asList(ComConstants.IgnoreTypeStatus.ENABLE.value(),
+                ComConstants.IgnoreTypeStatus.BACKEND_ENABLE.value());
         List<IgnoreTypeSysEntity> ignoreTypeSysEntities =
-                ignoreTypeSysRepository.findByStatusOrderByIgnoreTypeId(ComConstants.Status.ENABLE.value());
+                ignoreTypeSysRepository.findByStatusInOrderByIgnoreTypeId(sysStatuses);
         boolean projectManager = isProjectManager(projectId, userName);
         //获取项目配置
         List<IgnoreTypeProjectConfig> ignoreTypeProjectConfigs = ignoreTypeProjectRepository

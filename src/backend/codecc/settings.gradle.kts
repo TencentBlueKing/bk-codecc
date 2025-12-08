@@ -17,7 +17,7 @@ include("core:common:common-audit")
 include("core:common:common-auth")
 include("core:common:common-auth:common-auth-api")
 include("core:common:common-auth:common-auth-mock")
-include("core:common:common-auth:common-auth-v3")
+// include("core:common:common-auth:common-auth-v3")  // 已移除
 include("core:common:common-auth:common-auth-github")
 include("core:common:common-auth:common-auth-op")
 include("core:common:common-auth:common-auth-rbac")
@@ -74,8 +74,15 @@ include("core:schedule:model-schedule")
 include("core:schedule:biz-schedule")
 include("core:schedule:boot-schedule")
 
+include("core:scanschedule")
+include("core:scanschedule:api-scanschedule")
+include("core:scanschedule:biz-scanschedule")
+include("core:scanschedule:boot-scanschedule")
+include("core:scanschedule:model-scanschedule")
 
 
+
+// Coverity API 模块（被 biz-task-cov 和 biz-defect-cov 依赖）
 
 
 

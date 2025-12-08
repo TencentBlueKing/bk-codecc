@@ -26,11 +26,10 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.Pattern;
+import jakarta.validation.constraints.Pattern;
 import java.util.List;
 
 /**
@@ -40,33 +39,33 @@ import java.util.List;
  * @date 2019/5/23
  */
 @Data
-@ApiModel("任务更新视图")
+@Schema(description = "任务更新视图")
 public class TaskUpdateVO
 {
 
-    @ApiModelProperty(value = "任务主键id", required = true)
+    @Schema(description = "任务主键id", required = true)
     private long taskId;
 
-    @ApiModelProperty(value = "任务中文名")
+    @Schema(description = "任务中文名")
     @Pattern(regexp = "^[a-zA-Z0-9_\\u4e00-\\u9fa5]{1,50}", message = "输入的中文名称不符合命名规则")
     private String nameCn;
 
-    @ApiModelProperty(value = "代码语言")
+    @Schema(description = "代码语言")
     private Long codeLang;
 
-    @ApiModelProperty(value = "工具特定参数")
+    @Schema(description = "工具特定参数")
     private List<ToolConfigParamJsonVO> devopsToolParams;
 
-    @ApiModelProperty(value = "任务负责人/管理员")
+    @Schema(description = "任务负责人/管理员")
     private List<String> taskOwner;
 
-    @ApiModelProperty(value = "任务成员")
+    @Schema(description = "任务成员")
     private List<String> taskMember;
 
-    @ApiModelProperty(value = "任务状态")
+    @Schema(description = "任务状态")
     private int status;
 
-    @ApiModelProperty(value = "任务停用时间")
+    @Schema(description = "任务停用时间")
     private String disableTime;
 
 

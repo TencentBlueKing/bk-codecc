@@ -28,15 +28,15 @@ package com.tencent.bk.codecc.schedule.api;
 
 import com.tencent.bk.codecc.schedule.vo.*;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
 
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TASK_ID;
@@ -47,20 +47,20 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TAS
  * @version V2.0
  * @date 2020/05/26
  */
-@Api(tags = {"SERVICE_FS"}, description = "文件上传下载接口")
+@Tag(name = "SERVICE_FS", description = "文件上传下载接口")
 @Path("/user/fs")
 public interface UserFSRestResource
 {
-    @ApiOperation("下载文件")
+    @Operation(summary = "下载文件")
     @Path("/download/type/{downloadType}/filename/{fileName}")
     @GET
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     @Consumes(MediaType.APPLICATION_JSON)
     Response download(
-            @ApiParam(value = "文件类型", required = true)
+            @Parameter(description = "文件类型", required = true)
             @PathParam(value = "downloadType")
                     String downloadType,
-            @ApiParam(value = "文件名", required = true)
+            @Parameter(description = "文件名", required = true)
             @PathParam(value = "fileName")
                     String fileName);
 }

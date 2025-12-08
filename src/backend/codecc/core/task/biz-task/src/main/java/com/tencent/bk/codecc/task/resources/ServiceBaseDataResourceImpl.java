@@ -113,26 +113,12 @@ public class ServiceBaseDataResourceImpl implements ServiceBaseDataResource
     }
 
     @Override
-    public Result<Boolean> updateAdminMember(String userName, BaseDataVO baseDataVO) {
-        // 判断是否为OP管理员
-        if (!opAuthApi.isOpAdminMember(userName)) {
-            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, new String[]{"op admin member"});
-        }
-        return new Result<>(baseDataService.updateAdminMember(baseDataVO, userName));
-    }
-
-    @Override
     public Result<Boolean> updateOpAdminMember(String userName, BaseDataVO baseDataVO) {
         // 判断是否为OP管理员
         if (!opAuthApi.isOpAdminMember(userName)) {
             throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER, new String[]{"op admin member"});
         }
         return new Result<>(baseDataService.updateAdminMember(baseDataVO, userName));
-    }
-
-    @Override
-    public Result<List<String>> queryAdminMember() {
-        return new Result<>(baseDataService.queryMemberListByParamType(ComConstants.KEY_ADMIN_MEMBER));
     }
 
     @Override

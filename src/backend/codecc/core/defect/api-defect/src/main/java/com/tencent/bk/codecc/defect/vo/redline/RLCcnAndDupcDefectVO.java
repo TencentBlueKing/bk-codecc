@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo.redline;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -37,38 +36,38 @@ import lombok.Data;
  * @date 2019/7/4
  */
 @Data
-@ApiModel("圈复杂度红线告警")
+@Schema(description = "圈复杂度红线告警")
 public class RLCcnAndDupcDefectVO
 {
 
-    @ApiModelProperty("平均圈复杂度/平均代码重复率")
+    @Schema(description = "平均圈复杂度/平均代码重复率")
     private Double average;
 
-    @ApiModelProperty("单函数圈复杂度最大值")
+    @Schema(description = "单函数圈复杂度最大值")
     private Long singleFuncMax;
 
-    @ApiModelProperty("极高风险函数数量/极高风险文件数")
+    @Schema(description = "极高风险函数数量/极高风险文件数")
     private Long extreme;
 
-    @ApiModelProperty("高风险函数数量/高风险文件数")
+    @Schema(description = "高风险函数数量/高风险文件数")
     private Long high;
 
-    @ApiModelProperty("中风险函数数量/中风险文件数率")
+    @Schema(description = "中风险函数数量/中风险文件数率")
     private Long middle;
 
-    @ApiModelProperty("单文件代码重复率最大值")
+    @Schema(description = "单文件代码重复率最大值")
     private Double singleFileMax;
 
-    @ApiModelProperty("新增单函数圈复杂度最大值")
+    @Schema(description = "新增单函数圈复杂度最大值")
     private Long newSingleFuncMax;
 
-    @ApiModelProperty("新增风险函数数量")
+    @Schema(description = "新增风险函数数量")
     private Long newFuncCount;
 
-    @ApiModelProperty("新风险函数超标复杂度总数")
+    @Schema(description = "新风险函数超标复杂度总数")
     private Long newFuncBeyondThresholdSum;
 
-    @ApiModelProperty("历史风险函数超标复杂度总数")
+    @Schema(description = "历史风险函数超标复杂度总数")
     private Long historyFuncBeyondThresholdSum;
 
     /**
@@ -80,22 +79,22 @@ public class RLCcnAndDupcDefectVO
      * C10 无（因为10已经小于圈复杂度阈值20了，此时计算出来肯定不准确）
      * C5 无（因为5已经小于圈复杂度阈值20了，此时计算出来肯定不准确）
      */
-    @ApiModelProperty("圈复杂度超标率(阈值=30)")
+    @Schema(description = "圈复杂度超标率(阈值=30)")
     private Long c30;
     
-    @ApiModelProperty("圈复杂度超标率(阈值=25)")
+    @Schema(description = "圈复杂度超标率(阈值=25)")
     private Long c25;
     
-    @ApiModelProperty("圈复杂度超标率(阈值=20)")
+    @Schema(description = "圈复杂度超标率(阈值=20)")
     private Long c20;
     
-    @ApiModelProperty("圈复杂度超标率(阈值=15)")
+    @Schema(description = "圈复杂度超标率(阈值=15)")
     private Long c15;
     
-    @ApiModelProperty("圈复杂度超标率(阈值=10)")
+    @Schema(description = "圈复杂度超标率(阈值=10)")
     private Long c10;
     
-    @ApiModelProperty("圈复杂度超标率(阈值=5)")
+    @Schema(description = "圈复杂度超标率(阈值=5)")
     private Long c5;
 
     public RLCcnAndDupcDefectVO average(Double average) {

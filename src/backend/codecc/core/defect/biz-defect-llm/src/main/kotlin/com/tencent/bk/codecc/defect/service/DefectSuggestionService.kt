@@ -54,6 +54,9 @@ class DefectSuggestionService @Autowired constructor(
     @Value("\${codecc.llm.bkaidev:#{null}}")
     val bkaidevHost: String? = null
 
+    @Value("\${codecc.llm.bkaidevpath:#{null}}")
+    val bkAiDevPath: String? = null
+
     @Value("\${codecc.llm.model:'hunyuan-turbo'}")
     val model: String = ""
 
@@ -297,6 +300,7 @@ class DefectSuggestionService @Autowired constructor(
             bkAppCode = appCode,
             bkAppSecret = appSecret,
             host = bkaidevHost,
+            path = bkAiDevPath,
             bkTicket = bkTicket,
             apiKey = LLMConstants.LLM_API_KEY
         )
@@ -337,6 +341,7 @@ class DefectSuggestionService @Autowired constructor(
             bkAppCode = appCode,
             bkAppSecret = appSecret,
             host = bkaidevHost,
+            path = bkAiDevPath,
             bkTicket = bkTicket,
             apiKey = LLMConstants.LLM_API_KEY
         )

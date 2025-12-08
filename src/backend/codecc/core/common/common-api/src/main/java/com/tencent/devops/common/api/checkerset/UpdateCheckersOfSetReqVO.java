@@ -1,6 +1,6 @@
 package com.tencent.devops.common.api.checkerset;
 
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.List;
  * @date 2020/1/5
  */
 @Data
-@ApiModel("更新规则集中的规则请求视图")
+@Schema(description = "更新规则集中的规则请求视图")
 public class UpdateCheckersOfSetReqVO {
     /**
      * 规则集中的规则

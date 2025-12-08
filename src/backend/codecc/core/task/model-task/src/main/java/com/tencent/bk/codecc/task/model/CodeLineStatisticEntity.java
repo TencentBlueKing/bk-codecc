@@ -13,6 +13,7 @@
 package com.tencent.bk.codecc.task.model;
 
 import lombok.Data;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -28,11 +29,14 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Document(collection = "t_code_line_statistic")
 public class CodeLineStatisticEntity {
 
+    @Id
+    private String entityId;
+
     /**
      * 统计日期
      */
     @Field
-    @Indexed
+    @Indexed(background = true)
     private String date;
 
     /**

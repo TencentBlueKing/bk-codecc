@@ -48,7 +48,7 @@ import java.util.Set;
 public interface TaskRepository extends MongoRepository<TaskInfoEntity, String> {
 
     List<TaskInfoEntity> findByProjectIdAndTestStageGreaterThanAndTestTool(String projectId, Integer testStage,
-            String testTool);
+                                                                           String testTool);
 
     List<TaskInfoEntity> findByProjectIdAndTestStageAndTestTool(String projectId, Integer testStage, String testTool);
 
@@ -125,6 +125,7 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String> 
 
     /**
      * 通过流水线id获取任务信息集合
+     *
      * @param pipelineId
      * @return
      */
@@ -132,6 +133,7 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String> 
 
     /**
      * 查询流水线下所有的任务
+     *
      * @param pipelineId
      * @return
      */
@@ -139,6 +141,7 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String> 
 
     /**
      * 通过流水线id和多条流水线标识查找
+     *
      * @param pipelineId
      * @param multiPipelineMark
      * @return
@@ -170,16 +173,18 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String> 
 
     /**
      * 根据bg id查询
+     *
      * @param bgId
      * @return
      */
     List<TaskInfoEntity> findByBgId(Integer bgId);
 
     @Query(fields = "{'task_id': 1}")
-    List<TaskInfoEntity> findByBgIdAndStatus(Integer bgId, int status, Pageable pageable);
+    List<TaskInfoEntity> findTaskIdByBgIdAndStatus(Integer bgId, int status, Pageable pageable);
 
     /**
      * 通过task id清单
+     *
      * @param taskIds
      * @return
      */
@@ -187,7 +192,6 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String> 
 
     @Query(value = "{'task_id': {'$in': ?0}}", fields = "{'task_id': 1, 'alias_name': 1, 'branch': 1, 'name_en': 1, 'name_cn': 1, 'project_id': 1, 'project_name': 1, 'code_lang': 1}")
     List<TaskInfoEntity> findFieldsByTaskIdIn(List<Long> taskIds);
-
 
 
     /**
@@ -202,6 +206,7 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String> 
 
     /**
      * 根据创建来源查询
+     *
      * @param createFrom
      * @return
      */
@@ -209,6 +214,7 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String> 
 
     /**
      * 根据创建来源查询
+     *
      * @param createFrom
      * @return
      */
@@ -216,6 +222,7 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String> 
 
     /**
      * 根据项目id查询
+     *
      * @param projectId
      * @return
      */
@@ -223,21 +230,25 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String> 
 
     /**
      * 根据项目id与状态查询
+     *
      * @param projectId
      * @return
      */
     @Query(fields = "{'filter_path': 0, 'custom_proj_info': 0, 'default_filter_path': 0, "
             + "'project_build_command': 0, 'auto_gen_filter_path': 0}")
-    List<TaskInfoEntity> findByProjectIdAndStatus(String projectId,Integer status);
+    List<TaskInfoEntity> findByProjectIdAndStatus(String projectId, Integer status);
 
     /**
      * 根据gongfengid查询
+     *
      * @param gongfengProjectId
      * @return
      */
     TaskInfoEntity findFirstByGongfengProjectId(Integer gongfengProjectId);
 
+
     /**
+     * 根据工蜂项目ID和创建来源查询任务列表
      *
      * @param createFrom
      * @param gongfengProjectId
@@ -248,6 +259,7 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String> 
 
     /**
      * 获取特定创建的最大任务id值
+     *
      * @param createFrom
      * @return
      */
@@ -264,13 +276,16 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String> 
      * @param pageable   分页器
      * @return page
      */
-    @Query(fields = "{'execute_time':0, 'execute_date':0, 'timer_expression':0, 'last_disable_task_info':0, 'default_filter_path':0, 'tool_config_info_list':0, 'custom_proj_info':0}")
-    Page<TaskInfoEntity> findByStatusAndBgIdAndDeptIdInAndCreateFromIn(Integer status, Integer bgId,
-            Collection<Integer> deptIds, List<String> createFrom, Pageable pageable);
+    @Query(fields = "{'execute_time':0, 'execute_date':0, 'timer_expression':0, 'last_disable_task_info':0, 'default_filter_path':0,"
+            + " 'tool_config_info_list':0, 'custom_proj_info':0}")
+    Page<TaskInfoEntity> findByStatusAndBgIdAndDeptIdInAndCreateFromIn(Integer status,
+                                                                       Integer bgId, Collection<Integer> deptIds,
+                                                                       List<String> createFrom, Pageable pageable);
 
 
     /**
      * 按创建来源 任务状态查询
+     *
      * @param status     任务状态
      * @param createFrom 创建来源
      * @return list
@@ -283,7 +298,7 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String> 
      */
     @Query(fields = "{'task_id': 1}")
     List<TaskInfoEntity> findByCreateFromAndStatusAndProjectIdStartingWith(String createFrom, int status,
-            String projectIdStart);
+                                                                           String projectIdStart);
 
     /**
      * 根据业务id查询相应代码扫描任务
@@ -295,6 +310,7 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String> 
 
     /**
      * 根据gongfengid查询
+     *
      * @param gongfengProjectId
      * @return
      */
@@ -341,7 +357,7 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String> 
      */
     @Query(fields = "{'task_id': 1}")
     List<TaskInfoEntity> findByStatusAndCreateFromInAndTaskIdIn(int status, ArrayList<String> createFrom,
-            Set<Long> taskIdSet);
+                                                                Set<Long> taskIdSet);
 
     @Query(fields = "{'tool_config_info_list': 0, 'custom_proj_info': 0, 'default_filter_path': 0, "
             + "'project_build_command': 0}")
@@ -366,5 +382,9 @@ public interface TaskRepository extends MongoRepository<TaskInfoEntity, String> 
     TaskInfoEntity findStatusAndCreateFromByTaskId(Long taskId);
 
     @Query(fields = "{'task_id': 1}")
-    List<TaskInfoEntity> findTaskIdByProjectIdAndStatus(String projectId,Integer status);
+    List<TaskInfoEntity> findTaskIdByProjectIdAndStatus(String projectId, Integer status);
+
+    @Query(fields = "{'task_id': 1}")
+    List<TaskInfoEntity> findTaskIdByProjectIdAndStatusAndDisableReason(String projectId, Integer status,
+                                                                        String disableReason);
 }

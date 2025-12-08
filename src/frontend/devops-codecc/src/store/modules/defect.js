@@ -179,7 +179,7 @@ export default {
     },
     lintOtherParams({ commit }, params) {
       return http
-        .post('/defect/api/user/warn/checker/authors/list', params)
+        .post('/defect/api/user/warn/v2/checker/authors/list', params)
         .then(res => res.data || {});
     },
     lintSearchParams({ commit }, data) {

@@ -67,10 +67,10 @@
           {{ getTaskScopes(row.taskScopeType, row.taskScopeList) }}
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('审批人')" prop="approverType" show-overflow-tooltip>
+      <bk-table-column :label="$t('审批人')" prop="approverTypes" show-overflow-tooltip>
         <template
           slot-scope="{ row }">
-          {{ getApprover(row.approverType, row.customApprovers) }}
+          {{ getApprover(row.approverTypes, row.customApprovers) }}
         </template>
       </bk-table-column>
       <bk-table-column :label="$t('操作')" width="120">
@@ -137,7 +137,7 @@ export default {
         4: this.$t('提示'),
       },
       typeListMap: [],
-      approverList: [],
+      approverList: new Map(),
       isIgnoreTypeListReady: false,
     };
   },
@@ -240,7 +240,10 @@ export default {
     },
     handleFetchApprover() {
       this.$store.dispatch('ignore/fetchApproverList').then((res) => {
-        this.approverList = res?.data?.APPROVER_TYPE;
+        this.approverList = res?.data?.APPROVER_TYPE?.reduce((map, item) => {
+          map.set(item.key, item);
+          return map;
+        }, new Map());
       });
     },
     getTaskScopes(taskScopeType, taskScopeList = []) {
@@ -269,12 +272,21 @@ export default {
       }
       return '--';
     },
-    getApprover(approverType, customApprovers) {
-      if (approverType !== 'CUSTOM_APPROVER') {
-        const approver = this.approverList.find(item => item.key === approverType);
-        return approver ? approver.name : '--';
+    getApprover(approverTypes, customApprovers) {
+      const CUSTOM_APPROVER = 'CUSTOM_APPROVER'; // 自定义审批人
+      const curApprovers = approverTypes.reduce((array, approverType) => {
+        // 若有自定义审批人，从customApprovers中提取审批人名称
+        if (approverType === CUSTOM_APPROVER) {
+          array.push(...customApprovers);
+        } else {
+          array.push(this.approverList.get(approverType)?.name);
+        }
+        return array;
+      }, []);
+      if (curApprovers.length !== 0) {
+        return curApprovers.join(', ');
       }
-      return customApprovers.join(', ');
+      return '--';
     },
   },
 };

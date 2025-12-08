@@ -93,6 +93,7 @@ class JobManageServiceImpl @Autowired constructor(
             OperationType.REMOVE -> {
                 jobNameList.removeIf { it.jobName == jobInstance.jobName }
             }
+            else -> {}
         }
     }
 

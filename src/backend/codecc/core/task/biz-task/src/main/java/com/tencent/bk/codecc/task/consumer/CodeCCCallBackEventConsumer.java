@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.task.consumer;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.tencent.bk.codecc.task.model.CodeCCCallbackRegister;
 import com.tencent.bk.codecc.task.service.CodeCCCallbackRegisterService;
 import com.tencent.bk.codecc.task.vo.event.CodeCCCallbackEventDataVO;

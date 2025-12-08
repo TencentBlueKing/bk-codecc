@@ -7,7 +7,9 @@ import com.tencent.bk.codecc.defect.pojo.AggregateDefectNewInputModel
 import com.tencent.bk.codecc.defect.pojo.AggregateDefectOutputModelV2
 import com.tencent.bk.codecc.defect.pojo.DefectClusterDTO
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
+import com.tencent.bk.codecc.task.vo.TaskDetailVO
 import com.tencent.devops.common.api.exception.CodeCCException
+import com.tencent.devops.common.api.pojo.codecc.Result
 import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.constant.CommonMessageCode
 import com.tencent.devops.common.service.utils.SpringContextUtil
@@ -66,6 +68,15 @@ abstract class AbstractDefectCommitComponent<T>(
         transferAuthorList: List<TransferAuthorEntity.TransferAuthorPair>?,
         isReallocate: Boolean?
     ): List<T>
+
+    protected fun getTaskOwner(client: Client, taskId: Long): String {
+        val result: Result<TaskDetailVO> = client.get(ServiceTaskRestResource::class.java).getTaskInfoById(taskId)
+        if (result.isNotOk() || result.data == null) {
+            return ""
+        }
+
+        return result.data!!.taskOwner?.first() ?: ""
+    }
 
     /**
      * 获取md5映射对象

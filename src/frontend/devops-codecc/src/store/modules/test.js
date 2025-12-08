@@ -25,8 +25,8 @@ export default {
       return http.get(`${prefix}/list/${toolName}/${projectId}`)
         .then(response => response.data || {});
     },
-    getResult({ commit }, { toolName, version, stage }) {
-      return http.get(`${prefix}/getResult/${toolName}/${version}?stage=${stage}`)
+    getResult({ commit }, payload) {
+      return http.post(`${prefix}/getResult`, payload)
         .then(response => response.data || {});
     },
     listVersion({ commit }, { toolName, stage }) {

@@ -12,7 +12,7 @@ class V3AuthExPermissionApi(
     client: Client,
     redisTemplate: RedisTemplate<String, String>,
     private val authTaskService: AuthTaskService,
-    private val codeccAuthPermissionApi: AuthPermissionStrApi
+    private val codeccAuthPermissionApi: CodeCCV3AuthPermissionApi
 ) : AbstractAuthExPermissionApi(
     client,
     redisTemplate
@@ -50,11 +50,11 @@ class V3AuthExPermissionApi(
                 permissions = actions
             ) { mutableListOf() }
             val resourceSet = mutableSetOf<String>()
-            resultMap.values.forEach {
-                if (it.firstOrNull() == "*") {
-                    resourceSet.addAll(queryTaskListForUser(user, projectId, actions))
+            resultMap.values.forEach { taskList ->
+                if (taskList.firstOrNull() == "*") {
+                    resourceSet.addAll(authTaskService.queryTaskListForUser(user, projectId, actions))
                 } else {
-                    resourceSet.addAll(it)
+                    resourceSet.addAll(taskList)
                 }
             }
             return resourceSet

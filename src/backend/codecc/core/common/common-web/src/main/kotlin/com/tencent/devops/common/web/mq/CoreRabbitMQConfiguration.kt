@@ -89,11 +89,11 @@ class CoreRabbitMQConfiguration {
     @Primary
     fun coreConnectionFactory(config: CoreRabbitMQProperties): ConnectionFactory {
         val connectionFactory = CachingConnectionFactory()
-        connectionFactory.host = config.host
-        connectionFactory.port = config.port
-        connectionFactory.username = username!!
+        connectionFactory.setHost(config.host)
+        connectionFactory.setPort(config.port)
+        connectionFactory.setUsername(username!!)
         connectionFactory.setPassword(password!!)
-        connectionFactory.virtualHost = getVirtualHost()
+        connectionFactory.setVirtualHost(getVirtualHost())
         connectionFactory.setAddresses(addresses!!)
         if (channelCacheSize != null && channelCacheSize!! > 0) {
             connectionFactory.channelCacheSize = channelCacheSize!!

@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -39,17 +38,17 @@ import java.util.List;
  * @date 2019/5/14
  */
 @Data
-@ApiModel("工具状态更新视图")
+@Schema(description = "工具状态更新视图")
 public class ToolStatusUpdateReqVO
 {
 
-    @ApiModelProperty(value = "工具名清单", required = true)
+    @Schema(description = "工具名清单", required = true)
     private List<String> toolNameList;
 
-    @ApiModelProperty(value = "停用原因", required = true)
+    @Schema(description = "停用原因", required = true)
     private String stopReason;
 
-    @ApiModelProperty(value = "停用/启用动作", required = true, allowableValues = "{Y,N}")
+    @Schema(description = "停用/启用动作", required = true, allowableValues = "{Y,N}")
     private String manageType;
 
 }

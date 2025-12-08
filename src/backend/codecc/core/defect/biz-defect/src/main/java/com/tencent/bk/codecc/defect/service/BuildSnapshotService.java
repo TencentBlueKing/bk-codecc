@@ -113,6 +113,5 @@ public interface BuildSnapshotService {
      * 保存SCA告警快照
      */
     void saveSCASnapshot(long taskId, String toolName, String buildId, BuildEntity buildEntity,
-            SCASbomAggregateModel aggregateModel, List<SCAVulnerabilityEntity> vulnerabilities,
-            List<SCALicenseEntity> licenses);
+            SCASbomAggregateModel aggregateModel);
 }

@@ -26,8 +26,7 @@
 
 package com.tencent.devops.common.api.analysisresult;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -41,36 +40,36 @@ import java.util.List;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("CCN类工具最近一次分析结果")
+@Schema(description = "CCN类工具最近一次分析结果")
 public class DUPCLastAnalysisResultVO extends BaseRiskAnalysisResultVO {
     /**
      * 本次分析的代码重复率(平均重复率)
      */
-    @ApiModelProperty("本次分析的代码重复率")
+    @Schema(description = "本次分析的代码重复率")
     private Float dupRate;
 
     /**
      * 本次分析前的代码重复率
      */
-    @ApiModelProperty("本次分析前的代码重复率")
+    @Schema(description = "本次分析前的代码重复率")
     private Float lastDupRate;
 
     /**
      * 本次分析的代码重复率变化值
      */
-    @ApiModelProperty("本次分析的代码重复率变化值")
+    @Schema(description = "本次分析的代码重复率变化值")
     private Float dupRateChange;
 
 
     /**
      * 新告警处理人统计
      */
-    @ApiModelProperty("新告警处理人统计")
+    @Schema(description = "新告警处理人统计")
     private List<BaseRiskNotRepairedAuthorVO> newAuthorStatistic;
 
     /**
      * 存量告警处理人统计
      */
-    @ApiModelProperty("存量告警处理人统计")
+    @Schema(description = "存量告警处理人统计")
     private List<BaseRiskNotRepairedAuthorVO> existAuthorStatistic;
 }

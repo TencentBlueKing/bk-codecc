@@ -62,17 +62,12 @@
               <div class="cc-col">
                 <bk-form-item :label="$t('处理人')">
                   <bk-select v-model="searchParams.author" searchable>
-                    <template #trigger>
-                      <SelectTrigger v-model="searchParams.author" />
-                    </template>
                     <bk-option
                       v-for="(author, index) in searchFormData.authorList"
-                      :key="index"
-                      :id="author"
-                      :name="author"
-                    >
-                      <bk-user-display-name :user-id="author"></bk-user-display-name>
-                    </bk-option>
+                      :key="author.id"
+                      :id="author.id"
+                      :name="author.name"
+                    ></bk-option>
                   </bk-select>
                 </bk-form-item>
               </div>
@@ -380,7 +375,6 @@ import { mapState } from 'vuex';
 import util from '@/mixins/defect-list';
 import dupcDetail from './dupc-detail';
 import Empty from '@/components/empty';
-import SelectTrigger from '@/components/select-trigger/index.vue';
 // import filterSearchOption from './filter-search-option'
 // eslint-disable-next-line
 import { export_json_to_excel } from '@/vendor/export2Excel';
@@ -392,7 +386,6 @@ export default {
   components: {
     dupcDetail,
     Empty,
-    SelectTrigger,
     // filterSearchOption,
   },
   mixins: [util],
@@ -582,7 +575,7 @@ export default {
     async init() {
       this.contentLoading = true;
       await Promise.all([this.fetchLintList(), this.fetchLintParams()])
-        .then(([list, params]) => {
+        .then(async ([list, params]) => {
           this.isFetched = true;
           this.listData = list;
           this.formatFilePath(params.filePathTree);
@@ -596,10 +589,18 @@ export default {
             newAuthorList.unshift(user);
             return newAuthorList;
           }
-          params.authorList = addCurrentUser(
+          const authorList = addCurrentUser(
             params.authorList,
             this.user.username
           );
+          const dataMap = await this.$store.dispatch(
+            'displayname/batchGetDisplayName',
+            authorList,
+          );
+          params.authorList = authorList.map(author => ({
+            id: author,
+            name: dataMap.get(author)?.display_name || author,
+          }));
           this.searchFormData = Object.assign({}, this.searchFormData, params);
           this.pagination.count = this.listData.defectList.totalElements;
         })
@@ -888,7 +889,7 @@ export default {
       export_json_to_excel(tHeader, data, title);
     },
     formatJson(filterVal, list) {
-      let index = 1;
+      let index = 0;
       return list.map((item) =>
         filterVal.map((j) => {
           if (j === 'index') {

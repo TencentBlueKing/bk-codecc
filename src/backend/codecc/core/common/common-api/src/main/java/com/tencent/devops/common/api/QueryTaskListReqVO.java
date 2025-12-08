@@ -26,8 +26,7 @@
 
 package com.tencent.devops.common.api;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -43,50 +42,50 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("任务批量查询模型")
+@Schema(description = "任务批量查询模型")
 public class QueryTaskListReqVO extends CommonPageVO {
-    @ApiModelProperty(value = "任务ID集合", required = true)
+    @Schema(description = "任务ID集合", required = true)
     private Collection<Long> taskIds;
 
-    @ApiModelProperty(value = "蓝盾项目ID")
+    @Schema(description = "蓝盾项目ID")
     private String projectId;
 
-    @ApiModelProperty(value = "事业群ID", required = true)
+    @Schema(description = "事业群ID", required = true)
     private Integer bgId;
 
-    @ApiModelProperty(value = "部门ID")
+    @Schema(description = "部门ID")
     private Integer deptId;
 
-    @ApiModelProperty(value = "部门ID列表")
+    @Schema(description = "部门ID列表")
     private Collection<Integer> deptIds;
 
-    @ApiModelProperty(value = "任务状态")
+    @Schema(description = "任务状态")
     private Integer status;
 
-    @ApiModelProperty(value = "工具名称", required = true)
+    @Schema(description = "工具名称", required = true)
     private String toolName;
 
-    @ApiModelProperty(value = "标识是否排除taskIds")
+    @Schema(description = "标识是否排除taskIds")
     private String isExcludeTaskIds;
 
-    @ApiModelProperty(value = "任务创建来源")
+    @Schema(description = "任务创建来源")
     private List<String> createFrom;
 
-    @ApiModelProperty(value = "个性化触发扫描任务来源列表")
+    @Schema(description = "个性化触发扫描任务来源列表")
     private String customTaskSource;
 
-    @ApiModelProperty(value = "开始时间")
+    @Schema(description = "开始时间")
     private Long startTime;
 
-    @ApiModelProperty(value = "结束时间")
+    @Schema(description = "结束时间")
     private Long endTime;
 
-    @ApiModelProperty(value = "初始化天数")
+    @Schema(description = "初始化天数")
     private Integer initDay;
 
-    @ApiModelProperty(value = "任务ID")
+    @Schema(description = "任务ID")
     private Long taskId;
 
-    @ApiModelProperty(value = "用户名")
+    @Schema(description = "用户名")
     private String userId;
 }

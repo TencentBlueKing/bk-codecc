@@ -28,8 +28,7 @@
 package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -39,38 +38,38 @@ import lombok.Data;
  * @date 2019/4/30
  */
 @Data
-@ApiModel("工具配置的基本信息")
+@Schema(description = "工具配置的基本信息")
 public class ToolConfigBaseVO {
-    @ApiModelProperty(value = "任务ID", required = true)
+    @Schema(description = "任务ID", required = true)
     private long taskId;
 
-    @ApiModelProperty(value = "工具ID", required = true)
+    @Schema(description = "工具ID", required = true)
     private String toolName;
 
-    @ApiModelProperty(value = "工具展示名称", required = true)
+    @Schema(description = "工具展示名称", required = true)
     private String toolDisplayName;
 
-    @ApiModelProperty(value = "工具模型", required = true)
+    @Schema(description = "工具模型", required = true)
     private String toolPattern;
 
-    @ApiModelProperty(value = "当前步骤", required = true)
+    @Schema(description = "当前步骤", required = true)
     private int curStep;
 
-    @ApiModelProperty(value = "当前步骤状态，0成功/1失败", required = true)
+    @Schema(description = "当前步骤状态，0成功/1失败", required = true)
     private int stepStatus;
 
-    @ApiModelProperty(value = "跟进状态，0/1-未跟进，2-体验，3-接入中，4-已接入，5-挂起，6-下架/停用", required = true)
+    @Schema(description = "跟进状态，0/1-未跟进，2-体验，3-接入中，4-已接入，5-挂起，6-下架/停用", required = true)
     private int followStatus;
 
-    @ApiModelProperty(value = "规则集")
+    @Schema(description = "规则集")
     private CheckerSetVO checkerSet;
 
-    @ApiModelProperty(value = "工具框架化参数总和")
+    @Schema(description = "工具框架化参数总和")
     private String paramJson;
 
-    @ApiModelProperty(value = "工具类型")
+    @Schema(description = "工具类型")
     private String toolType;
 
-    @ApiModelProperty(value = "当前构建id")
+    @Schema(description = "当前构建id")
     private String currentBuildId;
 }

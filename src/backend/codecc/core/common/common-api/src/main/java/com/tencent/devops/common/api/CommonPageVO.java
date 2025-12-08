@@ -1,6 +1,6 @@
 package com.tencent.devops.common.api;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -13,16 +13,16 @@ import lombok.Data;
 @Data
 public class CommonPageVO
 {
-    @ApiModelProperty(value = "第几页")
+    @Schema(description = "第几页")
     private Integer pageNum;
 
-    @ApiModelProperty(value = "每页多少条")
+    @Schema(description = "每页多少条")
     private Integer pageSize;
 
-    @ApiModelProperty(value = "排序字段")
+    @Schema(description = "排序字段")
     private String sortField;
 
-    @ApiModelProperty(value = "排序类型")
+    @Schema(description = "排序类型")
     private String sortType;
 
 }

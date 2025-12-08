@@ -1,21 +1,35 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerRepository;
+import com.tencent.bk.codecc.defect.dao.core.mongorepository.LLMNDFToolAccessControlRepository;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.IgnoredNegativeDefectDao;
+import com.tencent.bk.codecc.defect.dto.llm.LLMAddIgnoredDefectReqVO;
+import com.tencent.bk.codecc.defect.dto.llm.LLMNegativeDefectLearnVO;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.defect.IgnoredNegativeDefectEntity;
+import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.service.IIgnoredNegativeDefectService;
+import com.tencent.bk.codecc.defect.utils.ParamUtils;
+import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
 import com.tencent.bk.codecc.defect.vo.IgnoredNegativeDefectStatisticVO;
 import com.tencent.bk.codecc.defect.vo.IgnoredNegativeDefectVO;
 import com.tencent.bk.codecc.defect.vo.ListNegativeDefectReqVO;
 import com.tencent.bk.codecc.defect.vo.ProcessNegativeDefectReqVO;
+import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.DateTimeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -28,6 +42,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_LLM_NEGATIVE_DEFECT_LEARN;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_LLM_NEGATIVE_DEFECT_LEARN;
 
 @Slf4j
 @Service
@@ -35,9 +53,14 @@ public class IIgnoredNegativeDefectServiceImpl implements IIgnoredNegativeDefect
 
     @Autowired
     IgnoredNegativeDefectDao ignoredNegativeDefectDao;
-
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
     @Autowired
     private CheckerRepository checkerRepository;
+    @Value("${codecc.admin:#{null}}")
+    private String admin;
+
+    private static final int LLM_NEGATIVE_DEFECT_LEARN_LIMIT = 20;
 
     private static class Period {
         public long startTime;
@@ -48,6 +71,34 @@ public class IIgnoredNegativeDefectServiceImpl implements IIgnoredNegativeDefect
             this.endTime = et;
         }
     }
+
+    private static final String SEPARATE = "#@#";
+
+    @Autowired
+    private LLMNDFToolAccessControlRepository llmndfToolAccessControlRepository;
+
+    // 缓存一个规则是否支持大模型误报过滤服务
+    // 格式: [工具名]#@#[规则名] -> true/false
+    private final LoadingCache<String, Boolean> llmndfOpenCheckers = CacheBuilder.newBuilder()
+            .refreshAfterWrite(1, TimeUnit.DAYS)
+            .maximumSize(1000)
+            .build(new CacheLoader<String, Boolean>() {
+                @Override
+                public Boolean load(@NotNull String toolChecker) {
+                    if (org.apache.commons.lang.StringUtils.isBlank(toolChecker) || !toolChecker.contains(SEPARATE)) {
+                        return false;
+                    }
+
+                    try {
+                        String[] toolAndChecker = toolChecker.split(SEPARATE, 2);
+                        return llmndfToolAccessControlRepository.existsByToolNameAndOpenCheckersContains(
+                                toolAndChecker[0], toolAndChecker[1]);
+                    } catch (Exception e) {
+                        log.error("cache load error: {}. {}", e.getMessage(), e.getStackTrace());
+                        return false;
+                    }
+                }
+            });
 
     /**
      * 生成 list 接口和 count 接口通用的过滤条件: 开始时间, 结束时间, checker name
@@ -175,6 +226,77 @@ public class IIgnoredNegativeDefectServiceImpl implements IIgnoredNegativeDefect
         }
 
         return ignoredNegativeDefectDao.updateProcessProgressByDefectId(entityId, processNegativeDefectReq);
+    }
+
+    @Override
+    public void batchDeleteIgnoredDefects(Long taskId, Set<String> defectIds) {
+        if (CollectionUtils.isEmpty(defectIds)) {
+            return;
+        }
+
+        long deletedCount = ignoredNegativeDefectDao.batchDelete(defectIds);
+        if (deletedCount <= 0) {
+            return;
+        }
+
+        LLMNegativeDefectLearnVO req = LLMNegativeDefectLearnVO.builder()
+                .taskId(taskId)
+                .isDelete(true)
+                .deletedDefectIds(defectIds)
+                .build();
+        rabbitTemplate.convertAndSend(EXCHANGE_LLM_NEGATIVE_DEFECT_LEARN, ROUTE_LLM_NEGATIVE_DEFECT_LEARN, req);
+    }
+
+    @Override
+    public void batchInsertIgnoredDefects(
+            List defects,
+            BatchDefectProcessReqVO batchDefectProcessReq,
+            TaskDetailVO taskDetail
+    ) {
+        try {
+            ignoredNegativeDefectDao.batchInsert(defects, batchDefectProcessReq, taskDetail);
+        } catch (Exception e) {
+            log.error("(大概率是类型转换失败): {}", e.getMessage());
+        }
+
+        if (!ParamUtils.enableLLMNegativeDefectFilter(taskDetail, ComConstants.Tool.BKCHECK.name())) {
+            return;
+        }
+        List<LLMAddIgnoredDefectReqVO> infos = new ArrayList<>();
+        for (Object defect : defects) {
+            if (defect instanceof LintDefectV2Entity) {
+                LintDefectV2Entity entity = (LintDefectV2Entity) defect;
+                // 检查该告警所对应的规则是否支持大模型误报过滤服务
+                Boolean isOpenChecker =
+                            llmndfOpenCheckers.getUnchecked(entity.getToolName() + SEPARATE + entity.getChecker());
+                if (BooleanUtils.isTrue(isOpenChecker)) {
+                    LLMAddIgnoredDefectReqVO info = LLMAddIgnoredDefectReqVO.builder()
+                            .defectId(entity.getEntityId())
+                            .ignoreReason(batchDefectProcessReq.getIgnoreReason())
+                            .message(entity.getMessage())
+                            .defectLineNo((long) entity.getLineNum())
+                            .filePath(entity.getFilePath())
+                            .ruleName(entity.getChecker())
+                            .lang(entity.getLanguage())
+                            .toolName(entity.getToolName())
+                            .build();
+                    infos.add(info);
+                }
+            }
+
+            // 限制一次性往 LLM 服务上报的误报数量
+            if (infos.size() >= LLM_NEGATIVE_DEFECT_LEARN_LIMIT) {
+                break;
+            }
+        }
+
+        LLMNegativeDefectLearnVO req = LLMNegativeDefectLearnVO.builder()
+                .userName(admin)
+                .projectId(taskDetail.getProjectId())
+                .taskId(taskDetail.getTaskId())
+                .llmIgnoredDefectInfos(infos)
+                .build();
+        rabbitTemplate.convertAndSend(EXCHANGE_LLM_NEGATIVE_DEFECT_LEARN, ROUTE_LLM_NEGATIVE_DEFECT_LEARN, req);
     }
 
     @Override

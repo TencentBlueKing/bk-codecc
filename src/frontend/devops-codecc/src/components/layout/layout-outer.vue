@@ -187,6 +187,10 @@ export default {
       flex: 5;
       justify-content: center;
 
+      .bk-tab-label-wrapper {
+        background-color: #fff;
+      }
+
       .bk-tab-label-item,
       .bk-tab-label-item.active {
         background-color: #fff;

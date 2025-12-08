@@ -36,7 +36,7 @@ import com.tencent.bk.codecc.defect.vo.TaskLogOverviewVO;
 import com.tencent.bk.codecc.task.vo.QueryLogRepVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.web.RestResource;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.util.StringUtils;

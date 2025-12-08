@@ -24,7 +24,7 @@ class KubernetesDiscoveryUtils constructor(
         val pods = coreV1Api.listNamespacedPod(
             namespace, null, null, null,
             null, null, null, null, null,
-            null, null
+            null, null, null
         )
         for (v1Pod in pods.items) {
             if (v1Pod.status?.podIP == instance.host) {

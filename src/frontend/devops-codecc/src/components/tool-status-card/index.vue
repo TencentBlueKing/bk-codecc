@@ -356,7 +356,7 @@
       <bk-container
         class="card-content"
         :col="4"
-        v-else-if="data.toolName === 'PECKER_SCA'"
+        v-else-if="data.toolTypes.includes('SCA')"
       >
         <bk-row class="card-num">
           <bk-col>
@@ -367,13 +367,13 @@
             </a>
           </bk-col>
           <!-- 隐藏漏洞数 -->
-          <!-- <bk-col>
+          <bk-col>
             <a @click="toList({}, 'sca-vuln')">
               {{ data.lastAnalysisResult.newVulCount === undefined
                 ? '--'
                 : handleBigNum(data.lastAnalysisResult.newVulCount) }}
             </a>
-          </bk-col> -->
+          </bk-col>
           <bk-col>
             <a @click="toList({}, 'sca-lic')">
               {{ data.lastAnalysisResult.licenseCount === undefined
@@ -385,7 +385,7 @@
         <bk-row class="card-txt">
           <bk-col>{{ $t('组件数') }}</bk-col>
           <!-- 隐藏漏洞数 -->
-          <!-- <bk-col>{{ $t('漏洞数') }}</bk-col> -->
+          <bk-col>{{ $t('漏洞数') }}</bk-col>
           <bk-col>{{ $t('许可证数') }}</bk-col>
         </bk-row>
       </bk-container>
@@ -571,6 +571,10 @@ export default {
         default:
           routerName = 'defect-lint-list';
           break;
+      }
+      // SCA特殊处理
+      if (this.data.toolTypes.includes('SCA')) {
+        routerName = `defect-${name}-list`;
       }
       const { params } = this.$route;
       params.toolId = this.data.toolName;

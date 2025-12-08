@@ -187,11 +187,17 @@
         <div class="settings-body">
           <bk-form-item
             :label-width="110"
-            class="input"
+            class="user-input"
             v-for="(item, index) in authorList"
             :key="index"
           >
-            <bk-input v-model="item.sourceAuthor"></bk-input>
+            <!-- <bk-input v-model="item.sourceAuthor"></bk-input> -->
+            <UserSelector
+              allow-create
+              :multiple="false"
+              :placeholder="$t('原处理人')"
+              :value.sync="item.sourceAuthor"
+            />
             <!-- <bk-input class="compile-version" v-model="item.targetAuthor" :placeholder="'新处理人'"></bk-input> -->
             <UserSelector
               allow-create
@@ -599,15 +605,15 @@ ${this.taskDetail.pipelineId}/edit#${this.taskDetail.atomCode}`,
     margin-right: 15px;
   }
 
-  .input {
-    width: 300px;
+  .user-input {
+    width: 410px;
     height: 32px;
 
     .compile-version {
       position: relative;
       top: -32px;
-      left: 115%;
-      width: 190px;
+      left: 110%;
+      width: 300px;
     }
 
     .compile-version::before {
@@ -623,7 +629,7 @@ ${this.taskDetail.pipelineId}/edit#${this.taskDetail.atomCode}`,
     .tool-icon {
       position: relative;
       top: -62px;
-      left: 220%;
+      left: 640px;
 
       .bk-icon {
         font-size: 20px;

@@ -1,5 +1,5 @@
 <template>
-  <bk-dialog v-model="visible" :title="title" width="800px" padding="30px 15px" z-index="500" ref="dialog" @cancel="handelClose()" :header-position="'left'">
+  <bk-dialog v-model="visible" :title="title" width="800px" padding="30px 15px" z-index="500" ref="dialog" @cancel="handelClose()" :header-position="'left'" :mask-close="false">
     <hr style=" width: 103.2%; margin-top: -5px;color: #D3D3D3">
     <bk-form :label-width="100" :model="formData" :rules="rules" ref="formData" style="margin-top: 27px">
       <bk-form-item :label="$t('规则名称')" :required="true" :property="'checkerName'" error-display-type="normal">

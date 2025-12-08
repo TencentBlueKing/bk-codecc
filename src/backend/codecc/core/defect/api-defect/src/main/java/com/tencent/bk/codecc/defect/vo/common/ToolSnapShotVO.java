@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo.common;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -38,30 +37,30 @@ import lombok.Data;
  * @date 2019/6/28
  */
 @Data
-@ApiModel("工具快照视图")
+@Schema(description = "工具快照视图")
 public class ToolSnapShotVO
 {
-    @ApiModelProperty("工具中文名")
+    @Schema(description = "工具中文名")
     @JsonProperty("tool_name_cn")
     private String toolNameCn;
 
-    @ApiModelProperty("工具英文名")
+    @Schema(description = "工具英文名")
     @JsonProperty("tool_name_en")
     private String toolNameEn;
 
-    @ApiModelProperty("工具告警详情页面")
+    @Schema(description = "工具告警详情页面")
     @JsonProperty("defect_detail_url")
     private String defectDetailUrl;
 
-    @ApiModelProperty("工具报表页面")
+    @Schema(description = "工具报表页面")
     @JsonProperty("defect_report_url")
     private String defectReportUrl;
 
-    @ApiModelProperty("工具分析结果状态")
+    @Schema(description = "工具分析结果状态")
     @JsonProperty("result_status")
     private String resultStatus;
 
-    @ApiModelProperty("工具分析结果状态描述")
+    @Schema(description = "工具分析结果状态描述")
     @JsonProperty("result_message")
     private String resultMessage;
 

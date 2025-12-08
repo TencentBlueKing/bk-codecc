@@ -2,7 +2,7 @@ package com.tencent.bk.codecc.task.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

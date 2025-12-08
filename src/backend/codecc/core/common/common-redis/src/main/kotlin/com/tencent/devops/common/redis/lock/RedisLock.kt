@@ -28,10 +28,9 @@ package com.tencent.devops.common.redis.lock
 
 import org.slf4j.LoggerFactory
 import org.springframework.data.redis.core.RedisTemplate
-import redis.clients.jedis.Jedis
-import redis.clients.jedis.JedisCluster
-import redis.clients.jedis.params.SetParams
+import org.springframework.data.redis.core.script.DefaultRedisScript
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
 class RedisLock(
@@ -40,16 +39,6 @@ class RedisLock(
     private val expiredTimeInSeconds: Long
 ) : AutoCloseable {
     companion object {
-        /**
-         * 将key 的值设为value ，当且仅当key 不存在，等效于 SETNX。
-         */
-        private const val NX = "NX"
-
-        /**
-         * seconds — 以秒为单位设置 key 的过期时间，等效于EXPIRE key seconds
-         */
-        private const val EX = "EX"
-
         /**
          * 调用set后的返回值
          */
@@ -104,7 +93,7 @@ class RedisLock(
     }
 
     /**
-     * 重写redisTemplate的set方法
+     * 重写 redisTemplate 的 set 方法，兼容 Lettuce
      * <p>
      * 命令 SET resource-name anystring NX EX max-lock-time 是一种在 Redis 中实现锁的简单方法。
      * <p>
@@ -115,28 +104,16 @@ class RedisLock(
      *
      * @param key 锁的Key
      * @param value 锁里面的值
-     * @param seconds 过去时间（秒）
-     * @return
+     * @param seconds 过期时间（秒）
+     * @return OK 或 null
      */
     private fun set(key: String, value: String, seconds: Long): String? {
-        return redisTemplate.execute { connection ->
-
-            val nativeConnection = connection.nativeConnection
-            val result =
-                when (nativeConnection) {
-                    is JedisCluster -> nativeConnection.set(key, value, SetParams.setParams().nx().ex(seconds.toInt()))
-                    is Jedis -> nativeConnection.set(key, value, SetParams.setParams().nx().ex(seconds.toInt()))
-                    else -> {
-                        logger.warn("Unknown redis connection($nativeConnection)")
-                        null
-                    }
-                }
-            result
-        }
+        val ok = redisTemplate.opsForValue().setIfAbsent(key, value,seconds, TimeUnit.SECONDS) ?: false
+        return if (ok) OK else null
     }
 
     /**
-     * 解锁
+     * 解锁 (兼容 Lettuce)
      * <p>
      * 可以通过以下修改，让这个锁实现更健壮：
      * <p>
@@ -146,30 +123,24 @@ class RedisLock(
      */
     fun unlock(): Boolean {
         // 只有加锁成功并且锁还有效才去释放锁
-        if (locked) {
-//            logger.info("Start to unlock the key($lockKey) of value($lockValue)")
-            return redisTemplate.execute { connection ->
-                val nativeConnection = connection.nativeConnection
+        try {
+            if (!unLockRemote()) {
+                logger.warn("remote lock has changed , key: $lockKey , value: $lockValue")
+                return false
+            }
+            return true
+        } catch (e: Exception) {
+            logger.error("unlock error", e)
+            return unLockRemote() // try again
+        }
+    }
 
-                val keys = listOf(lockKey)
-                val values = listOf(lockValue)
-                val result =
-                    when (nativeConnection) {
-                        is JedisCluster -> nativeConnection.eval(UNLOCK_LUA, keys, values)
-                        is Jedis -> nativeConnection.eval(UNLOCK_LUA, keys, values)
-                        else -> {
-                            logger.warn("Unknown redis connection($nativeConnection)")
-                            0L
-                        }
-                    }
-                locked = result == 0L
-                result == 1L
-            } ?: false
-        } /*else {
-            logger.info("It's already unlock")
-        }*/
-
-        return true
+    private fun unLockRemote(): Boolean {
+        return redisTemplate.execute(
+            DefaultRedisScript(UNLOCK_LUA, Long::class.java),
+            listOf(lockKey),
+            lockValue
+        ) > 0
     }
 
     /**

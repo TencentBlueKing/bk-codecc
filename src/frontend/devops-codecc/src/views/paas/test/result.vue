@@ -128,9 +128,6 @@ export default {
           current: this.current.defectCount ? `${(this.current.defectCount * 1000 / this.current.codeCount).toFixed(2)} /kloc` : '--',
           compare: this.compare.defectCount ? `${(this.compare.defectCount * 1000 / this.compare.codeCount).toFixed(2)} /kloc` : '--',
           suggestion: this.stage === 1 ? `> ${this.threshold.defectDensity}` : '--',
-          isPass: this.stage === 1
-            ? (this.current.defectCount * 1000 / this.current.codeCount) > this.threshold.defectDensity
-            : null,
         },
       ];
     },

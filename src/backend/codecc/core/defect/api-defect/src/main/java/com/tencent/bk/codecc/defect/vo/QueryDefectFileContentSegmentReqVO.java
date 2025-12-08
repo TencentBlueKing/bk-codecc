@@ -1,8 +1,12 @@
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModelProperty;
-import javax.validation.constraints.NotNull;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.NotEmpty;
 
 /**
@@ -11,26 +15,29 @@ import org.hibernate.validator.constraints.NotEmpty;
  * @date 2023/06/30
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class QueryDefectFileContentSegmentReqVO {
 
-    @ApiModelProperty(value = "告警 ID", required = true)
+    @Schema(description = "告警 ID", required = true)
     @NotEmpty(message = "告警 ID 不能为空")
     private String entityId;
 
-    @ApiModelProperty(value = "工具名称", required = false)
+    @Schema(description = "工具名称", required = false)
     private String toolName;
 
-    @ApiModelProperty(value = "工具维度", required = false)
+    @Schema(description = "工具维度", required = false)
     private String dimension;
 
-    @ApiModelProperty(value = "文件完整路径", required = true)
+    @Schema(description = "文件完整路径", required = true)
     @NotNull
     private String filePath;
 
-    @ApiModelProperty(value = "开始行", required = false)
+    @Schema(description = "开始行", required = false)
     private int beginLine;
 
-    @ApiModelProperty(value = "结束行", required = false)
+    @Schema(description = "结束行", required = false)
     private int endLine;
 
     /**

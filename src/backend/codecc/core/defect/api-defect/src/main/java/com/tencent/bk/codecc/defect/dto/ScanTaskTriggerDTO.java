@@ -25,8 +25,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ScanTaskTriggerDTO 
-{
+public class ScanTaskTriggerDTO {
 
     private Long taskId;
 

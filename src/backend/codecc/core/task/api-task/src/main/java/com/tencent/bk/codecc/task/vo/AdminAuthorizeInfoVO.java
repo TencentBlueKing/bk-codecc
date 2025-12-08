@@ -12,7 +12,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -27,19 +27,19 @@ import java.util.List;
 @Data
 public class AdminAuthorizeInfoVO {
 
-    @ApiModelProperty("用户名ID")
+    @Schema(description = "用户名ID")
     private String userId;
 
-    @ApiModelProperty("用户名ID集合")
+    @Schema(description = "用户名ID集合")
     private List<String> userIdList;
 
-    @ApiModelProperty("已授权的BG id")
+    @Schema(description = "已授权的BG id")
     private List<Integer> bgIdList;
 
-    @ApiModelProperty("已授权的来源平台：开源/非开源")
+    @Schema(description = "已授权的来源平台：开源/非开源")
     private List<String> createFroms;
 
-    @ApiModelProperty("备注")
+    @Schema(description = "备注")
     private String remarks;
 
 }

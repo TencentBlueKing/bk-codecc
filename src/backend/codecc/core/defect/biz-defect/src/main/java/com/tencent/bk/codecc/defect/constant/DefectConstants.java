@@ -39,6 +39,8 @@ public interface DefectConstants
      */
     enum DefectSeverity
     {
+
+        UNKNOWN(0),
         SERIOUS(1),
         NORMAL(2),
         PROMPT(4);

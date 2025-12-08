@@ -14,12 +14,15 @@ import com.tencent.bk.codecc.defect.service.DefectFilePathClusterService
 import com.tencent.devops.common.api.codecc.util.JsonUtil
 import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.api.util.UUIDUtil
+import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.constant.ComConstants.Tool
 import com.tencent.devops.common.constant.CommonMessageCode
 import org.apache.commons.lang.BooleanUtils
 import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.util.Pair
 import org.springframework.stereotype.Component
 import org.springframework.util.CollectionUtils
@@ -39,6 +42,12 @@ class CCNDefectCommitComponent constructor(
         private val logger = LoggerFactory.getLogger(CCNDefectCommitComponent::class.java)
     }
 
+    @Value("\${codecc.enableMultiTenant:#{null}}")
+    private val enableMultiTenant: Boolean? = null
+
+    @Autowired
+    private lateinit var client: Client
+
     @ExperimentalUnsignedTypes
     override fun processCluster(defectClusterDTO: DefectClusterDTO) {
         with(defectClusterDTO) {
@@ -50,6 +59,15 @@ class CCNDefectCommitComponent constructor(
             val relPathSet = aggregateDefectNewInputModel.relPathSet
             val filePathSet = aggregateDefectNewInputModel.filePathSet
             logger.info("[ccn cluster process] current defect size: ${inputDefects.size}, rel path set size: ${relPathSet?.size}, file path set size: ${filePathSet?.size}")
+
+            if (enableMultiTenant == true) {
+                val taskOwner = getTaskOwner(client, commitDefectVO.taskId)
+                // 多租户场景下需要对 author 做处理
+                aggregateDefectNewInputModel.defectList.forEach {
+                    it.author = taskOwner
+                }
+            }
+
             // 2. 获取原有告警清单
             val preDefectList = getPreDefectList(this, relPathSet, filePathSet)
             logger.info("[ccn cluster process] pre defect size: ${preDefectList.size}")

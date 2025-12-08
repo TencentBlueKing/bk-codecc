@@ -36,13 +36,13 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.servlet.http.Cookie;
+import jakarta.servlet.http.Cookie;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -67,6 +67,15 @@ public class GlobalMessageUtil {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
+    @Value("${spring.data.redis.host:localhost}")
+    private String redisHost;
+
+    @Value("${spring.data.redis.port:6379}")
+    private int redisPort;
+
+    @Value("${spring.data.redis.database:0}")
+    private int redisDatabase;
+
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalMessageUtil.class);
 
@@ -86,12 +95,11 @@ public class GlobalMessageUtil {
             Map<Object, Object> messageDetailMap = redisTemplate.opsForHash().entries(redisKey);
 
             if (MapUtils.isEmpty(messageDetailMap)) {
-                JedisConnectionFactory jedisConnectionFactory =
-                        (JedisConnectionFactory) redisTemplate.getConnectionFactory();
+                // 记录 Redis 连接信息（兼容 Jedis 和 Lettuce）
                 logger.error("operation type map not initialized: {}, {}, {}, {}", redisKey,
-                    jedisConnectionFactory.getHostName(),
-                    jedisConnectionFactory.getPort(),
-                    jedisConnectionFactory.getDatabase());
+                    redisHost,
+                    redisPort,
+                    redisDatabase);
                 return new HashMap<>();
             }
             for (Map.Entry<Object, Object> entry : messageDetailMap.entrySet()) {

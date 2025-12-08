@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -37,19 +36,19 @@ import lombok.Data;
  * @date 2019/4/24
  */
 @Data
-@ApiModel("用户信息")
+@Schema(description = "用户信息")
 public class UserVO
 {
     /**
      * 蓝鲸统一登录服务的验证码
      */
-    @ApiModelProperty("蓝鲸统一登录服务的验证码")
+    @Schema(description = "蓝鲸统一登录服务的验证码")
     private String bkToken;
 
-    @ApiModelProperty("用户名")
+    @Schema(description = "用户名")
     private String username;
 
-    @ApiModelProperty("是否健全通过")
+    @Schema(description = "是否健全通过")
     private boolean isAuthenticated;
 
 }

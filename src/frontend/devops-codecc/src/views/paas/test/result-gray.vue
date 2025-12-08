@@ -15,8 +15,9 @@
           </bk-link>
         </span>
         <div slot="content">
-          <bk-table :data="tableData" v-if="!isEmpty" :header-row-style="{ height: '50px' }" :outer-border="false"
-                    :header-border="false" v-bkloading="{ isLoading: loading }">
+          <bk-table
+            :data="tableData" v-if="!isEmpty" :header-row-style="{ height: '50px' }" :outer-border="false"
+            :header-border="false" v-bkloading="{ isLoading: loading }">
             <bk-table-column :label="$t('指标')" prop="metrics"></bk-table-column>
             <bk-table-column :label="$t('当前版本')" prop="current" :render-header="handleRenderCurrent">
               <template slot-scope="{ row }">
@@ -41,7 +42,6 @@
 </template>
 
 <script>
-import {bkCollapse, bkCollapseItem} from 'bk-magic-vue';
 import spinner from '@/images/spinner.svg';
 
 export default {
@@ -116,7 +116,6 @@ export default {
           metrics: this.$t('扫出问题密度'),
           current: this.current.defectCount ? `${(this.current.defectCount * 1000 / this.current.codeCount).toFixed(2)} /kloc` : '--',
           suggestion: `> ${this.threshold.defectDensity}`,
-          isPass: (this.current.defectCount * 1000 / this.current.codeCount) > this.threshold.defectDensity,
         },
       ];
     },
@@ -188,11 +187,11 @@ export default {
 </script>
 <style>
 #app {
-  min-width: 960px;
   height: 458px;
-  background: #FFFFFF;
-  box-shadow: 0 2px 4px 0 #1919290d;
+  min-width: 960px;
+  background: #FFF;
   border-radius: 2px;
+  box-shadow: 0 2px 4px 0 #1919290d;
 }
 </style>
 <style scoped>

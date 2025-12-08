@@ -498,7 +498,7 @@ public class CheckerSetDao {
      * OP修改这些信息需要同步该规则集的所有版本
      */
     public long updateInfoByCheckerSetId(String updater, String checkerSetId, String checkerSetName, String creator,
-            List<CheckerSetCatagoryEntity> catagories, String checkerSetSource, String description) {
+            List<CheckerSetCatagoryEntity> catagories, String checkerSetSource, String projectId, String description) {
         Query query = new Query();
         query.addCriteria(Criteria.where("checker_set_id").is(checkerSetId));
 
@@ -518,7 +518,9 @@ public class CheckerSetDao {
         if (StringUtils.isNotBlank(checkerSetSource)) {
             update.set("checker_set_source", checkerSetSource);
         }
-
+        if (StringUtils.isNotBlank(projectId)) {
+            update.set("project_id", projectId);
+        }
         if (StringUtils.isNotBlank(description)) {
             update.set("description", description);
         }

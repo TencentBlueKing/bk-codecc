@@ -1,7 +1,6 @@
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,18 +11,18 @@ import lombok.NoArgsConstructor;
  * @date 2024/04/29
  */
 @Data
-@ApiModel("建议阈值前端视图")
+@Schema(description = "建议阈值前端视图")
 @AllArgsConstructor
 @NoArgsConstructor
 public class RecommendedThresholdVO {
 
-    @ApiModelProperty("已执行任务数 (>=)")
+    @Schema(description = "已执行任务数 (>=)")
     Integer taskNum;
-    @ApiModelProperty("执行成功率 (>=) (单位: %)")
+    @Schema(description = "执行成功率 (>=) (单位: %)")
     Double successRate;
-    @ApiModelProperty("执行耗时均值 (<=) (单位: s/kloc)")
+    @Schema(description = "执行耗时均值 (<=) (单位: s/kloc)")
     Double averCostTime;
-    @ApiModelProperty("扫出问题密度 (>)")
+    @Schema(description = "扫出问题密度 (>)")
     Double defectDensity;
 
 }

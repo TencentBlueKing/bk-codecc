@@ -26,8 +26,7 @@
 
 package com.tencent.devops.common.api.global;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -37,17 +36,17 @@ import lombok.Data;
  * @date 2019/7/16
  */
 @Data
-@ApiModel("规则包国际化视图")
+@Schema(description = "规则包国际化视图")
 public class CheckerPackageGlobal
 {
-    @ApiModelProperty(value = "主键ID", required = true)
+    @Schema(description = "主键ID", required = true)
     String id;
-    @ApiModelProperty(value = "规则包ID", required = true)
+    @Schema(description = "规则包ID", required = true)
     String pkgId;
-    @ApiModelProperty(value = "规则包中文简体", required = true)
+    @Schema(description = "规则包中文简体", required = true)
     String packageZhCn;
-    @ApiModelProperty(value = "规则包中文繁体")
+    @Schema(description = "规则包中文繁体")
     String packageZhTw;
-    @ApiModelProperty(value = "规则包英文描述")
+    @Schema(description = "规则包英文描述")
     String packageEn;
 }

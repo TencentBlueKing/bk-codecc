@@ -1,16 +1,14 @@
 package com.tencent.bk.codecc.task.pojo
 
-import io.swagger.annotations.ApiModel
-import io.swagger.annotations.ApiModelProperty
-
-@ApiModel("流水线触发请求体")
+import io.swagger.v3.oas.annotations.media.Schema
+@Schema(description = "流水线触发请求体")
 data class TriggerPipelineOldReq(
-    @ApiModelProperty("仓库路径")
+    @get:Schema(description = "仓库路径")
     val gitUrl: String?,
-    @ApiModelProperty("分支")
+    @get:Schema(description = "分支")
     val branch: String?,
-    @ApiModelProperty("是否显示告警")
+    @get:Schema(description = "是否显示告警")
     val defectDisplay: Boolean,
-    @ApiModelProperty("触发来源")
+    @get:Schema(description = "触发来源")
     val triggerSource: String
 )

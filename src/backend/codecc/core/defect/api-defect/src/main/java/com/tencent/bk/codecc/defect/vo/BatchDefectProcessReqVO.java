@@ -16,14 +16,11 @@ import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
 import com.tencent.devops.common.api.codecc.util.JsonUtil;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.constant.CommonMessageCode;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,72 +31,76 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2019/10/31
  */
 @Data
-@ApiModel("批量告警处理的请求对象")
+@Schema(description = "批量告警处理的请求对象")
 @Slf4j
 public class BatchDefectProcessReqVO {
 
-    @ApiModelProperty("操作的用户")
+    @Schema(description = "操作的用户")
     private String userName;
 
-    @ApiModelProperty("任务ID")
+    @Schema(description = "任务ID")
     private Long taskId;
 
-    @ApiModelProperty("任务ID列表")
+    @Schema(description = "任务ID列表")
     private List<Long> taskIdList;
 
-    @ApiModelProperty("项目ID")
+    @Schema(description = "项目ID")
     private String projectId;
 
-    @ApiModelProperty("工具名称")
+    @Schema(description = "工具名称")
     private List<String> toolNameList;
 
-    @ApiModelProperty("工具名称")
+    @Schema(description = "工具名称")
     private List<String> dimensionList;
 
-    @ApiModelProperty("需要处理的SCA维度")
+    @Schema(description = "需要处理的SCA维度")
     private String scaDimension;
 
-    @ApiModelProperty("业务类型：忽略IgnoreDefect、分配AssignDefect、标志修改MarkDefect")
+    @Schema(description = "业务类型：忽略IgnoreDefect、分配AssignDefect、标志修改MarkDefect")
     private String bizType;
 
-    @ApiModelProperty("是否全选的标志，Y表示全选，N或者空表示非全选")
+    @Schema(description = "是否全选的标志，Y表示全选，N或者空表示非全选")
     private String isSelectAll;
 
-    @ApiModelProperty("告警缺陷列表")
+    @Schema(description = "告警缺陷列表")
     private Set<String> defectKeySet;
 
-    @ApiModelProperty("文件告警列表")
+    @Schema(description = "文件告警列表")
     private List<QueryFileDefectVO> fileDefects;
 
-    @ApiModelProperty("告警查询条件json")
+    @Schema(description = "告警查询条件json")
     private String queryDefectCondition;
 
-    @ApiModelProperty("源告警处理人")
+    @Schema(description = "源告警处理人")
     private Set<String> sourceAuthor;
 
-    @ApiModelProperty("分配给新的处理人")
+    @Schema(description = "分配给新的处理人")
     private LinkedHashSet<String> newAuthor;
 
-    @ApiModelProperty("忽略告警原因类型")
+    @Schema(description = "忽略告警原因类型")
     private int ignoreReasonType;
 
-    @ApiModelProperty("忽略告警具体原因")
+    @Schema(description = "忽略告警具体原因")
     private String ignoreReason;
 
-    @ApiModelProperty("忽略告警的作者")
+    @Schema(description = "忽略告警的作者")
     private String ignoreAuthor;
 
-    @ApiModelProperty("标志修改，0表示取消标志，1表示标志修改")
+    @Schema(description = "标志修改，0表示取消标志，1表示标志修改")
     private Integer markFlag;
 
-    @ApiModelProperty(value = "数据迁移是否成功", required = false)
+    @Schema(description = "数据迁移是否成功", required = false)
     private Boolean dataMigrationSuccessful;
 
-    @ApiModelProperty("是否为回复忽略再标记")
+    @Schema(description = "是否为回复忽略再标记")
     private Boolean revertAndMark;
 
-    @ApiModelProperty("是否强制提交告警到tapd")
+    @Schema(description = "是否强制提交告警到tapd")
     private Boolean forceSubmit;
+
+
+    @Schema(description = "任务ID和工具名信息")
+    private List<TaskInfoVO> taskInfos;
 
     public String getToolName() {
         if (getToolNameList() == null || getToolNameList().isEmpty()) {
@@ -136,6 +137,16 @@ public class BatchDefectProcessReqVO {
 
         Optional<String> result = defectKeySet.stream().findFirst();
         return result.orElse("");
+    }
+
+    @Data
+    @Schema(description = "任务ID和工具名信息")
+    public static class TaskInfoVO {
+        @Schema(description = "任务ID")
+        private Long taskId;
+
+        @Schema(description = "使用中的工具")
+        private Set<String> toolNames;
     }
 
 

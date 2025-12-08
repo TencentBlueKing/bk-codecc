@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -38,21 +37,21 @@ import lombok.Data;
  * @date 2019/6/3
  */
 @Data
-@ApiModel("工具侧上报分析的结果统计数据的请求对象")
+@Schema(description = "工具侧上报分析的结果统计数据的请求对象")
 public class CCNUploadStatisticVO
 {
-    @ApiModelProperty(value = "流名称", required = true)
+    @Schema(description = "流名称", required = true)
     @JsonProperty("stream_name")
     private String streamName;
 
-    @ApiModelProperty(value = "任务id", required = true)
+    @Schema(description = "任务id", required = true)
     @JsonProperty("task_id")
     private Long taskId;
 
-    @ApiModelProperty(value = "平均圈复杂度", required = true)
+    @Schema(description = "平均圈复杂度", required = true)
     private String averageCCN;
 
-    @ApiModelProperty(value = "构建ID", required = true)
+    @Schema(description = "构建ID", required = true)
     @JsonProperty("build_id")
     private String buildId;
 }

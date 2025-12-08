@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -25,27 +24,27 @@ import java.util.List;
  * @date 2021/5/25
  */
 @Data
-@ApiModel("编辑任务信息请求体")
+@Schema(description = "编辑任务信息请求体")
 public class TaskUpdateDeptInfoVO {
 
-    @ApiModelProperty("任务ID")
+    @Schema(description = "任务ID")
     private Long taskId;
 
-    @ApiModelProperty("任务拥有者")
+    @Schema(description = "任务拥有者")
     private List<String> taskOwner;
 
-    @ApiModelProperty("事业群ID")
+    @Schema(description = "事业群ID")
     private Integer bgId;
 
-    @ApiModelProperty("业务线")
+    @Schema(description = "业务线")
     private Integer businessLineId;
 
-    @ApiModelProperty("部门ID")
+    @Schema(description = "部门ID")
     private Integer deptId;
 
-    @ApiModelProperty("中心ID")
+    @Schema(description = "中心ID")
     private Integer centerId;
 
-    @ApiModelProperty("项目组ID")
+    @Schema(description = "项目组ID")
     private Integer groupId;
 }

@@ -30,18 +30,18 @@ import com.tencent.devops.common.api.RefreshDockerImageHashReqVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * 工具元数据注册接口
@@ -49,13 +49,13 @@ import javax.ws.rs.core.MediaType;
  * @version V2.0
  * @date 2020/4/8
  */
-@Api(tags = {"SERVICE_TOOL_META"}, description = "工具元数据注册接口")
+@Tag(name = "SERVICE_TOOL_META", description = "工具元数据注册接口")
 @Path("/service/toolmeta")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface ServiceToolMetaRestResource {
 
-    @ApiOperation("工具类型验证")
+    @Operation(summary = "工具类型验证")
     @Path("/tool/{toolType}/validate")
     @GET
     Result<Boolean> validateToolType(
@@ -63,12 +63,12 @@ public interface ServiceToolMetaRestResource {
                     String toolType
     );
 
-    @ApiOperation("工具支持语言验证")
+    @Operation(summary = "工具支持语言验证")
     @Path("/language/validate")
     @POST
     Result<Boolean> validateLanguage(List<String> languages);
 
-    @ApiOperation("获取工具元数据")
+    @Operation(summary = "获取工具元数据")
     @Path("/tool/toolName/{toolName}")
     @GET
     Result<ToolMetaDetailVO> obtainToolDetail(
@@ -77,7 +77,7 @@ public interface ServiceToolMetaRestResource {
     );
 
 
-    @ApiOperation("获取工具元数据")
+    @Operation(summary = "获取工具元数据")
     @Path("/tool/pattern/{pattern}")
     @GET
     Result<List<ToolMetaDetailVO>> getToolByPattern(
@@ -85,39 +85,39 @@ public interface ServiceToolMetaRestResource {
             String pattern
     );
 
-    @ApiOperation("获取工具元数据")
+    @Operation(summary = "获取工具元数据")
     @Path("/tool/allTools")
     @GET
     Result<List<ToolMetaDetailVO>> getAllTools();
 
-    @ApiOperation("刷新工具docker镜像的hash值")
+    @Operation(summary = "刷新工具docker镜像的hash值")
     @Path("/dockerImageHash")
     @POST
     Result<Boolean> refreshDockerImageHash(RefreshDockerImageHashReqVO refreshDockerImageHashReqVO);
 
-    @ApiOperation("查询工具列表")
+    @Operation(summary = "查询工具列表")
     @Path("/toolList")
     @GET
     Result<List<ToolMetaBaseVO>> toolList(
-            @ApiParam(value = "是否查询详细信息")
+            @Parameter(description = "是否查询详细信息")
             @QueryParam("isDetail")
             Boolean isDetail
     );
 
-    @ApiOperation("通过工具名称查询工具元数据")
+    @Operation(summary = "通过工具名称查询工具元数据")
     @Path("/listTools")
     @POST
     Result<List<ToolMetaDetailVO>> queryToolMetaDataByToolName(
-            @ApiParam(value = "工具名称列表", required = true)
+            @Parameter(description = "工具名称列表", required = true)
             List<String> toolNameList
     );
 
 
-    @ApiOperation("根据工具type获取工具名称列表")
+    @Operation(summary = "根据工具type获取工具名称列表")
     @Path("/toolName/toolType/{toolType}/list")
     @GET
     Result<List<String>> queryToolMetaNameListDataByType(
-        @ApiParam(value = "类型", required = true)
+        @Parameter(description = "类型", required = true)
         @PathParam("toolType")
         String type
     );

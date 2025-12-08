@@ -1940,9 +1940,10 @@ public class CheckerSetManageBizServiceImpl implements ICheckerSetManageBizServi
                 .findFirstByCheckerSetIdAndVersion(updateCheckerSetReqExtVO.getCheckerSetId(),
                         updateCheckerSetReqExtVO.getVersion());
         if (null != checkerSetEntity) {
-            log.info("checker set info before update: {}|{}|{}|{}|{}", checkerSetEntity.getCheckerSetName(),
+            log.info("checker set info before update: {}|{}|{}|{}|{}|{}", checkerSetEntity.getCheckerSetName(),
                     checkerSetEntity.getCreator(), checkerSetEntity.getCatagories(),
-                    checkerSetEntity.getCheckerSetSource(), checkerSetEntity.getDescription());
+                    checkerSetEntity.getCheckerSetSource(), checkerSetEntity.getProjectId(),
+                    checkerSetEntity.getDescription());
 
             long updateCount = checkerSetDao.updateInfoByCheckerSetId(userName,
                     updateCheckerSetReqExtVO.getCheckerSetId(),
@@ -1950,6 +1951,7 @@ public class CheckerSetManageBizServiceImpl implements ICheckerSetManageBizServi
                     updateCheckerSetReqExtVO.getCreator(),
                     getCatagoryEntities(updateCheckerSetReqExtVO.getCatagories()),
                     updateCheckerSetReqExtVO.getCheckerSetSource(),
+                    updateCheckerSetReqExtVO.getProjectId(),
                     updateCheckerSetReqExtVO.getDescription()
             );
             log.info("updated checker set count: {}", updateCount);

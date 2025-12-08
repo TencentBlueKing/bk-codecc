@@ -30,8 +30,7 @@ import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.tencent.bk.codecc.task.vo.checkerset.ToolCheckerSetVO;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.CheckerSetPackageType;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,127 +45,127 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("任务详细信息")
+@Schema(description = "任务详细信息")
 public class TaskDetailVO extends TaskBaseVO {
 
-    @ApiModelProperty(value = "任务成员")
+    @Schema(description = "任务成员")
     private List<String> taskMember;
 
     /**
      * 已接入的所有工具名称，格式; COVERITY,CPPLINT,PYLINT
      */
-    @ApiModelProperty(value = "已接入的所有工具名称")
+    @Schema(description = "已接入的所有工具名称")
     private String toolNames;
 
-    @ApiModelProperty(value = "置顶标识")
+    @Schema(description = "置顶标识")
     private Integer topFlag;
 
     /**
      * 项目接入的工具列表，查询时使用
      */
-    @ApiModelProperty(value = "项目接入的工具列表")
+    @Schema(description = "项目接入的工具列表")
     private List<ToolConfigInfoVO> toolConfigInfoList;
 
-    @ApiModelProperty(value = "任务停用时间")
+    @Schema(description = "任务停用时间")
     private String disableTime;
 
-    @ApiModelProperty(value = "编译平台")
+    @Schema(description = "编译平台")
     private String compilePlat;
 
-    @ApiModelProperty(value = "运行平台")
+    @Schema(description = "运行平台")
     private String runPlat;
 
-    @ApiModelProperty(value = "描述")
+    @Schema(description = "描述")
     private String description;
 
-    @ApiModelProperty("蓝盾项目ID")
+    @Schema(description = "蓝盾项目ID")
     private String projectId;
 
-    @ApiModelProperty("蓝盾项目名称")
+    @Schema(description = "蓝盾项目名称")
     private String projectName;
 
-    @ApiModelProperty(value = "事业群id")
+    @Schema(description = "事业群id")
     private int bgId;
 
-    @ApiModelProperty(value = "业务线id")
+    @Schema(description = "业务线id")
     private Integer businessLineId;
 
-    @ApiModelProperty(value = "部门id")
+    @Schema(description = "部门id")
     private int deptId;
 
-    @ApiModelProperty(value = "中心id")
+    @Schema(description = "中心id")
     private int centerId;
 
-    @ApiModelProperty(value = "组id")
+    @Schema(description = "组id")
     private int groupId;
 
-    @ApiModelProperty(value = "工作空间id")
+    @Schema(description = "工作空间id")
     private long workspaceId;
 
-    @ApiModelProperty(value = "凭证管理的主键id")
+    @Schema(description = "凭证管理的主键id")
     private String repoHashId;
 
-    @ApiModelProperty(value = "仓库别名")
+    @Schema(description = "仓库别名")
     private String aliasName;
 
-    @ApiModelProperty(value = "分支名，默认为master")
+    @Schema(description = "分支名，默认为master")
     private String branch;
 
-    @ApiModelProperty(value = "代码库类型")
+    @Schema(description = "代码库类型")
     private String scmType;
 
-    @ApiModelProperty(value = "代码库的最新版本号")
+    @Schema(description = "代码库的最新版本号")
     private String repoRevision;
 
-    @ApiModelProperty(value = "将默认过滤路径放到任务实体对象下面")
+    @Schema(description = "将默认过滤路径放到任务实体对象下面")
     private List<String> defaultFilterPath;
 
-    @ApiModelProperty(value = "已添加的自定义过滤路径")
+    @Schema(description = "已添加的自定义过滤路径")
     private List<String> filterPath;
 
-    @ApiModelProperty(value = "code.yml自定义过滤路径")
+    @Schema(description = "code.yml自定义过滤路径")
     private List<String> testSourceFilterPath;
 
-    @ApiModelProperty(value = "code.yml自定义过滤路径")
+    @Schema(description = "code.yml自定义过滤路径")
     private List<String> autoGenFilterPath;
 
-    @ApiModelProperty(value = "code.yml自定义过滤路径")
+    @Schema(description = "code.yml自定义过滤路径")
     private List<String> thirdPartyFilterPath;
 
-    @ApiModelProperty(value = "路径白名单")
+    @Schema(description = "路径白名单")
     private List<String> whitePaths;
 
-    @ApiModelProperty(value = "持续集成传递代码语言信息")
+    @Schema(description = "持续集成传递代码语言信息")
     private String devopsCodeLang;
 
-    @ApiModelProperty("是否从工蜂创建")
+    @Schema(description = "是否从工蜂创建")
     private Boolean gongfengFlag;
 
-    @ApiModelProperty("工蜂项目id")
+    @Schema(description = "工蜂项目id")
     private Integer gongfengProjectId;
 
-    @ApiModelProperty("最近的commitId")
+    @Schema(description = "最近的commitId")
     private String gongfengCommitId;
 
-    @ApiModelProperty("插件唯一标识")
+    @Schema(description = "插件唯一标识")
     private String atomCode;
 
     /**
      * V5 版本新增字段
      */
-    @ApiModelProperty("任务类型：流水线、服务创建、开源扫描、API触发")
+    @Schema(description = "任务类型：流水线、服务创建、开源扫描、API触发")
     private String taskType;
 
-    @ApiModelProperty("任务创建来源：当类型为 API触发 时这里代表创建来源的 appCode")
+    @Schema(description = "任务创建来源：当类型为 API触发 时这里代表创建来源的 appCode")
     private String createSource;
 
     /**
      * 持续集成传递工具信息
      */
-    @ApiModelProperty(value = "工具")
+    @Schema(description = "工具")
     private String devopsTools;
 
-    @ApiModelProperty(value = "工具特定参数")
+    @Schema(description = "工具特定参数")
     private List<ToolConfigParamJsonVO> devopsToolParams;
 
     /**
@@ -174,53 +173,53 @@ public class TaskDetailVO extends TaskBaseVO {
      * 如果 devopsToolParamVersion = v2, 则使用新的处理逻辑;
      * 否则还是走原来的那套逻辑
      */
-    @ApiModelProperty(value = "工具自定义参数体系版本")
+    @Schema(description = "工具自定义参数体系版本")
     private String devopsToolParamVersion;
 
-    @ApiModelProperty(value = "编译类型")
+    @Schema(description = "编译类型")
     private String projectBuildType;
 
-    @ApiModelProperty(value = "编译命令")
+    @Schema(description = "编译命令")
     private String projectBuildCommand;
 
-    @ApiModelProperty(value = "操作系统类型")
+    @Schema(description = "操作系统类型")
     private String osType;
 
-    @ApiModelProperty(value = "构建环境")
+    @Schema(description = "构建环境")
     private Map<String, String> buildEnv;
 
-    @ApiModelProperty(value = "工具关联规则集")
+    @Schema(description = "工具关联规则集")
     private List<ToolCheckerSetVO> toolCheckerSets;
 
-    @ApiModelProperty(value = "工具列表")
+    @Schema(description = "工具列表")
     private Set<String> toolSet;
 
-    @ApiModelProperty("最近分析时间")
+    @Schema(description = "最近分析时间")
     private Long minStartTime;
 
     /*----------------新任务页面显示-------------------*/
-    @ApiModelProperty("显示工具")
+    @Schema(description = "显示工具")
     private String displayToolName;
 
-    @ApiModelProperty("当前步骤")
+    @Schema(description = "当前步骤")
     private Integer displayStep;
 
-    @ApiModelProperty("步骤状态")
+    @Schema(description = "步骤状态")
     private Integer displayStepStatus;
 
-    @ApiModelProperty("显示进度条")
+    @Schema(description = "显示进度条")
     private Integer displayProgress;
 
-    @ApiModelProperty("显示工具信息")
+    @Schema(description = "显示工具信息")
     private String displayName;
 
-    @ApiModelProperty("是否回写工蜂")
+    @Schema(description = "是否回写工蜂")
     private Boolean mrCommentEnable;
 
-    @ApiModelProperty("启用开源扫描规则集选择的语言")
+    @Schema(description = "启用开源扫描规则集选择的语言")
     private List<String> languages;
 
-    @ApiModelProperty("启用哪种规则集配置")
+    @Schema(description = "启用哪种规则集配置")
     private CheckerSetPackageType checkerSetType;
 
     /**
@@ -243,60 +242,60 @@ public class TaskDetailVO extends TaskBaseVO {
      */
     private Boolean scanTestSource = false;
 
-    @ApiModelProperty(value = "自动语言识别")
+    @Schema(description = "自动语言识别")
     private Boolean autoLang;
 
-    @ApiModelProperty(value = "自动语言识别扫描标识")
+    @Schema(description = "自动语言识别扫描标识")
     private Boolean autoLangScanFlag;
 
-    @ApiModelProperty(value = "是否新的自动识别语言方式")
+    @Schema(description = "是否新的自动识别语言方式")
     private Boolean newAutoLangScanFlag;
 
-    @ApiModelProperty(value = "检查规则集环境类型:preProd/prod")
+    @Schema(description = "检查规则集环境类型:preProd/prod")
     private String checkerSetEnvType;
 
-    @ApiModelProperty
+    @Schema
     private Long totalSecurityDefectCount;
 
-    @ApiModelProperty
+    @Schema
     private Long totalDefectCount;
 
-    @ApiModelProperty
+    @Schema
     private Long totalStyleDefectCount;
 
-    @ApiModelProperty(value = "代码库总分")
+    @Schema(description = "代码库总分")
     private double rdIndicatorsScore;
 
-    @ApiModelProperty(value = "是否按开源治理计分")
+    @Schema(description = "是否按开源治理计分")
     private boolean openScan;
 
-    @ApiModelProperty(value = "仓库管理者")
+    @Schema(description = "仓库管理者")
     private List<String> repoOwner;
 
-    @ApiModelProperty(value = "流水线model的taskId")
+    @Schema(description = "流水线model的taskId")
     private String pipelineTaskId;
 
-    @ApiModelProperty(value = "流水线model的taskName")
+    @Schema(description = "流水线model的taskName")
     private String pipelineTaskName;
 
-    @ApiModelProperty(value = "数据是否迁移成功")
+    @Schema(description = "数据是否迁移成功")
     private Boolean dataMigrationSuccessful;
 
-    @ApiModelProperty(value = "超时时间")
+    @Schema(description = "超时时间")
     private Integer timeout;
 
-    @ApiModelProperty(value = "是否开启缓存")
+    @Schema(description = "是否开启缓存")
     private Boolean fileCacheEnable;
 
-    @ApiModelProperty(value = "最新BuildId")
+    @Schema(description = "最新BuildId")
     private String latestBuildId;
 
-    @ApiModelProperty(value = "测试任务的阶段号")
+    @Schema(description = "测试任务的阶段号")
     private Integer testStage;
 
-    @ApiModelProperty(value = "测试工具名")
+    @Schema(description = "测试工具名")
     private String testTool;
 
-    @ApiModelProperty(value = "测试版本号")
+    @Schema(description = "测试版本号")
     private String testVersion;
 }

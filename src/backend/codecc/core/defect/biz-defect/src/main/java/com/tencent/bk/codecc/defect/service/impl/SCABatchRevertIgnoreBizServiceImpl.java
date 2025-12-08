@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.IgnoredNegativeDefectDao;
+import com.tencent.bk.codecc.defect.service.IIgnoredNegativeDefectService;
 import com.tencent.bk.codecc.defect.service.ISCABatchDefectProcessBizService;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
@@ -29,7 +29,7 @@ public class SCABatchRevertIgnoreBizServiceImpl extends AbstractSCABatchDefectPr
     @Autowired
     private BizServiceFactory<ISCABatchDefectProcessBizService> scaBatchDefectProcessBizServiceFactory;
     @Autowired
-    private IgnoredNegativeDefectDao ignoredNegativeDefectDao;
+    private IIgnoredNegativeDefectService iIgnoredNegativeDefectService;
 
     @Override
     protected List<Long> getTaskIdsByDefectKeySet(BatchDefectProcessReqVO batchDefectProcessReqVO) {
@@ -64,7 +64,7 @@ public class SCABatchRevertIgnoreBizServiceImpl extends AbstractSCABatchDefectPr
         Set<String> entityIdSet = ((List<CommonEntity>) defectList).stream()
                 .map(CommonEntity::getEntityId)
                 .collect(Collectors.toSet());
-        ignoredNegativeDefectDao.batchDelete(entityIdSet);
+        iIgnoredNegativeDefectService.batchDeleteIgnoredDefects(batchDefectProcessReqVO.getTaskId(), entityIdSet);
     }
 
     @Override

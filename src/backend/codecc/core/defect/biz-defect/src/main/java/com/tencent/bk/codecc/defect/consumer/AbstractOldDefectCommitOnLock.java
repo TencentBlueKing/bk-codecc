@@ -83,7 +83,7 @@ public abstract class AbstractOldDefectCommitOnLock {
      */
     protected MessagePostProcessor delayMQProcessor(Integer delayInSecond) {
         return message -> {
-            message.getMessageProperties().setDelay(delayInSecond * 1000);
+            message.getMessageProperties().setDelayLong((long) delayInSecond * 1000);
             return message;
         };
     }

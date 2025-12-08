@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo.redline;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -39,14 +38,14 @@ import java.util.List;
  * @date 2019/7/4
  */
 @Data
-@ApiModel("质量红线指标")
+@Schema(description = "质量红线指标")
 public class PipelineRedLineCallbackVO
 {
 
-    @ApiModelProperty("产出原子")
+    @Schema(description = "产出原子")
     private String elementType;
 
-    @ApiModelProperty("元数据列表")
+    @Schema(description = "元数据列表")
     private List<RedLineVO> data;
 
 }

@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.common.CommonDefectDetailQueryReqVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -43,39 +42,39 @@ import java.util.Set;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("lint类工具查询请求视图")
+@Schema(description = "lint类工具查询请求视图")
 public class LintDefectDetailQueryReqVO extends CommonDefectDetailQueryReqVO
 {
-    @ApiModelProperty("告警id")
+    @Schema(description = "告警id")
     private String defectId;
 
-    @ApiModelProperty("规则包id")
+    @Schema(description = "规则包id")
     private String pkgId;
 
-    @ApiModelProperty("告警规则")
+    @Schema(description = "告警规则")
     private String checker;
 
-    @ApiModelProperty("处理人")
+    @Schema(description = "处理人")
     private String author;
 
-    @ApiModelProperty("严重程度")
+    @Schema(description = "严重程度")
     private Set<String> severity;
 
-    @ApiModelProperty(value = "告警状态：待修复（1），已修复（2），忽略（4），路径屏蔽（8），规则屏蔽（16）", allowableValues = "{1,2,4,8,16}")
+    @Schema(description = "告警状态：待修复（1），已修复（2），忽略（4），路径屏蔽（8），规则屏蔽（16）", allowableValues = "{1,2,4,8,16}")
     private Set<String> status;
 
-    @ApiModelProperty(value = "文件或路径列表")
+    @Schema(description = "文件或路径列表")
     private Set<String> fileList;
 
-    @ApiModelProperty(value = "聚类类型:文件(file),问题(defect)", allowableValues = "{file,defect}")
+    @Schema(description = "聚类类型:文件(file),问题(defect)", allowableValues = "{file,defect}")
     private String clusterType;
 
-    @ApiModelProperty(value = "起始创建时间")
+    @Schema(description = "起始创建时间")
     private String startCreateTime;
 
-    @ApiModelProperty(value = "截止创建时间")
+    @Schema(description = "截止创建时间")
     private String endCreateTime;
 
-    @ApiModelProperty(value = "告警类型:新增(1),历史(2)", allowableValues = "{1,2}")
+    @Schema(description = "告警类型:新增(1),历史(2)", allowableValues = "{1,2}")
     private Set<String> defectType;
 }

@@ -70,6 +70,7 @@ public class ToolMetaEntity extends CommonEntity
      * 发现缺陷和安全漏洞、规范代码、复杂度、重复代码
      */
     @Field("type")
+    @Indexed(background = true)
     private String type;
 
     /**
@@ -244,6 +245,12 @@ public class ToolMetaEntity extends CommonEntity
      */
     @Field("git_diff_required")
     private Boolean gitDiffRequired;
+
+    /**
+     * 是否启用编译脚本输入框
+     */
+    @Field("script_input_enabled")
+    private Boolean scriptInputEnabled;
 
     /**
      * 租户 id, 只有开启了多租户模式才会有该字段

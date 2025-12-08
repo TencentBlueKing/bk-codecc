@@ -1,7 +1,6 @@
 package com.tencent.bk.codecc.defect.vo
 
-import io.swagger.annotations.ApiModel
-import io.swagger.annotations.ApiModelProperty
+import io.swagger.v3.oas.annotations.media.Schema
 import lombok.Data
 
 /**
@@ -11,20 +10,20 @@ import lombok.Data
  * @date 2023/11/16
  */
 @Data
-@ApiModel("大语言模型请求数据对象")
+@Schema(description = "大语言模型请求数据对象")
 data class DefectSuggestionReqVO(
-    @ApiModelProperty("大模型类型")
+    @get:Schema(description = "大模型类型")
     var llmName: String? = null,
 
-    @ApiModelProperty("工具名称")
+    @get:Schema(description = "工具名称")
     val toolName: String? = null,
 
-    @ApiModelProperty("规则名称")
+    @get:Schema(description = "规则名称")
     val checker: String? = null,
 
-    @ApiModelProperty("规则描述")
+    @get:Schema(description = "规则描述")
     val message: String? = null,
 
-    @ApiModelProperty("代码内容")
+    @get:Schema(description = "代码内容")
     val content: String? = null
 )

@@ -26,8 +26,7 @@
 
 package com.tencent.devops.common.api.global;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -37,17 +36,17 @@ import lombok.Data;
  * @date 2019/7/16
  */
 @Data
-@ApiModel("工具参数国际化视图")
+@Schema(description = "工具参数国际化视图")
 public class ToolParamGlobal
 {
-    @ApiModelProperty(value = "主键ID", required = true)
+    @Schema(description = "主键ID", required = true)
     String id;
-    @ApiModelProperty(value = "工具名称", required = true)
+    @Schema(description = "工具名称", required = true)
     String toolName;
-    @ApiModelProperty(value = "工具参数中文简体", required = true)
+    @Schema(description = "工具参数中文简体", required = true)
     String labelNameZhCn;
-    @ApiModelProperty(value = "工具参数中文繁体")
+    @Schema(description = "工具参数中文繁体")
     String labelNameZhTw;
-    @ApiModelProperty(value = "工具参数英文描述")
+    @Schema(description = "工具参数英文描述")
     String labelNameEn;
 }

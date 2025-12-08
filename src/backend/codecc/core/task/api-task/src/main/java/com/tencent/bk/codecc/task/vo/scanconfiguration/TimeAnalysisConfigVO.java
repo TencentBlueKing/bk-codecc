@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.task.vo.scanconfiguration;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -40,14 +39,14 @@ import java.util.List;
  * @date 2019/5/16
  */
 @Data
-@ApiModel("更新定时任务分析请求视图")
+@Schema(description = "更新定时任务分析请求视图")
 public class TimeAnalysisConfigVO extends CommonVO
 {
 
-    @ApiModelProperty("定时执行日期")
+    @Schema(description = "定时执行日期")
     private List<String> executeDate;
 
-    @ApiModelProperty("定时执行时间")
+    @Schema(description = "定时执行时间")
     private String executeTime;
 
 }

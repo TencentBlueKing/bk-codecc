@@ -14,23 +14,23 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class RedissionConfig {
 
-    @Value("\${spring.redis.host}")
+    @Value("\${spring.data.redis.host}")
     private lateinit var redisHost: String
 
-    @Value("\${spring.redis.port}")
+    @Value("\${spring.data.redis.port}")
     private lateinit var redisPort: String
 
-    @Value("\${spring.redis.password}")
+    @Value("\${spring.data.redis.password}")
     private lateinit var redisPassword: String
 
-    @Value("\${spring.redis.database:0}")
+    @Value("\${spring.data.redis.database:0}")
     private var redisDB: Int = 0
 
-    @Value("\${spring.redis.ssl:#{null}}")
+    @Value("\${spring.data.redis.ssl:#{null}}")
     private var redisSsl: String? = null
 
-    @Value("\${issue.submit.limit.intervalLimit:25}")
-    private var intervalLimit: Long = 25
+    @Value("\${issue.submit.limit.intervalLimit:20}")
+    private var intervalLimit: Long = 20
 
     @Value("\${issue.submit.limit.intervalSeconds:1}")
     private var intervalSeconds: Long = 1
@@ -46,6 +46,8 @@ class RedissionConfig {
         serviceConfig.setPassword(redisPassword).database = redisDB
         val client = Redisson.create(config)
         val rateLimiter = client.getRateLimiter("SUBMIT_ISSUE_RATE_LIMITER")
+        // 清理旧配置，确保新配置生效
+        rateLimiter.delete()
         rateLimiter.trySetRate(RateType.OVERALL, intervalLimit, intervalSeconds, RateIntervalUnit.SECONDS)
         return rateLimiter
     }

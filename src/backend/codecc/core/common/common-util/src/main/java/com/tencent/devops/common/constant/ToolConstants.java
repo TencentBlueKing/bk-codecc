@@ -33,4 +33,7 @@ public interface ToolConstants {
             this.name = name;
         }
     }
+
+    String LLM_NEGATIVE_DEFECT_FILTER = "enableLLMNegativeDefectFilter";
+
 }

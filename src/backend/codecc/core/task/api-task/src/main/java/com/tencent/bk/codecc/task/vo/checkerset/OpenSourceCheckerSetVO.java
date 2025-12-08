@@ -13,8 +13,7 @@
 package com.tencent.bk.codecc.task.vo.checkerset;
 
 import com.tencent.devops.common.api.OrgInfoVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Set;
 import lombok.Data;
@@ -27,39 +26,39 @@ import lombok.Data;
  */
 
 @Data
-@ApiModel
+@Schema
 public class OpenSourceCheckerSetVO {
 
-    @ApiModelProperty
+    @Schema
     private String checkerSetId;
 
-    @ApiModelProperty
+    @Schema
     private Set<String> toolList;
 
-    @ApiModelProperty
+    @Schema
     private String checkerSetType;
 
-    @ApiModelProperty
+    @Schema
     private Integer version;
 
-    @ApiModelProperty("之前版本号")
+    @Schema(description = "之前版本号")
     private Integer lastVersion;
 
-    @ApiModelProperty("规则集名称")
+    @Schema(description = "规则集名称")
     private String checkerSetName;
 
-    @ApiModelProperty("可见范围")
+    @Schema(description = "可见范围")
     private List<OrgInfoVO> scopes;
 
-    @ApiModelProperty("可见范围-任务创建来源")
+    @Schema(description = "可见范围-任务创建来源")
     private List<String> taskCreateFromScopes;
 
-    @ApiModelProperty("代码语言/code")
+    @Schema(description = "代码语言/code")
     private String lang;
 
-    @ApiModelProperty("版本类型: enum ToolIntegratedStatus")
+    @Schema(description = "版本类型: enum ToolIntegratedStatus")
     private String versionType;
 
-    @ApiModelProperty("管理类型")
+    @Schema(description = "管理类型")
     private String manageType;
 }

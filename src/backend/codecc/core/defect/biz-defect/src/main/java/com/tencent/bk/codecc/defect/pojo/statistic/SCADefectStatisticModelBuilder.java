@@ -106,18 +106,9 @@ public class SCADefectStatisticModelBuilder extends
                 }
             }
         }
-        return this;
-    }
-
-    /**
-     * 统计许可证信息并更新模型计数
-     *
-     * @param licenses 许可证实体列表
-     * @return 当前构建器实例（支持链式调用）
-     */
-    public SCADefectStatisticModelBuilder licenses(List<SCALicenseEntity> licenses) {
-        if (CollectionUtils.isNotEmpty(licenses)) {
-            for (SCALicenseEntity license : licenses) {
+        // 遍历所有证书进行严重等级统计
+        if (CollectionUtils.isNotEmpty(aggregateModel.getLicenses())) {
+            for (SCALicenseEntity license : aggregateModel.getLicenses()) {
                 defectStatisticModel.incLicenseCount();
                 if (license.getSeverity() == ComConstants.SERIOUS) {
                     defectStatisticModel.incHighLicenseCount();

@@ -36,7 +36,7 @@ object LLMOpenAIApi {
      * @return String
      */
     fun getChatCompletion(apiAuthVO: ApiAuthVO, apiChatVO: ApiChatVO, llmModel: String): String {
-        val url = "${apiAuthVO.host}${LLMConstants.LLM_GATEWAY_URL_USERSPACE}"
+        val url = "${apiAuthVO.host}${apiAuthVO.path}"
         val requestBody = chatCompletionRequestV2{
             model = llmModel
             messages {
@@ -133,7 +133,7 @@ object LLMOpenAIApi {
         val httpTransport = HttpTransport(
             createHttpClient(llmConfig)
         )
-        val chatApi = LLMOpenAIChatApi(httpTransport)
+        val chatApi = LLMOpenAIChatApi(httpTransport, apiAuthVO.path?: LLMConstants.LLM_GATEWAY_URL_APPSPACE)
         val authorStr = JsonUtil.toJson(apiAuthVO).replace("\\s+".toRegex(), EMPTY_STRING)
 
         return flow {

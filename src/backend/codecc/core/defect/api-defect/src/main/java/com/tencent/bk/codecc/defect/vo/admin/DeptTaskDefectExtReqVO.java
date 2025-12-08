@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.defect.vo.admin;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -28,8 +27,8 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("导出开源扫描数据统计请求体")
+@Schema(description = "导出开源扫描数据统计请求体")
 public class DeptTaskDefectExtReqVO extends DeptTaskDefectReqVO {
-    @ApiModelProperty("按指定规则名筛选告警")
+    @Schema(description = "按指定规则名筛选告警")
     private List<String> checkerKeyList;
 }

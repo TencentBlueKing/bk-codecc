@@ -27,7 +27,7 @@
 package com.tencent.bk.codecc.task.vo.checkerset;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -43,7 +43,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
-@ApiModel("规则集版本视图")
+@Schema(description = "规则集版本视图")
 public class ToolCheckerSetVO extends CommonVO
 {
     /**

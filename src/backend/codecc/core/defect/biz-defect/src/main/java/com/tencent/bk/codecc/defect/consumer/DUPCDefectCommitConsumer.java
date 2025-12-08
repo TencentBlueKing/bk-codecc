@@ -32,6 +32,7 @@ import com.tencent.bk.codecc.defect.vo.customtool.ScmBlameVO;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.vo.FilterPathInputVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
+import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
@@ -47,6 +48,7 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bson.BsonSerializationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
 
@@ -86,6 +88,8 @@ public class DUPCDefectCommitConsumer extends AbstractDefectCommitConsumer {
     private DefectFilePathClusterService defectFilePathClusterService;
     @Autowired
     private Client client;
+    @Value("${codecc.enableMultiTenant:#{null}}")
+    private Boolean enableMultiTenant;
 
 
 
@@ -167,8 +171,6 @@ public class DUPCDefectCommitConsumer extends AbstractDefectCommitConsumer {
                     updateDefectStatus(dupcDefectEntity, oldDefectMap, filterPaths, whitePaths, curTime, m);
                 }
             }
-
-
 
             try {
                 //限制BLOCK_LIST大小
@@ -352,9 +354,27 @@ public class DUPCDefectCommitConsumer extends AbstractDefectCommitConsumer {
 
     }
 
+    private String getTaskOwner(Long taskId) {
+        Result<TaskDetailVO> result = client.get(ServiceTaskRestResource.class).getTaskInfoById(taskId);
+        if (result.isNotOk() || result.getData() == null || CollectionUtils.isEmpty(result.getData().getTaskOwner())) {
+            return "";
+        }
+
+        return result.getData().getTaskOwner()
+                .stream()
+                .findFirst()
+                .orElse("");
+    }
+
     private void setAuthor(DUPCDefectEntity dupcDefectEntity, ScmBlameVO fileLineAuthorInfo) {
         List<ScmBlameChangeRecordVO> changeRecords = fileLineAuthorInfo.getChangeRecords();
         List<CodeBlockEntity> blockList = dupcDefectEntity.getBlockList();
+        if (BooleanUtils.isTrue(enableMultiTenant)) {
+            String taskOwner = getTaskOwner(dupcDefectEntity.getTaskId());
+            dupcDefectEntity.setAuthorList(taskOwner);
+            return;
+        }
+
         if (CollectionUtils.isNotEmpty(blockList) && CollectionUtils.isNotEmpty(changeRecords)) {
             // 获取各文件代码行对应的作者信息映射
             Map<Integer, ScmBlameChangeRecordVO> lineAuthorMap = getLineAuthorMap(changeRecords);

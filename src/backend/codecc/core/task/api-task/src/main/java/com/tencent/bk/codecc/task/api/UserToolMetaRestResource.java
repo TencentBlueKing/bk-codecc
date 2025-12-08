@@ -28,18 +28,17 @@ package com.tencent.bk.codecc.task.api;
 
 import com.tencent.devops.common.api.ToolMetaDetailVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
@@ -51,28 +50,28 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
  * @version V2.0
  * @date 2020/4/8
  */
-@Api(tags = {"BUILD_TOOL_META"}, description = "工具元数据注册接口")
+@Tag(name = "BUILD_TOOL_META", description = "工具元数据注册接口")
 @Path("/user/toolmeta")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface UserToolMetaRestResource {
-    @ApiOperation("工具元数据查询")
+    @Operation(summary = "工具元数据查询")
     @Path("/alllist")
     @GET
     Result<List<ToolMetaDetailVO>> queryAllToolMetaDataList();
 
 
-    @ApiOperation("获取SCC自动语言过滤器")
+    @Operation(summary = "获取SCC自动语言过滤器")
     @Path("/preCI/sccLangFilter")
     @GET
     Result<String> getSCCLangFilterForPreCI();
 
 
-    @ApiOperation("根据工具类型获取工具列表")
+    @Operation(summary = "根据工具类型获取工具列表")
     @Path("/{type}/list")
     @GET
     Result<List<ToolMetaDetailVO>> getToolListByType(
-            @ApiParam(value = "工具类型")
+            @Parameter(description = "工具类型")
             @PathParam("type")
             String type
     );

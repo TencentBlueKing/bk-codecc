@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.consumer;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.BuildRepository;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.TaskLogOverviewDao;
 import com.tencent.bk.codecc.defect.dto.ScanTaskTriggerDTO;

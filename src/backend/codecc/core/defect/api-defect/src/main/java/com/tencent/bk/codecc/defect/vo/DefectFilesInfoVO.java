@@ -12,28 +12,27 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
-@ApiModel("告警相关文件信息")
+@Schema(description = "告警相关文件信息")
 public class DefectFilesInfoVO {
-    @ApiModelProperty(value = "文件路径名", required = true)
+    @Schema(description = "文件路径名", required = true)
     private String filePath;
 
-    @ApiModelProperty(value = "文件MD5与文件路径名共同唯一标志一个文件", required = true)
+    @Schema(description = "文件MD5与文件路径名共同唯一标志一个文件", required = true)
     private String fileMd5;
 
-    @ApiModelProperty(value = "文件内容", required = true)
+    @Schema(description = "文件内容", required = true)
     private String contents;
 
-    @ApiModelProperty(value = "文件的开始行", required = true)
+    @Schema(description = "文件的开始行", required = true)
     private int startLine = 1;
 
-    @ApiModelProperty(value = "告警跟踪信息在文件中的最小行")
+    @Schema(description = "告警跟踪信息在文件中的最小行")
     private int minLineNum = 1;
 
-    @ApiModelProperty(value = "告警跟踪信息在文件中的最大行")
+    @Schema(description = "告警跟踪信息在文件中的最大行")
     private int maxLineNum = 1;
 }

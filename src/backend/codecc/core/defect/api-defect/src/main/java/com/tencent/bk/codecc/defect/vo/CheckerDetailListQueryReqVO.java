@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,11 +27,11 @@ import java.util.Set;
  * @date 2021/05/25
  */
 @Data
-@ApiModel("查询规则清单首页实体类")
+@Schema(description = "查询规则清单首页实体类")
 @AllArgsConstructor
 @NoArgsConstructor
 public class CheckerDetailListQueryReqVO {
-    @ApiModelProperty("带查询工具规则列表")
+    @Schema(description = "带查询工具规则列表")
     private List<ToolCheckers> toolCheckerList;
 
     @Data

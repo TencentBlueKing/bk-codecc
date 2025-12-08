@@ -1,6 +1,7 @@
 package com.tencent.bk.codecc.defect.service;
 
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
+import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
 import com.tencent.bk.codecc.defect.vo.ToolBuildStackReqVO;
 import com.tencent.bk.codecc.defect.vo.ToolBuildInfoReqVO;
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
@@ -50,6 +51,14 @@ public interface ToolBuildInfoService {
     Boolean editToolBuildInfo(ToolBuildInfoReqVO reqVO);
 
     Boolean batchSetForceFullScan(Collection<Long> taskIdSet, String toolName);
+
+    /**
+     * 批量设置强制全量扫描
+     *
+     * @param taskInfoVOS
+     * @return
+     */
+    Boolean batchSetForceFullScan(List<BatchDefectProcessReqVO.TaskInfoVO> taskInfoVOS);
 
     /**
      * 若是重试触发的增量扫描，则设full_scan为false

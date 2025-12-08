@@ -39,14 +39,15 @@ import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.DefectStatus;
 
 import com.tencent.devops.common.constant.IgnoreApprovalConstants.ApproverStatus;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -60,13 +61,11 @@ import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
 import org.springframework.data.mongodb.core.aggregation.LimitOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
-import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.aggregation.SkipOperation;
 import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.query.BasicQuery;
@@ -133,6 +132,7 @@ public class LintDefectV2Dao {
 
     /**
      * 查询告警列表
+     *
      * @param taskId
      * @param toolName
      * @param excludeStatusSet
@@ -142,11 +142,11 @@ public class LintDefectV2Dao {
      * @return
      */
     public List<LintDefectV2Entity> findDefectsByFilePath(Long taskId,
-            String toolName,
-            Set<Integer> excludeStatusSet,
-            Set<String> filterPaths,
-            int pageSize,
-            String lastId) {
+                                                          String toolName,
+                                                          Set<Integer> excludeStatusSet,
+                                                          Set<String> filterPaths,
+                                                          int pageSize,
+                                                          String lastId) {
         Document fieldsObj = new Document();
         fieldsObj.put("status", true);
         fieldsObj.put("exclude_time", true);
@@ -174,14 +174,14 @@ public class LintDefectV2Dao {
     /**
      * 按维度的工具集合，文件绝对路径查询告警id
      *
-     * @param taskId 任务id
+     * @param taskId      任务id
      * @param toolNameSet 工具集合
-     * @param status 状态
-     * @param fileList 文件绝对路径列表
+     * @param status      状态
+     * @param fileList    文件绝对路径列表
      * @return list
      */
     public List<LintDefectV2Entity> findDefectsByFilePath(Long taskId, Set<String> toolNameSet, Integer status,
-            Set<String> fileList) {
+                                                          Set<String> fileList) {
         Document fieldsObj = new Document();
         fieldsObj.put("tool_name", true);
         fieldsObj.put("id", true);
@@ -203,13 +203,13 @@ public class LintDefectV2Dao {
      * 按规则统计告警数
      *
      * @param taskIdSet 任务ID集合
-     * @param toolName 工具名
-     * @param status 告警状态
-     * @param checkers 规则集合
+     * @param toolName  工具名
+     * @param status    告警状态
+     * @param checkers  规则集合
      * @return list
      */
     public List<CheckerStatisticEntity> findStatByTaskIdAndToolChecker(Collection<Long> taskIdSet, String toolName,
-            int status, Collection<String> checkers) {
+                                                                       int status, Collection<String> checkers) {
         MatchOperation match = Aggregation.match(Criteria.where("task_id").in(taskIdSet).and("tool_name").is(toolName)
                 .and("status").is(status).and("checker").in(checkers));
 
@@ -222,7 +222,7 @@ public class LintDefectV2Dao {
     }
 
     public List<CheckerStatisticExtEntity> findStatByTaskIdAndToolChecker(Collection<Long> taskIdSet, String toolName,
-            Set<Integer> status, String checker, long statStartTime, long statEndTime) {
+                                                                          Set<Integer> status, String checker, long statStartTime, long statEndTime) {
 
         MatchOperation match = Aggregation.match(Criteria.where("task_id").in(taskIdSet)
                 .and("tool_name").is(toolName)
@@ -332,7 +332,7 @@ public class LintDefectV2Dao {
      * 按告警数倒序获取skip个后面的size个任务id及告警数
      */
     public List<DefectCountModel> statisticLintDefect(Set<Long> taskIdSet, String toolName, long skipNum,
-            long size) {
+                                                      long size) {
         // 根据查询条件过滤
         Criteria criteria = new Criteria();
         criteria.and("task_id").in(taskIdSet).and("status").is(ComConstants.DefectStatus.NEW.value());
@@ -360,7 +360,7 @@ public class LintDefectV2Dao {
     /**
      * 按告警实体id查询告警指定字段信息
      *
-     * @param taskId 任务id
+     * @param taskId      任务id
      * @param defectIdSet 告警实体id
      * @return list
      */
@@ -383,11 +383,11 @@ public class LintDefectV2Dao {
      * 统计告警数
      */
     public Long countLintDefectByStatus(
-            List<Long> taskIdSet, Set<String>
+            Long taskId, Set<String>
             toolNames, Integer status, String timeField,
             long timeStart, long timeEnd
     ) {
-        Criteria criteria = Criteria.where("task_id").in(taskIdSet);
+        Criteria criteria = Criteria.where("task_id").is(taskId);
 
         if (CollectionUtils.isNotEmpty(toolNames)) {
             criteria.and("tool_name").in(toolNames);
@@ -410,11 +410,11 @@ public class LintDefectV2Dao {
      * 按忽略类型统计告警数
      *
      * @param startTime 告警创建时间
-     * @param endTime 告警创建时间
+     * @param endTime   告警创建时间
      * @return group list
      */
     public List<LintDefectV2Entity> statIgnoreGroupByReasonType(Collection<Long> taskIds, String toolName,
-            String checker, int status, long startTime, long endTime) {
+                                                                String checker, int status, long startTime, long endTime) {
         // 筛选create_time范围内的
         MatchOperation match = Aggregation.match(Criteria.where("task_id").in(taskIds)
                 .and("tool_name").is(toolName)
@@ -437,15 +437,15 @@ public class LintDefectV2Dao {
      * 按规则、创建时间批量分组统计
      *
      * @param taskIdSet 任务id集合
-     * @param toolName 有效工具
-     * @param status 告警状态
+     * @param toolName  有效工具
+     * @param status    告警状态
      * @param timeField 状态时间字段
      * @param startTime 开始时间13位
-     * @param endTime 结束时间13位
+     * @param endTime   结束时间13位
      * @return stat list
      */
     public List<LintDefectV2Entity> statByCheckerAndStatus(Set<Long> taskIdSet, String toolName, int status,
-            String timeField, long startTime, long endTime) {
+                                                           String timeField, long startTime, long endTime) {
         // 必填项
         Criteria criteria = Criteria.where("task_id").in(taskIdSet).and("tool_name").is(toolName);
 
@@ -475,7 +475,7 @@ public class LintDefectV2Dao {
      * 查询有评论的告警清单
      *
      * @param taskIdSet 任务id集合
-     * @param toolName 工具
+     * @param toolName  工具
      * @return list
      */
     public List<LintDefectV2Entity> findDefectHasComment(Set<Long> taskIdSet, String toolName) {
@@ -530,6 +530,7 @@ public class LintDefectV2Dao {
 
     /**
      * 通过任务ID与ApprovalId更新告警的审批状态等信息
+     *
      * @param taskIds
      * @param ignoreApprovalId
      * @param ignoreApprovalStatus
@@ -537,7 +538,8 @@ public class LintDefectV2Dao {
      * @return
      */
     public Long updateIgnoreApprovalStatusByTaskIdsAndApprovalId(List<Long> taskIds, String ignoreApprovalId,
-            Integer ignoreApprovalStatus, Integer ignoreTypeId, String ignoreReason, String userName) {
+                                                                 Integer ignoreApprovalStatus, Integer ignoreTypeId,
+                                                                 String ignoreReason, String userName) {
         if (CollectionUtils.isEmpty(taskIds) || StringUtils.isEmpty(ignoreApprovalId)) {
             return 0L;
         }
@@ -555,5 +557,83 @@ public class LintDefectV2Dao {
                     .set("ignore_author", userName);
         }
         return defectMongoTemplate.updateMulti(query, update, LintDefectV2Entity.class).getModifiedCount();
+    }
+
+    /**
+     * 通过告警id查询任务id
+     *
+     * @param defectIds
+     * @return
+     */
+    public List<LintDefectV2Entity> findTaskIdByDefectIds(List<String> defectIds) {
+        List<List<String>> defectIdsList = Lists.partition(defectIds, ComConstants.COMMON_NUM_10000);
+        List<LintDefectV2Entity> defects = new ArrayList<>();
+        for (List<String> pageDefectIds : defectIdsList) {
+            Query query = Query.query(Criteria.where("_id").in(pageDefectIds));
+            query.fields().include("task_id", "_id");
+            defects.addAll(defectMongoTemplate.find(query, LintDefectV2Entity.class));
+        }
+        return defects;
+    }
+
+    /**
+     * 查询任务下工具规则的告警id列表
+     * @param taskId
+     * @param toolName
+     * @param checker
+     * @return
+     */
+    public List<String> findDefectIdsByTaskIdAndToolNameAndChecker(Long taskId, String toolName, String checker) {
+        List<String> defectIds = new ArrayList<>();
+        String defectId = null;
+        while (true) {
+            Criteria cri = Criteria.where("task_id").is(taskId).and("tool_name").is(toolName)
+                    .and("checker").is(checker);
+            if (StringUtils.isNotBlank(defectId)) {
+                cri.and("_id").gt(defectId);
+            }
+            Query query = Query.query(cri);
+            query.with(Sort.by(Direction.ASC, "_id"));
+            query.fields().include("_id");
+            query.limit(ComConstants.COMMON_NUM_10000);
+            List<LintDefectV2Entity> defects = defectMongoTemplate.find(query, LintDefectV2Entity.class);
+            if (CollectionUtils.isEmpty(defects)) {
+                break;
+            }
+            defectId = defects.get(defects.size() - 1).getEntityId();
+            defectIds.addAll(defects.stream().map(LintDefectV2Entity::getEntityId).collect(Collectors.toList()));
+        }
+        return defectIds;
+    }
+
+    /**
+     * 复制告警
+     * @param defectIds
+     * @param toolName
+     * @param checker
+     * @param startId
+     */
+    public void copyDefectByEntityId(List<String> defectIds, String toolName, String checker, Long startId) {
+        if (CollectionUtils.isEmpty(defectIds)) {
+            return;
+        }
+        List<List<String>> defectIdsList = Lists.partition(defectIds, ComConstants.COMMON_PAGE_SIZE);
+        for (List<String> pageDefectIds : defectIdsList) {
+            List<LintDefectV2Entity> defects = defectMongoTemplate.find(Query.query(
+                    Criteria.where("_id").in(pageDefectIds)), LintDefectV2Entity.class);
+            if (CollectionUtils.isEmpty(defects)) {
+                continue;
+            }
+            long curTime = System.currentTimeMillis();
+            for (LintDefectV2Entity defect : defects) {
+                defect.setEntityId(null);
+                defect.setToolName(toolName);
+                defect.setChecker(checker);
+                defect.setId(startId.toString());
+                defect.setUpdatedDate(curTime);
+                startId++;
+            }
+            defectMongoTemplate.insertAll(defects);
+        }
     }
 }

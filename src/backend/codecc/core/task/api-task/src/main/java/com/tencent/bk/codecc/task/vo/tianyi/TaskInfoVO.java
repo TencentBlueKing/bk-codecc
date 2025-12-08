@@ -27,8 +27,7 @@
 
 package com.tencent.bk.codecc.task.vo.tianyi;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -41,17 +40,17 @@ import java.util.List;
  */
 
 @Data
-@ApiModel("任务信息")
+@Schema(description = "任务信息")
 public class TaskInfoVO {
-    @ApiModelProperty("任务ID")
+    @Schema(description = "任务ID")
     private Long taskId;
 
-    @ApiModelProperty("任务中文名称")
+    @Schema(description = "任务中文名称")
     private String nameCn;
 
-    @ApiModelProperty("任务所属蓝盾项目ID")
+    @Schema(description = "任务所属蓝盾项目ID")
     private String projectId;
 
-    @ApiModelProperty("使用中的工具")
+    @Schema(description = "使用中的工具")
     private List<String> toolNames;
 }

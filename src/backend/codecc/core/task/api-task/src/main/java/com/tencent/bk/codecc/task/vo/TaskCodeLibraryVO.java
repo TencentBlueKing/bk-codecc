@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.hibernate.validator.constraints.NotBlank;
 
@@ -42,54 +41,54 @@ import java.util.stream.Collectors;
  * @date 2019/6/13
  */
 @Data
-@ApiModel("任务代码库配置")
+@Schema(description = "任务代码库配置")
 public class TaskCodeLibraryVO
 {
-    @ApiModelProperty(value = "任务主键id")
+    @Schema(description = "任务主键id")
     private Long taskId;
 
-    @ApiModelProperty(value = "项目ID")
+    @Schema(description = "项目ID")
     private String projectId;
 
-    @ApiModelProperty(value = "项目名称")
+    @Schema(description = "项目名称")
     private String projectName;
 
-    @ApiModelProperty(value = "流水线ID")
+    @Schema(description = "流水线ID")
     private String pipelineId;
 
-    @ApiModelProperty(value = "流水线名称")
+    @Schema(description = "流水线名称")
     private String pipelineName;
 
     @NotBlank(message = "凭证管理的主键id不能为空")
-    @ApiModelProperty(value = "凭证管理的主键id", required = true)
+    @Schema(description = "凭证管理的主键id", required = true)
     private String repoHashId;
 
-    @ApiModelProperty(value = "仓库别名")
+    @Schema(description = "仓库别名")
     private String aliasName;
 
-    @ApiModelProperty(value = "代码表标识，使用别名、分支的方式标识代码，代码库别名 - 分支")
+    @Schema(description = "代码表标识，使用别名、分支的方式标识代码，代码库别名 - 分支")
     private List<CodeLibraryInfoVO> codeInfo;
 
     @NotBlank(message = "代码库类型不能为空")
-    @ApiModelProperty(value = "代码库类型", required = true)
+    @Schema(description = "代码库类型", required = true)
     private String scmType;
 
-    @ApiModelProperty(value = "操作系统类型", required = true)
+    @Schema(description = "操作系统类型", required = true)
     private String osType;
 
-    @ApiModelProperty(value = "构建环境", required = true)
+    @Schema(description = "构建环境", required = true)
     private Map<String, String> buildEnv;
 
-    @ApiModelProperty(value = "编译类型", required = true)
+    @Schema(description = "编译类型", required = true)
     private String projectBuildType;
 
-    @ApiModelProperty(value = "编译命令", required = true)
+    @Schema(description = "编译命令", required = true)
     private String projectBuildCommand;
 
     /**
      * 项目接入的工具列表，查询时使用
      */
-    @ApiModelProperty(value = "项目接入的工具列表")
+    @Schema(description = "项目接入的工具列表")
     private List<ToolConfigParamJsonVO> toolConfigList;
 
     /**

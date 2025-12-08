@@ -1,12 +1,11 @@
 package com.tencent.bk.codecc.task.vo.credential
 
-import io.swagger.annotations.ApiModelProperty
-
+import io.swagger.v3.oas.annotations.media.Schema
 data class CredentialRsp (
-    @ApiModelProperty("项目ID")
+    @get:Schema(description = "项目ID")
         val projectId: String,
-    @ApiModelProperty("凭证列表")
+    @get:Schema(description = "凭证列表")
         val credentials: List<Credential>?,
-    @ApiModelProperty("凭证列表")
+    @get:Schema(description = "凭证列表")
         val credential: Credential?
 )

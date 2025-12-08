@@ -11,19 +11,7 @@
     >
       <div class="breadcrumb">
         <div class="breadcrumb-name">
-          <bk-tab
-            active="sca-pkg"
-            :label-height="42"
-            @tab-change="handleTabChange"
-            type="unborder-card"
-          >
-            <bk-tab-panel
-              v-for="(panel, index) in panels"
-              v-bind="panel"
-              :key="index"
-            >
-            </bk-tab-panel>
-          </bk-tab>
+          <ActiveTab :list="panels" value="sca-pkg" @update:value="handleTabChange" />
           <div
             class="tab-extra-icon"
           >
@@ -112,6 +100,19 @@
             :class="{ collapse: !isSearchDropdown }"
           >
             <container :class="['cc-container', { fold: !isSearchDropdown }]">
+              <div class="cc-col">
+                <bk-form-item :label="$t('工具')">
+                  <bk-select multiple v-model="searchParams.toolNameList">
+                    <bk-option
+                      v-for="option in toolList"
+                      :key="option.toolName"
+                      :id="option.toolName"
+                      :name="option.toolDisplayName"
+                    >
+                    </bk-option>
+                  </bk-select>
+                </bk-form-item>
+              </div>
               <div class="cc-col">
                 <bk-form-item :label="$t('快照')">
                   <bk-select
@@ -210,7 +211,7 @@
                   </bk-select>
                 </bk-form-item>
               </div>
-              <div class="cc-col-2" v-show="allRenderColumnMap.severity">
+              <div class="cc-col" v-show="allRenderColumnMap.severity">
                 <bk-form-item :label="$t('风险级别')">
                   <bk-checkbox-group
                     v-model="searchParams.severity"
@@ -247,7 +248,7 @@
                 </bk-form-item>
               </div>
               <div class="cc-col" v-show="allRenderColumnMap.direct">
-                <bk-form-item :label="$t('依赖方式')">
+                <bk-form-item :label="$t('依赖方式')" class="break-all">
                   <bk-select
                     v-model="searchParams.direct"
                     :clearable="true"
@@ -387,7 +388,6 @@
               @selection-change="handleSelectionChange"
               v-bkloading="{ isLoading: tableLoading, opacity: 0.6 }">
               <bk-table-column
-                :selectable="handleSelectable"
                 type="selection"
                 width="50"
                 align="center"
@@ -425,7 +425,7 @@
                 </template>
               </bk-table-column>
               <!-- 隐藏漏洞数 -->
-              <!-- <bk-table-column
+              <bk-table-column
                 :label="$t('漏洞数')"
                 min-width="100"
                 show-overflow-tooltip
@@ -433,23 +433,28 @@
                 <template slot-scope="props">
                   <div class="template-tag-area">
                     <div
-                      v-bk-tooltips="{ content: `${$t('严重')}: ${props.row.seriousCount}` }"
-                      :class="['vuln-box', props.row.seriousCount ? 'vuln-serious' : 'vuln-none']">
-                      {{ props.row.seriousCount }}
+                      v-bk-tooltips="{ content: `${$t('高危')}: ${props.row.highCount}` }"
+                      :class="['vuln-box', props.row.highCount ? 'vuln-serious' : 'vuln-none']">
+                      {{ props.row.highCount }}
                     </div>
                     <div
-                      v-bk-tooltips="{ content: `${$t('高危')}: ${props.row.highCount}` }"
-                      :class="['vuln-box', props.row.highCount ? 'vuln-high' : 'vuln-none']">
-                      {{ props.row.highCount }}
+                      v-bk-tooltips="{ content: `${$t('中危')}: ${props.row.middleCount}` }"
+                      :class="['vuln-box', props.row.middleCount ? 'vuln-high' : 'vuln-none']">
+                      {{ props.row.middleCount }}
                     </div>
                     <div
                       v-bk-tooltips="{ content: `${$t('低危')}: ${props.row.lowCount}` }"
                       :class="['vuln-box', props.row.lowCount ? 'vuln-low' : 'vuln-none']">
                       {{ props.row.lowCount }}
                     </div>
+                    <div
+                      v-bk-tooltips="{ content: `${$t('未知')}: ${props.row.unknownCount}` }"
+                      :class="['vuln-box', props.row.unknownCount ? 'vuln-unknown' : 'vuln-none']">
+                      {{ props.row.unknownCount }}
+                    </div>
                   </div>
                 </template>
-              </bk-table-column> -->
+              </bk-table-column>
               <bk-table-column
                 :label="$t('许可证')"
                 min-width="150"
@@ -723,6 +728,7 @@
         slot="content"
         :entity-id="curRow.entityId"
         :build-id="curRow.buildId"
+        :tool-name="curRow.toolName"
         :package-name="curRow.name">
       </scaPkgDetail>
     </bk-sideslider>
@@ -774,6 +780,7 @@ import AuthorEditDialog from './author-edit-dialog.vue';
 import IgnoreDialog from './ignore-dialog.vue';
 import { array2Str } from '@/common/util';
 import { format } from 'date-fns';
+import ActiveTab from '../components/active-tab.vue';
 
 // 搜索过滤项缓存
 const SEARCH_OPTION_CACHE = 'search_option_columns_sca';
@@ -787,6 +794,7 @@ export default {
     SeverityStatus,
     AuthorEditDialog,
     IgnoreDialog,
+    ActiveTab,
   },
   mixins: [util, scaUtil],
   data() {
@@ -819,7 +827,10 @@ export default {
       statusUnion = statusUnion.concat(typesArr);
     }
 
+
     return {
+      dimension: ['SCA'],
+      taskIdList: [this.$route.params.taskId],
       // loading
       contentLoading: false,
       tableLoading: false,
@@ -868,6 +879,7 @@ export default {
         maskCount: 0, // 已屏蔽
       },
       searchParams: { // v-model 用户筛选
+        toolNameList: [],
         scaDimensionList: ['PACKAGE'], // SCA查询维度
         dimensionList: ['SCA'], // 查询维度
         buildId: query.buildId ? query.buildId : '',
@@ -937,10 +949,10 @@ export default {
   },
   computed: {
     toolNameStr() {
-      return this.basicSearchParams.toolNameList.join(',');
+      return this.searchParams.toolNameList.join(',');
     },
     toolNameList() {
-      return this.basicSearchParams.toolNameList || [];
+      return this.searchParams.toolNameList || [];
     },
     dimensionStr() {
       return this.basicSearchParams.dimensionList.join(',');
@@ -1071,7 +1083,7 @@ export default {
       this.customOption = defaultOptionColumn;
     }
     this.selectedOptionColumn = _.cloneDeep(defaultOptionColumn);
-    this.guideFlag = Boolean(localStorage.getItem('guideEnd') || '');
+    this.guideFlag = Boolean(localStorage.getItem('guideEnd') || !this.isInnerSite);
   },
   mounted() {
     // 读取缓存中搜索项首次展示或收起
@@ -1300,11 +1312,10 @@ export default {
       }
       const {
         taskIdList,
-        toolNameList,
         dimensionList,
       } = this.basicSearchParams;
 
-      const { scaDimensionList } = this.searchParams;
+      const { scaDimensionList, toolNameList } = this.searchParams;
 
       let data = {
         ...this.operateParams,
@@ -1391,7 +1402,6 @@ export default {
     },
     // 分配
     handleAuthor(changeAuthorType, entityId, author) {
-      window.changeAlert = false;
       this.operateParams.changeAuthorType = changeAuthorType;
       if (author !== undefined) {
         this.operateParams.sourceAuthor = author;
@@ -1427,11 +1437,10 @@ export default {
       }
       const {
         taskIdList,
-        toolNameList,
         dimensionList,
       } = this.basicSearchParams;
 
-      const { scaDimensionList } = this.searchParams;
+      const { scaDimensionList, toolNameList } = this.searchParams;
 
       data = { ...data, taskIdList, toolNameList, dimensionList, scaDimension: scaDimensionList[0] };
       const dispatchUrl = data.changeAuthorType === 3 ? 'defect/authorEdit' : 'defect/batchEdit';
@@ -1447,7 +1456,6 @@ export default {
             });
             this.operateParams.targetAuthor = [];
             this.operateParams.sourceAuthor = [];
-            this.$nextTick(() => window.changeAlert = false);
             if (data.changeAuthorType === 1) {
               this.listData.packageList.records.forEach((item) => {
                 if (item.entityId === data.defectKeySet[0]) {
@@ -1492,7 +1500,6 @@ export default {
       if (ignoreType === 'RevertIgnore') {
         this.handleIgnoreConfirm();
       } else {
-        window.changeAlert = false;
         this.$refs.ignoreRef.handleShow();
       }
     },
@@ -1509,10 +1516,9 @@ export default {
         };
       }
       const {
-        toolNameList,
         dimensionList,
       } = this;
-      const { scaDimensionList } = this.searchParams;
+      const { scaDimensionList, toolNameList } = this.searchParams;
       const { taskIdList } = this.basicSearchParams;
 
       data = { ...data, taskIdList, toolNameList, dimensionList, scaDimension: scaDimensionList[0] };
@@ -1564,7 +1570,7 @@ export default {
             });
             if (!data.batchFlag) {
               const index = this.listData.packageList.records.findIndex(item => item.entityId === data.defectKeySet[0]);
-              if (index > 0) {
+              if (index !== -1) {
                 this.listData.packageList.records.forEach((item) => {
                   if (item.entityId === data.defectKeySet[0]) {
                     if (this.operateParams.bizType === 'ChangeIgnoreType') {
@@ -1592,7 +1598,6 @@ export default {
 
             this.operateParams.ignoreReason = '';
             this.operateParams.ignoreReasonType = '';
-            this.$nextTick(() => window.changeAlert = false);
           }
         })
         .catch((e) => {
@@ -1620,9 +1625,9 @@ export default {
       }
       const {
         taskIdList,
-        toolNameList,
         dimensionList,
       } = this;
+      const { toolNameList } = this.searchParams;
       data = { ...data, taskIdList, toolNameList, dimensionList };
       this.preIgnoreApprovalLoading = true;
       const result = await this.$store.dispatch('defect/getPreIgnoreApproval', data);
@@ -1743,8 +1748,7 @@ export default {
             name: this.$t('组件名称'),
             version: this.$t('版本'),
             severity: this.$t('风险'),
-            // 隐藏漏洞数
-            // vulnerability_number: this.$t('漏洞数'),
+            vulnerability_number: this.$t('漏洞数'),
             licenseList: this.$t('许可证'),
             author: this.$t('处理人'),
             direct: this.$t('依赖方式'),
@@ -1768,12 +1772,11 @@ export default {
         if (j === 'severity') {
           return this.pkgSeverityMap[item[j]];
         }
-        // 隐藏漏洞数
-        // if (j === 'vulnerability_number') {
-        //   return `${this.$t('严重')}: ${item.seriousCount}` + ', '
-        //   + `${this.$t('高危')}: ${item.highCount}` + ', '
-        //   + `${this.$t('低危')}: ${item.lowCount}`;
-        // }
+        if (j === 'vulnerability_number') {
+          return `${this.$t('严重')}: ${item.seriousCount}` + ', '
+          + `${this.$t('高危')}: ${item.highCount}` + ', '
+          + `${this.$t('低危')}: ${item.lowCount}`;
+        }
         if (j === 'licenseList' && item[j]) {
           return item[j].map(lic => lic.name).join(', ');
         }
@@ -2114,8 +2117,12 @@ export default {
   border-radius: 5px;
 }
 
+.vuln-unknown {
+  background-color: #999aa3;
+}
+
 .vuln-serious {
-  background-color: #981e28;
+  background-color: #892B2C;
 }
 
 .vuln-high {
@@ -2189,6 +2196,10 @@ export default {
 
 /deep/ .bk-dialog-header {
   padding: 3px 24px 0 !important;
+}
+
+>>> .bk-label {
+  font-size: 12px;
 }
 </style>
 

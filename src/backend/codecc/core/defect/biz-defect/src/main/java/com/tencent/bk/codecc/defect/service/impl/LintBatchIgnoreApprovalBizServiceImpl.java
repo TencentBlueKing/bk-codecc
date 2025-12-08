@@ -154,7 +154,7 @@ public class LintBatchIgnoreApprovalBizServiceImpl extends AbstractLintBatchDefe
         LintQueryWarningSpecialService lintSpecialService =
                 SpringContextUtil.Companion.getBean(LintQueryWarningSpecialService.class);
         List<CheckerDetailVO> checkers = lintSpecialService.getCheckerDetails(
-                queryCondObj.getCheckerSet(), queryCondObj.getChecker(),
+                queryCondObj.getCheckerSets(), queryCondObj.getChecker(),
                 queryCondObj.getToolNameList(), queryCondObj.getDimensionList()
         );
         String opsId = UUID.randomUUID().toString().replace("-", "");
@@ -547,7 +547,7 @@ public class LintBatchIgnoreApprovalBizServiceImpl extends AbstractLintBatchDefe
         LintQueryWarningSpecialService lintSpecialService =
                 SpringContextUtil.Companion.getBean(LintQueryWarningSpecialService.class);
         List<CheckerDetailVO> checkers = lintSpecialService.getCheckerDetails(
-                queryCondObj.getCheckerSet(), queryCondObj.getChecker(),
+                queryCondObj.getCheckerSets(), queryCondObj.getChecker(),
                 queryCondObj.getToolNameList(), queryCondObj.getDimensionList()
         );
         // 先按任务分组，匹配符合的忽略配置

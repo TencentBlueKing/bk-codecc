@@ -1,13 +1,13 @@
 package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("运行时数据更新")
+@Schema(description = "运行时数据更新")
 public class RuntimeUpdateMetaVO extends CommonVO {
 
     /**

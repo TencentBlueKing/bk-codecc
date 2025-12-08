@@ -248,7 +248,7 @@
                 </span>
               </div>
 
-              <div v-if="isOpenIde && checkerShow()">
+              <div v-if="isOpenIde && checkerShow() && isInnerSite">
                 <div v-if="openIdeDetail.data.length > 0 && openIdeDetail.success && !openIdeDetail.low">
                   <bk-alert class="close-ide" type="success">
                     <div slot="title">{{ $t('检测到您已安装PreCI') }}</div>
@@ -501,11 +501,10 @@
               <dt>{{ $t('忽略原因') }}</dt>
               <dd>
                 {{ getIgnoreReasonByType(currentFile.ignoreReasonType) }}
-                {{
-                  currentFile.ignoreReason
-                    ? '：' + currentFile.ignoreReason
-                    : ''
-                }}
+                <span
+                  v-if="currentFile.ignoreReason"
+                  v-html="': ' + handleConvertLink(currentFile.ignoreReason)">
+                </span>
               </dd>
             </div>
           </div>
@@ -571,7 +570,7 @@
 
 <script>
 import CodeMirror from '@/common/codemirror';
-import { addClass, formatDiff, getClosest, hasClass } from '@/common/util';
+import { addClass, formatDiff, getClosest, hasClass, convertLink } from '@/common/util';
 import { mapState } from 'vuex';
 import { format } from 'date-fns';
 import { bus } from '@/common/bus';
@@ -1724,6 +1723,10 @@ export default {
     // 查看tapd单据
     goToTAPD(url) {
       window.open(url, '_blank');
+    },
+
+    handleConvertLink(str) {
+      return convertLink(str);
     },
   },
 };

@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -40,31 +39,31 @@ import java.util.List;
  * @date 2019/6/5
  */
 @Data
-@ApiModel("lint类配置规则包视图")
+@Schema(description = "lint类配置规则包视图")
 public class CheckerPkgRspVO
 {
 
-    @ApiModelProperty("规则包ID")
+    @Schema(description = "规则包ID")
     private String pkgId;
 
-    @ApiModelProperty("规则包名称")
+    @Schema(description = "规则包名称")
     private String pkgName;
 
-    @ApiModelProperty("规则包描述")
+    @Schema(description = "规则包描述")
     private String pkgDesc;
 
-    @ApiModelProperty("规则包状态是否打开")
+    @Schema(description = "规则包状态是否打开")
     private Boolean pkgStatus;
 
-    @ApiModelProperty("规则包打开的个数")
+    @Schema(description = "规则包打开的个数")
     private Integer openCheckerNum;
 
-    @ApiModelProperty("总的规则个数")
+    @Schema(description = "总的规则个数")
     private Integer totalCheckerNum;
 
-    @ApiModelProperty("规则列表")
+    @Schema(description = "规则列表")
     private List<CheckerDetailVO> checkerList;
 
-    @ApiModelProperty("规则集")
+    @Schema(description = "规则集")
     private CheckerSetVO checkerSet;
 }

@@ -44,7 +44,7 @@ export default {
      */
     filterMissingUsers({ state }, userIds) {
       if (userIds === '' || userIds === null) return [];
-      const userIdList = Array.isArray(userIds) ? userIds : [userIds];
+      const userIdList = Array.isArray(userIds) ? userIds.filter(Boolean) : [userIds].filter(Boolean);
       const newUsers = userIdList.filter(id => !state.usersMap.has(id));
       return newUsers;
     },

@@ -30,110 +30,112 @@
             :disabled="isSysIgnore"
           ></bk-input>
         </bk-form-item>
-        <div class="line"></div>
-        <div class="review-setting-title">
-          {{ $t('忽略问题 review 提醒设置') }}
-        </div>
-        <bk-form-item :label="$t('提醒日期')" ext-cls="date-select">
-          <bk-select
-            v-model="formData.notify.notifyMonths"
-            multiple
-            style="width: 150px"
-            @change="handleMonthsSelect"
-          >
-            <bk-option
-              v-for="(item, index) in monthsMap"
-              :key="index"
-              :id="item.value"
-              :name="item.label"
-              :class="{
-                'is-selected':
-                  formData.notify.notifyMonths &&
-                  (formData.notify.notifyMonths.includes(item.value) ||
-                    formData.notify.notifyMonths.includes(-1)),
-              }"
+        <template v-if="isInnerSite">
+          <div class="line"></div>
+          <div class="review-setting-title">
+            {{ $t('忽略问题 review 提醒设置') }}
+          </div>
+          <bk-form-item :label="$t('提醒日期')" ext-cls="date-select">
+            <bk-select
+              v-model="formData.notify.notifyMonths"
+              multiple
+              style="width: 150px"
+              @change="handleMonthsSelect"
             >
-              <span>{{ item.label }}</span>
-              <i
-                v-if="
-                  formData.notify.notifyMonths &&
+              <bk-option
+                v-for="(item, index) in monthsMap"
+                :key="index"
+                :id="item.value"
+                :name="item.label"
+                :class="{
+                  'is-selected':
+                    formData.notify.notifyMonths &&
                     (formData.notify.notifyMonths.includes(item.value) ||
-                      formData.notify.notifyMonths.includes(-1))
-                "
-                class="bk-option-icon bk-icon icon-check-1"
-              ></i>
-            </bk-option>
-          </bk-select>
-          <bk-select
-            v-model="formData.notify.notifyWeekOfMonths"
-            multiple
-            style="width: 150px"
-            @change="handleWeekOfMonthsSelect"
-          >
-            <bk-option
-              v-for="(item, index) in weekOfMonthsMap"
-              :id="item.value"
-              :name="item.label"
-              :key="index"
-              :class="{
-                'is-selected':
-                  formData.notify.notifyWeekOfMonths &&
-                  (formData.notify.notifyWeekOfMonths.includes(item.value) ||
-                    formData.notify.notifyWeekOfMonths.includes(-1)),
-              }"
+                      formData.notify.notifyMonths.includes(-1)),
+                }"
+              >
+                <span>{{ item.label }}</span>
+                <i
+                  v-if="
+                    formData.notify.notifyMonths &&
+                      (formData.notify.notifyMonths.includes(item.value) ||
+                        formData.notify.notifyMonths.includes(-1))
+                  "
+                  class="bk-option-icon bk-icon icon-check-1"
+                ></i>
+              </bk-option>
+            </bk-select>
+            <bk-select
+              v-model="formData.notify.notifyWeekOfMonths"
+              multiple
+              style="width: 150px"
+              @change="handleWeekOfMonthsSelect"
             >
-              <span>{{ item.label }}</span>
-              <i
-                v-if="
-                  formData.notify.notifyWeekOfMonths &&
+              <bk-option
+                v-for="(item, index) in weekOfMonthsMap"
+                :id="item.value"
+                :name="item.label"
+                :key="index"
+                :class="{
+                  'is-selected':
+                    formData.notify.notifyWeekOfMonths &&
                     (formData.notify.notifyWeekOfMonths.includes(item.value) ||
-                      formData.notify.notifyWeekOfMonths.includes(-1))
-                "
-                class="bk-option-icon bk-icon icon-check-1"
-              ></i>
-            </bk-option>
-          </bk-select>
-          <bk-select
-            v-model="formData.notify.notifyDayOfWeeks"
-            multiple
-            style="width: 150px"
-          >
-            <bk-option
-              v-for="(item, index) in dayOfWeeksMap"
-              :id="item.value"
-              :name="item.label"
-              :key="index"
-            ></bk-option>
-          </bk-select>
-        </bk-form-item>
-        <bk-form-item :label="$t('通知人角色')">
-          <bk-checkbox-group v-model="formData.notify.notifyReceiverTypes">
-            <bk-checkbox value="ignore_author" class="mr40">{{
-              $t('问题忽略人')
-            }}</bk-checkbox>
-            <bk-checkbox value="defect_author" class="mr40">{{
-              $t('问题处理人')
-            }}</bk-checkbox>
-            <bk-checkbox value="task_creator">{{
-              $t('任务创建人')
-            }}</bk-checkbox>
-          </bk-checkbox-group>
-        </bk-form-item>
-        <bk-form-item :label="$t('附加通知人')">
-          <!-- <bk-input v-model="formData.notify.extReceiver"></bk-input> -->
-          <UserSelector
-            allow-create
-            :value.sync="formData.notify.extReceiver"
-          />
-        </bk-form-item>
-        <bk-form-item :label="$t('通知方式')">
-          <bk-checkbox-group v-model="formData.notify.notifyTypes">
-            <bk-checkbox value="rtx" class="mr40">{{
-              $t('企业微信')
-            }}</bk-checkbox>
-            <bk-checkbox value="email">{{ $t('邮件') }}</bk-checkbox>
-          </bk-checkbox-group>
-        </bk-form-item>
+                      formData.notify.notifyWeekOfMonths.includes(-1)),
+                }"
+              >
+                <span>{{ item.label }}</span>
+                <i
+                  v-if="
+                    formData.notify.notifyWeekOfMonths &&
+                      (formData.notify.notifyWeekOfMonths.includes(item.value) ||
+                        formData.notify.notifyWeekOfMonths.includes(-1))
+                  "
+                  class="bk-option-icon bk-icon icon-check-1"
+                ></i>
+              </bk-option>
+            </bk-select>
+            <bk-select
+              v-model="formData.notify.notifyDayOfWeeks"
+              multiple
+              style="width: 150px"
+            >
+              <bk-option
+                v-for="(item, index) in dayOfWeeksMap"
+                :id="item.value"
+                :name="item.label"
+                :key="index"
+              ></bk-option>
+            </bk-select>
+          </bk-form-item>
+          <bk-form-item :label="$t('通知人角色')">
+            <bk-checkbox-group v-model="formData.notify.notifyReceiverTypes">
+              <bk-checkbox value="ignore_author" class="mr40">{{
+                $t('问题忽略人')
+              }}</bk-checkbox>
+              <bk-checkbox value="defect_author" class="mr40">{{
+                $t('问题处理人')
+              }}</bk-checkbox>
+              <bk-checkbox value="task_creator">{{
+                $t('任务创建人')
+              }}</bk-checkbox>
+            </bk-checkbox-group>
+          </bk-form-item>
+          <bk-form-item :label="$t('附加通知人')">
+            <!-- <bk-input v-model="formData.notify.extReceiver"></bk-input> -->
+            <UserSelector
+              allow-create
+              :value.sync="formData.notify.extReceiver"
+            />
+          </bk-form-item>
+          <bk-form-item :label="$t('通知方式')">
+            <bk-checkbox-group v-model="formData.notify.notifyTypes">
+              <bk-checkbox value="rtx" class="mr40">{{
+                $t('企业微信')
+              }}</bk-checkbox>
+              <bk-checkbox value="email">{{ $t('邮件') }}</bk-checkbox>
+            </bk-checkbox-group>
+          </bk-form-item>
+        </template>
         <bk-form-item>
           <bk-button theme="primary" class="mr10" @click="handleConfirm">{{
             $t('确定')
@@ -149,6 +151,8 @@
 import { leaveConfirm } from '@/common/leave-confirm';
 import { deepClone } from '@/common/util';
 import UserSelector from '@/components/user-selector/index.vue';
+import DEPLOY_ENV from '@/constants/env';
+
 export default {
   components: {
     UserSelector,
@@ -169,6 +173,7 @@ export default {
   },
   data() {
     return {
+      isInnerSite: DEPLOY_ENV === 'tencent',
       ignoreInfo: {},
       isLoading: false,
       formData: {

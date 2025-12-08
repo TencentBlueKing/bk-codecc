@@ -35,21 +35,21 @@ import com.tencent.bk.codecc.defect.vo.ToolDefectIdVO;
 import com.tencent.bk.codecc.defect.vo.ToolDefectPageVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
 import java.util.Map;
-import javax.validation.Valid;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * 服务间调用的告警管理服务
@@ -57,67 +57,67 @@ import javax.ws.rs.core.MediaType;
  * @version V1.0
  * @date 2019/10/20
  */
-@Api(tags = {"SERVICE_DEFECT"}, description = "服务间调用的告警管理服务")
+@Tag(name = "SERVICE_DEFECT", description = "服务间调用的告警管理服务")
 @Path("/service/defect")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface ServiceDefectRestResource {
 
-    @ApiOperation("告警批量处理")
+    @Operation(summary = "告警批量处理")
     @Path("/batch/task/{taskId}")
     @POST
     Result<Boolean> batchDefectProcess(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @PathParam("taskId")
             long taskId,
-            @ApiParam(value = "用户名", required = true)
+            @Parameter(description = "用户名", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userName,
-            @ApiParam(value = "批量告警处理请求信息", required = true)
+            @Parameter(description = "批量告警处理请求信息", required = true)
             @Valid
             BatchDefectProcessReqVO batchDefectProcessReqVO
     );
 
-    @ApiOperation("按时间获取最后一条告警")
+    @Operation(summary = "按时间获取最后一条告警")
     @Path("/task/{taskId}/tool/{toolName}/lastest")
     @GET
     Result<Long> lastestStatDefect(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @PathParam("taskId")
             long taskId,
-            @ApiParam(value = "工具名称", required = true)
+            @Parameter(description = "工具名称", required = true)
             @PathParam("toolName")
             String toolName
     );
 
 
-    @ApiOperation("按任务ID获取最新分析状态")
+    @Operation(summary = "按任务ID获取最新分析状态")
     @Path("/analyze/status")
     @POST
     Result<Map<Long, String>> getLatestAnalyzeStatus(
-            @ApiParam(value = "任务ID集合", required = true) List<Long> taskIds);
+            @Parameter(description = "任务ID集合", required = true) List<Long> taskIds);
 
 
-    @ApiOperation("通过筛选条件查询告警id")
+    @Operation(summary = "通过筛选条件查询告警id")
     @Path("/task/{taskId}/queryDefectId")
     @POST
     Result<List<ToolDefectIdVO>> queryDefectIdByCondition(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @PathParam("taskId")
             long taskId,
-            @ApiParam(value = "告警查询条件", required = true)
+            @Parameter(description = "告警查询条件", required = true)
             @Valid
             DefectQueryReqVO reqVO
     );
 
-    @ApiOperation("通过筛选条件聚合工具列表")
+    @Operation(summary = "通过筛选条件聚合工具列表")
     @Path("/task/{taskId}/queryDefectIdPage")
     @POST
     Result<ToolDefectPageVO> queryDefectIdPageByCondition(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @PathParam("taskId")
             long taskId,
-            @ApiParam(value = "告警查询条件", required = true)
+            @Parameter(description = "告警查询条件", required = true)
             @Valid
             DefectQueryReqVO reqVO,
             @QueryParam("pageNum")
@@ -127,16 +127,16 @@ public interface ServiceDefectRestResource {
 
     );
 
-    @ApiOperation("数据是否迁移成功")
+    @Operation(summary = "数据是否迁移成功")
     @Path("/commonToLintMigrationSuccessful/{taskId}")
     @GET
     Result<Boolean> commonToLintMigrationSuccessful(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @PathParam("taskId")
             long taskId
     );
 
-    @ApiOperation("根据构建号和任务id获取static库中的数据")
+    @Operation(summary = "根据构建号和任务id获取static库中的数据")
     @Path("/getDefectStaticList")
     @POST
     Result<List<GrayDefectStaticVO>> getGaryDefectStaticList(GrayBuildNumAndTaskVO grayBuildNumAndTaskVO);

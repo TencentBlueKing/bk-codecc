@@ -1,7 +1,6 @@
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,20 +14,20 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ApiModel("分析记录代码库信息查询视图类")
+@Schema(description = "分析记录代码库信息查询视图类")
 public class TaskLogRepoInfoVO {
-    @ApiModelProperty("代码库路径")
+    @Schema(description = "代码库路径")
     private String repoUrl;
 
-    @ApiModelProperty("代码库版本号")
+    @Schema(description = "代码库版本号")
     private String revision;
 
-    @ApiModelProperty("提交时间")
+    @Schema(description = "提交时间")
     private String commitTime;
 
-    @ApiModelProperty("提交用户")
+    @Schema(description = "提交用户")
     private String commitUser;
 
-    @ApiModelProperty("分支名")
+    @Schema(description = "分支名")
     private String branch;
 }

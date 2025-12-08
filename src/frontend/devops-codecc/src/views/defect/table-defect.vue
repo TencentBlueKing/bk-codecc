@@ -245,8 +245,9 @@
               >
                 {{ $t('取消忽略并标记处理') }}
               </p>
+              <p v-if="props.row.status & 4 && !props.row.ignoreCommentDefect && !isInnerSite"></p>
               <p
-                v-if="props.row.status & 4 && !props.row.ignoreCommentDefect && isInnerSite"
+                v-else-if="props.row.status & 4 && !props.row.ignoreCommentDefect"
                 class="entry-link"
                 @click.stop="handleRevertIgnoreAndCommit(props.row.entityId)"
               >

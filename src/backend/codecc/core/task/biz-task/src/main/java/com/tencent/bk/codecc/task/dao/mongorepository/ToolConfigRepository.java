@@ -3,6 +3,8 @@ package com.tencent.bk.codecc.task.dao.mongorepository;
 import com.tencent.bk.codecc.task.model.ToolConfigInfoEntity;
 import java.util.Collection;
 import java.util.List;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -29,4 +31,7 @@ public interface ToolConfigRepository extends MongoRepository<ToolConfigInfoEnti
             Collection<Long> taskIds,
             int followStatusIsNot
     );
+
+    @Query(fields = "{'task_id':1}")
+    List<ToolConfigInfoEntity> findByToolNameIsAndTaskIdGreaterThan(String toolName, Long taskId, Pageable pageable);
 }

@@ -29,8 +29,7 @@ package com.tencent.bk.codecc.defect.vo;
 import com.tencent.bk.codecc.defect.vo.openapi.DefectDetailExtVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.pojo.Page;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.Map;
@@ -43,73 +42,73 @@ import java.util.Map;
  */
 
 @Data
-@ApiModel("工具告警响应视图")
+@Schema(description = "工具告警响应视图")
 public class ToolDefectRspVO
 {
-    @ApiModelProperty("任务主键")
+    @Schema(description = "任务主键")
     private long taskId;
 
-    @ApiModelProperty("任务英文名")
+    @Schema(description = "任务英文名")
     private String nameEn;
 
-    @ApiModelProperty("工具名")
+    @Schema(description = "工具名")
     private String toolName;
 
-    @ApiModelProperty("严重规则数")
+    @Schema(description = "严重规则数")
     private Integer seriousCheckerCount;
 
-    @ApiModelProperty("正常规则数")
+    @Schema(description = "正常规则数")
     private Integer normalCheckerCount;
 
-    @ApiModelProperty("提示规则数")
+    @Schema(description = "提示规则数")
     private Integer promptCheckerCount;
 
-    @ApiModelProperty("新增文件数")
+    @Schema(description = "新增文件数")
     private Integer newDefectCount;
 
-    @ApiModelProperty("历史文件数")
+    @Schema(description = "历史文件数")
     private Integer historyDefectCount;
 
-    @ApiModelProperty("规则总数")
+    @Schema(description = "规则总数")
     private Integer totalCheckerCount;
 
-    @ApiModelProperty("首次分析时间")
+    @Schema(description = "首次分析时间")
     private Long firstAnalysisSuccessTime;
 
-    @ApiModelProperty("lint类告警清单")
+    @Schema(description = "lint类告警清单")
     private Page<LintDefectVO> lintDefectList;
 
     @Deprecated
-    @ApiModelProperty("lint类文件清单")
+    @Schema(description = "lint类文件清单")
     private Page<LintFileVO> lintFileList;
 
-    @ApiModelProperty("Cov类文件清单")
+    @Schema(description = "Cov类文件清单")
     private Page<DefectDetailExtVO> defectList;
 
     /**
      * 风险系数极高的个数
      */
-    @ApiModelProperty("风险系数极高的个数")
+    @Schema(description = "风险系数极高的个数")
     private Integer superHighCount;
 
-    @ApiModelProperty("风险系数高的个数")
+    @Schema(description = "风险系数高的个数")
     private Integer highCount;
 
-    @ApiModelProperty("风险系数中的个数")
+    @Schema(description = "风险系数中的个数")
     private Integer mediumCount;
 
-    @ApiModelProperty("风险系数低的个数")
+    @Schema(description = "风险系数低的个数")
     private Integer lowCount;
 
-    @ApiModelProperty("告警总数")
+    @Schema(description = "告警总数")
     private Integer totalCount;
 
-    @ApiModelProperty("缺陷列表")
+    @Schema(description = "缺陷列表")
     private Page<CCNDefectVO> ccnDefectList;
 
-    @ApiModelProperty("重复率缺陷列表")
+    @Schema(description = "重复率缺陷列表")
     private Page<DUPCDefectVO> dupcDefectList;
 
-    @ApiModelProperty("任务详情Map")
+    @Schema(description = "任务详情Map")
     private Map<Long, TaskDetailVO> taskDetailVoMap;
 }

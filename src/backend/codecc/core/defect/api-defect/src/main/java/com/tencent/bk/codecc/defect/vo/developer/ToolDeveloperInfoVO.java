@@ -1,7 +1,6 @@
 package com.tencent.bk.codecc.defect.vo.developer;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,14 +15,14 @@ import java.util.Set;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ApiModel("工具开发者信息VO")
+@Schema(description = "工具开发者信息VO")
 public class ToolDeveloperInfoVO {
-    @ApiModelProperty("工具名")
+    @Schema(description = "工具名")
     private String toolName;
-    @ApiModelProperty("开发者集合")
+    @Schema(description = "开发者集合")
     private Set<String> developers;
-    @ApiModelProperty("拥有者集合")
+    @Schema(description = "拥有者集合")
     private Set<String> owners;
-    @ApiModelProperty("管理员集合")
+    @Schema(description = "管理员集合")
     private Set<String> masters;
 }

@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.defect.vo.admin;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.Set;
@@ -26,15 +25,15 @@ import java.util.Set;
  */
 
 @Data
-@ApiModel("冒烟检查请求体")
+@Schema(description = "冒烟检查请求体")
 public class SmokeCheckReqVO {
 
-    @ApiModelProperty("工具名集合")
+    @Schema(description = "工具名集合")
     private Set<String> toolNameSet;
 
-    @ApiModelProperty("参数集合")
+    @Schema(description = "参数集合")
     private Set<SmokeParam> smokeParamSet;
 
-    @ApiModelProperty("备注")
+    @Schema(description = "备注")
     private String remarks;
 }

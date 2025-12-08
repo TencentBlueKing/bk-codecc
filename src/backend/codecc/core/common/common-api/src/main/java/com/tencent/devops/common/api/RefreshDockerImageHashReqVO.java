@@ -12,10 +12,10 @@
 
 package com.tencent.devops.common.api;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * 刷新工具镜像版本
@@ -26,12 +26,12 @@ import javax.validation.constraints.NotNull;
 @Data
 public class RefreshDockerImageHashReqVO {
     @NotNull(message = "工具名不能为空")
-    @ApiModelProperty(value = "工具名", required = true)
+    @Schema(description = "工具名", required = true)
     private String toolName;
 
-    @ApiModelProperty(value = "工具版本")
+    @Schema(description = "工具版本")
     private String toolVersion;
 
-    @ApiModelProperty(value = "工具版本类型，T-测试版本，G-灰度版本，P-正式发布版本")
+    @Schema(description = "工具版本类型，T-测试版本，G-灰度版本，P-正式发布版本")
     private String versionType;
 }

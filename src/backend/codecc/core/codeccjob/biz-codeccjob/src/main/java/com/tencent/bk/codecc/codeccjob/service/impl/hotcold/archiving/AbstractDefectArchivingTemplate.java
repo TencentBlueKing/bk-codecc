@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.codeccjob.service.impl.hotcold.archiving;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson2.JSON;
 import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.ColdDataArchivingLogRepository;
 import com.tencent.bk.codecc.codeccjob.service.ColdDataArchivingService;
 import com.tencent.bk.codecc.codeccjob.service.impl.hotcold.pojo.ArchivingFileModel;

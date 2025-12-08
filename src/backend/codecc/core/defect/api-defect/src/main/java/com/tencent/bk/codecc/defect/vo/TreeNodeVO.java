@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -37,20 +36,20 @@ import java.util.List;
  *
  */
 @Data
-@ApiModel("文件路径树")
+@Schema(description = "文件路径树")
 public class TreeNodeVO
 {
 
-    @ApiModelProperty("树ID")
+    @Schema(description = "树ID")
     private String treeId;
 
-    @ApiModelProperty("树节点")
+    @Schema(description = "树节点")
     private String name;
 
-    @ApiModelProperty("子树集合")
+    @Schema(description = "子树集合")
     private List<TreeNodeVO> children;
 
-    @ApiModelProperty("是否开放")
+    @Schema(description = "是否开放")
     private Boolean expanded;
 
     public TreeNodeVO()

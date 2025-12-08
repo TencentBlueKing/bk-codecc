@@ -5,11 +5,11 @@ import com.tencent.devops.common.web.RequestFilter
 import com.tencent.devops.common.web.security.AuthCodeCCToken
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import javax.ws.rs.container.ContainerRequestContext
-import javax.ws.rs.container.ContainerRequestFilter
-import javax.ws.rs.container.ResourceInfo
-import javax.ws.rs.core.Context
-import javax.ws.rs.ext.Provider
+import jakarta.ws.rs.container.ContainerRequestContext
+import jakarta.ws.rs.container.ContainerRequestFilter
+import jakarta.ws.rs.container.ResourceInfo
+import jakarta.ws.rs.core.Context
+import jakarta.ws.rs.ext.Provider
 
 
 @Provider

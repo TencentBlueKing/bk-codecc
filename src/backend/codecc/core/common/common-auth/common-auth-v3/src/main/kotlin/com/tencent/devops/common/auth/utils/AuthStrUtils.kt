@@ -45,6 +45,7 @@ object AuthStrUtils {
             ExpressionOperationEnum.ANY -> projectList.add("*")
             ExpressionOperationEnum.EQUAL -> projectList.add(content.value.toString())
             ExpressionOperationEnum.IN -> projectList.addAll(StringUtils.obj2List(content.value.toString()))
+            else -> {}
         }
         return projectList
     }
@@ -135,6 +136,7 @@ object AuthStrUtils {
                     parentExpression.operator
                 )
             )
+            else -> {}
         }
         return instantList
     }
@@ -239,6 +241,7 @@ object AuthStrUtils {
             ExpressionOperationEnum.START_WITH -> {
                 instanceList.addAll(checkProject(projectId, expression).second)
             }
+            else -> {}
         }
 
         return instanceList

@@ -1,11 +1,10 @@
 package com.tencent.devops.common.api.checkerset;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.Data;
 
-import javax.ws.rs.PathParam;
+import jakarta.ws.rs.PathParam;
 import java.util.Set;
 
 /**
@@ -15,21 +14,21 @@ import java.util.Set;
  * @date 2020/1/5
  */
 @Data
-@ApiModel("规则集与其他对象关系视图")
+@Schema(description = "规则集与其他对象关系视图")
 public class CheckerSetRelationshipVO
 {
-    @ApiModelProperty(value = "关系类型", required = true)
+    @Schema(description = "关系类型", required = true)
     private String type;
 
-    @ApiModelProperty(value = "项目ID")
+    @Schema(description = "项目ID")
     private String projectId;
 
-    @ApiModelProperty(value = "任务ID")
+    @Schema(description = "任务ID")
     private Long taskId;
 
-    @ApiModelProperty(value = "规则集版本号")
+    @Schema(description = "规则集版本号")
     Integer version;
 
-    @ApiModelProperty(value = "规则集集合")
+    @Schema(description = "规则集集合")
     Set<String> checkerSetIds;
 }

@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -39,12 +38,12 @@ import java.util.List;
  * @date 2019/11/11
  */
 @Data
-@ApiModel("编译工具")
+@Schema(description = "编译工具")
 public class BuildEnvVO
 {
-    @ApiModelProperty("编译工具名")
+    @Schema(description = "编译工具名")
     private String name;
 
-    @ApiModelProperty("工具版本号列表")
+    @Schema(description = "工具版本号列表")
     private List<String> versions;
 }

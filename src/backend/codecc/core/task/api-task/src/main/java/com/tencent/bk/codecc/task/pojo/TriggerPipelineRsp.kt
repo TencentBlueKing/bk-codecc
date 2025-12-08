@@ -1,18 +1,17 @@
 package com.tencent.bk.codecc.task.pojo
 
-import io.swagger.annotations.ApiModelProperty
-
+import io.swagger.v3.oas.annotations.media.Schema
 data class TriggerPipelineRsp(
-    @ApiModelProperty("项目id")
+    @get:Schema(description = "项目id")
     val projectId: String,
-    @ApiModelProperty("流水线id")
+    @get:Schema(description = "流水线id")
     val pipelineId: String,
-    @ApiModelProperty("任务id")
+    @get:Schema(description = "任务id")
     val taskId: Long?,
-    @ApiModelProperty("工具清单")
+    @get:Schema(description = "工具清单")
     val toolList: List<String>?,
-    @ApiModelProperty("是否首次触发")
+    @get:Schema(description = "是否首次触发")
     val firstTrigger: String?,
-    @ApiModelProperty("codecc构建id")
+    @get:Schema(description = "codecc构建id")
     val codeccBuildId: String?
 )

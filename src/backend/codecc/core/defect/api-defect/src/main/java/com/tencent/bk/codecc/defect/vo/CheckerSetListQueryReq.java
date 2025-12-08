@@ -14,8 +14,7 @@ package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetCategory;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetSource;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Set;
 import lombok.Data;
 
@@ -26,45 +25,45 @@ import lombok.Data;
  * @date 2020/1/7
  */
 @Data
-@ApiModel("查询规则集清单首页实体类")
+@Schema(description = "查询规则集清单首页实体类")
 public class CheckerSetListQueryReq {
 
-    @ApiModelProperty("项目id")
+    @Schema(description = "项目id")
     private String projectId;
 
-    @ApiModelProperty("任务id")
+    @Schema(description = "任务id")
     private Long taskId;
 
-    @ApiModelProperty("关键字")
+    @Schema(description = "关键字")
     private String keyWord;
 
-    @ApiModelProperty("语言")
+    @Schema(description = "语言")
     private Set<String> checkerSetLanguage;
 
-    @ApiModelProperty("规则集类别")
+    @Schema(description = "规则集类别")
     private Set<CheckerSetCategory> checkerSetCategory;
 
-    @ApiModelProperty("工具名")
+    @Schema(description = "工具名")
     private Set<String> toolName;
 
-    @ApiModelProperty("规则集来源")
+    @Schema(description = "规则集来源")
     private Set<CheckerSetSource> checkerSetSource;
 
-    @ApiModelProperty("创建者")
+    @Schema(description = "创建者")
     private String creator;
 
-    @ApiModelProperty("快速搜索框")
+    @Schema(description = "快速搜索框")
     private String quickSearch;
 
-    @ApiModelProperty("排序字段")
+    @Schema(description = "排序字段")
     private String sortField;
 
-    @ApiModelProperty("排序字段")
+    @Schema(description = "排序字段")
     private String sortType;
 
-    @ApiModelProperty("分页配置")
+    @Schema(description = "分页配置")
     private Integer pageNum;
 
-    @ApiModelProperty("分页大小配置")
+    @Schema(description = "分页大小配置")
     private Integer pageSize;
 }

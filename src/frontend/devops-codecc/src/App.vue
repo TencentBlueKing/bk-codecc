@@ -107,7 +107,6 @@ import { toggleLang } from './i18n';
 import { getToolMeta, getToolList, getTaskList } from './common/preload';
 import DEPLOY_ENV from '@/constants/env';
 import BkUserDisplayName from '@blueking/bk-user-display-name';
-// import Aegis from 'aegis-web-sdk';
 
 export default {
   name: 'App',
@@ -183,6 +182,7 @@ export default {
     async '$route.fullPath'(val) {
       // 同步地址到蓝盾
       if (window.self !== window.top) {
+        console.log('$route.fullPath', val);
         // iframe嵌入
         devopsUtil.syncUrl(val.replace(/^\/codecc\//, '/')); // eslint-disable-line
       }
@@ -203,12 +203,6 @@ export default {
   },
   created() {
     this.initDisplayName();
-    // const aegis = new Aegis({
-    //   id: window.AEGISID, // 项目ID
-    //   uin: this.user.username, // 用户唯一 ID（可选）
-    //   reportApiSpeed: true, // 接口测速
-    //   reportAssetSpeed: true, // 静态资源测速
-    // });
     // 蓝盾切换项目
     window.addEventListener('change::$currentProjectId', (data) => {
       if (

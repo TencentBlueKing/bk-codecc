@@ -1,35 +1,34 @@
 package com.tencent.bk.codecc.defect.vo.sca;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.Data;
 
 @Data
-@ApiModel("批量上报证书信息")
+@Schema(description = "批量上报证书信息")
 public class BatchUploadLicenseVO {
 
-    @ApiModelProperty("证书名称")
+    @Schema(description = "证书名称")
     private String name;
 
-    @ApiModelProperty("全名")
+    @Schema(description = "全名")
     private String fullName;
 
-    @ApiModelProperty("描述")
+    @Schema(description = "描述")
     private String summary;
 
-    @ApiModelProperty("是否是osi认证")
+    @Schema(description = "是否是osi认证")
     private Boolean osi;
 
-    @ApiModelProperty("是否是FSF认证")
+    @Schema(description = "是否是FSF认证")
     private Boolean fsf;
 
-    @ApiModelProperty("是否是SPDX认证")
+    @Schema(description = "是否是SPDX认证")
     private Boolean spdx;
 
-    @ApiModelProperty("许可证链接")
+    @Schema(description = "许可证链接")
     private List<String> urls;
 
-    @ApiModelProperty("状态")
+    @Schema(description = "状态")
     private Integer status;
 }

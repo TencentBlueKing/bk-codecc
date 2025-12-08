@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.codeccjob.component;
 
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
+import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.TypeReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.bk.codecc.defect.model.ignore.IgnoreApprovalConfigEntity;
 import com.tencent.bk.codecc.defect.vo.ignore.DefectIgnoreApprovalVO;

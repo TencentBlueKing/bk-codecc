@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.defect.vo.admin;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -27,49 +26,49 @@ import java.util.List;
  */
 
 @Data
-@ApiModel("活跃任务统计视图")
+@Schema(description = "活跃任务统计视图")
 public class ActiveTaskStatisticsVO
 {
-    @ApiModelProperty("任务ID")
+    @Schema(description = "任务ID")
     private Long taskId;
 
-    @ApiModelProperty("任务英文名")
+    @Schema(description = "任务英文名")
     private String nameEn;
 
-    @ApiModelProperty("任务中文名")
+    @Schema(description = "任务中文名")
     private String nameCn;
 
-    @ApiModelProperty("任务所用语言")
+    @Schema(description = "任务所用语言")
     private String codeLang;
 
-    @ApiModelProperty("任务拥有者")
+    @Schema(description = "任务拥有者")
     private List<String> taskOwner;
 
-    @ApiModelProperty("蓝盾项目ID")
+    @Schema(description = "蓝盾项目ID")
     private String projectId;
 
-    @ApiModelProperty("流水线ID")
+    @Schema(description = "流水线ID")
     private String pipelineId;
 
-    @ApiModelProperty("事业群名称")
+    @Schema(description = "事业群名称")
     private String bgName;
 
-    @ApiModelProperty("部门名称")
+    @Schema(description = "部门名称")
     private String deptName;
 
-    @ApiModelProperty("中心名称")
+    @Schema(description = "中心名称")
     private String centerName;
 
-    @ApiModelProperty("创建日期")
+    @Schema(description = "创建日期")
     private Long createdDate;
 
-    @ApiModelProperty("任务状态[enum Status]")
+    @Schema(description = "任务状态[enum Status]")
     private String status;
 
-    @ApiModelProperty("创建来源[enum BsTaskCreateFrom]")
+    @Schema(description = "创建来源[enum BsTaskCreateFrom]")
     private String createFrom;
 
-    @ApiModelProperty("是否活跃")
+    @Schema(description = "是否活跃")
     private String isActive;
 
 

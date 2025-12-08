@@ -70,8 +70,8 @@
         }
         if ('<%= process.env.NODE_ENV %>' !== 'development') {
           var projectId =
-            document.location.pathname.match(/^\/codecc\/([\w-]+)\/?/)?.[1] ||
-            document.location.search.match(/projectId=([\w-]+)/)?.[1] || '';
+            document.location.pathname.match(/^\/codecc\/([\w.-_]+)\/?/)?.[1] ||
+            document.location.search.match(/projectId=([\w.-_]+)/)?.[1] || '';
           var projectIdInCookie = document.cookie.replace(
             /(?:(?:^|.*;\s*)X-DEVOPS-PROJECT-ID\s*\=\s*([^;]*).*$)|^.*$/,
             '$1'

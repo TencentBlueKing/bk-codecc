@@ -30,19 +30,19 @@ import com.tencent.bk.codecc.defect.vo.coderepository.UploadRepositoriesVO;
 import com.tencent.bk.codecc.defect.vo.common.CommonDefectQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.data.domain.Sort;
 
-import javax.validation.Valid;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TASK_ID;
@@ -54,21 +54,21 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
  * @version V1.0
  * @date 2019/5/2
  */
-@Api(tags = {"SERVICE_DEFECT"}, description = "工具侧告警上报服务接口")
+@Tag(name = "SERVICE_DEFECT", description = "工具侧告警上报服务接口")
 @Path("/build/defects")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface BuildDefectRestResource
 {
-    @ApiOperation("工具侧上报代码仓库信息")
+    @Operation(summary = "工具侧上报代码仓库信息")
     @Path("/repositories")
     @POST
     Result uploadRepositories(
-            @ApiParam(value = "工具侧上报代码仓库信息", required = true)
+            @Parameter(description = "工具侧上报代码仓库信息", required = true)
                     UploadRepositoriesVO uploadRepositoriesVO);
 
 
-    @ApiOperation("查询告警清单(带提单信息)")
+    @Operation(summary = "查询告警清单(带提单信息)")
     @Path("/issue/list")
     @POST
     Result<CommonDefectQueryRspVO> queryDefectListWithIssue(
@@ -76,19 +76,19 @@ public interface BuildDefectRestResource
         String userId,
         @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
         String projectId,
-        @ApiParam(value = "查询参数详情", required = true)
+        @Parameter(description = "查询参数详情", required = true)
         @Valid
         DefectQueryReqVO defectQueryReqVO,
-        @ApiParam(value = "页数")
+        @Parameter(description = "页数")
         @QueryParam(value = "pageNum")
         int pageNum,
-        @ApiParam(value = "页面大小")
+        @Parameter(description = "页面大小")
         @QueryParam(value = "pageSize")
         int pageSize,
-        @ApiParam(value = "排序字段")
+        @Parameter(description = "排序字段")
         @QueryParam(value = "sortField")
         String sortField,
-        @ApiParam(value = "排序方式")
+        @Parameter(description = "排序方式")
         @QueryParam(value = "sortType")
         Sort.Direction sortType
     );

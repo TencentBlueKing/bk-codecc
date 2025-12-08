@@ -11,11 +11,11 @@ metadata:
   annotations:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-weight": "-6"
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
     {{- if .Values.commonAnnotations }}
     {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
     {{- end }}
 spec:
+  ttlSecondsAfterFinished: 600
   template:
     metadata:
       labels: {{- include "codecc.labels.standard" . | nindent 8 }}

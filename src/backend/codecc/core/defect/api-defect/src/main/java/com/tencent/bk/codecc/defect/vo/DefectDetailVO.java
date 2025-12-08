@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.HashMap;
@@ -27,22 +26,22 @@ import java.util.Map;
  * @date 2019/10/18
  */
 @Data
-@ApiModel("告警基础信息视图")
+@Schema(description = "告警基础信息视图")
 public class DefectDetailVO extends DefectBaseVO
 {
-    @ApiModelProperty(value = "CWE(Common Weakness Enumeration),通用缺陷对照表")
+    @Schema(description = "CWE(Common Weakness Enumeration),通用缺陷对照表")
     private Integer cwe;
 
-    @ApiModelProperty(value = "第三方平台的buildId")
+    @Schema(description = "第三方平台的buildId")
     private String platformBuildId;
 
-    @ApiModelProperty(value = "第三方平台的项目ID")
+    @Schema(description = "第三方平台的项目ID")
     private String platformProjectId;
 
-    @ApiModelProperty(value = "有关告警实例的数据。可以有多个告警实例。")
+    @Schema(description = "有关告警实例的数据。可以有多个告警实例。")
     private List<DefectInstanceVO> defectInstances;
 
-    @ApiModelProperty(value = "告警涉及的相关文件信息。可以有多个。")
+    @Schema(description = "告警涉及的相关文件信息。可以有多个。")
     private Map<String, DefectFilesInfoVO> fileInfoMap = new HashMap<>();
 
 }

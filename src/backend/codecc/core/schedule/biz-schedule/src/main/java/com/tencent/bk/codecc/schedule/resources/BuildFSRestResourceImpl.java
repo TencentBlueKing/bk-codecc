@@ -19,7 +19,7 @@ import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.web.RestResource;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
 
 /**

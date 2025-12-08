@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -37,14 +36,14 @@ import lombok.Data;
  * @version V1.0
  * @date 2019/8/5
  */
-@ApiModel("任务状态信息")
+@Schema(description = "任务状态信息")
 @AllArgsConstructor
 @Data
 public class TaskStatusVO
 {
-    @ApiModelProperty("任务状态")
+    @Schema(description = "任务状态")
     private Integer status;
 
-    @ApiModelProperty("工蜂项目id")
+    @Schema(description = "工蜂项目id")
     private Integer gongfengProjectId;
 }

@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ApiModel("任务扫描代码统计信息")
+@Schema(description = "任务扫描代码统计信息")
 public class ClocStatisticInfoVO {
 
     private Long taskId;

@@ -45,7 +45,7 @@ public class DefectStatisticModel<T extends DefectEntity> {
             Boolean fastIncrementFlag
     ) {
         this(taskDetailVO, toolName, averageCcn, buildId, toolBuildStackEntity, defectList, riskConfigMap,
-                defectJsonFileEntity, null, fastIncrementFlag, null, null);
+                defectJsonFileEntity, null, fastIncrementFlag, null);
     }
 
     /**
@@ -74,7 +74,7 @@ public class DefectStatisticModel<T extends DefectEntity> {
             Boolean fastIncrementFlag
     ) {
         this(taskDetailVO, toolName, averageCcn, buildId, toolBuildStackEntity, defectList, riskConfigMap,
-                defectJsonFileEntity, newCountCheckers, fastIncrementFlag, null, null);
+                defectJsonFileEntity, newCountCheckers, fastIncrementFlag, null);
     }
 
     /**
@@ -86,7 +86,6 @@ public class DefectStatisticModel<T extends DefectEntity> {
      * @param defectList
      * @param fastIncrementFlag
      * @param sbomAggregateModel
-     * @param scaLicenses
      */
     public DefectStatisticModel(
             TaskDetailVO taskDetailVO,
@@ -95,12 +94,11 @@ public class DefectStatisticModel<T extends DefectEntity> {
             ToolBuildStackEntity toolBuildStackEntity,
             List<T> defectList,
             Boolean fastIncrementFlag,
-            SCASbomAggregateModel sbomAggregateModel,
-            List<SCALicenseEntity> scaLicenses
+            SCASbomAggregateModel sbomAggregateModel
 
     ) {
         this(taskDetailVO, toolName, 0f, buildId, toolBuildStackEntity, defectList, null,
-                null, null, fastIncrementFlag, sbomAggregateModel, scaLicenses);
+                null, null, fastIncrementFlag, sbomAggregateModel);
     }
 
     private TaskDetailVO taskDetailVO;
@@ -143,9 +141,4 @@ public class DefectStatisticModel<T extends DefectEntity> {
      * 仅限于SCA工具，其他工具传 null
      */
     private SCASbomAggregateModel sbomAggregateModel;
-
-    /**
-     * 仅限于SCA工具，其他工具传 null
-     */
-    private List<SCALicenseEntity> scaLicenses;
 }

@@ -29,10 +29,10 @@ package com.tencent.devops.common.web.handler
 import com.tencent.devops.common.codecc.api.exception.ErrorCodeException
 import com.tencent.devops.common.api.pojo.codecc.Result
 import com.tencent.devops.common.service.utils.I18NUtils
-import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
-import javax.ws.rs.ext.ExceptionMapper
-import javax.ws.rs.ext.Provider
+import jakarta.ws.rs.core.MediaType
+import jakarta.ws.rs.core.Response
+import jakarta.ws.rs.ext.ExceptionMapper
+import jakarta.ws.rs.ext.Provider
 
 @Provider
 class CodeCCErrorCodeExceptionMapper : ExceptionMapper<ErrorCodeException> {

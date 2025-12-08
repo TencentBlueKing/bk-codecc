@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo.redline;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import lombok.Data;
 
@@ -38,32 +37,32 @@ import lombok.Data;
  * @date 2019/7/4
  */
 @Data
-@ApiModel("质量红线指标元数据")
+@Schema(description = "质量红线指标元数据")
 public class RedLineVO
 {
 
-    @ApiModelProperty("英文名")
+    @Schema(description = "英文名")
     private String enName;
 
-    @ApiModelProperty("中文名")
+    @Schema(description = "中文名")
     private String cnName;
 
-    @ApiModelProperty("工具名")
+    @Schema(description = "工具名")
     private String detail;
 
-    @ApiModelProperty("数据类型")
+    @Schema(description = "数据类型")
     private String type;
 
-    @ApiModelProperty("描述")
+    @Schema(description = "描述")
     private String msg;
 
-    @ApiModelProperty("数据的值")
+    @Schema(description = "数据的值")
     private String value;
 
-    @ApiModelProperty("其他字段（语言等）")
+    @Schema(description = "其他字段（语言等）")
     private String extra;
 
-    @ApiModelProperty("单工具，按规则标签统计的维度信息")
+    @Schema(description = "单工具，按规则标签统计的维度信息")
     private RLDimensionVO dimensionByChecker;
 
     @Override

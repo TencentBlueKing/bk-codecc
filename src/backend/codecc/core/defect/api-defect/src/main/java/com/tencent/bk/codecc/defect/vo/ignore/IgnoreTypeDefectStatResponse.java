@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.vo.ignore;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,24 +10,24 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class IgnoreTypeDefectStatResponse {
 
-    @ApiModelProperty("ignoreTypeId")
+    @Schema(description = "ignoreTypeId")
     private Integer ignoreTypeId;
 
     /**
      * 任务数量
      */
-    @ApiModelProperty("taskCount")
+    @Schema(description = "taskCount")
     private Long taskCount;
 
     /**
      * 告警数量
      */
-    @ApiModelProperty("defect")
+    @Schema(description = "defect")
     private Long defect;
 
     /**
      * 风险函数数量
      */
-    @ApiModelProperty("riskFunction")
+    @Schema(description = "riskFunction")
     private Long riskFunction;
 }

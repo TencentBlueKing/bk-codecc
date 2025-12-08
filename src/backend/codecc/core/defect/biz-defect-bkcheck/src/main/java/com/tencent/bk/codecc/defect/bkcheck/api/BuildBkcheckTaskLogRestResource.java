@@ -14,16 +14,15 @@ package com.tencent.bk.codecc.defect.bkcheck.api;
 
 import com.tencent.bk.codecc.defect.vo.TaskLogVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * bkcheck工具侧获取任务分析记录接口
@@ -31,20 +30,20 @@ import javax.ws.rs.core.MediaType;
  * @version V1.0
  * @date 2023/2/20
  */
-@Api(tags = {"BKCHECK_TASKLOG"}, description = "bkcheck工具侧获取任务分析记录接口")
+@Tag(name = "BKCHECK_TASKLOG", description = "bkcheck工具侧获取任务分析记录接口")
 @Path("/build/bkcheck/tasklog")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface BuildBkcheckTaskLogRestResource {
 
-    @ApiOperation("获取最近一次工具构建成功的分析记录")
+    @Operation(summary = "获取最近一次工具构建成功的分析记录")
     @Path("/taskId/{taskId}/toolName/{toolName}")
     @GET
     Result<TaskLogVO> getBuildTaskLog(
-            @ApiParam(value = "任务id", required = true)
+            @Parameter(description = "任务id", required = true)
             @PathParam("taskId")
             long taskId,
-            @ApiParam(value = "工具名称", required = true)
+            @Parameter(description = "工具名称", required = true)
             @PathParam("toolName")
             String toolName
     );

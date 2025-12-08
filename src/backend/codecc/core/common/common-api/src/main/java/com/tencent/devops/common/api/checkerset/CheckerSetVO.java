@@ -4,11 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.tencent.devops.common.api.CommonVO;
 import com.tencent.devops.common.api.annotation.I18NFieldMarker;
 import com.tencent.devops.common.api.annotation.I18NModuleCode;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Set;
-import javax.validation.constraints.Pattern;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -20,19 +19,19 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("规则集视图")
+@Schema(description = "规则集视图")
 public class CheckerSetVO extends CommonVO {
     /**
      * 规则集ID
      */
-    @ApiModelProperty(value = "规则集ID", required = true)
+    @Schema(description = "规则集ID", required = true)
     @Pattern(regexp = "^[0-9a-zA-Z_]{1,50}$", message = "输入的规则集ID不符合命名规则")
     private String checkerSetId;
 
     /**
      * 规则集名称
      */
-    @ApiModelProperty(value = "规则集名称", required = true)
+    @Schema(description = "规则集名称", required = true)
     @Pattern(regexp = "^[a-zA-Z0-9_\\u4e00-\\u9fa5]{1,50}", message = "输入的规则集名称不符合命名规则")
     @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.CHECKER_SET_CHECKER_SET_NAME)
     private String checkerSetName;
@@ -60,7 +59,7 @@ public class CheckerSetVO extends CommonVO {
     /**
      * 规则集可见范围1：公开；2：仅我的项目；
      */
-    @ApiModelProperty(value = "规则集可见范围", required = true)
+    @Schema(description = "规则集可见范围", required = true)
     private Integer scope;
 
     /**

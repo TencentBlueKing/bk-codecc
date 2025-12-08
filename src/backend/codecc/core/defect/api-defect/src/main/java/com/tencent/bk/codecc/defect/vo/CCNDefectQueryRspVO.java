@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.common.CommonDefectQueryRspVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.domain.Page;
@@ -41,72 +40,72 @@ import org.springframework.data.domain.Page;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("圈复杂度查询返回视图")
+@Schema(description = "圈复杂度查询返回视图")
 public class CCNDefectQueryRspVO extends CommonDefectQueryRspVO {
 
     /**
      * 风险系数极高的个数
      */
-    @ApiModelProperty("风险系数极高的个数")
+    @Schema(description = "风险系数极高的个数")
     private long superHighCount;
 
     /**
      * 风险系数高的个数
      */
-    @ApiModelProperty("风险系数高的个数")
+    @Schema(description = "风险系数高的个数")
     private long highCount;
 
     /**
      * 风险系数中的个数
      */
-    @ApiModelProperty("风险系数中的个数")
+    @Schema(description = "风险系数中的个数")
     private long mediumCount;
 
     /**
      * 风险系数低的个数
      */
-    @ApiModelProperty("风险系数低的个数")
+    @Schema(description = "风险系数低的个数")
     private long lowCount;
 
-    @ApiModelProperty("待修复告警数")
+    @Schema(description = "待修复告警数")
     private long existCount;
 
-    @ApiModelProperty("已修复告警数")
+    @Schema(description = "已修复告警数")
     private long fixCount;
 
-    @ApiModelProperty("已忽略告警数")
+    @Schema(description = "已忽略告警数")
     private long ignoreCount;
 
-    @ApiModelProperty("已屏蔽告警数")
+    @Schema(description = "已屏蔽告警数")
     private long maskCount;
 
     /**
      * 新增告警的个数
      */
-    @ApiModelProperty("新增告警的个数")
+    @Schema(description = "新增告警的个数")
     private long newDefectCount;
 
     /**
      * 历史告警的个数
      */
-    @ApiModelProperty("历史告警的个数")
+    @Schema(description = "历史告警的个数")
     private long historyDefectCount;
 
     /**
      * 告警总数
      */
-    @ApiModelProperty("告警总数")
+    @Schema(description = "告警总数")
     private long totalCount;
 
     /**
      * 缺陷列表
      */
-    @ApiModelProperty("缺陷列表")
+    @Schema(description = "缺陷列表")
     private Page<CCNDefectVO> defectList;
 
     /**
      * 圈复杂度阀值
      */
-    @ApiModelProperty(value = "圈复杂度阀值")
+    @Schema(description = "圈复杂度阀值")
     private int ccnThreshold;
 }

@@ -11,18 +11,24 @@ const languageMaps = {
   'zh-cn': 'zh-CN',
   zh: 'zh-CN',
   en: 'en-US',
+  ja: 'ja-JP',
 };
 
 const messages = {
   'zh-CN': Object.assign(lang.zhCN, langMessages['zh-CN']),
   'en-US': Object.assign(lang.enUS, langMessages['en-US']),
+  'ja-JP': Object.assign(lang.jaJP, langMessages['ja-JP']),
 };
 
 let curLocale = Cookies.get('blueking_language') || 'zh-CN';
 curLocale = Object.prototype.hasOwnProperty.call(languageMaps, curLocale)
   ? languageMaps[curLocale]
   : curLocale;
-const langKey = curLocale === 'zh-CN' ? 'zhCN' : 'enUS';
+const langKey = {
+  'zh-CN': 'zhCN',
+  'en-US': 'enUS',
+  'ja-JP': 'jaJP',
+}[curLocale] || 'zhCN';  // 默认回退中文
 locale.use(lang[langKey]);
 // console.log(locale, messages);
 

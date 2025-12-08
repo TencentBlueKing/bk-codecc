@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.common.CommonTrendRspVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -39,11 +38,11 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("重复率趋势视图")
+@Schema(description = "重复率趋势视图")
 public class DupcChartTrendVO extends CommonTrendRspVO
 {
 
-    @ApiModelProperty("重复率")
+    @Schema(description = "重复率")
     private Float dupc;
 
 }

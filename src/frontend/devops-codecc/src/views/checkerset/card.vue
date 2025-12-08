@@ -123,10 +123,45 @@
         :class="{ 'status-mark': true, 'using-status': checkerset.taskUsage }"
         v-bk-tooltips="useContentPrompt"
       ></i>
-      <span v-if="!isSmallScreen">
+      <div v-if="!isSmallScreen" class="task-status-wrapper clickable-element"
+           @click="handleClickTaskUsage(checkerset)"
+      >
         <label>{{ checkerset.taskUsage ? $t('使用中') : $t('空闲中') }}</label>
         <span class="value">({{ checkerset.taskUsage || 0 }})</span>
-      </span>
+      </div>
+      <bk-dialog
+          v-model="showTaskDialog"
+          :render-directive="'if'"
+          :title="checkerset.checkerSetName"
+          :width="800"
+          :showFooter="false"
+      >
+        <div>
+          <bk-table :data="taskTableData" :bordered="true">
+            <bk-table-column type="index" :label="$t('序号')" :width="60"/>
+            <bk-table-column :label="$t('任务名称')" prop="nameCn" :show-overflow-tooltip="true"/>
+            <bk-table-column :label="$t('任务')" prop="taskId" :width="90">
+              <template slot-scope="props">
+                <a
+                    :href="goToTaskDetailUrl(props.row.taskId)"
+                    target="_blank"
+                    class="task-id-link"
+                >
+                  {{ props.row.taskId }}
+                </a>
+              </template>
+            </bk-table-column>
+            <bk-table-column :label="$t('流水线')" prop="pipelineId" :width="270"/>
+            <bk-table-column :label="$t('任务状态')" prop="status" :width="100">
+              <template slot-scope="props">
+                <span>
+                  {{ formatStatus(props.row.status) }}
+                </span>
+              </template>
+            </bk-table-column>
+          </bk-table>
+        </div>
+      </bk-dialog>
     </section>
     <section class="item-version" v-if="from !== 'task'">
       <p class="current-version" @click="showMenu">
@@ -258,6 +293,8 @@ export default {
       },
       isFlash: false,
       newTipsClass: true,
+      showTaskDialog: false,
+      taskTableData: [],
     };
   },
   computed: {
@@ -493,6 +530,31 @@ export default {
         message: this.$t('已复制规则集ID【x】至剪贴板', [checkersetId]),
       });
     },
+    handleClickTaskUsage(row) {
+      const params = { checkerSetId: row.checkerSetId }
+      this.$store
+          .dispatch('checkerset/taskListForUsage', params).then(res => {
+            this.taskTableData = res.data.content
+      })
+      this.showTaskDialog = true
+    },
+    formatStatus(status) {
+      // 根据状态值返回对应的中文显示
+      const statusMap = {
+        0: this.$t('使用中'),
+        1: this.$t('已停用'),
+        2: this.$t('已归档'),
+        3: this.$t('测试任务')
+      };
+      return statusMap[status] || status;
+    },
+    goToTaskDetailUrl(taskId) {
+      let prefix = `${location.protocol}//${location.host}`;
+      if (window.self !== window.top) {
+        prefix = `${window.DEVOPS_SITE_URL}/console`;
+      }
+      return `${prefix}/codecc/${this.projectId}/task/${taskId}/detail`
+    }
   },
 };
 </script>
@@ -698,7 +760,35 @@ export default {
     text-align: center;
     flex: 1.1;
   }
+  .task-status-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .task-status-wrapper.clickable-element * {
+    cursor: inherit;
+  }
+  .clickable-element {
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  .clickable-element:hover {
+    background-color: #f5f7fa;
+    color: #3a84ff;
+  }
+  .clickable-element:active {
+    background-color: #e5e6eb;
+  }
+  .task-id-link {
+    color: #3a84ff;
+    cursor: pointer;
+  }
 
+  .task-id-link:hover {
+    color: #2864e6;
+  }
   .status-mark {
     display: inline-table;
     width: 6px;

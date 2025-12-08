@@ -51,7 +51,7 @@ import org.springframework.http.server.ServerHttpResponse
 import org.springframework.http.server.ServletServerHttpRequest
 import org.springframework.messaging.simp.config.MessageBrokerRegistry
 import org.springframework.web.socket.WebSocketHandler
-import org.springframework.web.socket.config.annotation.AbstractWebSocketMessageBrokerConfigurer
+import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry
 import org.springframework.web.socket.server.HandshakeInterceptor
@@ -64,7 +64,7 @@ open class WebSocketConfig @Autowired constructor(
     private val authTaskService: AuthTaskService,
     private val client: Client,
     private val redisTemplate: RedisTemplate<String, String>
-) : AbstractWebSocketMessageBrokerConfigurer() {
+) : WebSocketMessageBrokerConfigurer {
 
     companion object {
         private val logger = LoggerFactory.getLogger(WebSocketConfig::class.java)
@@ -142,6 +142,12 @@ open class WebSocketConfig @Autowired constructor(
                     // 若是BG管理员则校验通过
                     if (bkAuthExPermissionApi.isBgAdminMember(user, taskId, taskCreateFrom)) {
                         logger.info("current user is bg admin: $user taskId: $taskId")
+                        return true
+                    }
+
+                    // 若是蓝鲸开发者中心的工具开发者则校验通过
+                    if (bkAuthExPermissionApi.isToolDeveloper(user, taskId)) {
+                        logger.info("current user is tool developer: $user taskId: $taskId")
                         return true
                     }
 

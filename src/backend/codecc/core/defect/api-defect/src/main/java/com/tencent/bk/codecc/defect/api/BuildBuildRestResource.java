@@ -14,15 +14,14 @@ package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.bk.codecc.defect.vo.common.BuildVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * 构建信息build接口
@@ -30,15 +29,15 @@ import javax.ws.rs.core.MediaType;
  * @date 2021/11/19
  * @version V1.0
  */
-@Api(tags = {"BUILD_BUILD"}, description = "构建信息操作接口")
+@Tag(name = "BUILD_BUILD", description = "构建信息操作接口")
 @Path("/build/buildInfo")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface BuildBuildRestResource {
-    @ApiOperation("更新构建信息")
+    @Operation(summary = "更新构建信息")
     @Path("/")
     @POST
     Result<Boolean> updateBuildInfo(
-            @ApiParam(value = "构建信息对象", required = true)
+            @Parameter(description = "构建信息对象", required = true)
             BuildVO buildVO);
 }

@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -24,21 +23,21 @@ import lombok.Data;
  */
 
 @Data
-@ApiModel("Platform迁移请求视图")
+@Schema(description = "Platform迁移请求视图")
 public class PlatformMigrateReqVO {
 
-    @ApiModelProperty("工具名")
+    @Schema(description = "工具名")
     private String toolName;
 
-    @ApiModelProperty("原IP")
+    @Schema(description = "原IP")
     private String sourceIp;
 
-    @ApiModelProperty("目标IP")
+    @Schema(description = "目标IP")
     private String targetIp;
 
-    @ApiModelProperty("备注")
+    @Schema(description = "备注")
     private String remarks;
 
-    @ApiModelProperty("迁移记录id")
+    @Schema(description = "迁移记录id")
     private String entityId;
 }

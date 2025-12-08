@@ -1,6 +1,6 @@
 package com.tencent.devops.common.api.checkerset;
 
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
  * @date 2020/1/6
  */
 @Data
-@ApiModel("规则集类型视图")
+@Schema(description = "规则集类型视图")
 @AllArgsConstructor
 @NoArgsConstructor
 public class CheckerSetCategoryVO {

@@ -168,6 +168,18 @@ Return the mongodb connection uri
 {{- end -}}
 {{- end -}}
 
+{{- define "codecc.codeccjob.mongodbUri" -}}
+{{- if eq .Values.mongodb.enabled true -}}
+{{- printf "mongodb://%s:%s@%s/db_codeccjob?" .Values.mongodb.auth.username .Values.mongodb.auth.password (include "codecc.mongodb.fullname" .) -}}
+{{- else -}}
+{{- if not (empty .Values.bkCodeccMongoCodeccjobUrl) -}}
+{{- .Values.bkCodeccMongoCodeccjobUrl -}}
+{{- else -}}
+{{- printf "mongodb://%s:%s@%s/db_codeccjob?%s" .Values.externalMongodb.username (.Values.externalMongodb.password | urlquery) (include "codecc.mongodb.fullname" .) .Values.externalMongodb.extraUrlParams -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{/*
 Return the mongodb auth ab
 */}}

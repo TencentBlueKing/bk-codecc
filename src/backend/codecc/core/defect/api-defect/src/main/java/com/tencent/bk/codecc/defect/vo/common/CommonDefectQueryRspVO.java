@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo.common;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -41,21 +40,21 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ApiModel("文件告警查询返回视图")
+@Schema(description = "文件告警查询返回视图")
 public class CommonDefectQueryRspVO
 {
 
-    @ApiModelProperty("任务主键")
+    @Schema(description = "任务主键")
     private long taskId;
 
 
-    @ApiModelProperty("任务英文名")
+    @Schema(description = "任务英文名")
     private String nameEn;
 
 
-    @ApiModelProperty("工具名")
+    @Schema(description = "工具名")
     private String toolName;
 
-    @ApiModelProperty("温馨提示")
+    @Schema(description = "温馨提示")
     private String tips;
 }

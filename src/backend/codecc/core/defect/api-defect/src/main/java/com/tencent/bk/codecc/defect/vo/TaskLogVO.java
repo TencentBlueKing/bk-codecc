@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -39,73 +38,73 @@ import java.util.List;
  * @date 2019/5/2
  */
 @Data
-@ApiModel("任务分析记录信息")
+@Schema(description = "任务分析记录信息")
 public class TaskLogVO
 {
-    @ApiModelProperty(value = "流名称", required = true)
+    @Schema(description = "流名称", required = true)
     private String streamName;
 
-    @ApiModelProperty(value = "任务主键id", required = true)
+    @Schema(description = "任务主键id", required = true)
     private long taskId;
 
-    @ApiModelProperty(value = "工具名称", required = true)
+    @Schema(description = "工具名称", required = true)
     private String toolName;
 
-    @ApiModelProperty(value = "当前步骤", required = true)
+    @Schema(description = "当前步骤", required = true)
     private int currStep;
 
-    @ApiModelProperty(value = "步骤状态")
+    @Schema(description = "步骤状态")
     private int flag;
 
-    @ApiModelProperty(value = "开始时间")
+    @Schema(description = "开始时间")
     private long startTime;
 
-    @ApiModelProperty(value = "结束时间")
+    @Schema(description = "结束时间")
     private long endTime;
 
-    @ApiModelProperty(value = "耗时")
+    @Schema(description = "耗时")
     private long elapseTime;
 
-    @ApiModelProperty(value = "流水线id")
+    @Schema(description = "流水线id")
     private String pipelineId;
 
-    @ApiModelProperty(value = "构建id")
+    @Schema(description = "构建id")
     private String buildId;
 
-    @ApiModelProperty(value = "构建号")
+    @Schema(description = "构建号")
     private String buildNum;
 
-    @ApiModelProperty(value = "触发来源")
+    @Schema(description = "触发来源")
     private String triggerFrom;
 
-    @ApiModelProperty(value = "步骤列表", required = true)
+    @Schema(description = "步骤列表", required = true)
     private List<TaskUnit> stepArray;
 
     @Data
     public static class TaskUnit
     {
-        @ApiModelProperty(value = "当前步骤", required = true)
+        @Schema(description = "当前步骤", required = true)
         private int stepNum;
 
-        @ApiModelProperty(value = "步骤状态", required = true)
+        @Schema(description = "步骤状态", required = true)
         private int flag;
 
-        @ApiModelProperty(value = "开始时间", required = true)
+        @Schema(description = "开始时间", required = true)
         private long startTime;
 
-        @ApiModelProperty(value = "结束时间")
+        @Schema(description = "结束时间")
         private long endTime;
 
-        @ApiModelProperty(value = "步骤信息")
+        @Schema(description = "步骤信息")
         private String msg;
 
-        @ApiModelProperty(value = "步骤耗时")
+        @Schema(description = "步骤耗时")
         private long elapseTime;
 
-        @ApiModelProperty(value = "GOML目录结构是否符合规范,true/false")
+        @Schema(description = "GOML目录结构是否符合规范,true/false")
         private boolean dirStructSuggestParam;
 
-        @ApiModelProperty(value = "GOML编译是否成功，true（成功）/false（失败）")
+        @Schema(description = "GOML编译是否成功，true（成功）/false（失败）")
         private boolean compileResult;
     }
 }

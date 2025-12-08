@@ -12,8 +12,7 @@
 
 package com.tencent.devops.common.api;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -27,30 +26,30 @@ import java.time.LocalDate;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("用户登录统计视图")
+@Schema(description = "用户登录统计视图")
 public class UserLogInfoStatVO extends CommonVO {
 
-    @ApiModelProperty("用户名")
+    @Schema(description = "用户名")
     private String userName;
 
 
-    @ApiModelProperty("首次登录时间")
+    @Schema(description = "首次登录时间")
     private Long firstLogin;
 
 
-    @ApiModelProperty("最近登录时间")
+    @Schema(description = "最近登录时间")
     private Long lastLogin;
 
 
-    @ApiModelProperty("事业群")
+    @Schema(description = "事业群")
     private String bgName;
 
 
-    @ApiModelProperty("部门")
+    @Schema(description = "部门")
     private String deptName;
 
 
-    @ApiModelProperty("中心")
+    @Schema(description = "中心")
     private String centerName;
 
 }

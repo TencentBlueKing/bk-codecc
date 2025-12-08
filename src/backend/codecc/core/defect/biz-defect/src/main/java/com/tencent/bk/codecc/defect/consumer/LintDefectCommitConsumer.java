@@ -14,7 +14,7 @@ package com.tencent.bk.codecc.defect.consumer;
 
 import static com.tencent.devops.common.constant.CommonMessageCode.RECORD_NOT_EXITS;
 
-import com.alibaba.fastjson.JSONReader;
+import com.alibaba.fastjson2.JSONReader;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -25,6 +25,7 @@ import com.tencent.bk.codecc.defect.dao.defect.mongorepository.FileDefectGatherR
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.FileDefectGatherDao;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.defect.dto.llm.LLMNegativeDefectFilterReqVO;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
 import com.tencent.bk.codecc.defect.model.CheckerDetailEntity;
 import com.tencent.bk.codecc.defect.model.FileDefectGatherEntity;
@@ -39,6 +40,7 @@ import com.tencent.bk.codecc.defect.pojo.DefectClusterDTO;
 import com.tencent.bk.codecc.defect.pojo.statistic.DefectStatisticModel;
 import com.tencent.bk.codecc.defect.service.BuildSnapshotService;
 import com.tencent.bk.codecc.defect.service.ICheckerSetQueryBizService;
+import com.tencent.bk.codecc.defect.service.LLMNegativeDefectFilterService;
 import com.tencent.bk.codecc.defect.service.git.GitRepoApiService;
 import com.tencent.bk.codecc.defect.service.impl.redline.LintRedLineReportServiceImpl;
 import com.tencent.bk.codecc.defect.service.statistic.LintDefectStatisticServiceImpl;
@@ -75,6 +77,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Collections;
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -85,9 +88,11 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.amqp.rabbit.AsyncRabbitTemplate;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
@@ -115,6 +120,8 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
     @Autowired
     private FileDefectGatherDao fileDefectGatherDao;
     @Autowired
+    protected RabbitTemplate rabbitTemplate;
+    @Autowired
     private GitRepoApiService gitRepoApiService;
     @Autowired
     private LintDefectStatisticServiceImpl lintDefectStatisticServiceImpl;
@@ -126,6 +133,9 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
     private BuildSnapshotService buildSnapshotService;
     @Autowired
     private BaseDataCacheService baseDataCacheService;
+    @Autowired(required = false)
+    private LLMNegativeDefectFilterService llmNegativeDefectFilterService;
+    private final int MAX_LLM_FILTER_SIZE = 1000;
 
     @Override
     protected boolean uploadDefects(
@@ -576,21 +586,22 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
         Set<String> currentFileSet = new HashSet<>();
         // 通过流式读json文件
         try (FileInputStream fileInputStram = new FileInputStream(defectFile);
-                InputStreamReader inputStreamReader = new InputStreamReader(fileInputStram, StandardCharsets.UTF_8);
-                JSONReader reader = new JSONReader(inputStreamReader)) {
-            reader.startArray();
+                JSONReader reader = JSONReader.of(fileInputStram, StandardCharsets.UTF_8)) {
+            if (!reader.nextIfArrayStart()) {
+                throw new IOException("Expected JSON array");
+            }
             int cursor = 0;
             int chunkNo = 0;
             Set<String> eachBatchFilePathSet = new HashSet<>();
             Set<String> eachBatchRelPathSet = new HashSet<>();
             List<LintDefectV2Entity> lintDefectList = new ArrayList<>();
             //用于存储因为阻塞队列满了以后无法塞入队列的发送结果
-            List<AsyncRabbitTemplate.RabbitConverterFuture<Boolean>> asyncResultList = new ArrayList<>();
+            List<CompletableFuture<Boolean>> asyncResultList = new ArrayList<>();
             AtomicBoolean running = new AtomicBoolean(true);
             CountDownLatch finishLatch = new CountDownLatch(1);
             Set<Long> taskList = concurrentDefectTracingConfigCache.getVipTaskSet();
             Boolean isVip = CollectionUtils.isNotEmpty(taskList) && taskList.contains(taskId);
-            LinkedBlockingQueue<AsyncRabbitTemplate.RabbitConverterFuture<Boolean>> asyncResultQueue =
+            LinkedBlockingQueue<CompletableFuture<Boolean>> asyncResultQueue =
                     setConcurrentBlockingQueue(
                             taskId,
                             toolName,
@@ -600,8 +611,17 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
                             isVip
                     );
 
-            while (reader.hasNext()) {
-                LintFileV2Entity lintFileEntity = reader.readObject(LintFileV2Entity.class);
+            boolean enableLLMNegativeDefectFilter =
+                    BooleanUtils.isTrue(commitDefectVO.getEnableLLMNegativeDefectFilter());
+            List<String> llmndfCheckers;
+            if (enableLLMNegativeDefectFilter && llmNegativeDefectFilterService != null) {
+                llmndfCheckers = llmNegativeDefectFilterService.getOpenCheckersByToolName(toolName);
+            } else {
+                llmndfCheckers = null;
+            }
+
+            while (!reader.nextIfArrayEnd()) {
+                LintFileV2Entity lintFileEntity = reader.read(LintFileV2Entity.class);
 
                 if (CollectionUtils.isNotEmpty(lintFileEntity.getDefects())) {
                     ScmBlameVO scmBlameVO = fileChangeRecordsMap.get(lintFileEntity.getFile());
@@ -622,6 +642,8 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
                         continue;
                     }
 
+                    attachLLMFilterInfo(enableLLMNegativeDefectFilter, llmndfCheckers, tmpDefectList);
+
                     if (StringUtils.isNotBlank(tmpDefectList.get(0).getRelPath())) {
                         eachBatchRelPathSet.add(tmpDefectList.get(0).getRelPath());
                     }
@@ -638,6 +660,7 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
                         processFileDefect(commitDefectVO, lintDefectList, taskVO, eachBatchFilePathSet,
                                 eachBatchRelPathSet, filterPaths, buildEntity, chunkNo, transferAuthorList,
                                 asyncResultQueue, asyncResultList, isVip);
+
                         cursor = 0;
                         lintDefectList = new ArrayList<>();
                         eachBatchFilePathSet = new HashSet<>();
@@ -682,6 +705,26 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
         }
 
         return currentFileSet;
+    }
+
+    /**
+     * 在告警列表中附加信息: 指示该告警是否要上报 LLM 服务
+     */
+    private void attachLLMFilterInfo(
+            boolean enableLLMNegativeDefectFilter,
+            List<String> llmndfCheckers,
+            List<LintDefectV2Entity> defects
+    ) {
+        if (!enableLLMNegativeDefectFilter || CollectionUtils.isEmpty(llmndfCheckers)) {
+            return;
+        }
+
+        defects.stream()
+                .filter(it -> it.getContextStartLine() != null
+                    && it.getContextEndLine() != null
+                    && llmndfCheckers.contains(it.getChecker())
+                    && StringUtils.isNotBlank(it.getFilePath()))
+                .forEach(it -> it.setEnableLlmFilter(true));
     }
 
     /**
@@ -877,9 +920,10 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
             BuildEntity buildEntity,
             int chunkNo,
             List<TransferAuthorEntity.TransferAuthorPair> transferAuthorList,
-            @NotNull LinkedBlockingQueue<AsyncRabbitTemplate.RabbitConverterFuture<Boolean>> asyncResultQueue,
-            List<AsyncRabbitTemplate.RabbitConverterFuture<Boolean>> secondResultList,
-            Boolean isVip) {
+            @NotNull LinkedBlockingQueue<CompletableFuture<Boolean>> asyncResultQueue,
+            List<CompletableFuture<Boolean>> secondResultList,
+            Boolean isVip
+    ) {
         DefectClusterDTO defectClusterDTO = new DefectClusterDTO(
                 commitDefectVO,
                 buildEntity,
@@ -887,7 +931,7 @@ public class LintDefectCommitConsumer extends AbstractDefectCommitConsumer {
                 "",
                 ""
         );
-        AsyncRabbitTemplate.RabbitConverterFuture<Boolean> clusterResult = newLintDefectTracingComponent
+        CompletableFuture<Boolean> clusterResult = newLintDefectTracingComponent
                 .executeCluster(defectClusterDTO,
                         taskDetailVO,
                         chunkNo,

@@ -1148,4 +1148,24 @@ public class ToolMetaServiceImpl implements ToolMetaService {
         }
         return vos;
     }
+
+    @Override
+    public Boolean updateScriptInputSwitch(String user, String toolName, Boolean enabled) {
+        log.info("updateScriptInputSwitch param user: {}, toolName: {}, enabled: {}", user, toolName, enabled);
+        // 参数校验
+        if (StringUtils.isBlank(user) || StringUtils.isBlank(toolName) || enabled == null) {
+            log.error("param user, toolName or enabled is blank!");
+            return Boolean.FALSE;
+        }
+        // 查询工具元数据
+        ToolMetaEntity toolMetaEntity = toolMetaRepository.findFirstByName(toolName);
+        if (toolMetaEntity == null) {
+            log.error("Failed to find tool meta entity by tool name: {}", toolName);
+            return Boolean.FALSE;
+        }
+        toolMetaEntity.applyAuditInfoOnUpdate(user);
+        toolMetaEntity.setScriptInputEnabled(enabled);
+        updateToolMeta(toolMetaEntity);
+        return Boolean.TRUE;
+    }
 }

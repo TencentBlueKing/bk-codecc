@@ -4,6 +4,7 @@
     width="560"
     theme="primary"
     header-position="left"
+    :mask-close="false"
     :title="dialogTitle"
     :before-close="handleBeforeClose"
   >
@@ -105,6 +106,7 @@ export default {
   methods: {
     handleBeforeClose() {
       this.$emit('beforeClose');
+      this.isShow = false;
     },
     handleConfirm() {
       this.form.sourceAuthor = [];

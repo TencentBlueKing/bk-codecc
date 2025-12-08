@@ -1,7 +1,7 @@
 package com.tencent.devops.common.auth.api.service
 
-
 interface AuthTaskService {
+
     /**
      * 获取任务创建来源
      */
@@ -9,6 +9,12 @@ interface AuthTaskService {
         taskId: Long
     ): String
 
+    /**
+     * 获取工具列表
+     */
+    fun getTaskToolNameList(
+        taskId: Long
+    ): Set<String>
 
     /**
      * 获取任务所属流水线ID
@@ -17,12 +23,17 @@ interface AuthTaskService {
         taskId: Long
     ): String
 
-
-
     /**
      * 获取任务bg id
      */
     fun getTaskBgId(
+        taskId: Long
+    ): String
+
+    /**
+     * 获取项目id
+     */
+    fun getTaskProjectId(
         taskId: Long
     ): String
 

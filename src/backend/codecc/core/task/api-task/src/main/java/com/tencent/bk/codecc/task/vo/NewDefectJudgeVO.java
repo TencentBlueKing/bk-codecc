@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -13,7 +13,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("新告警判定视图")
+@Schema(description = "新告警判定视图")
 public class NewDefectJudgeVO extends CommonVO {
     /**
      * 判定方式1：按日期；2：按构建

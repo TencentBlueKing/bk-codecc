@@ -13,7 +13,7 @@
 package com.tencent.devops.common.api;
 
 import com.tencent.devops.common.constant.ComConstants;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -27,15 +27,15 @@ import java.util.List;
 @Data
 public class StatisticTaskCodeLineToolVO {
 
-    @ApiModelProperty(value = "数据来源范围")
+    @Schema(description = "数据来源范围")
     private List<ComConstants.DefectStatType> dataFromList;
 
-    @ApiModelProperty(value = "截止时间戳")
+    @Schema(description = "截止时间戳")
     private Long endTime;
 
-    @ApiModelProperty(value = "统计日期")
+    @Schema(description = "统计日期")
     private String date;
 
-    @ApiModelProperty(value = "工具列表")
+    @Schema(description = "工具列表")
     private String toolOrder;
 }

@@ -34,7 +34,7 @@
         {{ $t('新增忽略类型') }}
       </bk-button>
     </span>
-    <span class="title-tips">{{
+    <span v-if="isInnerSite" class="title-tips">{{
       $t('配置忽略类型，可定期提醒重新 review 相应忽略问题')
     }}</span>
     <bk-table v-bkloading="{ isLoading }" class="ignore-table" :data="data">
@@ -74,19 +74,19 @@
           >
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('提醒日期')" show-overflow-tooltip>
+      <bk-table-column v-if="isInnerSite" :label="$t('提醒日期')" show-overflow-tooltip>
         <template slot-scope="{ row }">
           {{ handleGetRemindDateStr(row.notify) }}
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('通知人角色')" show-overflow-tooltip>
+      <bk-table-column v-if="isInnerSite" :label="$t('通知人角色')" show-overflow-tooltip>
         <template slot-scope="{ row }">
           {{
             (row.receiverTypesStr && row.receiverTypesStr.join('、')) || '--'
           }}
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('通知方式')" show-overflow-tooltip>
+      <bk-table-column v-if="isInnerSite" :label="$t('通知方式')" show-overflow-tooltip>
         <template slot-scope="{ row }">
           {{ (row.notifyTypesStr && row.notifyTypesStr.join('、')) || '--' }}
         </template>
@@ -135,9 +135,12 @@
 </template>
 <script>
 import { mapState } from 'vuex';
+import DEPLOY_ENV from '@/constants/env';
+
 export default {
   data() {
     return {
+      isInnerSite: DEPLOY_ENV === 'tencent',
       isLoading: false,
       countLoading: true,
       hasPermission: false,

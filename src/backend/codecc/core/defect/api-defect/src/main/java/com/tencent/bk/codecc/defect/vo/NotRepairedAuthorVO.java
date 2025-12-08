@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -38,25 +37,25 @@ import lombok.Data;
  * @date 2019/6/28
  */
 @Data
-@ApiModel("未修复告警作者视图")
+@Schema(description = "未修复告警作者视图")
 public class NotRepairedAuthorVO
 {
-    @ApiModelProperty("作者名字")
+    @Schema(description = "作者名字")
     private String name;
 
-    @ApiModelProperty("严重数量")
+    @Schema(description = "严重数量")
     @JsonProperty("serious_count")
     private int seriousCount;
 
-    @ApiModelProperty("正常数量")
+    @Schema(description = "正常数量")
     @JsonProperty("normal_count")
     private int normalCount;
 
-    @ApiModelProperty("提示数量")
+    @Schema(description = "提示数量")
     @JsonProperty("prompt_count")
     private int promptCount;
 
-    @ApiModelProperty("总数量")
+    @Schema(description = "总数量")
     @JsonProperty("total_count")
     private int totalCount;
 

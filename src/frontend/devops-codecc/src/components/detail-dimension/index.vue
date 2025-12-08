@@ -449,12 +449,12 @@
             <div class="name">{{ $t('组件数') }}</div>
           </bk-col>
           <!-- 隐藏漏洞数 -->
-          <!-- <bk-col class="new">
+          <bk-col class="new">
             <div class="number" @click="handleToPage('sca-vuln')">
               {{ item.baseClusterResultVO.newVulCount | formatUndefNum }}
             </div>
             <div class="name">{{ $t('漏洞数') }}</div>
-          </bk-col> -->
+          </bk-col>
           <bk-col>
             <div class="number" @click="handleToPage('sca-lic')">
               {{ item.baseClusterResultVO.licenseCount | formatUndefNum }}

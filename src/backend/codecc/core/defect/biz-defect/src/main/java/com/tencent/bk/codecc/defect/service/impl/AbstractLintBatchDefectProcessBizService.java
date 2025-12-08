@@ -84,7 +84,7 @@ public abstract class AbstractLintBatchDefectProcessBizService extends AbstractB
                 .distinct()
                 .collect(Collectors.toList());
         Set<String> pkgChecker = lintSpecialService.getCheckers(
-                request.getCheckerSet(), request.getChecker(),
+                request.getCheckerSets(), request.getChecker(),
                 toolNameList, dimensionList
         );
         return getDefectsByQueryCondWithPage(taskToolMap, buildId, pkgChecker, request, startFilePath, skip, pageSize);

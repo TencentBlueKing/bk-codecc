@@ -17,7 +17,7 @@ class UserTaskLogRestResourceImpl @Autowired constructor(
     override fun getInitLogs(projectId: String, user: String, pipelineId: String, buildId: String?,
                              search: String?): Result<QueryLogs> {
         val result = client.getDevopsService(ServiceLogResource::class.java).getInitLogs(user, projectId, pipelineId,
-            buildId!!, false, null, null, null, 1)
+            buildId!!, false, null, null, null, 1,null,null,null)
         return Result(result.status,result.message,result.data)
     }
 
@@ -26,7 +26,7 @@ class UserTaskLogRestResourceImpl @Autowired constructor(
                               search: String?): Result<QueryLogs> {
         val result = client.getDevopsService(ServiceLogResource::class.java).getAfterLogs(user!!, projectId!!,
             pipelineId!!, buildId!!, start!!.toLong(), false,null,
-            null, null,  1)
+            null, null,  1,null,null)
         return Result(result.status,result.message,result.data)
     }
 

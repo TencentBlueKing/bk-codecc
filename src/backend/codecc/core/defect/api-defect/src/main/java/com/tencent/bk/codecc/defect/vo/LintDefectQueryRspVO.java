@@ -28,8 +28,7 @@ package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.common.CommonDefectQueryRspVO;
 import com.tencent.devops.common.api.pojo.Page;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -41,45 +40,45 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("lint类告警查询返回视图")
+@Schema(description = "lint类告警查询返回视图")
 public class LintDefectQueryRspVO extends CommonDefectQueryRspVO
 {
-    @ApiModelProperty("严重规则数")
+    @Schema(description = "严重规则数")
     private int seriousCount;
 
-    @ApiModelProperty("正常规则数")
+    @Schema(description = "正常规则数")
     private int normalCount;
 
-    @ApiModelProperty("提示规则数")
+    @Schema(description = "提示规则数")
     private int promptCount;
 
-    @ApiModelProperty("待修复告警数")
+    @Schema(description = "待修复告警数")
     private int existCount;
 
-    @ApiModelProperty("已修复告警数")
+    @Schema(description = "已修复告警数")
     private int fixCount;
 
-    @ApiModelProperty("已忽略告警数")
+    @Schema(description = "已忽略告警数")
     private int ignoreCount;
 
-    @ApiModelProperty("新增文件数")
+    @Schema(description = "新增文件数")
     private int newCount;
 
-    @ApiModelProperty("历史文件数")
+    @Schema(description = "历史文件数")
     private int historyCount;
 
-    @ApiModelProperty("符合条件的告警总数")
+    @Schema(description = "符合条件的告警总数")
     private int totalCount;
 
     /**
      * 按文件聚类时使用
      */
-    @ApiModelProperty("lint类文件清单")
+    @Schema(description = "lint类文件清单")
     private Page<LintFileVO> fileList;
 
     /**
      * 按问题聚类时使用
      */
-    @ApiModelProperty(value = "告警清单")
+    @Schema(description = "告警清单")
     private Page<LintDefectVO> defectList;
 }

@@ -376,7 +376,7 @@ public class IgnoreApprovalServiceImpl implements IgnoreApprovalService {
         if (reqVO == null || StringUtils.isBlank(reqVO.getName()) || CollectionUtils.isEmpty(reqVO.getDimensions())
                 || CollectionUtils.isEmpty(reqVO.getSeverities()) || CollectionUtils.isEmpty(reqVO.getIgnoreTypeIds())
                 || StringUtils.isBlank(reqVO.getProjectScopeType()) || StringUtils.isBlank(reqVO.getTaskScopeType())
-                || !CollectionUtils.isEmpty(reqVO.getApproverTypes())) {
+                || CollectionUtils.isEmpty(reqVO.getApproverTypes())) {
             log.error("reportRepoInfo param valid fail");
             throw new CodeCCException(CommonMessageCode.PARAMETER_IS_NULL);
         }

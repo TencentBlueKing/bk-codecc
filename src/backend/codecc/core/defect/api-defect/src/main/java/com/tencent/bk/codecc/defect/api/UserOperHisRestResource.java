@@ -28,18 +28,17 @@ package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.bk.codecc.defect.vo.OperationHistoryVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TASK_ID;
@@ -51,34 +50,34 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
  * @version V1.0
  * @date 2019/6/18
  */
-@Api(tags = {"USER_OPERATION_HISTORY"}, description = "操作记录接口")
+@Tag(name = "USER_OPERATION_HISTORY", description = "操作记录接口")
 @Path("/user/operation")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface UserOperHisRestResource
 {
-    @ApiOperation("获取操作记录清单")
+    @Operation(summary = "获取操作记录清单")
     @Path("/taskId/{taskId}")
     @POST
     Result<List<OperationHistoryVO>> getOperHisRecord(
-            @ApiParam(value = "任务id", required = true)
+            @Parameter(description = "任务id", required = true)
             @PathParam("taskId")
                     long taskId,
-            @ApiParam(value = "工具名")
+            @Parameter(description = "工具名")
             @QueryParam("toolName")
                     String toolName,
-            @ApiParam("功能id清单")
+            @Parameter(description = "功能id清单")
                     List<String> funcId
     );
 
-    @ApiOperation("设置codeCC任务用户权限操作记录")
+    @Operation(summary = "设置codeCC任务用户权限操作记录")
     @Path("/settings/authority")
     @POST
     Result<Boolean> settingsAuthorityOperationHistory(
-            @ApiParam("触发参数") List<String> reqVOList,
-            @ApiParam(value = "用户", required = true)
+            @Parameter(description = "触发参数") List<String> reqVOList,
+            @Parameter(description = "用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String userId,
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID) long taskId
     );
 }

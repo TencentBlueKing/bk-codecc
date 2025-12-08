@@ -8,19 +8,19 @@ spring:
   data:
     mongodb:
       auto-index-creation: __BK_CODECC_MONGODB_AUTO_CREATE_INDEX__
-  redis:
-    host: __BK_CODECC_REDIS_HOST__
-    password: __BK_CODECC_REDIS_PASSWORD__
-    port: __BK_CODECC_REDIS_PORT__
-    database: __BK_CODECC_REDIS_DB__
-    jedis:
-      pool:
-        max-active: __BK_CODECC_REDIS_POOL_ACTIVE__
-        max-wait: -1
-        max-idle: __BK_CODECC_REDIS_POOL_IDLE__
-        min-idle: 0
-    connect-timeout: 5000
-    client-type: jedis
+    redis:
+      host: __BK_CODECC_REDIS_HOST__
+      password: __BK_CODECC_REDIS_PASSWORD__
+      port: __BK_CODECC_REDIS_PORT__
+      database: __BK_CODECC_REDIS_DB__
+      lettuce:
+        pool:
+          max-active: __BK_CODECC_REDIS_POOL_ACTIVE__
+          max-wait: -1
+          max-idle: __BK_CODECC_REDIS_POOL_IDLE__
+          min-idle: 0
+      connect-timeout: 5000
+      client-type: lettuce
   rabbitmq:
     virtual-host: __BK_CODECC_RABBITMQ_VHOST__
     username: __BK_CODECC_RABBITMQ_USER__

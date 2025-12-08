@@ -456,6 +456,7 @@ export default {
           taskId: this.taskId,
           showLoading: true,
           buildNum: this.$route.query.buildNum,
+          buildId: this.$route.query.buildId,
         })
         .then((res) => {
           if (res.lastAnalysisResultList) {
@@ -469,6 +470,7 @@ export default {
           taskId: this.$route.params.taskId,
           orderBy: 'dimension',
           buildNum: this.$route.query.buildNum,
+          buildId: this.$route.query.buildId,
         })
         .then((res) => {
           this.rdScore = res;

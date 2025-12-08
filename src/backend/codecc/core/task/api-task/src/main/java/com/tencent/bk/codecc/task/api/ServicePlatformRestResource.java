@@ -28,12 +28,11 @@ package com.tencent.bk.codecc.task.api;
 
 import com.tencent.bk.codecc.task.vo.PlatformVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 
 /**
@@ -42,41 +41,41 @@ import java.util.List;
  * @version V1.0
  * @date 2019/5/28
  */
-@Api(tags = {"SERVICE_PLATFORM"}, description = "Platform接口")
+@Tag(name = "SERVICE_PLATFORM", description = "Platform接口")
 @Path("/service/paltform")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface ServicePlatformRestResource {
-    @ApiOperation("获取所有的platform")
+    @Operation(summary = "获取所有的platform")
     @Path("/list/toolName/{toolName}")
     @GET
     Result<List<PlatformVO>> getPlatformByToolName(
-            @ApiParam(value = "工具名称", required = true)
+            @Parameter(description = "工具名称", required = true)
             @PathParam("toolName")
                     String toolName);
 
-    @ApiOperation("获取任务的platform")
+    @Operation(summary = "获取任务的platform")
     @Path("/taskId/{taskId}/toolName/{toolName}")
     @GET
     Result<String> getPlatformIp(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @PathParam("taskId")
                     long taskId,
-            @ApiParam(value = "工具名称", required = true)
+            @Parameter(description = "工具名称", required = true)
             @PathParam("toolName")
                     String toolName);
 
-    @ApiOperation("根据工具名和IP获取platform")
+    @Operation(summary = "根据工具名和IP获取platform")
     @Path("/taskId/{taskId}/toolName/{toolName}/ip/{ip}")
     @GET
     Result<PlatformVO> getPlatformByToolNameAndIp(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @PathParam("taskId")
                     long taskId,
-            @ApiParam(value = "工具名称", required = true)
+            @Parameter(description = "工具名称", required = true)
             @PathParam("toolName")
                     String toolName,
-            @ApiParam(value = "platform ip", required = true)
+            @Parameter(description = "platform ip", required = true)
             @PathParam("ip")
                     String ip);
 

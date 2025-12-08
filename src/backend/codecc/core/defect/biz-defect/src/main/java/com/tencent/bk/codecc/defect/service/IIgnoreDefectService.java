@@ -12,9 +12,11 @@
 
 package com.tencent.bk.codecc.defect.service;
 
+import com.tencent.bk.codecc.defect.model.ignore.FileCommentIgnoresEntity;
 import com.tencent.bk.codecc.defect.model.ignore.IgnoreCommentDefectModel;
 import com.tencent.bk.codecc.defect.vo.ignore.IgnoreCommentDefectVO;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -33,17 +35,9 @@ public interface IIgnoreDefectService {
     IgnoreCommentDefectVO findIgnoreDefectInfo(Long taskId);
 
     /**
-     * 保存更新注释忽略告警信息
-     * @param ignoreCommentDefectModel
+     * 将 t_ignore_comment_defect_model 中的数据迁移到 t_file_comment_ignores
      * @return
      */
-    Boolean upsertIgnoreDefectInfo(IgnoreCommentDefectModel ignoreCommentDefectModel);
-
-    /**
-     * 删除忽略告警映射字段
-     * @param taskId
-     * @return
-     */
-    Boolean deleteIgnoreDefectMap(Long taskId, Set<String> currentFileSet);
+    List<FileCommentIgnoresEntity> migrate(IgnoreCommentDefectModel oldEntity, Set<String> excludeFile);
 
 }

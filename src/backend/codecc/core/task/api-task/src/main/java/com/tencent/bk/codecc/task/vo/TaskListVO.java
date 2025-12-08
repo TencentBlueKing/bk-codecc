@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -47,7 +46,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("任务清单视图实体")
+@Schema(description = "任务清单视图实体")
 public class TaskListVO extends CommonVO
 {
 
@@ -59,16 +58,16 @@ public class TaskListVO extends CommonVO
     /**
      * 启用的任务清单
      */
-    @ApiModelProperty(value = "启用的任务清单", required = true)
+    @Schema(description = "启用的任务清单", required = true)
     private List<TaskDetailVO> enableTasks;
 
 
     /**
      * 停用的任务清单
      */
-    @ApiModelProperty(value = "停用的任务清单", required = true)
+    @Schema(description = "停用的任务清单", required = true)
     private List<TaskDetailVO> disableTasks;
 
-    @ApiModelProperty(value = "任务清单", required = true)
+    @Schema(description = "任务清单", required = true)
     private Page<TaskDetailVO> pageTasks;
 }

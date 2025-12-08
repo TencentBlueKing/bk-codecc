@@ -5,6 +5,9 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_BK_METRICS_DAILY_TRIGGER;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_BK_METRICS_DAILY_TRIGGER;
+
 /**
  * 蓝盾度量上报CodeCC
  *
@@ -19,6 +22,6 @@ public class BkMetricsUploadScheduleTask implements IScheduleTask {
 
     @Override
     public void executeTask(@NotNull QuartzJobContext quartzJobContext) {
-        rabbitTemplate.convertAndSend("exchange.metrics.statistic.trigger", "route.metrics.statistic.trigger", "");
+        rabbitTemplate.convertAndSend(EXCHANGE_BK_METRICS_DAILY_TRIGGER, ROUTE_BK_METRICS_DAILY_TRIGGER, "");
     }
 }

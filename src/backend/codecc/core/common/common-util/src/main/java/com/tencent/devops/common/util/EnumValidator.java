@@ -12,8 +12,8 @@
 
 package com.tencent.devops.common.util;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 /**
  * 枚举值校验器

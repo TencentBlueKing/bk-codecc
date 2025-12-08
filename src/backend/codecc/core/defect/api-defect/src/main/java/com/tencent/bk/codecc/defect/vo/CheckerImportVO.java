@@ -13,13 +13,12 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.hibernate.validator.constraints.NotEmpty;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,18 +29,18 @@ import java.util.stream.Collectors;
  * @version V1.0
  */
 @Data
-@ApiModel("工具完整信息对象")
+@Schema(description = "工具完整信息对象")
 public class CheckerImportVO {
-    @ApiModelProperty(value = "工具名", required = true)
+    @Schema(description = "工具名", required = true)
     @NotNull(message = "工具名不能为空")
     @Pattern(regexp = "[A-Z0-9\\-]+", message = "工具名称，只能包含大写字母")
     private String toolName;
 
-    @ApiModelProperty(value = "规则列表", required = true)
+    @Schema(description = "规则列表", required = true)
     @NotEmpty(message = "规则列表不能为空")
     private List<CheckerDetailVO> checkerDetailVOList;
 
-    @ApiModelProperty(value = "腾讯规范规则集列表")
+    @Schema(description = "腾讯规范规则集列表")
     private List<CheckerSetVO> standardCheckerSetList;
 
     /**

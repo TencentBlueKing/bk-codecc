@@ -2,7 +2,7 @@ package com.tencent.bk.codecc.defect.consumer;
 
 import static com.tencent.devops.common.constant.RedisKeyConstants.TASK_INVALID_TOOL_DEFECT;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.tencent.bk.codecc.defect.service.TaskInvalidToolDefectService;
 import com.tencent.bk.codecc.defect.vo.TaskInvalidToolDefectVO;
 import lombok.extern.slf4j.Slf4j;

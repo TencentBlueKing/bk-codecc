@@ -9,6 +9,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.tencent.devops.common.api.annotation.I18NFieldMarker;
 import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.service.aop.I18NReflection.FieldMetaData;
 import com.tencent.devops.common.service.utils.I18NUtils;
 import java.lang.reflect.Field;
@@ -17,7 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import javax.servlet.http.Cookie;
+import jakarta.servlet.http.Cookie;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -161,8 +162,9 @@ public abstract class AbstractI18NResponseAspect {
             Locale locale = LocaleContextHolder.getLocale();
             log.info("get locale from accept language: {}", locale);
 
-            // 中英均不是，则返回默认
-            if (!"en".equalsIgnoreCase(locale.getLanguage()) && !"zh".equalsIgnoreCase(locale.getLanguage())) {
+            String language = locale.getLanguage().toLowerCase(Locale.ENGLISH);
+            // 不支持该语言，则返回默认
+            if (!I18NUtils.I18N_SUPPORT_LANG.contains(language)) {
                 return DEFAULT_LOCALE;
             }
 

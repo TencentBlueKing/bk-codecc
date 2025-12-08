@@ -29,9 +29,9 @@ package com.tencent.devops.common.web.security
 import com.tencent.devops.common.web.security.filter.PermissionAuthFilter
 import org.springframework.core.annotation.AnnotationUtils
 import java.lang.reflect.Method
-import javax.ws.rs.container.DynamicFeature
-import javax.ws.rs.container.ResourceInfo
-import javax.ws.rs.core.FeatureContext
+import jakarta.ws.rs.container.DynamicFeature
+import jakarta.ws.rs.container.ResourceInfo
+import jakarta.ws.rs.core.FeatureContext
 
 class PermissionAuthDynamicFeature : DynamicFeature {
     override fun configure(resourceInfo: ResourceInfo, context: FeatureContext) {

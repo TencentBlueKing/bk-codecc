@@ -12,8 +12,7 @@
  
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -23,19 +22,19 @@ import lombok.Data;
  * @version V1.0
  */
 @Data
-@ApiModel("单个代码评论视图")
+@Schema(description = "单个代码评论视图")
 public class SingleCommentVO {
 
-    @ApiModelProperty("评论id")
+    @Schema(description = "评论id")
     private String singleCommentId;
 
-    @ApiModelProperty("用户名")
+    @Schema(description = "用户名")
     private String userName;
 
-    @ApiModelProperty("评论")
+    @Schema(description = "评论")
     private String comment;
 
-    @ApiModelProperty("评论时间")
+    @Schema(description = "评论时间")
     private Long commentTime;
 
 }

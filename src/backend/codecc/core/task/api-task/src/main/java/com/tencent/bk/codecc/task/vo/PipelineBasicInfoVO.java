@@ -1,7 +1,6 @@
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -10,12 +9,12 @@ import lombok.Data;
  * @date 2023/10/19
  */
 @Data
-@ApiModel("流水线基础信息视图")
+@Schema(description = "流水线基础信息视图")
 public class PipelineBasicInfoVO {
-    @ApiModelProperty(value = "流水线 id")
+    @Schema(description = "流水线 id")
     private String pipelineId;
-    @ApiModelProperty(value = "流水线名")
+    @Schema(description = "流水线名")
     private String pipelineName;
-    @ApiModelProperty(value = "项目 id")
+    @Schema(description = "项目 id")
     private String projectId;
 }

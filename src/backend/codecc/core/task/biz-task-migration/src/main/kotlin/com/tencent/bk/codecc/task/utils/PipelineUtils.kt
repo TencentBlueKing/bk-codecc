@@ -1,5 +1,7 @@
 package com.tencent.bk.codecc.task.utils
 
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
 import com.tencent.bk.codecc.task.model.TaskInfoEntity
 import com.tencent.bk.codecc.task.vo.BatchRegisterVO
 import com.tencent.devops.common.api.enums.RepositoryType
@@ -32,6 +34,7 @@ import com.tencent.devops.common.pipeline.type.docker.ImageType
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import java.util.concurrent.TimeUnit
 
 @Component
 class PipelineUtils {
@@ -42,7 +45,6 @@ class PipelineUtils {
     public lateinit var CODECC_ATOM_CODE: String
     @Value("\${pipeline.atomCode.codeccVersion:4.*}")
     public lateinit var CODECC_ATOM_VERSION: String
-
     @Value("\${pipeline.atomCode.git:gitCodeRepo}")
     public lateinit var GIT_ATOM_CODE: String
     @Value("\${pipeline.atomCode.gitVersion:4.*}")
@@ -108,6 +110,7 @@ class PipelineUtils {
         registerVO: BatchRegisterVO,
         taskInfoEntity: TaskInfoEntity,
         relPath: String?,
+        specifiedVersion: String?,
         imageName: String,
         dispatchType: DispatchType
     ): Model {
@@ -159,7 +162,7 @@ class PipelineUtils {
             id = null,
             status = null,
             atomCode = CODECC_ATOM_CODE,
-            version = CODECC_ATOM_VERSION,
+            version = (specifiedVersion ?: CODECC_ATOM_VERSION),
             data = mapOf("input" to mapOf<String, String>())
         )
 
@@ -371,13 +374,13 @@ class PipelineUtils {
         }
     }
 
-    fun transferOldCodeCCElementToNew(): Element {
+    fun transferOldCodeCCElementToNew(specifiedVersion: String?): Element {
         return MarketBuildAtomElement(
             name = "执行扫描脚本",
             id = null,
             status = null,
             atomCode = CODECC_ATOM_CODE,
-            version = CODECC_ATOM_VERSION,
+            version = (specifiedVersion ?: CODECC_ATOM_VERSION),
             data = mapOf("input" to mapOf<String, String>())
         )
     }

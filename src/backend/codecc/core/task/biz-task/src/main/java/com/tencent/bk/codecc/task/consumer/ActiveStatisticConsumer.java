@@ -46,6 +46,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_ACTIVE_STAT;
@@ -54,7 +56,9 @@ import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_ACTIVE_STAT;
 
 /**
  * 活跃统计任务,该任务主要统计不区分开闭源环境的数据落地到task库上，且每天只需统计一次
- *
+ * core/task:  ActiveStatisticConsumer    任务工具相关统计
+ * ext/task:   ActiveStatisticExtConsumer 针对内部的任务工具统计
+ * ext/defect: OpStatisticExtConsumer     代码库相关统计
  * @version V1.0
  * @date 2020/12/10
  */
@@ -77,14 +81,20 @@ public class ActiveStatisticConsumer {
 
     /**
      * 定时任务统计每日数据
+     * 由于代码库在defect库，故需要传参按环境和业务范围分别统计
+     * @see com.tencent.devops.common.constant.ComConstants.DefectStatType
      */
     @RabbitListener(bindings = @QueueBinding(key = ROUTE_ACTIVE_STAT,
             value = @Queue(value = QUEUE_ACTIVE_STAT, durable = "false"),
             exchange = @Exchange(value = EXCHANGE_ACTIVE_STAT, durable = "false")))
     public void consumer(StatisticTaskCodeLineToolVO statisticVO) {
         try {
-            String date = DateTimeUtils.getDateByDiff(-1);
-            log.info("ActiveStatistic begin date: {}", date);
+            log.info("ActiveStatisticConsumer statisticVO: {}", statisticVO);
+            String date = statisticVO.getDate();
+            if (StringUtils.isEmpty(date)) {
+                date = DateTimeUtils.getDateByDiff(-1);
+            }
+
             long endTime = DateTimeUtils.getTimeStampEnd(date);
 
             // 大部分status字段为null，故认为状态不为D的都是有效的工具
@@ -93,19 +103,24 @@ public class ActiveStatisticConsumer {
             String toolOrder = toolMetaEntities.stream().map(ToolMetaEntity::getName)
                     .collect(Collectors.joining(ComConstants.COMMA));
 
-            // 1.设置来源范围
-            List<DefectStatType> dataFromList = Arrays.stream(DefectStatType.values()).collect(Collectors.toList());
+            // 获取需要统计的dataFrom
+            List<ComConstants.DefectStatType> dataFromList = statisticVO.getDataFromList();
+            if (CollectionUtils.isEmpty(dataFromList)) {
+                log.info("dataFromList is empty, statistic all type!");
+                dataFromList = Arrays.stream(DefectStatType.values()).collect(Collectors.toList());
+            }
 
             // 2.分页获取任务ID 统计任务数、工具数、分析代码行
             pageTaskIdStatistic(endTime, date, toolOrder, dataFromList);
             log.info("pageTaskIdStatistic finish.");
 
+            String finalDate = date;
             dataFromList.forEach(dataFrom -> {
                 // 3.保存执行分析的任务ID来统计执行次数
-                statisticToolAnalyzeCount(date, dataFrom, toolOrder);
+                statisticToolAnalyzeCount(finalDate, dataFrom, toolOrder);
 
                 // 4.统计工具分析耗时
-                toolAnalyzeElapseTimeStat(date, dataFrom, toolOrder);
+                toolAnalyzeElapseTimeStat(finalDate, dataFrom, toolOrder);
             });
 
             log.info("ActiveStatistic finish.");
@@ -171,23 +186,34 @@ public class ActiveStatisticConsumer {
      */
     private void saveAnalyzeCounts(String date, DefectStatType dataFrom, @NotNull String[] toolArr, boolean isSuccess) {
         try {
+            Integer currentStatStatus =
+                    isSuccess ? ComConstants.ScanStatus.SUCCESS.getCode() : ComConstants.ScanStatus.FAIL.getCode();
+            // 获取已统计过的数据
+            Map<String, AnalyzeCountStatEntity> sourceEntityMap =
+                    analyzeCountStatRepository.findByDateAndDataFromAndStatus(date, dataFrom.value(), currentStatStatus)
+                            .stream().collect(Collectors.toMap(obj ->
+                                    // 同date、dataFrom内的数据，工具 + status 是唯一的
+                                    obj.getToolName() + obj.getStatus(), Function.identity(), (k, v) -> k));
+
             List<AnalyzeCountStatEntity> analyzeCountStatEntities = Lists.newArrayList();
             for (String tool : toolArr) {
                 // 组装key
                 String redisKey = isSuccess ? getToolAnalyzeSuccStatKey(date, dataFrom.value(), tool)
                         : getToolAnalyzeFailStatKey(date, dataFrom.value(), tool);
 
-                List<String> taskIdStrList = redisTemplate.opsForList().range(redisKey, 0, -1);
-                if (taskIdStrList == null) {
-                    taskIdStrList = Collections.emptyList();
+                List<String> taskIdStrList = Optional.ofNullable(redisTemplate.opsForList().range(redisKey, 0, -1))
+                        .orElse(Collections.emptyList());
+
+                AnalyzeCountStatEntity countStatEntity = sourceEntityMap.get(tool + currentStatStatus);
+                if (countStatEntity == null) {
+                    countStatEntity = new AnalyzeCountStatEntity();
+                    countStatEntity.setDate(date);
+                    countStatEntity.setStatus(currentStatStatus);
+                    countStatEntity.setDataFrom(dataFrom.value());
+                    countStatEntity.setToolName(tool);
                 }
 
-                AnalyzeCountStatEntity countStatEntity = new AnalyzeCountStatEntity();
-                countStatEntity.setDate(date);
-                countStatEntity.setStatus(isSuccess ? ComConstants.ScanStatus.SUCCESS.getCode()
-                        : ComConstants.ScanStatus.FAIL.getCode());
-                countStatEntity.setDataFrom(dataFrom.value());
-                countStatEntity.setToolName(tool);
+                countStatEntity.setTotalCount(taskIdStrList.size());
                 countStatEntity.setTaskIdList(taskIdStrList.stream().map(Long::parseLong).collect(Collectors.toList()));
                 analyzeCountStatEntities.add(countStatEntity);
             }
@@ -240,12 +266,20 @@ public class ActiveStatisticConsumer {
                 toolFailCountMap = Maps.newHashMap();
             }
 
+            Map<String, ToolElapseTimeEntity> currentToolElapseTimeMap =
+                    toolElapseTimeRepository.findByDateAndDataFromAndScanStatType(date, dataFrom.value(),
+                            scanStatType.getValue()).stream().collect(
+                            Collectors.toMap(ToolElapseTimeEntity::getToolName, Function.identity(), (k, v) -> k));
+
             for (String tool : toolArr) {
-                ToolElapseTimeEntity elapseTimeEntity = new ToolElapseTimeEntity();
-                elapseTimeEntity.setDate(date);
-                elapseTimeEntity.setToolName(tool);
-                elapseTimeEntity.setDataFrom(dataFrom.value());
-                elapseTimeEntity.setScanStatType(scanStatType.getValue());
+                ToolElapseTimeEntity elapseTimeEntity = currentToolElapseTimeMap.get(tool);
+                if (elapseTimeEntity == null) {
+                    elapseTimeEntity = new ToolElapseTimeEntity();
+                    elapseTimeEntity.setDate(date);
+                    elapseTimeEntity.setToolName(tool);
+                    elapseTimeEntity.setDataFrom(dataFrom.value());
+                    elapseTimeEntity.setScanStatType(scanStatType.getValue());
+                }
 
                 String elapseTimeStr = toolElapseTimeMap.getOrDefault(tool, "0").toString();
                 elapseTimeEntity.setTotalElapseTime(Long.parseLong(elapseTimeStr));
@@ -277,8 +311,8 @@ public class ActiveStatisticConsumer {
         }
 
         QueryTaskListReqVO reqVO = new QueryTaskListReqVO();
-        // 传递参数 2 表示查询前一天的数据进行初始化
-        reqVO.setInitDay(2);
+        // 传递参数 1 表示查询前一天的数据进行初始化
+        reqVO.setInitDay(1);
         // 主环境的类型
         reqVO.setCreateFrom(dataFromList.stream().map(DefectStatType::value).collect(Collectors.toList()));
         Boolean isSuccess = client.getWithoutRetry(OpDefectRestResource.class).initCodeRepoStatTrend(reqVO).getData();

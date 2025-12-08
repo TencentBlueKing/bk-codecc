@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.hibernate.validator.constraints.NotBlank;
 
@@ -38,36 +37,36 @@ import org.hibernate.validator.constraints.NotBlank;
  * @date 2019/7/15
  */
 @Data
-@ApiModel("获取分析日志请求视图")
+@Schema(description = "获取分析日志请求视图")
 public class QueryLogReqVO
 {
 
     @NotBlank(message = "流水线ID不能为空")
-    @ApiModelProperty(value = "流水线ID", required = true)
+    @Schema(description = "流水线ID", required = true)
     String pipelineId;
 
     @NotBlank(message = "构建ID不能为空")
-    @ApiModelProperty(value = "构建ID", required = true)
+    @Schema(description = "构建ID", required = true)
     String buildId;
 
-    @ApiModelProperty("行数")
+    @Schema(description = "行数")
     Integer num;
 
-    @ApiModelProperty("是否正序输出")
+    @Schema(description = "是否正序输出")
     Boolean fromStart;
 
     @NotBlank(message = "起始行号不能为空")
-    @ApiModelProperty(value = "起始行号", required = true)
+    @Schema(description = "起始行号", required = true)
     Long start;
 
     @NotBlank(message = "结尾行号不能为空")
-    @ApiModelProperty(value = "结尾行号", required = true)
+    @Schema(description = "结尾行号", required = true)
     Long end;
 
-    @ApiModelProperty("对应elementId")
+    @Schema(description = "对应elementId")
     String tag;
 
-    @ApiModelProperty("执行次数")
+    @Schema(description = "执行次数")
     Integer executeCount;
 
 }

@@ -28,12 +28,11 @@ package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.bk.codecc.defect.vo.common.CommonDataReportRspVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TASK_ID;
 
@@ -43,27 +42,27 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TAS
  * @version V1.0
  * @date 2019/5/29
  */
-@Api(tags = {"USER_REPORT"}, description = "数据报表服务接口")
+@Tag(name = "USER_REPORT", description = "数据报表服务接口")
 @Path("/user/report")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface UserReportRestResource
 {
 
-    @ApiOperation("数据报表")
+    @Operation(summary = "数据报表")
     @Path("/toolName/{toolName}")
     @GET
     Result<CommonDataReportRspVO> dataReport(
-            @ApiParam("任务Id")
+            @Parameter(description = "任务Id")
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
                     Long taskId,
-            @ApiParam("工具名称")
+            @Parameter(description = "工具名称")
             @PathParam("toolName")
                     String toolName,
-            @ApiParam("开始时间")
+            @Parameter(description = "开始时间")
             @QueryParam("startTime")
                     String startTime,
-            @ApiParam("结束时间")
+            @Parameter(description = "结束时间")
             @QueryParam("endTime")
                     String endTime
     );

@@ -147,16 +147,12 @@
                   </bk-tag-input>
 
                   <bk-select v-else v-model="searchParams.author" searchable>
-                    <template #trigger>
-                      <SelectTrigger v-model="searchParams.author" />
-                    </template>
                     <bk-option
                       v-for="author in searchFormData.authorList"
                       :key="author.id"
                       :id="author.id"
                       :name="author.name"
                     >
-                      <bk-user-display-name :user-id="author.name"></bk-user-display-name>
                     </bk-option>
                   </bk-select>
                 </bk-form-item>
@@ -1340,6 +1336,7 @@
         width="560"
         theme="primary"
         header-position="left"
+        :mask-close="false"
         :title="
           operateParams.changeAuthorType === 1
             ? $t('修改问题处理人')
@@ -1405,6 +1402,7 @@
         :position="ignoreDialogPositionConfig"
         theme="primary"
         header-position="left"
+        :mask-close="false"
         :title="ignoreReasonDialogTitle"
         :before-close="handleBeforeClose"
         @cancel="handleIgnoreCancel"
@@ -1433,7 +1431,7 @@
               >
                 <bk-radio
                   class="cc-radio"
-                  v-for="ignore in ignoreList"
+                  v-for="ignore in ignoreList.filter(i => i.status !== 2)"
                   :key="ignore.ignoreTypeId"
                   :value="ignore.ignoreTypeId"
                 >
@@ -1505,6 +1503,7 @@
         width="560"
         theme="primary"
         header-position="left"
+        :mask-close="false"
         :before-close="handleBeforeClose"
         :title="$t('评论')"
       >
@@ -1536,40 +1535,14 @@
           </bk-button>
         </div>
       </bk-dialog>
-      <bk-dialog
-        v-model="operateDialogVisible"
-        width="640"
-        theme="primary"
-        :position="{ top: 50, left: 5 }"
-        :title="$t('现已支持键盘操作，提升操作效率')"
-      >
-        <div class="operate-txt operate-txt-1">1. {{ $t('列表') }}</div>
-        <div>
-          <img
-            v-if="isEn"
-            style="width: 592px"
-            src="../../images/operate-1-en.png"
-          />
-          <img v-else style="width: 592px" src="../../images/operate-1.png" />
-        </div>
-        <div class="operate-txt operate-txt-2">2. {{ $t('问题详情') }}</div>
-        <div>
-          <img
-            v-if="isEn"
-            style="width: 592px"
-            src="../../images/operate-2-en.png"
-          />
-          <img v-else style="width: 592px" src="../../images/operate-2.png" />
-        </div>
-        <div class="operate-footer" slot="footer">
-          <bk-button
-            theme="primary"
-            @click.native="operateDialogVisible = false"
-          >
-            {{ $t('关闭') }}
-          </bk-button>
-        </div>
-      </bk-dialog>
+      <operate-dialog
+        :visible.sync="operateDialogVisible">
+        <template #header>
+          <div class="!text-[24px] !text-[#313238] text-center mt-[10px]">
+            {{ $t('现已支持键盘操作，提升操作效率') }}
+          </div>
+        </template>
+      </operate-dialog>
       <bk-dialog
         v-model="emptyDialogVisible"
         :theme="'primary'"
@@ -1618,6 +1591,7 @@ import displayNameTagInputTpl from '@/mixins/display-name-tag-input-tpl';
 import CodeMirror from '@/common/codemirror';
 import Empty from '@/components/empty';
 import filterSearchOption from './filter-search-option';
+import OperateDialog from '@/components/operate-dialog';
 import { format } from 'date-fns';
 import DefectPanel from './components/defect-panel.vue';
 // eslint-disable-next-line
@@ -1626,7 +1600,6 @@ import { language } from '../../i18n';
 import DatePicker from '@/components/date-picker/index.vue';
 import DEPLOY_ENV from '@/constants/env';
 import UserSelector from '@/components/user-selector/index.vue';
-import SelectTrigger from '@/components/select-trigger/index.vue';
 
 // 搜索过滤项缓存
 const CCN_SEARCH_OPTION_CACHE = 'search_option_columns_cnn';
@@ -1636,9 +1609,9 @@ export default {
     DatePicker,
     Empty,
     filterSearchOption,
+    OperateDialog,
     DefectPanel,
     UserSelector,
-    SelectTrigger,
   },
   mixins: [util, displayNameTagInputTpl],
   data() {
@@ -2160,7 +2133,7 @@ export default {
       this.selectedOptionColumn = this.getCustomOption(true);
     }
     this.handelFetchIgnoreList();
-    this.guideFlag = Boolean(localStorage.getItem('guideEnd') || '');
+    this.guideFlag = Boolean(localStorage.getItem('guideEnd') || !this.isInnerSite);
   },
   mounted() {
     // this.$nextTick(() => {
@@ -2174,6 +2147,11 @@ export default {
     window.addEventListener('resize', this.getQueryPreLineNum);
     this.openDetail();
     this.keyOperate();
+    // 主动给 body 设置焦点，确保键盘事件能触发
+    this.$nextTick(() => {
+      document.body.setAttribute('tabindex', '-1');
+      document.body.focus();
+    });
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.getQueryPreLineNum);
@@ -2186,7 +2164,7 @@ export default {
       this.fetchStatusParams();
       isInit ? (this.contentLoading = true) : (this.fileLoading = true);
       await Promise.all([this.fetchLintList(), this.fetchLintParams()])
-        .then(([list, params]) => {
+        .then(async ([list, params]) => {
           this.ccnThreshold = list.ccnThreshold;
           this.isSearch = true;
           if (isInit) {
@@ -2228,9 +2206,13 @@ export default {
             params.authorList,
             this.user.username,
           );
-          params.authorList = authorList.map(item => ({
-            id: item,
-            name: item,
+          const dataMap = await this.$store.dispatch(
+            'displayname/batchGetDisplayName',
+            authorList,
+          );
+          params.authorList = authorList.map(author => ({
+            id: author,
+            name: dataMap.get(author)?.display_name || author,
           }));
 
           this.searchFormData = Object.assign({}, this.searchFormData, params);
@@ -2539,7 +2521,6 @@ export default {
       if (ignoreType === 'RevertIgnore') {
         this.handleIgnoreConfirm();
       } else {
-        window.changeAlert = false;
         this.ignoreReasonDialogVisible = true;
       }
     },
@@ -2629,7 +2610,6 @@ export default {
       this.commentParams.commentId = this.lintDetail.codeComment
         ? this.lintDetail.codeComment.entityId
         : '';
-      window.changeAlert = false;
       this.commentDialogVisible = true;
     },
     handleFileListRowClick(row, event, column) {
@@ -2648,7 +2628,6 @@ export default {
     },
     handleAuthor(changeAuthorType, entityId, author, defectId) {
       this.authorEditDialogVisible = true;
-      window.changeAlert = false;
       this.operateParams.changeAuthorType = changeAuthorType;
       if (author !== undefined) {
         this.operateParams.sourceAuthor = [author];
@@ -2902,54 +2881,36 @@ export default {
       function keyDown(event) {
         const e = event || window.event;
         if (e.target.nodeName !== 'BODY') return;
-        switch (e.keyCode) {
-          case 13: // enter
+        switch (e.code) {
+          case 'Enter': // enter
             // e.path.length < 5 防止规则等搜索条件里面的回车触发打开详情
             if (!vm.defectDetailDialogVisible && !vm.authorEditDialogVisible) vm.keyEnter();
             break;
-          case 27: // esc
+          case 'Escape': // esc
             if (vm.defectDetailDialogVisible) vm.defectDetailDialogVisible = false;
             break;
-          case 37: // left
-            if (vm.defectDetailDialogVisible && vm.fileIndex > 0) {
-              vm.handleFileListRowClick(vm.defectList[(vm.fileIndex -= 1)]);
-            } else if (!vm.defectDetailDialogVisible && vm.fileIndex > 0) {
-              vm.fileIndex -= 1;
+          case 'ArrowLeft': // left
+          case 'ArrowUp': // up
+          case 'KeyW': // w
+            if (vm.fileIndex > 0) {
+              if (vm.defectDetailDialogVisible) {
+                vm.handleFileListRowClick(vm.defectList[(vm.fileIndex -= 1)]);
+              } else {
+                vm.fileIndex -= 1;
+                vm.screenScroll();
+              }
             }
             break;
-          case 38: // up
-            if (!vm.defectDetailDialogVisible && vm.fileIndex > 0) {
-              vm.fileIndex -= 1;
-            } else if (vm.defectDetailDialogVisible && vm.fileIndex > 0) {
-              vm.handleFileListRowClick(vm.defectList[(vm.fileIndex -= 1)]);
-              return false;
-            }
-            break;
-          case 39: // right
-            if (
-              vm.defectDetailDialogVisible
-              && vm.fileIndex < vm.defectList.length - 1
-            ) {
-              vm.handleFileListRowClick(vm.defectList[(vm.fileIndex += 1)]);
-            } else if (
-              !vm.defectDetailDialogVisible
-              && vm.fileIndex < vm.defectList.length - 1
-            ) {
-              vm.fileIndex += 1;
-            }
-            break;
-          case 40: // down
-            if (
-              !vm.defectDetailDialogVisible
-              && vm.fileIndex < vm.defectList.length - 1
-            ) {
-              vm.fileIndex += 1;
-            } else if (
-              vm.defectDetailDialogVisible
-              && vm.fileIndex < vm.defectList.length - 1
-            ) {
-              vm.handleFileListRowClick(vm.defectList[(vm.fileIndex += 1)]);
-              return false;
+          case 'ArrowRight': // right
+          case 'ArrowDown': // down
+          case 'KeyS': // s
+            if (vm.fileIndex < vm.defectList.length - 1) {
+              if (vm.defectDetailDialogVisible) {
+                vm.handleFileListRowClick(vm.defectList[(vm.fileIndex += 1)]);
+              } else {
+                vm.fileIndex += 1;
+                vm.screenScroll();
+              }
             }
             break;
         }
@@ -3352,7 +3313,7 @@ export default {
       localStorage.setItem('guide2End', true);
     },
     handleNextGuide() {
-      if (!localStorage.getItem('guide2End')) {
+      if (!localStorage.getItem('guide2End') && this.isInnerSite) {
         const index = this.defectList.findIndex(item => item.status === 1);
         document.getElementsByClassName('guide-icon')[index]?.click();
         setTimeout(() => {

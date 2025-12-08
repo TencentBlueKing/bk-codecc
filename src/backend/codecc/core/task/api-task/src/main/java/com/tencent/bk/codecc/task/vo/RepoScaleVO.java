@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,11 +18,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RepoScaleVO extends CommonVO {
 
-    @ApiModelProperty("代码库规模上限")
+    @Schema(description = "代码库规模上限")
     private Long upperLimit;
-    @ApiModelProperty("代码库规模下限")
+    @Schema(description = "代码库规模下限")
     private Long lowerLimit;
-    @ApiModelProperty("名字")
+    @Schema(description = "名字")
     private String name;
 
 }

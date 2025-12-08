@@ -4,10 +4,10 @@ import com.tencent.devops.common.web.ResponseFilter
 import io.opentelemetry.api.trace.Span
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
-import javax.ws.rs.container.ContainerRequestContext
-import javax.ws.rs.container.ContainerResponseContext
-import javax.ws.rs.container.ContainerResponseFilter
-import javax.ws.rs.ext.Provider
+import jakarta.ws.rs.container.ContainerRequestContext
+import jakarta.ws.rs.container.ContainerResponseContext
+import jakarta.ws.rs.container.ContainerResponseFilter
+import jakarta.ws.rs.ext.Provider
 
 @Provider
 @ResponseFilter

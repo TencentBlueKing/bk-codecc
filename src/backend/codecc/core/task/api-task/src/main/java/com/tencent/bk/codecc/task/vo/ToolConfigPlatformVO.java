@@ -25,8 +25,7 @@
  */
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -36,33 +35,33 @@ import lombok.Data;
  * @date 2020/1/11
  */
 @Data
-@ApiModel("工具配置的基本信息")
+@Schema(description = "工具配置的基本信息")
 public class ToolConfigPlatformVO
 {
-    @ApiModelProperty(value = "配置信息对应的任务ID")
+    @Schema(description = "配置信息对应的任务ID")
     private Long taskId;
 
-    @ApiModelProperty(value = "工具名称")
+    @Schema(description = "工具名称")
     private String toolName;
 
-    @ApiModelProperty(value = "任务英文名")
+    @Schema(description = "任务英文名")
     private String nameEn;
 
-    @ApiModelProperty(value = "任务中文名")
+    @Schema(description = "任务中文名")
     private String nameCn;
 
-    @ApiModelProperty(value = "Platform ip")
+    @Schema(description = "Platform ip")
     private String ip;
 
-    @ApiModelProperty(value = "Platform port")
+    @Schema(description = "Platform port")
     private String port;
 
-    @ApiModelProperty(value = "Platform userName")
+    @Schema(description = "Platform userName")
     private String userName;
 
-    @ApiModelProperty(value = "Platform password")
+    @Schema(description = "Platform password")
     private String password;
 
-    @ApiModelProperty(value = "特殊配置(用于工具侧配置文件中添加个性化属性)")
+    @Schema(description = "特殊配置(用于工具侧配置文件中添加个性化属性)")
     private String specConfig;
 }

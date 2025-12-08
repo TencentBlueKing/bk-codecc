@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.common.CommonDefectDetailQueryRspVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -40,36 +39,36 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("圈复杂度告警查询返回视图")
+@Schema(description = "圈复杂度告警查询返回视图")
 public class CCNDefectDetailQueryRspVO extends CommonDefectDetailQueryRspVO
 {
-    @ApiModelProperty("代码评论")
+    @Schema(description = "代码评论")
     private CodeCommentVO codeComment;   // todo delete
 
     /**
      * 告警忽略时间
      */
-    @ApiModelProperty(value = "告警忽略时间")
+    @Schema(description = "告警忽略时间")
     private Long ignoreTime;
 
     /**
      * 告警忽略原因类型
      */
-    @ApiModelProperty("告警忽略原因类型")
+    @Schema(description = "告警忽略原因类型")
     private Integer ignoreReasonType;
 
     /**
      * 告警忽略原因
      */
-    @ApiModelProperty("告警忽略原因")
+    @Schema(description = "告警忽略原因")
     private String ignoreReason;
 
     /**
      * 告警忽略操作人
      */
-    @ApiModelProperty("告警忽略操作人")
+    @Schema(description = "告警忽略操作人")
     private String ignoreAuthor;
 
-    @ApiModelProperty("告警详细信息")
+    @Schema(description = "告警详细信息")
     private CCNDefectVO defectVO;
 }

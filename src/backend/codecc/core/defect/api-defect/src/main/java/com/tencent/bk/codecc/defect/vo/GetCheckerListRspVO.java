@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.List;
  * @date 2019/11/2
  */
 @Data
-@ApiModel("代码重复率的扫描统计结果")
+@Schema(description = "代码重复率的扫描统计结果")
 public class GetCheckerListRspVO
 {
     private List<CheckerPkgRspVO> checkerPackages;

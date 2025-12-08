@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo.common;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -40,28 +39,28 @@ import java.util.List;
  * @date 2019/6/28
  */
 @Data
-@ApiModel("快照视图")
+@Schema(description = "快照视图")
 public class SnapShotVO {
-    @ApiModelProperty("项目id")
+    @Schema(description = "项目id")
     @JsonProperty("bs_project_id")
     private String projectId;
 
-    @ApiModelProperty("流水线id")
+    @Schema(description = "流水线id")
     @JsonProperty("bs_pipeline_id")
     private String pipelineId;
 
-    @ApiModelProperty("任务id")
+    @Schema(description = "任务id")
     private String taskId;
 
-    @ApiModelProperty("构建id")
+    @Schema(description = "构建id")
     @JsonProperty("bs_build_id")
     private String buildId;
 
-    @ApiModelProperty("工具快照清单")
+    @Schema(description = "工具快照清单")
     @JsonProperty("tool_snapshot_list")
     private List<ToolSnapShotVO> toolSnapshotList;
 
-    @ApiModelProperty("红线数据上报状态")
+    @Schema(description = "红线数据上报状态")
     @JsonProperty("metadata_report")
     private Boolean metadataReport;
 }

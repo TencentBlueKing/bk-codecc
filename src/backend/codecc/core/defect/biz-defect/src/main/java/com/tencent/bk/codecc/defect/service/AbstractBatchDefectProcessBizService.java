@@ -20,10 +20,10 @@ import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.TaskInfoWithSortedToolConfigResponse.TaskBase;
 import com.tencent.codecc.common.db.CommonEntity;
-import com.tencent.devops.common.api.codecc.util.JsonUtil;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.client.Client;
+import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.BusinessType;
 import com.tencent.devops.common.constant.CommonMessageCode;
@@ -35,12 +35,13 @@ import com.tencent.devops.common.service.IBizService;
 import com.tencent.devops.common.service.utils.SpringContextUtil;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.web.aop.annotation.OperationHistory;
+
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.LinkedList;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -65,6 +66,9 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
 
     @Autowired
     private TaskPersonalStatisticService taskPersonalStatisticService;
+
+    @Autowired
+    private IIgnoredNegativeDefectService iIgnoredNegativeDefectService;
 
     @Autowired
     private IgnoredNegativeDefectDao ignoredNegativeDefectDao;
@@ -262,29 +266,27 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
                 batchDefectProcessReqVO.getTaskId(), batchDefectProcessReqVO.getBizType(),
                 defectList == null ? 0 : defectList.size(), batchDefectProcessReqVO.getDefectKeySet().size());
 
-        if (CollectionUtils.isNotEmpty(defectList) && defectList.get(0) instanceof LintDefectV2Entity) {
-            int opType = NOP;
+        int opType = NOP;
         if (CollectionUtils.isNotEmpty(defectList) && defectList.get(0) instanceof LintDefectV2Entity) {
             opType = isInsertOrDelete(batchDefectProcessReqVO.getBizType(),
                     batchDefectProcessReqVO.getIgnoreReasonType());
         }
 
-            if (opType == INS) {
-                Result<TaskDetailVO> taskBaseResult = client.get(ServiceTaskRestResource.class)
-                        .getTaskInfoById(batchDefectProcessReqVO.getTaskId());
-                if (null == taskBaseResult || taskBaseResult.isNotOk() || null == taskBaseResult.getData()) {
-                    log.error("get task info fail!, task id: {}", batchDefectProcessReqVO.getTaskId());
-                    throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
-                }
-
-                ignoredNegativeDefectDao.batchInsert(
-                        defectList,
-                        batchDefectProcessReqVO,
-                        taskBaseResult.getData()
-                );
-            } else if (opType == DEL) {
-                ignoredNegativeDefectDao.batchDelete(batchDefectProcessReqVO.getDefectKeySet());
+        if (opType == INS) {
+            Result<TaskDetailVO> taskBaseResult = client.get(ServiceTaskRestResource.class)
+                    .getTaskInfoById(batchDefectProcessReqVO.getTaskId());
+            if (null == taskBaseResult || taskBaseResult.isNotOk() || null == taskBaseResult.getData()) {
+                log.error("get task info fail!, task id: {}", batchDefectProcessReqVO.getTaskId());
+                throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
             }
+            iIgnoredNegativeDefectService.batchInsertIgnoredDefects(
+                    defectList,
+                    batchDefectProcessReqVO,
+                    taskBaseResult.getData()
+            );
+        } else if (opType == DEL) {
+            iIgnoredNegativeDefectService.batchDeleteIgnoredDefects(batchDefectProcessReqVO.getTaskId(),
+                    batchDefectProcessReqVO.getDefectKeySet());
         }
 
         if (CollectionUtils.isNotEmpty(defectList)) {
@@ -456,6 +458,7 @@ public abstract class AbstractBatchDefectProcessBizService implements IBizServic
     protected void refreshOverviewData(long taskId) {
         taskPersonalStatisticService.refresh(taskId, "from batch defect process: " + this);
     }
+
 
     protected void processBatchDefectProcessHandler(List defects, BatchDefectProcessReqVO batchDefectProcessReqVO) {
         if (handlers == null || handlers.isEmpty()) {

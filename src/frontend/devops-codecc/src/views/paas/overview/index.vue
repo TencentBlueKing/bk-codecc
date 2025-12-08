@@ -21,6 +21,12 @@
         </div>
         <div class="image-wrapper">
           <div class="image">
+            <div id="taskIdCount" ref="taskIdCount" class="chart-size"></div>
+            <div><span class="imageFrontSize">{{$t('任务接入数')}}</span></div>
+          </div>
+        </div>
+        <div class="image-wrapper">
+          <div class="image">
             <div id="issueCount" ref="issueCount" class="chart-size"></div>
             <div><span class="imageFrontSize">{{$t('检出问题数')}}</span></div>
           </div>
@@ -178,6 +184,11 @@ export default {
       const optionCodeRepo = this.getNewBlueChart();
       optionCodeRepo.series[0].data[0].name = summaryData.codeRepoCount.toString();
       codeRepoChart.setOption(optionCodeRepo);
+
+      const taskIdCountChart = echarts.init(this.$refs.taskIdCount);
+      const optionTaskIds = this.getNewBlueChart();
+      optionTaskIds.series[0].data[0].name = summaryData.taskIdCount.toString();
+      taskIdCountChart.setOption(optionTaskIds);
 
       const issueChart = echarts.init(this.$refs.issueCount);
       const optionIssue = this.getNewBlueChart();

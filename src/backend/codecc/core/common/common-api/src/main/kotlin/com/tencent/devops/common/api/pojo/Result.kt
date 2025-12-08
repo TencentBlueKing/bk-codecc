@@ -28,18 +28,16 @@ package com.tencent.devops.common.api.pojo
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.tencent.devops.common.constant.CommonMessageCode
-import io.swagger.annotations.ApiModel
-import io.swagger.annotations.ApiModelProperty
-
-@ApiModel("数据返回包装模型")
+import io.swagger.v3.oas.annotations.media.Schema
+@Schema(description = "数据返回包装模型")
 data class Result<out T>(
-        @ApiModelProperty("状态码", required = true)
+        @get:Schema(description = "状态码", required = true)
         val status: Int,
-        @ApiModelProperty("错误码", required = true)
+        @get:Schema(description = "错误码", required = true)
         val code: String?,
-        @ApiModelProperty("错误信息", required = false)
+        @get:Schema(description = "错误信息", required = false)
         val message: String? = null,
-        @ApiModelProperty("数据", required = false)
+        @get:Schema(description = "数据", required = false)
         val data: T? = null
 ) {
     constructor(data: T) : this(0, CommonMessageCode.SUCCESS, null, data)

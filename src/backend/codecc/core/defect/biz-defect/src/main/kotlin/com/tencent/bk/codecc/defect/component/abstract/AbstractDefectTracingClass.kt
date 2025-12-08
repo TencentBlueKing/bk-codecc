@@ -23,6 +23,7 @@ import org.apache.commons.exec.ExecuteException
 import org.slf4j.LoggerFactory
 import org.springframework.amqp.rabbit.AsyncRabbitTemplate
 import java.io.File
+import java.util.concurrent.CompletableFuture
 
 abstract class AbstractDefectTracingClass<T : CommonEntity>(
     private val scmJsonComponent: ScmJsonComponent
@@ -62,17 +63,18 @@ abstract class AbstractDefectTracingClass<T : CommonEntity>(
                 buildId,
                 defectHashList
             )
-            resultHandlerMap.forEach { (t, u) ->
+            resultHandlerMap.forEach { (fileName, future) ->
                 try {
                     logger.info("for each return value")
-                    if (u.get() == true) {
-                        outputDefectList.addAll(getFileContent(t) ?: mutableListOf())
+                    val result = future.get()
+                    if (result == true) {
+                        outputDefectList.addAll(getFileContent(fileName) ?: mutableListOf())
                         logger.info("return value is true")
                     } else {
                         logger.info("return value is false")
                     }
                 } catch (e: Exception) {
-                    logger.info("async aggregate defects fail! output file : $t")
+                    logger.info("async aggregate defects fail! output file : $fileName")
                 }
             }
         } else {
@@ -102,12 +104,12 @@ abstract class AbstractDefectTracingClass<T : CommonEntity>(
         toolName: String,
         buildId: String,
         defectHashList: List<AggregateDefectInputModel>
-    ): MutableMap<String, AsyncRabbitTemplate.RabbitConverterFuture<Boolean>> {
+    ): MutableMap<String, CompletableFuture<Boolean>> {
         // 将告警按文件路径聚类，最多不能超过50000个，既保证效率，又保证不会多出太多线程
         val aggregateGroupList = groupByFilePath(defectHashList)
 
         // 运行的future清单
-        val resultHandlerMap = mutableMapOf<String, AsyncRabbitTemplate.RabbitConverterFuture<Boolean>>()
+        val resultHandlerMap = mutableMapOf<String, CompletableFuture<Boolean>>()
 
         logger.info("aggregate group list size : ${aggregateGroupList.size}")
         // 按照分组进行聚类计算

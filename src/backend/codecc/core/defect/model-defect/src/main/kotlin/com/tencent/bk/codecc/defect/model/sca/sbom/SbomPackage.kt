@@ -69,13 +69,13 @@ open class SbomPackage(
     /**
      * 确定的证书
      */
-    @Field("license_concluded")
-    var licenseConcluded: String? = null,
+    @Field("licenses_concluded")
+    var licensesConcluded: List<String>? = null,
     /**
      * 声明的证书
      */
-    @Field("license_declared")
-    var licenseDeclared: String? = null,
+    @Field("licenses_declared")
+    var licensesDeclared: List<String>? = null,
     /**
      * 根据依赖关系分析出来的依赖深度，默认：1
      */

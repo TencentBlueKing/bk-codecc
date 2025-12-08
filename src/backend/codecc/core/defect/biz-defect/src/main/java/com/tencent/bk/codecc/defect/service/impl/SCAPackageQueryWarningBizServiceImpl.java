@@ -3,19 +3,15 @@ package com.tencent.bk.codecc.defect.service.impl;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.tencent.bk.codecc.defect.dao.SCAQueryWarningParams;
-import com.tencent.bk.codecc.defect.dao.defect.mongorepository.sca.BuildSCASbomPackageRepository;
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.sca.SCALicenseRepository;
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.sca.SCASbomPackageRepository;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.SCASbomPackageDao;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.SCAVulnerabilityDao;
-import com.tencent.bk.codecc.defect.model.sca.BuildSCASbomPackageEntity;
 import com.tencent.bk.codecc.defect.model.sca.SCALicenseEntity;
 import com.tencent.bk.codecc.defect.model.sca.SCASbomPackageEntity;
 import com.tencent.bk.codecc.defect.model.sca.SCAVulnerabilityEntity;
-import com.tencent.bk.codecc.defect.resources.ServiceTaskLogOverviewResourceImpl;
-import com.tencent.bk.codecc.defect.service.ISCAQueryWarningService;
 import com.tencent.bk.codecc.defect.service.TaskLogService;
-import com.tencent.bk.codecc.defect.service.impl.sca.SCAClusterDefectServiceImpl;
+import com.tencent.bk.codecc.defect.service.sca.AbstractSCAQueryWarningService;
 import com.tencent.bk.codecc.defect.utils.ParamUtils;
 import com.tencent.bk.codecc.defect.utils.SCAUtils;
 import com.tencent.bk.codecc.defect.vo.common.QueryWarningPageInitRspVO;
@@ -55,15 +51,12 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service("SCAPackageQueryWarningBizService")
-public class SCAPackageQueryWarningBizServiceImpl implements ISCAQueryWarningService {
+public class SCAPackageQueryWarningBizServiceImpl extends AbstractSCAQueryWarningService {
     @Autowired
     private SCAVulnerabilityDao scaVulnerabilityDao;
 
     @Autowired
     private SCASbomPackageDao scaSbomPackageDao;
-
-    @Autowired
-    private BuildSCASbomPackageRepository buildSCASbomPackageRepository;
 
     @Autowired
     private SCALicenseRepository scaLicenseRepository;
@@ -72,16 +65,11 @@ public class SCAPackageQueryWarningBizServiceImpl implements ISCAQueryWarningSer
     private SCASbomPackageRepository scaSbomPackageRepository;
 
     @Autowired
-    private SCAClusterDefectServiceImpl scaClusterDefectServiceImpl;
-
-    @Autowired
-    private ServiceTaskLogOverviewResourceImpl serviceTaskLogOverviewResourceImpl;
-
-    @Autowired
     protected TaskLogService taskLogService;
 
     /**
      * 处理SCA组件列表查询
+     *
      * @param scaQueryWarningParams
      * @param pageNum
      * @param pageSize
@@ -148,6 +136,45 @@ public class SCAPackageQueryWarningBizServiceImpl implements ISCAQueryWarningSer
         Map<Integer, Integer> statusCountMap = new HashMap<>();
         List<SCASbomPackageEntity> records = result.getRecords();
         if (CollectionUtils.isNotEmpty(records)) {
+            // 1. 收集所有许可证名称
+            Set<String> affectedLicenseNames = new HashSet<>();
+            for (SCASbomPackageEntity record : records) {
+                if (CollectionUtils.isNotEmpty(record.getLicenses())) {
+                    affectedLicenseNames.addAll(record.getLicenses());
+                }
+            }
+
+            // 2. 批量查询所有许可证实体
+            Map<String, SCALicenseEntity> licenseMap = new HashMap<>();
+            if (!affectedLicenseNames.isEmpty()) {
+                List<SCALicenseEntity> licenseEntities = scaLicenseRepository.findByTaskIdAndToolNameInAndNameIn(
+                        taskId,
+                        toolNameList,
+                        new ArrayList<>(affectedLicenseNames)
+                );
+
+                // 构建许可证名称到实体的映射
+                licenseEntities.forEach(license ->
+                        licenseMap.put(license.getName(), license)
+                );
+            }
+
+            // 3. 批量统计所有漏洞
+            List<String> packageIds = records.stream().map(SCASbomPackageEntity::getPackageId)
+                    .collect(Collectors.toList());
+            List<SCADefectGroupStatisticVO> vulStatistics =
+                    scaVulnerabilityDao.statisticByPackageIdAndSeverity(taskId, toolNameList, packageIds);
+            Map<String, Map<Integer, Integer>> vulStatisticsMap = new HashMap<>();
+            if (CollectionUtils.isNotEmpty(vulStatistics)) {
+                vulStatistics.forEach(statistic -> {
+                    Map<Integer, Integer> severityCount = vulStatisticsMap.getOrDefault(statistic.getPackageId(),
+                            new HashMap<>());
+                    severityCount.put(statistic.getSeverity(), statistic.getDefectCount());
+                    vulStatisticsMap.put(statistic.getPackageId(), severityCount);
+                });
+            }
+
+            // 4. 使用批量查询结果处理记录
             scaPackageVOList = records.stream().map(scaSbomPackageEntity -> {
                 // 实体类转视图类
                 SCAPackageVO scaPackageVO = new SCAPackageVO();
@@ -156,24 +183,29 @@ public class SCAPackageQueryWarningBizServiceImpl implements ISCAQueryWarningSer
                 // 判断是否直接依赖
                 scaPackageVO.setDirect(scaSbomPackageEntity.getDepth() <= 1);
 
-                // 获取组件使用到的许可证列表
-                List<SCALicenseEntity> licenseEntityList =
-                        scaLicenseRepository.findByTaskIdAndToolNameAndNameIn(
-                                scaSbomPackageEntity.getTaskId(),
-                                scaSbomPackageEntity.getToolName(),
-                                scaSbomPackageEntity.getLicenses()
-                        );
-                if (CollectionUtils.isNotEmpty(licenseEntityList)) {
-                    List<SCALicenseVO> packageLicenseVOList =
-                            licenseEntityList.stream()
-                                    .map(licenseEntity -> {
-                                        SCALicenseVO licenseVO = new SCALicenseVO();
-                                        BeanUtils.copyProperties(licenseEntity, licenseVO);
-                                        return licenseVO;
-                                    })
-                                    .collect(Collectors.toList());
-                    scaPackageVO.setLicenseList(packageLicenseVOList);
+                // 设置漏洞统计信息
+                if (vulStatisticsMap.containsKey(scaSbomPackageEntity.getPackageId())) {
+                    Map<Integer, Integer> severityCount =
+                            vulStatisticsMap.getOrDefault(scaSbomPackageEntity.getPackageId(), new HashMap<>());
+                    scaPackageVO.setHighCount(severityCount.getOrDefault(ComConstants.SERIOUS, 0));
+                    scaPackageVO.setMiddleCount(severityCount.getOrDefault(ComConstants.NORMAL, 0));
+                    scaPackageVO.setLowCount(severityCount.getOrDefault(ComConstants.PROMPT, 0));
+                    scaPackageVO.setUnknownCount(severityCount.getOrDefault(ComConstants.UNKNOWN, 0));
                 }
+
+                // 获取组件使用到的许可证列表
+                List<SCALicenseVO> packageLicenseVOList = new ArrayList<>();
+                if (CollectionUtils.isNotEmpty(scaSbomPackageEntity.getLicenses())) {
+                    scaSbomPackageEntity.getLicenses().forEach(licenseName -> {
+                        SCALicenseEntity licenseEntity = licenseMap.get(licenseName);
+                        if (licenseEntity != null) {
+                            SCALicenseVO licenseVO = new SCALicenseVO();
+                            BeanUtils.copyProperties(licenseEntity, licenseVO);
+                            packageLicenseVOList.add(licenseVO);
+                        }
+                    });
+                }
+                scaPackageVO.setLicenseList(packageLicenseVOList);
 
                 // 风险等级字段值替换
                 int severity = scaPackageVO.getSeverity() == ComConstants.PROMPT_IN_DB
@@ -216,6 +248,7 @@ public class SCAPackageQueryWarningBizServiceImpl implements ISCAQueryWarningSer
 
     /**
      * 处理组件详情查询
+     *
      * @param requestVO
      * @return
      */
@@ -258,19 +291,15 @@ public class SCAPackageQueryWarningBizServiceImpl implements ISCAQueryWarningSer
 
         // 获取影响组件的漏洞列表
         List<SCAVulnerabilityEntity> vulEntityList =
-                scaVulnerabilityDao.findByTaskIdAndToolNameAndAffectedPackageId(
+                scaVulnerabilityDao.findByTaskIdAndToolNameAndPackageId(
                         entity.getTaskId(),
                         entity.getToolName(),
-                        entity.getLicenses()
+                        entity.getPackageId()
                 );
         if (CollectionUtils.isNotEmpty(vulEntityList)) {
             List<SCAVulnerabilityVO> packageVulnerabilityVOList =
                     vulEntityList.stream()
-                            .map(vulEntity -> {
-                                SCAVulnerabilityVO vulnerabilityVO = new SCAVulnerabilityVO();
-                                BeanUtils.copyProperties(vulEntity, vulnerabilityVO);
-                                return vulnerabilityVO;
-                            })
+                            .map(this::getVulVOFromEntity)
                             .collect(Collectors.toList());
             packageDetailVO.setVulnerabilityList(packageVulnerabilityVOList);
         }
@@ -376,6 +405,7 @@ public class SCAPackageQueryWarningBizServiceImpl implements ISCAQueryWarningSer
 
     /**
      * 统计添加筛选条件后的各状态告警数量
+     *
      * @param scaQueryWarningParams
      * @param response
      */
@@ -414,6 +444,7 @@ public class SCAPackageQueryWarningBizServiceImpl implements ISCAQueryWarningSer
 
     /**
      * 统计添加筛选条件后的各风险等级告警数量
+     *
      * @param scaQueryWarningParams
      * @param response
      */

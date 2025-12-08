@@ -26,8 +26,7 @@
 
 package com.tencent.devops.common.api;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -39,42 +38,42 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("基础数据视图类")
+@Schema(description = "基础数据视图类")
 public class BaseDataVO extends CommonVO {
 
-    @ApiModelProperty("参数代码")
+    @Schema(description = "参数代码")
     private String paramCode;
 
-    @ApiModelProperty("参数名称")
+    @Schema(description = "参数名称")
     private String paramName;
 
-    @ApiModelProperty("参数值")
+    @Schema(description = "参数值")
     private String paramValue;
 
-    @ApiModelProperty("参数类型")
+    @Schema(description = "参数类型")
     private String paramType;
 
-    @ApiModelProperty("参数状态")
+    @Schema(description = "参数状态")
     private String paramStatus;
 
-    @ApiModelProperty("参数扩展字段1")
+    @Schema(description = "参数扩展字段1")
     private String paramExtend1;
 
-    @ApiModelProperty("参数扩展字段2")
+    @Schema(description = "参数扩展字段2")
     private String paramExtend2;
 
-    @ApiModelProperty("参数扩展字段3")
+    @Schema(description = "参数扩展字段3")
     private String paramExtend3;
 
-    @ApiModelProperty("参数扩展字段4")
+    @Schema(description = "参数扩展字段4")
     private String paramExtend4;
 
-    @ApiModelProperty("参数扩展字段5")
+    @Schema(description = "参数扩展字段5")
     private String paramExtend5;
 
-    @ApiModelProperty("LANG类型专用-语言全称")
+    @Schema(description = "LANG类型专用-语言全称")
     private String langFullKey;
 
-    @ApiModelProperty("LANG类型专用-语言类型")
+    @Schema(description = "LANG类型专用-语言类型")
     private String langType;
 }

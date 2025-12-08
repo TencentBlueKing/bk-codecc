@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.vo.common;
 
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.List;
  * @date 2019/12/14
  */
 @Data
-@ApiModel("后端参数视图")
+@Schema(description = "后端参数视图")
 public class BackendParamsVO
 {
     private List<String> paramJsonRelateCheckerSetTools;

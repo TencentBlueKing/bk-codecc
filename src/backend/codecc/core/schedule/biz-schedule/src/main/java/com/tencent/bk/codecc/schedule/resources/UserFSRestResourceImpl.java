@@ -17,7 +17,7 @@ import com.tencent.bk.codecc.schedule.service.UploadDownloadService;
 import com.tencent.devops.common.web.RestResource;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 /**
  * 文件上传下载接口

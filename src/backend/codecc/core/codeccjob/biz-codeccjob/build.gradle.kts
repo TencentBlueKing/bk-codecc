@@ -9,13 +9,14 @@ dependencies {
     api(project(":core:common:common-client"))
 //    api(project(":common:common-auth"))
     api(project(":core:common:common-db"))
+    api(project(":core:common:common-redis"))
     api(project(":core:codeccjob:model-codeccjob"))
     api(project(":core:codeccjob:api-codeccjob"))
     api(project(":core:defect:api-defect"))
     api(project(":core:defect:model-defect"))
     api(project(":core:common:common-auth:common-auth-api"))
     api("org.springframework.boot:spring-boot-starter-websocket")
-    api(group = "javax.websocket", name = "javax.websocket-api", version = "1.1")
+    api(group = "jakarta.websocket", name = "jakarta.websocket-api", version = Versions.jakartaWebsocketVersion)
     api("io.undertow:undertow-servlet")
     api("io.undertow:undertow-websockets-jsr")
     api("org.redisson:redisson")
@@ -25,6 +26,9 @@ dependencies {
         exclude(group = "com.tencent.bk.devops.ci.project", module = "common-api")
         exclude(group = "com.tencent.bk.devops.ci.project", module = "common-auth")
     }
+    api("com.tencent.bk.devops.ci.metrics:api-metrics") {
+        isTransitive = false
+    }
     api(project(":core:common:common-storage:common-storage-cos"))
-    api("org.tukaani:xz:1.9")
+    api("org.tukaani:xz:${Versions.xzVersion}")
 }

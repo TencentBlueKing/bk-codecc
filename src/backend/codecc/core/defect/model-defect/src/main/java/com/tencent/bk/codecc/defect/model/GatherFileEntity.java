@@ -26,7 +26,7 @@
 
 package com.tencent.bk.codecc.defect.model;
 
-import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson2.annotation.JSONField;
 import com.tencent.codecc.common.db.CommonEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

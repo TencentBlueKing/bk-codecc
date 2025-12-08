@@ -73,6 +73,7 @@
             <bk-dialog
               :position="{ top: 50, left: 5 }"
               v-model="isCustomReceiverShow"
+              :mask-close="false"
               width="720"
             >
               <custom-receiver
@@ -269,6 +270,7 @@
             <bk-dialog
               :position="{ top: 50, left: 5 }"
               v-model="isEmailReceiverShow"
+              :mask-close="false"
               width="720"
             >
               <custom-receiver

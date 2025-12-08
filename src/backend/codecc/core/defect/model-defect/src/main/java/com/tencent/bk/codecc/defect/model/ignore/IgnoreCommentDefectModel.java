@@ -37,4 +37,6 @@ public class IgnoreCommentDefectModel {
     @Field("ignore_defect_map")
     private Map<String, List<IgnoreCommentDefectSubModel>> ignoreDefectMap;
 
+    @Field("migrated")
+    private Boolean migrated;
 }

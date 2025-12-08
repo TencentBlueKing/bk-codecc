@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -42,33 +41,33 @@ import java.util.Set;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("第三方platform信息视图")
+@Schema(description = "第三方platform信息视图")
 public class PlatformVO extends CommonVO
 {
-    @ApiModelProperty(value = "工具名称", required = true)
+    @Schema(description = "工具名称", required = true)
     private String toolName;
 
-    @ApiModelProperty(value = "IP", required = true)
+    @Schema(description = "IP", required = true)
     private String ip;
 
-    @ApiModelProperty(value = "端口", required = true)
+    @Schema(description = "端口", required = true)
     private String port;
 
-    @ApiModelProperty(value = "用户名", required = true)
+    @Schema(description = "用户名", required = true)
     private String userName;
 
-    @ApiModelProperty(value = "密码", required = true)
+    @Schema(description = "密码", required = true)
     private String passwd;
 
-    @ApiModelProperty(value = "token", required = true)
+    @Schema(description = "token", required = true)
     private String token;
 
-    @ApiModelProperty(value = "状态", required = true)
+    @Schema(description = "状态", required = true)
     private Integer status;
 
-    @ApiModelProperty(value = "责任人", required = true)
+    @Schema(description = "责任人", required = true)
     private String owner;
 
-    @ApiModelProperty(value = "支持的任务类型，当前主要用来区分是否支持开源扫描的", required = true)
+    @Schema(description = "支持的任务类型，当前主要用来区分是否支持开源扫描的", required = true)
     private Set<String> supportTaskTypes;
 }

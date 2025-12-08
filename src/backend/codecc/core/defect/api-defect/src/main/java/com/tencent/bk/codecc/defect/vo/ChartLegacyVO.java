@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -37,25 +36,25 @@ import lombok.Data;
  * @date 2019/5/28
  */
 @Data
-@ApiModel("数据报表的折线图表节点视图")
+@Schema(description = "数据报表的折线图表节点视图")
 public class ChartLegacyVO
 {
-    @ApiModelProperty("日期")
+    @Schema(description = "日期")
     private String date;
 
-    @ApiModelProperty("新增告警数")
+    @Schema(description = "新增告警数")
     private Integer newCount;
 
-    @ApiModelProperty("历史告警数")
+    @Schema(description = "历史告警数")
     private Integer historyCount;
 
-    @ApiModelProperty("总告警数")
+    @Schema(description = "总告警数")
     private Integer count;
 
-    @ApiModelProperty("显示日期")
+    @Schema(description = "显示日期")
     private String tips;
 
-    //@ApiModelProperty("时间")
+    //@Schema(description = "时间")
     //private Long time;
 
     public ChartLegacyVO()

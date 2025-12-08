@@ -3,8 +3,7 @@ package com.tencent.devops.common.api.clusterresult;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.Data;
 
@@ -18,38 +17,38 @@ import lombok.Data;
         @JsonSubTypes.Type(value = SecurityClusterResultVO.class, name = "SECURITY"),
         @JsonSubTypes.Type(value = SCAClusterResultVO.class, name = "SCA")
 })
-@ApiModel
+@Schema
 public class BaseClusterResultVO {
-    @ApiModelProperty
+    @Schema
     private Long taskId;
 
-    @ApiModelProperty
+    @Schema
     private String buildId;
 
-    @ApiModelProperty
+    @Schema
     private String type;
 
-    @ApiModelProperty
+    @Schema
     private Integer toolNum;
 
-    @ApiModelProperty
+    @Schema
     private List<String> toolList;
 
-    @ApiModelProperty
+    @Schema
     private Integer totalCount;
 
-    @ApiModelProperty
+    @Schema
     private Integer newCount;
 
-    @ApiModelProperty
+    @Schema
     private Integer fixCount;
 
-    @ApiModelProperty
+    @Schema
     private Integer maskCount;
 
-    @ApiModelProperty
+    @Schema
     private Long totalLines;
 
-    @ApiModelProperty
+    @Schema
     private Integer ccnBeyondThresholdSum;
 }

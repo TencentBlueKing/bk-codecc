@@ -10,8 +10,9 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.Set;
 
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
@@ -29,7 +30,7 @@ public class ToolDeveloperExtAuth implements CodeCCExtAuthProcessor {
     private ToolDeveloperInfoRepository toolDeveloperInfoRepository;
 
     @Override
-    public boolean isPassAuth(@NotNull ContainerRequestContext requestContext) {
+    public boolean isPassAuth(@NotNull ContainerRequestContext requestContext, @NotNull ContainerRequestFilter filter) {
         String userName = requestContext.getHeaderString(AUTH_HEADER_DEVOPS_USER_ID);
         if (StringUtils.isBlank(userName)) {
             return false;

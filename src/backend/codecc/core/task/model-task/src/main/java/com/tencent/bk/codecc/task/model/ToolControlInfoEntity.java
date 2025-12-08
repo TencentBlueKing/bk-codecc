@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.task.model;
 
 import com.tencent.codecc.common.db.CommonEntity;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.checkerframework.common.aliasing.qual.Unique;

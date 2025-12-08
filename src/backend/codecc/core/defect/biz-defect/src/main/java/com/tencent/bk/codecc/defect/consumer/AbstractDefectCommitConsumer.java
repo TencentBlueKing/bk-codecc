@@ -15,7 +15,7 @@ package com.tencent.bk.codecc.defect.consumer;
 import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_DATA_SEPARATION;
 import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_DATA_SEPARATION_COOL_DOWN;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.tencent.bk.codecc.defect.cache.ConcurrentDefectTracingConfigCache;
 import com.tencent.bk.codecc.defect.component.DefectConsumerRetryLimitComponent;
 import com.tencent.bk.codecc.defect.component.ScmJsonComponent;
@@ -56,6 +56,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -383,7 +384,7 @@ public abstract class AbstractDefectCommitConsumer extends AbstractDefectCommitO
      * @param isVip
      * @return
      */
-    protected LinkedBlockingQueue<AsyncRabbitTemplate.RabbitConverterFuture<Boolean>> setConcurrentBlockingQueue(
+    protected LinkedBlockingQueue<CompletableFuture<Boolean>> setConcurrentBlockingQueue(
             Long taskId,
             String toolName,
             String buildId,
@@ -391,7 +392,7 @@ public abstract class AbstractDefectCommitConsumer extends AbstractDefectCommitO
             CountDownLatch finishLatch,
             Boolean isVip
     ) {
-        LinkedBlockingQueue<AsyncRabbitTemplate.RabbitConverterFuture<Boolean>> asyncResultQueue =
+        LinkedBlockingQueue<CompletableFuture<Boolean>> asyncResultQueue =
                 new LinkedBlockingQueue<>(concurrentDefectTracingConfigCache.getConcurrentLimit(isVip));
         new Thread(() -> {
             try {
@@ -403,7 +404,7 @@ public abstract class AbstractDefectCommitConsumer extends AbstractDefectCommitO
                     }
                     try {
                         synchronized (asyncResultQueue) {
-                            AsyncRabbitTemplate.RabbitConverterFuture<Boolean> clusterResult = asyncResultQueue.poll();
+                            CompletableFuture<Boolean> clusterResult = asyncResultQueue.poll();
                             if (null != clusterResult) {
                                 /*
                                  * 对取出的异步聚类结果进行判断

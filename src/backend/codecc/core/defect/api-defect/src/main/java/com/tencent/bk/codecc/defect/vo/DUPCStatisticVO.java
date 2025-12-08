@@ -12,8 +12,7 @@
  
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -23,38 +22,38 @@ import lombok.Data;
  * @version V1.0
  */
 @Data
-@ApiModel("重复率统计视图")
+@Schema(description = "重复率统计视图")
 public class DUPCStatisticVO extends StatisticVO
 {
 
     /**
      * 本次分析前的遗留告警数
      */
-    @ApiModelProperty("本次分析前的遗留告警数")
+    @Schema(description = "本次分析前的遗留告警数")
     private int lastDefectCount;
 
     /**
      * 本次分析的代码重复率
      */
-    @ApiModelProperty("本次分析的代码重复率")
+    @Schema(description = "本次分析的代码重复率")
     private float dupRate;
 
     /**
      * 本次分析前的代码重复率
      */
-    @ApiModelProperty("本次分析前的代码重复率")
+    @Schema(description = "本次分析前的代码重复率")
     private float lastDupRate;
 
     /**
      * 本次分析的代码重复率变化值
      */
-    @ApiModelProperty("本次分析的代码重复率变化值")
+    @Schema(description = "本次分析的代码重复率变化值")
     private float dupRateChange;
 
     /**
      * 代码重复率工具的扫描统计结果
      */
-    @ApiModelProperty("代码重复率工具的扫描统计结果")
+    @Schema(description = "代码重复率工具的扫描统计结果")
     private DUPCScanSummaryVO dupcScanSummary;
 
 

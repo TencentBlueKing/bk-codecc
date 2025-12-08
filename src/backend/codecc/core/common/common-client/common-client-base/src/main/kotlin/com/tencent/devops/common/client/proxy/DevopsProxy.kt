@@ -5,9 +5,9 @@ import feign.Feign
 import org.slf4j.LoggerFactory
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
-import javax.ws.rs.HeaderParam
-import javax.ws.rs.PathParam
-import javax.ws.rs.QueryParam
+import jakarta.ws.rs.HeaderParam
+import jakarta.ws.rs.PathParam
+import jakarta.ws.rs.QueryParam
 
 class DevopsProxy constructor(
     private val any: Any,

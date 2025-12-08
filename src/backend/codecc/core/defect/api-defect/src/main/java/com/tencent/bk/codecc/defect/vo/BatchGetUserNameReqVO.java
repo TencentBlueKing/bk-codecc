@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ApiModel("batchGetUserName 请求体")
+@Schema(description = "batchGetUserName 请求体")
 public class BatchGetUserNameReqVO {
     private String tenantId;
     private List<String> userIds;

@@ -1,13 +1,17 @@
 package com.tencent.bk.codecc.defect.dao.defect.mongotemplate;
 
+import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
+import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
 import com.tencent.bk.codecc.defect.vo.ToolBuildInfoReqVO;
 import com.tencent.devops.common.constant.ComConstants;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
@@ -32,6 +36,7 @@ import java.util.List;
 @Repository
 @Slf4j
 public class ToolBuildInfoDao {
+
     @Autowired
     private MongoTemplate defectMongoTemplate;
 
@@ -172,5 +177,42 @@ public class ToolBuildInfoDao {
 
         log.info("task id count: {} ,elapse time: {}ms", taskIdSet.size(), System.currentTimeMillis() - start);
         return results.getMappedResults();
+    }
+
+    /**
+     * 批量设置强制全量扫描标志(每1000条执行一次)
+     *
+     * @param taskInfoVOS 任务ID和对应工具名称集合的映射
+     */
+    public void batchSetForceFullScan(List<BatchDefectProcessReqVO.TaskInfoVO> taskInfoVOS) {
+        // 检查输入参数是否为空
+        if (CollectionUtils.isEmpty(taskInfoVOS)) {
+            log.warn("taskIdToolsMap is empty, skip batch set force full scan");
+            return;
+        }
+
+        List<List<BatchDefectProcessReqVO.TaskInfoVO>> pageEntriesList = Lists.partition(taskInfoVOS,
+                ComConstants.COMMON_PAGE_SIZE);
+
+        for (List<BatchDefectProcessReqVO.TaskInfoVO> pageEntries : pageEntriesList) {
+            BulkOperations bulkOps = defectMongoTemplate.bulkOps(BulkOperations.BulkMode.ORDERED,
+                    ToolBuildInfoEntity.class);
+            for (BatchDefectProcessReqVO.TaskInfoVO entry : pageEntries) {
+                // 查询条件：匹配task_id和tool_name
+                Query query = Query.query(
+                        Criteria.where("task_id").is(entry.getTaskId())
+                                .and("tool_name").in(entry.getToolNames())
+                );
+
+                // 更新操作：设置强制全量扫描标志
+                Update update = new Update();
+                update.set("force_full_scan", ComConstants.CommonJudge.COMMON_Y.value());
+
+                // 添加更新操作到批量操作中
+                bulkOps.updateMulti(query, update);
+            }
+            bulkOps.execute();
+        }
+        log.info("Batch full scan is completed, total of {} records", taskInfoVOS.size());
     }
 }
