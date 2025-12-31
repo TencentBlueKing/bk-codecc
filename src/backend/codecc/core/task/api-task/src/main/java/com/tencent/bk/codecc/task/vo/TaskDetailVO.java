@@ -26,7 +26,6 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.tencent.bk.codecc.task.vo.checkerset.ToolCheckerSetVO;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.CheckerSetPackageType;
