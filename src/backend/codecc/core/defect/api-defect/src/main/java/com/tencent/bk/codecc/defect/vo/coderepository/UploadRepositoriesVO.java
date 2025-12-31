@@ -2,7 +2,7 @@ package com.tencent.bk.codecc.defect.vo.coderepository;
 
 import com.tencent.devops.common.api.CodeRepoVO;
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -15,7 +15,7 @@ import java.util.Set;
  * @date 2019/11/15
  */
 @Data
-@ApiModel("代码仓库信息视图")
+@Schema(description = "代码仓库信息视图")
 public class UploadRepositoriesVO extends CommonVO
 {
     /**

@@ -28,18 +28,18 @@ package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.bk.codecc.defect.vo.common.BackendParamsVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * 后端配置参数接口
@@ -47,19 +47,19 @@ import javax.ws.rs.core.MediaType;
  * @version V1.0
  * @date 2019/5/29
  */
-@Api(tags = {"BACKEND_PARAMS"}, description = " 后端配置参数接口")
+@Tag(name = "BACKEND_PARAMS", description = " 后端配置参数接口")
 @Path("/user/backendParams")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface UserBackendParamsResource {
 
-    @ApiOperation("查询后端配置参数")
+    @Operation(summary = "查询后端配置参数")
     @Path("/")
     @GET
     Result<BackendParamsVO> getParams();
 
 
-    @ApiOperation("告警提交MQ触发-大项目")
+    @Operation(summary = "告警提交MQ触发-大项目")
     @Path("/pubMsgToCommitDefect/{mode}")
     @POST
     Result<Boolean> pubMsgToCommitDefect(
@@ -68,41 +68,41 @@ public interface UserBackendParamsResource {
             String jsonBody
     );
 
-    @ApiOperation("数据迁移模式开关")
+    @Operation(summary = "数据迁移模式开关")
     @Path("/dataMigration/commonToLint/switch")
     @POST
     Result<Boolean> commonToLintDataMigrationSwitch(
-            @ApiParam(value = "三种模式: single/batch/off", required = true)
+            @Parameter(description = "三种模式: single/batch/off", required = true)
             @QueryParam("mode")
             String mode
     );
 
-    @ApiOperation("触发批量数据迁移")
+    @Operation(summary = "触发批量数据迁移")
     @Path("/dataMigration/trigger/batchCommonToLint")
     @POST
     Result<Boolean> batchCommonToLintDataMigration();
 
-    @ApiOperation("提单屏蔽")
+    @Operation(summary = "提单屏蔽")
     @Path("/addCommitDefectBlockList")
     @POST
     Result<String> addCommitDefectBlockList(List<Long> taskIds);
 
-    @ApiOperation("清空提单屏蔽列表")
+    @Operation(summary = "清空提单屏蔽列表")
     @Path("/clearCommitDefectBlockList")
     @POST
     Result<Boolean> clearCommitDefectBlockList(List<Long> taskIds);
 
-    @ApiOperation("降冷指定任务")
+    @Operation(summary = "降冷指定任务")
     @Path("/coolDown/{taskId}")
     @POST
     Result<Boolean> coolDown(@PathParam("taskId") Long taskId);
 
-    @ApiOperation("加热指定任务")
+    @Operation(summary = "加热指定任务")
     @Path("/warmUp/{taskId}")
     @POST
     Result<Boolean> warmUp(@PathParam("taskId") Long taskId);
 
-    @ApiOperation("触发冷热分离任务下发")
+    @Operation(summary = "触发冷热分离任务下发")
     @Path("/hotColdDataSeparationTrigger")
     @POST
     Result<Boolean> hotColdDataSeparationTrigger();

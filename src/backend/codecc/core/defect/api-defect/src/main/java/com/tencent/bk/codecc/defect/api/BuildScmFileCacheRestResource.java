@@ -32,17 +32,16 @@ package com.tencent.bk.codecc.defect.api;
 import com.tencent.bk.codecc.defect.vo.file.ScmFileMd5Info;
 import com.tencent.devops.common.api.annotation.ServiceInterface;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_BUILD_ID;
@@ -53,24 +52,24 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_BUI
  * @version V2.0
  * @date 2020/4/8
  */
-@Api(tags = {"BUILD_SCM_FILE"}, description = "代码文件接口")
+@Tag(name = "BUILD_SCM_FILE", description = "代码文件接口")
 @Path("/build/scm/file")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @ServiceInterface(value = "report")
 public interface BuildScmFileCacheRestResource {
 
-    @ApiOperation("获取上报文件md5信息")
+    @Operation(summary = "获取上报文件md5信息")
     @Path("/list")
     @GET
     Result<List<ScmFileMd5Info>> listMd5FileInfos(
-            @ApiParam(value = "任务id", required = true)
+            @Parameter(description = "任务id", required = true)
             @QueryParam("taskId")
                     long taskId,
-            @ApiParam(value = "工具名称", required = true)
+            @Parameter(description = "工具名称", required = true)
             @QueryParam("toolName")
                     String toolName,
-            @ApiParam(value = "构建ID", required = true)
+            @Parameter(description = "构建ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_BUILD_ID)
                     String buildId
     );

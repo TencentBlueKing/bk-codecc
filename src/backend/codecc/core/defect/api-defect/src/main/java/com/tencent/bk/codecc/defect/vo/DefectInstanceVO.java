@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -22,42 +21,42 @@ import java.util.List;
  * 告警实例的数据
  */
 @Data
-@ApiModel("告警实例的数据")
+@Schema(description = "告警实例的数据")
 public class DefectInstanceVO {
     /**
      * 有关引起告警的跟踪数据。可以有多个跟踪数据。
      */
-    @ApiModelProperty(value = "告警涉及的相关文件信息。可以有多个。", required = true)
+    @Schema(description = "告警涉及的相关文件信息。可以有多个。", required = true)
     private List<Trace> traces;
 
     @Data
-    @ApiModel("告警跟踪数据视图")
+    @Schema(description = "告警跟踪数据视图")
     public static class Trace {
-        @ApiModelProperty(value = "报错行的描述信息", required = true)
+        @Schema(description = "报错行的描述信息", required = true)
         private String message;
 
-        @ApiModelProperty(value = "文件MD5与文件路径名共同唯一标志一个文件", required = true)
+        @Schema(description = "文件MD5与文件路径名共同唯一标志一个文件", required = true)
         private String fileMd5;
 
-        @ApiModelProperty(value = "文件路径名", required = true)
+        @Schema(description = "文件路径名", required = true)
         private String filePath;
 
-        @ApiModelProperty(value = "告警出现（实例）的简短标识符。用在 UI 中")
+        @Schema(description = "告警出现（实例）的简短标识符。用在 UI 中")
         private String tag;
 
-        @ApiModelProperty(value = "跟踪时间序号", required = true)
+        @Schema(description = "跟踪时间序号", required = true)
         private Integer traceNum;
 
-        @ApiModelProperty(value = "行号", required = true)
+        @Schema(description = "行号", required = true)
         private int lineNum;
 
-        @ApiModelProperty(value = "开始列号")
+        @Schema(description = "开始列号")
         private Integer startColumn;
 
-        @ApiModelProperty(value = "结束列号")
+        @Schema(description = "结束列号")
         private int endColumn;
 
-        @ApiModelProperty(value = "是否是告警的主事件，告警也可能不存在主事件")
+        @Schema(description = "是否是告警的主事件，告警也可能不存在主事件")
         private boolean main;
 
         /**
@@ -78,13 +77,13 @@ public class DefectInstanceVO {
          * -----------------------------------------------------------------------------------------------------
          * REMEDIATION： 提供旨在帮助您修复报告的软件问题的补救建议，而不只是报告问题。用在安全缺陷中。
          */
-        @ApiModelProperty(value = "事件类型")
+        @Schema(description = "事件类型")
         private String kind;
 
         /**
          * 关联告警跟踪信息
          */
-        @ApiModelProperty(value = "关联告警跟踪信息")
+        @Schema(description = "关联告警跟踪信息")
         List<Trace> linkTrace;
     }
 }

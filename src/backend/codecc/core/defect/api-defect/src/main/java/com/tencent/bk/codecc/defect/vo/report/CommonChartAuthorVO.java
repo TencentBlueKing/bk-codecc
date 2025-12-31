@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo.report;
 
 import com.tencent.devops.common.constant.ComConstants;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -38,20 +37,20 @@ import lombok.Data;
  * @date 2019/5/28
  */
 @Data
-@ApiModel("数据报表作者列表")
+@Schema(description = "数据报表作者列表")
 public class CommonChartAuthorVO extends ChartAuthorBaseVO
 {
 
-    @ApiModelProperty("严重数量")
+    @Schema(description = "严重数量")
     private Integer serious;
 
-    @ApiModelProperty("一般数量")
+    @Schema(description = "一般数量")
     private Integer normal;
 
-    @ApiModelProperty("提示数量")
+    @Schema(description = "提示数量")
     private Integer prompt;
 
-    //@ApiModelProperty("提示语")
+    //@Schema(description = "提示语")
     //private String tips;
 
     public void add(CommonChartAuthorVO b) {

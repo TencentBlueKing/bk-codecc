@@ -43,6 +43,7 @@
 
       var TECHMAP_REPORT = '<%= process.env.BK_TECHMAP_REPORT %>';
       var BK_IAM_URL_PREFIX = '<%= process.env.BK_IAM_URL_PREFIX %>';
+      var BK_API_TENANT_BASE_URL = '<%= process.env.BK_API_TENANT_BASE_URL %>';
 
       // aegis监控
       // var AEGISID = '<%= process.env.BK_AEGISID %>';
@@ -69,8 +70,8 @@
         }
         if ('<%= process.env.NODE_ENV %>' !== 'development') {
           var projectId =
-            document.location.pathname.match(/^\/codecc\/([\w-]+)\/?/)?.[1] ||
-            document.location.search.match(/projectId=([\w-]+)/)?.[1] || '';
+            document.location.pathname.match(/^\/codecc\/([\w.-_]+)\/?/)?.[1] ||
+            document.location.search.match(/projectId=([\w.-_]+)/)?.[1] || '';
           var projectIdInCookie = document.cookie.replace(
             /(?:(?:^|.*;\s*)X-DEVOPS-PROJECT-ID\s*\=\s*([^;]*).*$)|^.*$/,
             '$1'

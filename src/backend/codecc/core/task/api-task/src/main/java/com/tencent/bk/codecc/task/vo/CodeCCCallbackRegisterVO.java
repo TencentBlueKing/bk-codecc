@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.models.auth.In;
+
 import java.util.List;
 import lombok.Data;
 

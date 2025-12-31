@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -39,16 +38,16 @@ import java.util.List;
  * @date 2019/7/1
  */
 @Data
-@ApiModel("任务拥有者，任务成员清单，任务查看者清单")
+@Schema(description = "任务拥有者，任务成员清单，任务查看者清单")
 public class TaskMemberVO
 {
 
-    @ApiModelProperty("任务成员清单")
+    @Schema(description = "任务成员清单")
     private List<String> taskMember;
 
-    @ApiModelProperty("任务拥有者清单")
+    @Schema(description = "任务拥有者清单")
     private List<String> taskOwner;
 
-    @ApiModelProperty("任务查看者清单")
+    @Schema(description = "任务查看者清单")
     private List<String> taskViewer;
 }

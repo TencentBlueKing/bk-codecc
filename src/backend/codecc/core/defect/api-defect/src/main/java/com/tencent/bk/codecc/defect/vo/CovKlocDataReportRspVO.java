@@ -28,8 +28,7 @@ package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.common.CommonDataReportRspVO;
 import com.tencent.bk.codecc.defect.vo.report.ChartAuthorListVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -41,14 +40,14 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("Coverity类数据报表响应视图")
+@Schema(description = "Coverity类数据报表响应视图")
 public class CovKlocDataReportRspVO extends CommonDataReportRspVO
 {
 
-    @ApiModelProperty("待修复告警作者分布")
+    @Schema(description = "待修复告警作者分布")
     private ChartAuthorListVO authorChart;
 
-    @ApiModelProperty("待修复告警、每日新增告警、每日关闭、修复告警")
+    @Schema(description = "待修复告警、每日新增告警、每日关闭、修复告警")
     private CovKlocChartVO newCloseFixChart;
 
 }

@@ -13,8 +13,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -24,43 +23,43 @@ import lombok.Data;
  * @version V1.0
  */
 @Data
-@ApiModel("统计视图")
+@Schema(description = "统计视图")
 public class StatisticVO extends CommonVO
 {
     /**
      * 任务ID
      */
-    @ApiModelProperty("任务id")
+    @Schema(description = "任务id")
     private Long taskId;
 
     /**
      * 工具名称
      */
-    @ApiModelProperty("工具名称")
+    @Schema(description = "工具名称")
     private String toolName;
 
     /**
      * 分析版本号
      */
-    @ApiModelProperty("分析版本号")
+    @Schema(description = "分析版本号")
     private String analysisVersion;
 
     /**
      * 统计的时间
      */
-    @ApiModelProperty("统计的时间")
+    @Schema(description = "统计的时间")
     private long time;
 
     /**
      * 告警数量
      */
-    @ApiModelProperty("告警数量")
+    @Schema(description = "告警数量")
     private int defectCount;
 
     /**
      * 告警变化量
      */
-    @ApiModelProperty("告警变化量")
+    @Schema(description = "告警变化量")
     private int defectChange;
 
 }

@@ -36,7 +36,7 @@ import com.tencent.devops.common.auth.api.service.AuthTaskService
 import com.tencent.devops.common.auth.service.IamEsbService
 import com.tencent.devops.common.auth.utils.CodeCCAuthResourceApi
 import com.tencent.devops.common.client.Client
-import com.tencent.devops.common.redis.RedisOperation
+
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.AutoConfigureOrder
@@ -78,7 +78,7 @@ class V3AuthExAutoConfiguration {
     fun authExPermissionApi(redisTemplate: RedisTemplate<String, String>,
                             client: Client,
                             authTaskService : AuthTaskService,
-                            codeccAuthPermissionStrApi: AuthPermissionStrApi) =
+                            codeccAuthPermissionStrApi: CodeCCV3AuthPermissionApi) =
             V3AuthExPermissionApi(
                 client = client,
                 redisTemplate = redisTemplate,
@@ -90,12 +90,11 @@ class V3AuthExAutoConfiguration {
             V3AuthExRegisterApi(authResourceApi)
 
     @Bean
-    fun codeCCV3AuthPermissionApi(redisOperation: RedisOperation) =
-        CodeCCV3AuthPermissionApi(authHelper(), policyService(), redisOperation)
+    fun codeCCV3AuthPermissionApi(redisTemplate: RedisTemplate<String, String>) =
+        CodeCCV3AuthPermissionApi(authHelper(), policyService(), redisTemplate)
 
     @Bean
-    fun codeCCV3AuthResourceApi(redisOperation: RedisOperation,
-                                iamEsbService: IamEsbService,
+    fun codeCCV3AuthResourceApi(iamEsbService: IamEsbService,
                                 iamConfiguration: IamConfiguration) =
         CodeCCAuthResourceApi(iamEsbService, iamConfiguration)
 

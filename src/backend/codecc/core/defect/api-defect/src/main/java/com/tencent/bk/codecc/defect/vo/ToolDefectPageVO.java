@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -29,7 +28,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ApiModel("工具告警id视图")
+@Schema(description = "工具告警id视图")
 public class ToolDefectPageVO {
 
     private long taskId;
@@ -39,7 +38,7 @@ public class ToolDefectPageVO {
     /**
      * 告警id， 任务、工具下唯一
      */
-    @ApiModelProperty("告警id， 任务、工具下唯一")
+    @Schema(description = "告警id， 任务、工具下唯一")
     private List<String> id;
     /**
      * 总数

@@ -41,7 +41,7 @@ import feign.Request
 import feign.RequestInterceptor
 import feign.jackson.JacksonDecoder
 import feign.jackson.JacksonEncoder
-import feign.jaxrs.JAXRSContract
+import feign.jaxrs3.JAXRS3Contract
 import feign.okhttp.OkHttpClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.annotation.AnnotationUtils
@@ -92,7 +92,7 @@ abstract class Client constructor(
     )
 
     protected val feignClient = OkHttpClient(okHttpClient)
-    protected val jaxRsContract = JAXRSContract()
+    protected val jaxRsContract = JAXRS3Contract()
     protected val jacksonDecoder = JacksonDecoder(objectMapper)
     protected val jacksonEncoder = JacksonEncoder(objectMapper)
 

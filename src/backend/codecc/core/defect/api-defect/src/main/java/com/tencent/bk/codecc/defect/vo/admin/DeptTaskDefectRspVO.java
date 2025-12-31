@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo.admin;
 
 import com.tencent.bk.codecc.defect.vo.openapi.TaskDefectVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -41,13 +40,13 @@ import java.util.List;
  */
 
 @Data
-@ApiModel("按组织架构查询任务告警响应体")
+@Schema(description = "按组织架构查询任务告警响应体")
 public class DeptTaskDefectRspVO
 {
-    @ApiModelProperty("任务告警列表")
+    @Schema(description = "任务告警列表")
     private List<TaskDefectVO> taskDefectVoList;
 
-    @ApiModelProperty("活跃项目列表")
+    @Schema(description = "活跃项目列表")
     private List<ActiveTaskStatisticsVO> activeTaskList;
 
 }

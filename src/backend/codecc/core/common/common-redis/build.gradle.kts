@@ -3,10 +3,7 @@ plugins {
 }
 
 dependencies {
-    api("org.springframework.boot:spring-boot-starter-data-redis") {
-        exclude(group = "io.lettuce", module = "lettuce-core")
-    }
+    api("org.springframework.boot:spring-boot-starter-data-redis")  // Lettuce 会自动引入
     api("org.redisson:redisson")
-    api("redis.clients:jedis")
-    api("org.apache.commons:commons-pool2")
+    // Lettuce 已由 spring-boot-starter-data-redis 自动引入，无需手动添加
 }

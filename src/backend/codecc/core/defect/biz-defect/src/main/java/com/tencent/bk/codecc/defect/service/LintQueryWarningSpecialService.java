@@ -66,14 +66,30 @@ public interface LintQueryWarningSpecialService {
     /**
      * 根据工具列表、维度获取规则
      *
-     * @param checkerSet 规则集
+     * @param checkerSets 规则集列表
+     * @param checker 当checkerSet不为空时，才会校验checker归属
+     * @param toolNameList
+     * @param dimensionList
+     * @return
+     */
+    Set<String> getCheckers(
+            List<CheckerSet> checkerSets,
+            String checker,
+            List<String> toolNameList,
+            List<String> dimensionList
+    );
+
+    /**
+     * 根据工具列表、维度获取规则
+     *
+     * @param checkerSets 规则集
      * @param checker 当checkerSet不为空时，才会校验checker归属
      * @param toolNameList
      * @param dimensionList
      * @return
      */
     List<CheckerDetailVO> getCheckerDetails(
-            CheckerSet checkerSet,
+            List<CheckerSet> checkerSets,
             String checker,
             List<String> toolNameList,
             List<String> dimensionList

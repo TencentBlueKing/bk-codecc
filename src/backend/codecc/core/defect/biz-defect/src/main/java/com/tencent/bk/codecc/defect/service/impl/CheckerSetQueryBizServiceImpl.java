@@ -8,9 +8,11 @@ import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetProjectRe
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetRepository;
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetTaskRelationshipRepository;
 import com.tencent.bk.codecc.defect.dao.core.mongotemplate.CheckerSetDao;
+import com.tencent.bk.codecc.defect.dao.core.mongotemplate.CheckerSetPackageDao;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerPropsEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetCatagoryEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
+import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetPackageEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetProjectRelationshipEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetTaskRelationshipEntity;
 import com.tencent.bk.codecc.defect.service.ICheckerSetQueryBizService;
@@ -19,6 +21,7 @@ import com.tencent.bk.codecc.defect.vo.CheckerCommonCountVO;
 import com.tencent.bk.codecc.defect.vo.CheckerCountListVO;
 import com.tencent.bk.codecc.defect.vo.CheckerSetListQueryReq;
 import com.tencent.bk.codecc.defect.vo.OtherCheckerSetListQueryReq;
+import com.tencent.bk.codecc.defect.vo.checkerset.TaskUsageDetailVO;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetCategory;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetSource;
 import com.tencent.bk.codecc.task.api.ServiceBaseDataResource;
@@ -28,6 +31,7 @@ import com.tencent.bk.codecc.task.vo.GrayToolProjectVO;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.BaseDataVO;
+import com.tencent.devops.common.api.QueryTaskListReqVO;
 import com.tencent.devops.common.api.annotation.I18NResponse;
 import com.tencent.devops.common.api.checkerset.CheckerSetCategoryVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
@@ -57,6 +61,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -67,9 +72,12 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.tencent.devops.common.util.CodeccStringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -98,6 +106,7 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
      * 规则集语言参数
      */
     private static final String KEY_LANG = "LANG";
+    private static final long MAX_LEV_DIS = 1000010;
 
     @Autowired
     private CheckerSetRepository checkerSetRepository;
@@ -110,6 +119,8 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
     @Autowired
     private CheckerSetTaskRelationshipRepository checkerSetTaskRelationshipRepository;
     @Autowired
+    private CheckerSetPackageDao checkerSetPackageDao;
+    @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
     /**
@@ -120,7 +131,7 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
      * @return
      */
     @Override
-    public Page<CheckerSetVO> getOtherCheckerSets(String projectId, OtherCheckerSetListQueryReq queryCheckerSetReq) {
+    public List<CheckerSetVO> getOtherCheckerSets(String projectId, OtherCheckerSetListQueryReq queryCheckerSetReq) {
         if (null == queryCheckerSetReq.getSortType()) {
             queryCheckerSetReq.setSortType(Sort.Direction.DESC);
         }
@@ -128,10 +139,6 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
         if (StringUtils.isEmpty(queryCheckerSetReq.getSortField())) {
             queryCheckerSetReq.setSortField("task_usage");
         }
-        int pageNum = Math.max(queryCheckerSetReq.getPageNum() - 1, 0);
-        int pageSize = queryCheckerSetReq.getPageSize() <= 0 ? 10 : queryCheckerSetReq.getPageSize();
-        Pageable pageable = PageRequest.of(pageNum, pageSize, Sort.by(queryCheckerSetReq.getSortType(),
-                queryCheckerSetReq.getSortField()));
 
         // 先查出项目已安装的规则集列表
         Set<String> projectCheckerSetIds = Sets.newHashSet();
@@ -158,50 +165,90 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
         Set<CheckerSetCategory> categories = CollectionUtils.isEmpty(queryCheckerSetReq.getCheckerSetCategory())
                 ? Collections.emptySet() : queryCheckerSetReq.getCheckerSetCategory().stream()
                 .map(CheckerSetCategory::getByName).filter(Objects::nonNull).collect(Collectors.toSet());
+
         List<CheckerSetEntity> checkerSetEntities =
                 checkerSetDao.findMoreByCondition(queryCheckerSetReq.getQuickSearch(),
                         queryCheckerSetReq.getCheckerSetLanguage(), categories, projectCheckerSetIds,
-                        queryCheckerSetReq.getProjectInstalled(), toolgrayMap, pageable);
+                        queryCheckerSetReq.getProjectInstalled(), toolgrayMap);
 
         if (CollectionUtils.isEmpty(checkerSetEntities)) {
-            return new PageImpl<>(Lists.newArrayList(), pageable, 0);
+            return Lists.newArrayList();
         }
 
-        Long coefficient = queryCheckerSetReq.getSortType().equals(Sort.Direction.ASC) ? 1L : -1L;
-        List<CheckerSetVO> result = checkerSetEntities.stream().map(checkerSetEntity -> {
-                    CheckerSetVO checkerSetVO = new CheckerSetVO();
-                    BeanUtils.copyProperties(checkerSetEntity, checkerSetVO, "checkerProps");
-                    checkerSetVO.setCodeLangList(List2StrUtil.fromString(checkerSetEntity.getCheckerSetLang(), ","));
-                    checkerSetVO.setToolList(Sets.newHashSet());
-                    if (CollectionUtils.isNotEmpty(checkerSetEntity.getCheckerProps())) {
-                        for (CheckerPropsEntity checkerPropsEntity : checkerSetEntity.getCheckerProps()) {
-                            checkerSetVO.getToolList().add(checkerPropsEntity.getToolName());
-                        }
-                    }
-                    int checkerCount = checkerSetEntity.getCheckerProps() != null
-                            ? checkerSetEntity.getCheckerProps().size() : 0;
-                    checkerSetVO.setCheckerCount(checkerCount);
-                    if (CheckerSetSource.DEFAULT.name().equals(checkerSetEntity.getCheckerSetSource())
-                            || CheckerSetSource.RECOMMEND.name().equals(checkerSetEntity.getCheckerSetSource())
-                            || projectCheckerSetIds.contains(checkerSetEntity.getCheckerSetId())) {
-                        checkerSetVO.setProjectInstalled(true);
-                    } else {
-                        checkerSetVO.setProjectInstalled(false);
-                    }
-                    //设置默认标签
-                    String checkerSetSource = checkerSetVO.getCheckerSetSource();
-                    checkerSetVO.setDefaultCheckerSet((CheckerSetSource.DEFAULT.name().equals(checkerSetSource)
-                            && null == defaultCheckerSetMap.get(checkerSetVO.getCheckerSetId())
-                            || (null != defaultCheckerSetMap.get(checkerSetVO.getCheckerSetId())
-                            && defaultCheckerSetMap.get(checkerSetVO.getCheckerSetId()))));
-                    return checkerSetVO;
-                }).sorted(Comparator.comparingLong(o -> sortByOfficialProps(o) + coefficient * o.getCreateTime()))
+        return checkerSetEntities.stream()
+                .map(checkerSetEntity ->
+                        mapCheckerSetEntity(checkerSetEntity, projectCheckerSetIds,
+                                defaultCheckerSetMap, queryCheckerSetReq.getQuickSearch()))
                 .collect(Collectors.toList());
+    }
 
-        long total = pageNum * pageSize + result.size() + 1;
+    /**
+     * CheckerSetEntity 转 CheckerSetVO
+     */
+    private CheckerSetVO mapCheckerSetEntity(
+            CheckerSetEntity checkerSetEntity,
+            Set<String> projectCheckerSetIds,
+            Map<String, Boolean> defaultCheckerSetMap,
+            String quickSearch
+    ) {
+        CheckerSetVO checkerSetVO = new CheckerSetVO();
+        BeanUtils.copyProperties(checkerSetEntity, checkerSetVO, "checkerProps");
+        checkerSetVO.setCodeLangList(List2StrUtil.fromString(checkerSetEntity.getCheckerSetLang(), ","));
+        checkerSetVO.setToolList(Sets.newHashSet());
+        if (CollectionUtils.isNotEmpty(checkerSetEntity.getCheckerProps())) {
+            for (CheckerPropsEntity checkerPropsEntity : checkerSetEntity.getCheckerProps()) {
+                checkerSetVO.getToolList().add(checkerPropsEntity.getToolName());
+            }
+        }
+        int checkerCount = checkerSetEntity.getCheckerProps() != null
+                ? checkerSetEntity.getCheckerProps().size() : 0;
+        checkerSetVO.setCheckerCount(checkerCount);
+        if (CheckerSetSource.DEFAULT.name().equals(checkerSetEntity.getCheckerSetSource())
+                || CheckerSetSource.RECOMMEND.name().equals(checkerSetEntity.getCheckerSetSource())
+                || projectCheckerSetIds.contains(checkerSetEntity.getCheckerSetId())) {
+            checkerSetVO.setProjectInstalled(true);
+        } else {
+            checkerSetVO.setProjectInstalled(false);
+        }
+        //设置默认标签
+        String checkerSetSource = checkerSetVO.getCheckerSetSource();
+        checkerSetVO.setDefaultCheckerSet((CheckerSetSource.DEFAULT.name().equals(checkerSetSource)
+                && null == defaultCheckerSetMap.get(checkerSetVO.getCheckerSetId())
+                || (null != defaultCheckerSetMap.get(checkerSetVO.getCheckerSetId())
+                && defaultCheckerSetMap.get(checkerSetVO.getCheckerSetId()))));
 
-        //封装分页类
-        return new PageImpl<>(result, pageable, total);
+        if (StringUtils.isBlank(quickSearch) || StringUtils.isBlank(checkerSetVO.getCheckerSetName())) {
+            // 如果有 Blank, 直接将 levDis 设为最大
+            checkerSetVO.setLevDis(MAX_LEV_DIS);
+        } else {
+            // 计算编辑距离不考虑英文大小写
+            String checkerSetName2 = checkerSetVO.getCheckerSetName().toLowerCase(Locale.ENGLISH);
+            String quickSearch2 = quickSearch.toLowerCase(Locale.ENGLISH);
+
+            if (CodeccStringUtils.subsequence(quickSearch2, checkerSetName2)) {
+                checkerSetVO.setLevDis(
+                        CodeccStringUtils.levenshteinDistance(checkerSetName2, quickSearch2, MAX_LEV_DIS)
+                );
+            } else {
+                checkerSetVO.setLevDis(MAX_LEV_DIS);
+            }
+        }
+
+        // 完全判断该规则集是否默认规则集
+        if (BooleanUtils.isTrue(checkerSetEntity.getDefaultCheckerSet())) {
+            checkerSetVO.setDefault(true);
+        } else if (CheckerSetSource.DEFAULT.name().equals(checkerSetEntity.getCheckerSetSource())) {
+            checkerSetVO.setDefault(true);
+        } else {
+            checkerSetVO.setDefault(false);
+        }
+
+        // 判断该规则集是否推荐规则集
+        checkerSetVO.setRecommend(
+                CheckerSetSource.RECOMMEND.name().equals(checkerSetEntity.getCheckerSetSource())
+        );
+
+        return checkerSetVO;
     }
 
     /**
@@ -1861,5 +1908,88 @@ public class CheckerSetQueryBizServiceImpl implements ICheckerSetQueryBizService
         });
 
         return checkerSetVOList;
+    }
+
+    @Override
+    public Set<String> getPackageCheckerNameByType(String type) {
+        if (StringUtils.isBlank(type)) {
+            log.info("getPackageCheckerNameByType: type is blank, returning empty set");
+            return Collections.emptySet();
+        }
+
+        log.info("Fetching checker set IDs for type: {}", type);
+        List<CheckerSetPackageEntity> checkerSetPackageEntities = checkerSetPackageDao.findCheckerSetIdListByType(type);
+        if (checkerSetPackageEntities.isEmpty()) {
+            log.info("No checker set packages found for type: {}", type);
+            return Collections.emptySet();
+        }
+
+        log.info("Found {} checker set packages for type: {}", checkerSetPackageEntities.size(), type);
+
+        // 构建 checkerSetId 到 version 的映射
+        Map<String, Integer> checkerSetIdVersionMap = checkerSetPackageEntities.stream()
+                .collect(Collectors.toMap(
+                        CheckerSetPackageEntity::getCheckerSetId,
+                        CheckerSetPackageEntity::getVersion
+                ));
+
+        try {
+            List<CheckerSetEntity> checkerSetEntities =
+                    checkerSetDao.findCheckerSetByCheckerSetIdVersionMap(checkerSetIdVersionMap);
+
+            log.info("Matched {} checker sets based on versions", checkerSetEntities.size());
+            // 收集所有符合条件的 CheckerProps 的 checkerKey 就是详细具体的规则名称
+            Set<String> result = checkerSetEntities.stream()
+                    .filter(checkerSetEntity -> checkerSetEntity.getCheckerProps() != null)
+                    .flatMap(checkerSetEntity -> checkerSetEntity.getCheckerProps().stream())
+                    .map(CheckerPropsEntity::getCheckerKey)
+                    .collect(Collectors.toSet());
+
+            log.info("Found {} checker names for type: {}", result.size(), type);
+            return result.isEmpty() ? Collections.emptySet() : result;
+
+        } catch (Exception e) {
+            log.error("Error fetching checkerSetEntityList for type: {}", type, e);
+            return Collections.emptySet();
+        }
+    }
+
+    @Override
+    public Page<TaskUsageDetailVO> getCheckerSetTaskUsageDetail(String projectId, String checkerSetId) {
+        log.info("getCheckerSetTaskUsageDetail, projectId: [{}], checkerSetId: [{}]", projectId, checkerSetId);
+        List<CheckerSetTaskRelationshipEntity> relationships =
+                checkerSetTaskRelationshipRepository.findByCheckerSetIdAndProjectIdIn(checkerSetId,
+                        Collections.singleton(projectId));
+        if (relationships.isEmpty()) {
+            return new PageImpl<>(Collections.emptyList());
+        }
+
+        List<Long> taskIds =
+                relationships.stream().map(CheckerSetTaskRelationshipEntity::getTaskId).collect(Collectors.toList());
+
+        QueryTaskListReqVO taskListReqVO = new QueryTaskListReqVO();
+        // 查出全部
+        taskListReqVO.setTaskIds(taskIds);
+        List<TaskDetailVO> taskDetailVOS =
+                client.get(ServiceTaskRestResource.class).getTaskDetailListByIdsWithDelete(taskListReqVO).getData();
+        if (taskDetailVOS == null) {
+            log.error("getCheckerSetTaskUsageDetail, taskDetailVOS is null");
+            return new PageImpl<>(Collections.emptyList());
+        }
+        if (taskDetailVOS.size() != taskIds.size()) {
+            log.warn("task info size not match, taskIds: {}, taskDetailVOS: {}", taskIds, taskDetailVOS);
+        }
+
+        List<TaskUsageDetailVO> taskUsageDetailVOList = taskDetailVOS.stream()
+                .map(taskDetailVO -> {
+                    TaskUsageDetailVO vo = new TaskUsageDetailVO();
+                    BeanUtils.copyProperties(taskDetailVO, vo);
+                    return vo;
+                })
+                // 按任务ID倒序
+                .sorted(Comparator.comparingLong(TaskUsageDetailVO::getTaskId).reversed())
+                .collect(Collectors.toCollection(LinkedList::new));
+
+        return new PageImpl<>(taskUsageDetailVOList);
     }
 }

@@ -3,10 +3,10 @@ package com.tencent.devops.common.web.filter
 import com.tencent.devops.common.util.TraceBuildIdThreadCacheUtils
 import com.tencent.devops.common.web.ResponseFilter
 import org.slf4j.LoggerFactory
-import javax.ws.rs.container.ContainerRequestContext
-import javax.ws.rs.container.ContainerResponseContext
-import javax.ws.rs.container.ContainerResponseFilter
-import javax.ws.rs.ext.Provider
+import jakarta.ws.rs.container.ContainerRequestContext
+import jakarta.ws.rs.container.ContainerResponseContext
+import jakarta.ws.rs.container.ContainerResponseFilter
+import jakarta.ws.rs.ext.Provider
 
 /**
  * 请求后，清除BuildId缓存

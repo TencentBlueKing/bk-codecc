@@ -33,6 +33,12 @@ class OpenApiCallbackResourceImpl @Autowired constructor(
             client.getWithoutRetry(ServiceTaskRestResource::class.java)
                     .stopDisableProjectTask(callBackInfo.data.projectId)
         }
+        // 处理项目启用的情况，启用后，项目下的扫描任务重新启动，注意仅启用因为项目停用导致停用的扫描任务
+        if (callBackInfo.event == ProjectEventType.PROJECT_ENABLE) {
+            logger.info("projectId: ${callBackInfo.data.projectId} enable.")
+            client.getWithoutRetry(ServiceTaskRestResource::class.java)
+                .startEnableProjectTask(callBackInfo.data.projectId)
+        }
         return Result(BooleanUtils.TRUE)
     }
 

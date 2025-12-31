@@ -1,5 +1,6 @@
 package com.tencent.bk.codecc.defect.llm.api
 
+import com.tencent.bk.codecc.defect.constant.LLMConstants
 import com.tencent.bk.codecc.defect.pojo.Input
 import com.tencent.bk.codecc.defect.pojo.OpenAIData
 import com.tencent.bk.codecc.defect.pojo.Chat
@@ -55,7 +56,7 @@ object ChatGPTApi : LLMApi {
             .post(RequestBody.create("application/json".toMediaTypeOrNull(), JsonUtil.toJson(bkAIDevOpenAIReqBodyVO)))
             .build()
 
-        val client = OkHttpClient().newBuilder().readTimeout(60, TimeUnit.SECONDS).build()
+        val client = OkHttpClient().newBuilder().readTimeout(LLMConstants.TIMEOUT_SECONDS.toLong(), TimeUnit.SECONDS).build()
 
         return try {
             client.newCall(request).execute().use { response ->

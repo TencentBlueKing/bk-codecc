@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.common.CommonDataReportRspVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -41,14 +40,14 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("圈复杂度数据报表响应视图")
+@Schema(description = "圈复杂度数据报表响应视图")
 public class DupcDataReportRspVO extends CommonDataReportRspVO
 {
 
-    @ApiModelProperty("ducp风险系数图")
+    @Schema(description = "ducp风险系数图")
     private DupcChartRiskFactorVO chartRiskList;
 
-    @ApiModelProperty("ducp趋势图")
+    @Schema(description = "ducp趋势图")
     private DupcChartTrendListVO chartTrendList;
 
 }

@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo.openapi;
 
 import com.tencent.bk.codecc.defect.vo.report.CommonChartAuthorVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -41,81 +40,81 @@ import java.util.List;
  */
 
 @Data
-@ApiModel("任务维度的告警统计视图")
+@Schema(description = "任务维度的告警统计视图")
 public class TaskDefectVO
 {
-    @ApiModelProperty("任务ID")
+    @Schema(description = "任务ID")
     private Long taskId;
 
-    @ApiModelProperty("任务英文名")
+    @Schema(description = "任务英文名")
     private String nameEn;
 
-    @ApiModelProperty("任务中文名")
+    @Schema(description = "任务中文名")
     private String nameCn;
 
-    @ApiModelProperty("任务所用语言")
+    @Schema(description = "任务所用语言")
     private String codeLang;
 
-    @ApiModelProperty("任务拥有者")
+    @Schema(description = "任务拥有者")
     private List<String> taskOwner;
 
-    @ApiModelProperty("蓝盾项目ID")
+    @Schema(description = "蓝盾项目ID")
     private String projectId;
 
-    @ApiModelProperty("蓝盾项目名称")
+    @Schema(description = "蓝盾项目名称")
     private String projectName;
 
-    @ApiModelProperty("事业群名称")
+    @Schema(description = "事业群名称")
     private String bgName;
 
-    @ApiModelProperty("部门名称")
+    @Schema(description = "部门名称")
     private String deptName;
 
-    @ApiModelProperty("中心名称")
+    @Schema(description = "中心名称")
     private String centerName;
 
-    @ApiModelProperty("最近分析状态")
+    @Schema(description = "最近分析状态")
     private String analyzeDate;
 
-    @ApiModelProperty("遗留告警超时数(OP)")
+    @Schema(description = "遗留告警超时数(OP)")
     private Integer timeoutDefectNum;
 
-    @ApiModelProperty(value = "创建时间")
+    @Schema(description = "创建时间")
     private Long createdDate;
 
-    @ApiModelProperty("代码行数")
+    @Schema(description = "代码行数")
     private Integer codeLineNum;
 
     /**----------工蜂代码库信息-----------*/
-    @ApiModelProperty("代码库地址")
+    @Schema(description = "代码库地址")
     private String repoUrl;
 
-    @ApiModelProperty("代码库属于团队(team)还是个人(personal)")
+    @Schema(description = "代码库属于团队(team)还是个人(personal)")
     private String repoBelong;
 
-    @ApiModelProperty("代码库是否开源:私有(0) 公共(10)")
+    @Schema(description = "代码库是否开源:私有(0) 公共(10)")
     private Integer repoVisibilityLevel;
 
-    @ApiModelProperty("代码库所有成员")
+    @Schema(description = "代码库所有成员")
     private String repoOwners;
 
-    @ApiModelProperty("fork来源工蜂项目ID(0:未fork)")
+    @Schema(description = "fork来源工蜂项目ID(0:未fork)")
     private Integer forkedFromId;
     /**----------工蜂代码库信息-----------*/
 
-    @ApiModelProperty("已忽略告警数")
+    @Schema(description = "已忽略告警数")
     private IgnoreDefectVO ignoreCount;
 
-    @ApiModelProperty("已修复告警数")
+    @Schema(description = "已修复告警数")
     private CommonChartAuthorVO fixedCount;
 
-    @ApiModelProperty("待修复告警数")
+    @Schema(description = "待修复告警数")
     private CommonChartAuthorVO existCount;
 
-    @ApiModelProperty("已屏蔽告警数")
+    @Schema(description = "已屏蔽告警数")
     private CommonChartAuthorVO excludedCount;
 
-    @ApiModelProperty("新增告警数(OP)")
+    @Schema(description = "新增告警数(OP)")
     private CommonChartAuthorVO newAddCount;
 
     public TaskDefectVO()

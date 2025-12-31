@@ -288,4 +288,17 @@ public class ThirdPartySystemCaller {
         //获取风险系数值
         return ccnRiskFactorCache.getUnchecked(riskFactor);
     }
+
+    public List<Long> getTaskIdsByProjectId(String projectId) {
+        if (StringUtils.isBlank(projectId)) {
+            return Collections.emptyList();
+        }
+        // 获取任务所有使用过的工具
+        Result<List<Long>> result = client.get(ServiceTaskRestResource.class).getTaskIdsByProjectId(projectId);
+        if (result.isNotOk() || CollectionUtils.isEmpty(result.getData())) {
+            log.error("handler project  {} result not ok or empty", projectId);
+            return Collections.emptyList();
+        }
+        return result.getData();
+    }
 }

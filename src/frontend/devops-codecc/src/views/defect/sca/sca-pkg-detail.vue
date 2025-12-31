@@ -144,6 +144,15 @@
               <i class="bk-icon fail-icon codecc-icon icon-close-line" v-else />
             </template>
           </bk-table-column>
+          <bk-table-column
+            :label="$t('GPL 兼容')"
+            min-width="80"
+            prop="gplCompatible">
+            <template slot-scope="props">
+              <i class="bk-icon success-icon codecc-icon icon-check-line" v-if="props.row.gplCompatible" />
+              <i class="bk-icon fail-icon codecc-icon icon-close-line" v-else />
+            </template>
+          </bk-table-column>
           <div slot="empty">
             <div class="codecc-table-empty-text">
               <img src="../../../images/empty.png" class="empty-img" />
@@ -153,7 +162,7 @@
         </bk-table>
       </div>
       <!-- 隐藏漏洞数 -->
-      <!-- <div class="detail-content-items">
+      <div class="detail-content-items">
         <div class="package-title">
           <span class="package-title-text">{{ $t('漏洞信息') }}</span>
         </div>
@@ -176,7 +185,7 @@
             show-overflow-tooltip
             prop="vulName">
             <template slot-scope="props">
-              <span class="purple-text">{{ props.row.vulName || '--' }}</span>
+              <span class="purple-text">{{ props.row.name || '--' }}</span>
             </template>
           </bk-table-column>
           <bk-table-column
@@ -189,32 +198,14 @@
             </template>
           </bk-table-column>
           <bk-table-column
-            :label="$t('漏洞类型')"
-            min-width="100"
-            show-overflow-tooltip
-            prop="vulType">
-            <template slot-scope="props">
-              <span>{{ props.row.vulType || '--' }}</span>
-            </template>
-          </bk-table-column>
-          <bk-table-column
-            :label="$t('攻击类型')"
-            min-width="100"
-            show-overflow-tooltip
-            prop="attackType">
-            <template slot-scope="props">
-              <span>{{ props.row.attackType || '--' }}</span>
-            </template>
-          </bk-table-column>
-          <bk-table-column
             :label="$t('CVSS 评分')"
             min-width="100"
             show-overflow-tooltip
             prop="cvss_rate">
             <template slot-scope="props">
               <div class="cvss-display">
-                <div>{{ `V3: ${props.row.cvssV3}` }}</div>
-                <div>{{ `V2: ${props.row.cvssV2}` }}</div>
+                <div>{{ `V3: ${props.row?.cvssV3?.score || '--'}` }}</div>
+                <div>{{ `V2: ${props.row?.cvssV2?.score || '--'}` }}</div>
               </div>
             </template>
           </bk-table-column>
@@ -225,7 +216,7 @@
             </div>
           </div>
         </bk-table>
-      </div> -->
+      </div>
     </div>
   </div>
 </template>
@@ -250,13 +241,17 @@ export default {
       type: String,
       default: '',
     },
+    toolName: {
+      type: String,
+      default: '',
+    },
   },
   data() {
     return {
       searchParams: {
         // data
         taskId: this.$route.params.taskId,
-        toolName: 'PECKER_SCA',
+        toolName: this.toolName,
         buildId: this.buildId,
         packageName: this.packageName,
         dimension: 'SCA',

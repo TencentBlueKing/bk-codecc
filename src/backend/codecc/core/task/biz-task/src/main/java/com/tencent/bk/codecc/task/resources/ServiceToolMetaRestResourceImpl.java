@@ -97,4 +97,9 @@ public class ServiceToolMetaRestResourceImpl implements ServiceToolMetaRestResou
     public Result<List<ToolMetaDetailVO>> queryToolMetaDataByToolName(List<String> toolNameList) {
         return new Result<>(toolMetaService.getToolsByToolName(toolNameList));
     }
+
+    @Override
+    public Result<List<String>> queryToolMetaNameListDataByType(String type) {
+        return new Result<>(toolMetaService.queryToolMetaNameListDataByType(type));
+    }
 }

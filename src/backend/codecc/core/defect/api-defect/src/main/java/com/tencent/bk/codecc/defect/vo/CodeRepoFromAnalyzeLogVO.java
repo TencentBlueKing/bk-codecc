@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -23,42 +22,42 @@ import lombok.Data;
  * @date 2020/2/26
  */
 @Data
-@ApiModel("代码库视图")
+@Schema(description = "代码库视图")
 public class CodeRepoFromAnalyzeLogVO {
     /**
      * 任务ID
      */
-    @ApiModelProperty("任务id")
+    @Schema(description = "任务id")
     private long taskId;
 
     /**
      * 代码仓库地址
      */
-    @ApiModelProperty("代码仓库地址")
+    @Schema(description = "代码仓库地址")
     private String url;
 
     /**
      * 分支名
      */
-    @ApiModelProperty("分支名")
+    @Schema(description = "分支名")
     private String branch;
 
     /**
      * 代码仓库首次扫描时间
      */
-    @ApiModelProperty("代码仓库首次扫描时间")
+    @Schema(description = "代码仓库首次扫描时间")
     private Long urlFirstScan;
 
     /**
      * 分支首次扫描时间
      */
-    @ApiModelProperty("分支首次扫描时间")
+    @Schema(description = "分支首次扫描时间")
     private Long branchFirstScan;
 
     /**
      * 分支首次扫描时间
      */
-    @ApiModelProperty("分支最近扫描时间")
+    @Schema(description = "分支最近扫描时间")
     private Long branchLastScan;
 
 }

@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.common.CommonDefectQueryRspVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.domain.Page;
@@ -43,48 +42,48 @@ import java.util.Map;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("圈复杂度查询返回视图")
+@Schema(description = "圈复杂度查询返回视图")
 public class DefectQueryRspVO extends CommonDefectQueryRspVO
 {
-    @ApiModelProperty("严重告警数")
+    @Schema(description = "严重告警数")
     private int seriousCount;
 
-    @ApiModelProperty("一般告警数")
+    @Schema(description = "一般告警数")
     private int normalCount;
 
-    @ApiModelProperty("提示告警数")
+    @Schema(description = "提示告警数")
     private int promptCount;
 
-    @ApiModelProperty("待修复告警数")
+    @Schema(description = "待修复告警数")
     private int existCount;
 
-    @ApiModelProperty("已修复告警数")
+    @Schema(description = "已修复告警数")
     private int fixCount;
 
-    @ApiModelProperty("已忽略告警数")
+    @Schema(description = "已忽略告警数")
     private int ignoreCount;
 
-    @ApiModelProperty("已屏蔽告警数")
+    @Schema(description = "已屏蔽告警数")
     private int maskCount;
 
-    @ApiModelProperty("新告警数")
+    @Schema(description = "新告警数")
     private int newCount;
 
-    @ApiModelProperty("历史告警数")
+    @Schema(description = "历史告警数")
     private int historyCount;
 
-    @ApiModelProperty("总告警数")
+    @Schema(description = "总告警数")
     private int totalCount;
 
-    @ApiModelProperty("文件路径树")
+    @Schema(description = "文件路径树")
     private TreeNodeVO filePathTree;
 
-    @ApiModelProperty("告警列表")
+    @Schema(description = "告警列表")
     private Map<String, Integer> checkerMap;
 
-    @ApiModelProperty("作者列表")
+    @Schema(description = "作者列表")
     private Map<String, Integer> authorMap;
 
-    @ApiModelProperty("告警清单")
+    @Schema(description = "告警清单")
     private Page<DefectBaseVO> defectList;
 }

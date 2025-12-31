@@ -30,4 +30,6 @@ import java.util.Set;
 public interface AnalyzeCountStatRepository extends MongoRepository<AnalyzeCountStatEntity, String> {
     List<AnalyzeCountStatEntity> findByDateAndDataFromInAndToolName(
             String date, Set<String> createFrom, String toolName);
+
+    List<AnalyzeCountStatEntity> findByDateAndDataFromAndStatus(String date, String createFrom, Integer status);
 }

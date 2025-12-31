@@ -13,7 +13,7 @@
 package com.tencent.bk.codecc.defect.vo.admin;
 
 import com.tencent.bk.codecc.defect.vo.TaskLogOverviewVO;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -30,10 +30,10 @@ import java.util.Collection;
 @EqualsAndHashCode(callSuper = true)
 public class TaskLogOverviewReqVO extends TaskLogOverviewVO {
 
-    @ApiModelProperty("分析状态 enum ScanStatus")
+    @Schema(description = "分析状态 enum ScanStatus")
     private Integer status;
 
-    @ApiModelProperty("任务ID集合")
+    @Schema(description = "任务ID集合")
     private Collection<Long> taskIds;
 
 }

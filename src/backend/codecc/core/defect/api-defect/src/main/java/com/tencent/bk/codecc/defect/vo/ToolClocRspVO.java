@@ -13,8 +13,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.dto.CodeLineModel;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -26,12 +25,12 @@ import java.util.List;
  * @version V1.0
  */
 @Data
-@ApiModel("代码行数展示视图")
+@Schema(description = "代码行数展示视图")
 public class ToolClocRspVO 
 {
-    @ApiModelProperty("任务id")
+    @Schema(description = "任务id")
     private Long taskId;
 
-    @ApiModelProperty("代码行数集合")
+    @Schema(description = "代码行数集合")
     private List<CodeLineModel> codeLineList;
 }

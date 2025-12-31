@@ -28,6 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.amqp.rabbit.AsyncRabbitTemplate;
+
+import java.util.concurrent.CompletableFuture;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.File;
@@ -63,7 +65,7 @@ public abstract class AbstractDefectTracingComponent<T> {
      * @param inputList
      * @return
      */
-    public AsyncRabbitTemplate.RabbitConverterFuture<Boolean> executeCluster(
+    public CompletableFuture<Boolean> executeCluster(
             DefectClusterDTO defectClusterDTO,
             TaskDetailVO taskDetailVO,
             int chunkNo,
@@ -98,7 +100,7 @@ public abstract class AbstractDefectTracingComponent<T> {
 
             Files.write(JsonUtil.INSTANCE.toJson(aggregateDefectNewInputModel).getBytes(), inputFile);
             scmJsonComponent.upload(inputFilePath, inputFileName, ScmJsonComponent.AGGREGATE);
-            AsyncRabbitTemplate.RabbitConverterFuture<Boolean> asyncMsgFuture;
+            CompletableFuture<Boolean> asyncMsgFuture;
             if (ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value().equalsIgnoreCase(taskDetailVO.getCreateFrom())) {
                 AsyncRabbitTemplate asyncRabbitTamplte = SpringContextUtil.Companion.getBean(AsyncRabbitTemplate.class,
                         "opensourceAsyncRabbitTamplte");

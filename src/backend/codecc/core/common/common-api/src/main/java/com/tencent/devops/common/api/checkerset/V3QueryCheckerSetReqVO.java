@@ -1,6 +1,6 @@
 package com.tencent.devops.common.api.checkerset;
 
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -10,7 +10,7 @@ import lombok.Data;
  * @date 2020/1/2
  */
 @Data
-@ApiModel("查询规则集列表请求体")
+@Schema(description = "查询规则集列表请求体")
 public class V3QueryCheckerSetReqVO
 {
     /**

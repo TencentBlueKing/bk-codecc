@@ -37,7 +37,7 @@ import com.tencent.devops.common.util.ReflectUtil
 
 object JsonUtil {
     private val objectMapper = ObjectMapper().apply {
-        registerModule(KotlinModule())
+        registerModule(KotlinModule.Builder().build())
         configure(SerializationFeature.INDENT_OUTPUT, true)
         configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true)
         configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true)
@@ -47,7 +47,7 @@ object JsonUtil {
     }
 
     private val skipEmptyObjectMapper = ObjectMapper().apply {
-        registerModule(KotlinModule())
+        registerModule(KotlinModule.Builder().build())
         configure(SerializationFeature.INDENT_OUTPUT, true)
         configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true)
         configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true)

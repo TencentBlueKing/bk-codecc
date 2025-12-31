@@ -26,14 +26,13 @@
 
 package com.tencent.bk.codecc.task.vo.path;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
-@ApiModel("code.yml过滤路径类")
+@Schema(description = "code.yml过滤路径类")
 public class CodeYmlFilterPathVO
 {
     /*

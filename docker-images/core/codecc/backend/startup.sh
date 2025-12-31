@@ -16,13 +16,14 @@ java -server \
      -XX:G1NewSizePercent=60 \
      -XX:G1MaxNewSizePercent=60 \
      -XX:MaxGCPauseMillis=800 \
-     -Xloggc:$CODECC_LOGS_DIR/gc.log \
-     -XX:+PrintTenuringDistribution \
-     -XX:+PrintGCDetails \
-     -XX:+PrintGCDateStamps \
+     -Xlog:gc*,gc+age=trace:file=$CODECC_LOGS_DIR/gc-%t.log:time,level,tags \
      -XX:+HeapDumpOnOutOfMemoryError \
      -XX:HeapDumpPath=oom.hprof \
      -XX:ErrorFile=$CODECC_LOGS_DIR/error_sys.log \
+     -XX:+TieredCompilation \
+     --add-opens java.base/java.time=ALL-UNNAMED \
+     --add-opens java.base/java.lang=ALL-UNNAMED \
+     --add-opens java.base/java.util=ALL-UNNAMED \
      -Dspring.profiles.active=$CODECC_PROFILE \
      -Dserver.prefix=$SERVICE_PREFIX \
      -Dserver.namespace=$NAMESPACE \

@@ -12,8 +12,7 @@
  
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,13 +29,13 @@ import java.util.Map;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ApiModel("规则通用数量查询接口")
+@Schema(description = "规则通用数量查询接口")
 public class CheckerCommonCountVO 
 {
-    @ApiModelProperty("名字")
+    @Schema(description = "名字")
     private String name;
 
-    @ApiModelProperty("数量清单")
+    @Schema(description = "数量清单")
     private List<CheckerCountListVO> checkerCountList;
 
 }

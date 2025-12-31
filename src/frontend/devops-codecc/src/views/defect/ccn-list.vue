@@ -141,6 +141,8 @@
                     :max-data="1"
                     :trigger="'focus'"
                     :allow-create="true"
+                    :tpl="renderDisplayNameTagInputOption"
+                    :tag-tpl="renderDisplayNameTagInputTag"
                   >
                   </bk-tag-input>
 
@@ -314,17 +316,19 @@
                       :key="item.buildId"
                       :id="item.buildId"
                       :name="`#${item.buildNum} ${item.branch} ${
-                        item.buildUser
+                        usersMap.get(item.buildUser)?.display_name || item.buildUser
                       } ${formatDate(item.buildTime) || ''}${$t('触发')}`"
                     >
                       <div
                         class="cc-ellipsis"
                         :title="`#${item.buildNum} ${item.branch} ${
-                          item.buildUser
+                          usersMap.get(item.buildUser)?.display_name || item.buildUser
                         } ${formatDate(item.buildTime) || ''}${$t('触发')}`"
                       >
                         {{
-                          `#${item.buildNum} ${item.branch} ${item.buildUser} ${
+                          `#${item.buildNum} ${item.branch} ${
+                            usersMap.get(item.buildUser)?.display_name || item.buildUser
+                          } ${
                             formatDate(item.buildTime) || ''
                           }${$t('触发')}`
                         }}
@@ -614,7 +618,7 @@
                     "
                   >
                     <!-- <span>{{props.row.authorList && props.row.authorList.join(';')}}</span> -->
-                    <span>{{ props.row.author }}</span>
+                    <bk-user-display-name :user-id="props.row.author"></bk-user-display-name>
                     <span
                       v-if="hoverAuthorIndex === props.$index"
                       class="bk-icon icon-edit2 fs18"
@@ -1206,7 +1210,7 @@
                           {{ $t('处理人') }}
                         </dt>
                         <dd>
-                          {{ currentLintFile.author }}
+                          <bk-user-display-name :user-id="currentLintFile.author"></bk-user-display-name>
                           <span
                             v-if="
                               currentLintFile.status & 1 ||
@@ -1239,7 +1243,7 @@
                       </div>
                       <div class="item">
                         <dt>{{ $t('提交人') }}</dt>
-                        <dd>{{ currentLintFile.commitAuthor}}</dd>
+                        <bk-user-display-name :user-id="currentLintFile.commitAuthor"></bk-user-display-name>
                       </div>
                     </div>
                     <div class="block" v-if="currentLintFile.status & 4">
@@ -1251,7 +1255,7 @@
                       </div>
                       <div class="item">
                         <dt>{{ $t('忽略人') }}</dt>
-                        <dd>{{ currentLintFile.ignoreAuthor }}</dd>
+                        <bk-user-display-name :user-id="currentLintFile.ignoreAuthor"></bk-user-display-name>
                       </div>
                       <div class="item disb">
                         <dt>{{ $t('忽略原因') }}</dt>
@@ -1332,6 +1336,7 @@
         width="560"
         theme="primary"
         header-position="left"
+        :mask-close="false"
         :title="
           operateParams.changeAuthorType === 1
             ? $t('修改问题处理人')
@@ -1354,24 +1359,14 @@
               property="sourceAuthor"
               :label="$t('原处理人')"
             >
-              <bk-input
-                v-model="operateParams.sourceAuthor"
-                :disabled="operateParams.changeAuthorType === 1"
-                style="width: 290px"
-              ></bk-input>
+              <bk-user-display-name :user-id="operateParams.sourceAuthor"></bk-user-display-name>
             </bk-form-item>
             <bk-form-item :label="$t('新处理人')">
-              <bk-tag-input
+              <UserSelector
                 allow-create
-                v-if="IS_ENV_TAI"
-                v-model="operateParams.targetAuthor"
+                :value.sync="operateParams.targetAuthor"
                 style="width: 290px"
-              ></bk-tag-input>
-              <bk-tag-input allow-create
-                v-else
-                v-model="operateParams.targetAuthor"
-                style="width: 290px"
-              ></bk-tag-input>
+              />
             </bk-form-item>
           </bk-form>
         </div>
@@ -1395,7 +1390,7 @@
             theme="primary"
             type="button"
             :disabled="authorEditDialogLoading"
-            @click.native="authorEditDialogVisible = false"
+            @click.native="handleCloseAuthorDialog"
           >
             {{ $t('取消') }}
           </bk-button>
@@ -1407,6 +1402,7 @@
         :position="ignoreDialogPositionConfig"
         theme="primary"
         header-position="left"
+        :mask-close="false"
         :title="ignoreReasonDialogTitle"
         :before-close="handleBeforeClose"
         @cancel="handleIgnoreCancel"
@@ -1435,7 +1431,7 @@
               >
                 <bk-radio
                   class="cc-radio"
-                  v-for="ignore in ignoreList"
+                  v-for="ignore in ignoreList.filter(i => i.status !== 2)"
                   :key="ignore.ignoreTypeId"
                   :value="ignore.ignoreTypeId"
                 >
@@ -1507,6 +1503,7 @@
         width="560"
         theme="primary"
         header-position="left"
+        :mask-close="false"
         :before-close="handleBeforeClose"
         :title="$t('评论')"
       >
@@ -1538,40 +1535,14 @@
           </bk-button>
         </div>
       </bk-dialog>
-      <bk-dialog
-        v-model="operateDialogVisible"
-        width="640"
-        theme="primary"
-        :position="{ top: 50, left: 5 }"
-        :title="$t('现已支持键盘操作，提升操作效率')"
-      >
-        <div class="operate-txt operate-txt-1">1. {{ $t('列表') }}</div>
-        <div>
-          <img
-            v-if="isEn"
-            style="width: 592px"
-            src="../../images/operate-1-en.png"
-          />
-          <img v-else style="width: 592px" src="../../images/operate-1.png" />
-        </div>
-        <div class="operate-txt operate-txt-2">2. {{ $t('问题详情') }}</div>
-        <div>
-          <img
-            v-if="isEn"
-            style="width: 592px"
-            src="../../images/operate-2-en.png"
-          />
-          <img v-else style="width: 592px" src="../../images/operate-2.png" />
-        </div>
-        <div class="operate-footer" slot="footer">
-          <bk-button
-            theme="primary"
-            @click.native="operateDialogVisible = false"
-          >
-            {{ $t('关闭') }}
-          </bk-button>
-        </div>
-      </bk-dialog>
+      <operate-dialog
+        :visible.sync="operateDialogVisible">
+        <template #header>
+          <div class="!text-[24px] !text-[#313238] text-center mt-[10px]">
+            {{ $t('现已支持键盘操作，提升操作效率') }}
+          </div>
+        </template>
+      </operate-dialog>
       <bk-dialog
         v-model="emptyDialogVisible"
         :theme="'primary'"
@@ -1610,15 +1581,17 @@
   </div>
 </template>
 
-<script>
+<script lang="jsx">
 import _ from 'lodash';
 import { mapState } from 'vuex';
 import { bus } from '@/common/bus';
 import { getClosest, toggleClass, formatDiff, hasClass } from '@/common/util';
 import util from '@/mixins/defect-list';
+import displayNameTagInputTpl from '@/mixins/display-name-tag-input-tpl';
 import CodeMirror from '@/common/codemirror';
 import Empty from '@/components/empty';
 import filterSearchOption from './filter-search-option';
+import OperateDialog from '@/components/operate-dialog';
 import { format } from 'date-fns';
 import DefectPanel from './components/defect-panel.vue';
 // eslint-disable-next-line
@@ -1626,6 +1599,7 @@ import { export_json_to_excel } from '@/vendor/export2Excel';
 import { language } from '../../i18n';
 import DatePicker from '@/components/date-picker/index.vue';
 import DEPLOY_ENV from '@/constants/env';
+import UserSelector from '@/components/user-selector/index.vue';
 
 // 搜索过滤项缓存
 const CCN_SEARCH_OPTION_CACHE = 'search_option_columns_cnn';
@@ -1635,9 +1609,11 @@ export default {
     DatePicker,
     Empty,
     filterSearchOption,
+    OperateDialog,
     DefectPanel,
+    UserSelector,
   },
-  mixins: [util],
+  mixins: [util, displayNameTagInputTpl],
   data() {
     const isProjectDefect = this.$route.name === 'project-ccn-list';
     this.getDefaultOption = () => (isProjectDefect
@@ -1852,7 +1828,6 @@ export default {
       isProjectDefect,
       taskIdList: isProjectDefect ? [] : [Number(taskId)],
       emptyDialogVisible: false,
-      IS_ENV_TAI: window.IS_ENV_TAI,
       dateType: query.dateType || 'createTime',
     };
   },
@@ -1865,6 +1840,9 @@ export default {
     }),
     ...mapState('project', {
       projectVisitable: 'visitable',
+    }),
+    ...mapState('displayname', {
+      usersMap: 'usersMap',
     }),
     visitable() {
       return this.projectVisitable || !this.isProjectDefect;
@@ -2155,7 +2133,7 @@ export default {
       this.selectedOptionColumn = this.getCustomOption(true);
     }
     this.handelFetchIgnoreList();
-    this.guideFlag = Boolean(localStorage.getItem('guideEnd') || '');
+    this.guideFlag = Boolean(localStorage.getItem('guideEnd') || !this.isInnerSite);
   },
   mounted() {
     // this.$nextTick(() => {
@@ -2169,6 +2147,11 @@ export default {
     window.addEventListener('resize', this.getQueryPreLineNum);
     this.openDetail();
     this.keyOperate();
+    // 主动给 body 设置焦点，确保键盘事件能触发
+    this.$nextTick(() => {
+      document.body.setAttribute('tabindex', '-1');
+      document.body.focus();
+    });
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.getQueryPreLineNum);
@@ -2181,7 +2164,7 @@ export default {
       this.fetchStatusParams();
       isInit ? (this.contentLoading = true) : (this.fileLoading = true);
       await Promise.all([this.fetchLintList(), this.fetchLintParams()])
-        .then(([list, params]) => {
+        .then(async ([list, params]) => {
           this.ccnThreshold = list.ccnThreshold;
           this.isSearch = true;
           if (isInit) {
@@ -2223,9 +2206,13 @@ export default {
             params.authorList,
             this.user.username,
           );
-          params.authorList = authorList.map(item => ({
-            id: item,
-            name: item,
+          const dataMap = await this.$store.dispatch(
+            'displayname/batchGetDisplayName',
+            authorList,
+          );
+          params.authorList = authorList.map(author => ({
+            id: author,
+            name: dataMap.get(author)?.display_name || author,
           }));
 
           this.searchFormData = Object.assign({}, this.searchFormData, params);
@@ -2253,9 +2240,13 @@ export default {
     },
     async getBuildList() {
       if (this.visitable === false) return;
-      this.buildList = await this.$store.dispatch('defect/getBuildList', {
+      const list = await this.$store.dispatch('defect/getBuildList', {
         taskId: this.$route.params.taskId,
       });
+      // display name 处理
+      const userIds = [...new Set(list.map(item => item.buildUser))];
+      await this.$store.dispatch('displayname/batchGetDisplayName', userIds);
+      this.buildList = list;
     },
     fetchLintParams() {
       if (this.visitable === false) return;
@@ -2530,7 +2521,6 @@ export default {
       if (ignoreType === 'RevertIgnore') {
         this.handleIgnoreConfirm();
       } else {
-        window.changeAlert = false;
         this.ignoreReasonDialogVisible = true;
       }
     },
@@ -2599,6 +2589,7 @@ export default {
           this.isAddingIgnore = false;
           this.fetchSeverityParams();
           this.fetchStatusParams();
+          this.handleClearWindowAlert();
         });
     },
     handleIgnoreCancel() {
@@ -2606,6 +2597,7 @@ export default {
       this.operateParams.ignoreReasonType = '';
       this.ignoreReasonDialogVisible = false;
       this.isAddingIgnore = false;
+      this.handleClearWindowAlert();
     },
     handleComment(id) {
       // 暂不做评论修
@@ -2618,7 +2610,6 @@ export default {
       this.commentParams.commentId = this.lintDetail.codeComment
         ? this.lintDetail.codeComment.entityId
         : '';
-      window.changeAlert = false;
       this.commentDialogVisible = true;
     },
     handleFileListRowClick(row, event, column) {
@@ -2637,7 +2628,6 @@ export default {
     },
     handleAuthor(changeAuthorType, entityId, author, defectId) {
       this.authorEditDialogVisible = true;
-      window.changeAlert = false;
       this.operateParams.changeAuthorType = changeAuthorType;
       if (author !== undefined) {
         this.operateParams.sourceAuthor = [author];
@@ -2689,7 +2679,7 @@ export default {
       this.buildLintHints(codeViewer, showDefectDetail);
     },
     // 创建问题提示块
-    buildLintHints(codeViewer, showDefectDetail) {
+    async buildLintHints(codeViewer, showDefectDetail) {
       let checkerComment = '';
       const { trimBeginLine } = this.lintDetail;
       const { ccn, startLines, endLines, entityId } = this.currentLintFile;
@@ -2726,12 +2716,16 @@ export default {
                     </div>`;
 
       if (this.commentList.length) {
+        const userIds = [...new Set(this.commentList.map(item => item.userName))];
+        const dataMap = await this.$store.dispatch('displayname/batchGetDisplayName', userIds);
         for (let i = 0; i < this.commentList.length; i++) {
           checkerComment += `
                             <p class="comment-item">
                                 <span class="info">
                                     <i class="codecc-icon icon-user-fill"></i>
-                                    <span>${this.commentList[i].userName}</span>
+                                    <span>
+                                      ${dataMap.get(this.commentList[i].userName)?.display_name || this.commentList[i].userName}
+                                    </span>
                                     <span title="${
   this.commentList[i].comment
 }">${this.commentList[i].comment}</span>
@@ -2887,54 +2881,36 @@ export default {
       function keyDown(event) {
         const e = event || window.event;
         if (e.target.nodeName !== 'BODY') return;
-        switch (e.keyCode) {
-          case 13: // enter
+        switch (e.code) {
+          case 'Enter': // enter
             // e.path.length < 5 防止规则等搜索条件里面的回车触发打开详情
             if (!vm.defectDetailDialogVisible && !vm.authorEditDialogVisible) vm.keyEnter();
             break;
-          case 27: // esc
+          case 'Escape': // esc
             if (vm.defectDetailDialogVisible) vm.defectDetailDialogVisible = false;
             break;
-          case 37: // left
-            if (vm.defectDetailDialogVisible && vm.fileIndex > 0) {
-              vm.handleFileListRowClick(vm.defectList[(vm.fileIndex -= 1)]);
-            } else if (!vm.defectDetailDialogVisible && vm.fileIndex > 0) {
-              vm.fileIndex -= 1;
+          case 'ArrowLeft': // left
+          case 'ArrowUp': // up
+          case 'KeyW': // w
+            if (vm.fileIndex > 0) {
+              if (vm.defectDetailDialogVisible) {
+                vm.handleFileListRowClick(vm.defectList[(vm.fileIndex -= 1)]);
+              } else {
+                vm.fileIndex -= 1;
+                vm.screenScroll();
+              }
             }
             break;
-          case 38: // up
-            if (!vm.defectDetailDialogVisible && vm.fileIndex > 0) {
-              vm.fileIndex -= 1;
-            } else if (vm.defectDetailDialogVisible && vm.fileIndex > 0) {
-              vm.handleFileListRowClick(vm.defectList[(vm.fileIndex -= 1)]);
-              return false;
-            }
-            break;
-          case 39: // right
-            if (
-              vm.defectDetailDialogVisible
-              && vm.fileIndex < vm.defectList.length - 1
-            ) {
-              vm.handleFileListRowClick(vm.defectList[(vm.fileIndex += 1)]);
-            } else if (
-              !vm.defectDetailDialogVisible
-              && vm.fileIndex < vm.defectList.length - 1
-            ) {
-              vm.fileIndex += 1;
-            }
-            break;
-          case 40: // down
-            if (
-              !vm.defectDetailDialogVisible
-              && vm.fileIndex < vm.defectList.length - 1
-            ) {
-              vm.fileIndex += 1;
-            } else if (
-              vm.defectDetailDialogVisible
-              && vm.fileIndex < vm.defectList.length - 1
-            ) {
-              vm.handleFileListRowClick(vm.defectList[(vm.fileIndex += 1)]);
-              return false;
+          case 'ArrowRight': // right
+          case 'ArrowDown': // down
+          case 'KeyS': // s
+            if (vm.fileIndex < vm.defectList.length - 1) {
+              if (vm.defectDetailDialogVisible) {
+                vm.handleFileListRowClick(vm.defectList[(vm.fileIndex += 1)]);
+              } else {
+                vm.fileIndex += 1;
+                vm.screenScroll();
+              }
             }
             break;
         }
@@ -3095,6 +3071,7 @@ export default {
         })
         .finally(() => {
           this.tableLoading = false;
+          this.handleClearWindowAlert();
         });
     },
     handleCommentConfirm() {
@@ -3186,7 +3163,7 @@ export default {
       );
       this.setTableHeight();
     },
-    downloadExcel() {
+    async downloadExcel() {
       if (this.tableLoading) {
         this.$bkMessage({
           message: this.$t('问题列表加载中，请等待列表加载完再尝试导出。'),
@@ -3201,16 +3178,22 @@ export default {
         });
         return;
       }
-      this.exportLoading = true;
-      this.$store
-        .dispatch('defect/lintList', params)
-        .then((res) => {
-          const list = res && res.defectList && res.defectList.content;
-          this.generateExcel(list);
-        })
-        .finally(() => {
-          this.exportLoading = false;
-        });
+      try {
+        this.exportLoading = true;
+        const res = await this.$store.dispatch('defect/lintList', params);
+        const list = res && res.defectList && res.defectList.content;
+        // display name 处理
+        const userIds = [...new Set(list.map(item => item.author))];
+        const dataMap = await this.$store.dispatch('displayname/batchGetDisplayName', userIds);
+        for (const row of list) {
+          row.author = dataMap.get(row.author)?.display_name || row.author;
+        }
+        this.generateExcel(list);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        this.exportLoading = false;
+      }
     },
     generateExcel(list = []) {
       const { isProjectDefect } = this;
@@ -3330,7 +3313,7 @@ export default {
       localStorage.setItem('guide2End', true);
     },
     handleNextGuide() {
-      if (!localStorage.getItem('guide2End')) {
+      if (!localStorage.getItem('guide2End') && this.isInnerSite) {
         const index = this.defectList.findIndex(item => item.status === 1);
         document.getElementsByClassName('guide-icon')[index]?.click();
         setTimeout(() => {
@@ -3450,6 +3433,10 @@ export default {
       document.execCommand('copy');
       document.body.removeChild(input);
       this.$bkMessage({ theme: 'success', message: this.$t('复制成功') });
+    },
+    handleCloseAuthorDialog() {
+      this.authorEditDialogVisible = false;
+      this.handleClearWindowAlert();
     },
   },
 };

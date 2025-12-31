@@ -28,8 +28,7 @@ package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.devops.common.api.analysisresult.BaseLastAnalysisResultVO;
 import com.tencent.devops.common.api.clusterresult.BaseClusterResultVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -44,103 +43,103 @@ import lombok.NoArgsConstructor;
  * @date 2019/6/8
  */
 @Data
-@ApiModel("任务信息概览数据")
+@Schema(description = "任务信息概览数据")
 public class TaskOverviewVO
 {
-    @ApiModelProperty(value = "任务主键id", required = true)
+    @Schema(description = "任务主键id", required = true)
     private long taskId;
 
-    @ApiModelProperty(value = "任务扫描状态")
+    @Schema(description = "任务扫描状态")
     private Integer status;
 
-    @ApiModelProperty(value = "任务扫描结果总分")
+    @Schema(description = "任务扫描结果总分")
     private Double rdIndicatorsScore;
 
-    @ApiModelProperty(value = "任务扫描结果规范分数")
+    @Schema(description = "任务扫描结果规范分数")
     private double codeStyleScore;
 
-    @ApiModelProperty(value = "任务扫描结果安全分数")
+    @Schema(description = "任务扫描结果安全分数")
     private double codeSecurityScore;
 
-    @ApiModelProperty(value = "任务扫描结果度量分数")
+    @Schema(description = "任务扫描结果度量分数")
     private double codeMeasureScore;
 
-    @ApiModelProperty(value = "缺陷扫描结果缺陷分数(Coverity)")
+    @Schema(description = "缺陷扫描结果缺陷分数(Coverity)")
     private double codeDefectScore;
 
-    @ApiModelProperty(value = "任务扫描结果圈复杂度分数")
+    @Schema(description = "任务扫描结果圈复杂度分数")
     private double codeCcnScore;
 
-    @ApiModelProperty(value = "扫描场景是否符合开源扫描要求")
+    @Schema(description = "扫描场景是否符合开源扫描要求")
     private boolean isOpenScan;
 
-    @ApiModelProperty(value = "平均千行圈复杂度超标数")
+    @Schema(description = "平均千行圈复杂度超标数")
     private Double averageThousandDefect;
 
-    @ApiModelProperty(value = "规范普通问题数")
+    @Schema(description = "规范普通问题数")
     private int codeStyleNormalDefectCount;
 
-    @ApiModelProperty(value = "一般程度规范告警平均千行数")
+    @Schema(description = "一般程度规范告警平均千行数")
     private double averageNormalStandardThousandDefect;
 
-    @ApiModelProperty(value = "规范严重问题数")
+    @Schema(description = "规范严重问题数")
     private int codeStyleSeriousDefectCount;
 
-    @ApiModelProperty(value = "严重程度规范告警平均千行数")
+    @Schema(description = "严重程度规范告警平均千行数")
     private double averageSeriousStandardThousandDefect;
 
-    @ApiModelProperty(value = "缺陷普通问题数")
+    @Schema(description = "缺陷普通问题数")
     private int codeDefectNormalDefectCount;
 
-    @ApiModelProperty(value = "一般程度缺陷告警平均千行数")
+    @Schema(description = "一般程度缺陷告警平均千行数")
     private double averageNormalDefectThousandDefect;
 
-    @ApiModelProperty(value = "缺陷严重问题数")
+    @Schema(description = "缺陷严重问题数")
     private int codeDefectSeriousDefectCount;
 
-    @ApiModelProperty(value = "严重程度缺陷告警平均千行数")
+    @Schema(description = "严重程度缺陷告警平均千行数")
     private double averageSeriousDefectThousandDefect;
 
-    @ApiModelProperty(value = "安全普通问题数")
+    @Schema(description = "安全普通问题数")
     private int codeSecurityNormalDefectCount;
 
-    @ApiModelProperty(value = "安全严重问题数")
+    @Schema(description = "安全严重问题数")
     private int codeSecuritySeriousDefectCount;
 
-    @ApiModelProperty(value = "按工具最近一次分析结果列表")
+    @Schema(description = "按工具最近一次分析结果列表")
     private List<LastAnalysis> lastAnalysisResultList;
 
-    @ApiModelProperty(value = "按维度最近一次分析结果列表")
+    @Schema(description = "按维度最近一次分析结果列表")
     private List<LastCluster> lastClusterResultList;
 
     @Data
     public static class LastAnalysis
     {
-        @ApiModelProperty(value = "工具名称", required = true)
+        @Schema(description = "工具名称", required = true)
         private String toolName;
 
-        @ApiModelProperty(value = "工具类型", required = true)
+        @Schema(description = "工具类型", required = true)
         private List<String> toolTypes;
 
-        @ApiModelProperty(value = "当前步骤", required = true)
+        @Schema(description = "当前步骤", required = true)
         private int curStep;
 
-        @ApiModelProperty(value = "当前步骤状态，0成功/1失败", required = true)
+        @Schema(description = "当前步骤状态，0成功/1失败", required = true)
         private int stepStatus;
 
-        @ApiModelProperty(value = "最近一次分析时间", required = true)
+        @Schema(description = "最近一次分析时间", required = true)
         private long lastAnalysisTime;
 
-        @ApiModelProperty(value = "最近一次分析耗时", required = true)
+        @Schema(description = "最近一次分析耗时", required = true)
         private long elapseTime;
 
-        @ApiModelProperty("构建ID")
+        @Schema(description = "构建ID")
         private String buildId;
 
-        @ApiModelProperty("构建号")
+        @Schema(description = "构建号")
         private String buildNum;
 
-        @ApiModelProperty(value = "最近一次分析结果", required = true)
+        @Schema(description = "最近一次分析结果", required = true)
         private BaseLastAnalysisResultVO lastAnalysisResult;
     }
 
@@ -148,7 +147,7 @@ public class TaskOverviewVO
     @AllArgsConstructor
     @NoArgsConstructor
     public static class LastCluster {
-        @ApiModelProperty(value = "最近一次分析结果", required = true)
+        @Schema(description = "最近一次分析结果", required = true)
         private BaseClusterResultVO baseClusterResultVO;
 
         @Override

@@ -26,12 +26,11 @@
 
 package com.tencent.bk.codecc.schedule.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.ToString;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * 获取所有coverity platform信息的请求体
@@ -40,25 +39,25 @@ import javax.validation.constraints.NotNull;
  * @date 2019/4/26
  */
 @Data
-@ApiModel("上传文件的请求体")
+@Schema(description = "上传文件的请求体")
 @ToString
 public class UploadVO
 {
     @NotNull(message = "文件名不能为空")
-    @ApiModelProperty(value = "文件名", required = true)
+    @Schema(description = "文件名", required = true)
     private String fileName;
 
-    @ApiModelProperty(value = "分片总数")
+    @Schema(description = "分片总数")
     private Integer chunks;
 
-    @ApiModelProperty(value = "当前分片")
+    @Schema(description = "当前分片")
     private Integer chunk;
 
     @NotNull(message = "上传类型不能为空")
-    @ApiModelProperty(value = "上传类型", required = true)
+    @Schema(description = "上传类型", required = true)
     private String uploadType;
 
     @NotNull(message = "构建ID不能为空")
-    @ApiModelProperty(value = "构建ID")
+    @Schema(description = "构建ID")
     private String buildId;
 }

@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.model.ignore;
 
 import com.tencent.codecc.common.db.CommonEntity;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
@@ -80,8 +80,8 @@ public class IgnoreApprovalEntity extends CommonEntity {
      * 忽略人LEADER
      * 自定义
      */
-    @Field("approver_type")
-    private String approverType;
+    @Field("approver_types")
+    private List<String> approverTypes;
 
     /**
      * 自定义审批人列表

@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,20 +27,20 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ApiModel("持续集成项目组织架构视图")
+@Schema(description = "持续集成项目组织架构视图")
 public class DevopsProjectOrgVO {
-    @ApiModelProperty("事业群ID")
+    @Schema(description = "事业群ID")
     private Integer bgId;
 
-    @ApiModelProperty("业务线ID")
+    @Schema(description = "业务线ID")
     private Integer businessLineId;
 
-    @ApiModelProperty("部门ID")
+    @Schema(description = "部门ID")
     private Integer deptId;
 
-    @ApiModelProperty("中心ID")
+    @Schema(description = "中心ID")
     private Integer centerId;
 
-    @ApiModelProperty("项目组ID")
+    @Schema(description = "项目组ID")
     private Integer groupId;
 }

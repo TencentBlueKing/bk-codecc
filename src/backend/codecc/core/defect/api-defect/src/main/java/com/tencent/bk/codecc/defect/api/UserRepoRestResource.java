@@ -14,12 +14,11 @@ package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.devops.common.api.CodeRepoVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,36 +32,36 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
  * @date 2019/12/23
  * @version V1.0
  */
-@Api(tags = {"USER_REPO"}, description = "代码库前端接口")
+@Tag(name = "USER_REPO", description = "代码库前端接口")
 @Path("/user/repo")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface UserRepoRestResource
 {
-    @ApiOperation("根据任务集获取代码库清单")
+    @Operation(summary = "根据任务集获取代码库清单")
     @Path("/list")
     @POST
     Result<Map<Long, Set<CodeRepoVO>>> getCodeRepoListByTaskIds(
-            @ApiParam("任务id清单")
+            @Parameter(description = "任务id清单")
                     Set<Long> taskIds,
-            @ApiParam("项目id清单")
+            @Parameter(description = "项目id清单")
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
                     String projectId);
 
-    @ApiOperation("获取oauth跳转链接")
+    @Operation(summary = "获取oauth跳转链接")
     @Path("/oauth/url")
     @GET
     Result<String> getOauthUrl(
-            @ApiParam("用户Id")
+            @Parameter(description = "用户Id")
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userId,
-            @ApiParam("项目Id")
+            @Parameter(description = "项目Id")
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId,
-            @ApiParam("任务Id")
+            @Parameter(description = "任务Id")
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             long taskId,
-            @ApiParam("工具英文名")
+            @Parameter(description = "工具英文名")
             @QueryParam("toolName")
             String toolName
     );

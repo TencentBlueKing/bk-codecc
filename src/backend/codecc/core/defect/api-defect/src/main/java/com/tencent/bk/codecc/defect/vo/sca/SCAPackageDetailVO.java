@@ -1,7 +1,6 @@
 package com.tencent.bk.codecc.defect.vo.sca;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -9,38 +8,38 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("SCA组件详情类视图")
+@Schema(description = "SCA组件详情类视图")
 public class SCAPackageDetailVO extends SCAPackageVO {
-    @ApiModelProperty("发布日期")
+    @Schema(description = "发布日期")
     private String releaseDate;
 
-    @ApiModelProperty("组件描述")
+    @Schema(description = "组件描述")
     private String description;
 
-    @ApiModelProperty("下载地址")
+    @Schema(description = "下载地址")
     private String downloadLocation;
 
-    @ApiModelProperty("主页URL")
+    @Schema(description = "主页URL")
     private String homepage;
 
-    @ApiModelProperty("源代码URL")
+    @Schema(description = "源代码URL")
     private String sourceUrl;
 
-    @ApiModelProperty("文档URL")
+    @Schema(description = "文档URL")
     private String docUrl;
 
-    @ApiModelProperty("依赖来源")
+    @Schema(description = "依赖来源")
     private Boolean filesAnalyzed;
 
-    @ApiModelProperty("依赖层级")
+    @Schema(description = "依赖层级")
     private int depth;
 
-    @ApiModelProperty("引入的文件列表")
+    @Schema(description = "引入的文件列表")
     private List<SCAPackageFileInfoVO> fileInfos;
 
-    @ApiModelProperty("供应商")
+    @Schema(description = "供应商")
     private String supplier;
 
-    @ApiModelProperty("组件漏洞信息")
+    @Schema(description = "组件漏洞信息")
     private List<SCAVulnerabilityVO> vulnerabilityList;
 }

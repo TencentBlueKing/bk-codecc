@@ -3,6 +3,7 @@
     v-model="createVisible"
     :theme="'primary'"
     :width="579"
+    :mask-close="false"
     :before-close="handleBeforeClose"
     :position="{ top: 100, left: 5 }"
   >
@@ -173,7 +174,6 @@ export default {
     },
     createVisible: {
       get() {
-        window.changeAlert = false;
         return this.visible;
       },
       set(value) {
@@ -203,13 +203,11 @@ export default {
             this.treeList[0].expanded = false;
           }
         }
-        window.changeAlert = true;
       },
       deep: true,
     },
   },
   created() {
-    window.changeAlert = false;
     this.$store.dispatch('task/ignoreTree');
   },
   methods: {
@@ -365,7 +363,6 @@ export default {
     },
     handleCheckChange(values) {
       this.isHasChecked = values.length > 0;
-      window.changeAlert = true;
     },
     handleBeforeClose() {
       return leaveConfirm();

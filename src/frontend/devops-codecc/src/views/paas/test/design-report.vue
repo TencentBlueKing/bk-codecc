@@ -281,8 +281,6 @@ export default {
       this.pagination.current = 1;
       this.queryTestVersions();
     },
-    submitExportExcelBtn() {
-    },
     formatDate(date, token = 'yyyy-MM-dd', options = {}) {
       return date ? format(Number(date), token, options) : '';
     },
@@ -390,6 +388,7 @@ export default {
     },
     handlePageLimitChange(currentLimit) {
       this.pagination.current = 1;
+      this.pagination.limit = currentLimit;
       const searchParams = { ...this.getSearchParams(), pageNum: 1, pageSize: currentLimit };
       this.queryTestReportDetailList(searchParams);
     },

@@ -73,6 +73,19 @@ public class UploadRepositoriesServiceImpl implements UploadRepositoriesService 
         List<String> repoRelativePathList = uploadRepositoriesVO.getRepoRelativePathList();
         log.info("upload repo info, task id: {}, repoRelativePathList: {}", uploadRepositoriesVO.getTaskId(),
                 repoRelativePathList);
+
+        // 代码库/分支统计
+        UploadTaskLogStepVO stepVO = new UploadTaskLogStepVO();
+        stepVO.setTaskId(taskId);
+        stepVO.setProjectId(uploadRepositoriesVO.getProjectId());
+        stepVO.setPipelineBuildId(buildId);
+        stepVO.setToolName(toolName);
+        rabbitTemplate.convertAndSend(EXCHANGE_CODE_REPO_STAT, ROUTE_CODE_REPO_STAT, stepVO, message -> {
+            // 延迟20s
+            message.getMessageProperties().setDelayLong(20L * 1000);
+            return message;
+        });
+
         // 更新构建运行时栈表
         ToolBuildStackEntity toolBuildStackEntity =
                 toolBuildStackRepository.findFirstByTaskIdAndToolNameAndBuildId(taskId, toolName, buildId);
@@ -126,15 +139,10 @@ public class UploadRepositoriesServiceImpl implements UploadRepositoriesService 
             codeRepoInfo.setCreatedDate(currentTime);
             codeRepoRepository.save(codeRepoInfo);
 
-            // 代码库/分支统计
-            UploadTaskLogStepVO stepVO = new UploadTaskLogStepVO();
-            stepVO.setTaskId(taskId);
-            stepVO.setProjectId(uploadRepositoriesVO.getProjectId());
-            stepVO.setPipelineBuildId(buildId);
-            stepVO.setToolName(toolName);
-            rabbitTemplate.convertAndSend(EXCHANGE_CODE_REPO_STAT, ROUTE_CODE_REPO_STAT, stepVO);
-
             return new Result(0, CommonMessageCode.SUCCESS, "upload repo info success.");
+        } catch (Exception e) {
+            log.error("upload repo info, error", e);
+            return new Result(0, CommonMessageCode.SUCCESS, "upload repo info error.");
         } finally {
             if (locker != null && locker.isLocked()) {
                 locker.unlock();

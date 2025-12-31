@@ -27,88 +27,86 @@
 
 package com.tencent.devops.common.api.pojo
 
-import io.swagger.annotations.ApiModel
-import io.swagger.annotations.ApiModelProperty
-
-@ApiModel("蓝盾项目视图模型")
+import io.swagger.v3.oas.annotations.media.Schema
+@Schema(description = "蓝盾项目视图模型")
 data class ProjectVO(
-    @ApiModelProperty("主键ID")
+    @get:Schema(description = "主键ID")
     val id: Long,
-    @ApiModelProperty("项目ID")
+    @get:Schema(description = "项目ID")
     val projectId: String,
-    @ApiModelProperty("项目名称")
+    @get:Schema(description = "项目名称")
     val projectName: String,
-    @ApiModelProperty("项目代码（蓝盾项目Id）")
+    @get:Schema(description = "项目代码（蓝盾项目Id）")
     val projectCode: String,
-    @ApiModelProperty("项目类型")
+    @get:Schema(description = "项目类型")
     val projectType: Int?,
-    @ApiModelProperty("审批状态")
+    @get:Schema(description = "审批状态")
     val approvalStatus: Int?,
-    @ApiModelProperty("审批时间")
+    @get:Schema(description = "审批时间")
     val approvalTime: String?,
-    @ApiModelProperty("审批人")
+    @get:Schema(description = "审批人")
     val approver: String?,
-    @ApiModelProperty("cc业务ID")
+    @get:Schema(description = "cc业务ID")
     val ccAppId: Long?,
-    @ApiModelProperty("cc业务名称")
+    @get:Schema(description = "cc业务名称")
     val ccAppName: String?,
-    @ApiModelProperty("创建时间")
+    @get:Schema(description = "创建时间")
     val createdAt: String?,
-    @ApiModelProperty("创建人")
+    @get:Schema(description = "创建人")
     val creator: String?,
-    @ApiModelProperty("数据ID")
+    @get:Schema(description = "数据ID")
     val dataId: Long?,
-    @ApiModelProperty("部署类型")
+    @get:Schema(description = "部署类型")
     val deployType: String?,
-    @ApiModelProperty("事业群ID")
+    @get:Schema(description = "事业群ID")
     val bgId: String?,
-    @ApiModelProperty("事业群名字")
+    @get:Schema(description = "事业群名字")
     val bgName: String?,
-    @ApiModelProperty("业务线ID")
+    @get:Schema(description = "业务线ID")
     val businessLineId: String?,
-    @ApiModelProperty("业务线名称")
+    @get:Schema(description = "业务线名称")
     val businessLineName: String?,
-    @ApiModelProperty("部门ID")
+    @get:Schema(description = "部门ID")
     val deptId: String?,
-    @ApiModelProperty("部门名称")
+    @get:Schema(description = "部门名称")
     val deptName: String?,
-    @ApiModelProperty("中心ID")
+    @get:Schema(description = "中心ID")
     val centerId: String?,
-    @ApiModelProperty("中心名称")
+    @get:Schema(description = "中心名称")
     val centerName: String?,
-    @ApiModelProperty("描述")
+    @get:Schema(description = "描述")
     val description: String?,
-    @ApiModelProperty("英文缩写")
+    @get:Schema(description = "英文缩写")
     val englishName: String,
-    @ApiModelProperty("extra")
+    @get:Schema(description = "extra")
     val extra: String?,
-    @ApiModelProperty("是否离线")
+    @get:Schema(description = "是否离线")
     val offlined: Boolean?,
-    @ApiModelProperty("是否保密")
+    @get:Schema(description = "是否保密")
     val secrecy: Boolean?,
-    @ApiModelProperty("是否启用图表激活")
+    @get:Schema(description = "是否启用图表激活")
     val helmChartEnabled: Boolean?,
-    @ApiModelProperty("kind")
+    @get:Schema(description = "kind")
     val kind: Int?,
     val remark: String?,
-    @ApiModelProperty("修改时间")
+    @get:Schema(description = "修改时间")
     val updatedAt: String?,
-    @ApiModelProperty("修改人")
+    @get:Schema(description = "修改人")
     val updator: String?,
-    @ApiModelProperty("启用：true；停用：false")
+    @get:Schema(description = "启用：true；停用：false")
     val enabled: Boolean?,
-    @ApiModelProperty("是否灰度")
+    @get:Schema(description = "是否灰度")
     val gray: Boolean,
-    @ApiModelProperty("混合云CC业务ID")
+    @get:Schema(description = "混合云CC业务ID")
     val hybridCcAppId: Long?,
-    @ApiModelProperty("支持构建机访问外网")
+    @get:Schema(description = "支持构建机访问外网")
     val enableExternal: Boolean?,
-    @ApiModelProperty("支持IDC构建机")
+    @get:Schema(description = "支持IDC构建机")
     val enableIdc: Boolean? = false,
-    @ApiModelProperty("流水线数量上限")
+    @get:Schema(description = "流水线数量上限")
     val pipelineLimit: Int? = 500,
-    @ApiModelProperty("项目路由指向")
+    @get:Schema(description = "项目路由指向")
     val routerTag: String?,
-    @ApiModelProperty("运营产品ID")
+    @get:Schema(description = "运营产品ID")
     val productId: Int? = null
 )

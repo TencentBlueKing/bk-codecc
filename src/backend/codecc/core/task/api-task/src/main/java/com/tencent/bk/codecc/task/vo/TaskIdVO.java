@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -41,13 +40,13 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ApiModel("保存任务返回主键")
+@Schema(description = "保存任务返回主键")
 public class TaskIdVO
 {
 
-    @ApiModelProperty(value = "任务主键", required = true)
+    @Schema(description = "任务主键", required = true)
     private Long taskId;
 
-    @ApiModelProperty(value = "项目英文名", required = true)
+    @Schema(description = "项目英文名", required = true)
     private String nameEn;
 }

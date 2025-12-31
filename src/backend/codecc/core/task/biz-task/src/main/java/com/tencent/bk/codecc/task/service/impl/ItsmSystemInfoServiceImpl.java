@@ -18,11 +18,16 @@ public class ItsmSystemInfoServiceImpl implements ItsmSystemInfoService {
     private ItsmSystemInfoRepository itsmSystemInfoRepository;
 
     @Override
-    public ItsmSystemInfoVO getSystemInfo(String system) {
+    public ItsmSystemInfoVO getSystemInfo(String system, Integer version) {
         if (StringUtils.isBlank(system)) {
             return null;
         }
-        ItsmSystemInfoEntity itsmSystemInfo = itsmSystemInfoRepository.findFirstBySystem(system);
+        ItsmSystemInfoEntity itsmSystemInfo;
+        if (version != null) {
+            itsmSystemInfo = itsmSystemInfoRepository.findFirstBySystemAndVersion(system, version);
+        } else {
+            itsmSystemInfo = itsmSystemInfoRepository.findFirstBySystem(system);
+        }
         if (itsmSystemInfo == null) {
             return null;
         }

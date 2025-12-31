@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.model;
 
 import com.tencent.codecc.common.db.CommonEntity;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

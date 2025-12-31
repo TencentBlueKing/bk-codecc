@@ -12,8 +12,7 @@
 
 package com.tencent.devops.common.api;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,20 +29,20 @@ import java.util.Set;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ApiModel("企业微信通知视图")
+@Schema(description = "企业微信通知视图")
 public class RtxNotifyVO {
-    @ApiModelProperty("接收人列表")
+    @Schema(description = "接收人列表")
     private Set<String> receivers;
 
-    @ApiModelProperty("标题")
+    @Schema(description = "标题")
     private String title;
 
-    @ApiModelProperty("通知内容")
+    @Schema(description = "通知内容")
     private String substance;
 
-    @ApiModelProperty("接受人类型 enum WeworkReceiverType: single、group")
+    @Schema(description = "接受人类型 enum WeworkReceiverType: single、group")
     private String receiverType;
 
-    @ApiModelProperty("文本类型 enum WeworkTextType: text、markdown")
+    @Schema(description = "文本类型 enum WeworkTextType: text、markdown")
     private String textType;
 }

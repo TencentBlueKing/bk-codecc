@@ -35,12 +35,11 @@ import com.tencent.bk.codecc.task.vo.OpenScanAndPreProdCheckerSetMapVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Map;
 
@@ -50,49 +49,49 @@ import java.util.Map;
  * @version V1.0
  * @date 2019/4/19
  */
-@Api(tags = {"META"}, description = "元数据查询")
+@Tag(name = "META", description = "元数据查询")
 @Path("/user")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface UserMetaRestResource
 {
-    @ApiOperation("查询工具列表")
+    @Operation(summary = "查询工具列表")
     @Path("/toolList")
     @GET
     Result<List<ToolMetaBaseVO>> toolList(
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId,
-            @ApiParam(value = "是否查询详细信息")
+            @Parameter(description = "是否查询详细信息")
             @QueryParam("isDetail")
             Boolean isDetail
     );
 
-    @ApiOperation("查询工具详情")
+    @Operation(summary = "查询工具详情")
     @Path("/toolDetail")
     @GET
     Result<ToolMetaDetailVO> toolDetail(
-            @ApiParam(value = "工具名（唯一标志）", required = true)
+            @Parameter(description = "工具名（唯一标志）", required = true)
             @QueryParam("toolName")
                     String toolName);
 
-    @ApiOperation("查询元数据")
+    @Operation(summary = "查询元数据")
     @Path("/metadatas")
     @GET
     Result<Map<String, List<MetadataVO>>> metadatas(
-            @ApiParam(value = "元数据类型", required = true)
+            @Parameter(description = "元数据类型", required = true)
             @QueryParam("metadataType")
             String metadataType
     );
 
-    @ApiOperation("查询编译工具")
+    @Operation(summary = "查询编译工具")
     @Path("/buildEnv")
     @GET
     Result<List<BuildEnvVO>> getBuildEnv(
-            @ApiParam(value = "操作系统类型", required = true)
+            @Parameter(description = "操作系统类型", required = true)
             @QueryParam("os")
                     String os);
 
-    @ApiOperation("查询开源治理/EPC对应工具列表映射")
+    @Operation(summary = "查询开源治理/EPC对应工具列表映射")
     @Path("/getOpenScanAndEpcToolNameMap")
     @GET
     Result<OpenScanAndEpcToolNameMapVO> getOpenScanAndEpcToolNameMap(
@@ -100,7 +99,7 @@ public interface UserMetaRestResource
             String projectId
     );
 
-    @ApiOperation("查询开源治理/预发布版对应规则集映射")
+    @Operation(summary = "查询开源治理/预发布版对应规则集映射")
     @Path("/getOpenScanAndPreProdCheckerSetMap")
     @GET
     Result<OpenScanAndPreProdCheckerSetMapVO> getOpenScanAndPreProdCheckerSetMap(

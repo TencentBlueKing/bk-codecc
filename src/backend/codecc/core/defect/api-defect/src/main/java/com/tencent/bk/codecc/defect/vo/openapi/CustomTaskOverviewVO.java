@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.defect.vo.openapi;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -25,12 +24,12 @@ import lombok.EqualsAndHashCode;
  */
 
 @Data
-@ApiModel("个性化工蜂扫描任务概览视图")
+@Schema(description = "个性化工蜂扫描任务概览视图")
 @EqualsAndHashCode(callSuper = true)
 public class CustomTaskOverviewVO extends TaskOverviewDetailVO
 {
 
-    @ApiModelProperty("仓库地址")
+    @Schema(description = "仓库地址")
     private String url;
 
 

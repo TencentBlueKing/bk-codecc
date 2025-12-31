@@ -50,7 +50,11 @@
                 :label="$t('问题处理人')"
                 prop="authorName"
                 align="center"
-              ></bk-table-column>
+              >
+                <template slot-scope="{ row }">
+                  <bk-user-display-name :user-id="row.authorName"></bk-user-display-name>
+                </template>
+              </bk-table-column>
               <bk-table-column :label="$t('总数')" prop="total" align="center">
                 <template slot-scope="{ row }">
                   <a
@@ -261,7 +265,7 @@ export default {
       const res = await this.$store.dispatch('defect/report', params);
       return res;
     },
-    initAuthors() {
+    async initAuthors() {
       const { authorList } = this.chartAuthorList;
       const name = [];
       const superHighN = [];
@@ -269,9 +273,14 @@ export default {
       const mediumN = [];
       const lowN = [];
 
+      const dataMap = await this.$store.dispatch(
+        'displayname/batchGetDisplayName',
+        authorList.map(item => item.authorName || ''),
+      );
+
       if (authorList) {
         authorList.forEach((author, index) => {
-          name.push(author.authorName);
+          name.push(dataMap.get(author.authorName)?.display_name || author.authorName);
           superHighN.push(author.superHigh);
           highN.push(author.high);
           mediumN.push(author.medium);
@@ -457,11 +466,19 @@ export default {
     handleHref(query) {
       this.resolveHref('defect-ccn-list', query);
     },
-    downloadExcel() {
+    async downloadExcel() {
       if (!this.authorsData || !this.authorsData.length) {
         this.$bkMessage({ theme: 'warn', message: this.$t('数据为空') });
         return;
       }
+
+      const userIds = [...new Set(this.authorsData.map(item => item.authorName))];
+      const dataMap = await this.$store.dispatch('displayname/batchGetDisplayName', userIds);
+      const authorExportData = this.authorsData.map(item => ({
+        ...item,
+        authorName: dataMap.get(item.authorName)?.display_name || item.authorName,
+      }));
+
       const excelData1 = this.getExcelData(
         [
           this.$t('问题处理人'),
@@ -472,7 +489,7 @@ export default {
           this.$t('低风险(1-19)'),
         ],
         ['authorName', 'total', 'superHigh', 'high', 'medium', 'low'],
-        this.authorsData,
+        authorExportData,
         this.$t('待修复函数处理人分布'),
       );
       const excelData = [excelData1];

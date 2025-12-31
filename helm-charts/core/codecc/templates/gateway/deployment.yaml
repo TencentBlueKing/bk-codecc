@@ -2,7 +2,7 @@
 apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
 kind: Deployment
 metadata:
-  name: {{ include "common.names.fullname" . }}-gateway
+  name: {{ include "codecc.names.fullname" . }}-gateway
   labels: {{- include "codecc.labels.standard" . | nindent 4 }}
     app.kubernetes.io/component: gateway
     {{- if .Values.commonLabels }}
@@ -63,7 +63,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: BK_CODECC_SERVICE_PREFIX
-              value: {{ include "common.names.fullname" . }}-
+              value: {{ include "codecc.names.fullname" . }}-
             - name: BK_CODECC_HOST
               value: {{ .Values.config.bkCodeccPublicSchema }}://{{ .Values.config.bkCodeccPublicUrl }}
             - name: BK_CI_PUBLIC_URL
@@ -112,6 +112,28 @@ spec:
               value: {{ .Values.config.bkEsbEnable | quote  }}
             - name: BK_ESB_HOST
               value: {{ .Values.config.bkEsbHost }}
+            - name: BK_CI_REDIS_HOST
+              value: {{ .Values.config.bkCiRedisHost }}
+            - name: BK_CI_REDIS_PORT
+              value: {{ .Values.config.bkCiRedisPort | quote }}
+            - name: BK_CI_REDIS_PASSWORD
+              value: {{ .Values.config.bkCiRedisPassword }}
+            - name: BK_CI_REDIS_DB
+              value: {{ .Values.config.bkCiRedisDb | quote }}
+            - name: RELEASE_NAME
+              value: bk
+            - name: CHART_NAME
+              value: codecc
+            - name: BK_API_TENANT_HOST
+              value: {{ .Values.config.bkApiTenantHost }}
+            - name: BK_LOGIN_PATH
+              value: {{ .Values.config.bkLoginPath }}
+            - name: BK_CODECC_ENABLE_MULTI_TENANT
+              value: {{ .Values.config.bkCodeccEnableMultiTenant | quote }}
+            - name: BK_CI_JWT_RSA_PRIVATE_KEY
+              value: ""
+            - name: BK_API_TENANT_BASE_URL
+              value: {{ .Values.config.bkApiTenantHost }}/api/bk-user-web/prod
           ports:
             - name: http
               containerPort: 80

@@ -132,7 +132,7 @@ fi
 mkdir -p $WORKING_DIR/tmp
 tmp_dir=$WORKING_DIR/tmp
 # 执行退出时自动清理tmp目录
-trap 'rm -rf $tmp_dir' EXIT TERM
+#trap 'rm -rf $tmp_dir' EXIT TERM
 
 # 编译frontend
 if [[ $ALL -eq 1 || $GATEWAY -eq 1 ]] ; then
@@ -149,7 +149,8 @@ if [[ $ALL -eq 1 || $GATEWAY -eq 1 ]] ; then
     cp -rf $GATEWAY_DIR/startup.sh tmp/
     cp -rf $GATEWAY_DIR/scripts/render_tpl tmp/
     cp -rf $GATEWAY_DIR/scripts/codecc.env tmp/
-    cp -f $GATEWAY_TEMPLATE_DIR/gateway#* tmp/
+    mkdir -p tmp/templates
+    cp -f $GATEWAY_TEMPLATE_DIR/gateway#* tmp/templates
     docker build -f gateway/gateway.Dockerfile -t $REGISTRY/$NAMESPACE/${PERFIX}gateway:$VERSION tmp --network=host
     if [[ $PUSH -eq 1 ]] ; then
         docker push $REGISTRY/$NAMESPACE/${PERFIX}gateway:$VERSION
@@ -214,6 +215,7 @@ if [[ $ALL -eq 1 || $INIT -eq 1 ]] ; then
     rm -rf tmp/*
     mkdir -p tmp
     cp -rf entrance/init-entrance.sh tmp/
+    cp -rf entrance/bk-ci-gen-jwt-token.sh tmp/
     docker build -f entrance/init.Dockerfile -t $REGISTRY/$NAMESPACE/${PERFIX}entrance-init:$VERSION tmp --no-cache --network=host
     if [[ $PUSH -eq 1 ]] ; then
         docker push $REGISTRY/$NAMESPACE/${PERFIX}entrance-init:$VERSION

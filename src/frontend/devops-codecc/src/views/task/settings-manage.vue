@@ -379,8 +379,11 @@ ${pipelineId}/edit#${this.taskDetail.atomCode}`,
             theme: 'success',
             message: this.$t('删除成功'),
           });
-          this.$router.push({
-            name: 'task-list',
+          this.$nextTick(() => {
+            window.changeAlert = false;
+            this.$router.push({
+              name: 'task-list',
+            });
           });
         } else {
           this.$bkMessage({

@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.task.vo.pipeline;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("流水线工具参数视图")
+@Schema(description = "流水线工具参数视图")
 public class PipelineToolParamVO extends CommonVO
 {
     private String paramKey;

@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.vo.ignore;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -16,28 +16,28 @@ public class IgnoreTypeNotifyVO {
      * 通知 - 月份配置
      * 是否为每月
      */
-    @ApiModelProperty("every_month")
+    @Schema(description = "every_month")
     private Boolean everyMonth;
 
     /**
      * 通知 - 月份配置
      * 1～12
      */
-    @ApiModelProperty("notify_months")
+    @Schema(description = "notify_months")
     private Set<Integer> notifyMonths;
 
     /**
      * 通知 - 每周配置
      * 是否为每周
      */
-    @ApiModelProperty("every_week")
+    @Schema(description = "every_week")
     private Boolean everyWeek;
 
     /**
      * 通知 - 每月第几周配置
      * 1～5
      */
-    @ApiModelProperty("notify_week_of_months")
+    @Schema(description = "notify_week_of_months")
     private Set<Integer> notifyWeekOfMonths;
 
 
@@ -45,27 +45,27 @@ public class IgnoreTypeNotifyVO {
      * 通知 - 每周第几天配置
      * 1～7
      */
-    @ApiModelProperty("notify_day_of_weeks")
+    @Schema(description = "notify_day_of_weeks")
     private Set<Integer> notifyDayOfWeeks;
 
     /**
      * 通知接接收者类型
      * {@link com.tencent.devops.common.constant.ComConstants.IgnoreTypeNotifyReceiverType}
      */
-    @ApiModelProperty("notify_receiver_types")
+    @Schema(description = "notify_receiver_types")
     private List<String> notifyReceiverTypes;
 
     /**
      * 附加通知人
      */
-    @ApiModelProperty("ext_receiver")
+    @Schema(description = "ext_receiver")
     private Set<String> extReceiver;
 
     /**
      * 通知类型
      * {@link com.tencent.devops.common.constant.ComConstants.NotifyType}
      */
-    @ApiModelProperty("notify_type")
+    @Schema(description = "notify_type")
     private List<String> notifyTypes;
 
     public static IgnoreTypeNotifyVO newIgnoreTypeNotifyVO() {

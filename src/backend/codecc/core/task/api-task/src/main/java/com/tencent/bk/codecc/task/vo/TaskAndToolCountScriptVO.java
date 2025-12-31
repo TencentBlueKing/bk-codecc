@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -23,20 +22,20 @@ import lombok.Data;
  * @date 2020/12/07
  */
 @Data
-@ApiModel("工具、任务数量视图")
+@Schema(description = "工具、任务数量视图")
 public class TaskAndToolCountScriptVO {
-    @ApiModelProperty("日期")
+    @Schema(description = "日期")
     private String date;
 
-    @ApiModelProperty("来源")
+    @Schema(description = "来源")
     private String createFrom;
 
-    @ApiModelProperty("数量")
+    @Schema(description = "数量")
     private Long count;
 
-    @ApiModelProperty("工具名")
+    @Schema(description = "工具名")
     private String toolName;
 
-    @ApiModelProperty("活跃数量")
+    @Schema(description = "活跃数量")
     private Long activeCount;
 }

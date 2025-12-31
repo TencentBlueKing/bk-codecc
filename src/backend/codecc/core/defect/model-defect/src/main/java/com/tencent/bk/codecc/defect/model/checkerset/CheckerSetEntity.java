@@ -217,6 +217,12 @@ public class CheckerSetEntity extends CommonEntity {
     private String toolName;
 
     /**
+     * 租户 id
+     */
+    @Field("tenant_id")
+    private String tenantId;
+
+    /**
      *  --------------已废弃----------- 是否推荐
      */
     @Deprecated

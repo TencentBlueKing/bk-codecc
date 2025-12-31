@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -39,45 +38,45 @@ import java.util.List;
  * @date 2019/7/12
  */
 @Data
-@ApiModel("日志查询模型")
+@Schema(description = "日志查询模型")
 public class QueryLogRepVO
 {
-    @ApiModelProperty(value = "构建ID")
+    @Schema(description = "构建ID")
     private String buildId;
 
-    @ApiModelProperty(value = "是否结束")
+    @Schema(description = "是否结束")
     private Boolean finished;
 
-    @ApiModelProperty(value = "日志列表")
+    @Schema(description = "日志列表")
     private List<LogLine> logs;
 
-    @ApiModelProperty(value = "所用时间")
+    @Schema(description = "所用时间")
     private Long timeUsed;
 
-    @ApiModelProperty(value = "日志查询状态")
+    @Schema(description = "日志查询状态")
     private Integer status;
 
 
-    @ApiModel("日志模型")
+    @Schema(description = "日志模型")
     @Data
     private class LogLine
     {
-        @ApiModelProperty(value = "日志行号")
+        @Schema(description = "日志行号")
         private Long lineNo;
-        @ApiModelProperty(value = "日志时间戳")
+        @Schema(description = "日志时间戳")
         private Long timestamp;
-        @ApiModelProperty(value = "日志消息体")
+        @Schema(description = "日志消息体")
         private String message;
-        @ApiModelProperty(value = "日志权重级")
+        @Schema(description = "日志权重级")
         private Byte priority;
-        @ApiModelProperty(value = "日志tag")
+        @Schema(description = "日志tag")
         private String tag;
-        @ApiModelProperty(value = "日志执行次数")
+        @Schema(description = "日志执行次数")
         private int executeCount = 1;
 
     }
 
-    @ApiModel("日志状态")
+    @Schema(description = "日志状态")
     public enum LogStatus
     {
         /**

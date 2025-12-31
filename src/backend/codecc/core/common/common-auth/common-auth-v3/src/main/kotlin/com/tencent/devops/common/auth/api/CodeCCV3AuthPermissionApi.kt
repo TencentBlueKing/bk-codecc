@@ -10,9 +10,9 @@ import com.tencent.bk.sdk.iam.service.PolicyService
 import com.tencent.devops.common.api.util.OwnerUtils
 import com.tencent.devops.common.auth.code.AuthServiceCode
 import com.tencent.devops.common.auth.utils.AuthStrUtils
-import com.tencent.devops.common.redis.RedisOperation
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.redis.core.RedisTemplate
 
 
 /*
@@ -44,9 +44,9 @@ import org.springframework.beans.factory.annotation.Autowired
 class CodeCCV3AuthPermissionApi @Autowired constructor(
     private val authHelper: AuthHelper,
     private val policyService: PolicyService,
-    private val redisOperation: RedisOperation
-): AuthPermissionStrApi {
-    override fun addResourcePermissionForUsers(userId: String,
+    private val redisTemplate: RedisTemplate<String, String>
+) {
+    fun addResourcePermissionForUsers(userId: String,
                                                projectCode: String,
                                                serviceCode: AuthServiceCode,
                                                permission: String,
@@ -57,7 +57,7 @@ class CodeCCV3AuthPermissionApi @Autowired constructor(
         return true
     }
 
-    override fun getUserResourceByPermission(user: String,
+    fun getUserResourceByPermission(user: String,
                                              serviceCode: AuthServiceCode,
                                              resourceType: String,
                                              projectCode: String,
@@ -92,7 +92,7 @@ class CodeCCV3AuthPermissionApi @Autowired constructor(
         }
     }
 
-    override fun getUserResourcesByPermissions(user: String, serviceCode: AuthServiceCode, resourceType: String, projectCode: String, permissions: Set<String>, supplier: (() -> List<String>)?): Map<String, List<String>> {
+    fun getUserResourcesByPermissions(user: String, serviceCode: AuthServiceCode, resourceType: String, projectCode: String, permissions: Set<String>, supplier: (() -> List<String>)?): Map<String, List<String>> {
         logger.info("v3 getUserResourcesByPermissions user[$user] serviceCode[$serviceCode] resourceType[$resourceType] projectCode[$projectCode] permission[$permissions] supplier[$supplier]")
         return getUserResourcesByPermissions(
             userId = user,
@@ -105,7 +105,7 @@ class CodeCCV3AuthPermissionApi @Autowired constructor(
         )
     }
 
-    override fun getUserResourcesByPermissions(userId: String, scopeType: String, scopeId: String, resourceType: String, permissions: Set<String>, systemId: AuthServiceCode, supplier: (() -> List<String>)?): Map<String, List<String>> {
+    fun getUserResourcesByPermissions(userId: String, scopeType: String, scopeId: String, resourceType: String, permissions: Set<String>, systemId: AuthServiceCode, supplier: (() -> List<String>)?): Map<String, List<String>> {
         logger.info("v3 getUserResourcesByPermissions user[$userId] scopeType[$scopeType] scopeId[$scopeId] resourceType[$resourceType] systemId[$systemId] permission[$permissions] supplier[$supplier]")
         val permissionMap = mutableMapOf<String, List<String>>()
         permissions.map {
@@ -123,11 +123,11 @@ class CodeCCV3AuthPermissionApi @Autowired constructor(
         return permissionMap
     }
 
-    override fun validateUserResourcePermission(user: String, serviceCode: AuthServiceCode, resourceType: String, projectCode: String, permission: String): Boolean {
+    fun validateUserResourcePermission(user: String, serviceCode: AuthServiceCode, resourceType: String, projectCode: String, permission: String): Boolean {
         return true
     }
 
-    override fun validateUserResourcePermission(user: String, serviceCode: AuthServiceCode, resourceType: String, projectCode: String, resourceCode: String, permission: String, relationResourceType: String?): Boolean {
+    fun validateUserResourcePermission(user: String, serviceCode: AuthServiceCode, resourceType: String, projectCode: String, resourceCode: String, permission: String, relationResourceType: String?): Boolean {
         logger.info("v3 validateUserResourcePermission user[$user] serviceCode[${serviceCode.id()}] resourceType[${resourceType}] permission[${permission}]")
         if (isProjectOwner(projectCode, user)) {
             return true
@@ -162,7 +162,7 @@ class CodeCCV3AuthPermissionApi @Autowired constructor(
     // 此处为不在common内依赖业务接口，固只从redis内取，前置有写入逻辑
     // 若前置失效会导致log,dispatch, artifactory等校验权限出现： 项目管理员没有该项目下其他人创建的某资源的权限。 处理概率极小
     private fun isProjectOwner(projectId: String, userId: String): Boolean {
-        val projectOwner = redisOperation.get(OwnerUtils.getOwnerRedisKey(projectId))
+        val projectOwner = redisTemplate.opsForValue().get(OwnerUtils.getOwnerRedisKey(projectId))
         if (!projectOwner.isNullOrEmpty()) {
             return projectOwner == userId
         }

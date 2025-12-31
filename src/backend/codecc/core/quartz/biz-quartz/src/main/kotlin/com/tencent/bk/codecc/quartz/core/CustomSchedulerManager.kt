@@ -415,7 +415,7 @@ open class CustomSchedulerManager @Autowired constructor(
      * 批量添加定时任务
      */
     private fun addJobs(jobInstances: List<JobInstanceEntity>) {
-        val jobTriggerMap = mutableMapOf<JobDetail, List<Trigger>>()
+        val jobTriggerMap = mutableMapOf<JobDetail, Set<Trigger>>()  // Quartz 2.3.x 需要 Set
         jobInstances.forEach {
             with(it) {
                 val beanName = className.decapitalize()
@@ -441,7 +441,7 @@ open class CustomSchedulerManager @Autowired constructor(
                 )
                 val jobDetail = JobBuilder.newJob(ShardingJob::class.java).withIdentity(jobKey)
                         .usingJobData(JobDataMap(jobParamMap)).build()
-                jobTriggerMap[jobDetail] = listOf(trigger)
+                jobTriggerMap[jobDetail] = setOf(trigger)  // Quartz 2.3.x 需要 Set 而不是 List
             }
         }
         try {

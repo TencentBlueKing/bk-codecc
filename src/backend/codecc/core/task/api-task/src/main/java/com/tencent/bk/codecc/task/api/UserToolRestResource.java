@@ -35,23 +35,23 @@ import com.tencent.bk.codecc.task.vo.RepoInfoVO;
 import com.tencent.bk.codecc.task.vo.ToolConfigPlatformVO;
 import com.tencent.bk.codecc.task.vo.ToolStatusUpdateReqVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * 工具管理接口
@@ -59,89 +59,89 @@ import javax.ws.rs.core.MediaType;
  * @version V1.0
  * @date 2019/5/7
  */
-@Api(tags = {"USER_TOOL"}, description = "工具管理接口")
+@Tag(name = "USER_TOOL", description = "工具管理接口")
 @Path("/user/tool")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface UserToolRestResource {
 
-    @ApiOperation("批量注册工具")
+    @Operation(summary = "批量注册工具")
     @Path("/")
     @POST
     Result<Boolean> registerTools(
-            @ApiParam(value = "工具注册信息", required = true)
+            @Parameter(description = "工具注册信息", required = true)
             @Valid
             BatchRegisterVO batchRegisterVO,
-            @ApiParam(value = "当前用户", required = true)
+            @Parameter(description = "当前用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             @NotNull(message = "用户信息不能为空")
             String userName
     );
 
 
-    @ApiOperation("获取代码库清单")
+    @Operation(summary = "获取代码库清单")
     @Path("/repos/projCode/{projCode}")
     @GET
     Result<List<RepoInfoVO>> getRepoList(
-            @ApiParam(value = "项目code", required = true)
+            @Parameter(description = "项目code", required = true)
             @PathParam("projCode")
             String projCode);
 
 
-    @ApiOperation("获取代码库分支列表")
+    @Operation(summary = "获取代码库分支列表")
     @Path("/branches")
     @GET
     Result<List<String>> listBranches(
-            @ApiParam(value = "项目code", required = true)
+            @Parameter(description = "项目code", required = true)
             @QueryParam("projCode")
             String projCode,
-            @ApiParam(value = "仓库地址", required = true)
+            @Parameter(description = "仓库地址", required = true)
             @QueryParam("url")
             String url,
-            @ApiParam(value = "仓库类型", required = true)
+            @Parameter(description = "仓库类型", required = true)
             @QueryParam("type")
             String type
     );
 
-    @ApiOperation("工具启用停用")
+    @Operation(summary = "工具启用停用")
     @Path("/status")
     @PUT
     Result<Boolean> updateToolStatus(
-            @ApiParam(value = "工具名清单", required = true)
+            @Parameter(description = "工具名清单", required = true)
             ToolStatusUpdateReqVO toolStatusUpdateReqVO,
-            @ApiParam(value = "当前用户", required = true)
+            @Parameter(description = "当前用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userName,
-            @ApiParam(value = "任务id", required = true)
+            @Parameter(description = "任务id", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             long taskId);
 
-    @ApiOperation("停用流水线")
+    @Operation(summary = "停用流水线")
     @Path("/delete/pipeline")
     @DELETE
     Result<Boolean> deletePipeline(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             Long taskId,
-            @ApiParam(value = "项目ID", required = true)
+            @Parameter(description = "项目ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId,
-            @ApiParam(value = "当前用户", required = true)
+            @Parameter(description = "当前用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userName
     );
 
-    @ApiOperation("修改工具特殊配置")
+    @Operation(summary = "修改工具特殊配置")
     @Path("/toolConfig/update")
     @PUT
     Result<Boolean> updateToolPlatformInfo(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             Long taskId,
-            @ApiParam(value = "当前用户", required = true)
+            @Parameter(description = "当前用户", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userName,
-            @ApiParam(value = "请求体", required = true)
+            @Parameter(description = "请求体", required = true)
             ToolConfigPlatformVO toolConfigPlatformVO
     );
 }

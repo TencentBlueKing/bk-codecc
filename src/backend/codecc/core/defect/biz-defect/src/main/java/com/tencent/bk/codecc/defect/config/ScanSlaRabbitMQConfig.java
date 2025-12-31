@@ -13,6 +13,7 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
@@ -48,7 +49,8 @@ public class ScanSlaRabbitMQConfig {
     }
 
     @Bean
-    public Binding scanSlaQueueBind(Queue scanSlaQueue, CustomExchange scanSlaExchange) {
+    public Binding scanSlaQueueBind(@Qualifier("scanSlaQueue") Queue scanSlaQueue,
+                                     @Qualifier("scanSlaExchange") CustomExchange scanSlaExchange) {
         return BindingBuilder.bind(scanSlaQueue).to(scanSlaExchange).with(ROUTE_SCAN_FINISH).noargs();
     }
 
@@ -60,8 +62,8 @@ public class ScanSlaRabbitMQConfig {
     @Bean
     public SimpleMessageListenerContainer scanSlaMessageListenerContainer(
             ConnectionFactory connectionFactory,
-            Queue scanSlaQueue,
-            RabbitAdmin scanSlaRabbitAdmin,
+            @Qualifier("scanSlaQueue") Queue scanSlaQueue,
+            @Qualifier("scanSlaRabbitAdmin") RabbitAdmin scanSlaRabbitAdmin,
             ScanSlaConsumer scanSlaConsumer,
             Jackson2JsonMessageConverter jackson2JsonMessageConverter) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer(connectionFactory);

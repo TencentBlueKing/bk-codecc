@@ -1,6 +1,6 @@
 package com.tencent.devops.common.api.checkerset;
 
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -12,9 +12,8 @@ import java.util.List;
  * @date 2020/1/7
  */
 @Data
-@ApiModel("更新规则集基础信息请求体视图")
-public class V3UpdateCheckerSetReqVO
-{
+@Schema(description = "更新规则集基础信息请求体视图")
+public class V3UpdateCheckerSetReqVO {
     /**
      * 规则集名称
      */

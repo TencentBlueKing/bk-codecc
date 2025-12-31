@@ -12,14 +12,17 @@
 
 package com.tencent.bk.codecc.defect.consumer;
 
-import com.alibaba.fastjson.JSONReader;
+import com.alibaba.fastjson2.JSONReader;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.tencent.bk.codecc.defect.constant.DefectMessageCode;
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.CLOCDefectRepository;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.CLOCDefectDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.FileCommentIgnoresDao;
+import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.IgnoreDefectDao;
 import com.tencent.bk.codecc.defect.model.DefectJsonFileEntity;
 import com.tencent.bk.codecc.defect.model.HeadFileEntity;
 import com.tencent.bk.codecc.defect.model.defect.CLOCDefectEntity;
+import com.tencent.bk.codecc.defect.model.ignore.FileCommentIgnoresEntity;
 import com.tencent.bk.codecc.defect.model.ignore.IgnoreCommentDefectModel;
 import com.tencent.bk.codecc.defect.model.ignore.IgnoreCommentDefectSubModel;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
@@ -79,11 +82,16 @@ public class CLOCDefectCommitConsumer extends AbstractDefectCommitConsumer {
     @Autowired
     private CLOCDefectStatisticService clocDefectStatisticService;
     @Autowired
+    private IHeadFileService iHeadFileService;
+    @Autowired
     private IIgnoreDefectService iIgnoreDefectService;
     @Autowired
-    private IHeadFileService iHeadFileService;
+    private FileCommentIgnoresDao fileCommentIgnoresDao;
+    @Autowired
+    private IgnoreDefectDao ignoreDefectDao;
 
     private static final Integer MAX_PER_SIZE = 10000;
+    private static final int BATCH_SIZE = 1000;
 
     @Override
     protected boolean uploadDefects(
@@ -102,7 +110,7 @@ public class CLOCDefectCommitConsumer extends AbstractDefectCommitConsumer {
         boolean isFullScan = toolBuildStackEntity == null || toolBuildStackEntity.isFullScan();
         //区分增量与全量进行更新
         if (isFullScan) {
-            fullUploadDefects(taskId, buildId, toolName, streamName, toolBuildStackEntity);
+            fullUploadDefects(taskId, buildId, toolName, streamName);
         } else {
             incUploadDefects(taskId, buildId, toolName, streamName, toolBuildStackEntity);
         }
@@ -111,16 +119,39 @@ public class CLOCDefectCommitConsumer extends AbstractDefectCommitConsumer {
         return true;
     }
 
+    private void migrateCommentIgnoreInfoWhenDelete(Long taskId, Set<String> filePaths) {
+        long deletedCount = fileCommentIgnoresDao.deleteByTaskIdAndFilePathIn(taskId, filePaths);
+        if (deletedCount > 0) {
+            return;
+        }
+
+        // TODO: 迁移相关的代码, 可以在 3-6 个月以后删除. 2025.05.29
+        log.info("migrateCommentIgnoreInfoWhenDelete. task id: {}", taskId);
+
+        // 没有删到数据, 说明该任务的数据有可能还没迁移
+        if (filePaths == null) {
+            // 本欲删除该任务所有的忽略信息, 所以直接软删旧表 t_ignore_comment_defect_model 中的数据
+            ignoreDefectDao.updateMigratedByTaskId(taskId);
+        } else if (!filePaths.isEmpty()) {
+            // 只删除部分文件的忽略信息, 需要迁移其他文件的忽略信息
+            IgnoreCommentDefectModel oldEntity = ignoreDefectDao.findFirstUnmigratedByTaskId(taskId);
+            if (oldEntity == null) {
+                return;
+            }
+
+            iIgnoreDefectService.migrate(oldEntity, filePaths);
+            ignoreDefectDao.updateMigratedByTaskId(taskId);
+        }
+    }
+
     /**
      * 全量更新
      * @param taskId
      * @param buildId
      * @param toolName
      * @param streamName
-     * @param toolBuildStackEntity
      */
-    private void fullUploadDefects(Long taskId, String buildId, String toolName, String streamName,
-                                   ToolBuildStackEntity toolBuildStackEntity) {
+    private void fullUploadDefects(Long taskId, String buildId, String toolName, String streamName) {
         //更新忽略信息，具体如下：
         /*
           全量扫描，先将map字段置空，然后再逐个更新
@@ -128,7 +159,7 @@ public class CLOCDefectCommitConsumer extends AbstractDefectCommitConsumer {
         String ignoreListJson = scmJsonComponent.loadRawIgnores(streamName, toolName, buildId);
         log.info("upsert ignore comment defect model, task id: {}, tool name: {}, build id: {}",
                 taskId, toolName, buildId);
-        iIgnoreDefectService.deleteIgnoreDefectMap(taskId, null);
+        migrateCommentIgnoreInfoWhenDelete(taskId, null);
         if (StringUtils.isNotBlank(ignoreListJson)) {
             upsertIgnoreDefectInfo(taskId, ignoreListJson);
         }
@@ -178,16 +209,19 @@ public class CLOCDefectCommitConsumer extends AbstractDefectCommitConsumer {
                     fileIndex), null);
         }
         try (FileInputStream fileInputStream = new FileInputStream(defectFile);
-             InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, StandardCharsets.UTF_8);
-             JSONReader reader = new JSONReader(inputStreamReader)) {
-            reader.startObject();
-            while (reader.hasNext()) {
-                String keys = reader.readString();
+             JSONReader reader = JSONReader.of(fileInputStream, StandardCharsets.UTF_8)) {
+            if (!reader.nextIfObjectStart()) {
+                return;
+            }
+            while (!reader.nextIfObjectEnd()) {
+                String keys = reader.readFieldName();
                 if (keys.equals("defects")) {
-                    reader.startArray();
+                    if (!reader.nextIfArrayStart()) {
+                        continue;
+                    }
                     List<CLOCDefectEntity> clocDefectEntityList = new LinkedList<>();
-                    while (reader.hasNext()) {
-                        clocDefectEntityList.add(JsonUtil.INSTANCE.to(reader.readString(), CLOCDefectEntity.class));
+                    while (!reader.nextIfArrayEnd()) {
+                        clocDefectEntityList.add(reader.read(CLOCDefectEntity.class));
                         if (clocDefectEntityList.size() > MAX_PER_SIZE) {
                             fillDefectInfo(clocDefectEntityList, filePathMap, true);
                             batchUpsertClocInfo(taskId, toolName, streamName, clocDefectEntityList);
@@ -199,12 +233,10 @@ public class CLOCDefectCommitConsumer extends AbstractDefectCommitConsumer {
                         fillDefectInfo(clocDefectEntityList, filePathMap, true);
                         batchUpsertClocInfo(taskId, toolName, streamName, clocDefectEntityList);
                     }
-                    reader.endArray();
                 } else {
-                    reader.readObject();
+                    reader.skipValue();
                 }
             }
-            reader.endObject();
         } catch (IOException e) {
             log.warn("Read defect file exception: {}", fileIndex, e);
         }
@@ -241,7 +273,7 @@ public class CLOCDefectCommitConsumer extends AbstractDefectCommitConsumer {
         if (CollectionUtils.isNotEmpty(toolBuildStackEntity.getDeleteFiles())) {
             currentFileSet.addAll(toolBuildStackEntity.getDeleteFiles());
         }
-        iIgnoreDefectService.deleteIgnoreDefectMap(taskId, currentFileSet);
+        migrateCommentIgnoreInfoWhenDelete(taskId, currentFileSet);
         if (StringUtils.isNotBlank(ignoreListJson)) {
             upsertIgnoreDefectInfo(taskId, ignoreListJson);
         }
@@ -294,10 +326,85 @@ public class CLOCDefectCommitConsumer extends AbstractDefectCommitConsumer {
             Map<String, List<IgnoreCommentDefectSubModel>> ignoreJsonFileEntity = JsonUtil.INSTANCE.to(
                     ignoreListJson, new TypeReference<Map<String, List<IgnoreCommentDefectSubModel>>>() {
                     });
-            IgnoreCommentDefectModel ignoreCommentDefectModel = new IgnoreCommentDefectModel();
-            ignoreCommentDefectModel.setTaskId(taskId);
-            ignoreCommentDefectModel.setIgnoreDefectMap(ignoreJsonFileEntity);
-            iIgnoreDefectService.upsertIgnoreDefectInfo(ignoreCommentDefectModel);
+
+            processCommentIgnoreJson(taskId, ignoreJsonFileEntity);
+        }
+    }
+
+    /**
+     * commentIgnoreJson 的存储结构:
+     * {
+     *     "file_path": [
+     *     {
+     *         "line_num": xxx,
+     *         [
+     *         "checker": "ignore_reason",
+     *         ...
+     *         ]
+     *     }]
+     * }
+     * 对着上面的结构解析 commentIgnoreJson, 将数据保存到 t_file_comment_ignores.
+     * 注意: commentIgnoreJson 保存的是一个任务下的注释忽略数据, 而 t_file_comment_ignores 只保存单个文件的注释忽略数据.
+     */
+    private void processCommentIgnoreJson(Long taskId,
+            Map<String, List<IgnoreCommentDefectSubModel>> commentIgnoreJson) {
+        if (commentIgnoreJson == null) {
+            return;
+        }
+
+        log.info("process commentIgnoreJson. json size: {}", commentIgnoreJson.size());
+
+        List<FileCommentIgnoresEntity> entities = new ArrayList<>();
+
+        commentIgnoreJson.forEach((filePath, lines) -> {
+            if (StringUtils.isBlank(filePath) || CollectionUtils.isEmpty(lines)) {
+                return;
+            }
+
+            FileCommentIgnoresEntity entity = FileCommentIgnoresEntity.builder()
+                    .taskId(taskId)
+                    .filePath(filePath)
+                    .build();
+            List<FileCommentIgnoresEntity.LineIgnoreInfo> lineIgnoreInfos = new ArrayList<>();
+
+            lines.forEach(line -> {
+                if (line.getIgnoreRule() == null || line.getIgnoreRule().isEmpty() || line.getLineNum() == null) {
+                    return;
+                }
+
+                List<FileCommentIgnoresEntity.IgnoreInfo> ignoreInfos = new ArrayList<>();
+                line.getIgnoreRule().forEach((checker, ignoreReason) -> {
+                    FileCommentIgnoresEntity.IgnoreInfo ignoreInfo =
+                            new FileCommentIgnoresEntity.IgnoreInfo(checker, ignoreReason);
+                    ignoreInfos.add(ignoreInfo);
+                });
+
+                long lineNum = line.getLineNum().longValue();
+                FileCommentIgnoresEntity.LineIgnoreInfo lineIgnoreInfo = new FileCommentIgnoresEntity.LineIgnoreInfo();
+                lineIgnoreInfo.setLineNum(lineNum);
+                lineIgnoreInfo.setIgnoreInfos(ignoreInfos);
+
+                lineIgnoreInfos.add(lineIgnoreInfo);
+            });
+
+            if (!lineIgnoreInfos.isEmpty()) {
+                entity.setLineIgnoreInfos(lineIgnoreInfos);
+                entity.applyAuditInfoOnCreate();
+                addAndSave(entities, entity);
+            }
+        });
+
+        fileCommentIgnoresDao.insertAll(entities);
+    }
+
+    /**
+     * 分批 save
+     */
+    private void addAndSave(List<FileCommentIgnoresEntity> entities, FileCommentIgnoresEntity entity) {
+        entities.add(entity);
+        if (entities.size() >= BATCH_SIZE) {
+            fileCommentIgnoresDao.insertAll(entities);
+            entities.clear();
         }
     }
 

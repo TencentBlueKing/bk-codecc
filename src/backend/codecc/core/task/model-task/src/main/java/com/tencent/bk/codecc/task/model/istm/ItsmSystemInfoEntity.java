@@ -44,4 +44,7 @@ public class ItsmSystemInfoEntity extends CommonEntity {
 
     @Field("operate_ticket_body")
     private String operateTicketBody;
+
+    @Field("version")
+    private Integer version;
 }

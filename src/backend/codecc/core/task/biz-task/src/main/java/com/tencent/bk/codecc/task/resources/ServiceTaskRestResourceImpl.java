@@ -308,6 +308,21 @@ public class ServiceTaskRestResourceImpl implements ServiceTaskRestResource {
     }
 
     @Override
+    public Result<List<Long>> getTaskIdsByProjectId(String projectId) {
+        return new Result<>(taskService.queryTasIdByProjectId(projectId));
+    }
+
+    @Override
+    public Result<List<Long>> getAllTaskIdsByProjectId(String projectId) {
+        return new Result<>(taskService.queryAllTaskIdByProjectId(projectId));
+    }
+
+    @Override
+    public Result<List<String>> getAllPipelineIdsByProjectId(String projectId) {
+        return new Result<>(taskService.queryAllPipelineIdByProjectId(projectId));
+    }
+
+    @Override
     public Result<List<String>> queryProjectIdPage(Set<String> createFrom, Integer pageNum, Integer pageSize) {
         return new Result<>(taskService.queryProjectIdPage(createFrom, pageNum, pageSize));
     }
@@ -390,6 +405,12 @@ public class ServiceTaskRestResourceImpl implements ServiceTaskRestResource {
     @Override
     public Result<Boolean> stopDisableProjectTask(String projectId) {
         taskService.stopDisableProjectTask(projectId);
+        return new Result<>(true);
+    }
+
+    @Override
+    public Result<Boolean> startEnableProjectTask(String projectId) {
+        taskService.startEnableProjectTask(projectId);
         return new Result<>(true);
     }
 

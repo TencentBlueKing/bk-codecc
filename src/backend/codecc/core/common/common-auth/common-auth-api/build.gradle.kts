@@ -37,17 +37,17 @@ dependencies {
     api("com.fasterxml.jackson.core:jackson-databind")
     api("com.fasterxml.jackson.core:jackson-core")
     api("com.fasterxml.jackson.core:jackson-annotations")
-    api("com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider")
+    api("com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider")
     api("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
-    api("com.fasterxml.jackson.jaxrs:jackson-jaxrs-base")
+    api("com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-base")
     api("com.fasterxml.jackson.module:jackson-module-kotlin")
     api("org.springframework.boot:spring-boot-starter-jersey")
     api("org.springframework.boot:spring-boot-starter-undertow")
-    api("io.swagger:swagger-jersey2-jaxrs") {
+    api("io.swagger.core.v3:swagger-jaxrs2-jakarta") {
         exclude(group = "org.json", module = "json")
     }
-    api("com.github.fge:json-schema-validator:2.2.6")
-    api("com.networknt:json-schema-validator:1.0.49")
+    api("com.github.fge:json-schema-validator:${Versions.jsonSchemaVersion}")
+    api("com.networknt:json-schema-validator:${Versions.networkntJsonSchemaVersion}")
     api(group = "com.tencent.bk.devops.ci.auth", name = "api-auth"){
         isChanging=true
     }

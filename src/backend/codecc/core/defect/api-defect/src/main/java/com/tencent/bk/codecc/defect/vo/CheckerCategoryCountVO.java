@@ -13,8 +13,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.enums.CheckerCategory;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,12 +27,12 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ApiModel("规则类型数量视图")
+@Schema(description = "规则类型数量视图")
 public class CheckerCategoryCountVO 
 {
-    @ApiModelProperty("规则类型")
+    @Schema(description = "规则类型")
     private CheckerCategory checkerCategory;
 
-    @ApiModelProperty("数量")
+    @Schema(description = "数量")
     private Integer count;
 }

@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "common.names.fullname" . }}-asyncreport
+  name: {{ include "codecc.names.fullname" . }}-asyncreport
   labels: {{- include "codecc.labels.standard" . | nindent 4 }}
     app.kubernetes.io/name: asyncreport
     app.kubernetes.io/component: microservice

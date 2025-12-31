@@ -28,29 +28,28 @@ package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.bk.codecc.defect.vo.common.AuthorTransferVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_TASK_ID;
 
 /**
  * 处理人转换服务
  */
-@Api(tags = {"USER_AUTHOR"}, description = "作者转换服务接口")
+@Tag(name = "USER_AUTHOR", description = "作者转换服务接口")
 @Path("/user/transferAuthor")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface UserTransferAuthorRestResource
 {
-    @ApiOperation("获取告警处理人批量转换关系表")
+    @Operation(summary = "获取告警处理人批量转换关系表")
     @Path("/list")
     @GET
     Result<AuthorTransferVO> getAuthorTransfer(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
                     long taskId);
 }

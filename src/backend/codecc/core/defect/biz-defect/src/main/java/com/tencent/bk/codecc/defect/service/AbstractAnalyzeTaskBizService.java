@@ -51,6 +51,7 @@ import com.tencent.bk.codecc.defect.model.statistic.CCNStatisticEntity;
 import com.tencent.bk.codecc.defect.model.statistic.CLOCStatisticEntity;
 import com.tencent.bk.codecc.defect.model.statistic.LintStatisticEntity;
 import com.tencent.bk.codecc.defect.service.file.ScmFileInfoService;
+import com.tencent.bk.codecc.defect.utils.ParamUtils;
 import com.tencent.bk.codecc.defect.utils.ThirdPartySystemCaller;
 import com.tencent.bk.codecc.defect.vo.CommitDefectVO;
 import com.tencent.bk.codecc.defect.vo.TaskLogOverviewVO;
@@ -97,6 +98,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -357,6 +359,7 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
 
         String exchange;
         String routingKey;
+        boolean isNormalFileSize = false;
         // 工蜂项目走工蜂提单集群
         if (ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value().equalsIgnoreCase(taskVO.getCreateFrom())) {
             log.warn("工蜂项目: {}", fileSize);
@@ -379,10 +382,16 @@ public abstract class AbstractAnalyzeTaskBizService implements IBizService<Uploa
             log.info("告警文件小于200M: {}", fileSize);
             exchange = String.format("%s%s.new", ConstantsKt.PREFIX_EXCHANGE_DEFECT_COMMIT, toolPattern.toLowerCase());
             routingKey = String.format("%s%s.new", ConstantsKt.PREFIX_ROUTE_DEFECT_COMMIT, toolPattern.toLowerCase());
+            isNormalFileSize = true;
         }
 
         // 通过消息队列异步提单
         CommitDefectVO commitDefectVO = getCommitDefectVO(uploadTaskLogStepVO, taskVO, fileSize);
+        // 目前 LLM 误报过滤只支持小于 200M 的 bkcheck 的告警文件
+        if (isNormalFileSize && ComConstants.Tool.BKCHECK.name().equalsIgnoreCase(toolName)
+                && ParamUtils.enableLLMNegativeDefectFilter(taskVO, toolName)) {
+            commitDefectVO.setEnableLLMNegativeDefectFilter(true);
+        }
         rabbitTemplate.convertAndSend(exchange, routingKey, commitDefectVO);
     }
 

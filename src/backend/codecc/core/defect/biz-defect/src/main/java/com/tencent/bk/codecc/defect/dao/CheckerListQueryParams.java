@@ -4,8 +4,7 @@ import com.tencent.bk.codecc.defect.vo.enums.CheckerCategory;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerListSortType;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerRecommendType;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSource;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.springframework.data.domain.Sort;
 
@@ -13,66 +12,66 @@ import java.util.Map;
 import java.util.Set;
 
 @Data
-@ApiModel("规则清单数据查询参数类")
+@Schema(description = "规则清单数据查询参数类")
 public class CheckerListQueryParams {
-    @ApiModelProperty("关键字")
+    @Schema(description = "关键字")
     private String keyWord;
 
-    @ApiModelProperty("语言")
+    @Schema(description = "语言")
     private Set<String> checkerLanguage;
 
-    @ApiModelProperty("规则类型")
+    @Schema(description = "规则类型")
     private Set<CheckerCategory> checkerCategory;
 
-    @ApiModelProperty("工具")
+    @Schema(description = "工具")
     private Set<String> toolName;
 
-    @ApiModelProperty("标签")
+    @Schema(description = "标签")
     private Set<String> tag;
 
-    @ApiModelProperty("严重等级")
+    @Schema(description = "严重等级")
     private Set<String> severity;
 
-    @ApiModelProperty("可修改参数")
+    @Schema(description = "可修改参数")
     private Set<Boolean> editable;
 
-    @ApiModelProperty("推荐")
+    @Schema(description = "推荐")
     private Set<CheckerRecommendType> checkerRecommend;
 
-    @ApiModelProperty("规则集id")
+    @Schema(description = "规则集id")
     private String checkerSetId;
 
-    @ApiModelProperty("版本号")
+    @Schema(description = "版本号")
     private Integer version;
 
-    @ApiModelProperty("是否规则集选中")
+    @Schema(description = "是否规则集选中")
     private Set<Boolean> checkerSetSelected;
 
-    @ApiModelProperty("选中的规则集")
+    @Schema(description = "选中的规则集")
     private Set<String> selectedCheckerKey;
 
-    @ApiModelProperty("页数")
+    @Schema(description = "页数")
     private Integer pageNum;
 
-    @ApiModelProperty("页数")
+    @Schema(description = "页数")
     private Integer pageSize;
 
-    @ApiModelProperty("升序或降序")
+    @Schema(description = "升序或降序")
     private Sort.Direction sortType;
 
-    @ApiModelProperty("排序字段")
+    @Schema(description = "排序字段")
     private CheckerListSortType sortField;
 
-    @ApiModelProperty("工具集成状态")
+    @Schema(description = "工具集成状态")
     private Map<String, Integer> toolIntegratedStatusMap;
 
-    @ApiModelProperty("项目ID，用于过滤项目不可见的自定义规则")
+    @Schema(description = "项目ID，用于过滤项目不可见的自定义规则")
     private String projectId;
 
-    @ApiModelProperty("规则创建来源")
+    @Schema(description = "规则创建来源")
     private Set<CheckerSource> checkerSource;
 
-    @ApiModelProperty("查询请求是否来源于op")
+    @Schema(description = "查询请求是否来源于op")
     private Boolean isOp = false;
 
 }

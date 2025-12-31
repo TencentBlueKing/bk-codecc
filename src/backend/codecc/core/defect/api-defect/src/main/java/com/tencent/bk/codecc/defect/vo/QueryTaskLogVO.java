@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.domain.Page;
@@ -41,21 +40,21 @@ import org.springframework.data.domain.Page;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("查询分析记录视图")
+@Schema(description = "查询分析记录视图")
 public class QueryTaskLogVO extends CommonVO
 {
-    @ApiModelProperty(value = "任务主键id", required = true)
+    @Schema(description = "任务主键id", required = true)
     private long taskId;
 
-    @ApiModelProperty(value = "工具名称", required = true)
+    @Schema(description = "工具名称", required = true)
     private String toolName;
 
-    @ApiModelProperty(value = "第几页", required = true)
+    @Schema(description = "第几页", required = true)
     private int page;
 
-    @ApiModelProperty(value = "每页多少条", required = true)
+    @Schema(description = "每页多少条", required = true)
     private int pageSize;
 
-    @ApiModelProperty(value = "分析记录列表")
+    @Schema(description = "分析记录列表")
     private Page<TaskLogVO> taskLogPage;
 }

@@ -40,8 +40,7 @@ import java.util.List;
  * @date 2019/4/24
  */
 @Repository
-public interface ToolMetaRepository extends MongoRepository<ToolMetaEntity, String>
-{
+public interface ToolMetaRepository extends MongoRepository<ToolMetaEntity, String> {
     /**
      * 通过状态进行查询
      *
@@ -49,6 +48,12 @@ public interface ToolMetaRepository extends MongoRepository<ToolMetaEntity, Stri
      * @return
      */
     List<ToolMetaEntity> findByStatus(String status);
+
+    /**
+     * 查询非指定状态的工具名称
+     */
+    @Query(fields = "{'name':1, 'type':1, 'display_name':1 }")
+    List<ToolMetaEntity> findByStatusIsNot(String status);
 
     /**
      * 通过工具名进行查询
@@ -106,4 +111,8 @@ public interface ToolMetaRepository extends MongoRepository<ToolMetaEntity, Stri
      */
     @Query(fields = "{'name':1, 'lang':1}", value = "{'name' : ?0}")
     List<ToolMetaEntity> findLangByName(String name);
+
+    @Query(fields = "{'name':1}")
+    List<ToolMetaEntity> findNameByType(String type);
+
 }

@@ -577,10 +577,6 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
 
         String content = null;
         if (scmType == ScmType.GITHUB) {
-            content = tryGetGithubContentFromBkrepo(url, ref, relPath, userId, projectId);
-            if (StringUtils.isNotEmpty(content)) {
-                return content;
-            }
 
             content = tryGetGithubPublicContent(url, ref, relPath);
             if (StringUtils.isNotEmpty(content)) {
@@ -593,36 +589,6 @@ public abstract class AbstractQueryWarningBizService implements IQueryWarningBiz
         }
 
         return content;
-    }
-
-
-    private String tryGetGithubContentFromBkrepo(String url, String ref, String relPath, String userId,
-            String projectId) {
-        try {
-            String projectName = GitUtil.INSTANCE.getProjectName(url);
-            String[] arr = projectName.split("/");
-            String owner = arr[0];
-            String repoName = arr[1];
-            String repoUrl = String.format("http://%s/git/%s/%s/raw/%s/%s?hub_type=github&owner=%s",
-                    githubRepoHost,
-                    URLEncoder.encode(projectId, "UTF-8"),
-                    URLEncoder.encode(repoName, "UTF-8"),
-                    URLEncoder.encode(ref, "UTF-8"),
-                    URLEncoder.encode(relPath, "UTF-8"),
-                    URLEncoder.encode(owner, "UTF-8"));
-
-            Map<String, String> headers = new HashMap<>();
-            headers.put("Authorization", "Platform " + new String(
-                    Base64.getEncoder().encode((githubRepoAccessKey + ":" + githubRepoSecretKey).getBytes())));
-            headers.put(AUTH_HEADER_DEVOPS_REPO_USER_ID, userId);
-
-            String content = OkhttpUtils.INSTANCE.doShortGet(repoUrl, headers);
-            logger.info("get from bkrepo of github: {}, {}", projectId, projectName);
-            return content;
-        } catch (Exception ex) {
-            logger.error("fail to get github content from repo url: {}, error msg: {}", url, ex.getMessage());
-            return null;
-        }
     }
 
     /**

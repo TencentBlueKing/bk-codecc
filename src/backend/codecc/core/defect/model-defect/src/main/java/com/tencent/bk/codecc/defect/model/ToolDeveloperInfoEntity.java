@@ -20,7 +20,7 @@ import java.util.Set;
 public class ToolDeveloperInfoEntity extends CommonEntity {
 
     @Field("tool_name")
-    @Indexed
+    @Indexed(unique = true)
     private String toolName;
 
     @Field("developers")

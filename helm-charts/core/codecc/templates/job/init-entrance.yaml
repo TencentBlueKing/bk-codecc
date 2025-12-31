@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "common.names.fullname" . }}-init-entrance
+  name: {{ include "codecc.names.fullname" . }}-init-entrance
   labels: {{- include "codecc.labels.standard" . | nindent 4 }}
     app.kubernetes.io/component: init-entrance
     {{- if .Values.commonLabels }}
@@ -11,11 +11,11 @@ metadata:
   annotations:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-weight": "-5"
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
     {{- if .Values.commonAnnotations }}
     {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
     {{- end }}
 spec:
+  ttlSecondsAfterFinished: 600
   template:
     metadata:
       labels: {{- include "codecc.labels.standard" . | nindent 8 }}
@@ -31,5 +31,7 @@ spec:
               value: {{ .Values.config.bkCodeccPublicSchema }}://{{ .Values.config.bkCodeccPublicUrl }}/codecc
             - name: BK_CI_PROJECT_INNER_URL
               value: {{ .Values.config.bkCiProjectInnerUrl }}
+            - name: BK_CI_JWT_RSA_PRIVATE_KEY
+              value: {{ .Values.config.bkCiJwtRsaPrivateKey }}
       restartPolicy: OnFailure
 {{- end }}

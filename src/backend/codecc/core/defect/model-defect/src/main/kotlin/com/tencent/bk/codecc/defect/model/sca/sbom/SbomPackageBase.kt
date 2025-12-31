@@ -5,12 +5,6 @@ import org.springframework.data.mongodb.core.mapping.Field
 
 open class SbomPackageBase(
     /**
-     * SBOM Package 数据库ID
-     * 用于License与Vul 做关联
-     */
-    @Field("package_id")
-    var packageId: String? = null,
-    /**
      * SBOM ID
      */
     @Field("element_id")
@@ -26,4 +20,12 @@ open class SbomPackageBase(
     @Field("version")
     var version: String? = null
 
-) : CommonEntity()
+) : CommonEntity() {
+    fun getPackageId(): String? {
+        return if (version.isNullOrEmpty()) {
+            name
+        } else {
+            "$name:$version"
+        }
+    }
+}

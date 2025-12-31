@@ -29,14 +29,13 @@ package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.devops.common.api.CommonVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 
 /**
@@ -47,68 +46,68 @@ import java.util.List;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("任务的基本信息")
+@Schema(description = "任务的基本信息")
 public class TaskBaseVO extends CommonVO {
-    @ApiModelProperty(value = "任务主键id", required = true)
+    @Schema(description = "任务主键id", required = true)
     private long taskId;
 
-    @ApiModelProperty(value = "任务英文名", required = true)
+    @Schema(description = "任务英文名", required = true)
     @Pattern(regexp = "^[0-9a-zA-Z_]{1,50}$", message = "输入的英文名称不符合命名规则")
     private String nameEn;
 
-    @ApiModelProperty(value = "任务中文名", required = true)
+    @Schema(description = "任务中文名", required = true)
     @Pattern(regexp = "^[a-zA-Z0-9_\\u4e00-\\u9fa5]{1,50}", message = "输入的中文名称不符合命名规则")
     private String nameCn;
 
-    @ApiModelProperty(value = "项目ID", required = true)
+    @Schema(description = "项目ID", required = true)
     private String projectId;
 
-    @ApiModelProperty(value = "项目名称", required = true)
+    @Schema(description = "项目名称", required = true)
     private String projectName;
 
-    @ApiModelProperty(value = "流水线ID", required = true)
+    @Schema(description = "流水线ID", required = true)
     private String pipelineId;
 
-    @ApiModelProperty(value = "流水线一对多标识", required = false)
+    @Schema(description = "流水线一对多标识", required = false)
     private String multiPipelineMark;
 
-    @ApiModelProperty(value = "流水线名称", required = true)
+    @Schema(description = "流水线名称", required = true)
     private String pipelineName;
 
-    @ApiModelProperty(value = "代码语言", required = true)
+    @Schema(description = "代码语言", required = true)
     private Long codeLang;
 
-    @ApiModelProperty(value = "任务负责人", required = true)
+    @Schema(description = "任务负责人", required = true)
     private List<String> taskOwner;
 
-    @ApiModelProperty(value = "任务状态", required = true)
+    @Schema(description = "任务状态", required = true)
     private Integer status;
 
-    @ApiModelProperty(value = "创建来源", required = true)
+    @Schema(description = "创建来源", required = true)
     private String createFrom;
 
-    @ApiModelProperty(value = "定时任务执行时间")
+    @Schema(description = "定时任务执行时间")
     private String executeTime;
 
-    @ApiModelProperty(value = "定时任务执行时间")
+    @Schema(description = "定时任务执行时间")
     private List<String> executeDate;
 
-    @ApiModelProperty(value = "扫描方式0：全量；1：增量")
+    @Schema(description = "扫描方式0：全量；1：增量")
     private Integer scanType;
 
-    @ApiModelProperty(value = "启用的工具列表", required = true)
+    @Schema(description = "启用的工具列表", required = true)
     private List<ToolConfigBaseVO> enableToolList;
 
-    @ApiModelProperty(value = "停用的工具列表", required = true)
+    @Schema(description = "停用的工具列表", required = true)
     private List<ToolConfigBaseVO> disableToolList;
 
-    @ApiModelProperty(value = "新告警判定设置", required = true)
+    @Schema(description = "新告警判定设置", required = true)
     private NewDefectJudgeVO newDefectJudge;
 
-    @ApiModelProperty("通知配置信息")
+    @Schema(description = "通知配置信息")
     private NotifyCustomVO notifyCustomInfo;
 
-    @ApiModelProperty(value = "任务关联的规则集列表", required = true)
+    @Schema(description = "任务关联的规则集列表", required = true)
     @NotNull(message = "规则集列表不能为空")
     @Size(min = 1, message = "规则集列表不能为空")
     private List<CheckerSetVO> checkerSetList;
@@ -118,28 +117,28 @@ public class TaskBaseVO extends CommonVO {
      * 旧插件: 值为空
      * 新插件: 值为CodeccCheckAtom
      */
-    @ApiModelProperty(value = "原子插件码")
+    @Schema(description = "原子插件码")
     private String atomCode;
 
-    @ApiModelProperty(value = "规则集数目")
+    @Schema(description = "规则集数目")
     private String checkerSetName;
 
-    @ApiModelProperty(value = "规则数目")
+    @Schema(description = "规则数目")
     private Long checkerCount;
 
-    @ApiModelProperty(value = "个性化项目视图")
+    @Schema(description = "个性化项目视图")
     private CustomProjVO customProjInfo;
 
-    @ApiModelProperty(value = "任务扫描的代码库配置信息")
+    @Schema(description = "任务扫描的代码库配置信息")
     private TaskCodeLibraryVO codeLibraryInfo;
 
-    @ApiModelProperty(value = "是否可以运行")
+    @Schema(description = "是否可以运行")
     private Boolean hasNoPermission;
     
 
-    @ApiModelProperty(value = "是否禁止页面忽略告警")
+    @Schema(description = "是否禁止页面忽略告警")
     private Boolean prohibitIgnore;
 
-    @ApiModelProperty
+    @Schema
     private Integer cleanIndex;
 }

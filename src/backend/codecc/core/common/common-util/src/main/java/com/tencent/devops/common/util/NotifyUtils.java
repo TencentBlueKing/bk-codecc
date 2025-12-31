@@ -47,7 +47,10 @@ public class NotifyUtils {
     }
 
     public static boolean isGitCi(String projectId, String nameCn) {
-        return projectId.startsWith("git_") && nameCn.startsWith(projectId);
+        if (StringUtils.isNotEmpty(projectId) && StringUtils.isNotEmpty(nameCn)) {
+            return projectId.startsWith("git_") && nameCn.startsWith(projectId);
+        }
+        return false;
     }
 
     /**

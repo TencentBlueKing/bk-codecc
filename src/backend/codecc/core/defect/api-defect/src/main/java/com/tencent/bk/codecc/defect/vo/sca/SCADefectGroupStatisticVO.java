@@ -14,6 +14,11 @@ public class SCADefectGroupStatisticVO {
      */
     private int severity;
 
+    /**
+     * 包ID
+     */
+    private String packageId;
+
     private Long lineUpdateTime;
 
     private int defectCount;

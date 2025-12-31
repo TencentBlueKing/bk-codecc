@@ -26,7 +26,7 @@
 
 package com.tencent.devops.common.api;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -38,18 +38,18 @@ import lombok.Data;
 @Data
 public class CommonVO {
 
-    @ApiModelProperty(value = "主键")
+    @Schema(description = "主键")
     private String entityId;
 
-    @ApiModelProperty(value = "创建时间")
+    @Schema(description = "创建时间")
     private Long createdDate;
 
-    @ApiModelProperty(value = "创建人")
+    @Schema(description = "创建人")
     private String createdBy;
 
-    @ApiModelProperty(value = "更新时间")
+    @Schema(description = "更新时间")
     private Long updatedDate;
 
-    @ApiModelProperty(value = "更新人")
+    @Schema(description = "更新人")
     private String updatedBy;
 }

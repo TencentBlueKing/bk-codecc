@@ -8,8 +8,9 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
 
@@ -22,7 +23,7 @@ public class CheckerSetExtAuth implements CodeCCExtAuthProcessor {
     private CheckerSetRepository checkerSetRepository;
 
     @Override
-    public boolean isPassAuth(@NotNull ContainerRequestContext requestContext) {
+    public boolean isPassAuth(@NotNull ContainerRequestContext requestContext, @NotNull ContainerRequestFilter filter) {
         String user = requestContext.getHeaderString(AUTH_HEADER_DEVOPS_USER_ID);
         MultivaluedMap<String, String> pathParameters = requestContext.getUriInfo().getPathParameters();
         String checkerSetId = pathParameters.getFirst("checkerSetId");

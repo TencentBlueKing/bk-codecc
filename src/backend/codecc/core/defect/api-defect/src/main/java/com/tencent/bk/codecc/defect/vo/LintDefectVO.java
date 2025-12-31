@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.Data;
 
@@ -38,154 +37,154 @@ import lombok.Data;
  * @date 2019/5/9
  */
 @Data
-@ApiModel("lint类告警视图")
+@Schema(description = "lint类告警视图")
 public class LintDefectVO {
     private Long taskId;
 
-    @ApiModelProperty(value = "所属文件的主键id")
+    @Schema(description = "所属文件的主键id")
     private String entityId;
 
-    @ApiModelProperty("告警ID")
+    @Schema(description = "告警ID")
     private String id;
 
-    @ApiModelProperty(value = "所属文件名")
+    @Schema(description = "所属文件名")
     private String fileName;
 
-    @ApiModelProperty("告警行号")
+    @Schema(description = "告警行号")
     private int lineNum;
 
-    @ApiModelProperty("告警作者")
+    @Schema(description = "告警作者")
     private List<String> author;
 
-    @ApiModelProperty("告警规则")
+    @Schema(description = "告警规则")
     private String checker;
 
-    @ApiModelProperty("告警规则名")
+    @Schema(description = "告警规则名")
     private String checkerName;
 
-    @ApiModelProperty("严重程度")
+    @Schema(description = "严重程度")
     private int severity;
 
-    @ApiModelProperty("告警描述")
+    @Schema(description = "告警描述")
     private String message;
 
     /**
      * 告警类型：新告警NEW(1)，历史告警HISTORY(2)
      */
-    @ApiModelProperty("告警类型")
+    @Schema(description = "告警类型")
     private int defectType;
 
     /**
      * 告警状态：NEW(1), FIXED(2), IGNORE(4), PATH_MASK(8), CHECKER_MASK(16);
      */
-    @ApiModelProperty("告警状态")
+    @Schema(description = "告警状态")
     private int status;
 
     /**
      * 告警行的变更时间，用于跟新旧告警的判断时间做对比
      */
-    @ApiModelProperty("告警行的变更时间")
+    @Schema(description = "告警行的变更时间")
     private long lineUpdateTime;
 
-    @ApiModelProperty("pinpoint的hash值")
+    @Schema(description = "pinpoint的hash值")
     private String pinpointHash;
 
-    @ApiModelProperty("文件的md5值")
+    @Schema(description = "文件的md5值")
     private String fileMd5;
 
-    @ApiModelProperty("文件相对路径")
+    @Schema(description = "文件相对路径")
     private String relPath;
 
-    @ApiModelProperty("文件全路径")
+    @Schema(description = "文件全路径")
     private String filePath;
 
-    @ApiModelProperty("告警规则详情")
+    @Schema(description = "告警规则详情")
     private String checkerDetail;
 
-    @ApiModelProperty("告警创建时间")
+    @Schema(description = "告警创建时间")
     private Long createTime;
 
-    @ApiModelProperty("告警修复时间")
+    @Schema(description = "告警修复时间")
     private Long fixedTime;
 
-    @ApiModelProperty("告警忽略时间")
+    @Schema(description = "告警忽略时间")
     private Long ignoreTime;
 
-    @ApiModelProperty("告警忽略原因类型")
+    @Schema(description = "告警忽略原因类型")
     private Integer ignoreReasonType;
 
-    @ApiModelProperty("告警忽略原因")
+    @Schema(description = "告警忽略原因")
     private String ignoreReason;
 
-    @ApiModelProperty("告警忽略操作人")
+    @Schema(description = "告警忽略操作人")
     private String ignoreAuthor;
 
-    @ApiModelProperty("告警屏蔽时间")
+    @Schema(description = "告警屏蔽时间")
     private Long excludeTime;
 
     /**
      * 告警是否被标记为已修改的标志，checkbox for developer, 0 is normal, 1 is tag, 2 is prompt
      */
-    @ApiModelProperty(value = "告警是否被标记为已修改的标志")
+    @Schema(description = "告警是否被标记为已修改的标志")
     private Integer mark;
 
-    @ApiModelProperty(value = "告警被标记为已修改的时间")
+    @Schema(description = "告警被标记为已修改的时间")
     private Long markTime;
 
-    @ApiModelProperty(value = "标记了，但是再次扫描没有修复")
+    @Schema(description = "标记了，但是再次扫描没有修复")
     private Boolean markButNoFixed;
 
-    @ApiModelProperty("创建时的构建号")
+    @Schema(description = "创建时的构建号")
     private String createBuildNumber;
 
-    @ApiModelProperty("修复时的构建号")
+    @Schema(description = "修复时的构建号")
     private String fixedBuildNumber;
 
-    @ApiModelProperty("告警规则类型")
+    @Schema(description = "告警规则类型")
     private String checkerType;
 
-    @ApiModelProperty("告警详情链接")
+    @Schema(description = "告警详情链接")
     private String defectDetailUrl;
 
-    @ApiModelProperty("告警评论")
+    @Schema(description = "告警评论")
     private CodeCommentVO codeComment;
 
-    @ApiModelProperty("是否有告警评论")
+    @Schema(description = "是否有告警评论")
     private Boolean hasCodeComment;
 
-    @ApiModelProperty("代码库路径")
+    @Schema(description = "代码库路径")
     private String url;
 
-    @ApiModelProperty("分支名称")
+    @Schema(description = "分支名称")
     private String branch;
 
-    @ApiModelProperty("版本号")
+    @Schema(description = "版本号")
     private String revision;
 
-    @ApiModelProperty("工具名")
+    @Schema(description = "工具名")
     private String toolName;
 
-    @ApiModelProperty("是否注释忽略")
+    @Schema(description = "是否注释忽略")
     private Boolean ignoreCommentDefect;
 
-    @ApiModelProperty("所属任务名称")
+    @Schema(description = "所属任务名称")
     private String taskNameCn;
 
-    @ApiModelProperty("提交人")
+    @Schema(description = "提交人")
     private String commitAuthor;
 
-    @ApiModelProperty("忽略审批ID")
+    @Schema(description = "忽略审批ID")
     private String ignoreApprovalId;
 
-    @ApiModelProperty("忽略审批状态 - 0 进行中  1 成功  2失败 - 没有审批记录时为空")
+    @Schema(description = "忽略审批状态 - 0 进行中  1 成功  2失败 - 没有审批记录时为空")
     private Integer ignoreApprovalStatus;
 
-    @ApiModelProperty("忽略审批链接")
+    @Schema(description = "忽略审批链接")
     private String ignoreApprovalUrl;
 
-    @ApiModelProperty("忽略审批人类型")
-    private String ignoreApproverType;
+    @Schema(description = "忽略审批人类型")
+    private List<String> ignoreApproverTypes;
 
-    @ApiModelProperty("忽略审批 - 自定义审批人")
+    @Schema(description = "忽略审批 - 自定义审批人")
     private List<String> customIgnoreApprovers;
 }

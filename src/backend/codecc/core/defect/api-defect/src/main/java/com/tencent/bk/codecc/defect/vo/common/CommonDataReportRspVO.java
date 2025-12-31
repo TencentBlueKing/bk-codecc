@@ -32,8 +32,7 @@ import com.tencent.bk.codecc.defect.vo.CCNDataReportRspVO;
 import com.tencent.bk.codecc.defect.vo.CovKlocDataReportRspVO;
 import com.tencent.bk.codecc.defect.vo.DupcDataReportRspVO;
 import com.tencent.bk.codecc.defect.vo.LintDataReportRspVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -43,7 +42,7 @@ import lombok.Data;
  * @date 2019/5/28
  */
 @Data
-@ApiModel("数据报表返回视图")
+@Schema(description = "数据报表返回视图")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "toolName", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)
 @JsonSubTypes({@JsonSubTypes.Type(value = LintDataReportRspVO.class, name = "ESLINT"),
         @JsonSubTypes.Type(value = LintDataReportRspVO.class, name = "SPOTBUGS"),
@@ -66,10 +65,10 @@ import lombok.Data;
 public class CommonDataReportRspVO
 {
 
-    @ApiModelProperty("任务主键")
+    @Schema(description = "任务主键")
     private Long taskId;
 
-    @ApiModelProperty("工具名")
+    @Schema(description = "工具名")
     private String toolName;
 
 }

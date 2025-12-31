@@ -30,8 +30,10 @@ import com.tencent.bk.codecc.defect.service.statistic.SCADefectStatisticServiceI
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.constant.ComConstants.DefectStatus;
+
 import java.util.List;
 import java.util.stream.Collectors;
+
 import kotlin.Triple;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -74,19 +76,13 @@ public class SCAFastIncrementConsumer extends AbstractFastIncrementConsumer {
                 toolName, buildId, true
         );
         SCASbomAggregateModel aggregateModel;
-        List<SCAVulnerabilityEntity> vulnerabilities;
-        List<SCALicenseEntity> licenseEntities;
 
         if (StringUtils.isNotEmpty(baseBuildId)) {
-            Triple<SCASbomAggregateModel, List<SCAVulnerabilityEntity>, List<SCALicenseEntity>> triple =
-                    getDefectListFromSnapshot(taskId, toolName, baseBuildId);
-            aggregateModel = triple.getFirst();
-            vulnerabilities = triple.getSecond();
-            licenseEntities = triple.getThird();
+            aggregateModel = getDefectListFromSnapshot(taskId, toolName, baseBuildId);
             log.info("lint fast incr, all new defect from snapshot, task id {}, tool name {}, "
                             + "base build id {}, package size {}, vul size {}, license size: {}",
-                    taskId, toolName, baseBuildId, aggregateModel.getPackages().size(), vulnerabilities.size(),
-                    licenseEntities.size());
+                    taskId, toolName, baseBuildId, aggregateModel.getPackages().size(),
+                    aggregateModel.getVulnerabilities().size(), aggregateModel.getLicenses().size());
         } else {
             /*
              * 这里不能直接从告警表取数据，可能会引入并发脏数据
@@ -94,10 +90,8 @@ public class SCAFastIncrementConsumer extends AbstractFastIncrementConsumer {
              * 假定#2工具侧扫描上报数据延迟，导致写入仓库信息延迟
              * 当#3开启时，判定最后一次仓库没变化，进而走超快增量，开始生成相关快照或者报表数据；而这一刻告警表有可能已经被dev的告警上报所覆盖
              */
-            aggregateModel = new SCASbomAggregateModel(taskId, toolName, new SCASbomInfoEntity(taskId, toolName),
-                    Lists.newArrayList(), Lists.newArrayList(), Lists.newArrayList(), Lists.newArrayList());
-            vulnerabilities = Lists.newArrayList();
-            licenseEntities = Lists.newArrayList();
+            aggregateModel = new SCASbomAggregateModel(taskId, toolName, Lists.newArrayList(), Lists.newArrayList(),
+                    Lists.newArrayList());
             log.error("sca fast incr, can not match base build id, task id {}, tool name {}, build id {}",
                     taskId, toolName, buildId);
         }
@@ -108,8 +102,7 @@ public class SCAFastIncrementConsumer extends AbstractFastIncrementConsumer {
             buildEntity = new BuildEntity();
         }
         log.info("sca fast incr, save build defect, task id {}, tool name {}, build id {}", taskId, toolName, buildId);
-        buildSnapshotService.saveSCASnapshot(taskId, toolName, buildId, buildEntity, aggregateModel, vulnerabilities,
-                licenseEntities);
+        buildSnapshotService.saveSCASnapshot(taskId, toolName, buildId, buildEntity, aggregateModel);
 
         log.info("sca fast incr, statistic, task id {}, tool name {}, build id {}", taskId, toolName, buildId);
         TaskDetailVO taskVO = thirdPartySystemCaller.getTaskInfo(analyzeConfigInfoVO.getNameEn());
@@ -119,10 +112,9 @@ public class SCAFastIncrementConsumer extends AbstractFastIncrementConsumer {
                 toolName,
                 buildId,
                 toolBuildStackEntity,
-                vulnerabilities,
+                aggregateModel.getVulnerabilities(),
                 false,
-                aggregateModel,
-                licenseEntities
+                aggregateModel
         ));
 
         // 更新告警快照基准构建ID
@@ -137,24 +129,16 @@ public class SCAFastIncrementConsumer extends AbstractFastIncrementConsumer {
      * @param taskId      任务ID
      * @param toolName    工具名称
      * @param baseBuildId 基准构建ID（用于获取历史快照）
-     * @return Triple包含三个元素：
-     *         第一项：SCA软件包聚合模型（过滤后仅含NEW状态的包）
-     *         第二项：新增漏洞实体列表（从快照获取）
-     *         第三项：新增许可证实体列表（从快照获取）
+     * @return SCA软件包聚合模型（过滤后仅含NEW状态的包）
      */
-    private Triple<SCASbomAggregateModel, List<SCAVulnerabilityEntity>,
-            List<SCALicenseEntity>> getDefectListFromSnapshot(
-            Long taskId,
-            String toolName,
-            String baseBuildId
-    ) {
+    private SCASbomAggregateModel getDefectListFromSnapshot(Long taskId, String toolName, String baseBuildId) {
         // 从SCA组件服务获取指定构建版本的SBOM快照
-        SCASbomAggregateModel aggregateModel = scaSbomService.getSCASbomSnapshot(taskId, toolName, baseBuildId);
+        List<SCASbomPackageEntity> packageEntities =
+                scaSbomService.getSCAPackageSnapshot(taskId, toolName, baseBuildId);
 
         // 过滤状态为NEW的软件包（排除非新增状态的包）
-        List<SCASbomPackageEntity> packages = aggregateModel.getPackages().stream()
+        List<SCASbomPackageEntity> packages = packageEntities.stream()
                 .filter(it -> it.getStatus() == DefectStatus.NEW.value()).collect(Collectors.toList());
-        aggregateModel.setPackages(packages);
 
         // 从漏洞服务获取新增漏洞列表
         List<SCAVulnerabilityEntity> vulnerabilities = scaVulnerabilityService.getNewVulnerabilitiesFromSnapshot(
@@ -166,6 +150,6 @@ public class SCAFastIncrementConsumer extends AbstractFastIncrementConsumer {
                 taskId, toolName, baseBuildId
         );
 
-        return new Triple<>(aggregateModel, vulnerabilities, licenses);
+        return new SCASbomAggregateModel(taskId, toolName, packages, vulnerabilities, licenses);
     }
 }

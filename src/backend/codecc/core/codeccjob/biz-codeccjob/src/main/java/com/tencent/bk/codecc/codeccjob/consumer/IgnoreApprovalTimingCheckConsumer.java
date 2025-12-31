@@ -7,6 +7,7 @@ import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.IgnoreApproval
 import com.tencent.bk.codecc.codeccjob.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.model.ignore.IgnoreApprovalEntity;
 import com.tencent.bk.codecc.task.api.ServiceItsmSystemInfoResource;
+import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
 import com.tencent.bk.codecc.task.vo.itsm.ItsmSystemInfoVO;
 import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.constant.ComConstants;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -41,6 +43,10 @@ public class IgnoreApprovalTimingCheckConsumer implements IConsumer<String> {
 
     @Autowired
     private Client client;
+
+
+    @Value("${itsm.version:#{null}}")
+    private Integer version;
 
 
     @Override
@@ -69,7 +75,7 @@ public class IgnoreApprovalTimingCheckConsumer implements IConsumer<String> {
 
             // 目前仅支持BK ITSM
             ItsmSystemInfoVO systemInfoVO = client.get(ServiceItsmSystemInfoResource.class)
-                    .getSystemInfo(ComConstants.ItsmSystem.BK_ITSM.name()).getData();
+                    .getSystemInfo(ComConstants.ItsmSystem.BK_ITSM.name(), version).getData();
             // 如果提单成功，主动查询去找下当前的状态
             checkAndSetTicketStatus(approvals, systemInfoVO);
 
@@ -80,7 +86,11 @@ public class IgnoreApprovalTimingCheckConsumer implements IConsumer<String> {
             for (IgnoreApprovalEntity approval : approvals) {
                 // 已完成状态
                 if (ApproverStatus.APPROVAL_FINISH_STATUS.contains(approval.getStatus())) {
-                    lintDefectV2Dao.updateIgnoreApprovalStatusByTaskIdsAndApprovalId(approval.getTaskIds(),
+                    // 更新告警数据
+                    List<Long> taskIds = !CollectionUtils.isEmpty(approval.getTaskIds()) ? approval.getTaskIds()
+                            : client.get(ServiceTaskRestResource.class).getTaskIdsByProjectId(approval.getProjectId())
+                                    .getData();
+                    lintDefectV2Dao.updateIgnoreApprovalStatusByTaskIdsAndApprovalId(taskIds,
                             approval.getEntityId(), approval.getStatus(), approval.getIgnoreTypeId(),
                             approval.getIgnoreReason(), approval.getIgnoreAuthor());
                 }

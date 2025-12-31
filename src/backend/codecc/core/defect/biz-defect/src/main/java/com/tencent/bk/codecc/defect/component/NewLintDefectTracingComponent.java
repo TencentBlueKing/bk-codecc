@@ -16,6 +16,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.dao.defect.mongorepository.LintDefectV2Repository;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
+import com.tencent.bk.codecc.defect.dto.llm.LLMNegativeDefectFilterReqVO;
+import com.tencent.bk.codecc.defect.dto.llm.LLMNegativeDefectFilterVO;
 import com.tencent.bk.codecc.defect.model.BuildEntity;
 import com.tencent.bk.codecc.defect.model.TransferAuthorEntity;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
@@ -43,15 +45,22 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bson.types.ObjectId;
 import org.springframework.amqp.rabbit.AsyncRabbitTemplate;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.concurrent.CompletableFuture;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.util.Pair;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Component;
+
+import static com.tencent.devops.common.web.mq.ConstantsKt.EXCHANGE_LLM_NEGATIVE_DEFECT_FILTER;
+import static com.tencent.devops.common.web.mq.ConstantsKt.ROUTE_LLM_NEGATIVE_DEFECT_FILTER;
 
 /**
  * 新的告警跟踪组件
@@ -72,6 +81,8 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
     private LintDefectV2Dao lintDefectV2Dao;
     @Autowired
     private MongoTemplate defectMongoTemplate;
+    @Autowired
+    protected RabbitTemplate rabbitTemplate;
 
     /**
      * 告警跟踪
@@ -206,6 +217,92 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
         return upsertDefectList;
     }
 
+    private LLMNegativeDefectFilterReqVO genLLMNegativeDefectFilterDTO(
+            String toolName, Long taskId, LintDefectV2Entity defect) {
+        return LLMNegativeDefectFilterReqVO.builder()
+                .defectId(defect.getEntityId())
+                .message(defect.getMessage())
+                .defectLineNo((long)defect.getLineNum())
+                .startLineNo(defect.getContextStartLine())
+                .endLineNo(defect.getContextEndLine())
+                .filePath(defect.getFilePath())
+                .ruleName(defect.getChecker())
+                .toolName(toolName)
+                .taskId(taskId)
+//              没有填 projectId
+                .caseType("IGNORE")
+                .fileName(defect.getFileName())
+                .pinpointHash(defect.getPinpointHash())
+                .status(defect.getStatus())
+                .ignoreReasonType(defect.getIgnoreReasonType())
+                .ignoreReason(defect.getIgnoreReason())
+                .build();
+    }
+
+    private void addLLMFilterReq(
+            List<LLMNegativeDefectFilterReqVO> llmNegativeDefectFilterReqVOS,
+            String toolName,
+            Long taskId,
+            LintDefectV2Entity defect
+    ) {
+        if (!BooleanUtils.isTrue(defect.getEnableLlmFilter())) {
+            return;
+        }
+
+        llmNegativeDefectFilterReqVOS.add(
+                genLLMNegativeDefectFilterDTO(toolName, taskId, defect)
+        );
+    }
+
+    private void addLLMFilterReqs(
+            List<LLMNegativeDefectFilterReqVO> llmNegativeDefectFilterReqVOS,
+            String toolName,
+            Long taskId,
+            List<LintDefectV2Entity> defects
+    ) {
+        if (CollectionUtils.isEmpty(defects)) {
+            return;
+        }
+
+        defects.forEach(defect -> addLLMFilterReq(llmNegativeDefectFilterReqVOS, toolName, taskId, defect));
+    }
+
+    /**
+     * 分批开启 LLM 误报过滤
+     *
+     * @param buildId
+     * @param llmNegativeDefectFilterReqVOS
+     */
+    private void batchStartLLMFilter(long taskId, String buildId,
+            List<LLMNegativeDefectFilterReqVO> llmNegativeDefectFilterReqVOS) {
+        if (CollectionUtils.isEmpty(llmNegativeDefectFilterReqVOS)) {
+            return;
+        }
+
+        final int BATCH_SIZE = 100;
+        if (llmNegativeDefectFilterReqVOS.size() > BATCH_SIZE) {
+            List<List<LLMNegativeDefectFilterReqVO>> partitionList =
+                    Lists.partition(llmNegativeDefectFilterReqVOS, BATCH_SIZE);
+            partitionList.forEach(aPartition -> {
+                LLMNegativeDefectFilterVO mqReq = LLMNegativeDefectFilterVO.builder()
+                        .taskId(taskId)
+                        .buildId(buildId)
+                        .llmNegativeDefectFilterReqVOS(aPartition)
+                        .build();
+                rabbitTemplate.convertAndSend(EXCHANGE_LLM_NEGATIVE_DEFECT_FILTER,
+                        ROUTE_LLM_NEGATIVE_DEFECT_FILTER, mqReq);
+            });
+        } else {
+            LLMNegativeDefectFilterVO mqReq = LLMNegativeDefectFilterVO.builder()
+                    .taskId(taskId)
+                    .buildId(buildId)
+                    .llmNegativeDefectFilterReqVOS(llmNegativeDefectFilterReqVOS)
+                    .build();
+            rabbitTemplate.convertAndSend(EXCHANGE_LLM_NEGATIVE_DEFECT_FILTER,
+                    ROUTE_LLM_NEGATIVE_DEFECT_FILTER, mqReq);
+        }
+    }
+
     /**
      * 保存告警
      *
@@ -240,6 +337,8 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
             List<LintDefectV2Entity> replaceList = Lists.newArrayList();
             // 实体跟踪，批量按需update
             LintDefectV2EntityTracking.ListContainer trackingList = new LintDefectV2EntityTracking.ListContainer();
+
+            List<LLMNegativeDefectFilterReqVO> llmNegativeDefectFilterReqVOS = new ArrayList<>();
 
             List<LintDefectV2Entity> needGenerateDefectIdList = new ArrayList<>();
             long curTime = System.currentTimeMillis();
@@ -295,6 +394,9 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
             if (CollectionUtils.isNotEmpty((replaceList))) {
                 lintDefectV2Repository.saveAll(replaceList);
             }
+
+            addLLMFilterReqs(llmNegativeDefectFilterReqVOS, toolName, taskId, upsertDefectList);
+            batchStartLLMFilter(taskId, buildId, llmNegativeDefectFilterReqVOS);
         }
 
         log.info("end saveDefectFile, cost:{}, taskId:{}, toolName:{}, buildId:{}, replace count: {}, insert count: {},"
@@ -317,14 +419,14 @@ public class NewLintDefectTracingComponent extends AbstractDefectTracingComponen
     protected List<LintDefectV2Entity> handleWithOutputModel(
             List<LintDefectV2Entity> originalDefectList,
             List<LintDefectV2Entity> currentDefectList,
-            Pair<String, AsyncRabbitTemplate.RabbitConverterFuture<Boolean>> asyncResult,
+            Pair<String, CompletableFuture<Boolean>> asyncResult,
             BuildEntity buildEntity, List<TransferAuthorEntity.TransferAuthorPair> transferAuthorList) {
         long beginTime = System.currentTimeMillis();
         List<LintDefectV2Entity> upsertDefectList = new ArrayList<>();
         if (asyncResult != null) {
             String outputFile = asyncResult.getFirst();
             log.info("begin handleWithOutputModel: {}", outputFile);
-            AsyncRabbitTemplate.RabbitConverterFuture<Boolean> asyncMsgFuture = asyncResult.getSecond();
+            CompletableFuture<Boolean> asyncMsgFuture = asyncResult.getSecond();
             try {
                 if (asyncMsgFuture.get()) {
                     log.info("return true: {}", outputFile);

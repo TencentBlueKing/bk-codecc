@@ -13,7 +13,7 @@
 package com.tencent.bk.codecc.defect.consumer;
 
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.tencent.bk.codecc.defect.dto.IgnoreTypeNotifyTriggerModel;
 import com.tencent.bk.codecc.defect.service.IIgnoreTypeService;
 import lombok.extern.slf4j.Slf4j;

@@ -117,8 +117,8 @@ mongodb:
   #     EOF
   # extraEnvVars:
   # - name: MONGODB_CLIENT_EXTRA_FLAGS
-  #   value: "--ipv6"      
- 
+  #   value: "--ipv6"
+
 ## 如果mongodb.enabled为false，bkrepo将使用下面的参数连接外部mongodb
 externalMongodb:
   ## mongodb 帐号密码与
@@ -293,10 +293,10 @@ gateway:
   hostAliases: []
   resources:
     requests:
-      cpu: 100m
+      cpu: "2"
       memory: 1000Mi
     limits:
-      cpu: 500m
+      cpu: "4"
       memory: 1500Mi
   containerSecurityContext:
     enabled: false
@@ -336,10 +336,10 @@ task:
   hostAliases: [ ]
   resources:
     requests:
-      cpu: 100m
+      cpu: "2"
       memory: 1000Mi
     limits:
-      cpu: 500m
+      cpu: "4"
       memory: 1500Mi
   containerSecurityContext:
     enabled: false
@@ -382,10 +382,10 @@ defect:
   hostAliases: [ ]
   resources:
     requests:
-      cpu: 100m
+      cpu: "2"
       memory: 1000Mi
     limits:
-      cpu: 500m
+      cpu: "4"
       memory: 1500Mi
   containerSecurityContext:
     enabled: false
@@ -429,10 +429,10 @@ report:
   hostAliases: [ ]
   resources:
     requests:
-      cpu: 100m
+      cpu: "2"
       memory: 1000Mi
     limits:
-      cpu: 500m
+      cpu: "4"
       memory: 1500Mi
   containerSecurityContext:
     enabled: false
@@ -476,10 +476,10 @@ asyncreport:
   hostAliases: [ ]
   resources:
     requests:
-      cpu: 100m
+      cpu: "2"
       memory: 1000Mi
     limits:
-      cpu: 500m
+      cpu: "4"
       memory: 1500Mi
   containerSecurityContext:
     enabled: false
@@ -522,10 +522,10 @@ codeccjob:
   hostAliases: [ ]
   resources:
     requests:
-      cpu: 100m
+      cpu: "2"
       memory: 1000Mi
     limits:
-      cpu: 500m
+      cpu: "4"
       memory: 1500Mi
   containerSecurityContext:
     enabled: false
@@ -568,10 +568,10 @@ quartz:
   hostAliases: [ ]
   resources:
     requests:
-      cpu: 100m
+      cpu: "2"
       memory: 1000Mi
     limits:
-      cpu: 500m
+      cpu: "4"
       memory: 1500Mi
   containerSecurityContext:
     enabled: false
@@ -615,10 +615,10 @@ schedule:
   hostAliases: [ ]
   resources:
     requests:
-      cpu: 100m
+      cpu: "2"
       memory: 1000Mi
     limits:
-      cpu: 500m
+      cpu: "4"
       memory: 1500Mi
   containerSecurityContext:
     enabled: false

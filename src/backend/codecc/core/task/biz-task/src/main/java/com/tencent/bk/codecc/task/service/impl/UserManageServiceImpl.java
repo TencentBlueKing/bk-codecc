@@ -45,7 +45,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -83,7 +83,7 @@ public class UserManageServiceImpl implements UserManageService {
     @Override
     public List<DevopsProjectVO> getProjectList(String userId, String accessToken) {
         com.tencent.devops.project.pojo.Result<List<ProjectVO>> projectResult =
-                client.getDevopsService(ServiceProjectResource.class).list(accessToken);
+                client.getDevopsService(ServiceProjectResource.class).list(accessToken, null, null, null, null, null);
         if (projectResult.isNotOk() || null == projectResult.getData()) {
             log.error("get project list fail!");
             throw new CodeCCException(CommonMessageCode.BLUE_SHIELD_INTERNAL_ERROR);

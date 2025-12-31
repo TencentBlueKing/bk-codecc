@@ -13,8 +13,7 @@ const DefectClocLang = () => import(/* webpackChunkName: 'defect-list' */ '../vi
 const DefectLintCharts = () => import(/* webpackChunkName: 'defect-charts' */ '../views/defect/lint-charts');
 
 const DefectPkgList = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/sca/sca-pkg-list');
-// 隐藏漏洞数
-// const DefectVulnList = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/sca/sca-vuln-list');
+const DefectVulnList = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/sca/sca-vuln-list');
 const DefectLicList = () => import(/* webpackChunkName: 'defect-list' */ '../views/defect/sca/sca-lic-list');
 
 const routes = [
@@ -222,15 +221,14 @@ const routes = [
       breadcrumb: 'inside',
     },
   },
-  // 隐藏漏洞数
-  // {
-  //   path: '/codecc/:projectId/task/:taskId/defect/sca/vuln/list',
-  //   name: 'defect-sca-vuln-list',
-  //   component: DefectVulnList,
-  //   meta: {
-  //     breadcrumb: 'inside',
-  //   },
-  // },
+  {
+    path: '/codecc/:projectId/task/:taskId/defect/sca/vuln/list',
+    name: 'defect-sca-vuln-list',
+    component: DefectVulnList,
+    meta: {
+      breadcrumb: 'inside',
+    },
+  },
   {
     path: '/codecc/:projectId/task/:taskId/defect/sca/lic/list',
     name: 'defect-sca-lic-list',

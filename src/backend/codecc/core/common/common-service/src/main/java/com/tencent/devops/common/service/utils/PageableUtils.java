@@ -25,6 +25,8 @@ import org.springframework.data.domain.Sort;
  */
 
 public class PageableUtils {
+
+    private static final String SORT_TYPE_DESC = "desc";
     /**
      * 生成分页请求对象
      *
@@ -59,5 +61,18 @@ public class PageableUtils {
 
         return PageRequest.of(pageNum == null || pageNum - 1 < 0 ? 0 : pageNum - 1,
             pageSize == null || pageSize <= 0 ? 10 : pageSize);
+    }
+
+    /**
+     * 标准化排序方向
+     *
+     * @param sortType 排序类型
+     * @return 排序方向
+     */
+    public static Sort.Direction standardDirection(String sortType) {
+        if (StringUtils.isNotEmpty(sortType) && sortType.equalsIgnoreCase(SORT_TYPE_DESC)) {
+            return Sort.Direction.DESC;
+        }
+        return Sort.Direction.ASC;
     }
 }

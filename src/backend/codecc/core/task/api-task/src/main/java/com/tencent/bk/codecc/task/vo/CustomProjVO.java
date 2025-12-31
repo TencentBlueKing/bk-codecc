@@ -13,8 +13,7 @@
 package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.Map;
@@ -26,27 +25,27 @@ import java.util.Map;
  * @version V1.0
  */
 @Data
-@ApiModel("个性化项目视图")
+@Schema(description = "个性化项目视图")
 public class CustomProjVO extends CommonVO
 {
-    @ApiModelProperty("项目url")
+    @Schema(description = "项目url")
     private String url;
 
-    @ApiModelProperty("任务id")
+    @Schema(description = "任务id")
     private Long taskId;
 
-    @ApiModelProperty("流水线id")
+    @Schema(description = "流水线id")
     private String pipelineId;
 
-    @ApiModelProperty("项目id")
+    @Schema(description = "项目id")
     private String projectId;
 
-    @ApiModelProperty("是否显示告警")
+    @Schema(description = "是否显示告警")
     private Boolean defectDisplay;
 
-    @ApiModelProperty("个性化触发项目来源")
+    @Schema(description = "个性化触发项目来源")
     private String customProjSource;
 
-    @ApiModelProperty("参数映射")
+    @Schema(description = "参数映射")
     private Map<String, String> paramMap;
 }

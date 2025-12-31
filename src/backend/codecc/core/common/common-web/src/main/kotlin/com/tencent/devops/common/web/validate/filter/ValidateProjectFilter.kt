@@ -1,6 +1,6 @@
 package com.tencent.devops.common.web.validate.filter
 
-import com.alibaba.fastjson.JSONObject
+import com.alibaba.fastjson2.JSONObject
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_PROJECT_ID
 import com.tencent.devops.common.api.exception.CodeCCException
 import com.tencent.devops.common.client.Client
@@ -9,8 +9,8 @@ import com.tencent.devops.common.service.utils.SpringContextUtil
 import com.tencent.devops.project.api.service.ServiceProjectResource
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import javax.ws.rs.container.ContainerRequestContext
-import javax.ws.rs.container.ContainerRequestFilter
+import jakarta.ws.rs.container.ContainerRequestContext
+import jakarta.ws.rs.container.ContainerRequestFilter
 
 class ValidateProjectFilter : ContainerRequestFilter {
 

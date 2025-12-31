@@ -11,6 +11,8 @@ dependencies {
         exclude(group="com.tencent.bk.devops.ci.common", module = "common-api")
         exclude(group="com.tencent.bk.devops.ci.common", module = "common-auth")
     }
-    api("io.jsonwebtoken:jjwt")
+    api("io.jsonwebtoken:jjwt-api")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson")
     api(group = "net.sf.json-lib", name = "json-lib", classifier="jdk15")
 }

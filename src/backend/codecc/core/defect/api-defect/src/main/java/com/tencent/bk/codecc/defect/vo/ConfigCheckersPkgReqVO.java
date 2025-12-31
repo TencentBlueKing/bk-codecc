@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -44,25 +43,25 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ApiModel("配置规则包")
+@Schema(description = "配置规则包")
 public class ConfigCheckersPkgReqVO
 {
 
     @NotEmpty(message = "规则包ID不能为空")
-    @ApiModelProperty("规则包ID")
+    @Schema(description = "规则包ID")
     private String pkgId;
 
-    @ApiModelProperty("任务ID")
+    @Schema(description = "任务ID")
     private Long taskId;
 
     @NotEmpty(message = "工具名称不能为空")
-    @ApiModelProperty("工具名称")
+    @Schema(description = "工具名称")
     private String toolName;
 
-    @ApiModelProperty("打开规则")
+    @Schema(description = "打开规则")
     private List<String> openedCheckers;
 
-    @ApiModelProperty("关闭规则")
+    @Schema(description = "关闭规则")
     private List<String> closedCheckers;
 
     /**

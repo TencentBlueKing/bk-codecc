@@ -31,6 +31,7 @@ import static com.tencent.devops.common.constant.ComConstants.DEFAULT_LANDUN_WOR
 import static com.tencent.devops.common.constant.ComConstants.TOOL_NAMES_SEPARATOR;
 import static com.tencent.devops.common.constant.ComConstants.Tool.SCAN_COMMIT_TOOLS;
 
+import com.alibaba.fastjson2.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -114,6 +115,7 @@ import com.tencent.devops.common.util.GsonUtils;
 import com.tencent.devops.common.util.List2StrUtil;
 import com.tencent.devops.common.util.MD5Utils;
 import com.tencent.devops.common.util.PathUtils;
+
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -124,6 +126,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -254,9 +257,9 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                 JsonUtil.INSTANCE.toJson(taskToolMap));
 
         // 规则集筛选
-        Set<String> pkgChecker = getCheckers(request.getCheckerSet(), request.getChecker(), taskToolMap, dimensionList);
+        Set<String> pkgChecker = getCheckers(request.getCheckerSets(), request.getChecker(), taskToolMap, dimensionList);
         log.info("defect list pkgChecker: {}, {}", taskIdList, pkgChecker.size());
-        if (request.getCheckerSet() != null && CollectionUtils.isEmpty(pkgChecker)) {
+        if (CollectionUtils.isNotEmpty(request.getCheckerSets()) && CollectionUtils.isEmpty(pkgChecker)) {
             return lintDefectQueryRsp;
         }
 
@@ -599,7 +602,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
      * @date 2023/6/22
      */
     private void setLintDefectDetailQueryRspVO(LintDefectV2Entity defectEntity, LintDefectDetailVO lintDefectDetailVO,
-            LintDefectDetailQueryRspVO responseVO, Long taskId) {
+                                               LintDefectDetailQueryRspVO responseVO, Long taskId) {
         boolean isMigrationMatchTool =
                 commonDefectMigrationService.matchToolNameSet().contains(defectEntity.getToolName());
 
@@ -708,7 +711,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
     }
 
     private LintDefectDetailVO getLintDefectDetailVO(LintDefectV2Entity defectEntity, String buildId,
-            Long taskId, LintDefectDetailQueryRspVO responseVO) {
+                                                     Long taskId, LintDefectDetailQueryRspVO responseVO) {
         defectEntity =
                 queryWarningLogicComponent.postHandleLintDefect(Lists.newArrayList(defectEntity), buildId).get(0);
 
@@ -768,7 +771,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
      * @param lintDefectDetailVO
      */
     private void getFilesContent(long taskId, String userId, TaskDetailVO taskDetailVO, String buildId,
-            LintDefectV2Entity defectEntity, LintDefectDetailVO lintDefectDetailVO) {
+                                 LintDefectV2Entity defectEntity, LintDefectDetailVO lintDefectDetailVO) {
         String toolName = defectEntity.getToolName();
 
         // BLACKDUCK工具没有代码文件内容，无需获取
@@ -1002,7 +1005,8 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         List<String> toolNameList = request.getToolNameList();
         List<String> dimensionList = request.getDimensionList();
         List<Long> taskIdList = request.getTaskIdList();
-        String checkerSetId = request.getCheckerSet();
+        List<String> checkerSetIds = request.getCheckerSets() == null ? null : request.getCheckerSets().stream()
+                .map(CheckerSet::getCheckerSetId).collect(Collectors.toList());
         String buildId = request.getBuildId();
         boolean isMultiTaskQuery = Boolean.TRUE.equals(request.getMultiTaskQuery());
 
@@ -1026,7 +1030,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                 .distinct()
                 .collect(Collectors.toList());
 
-        Set<String> pkgChecker = getCheckers(checkerSetId, null, null, toolNameList, dimensionList);
+        Set<String> pkgChecker = getCheckers(request.getCheckerSets(), null, toolNameList, dimensionList);
         Set<String> finalAuthors = Sets.newHashSet();
         Set<String> checkerList = Sets.newHashSet();
         Set<String> defectPaths = Sets.newTreeSet();
@@ -1104,7 +1108,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                 .sorted(Collator.getInstance(Locale.SIMPLIFIED_CHINESE))
                 .collect(Collectors.toList());
         response.setAuthorList(sortedAuthors);
-        response.setCheckerList(handleCheckerList(toolNameList, checkerList, checkerSetId));
+        response.setCheckerList(handleCheckerList(toolNameList, checkerList, checkerSetIds));
 
         return response;
     }
@@ -1112,8 +1116,8 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
     @Override
     @Deprecated
     public QueryWarningPageInitRspVO processQueryWarningPageInitRequest(List<Long> taskId, String toolName,
-            String dimension, Set<String> statusSet, String checkerSet, String buildId,
-            Boolean dataMigrationSuccessful) {
+                                                                        String dimension, Set<String> statusSet, String checkerSet, String buildId,
+                                                                        Boolean dataMigrationSuccessful) {
         // todo: 待清理
         return new QueryWarningPageInitRspVO();
     }
@@ -1146,12 +1150,12 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
 
         // 规则集筛选
         Set<String> pkgChecker = getCheckers(
-                request.getCheckerSet(), request.getChecker(),
+                request.getCheckerSets(), request.getChecker(),
                 taskToolMap, dimensionList
         );
 
         // 规则不属于该规则集
-        if (request.getCheckerSet() != null && CollectionUtils.isEmpty(pkgChecker)) {
+        if (CollectionUtils.isNotEmpty(request.getCheckerSets()) && CollectionUtils.isEmpty(pkgChecker)) {
             return response;
         }
 
@@ -1375,13 +1379,13 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
      * 获取规则类型
      *
      * @param toolNameSet
-     * @param checkerSet
+     * @param checkerSets
      * @return
      */
     private List<CheckerCustomVO> handleCheckerList(
             List<String> toolNameSet,
             Set<String> checkerList,
-            String checkerSet
+            List<String> checkerSets
     ) {
         if (CollectionUtils.isEmpty(checkerList)) {
             return new ArrayList<>();
@@ -1389,7 +1393,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
 
         // 获取工具对应的所有警告类型 [初始化新增时一定要检查规则名称是否重复]
         Map<String, CheckerDetailVO> checkerDetailVOMap =
-                multitoolCheckerService.queryAllCheckerI18NWrapper(toolNameSet, checkerSet, true)
+                multitoolCheckerService.queryAllCheckerI18NWrapper(toolNameSet, new ArrayList<>(checkerSets), true)
                         .stream()
                         .collect(Collectors.toMap(CheckerDetailVO::getCheckerKey, Function.identity(), (k, v) -> v));
 
@@ -1398,7 +1402,7 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
         }
 
         // 若规则集不为空，需要把告警对应的规则checkerList做一次交集处理，过滤掉规则集以外的规则
-        if (StringUtils.isNotEmpty(checkerSet)) {
+        if (CollectionUtils.isNotEmpty(checkerSets)) {
             checkerList.retainAll(checkerDetailVOMap.keySet());
         }
 
@@ -1560,9 +1564,9 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
     /**
      * 根据工具列表、维度获取规则
      *
-     * @param checkerSet 规则集
-     * @param checker 当checkerSet不为空时，才会校验checker归属
-     * @param toolNameList 任务与工具映射
+     * @param checkerSet    规则集
+     * @param checker       当checkerSet不为空时，才会校验checker归属
+     * @param toolNameList  任务与工具映射
      * @param dimensionList
      * @return
      */
@@ -1573,14 +1577,28 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
             List<String> toolNameList,
             List<String> dimensionList
     ) {
-        String checkerSetId = checkerSet != null ? checkerSet.getCheckerSetId() : null;
-        Integer checkerSetVersion = checkerSet != null ? checkerSet.getVersion() : null;
+        return getCheckers(checkerSet == null ? Collections.emptyList() : Collections.singletonList(checkerSet),
+                checker, toolNameList, dimensionList);
+    }
 
-        return getCheckers(checkerSetId, checkerSetVersion, checker, toolNameList, dimensionList);
+    /**
+     * 根据工具列表、维度获取规则
+     *
+     * @param checkerSets   规则集列表
+     * @param checker       当checkerSet不为空时，才会校验checker归属
+     * @param toolNameList  任务与工具映射
+     * @param dimensionList
+     * @return
+     */
+    @Override
+    public Set<String> getCheckers(List<CheckerSet> checkerSets, String checker, List<String> toolNameList,
+                                   List<String> dimensionList) {
+        return getCheckerDetails(checkerSets, checker, toolNameList, dimensionList).stream()
+                .map(CheckerDetailVO::getCheckerKey).collect(Collectors.toSet());
     }
 
     private Set<String> getCheckers(
-            CheckerSet checkerSet,
+            List<CheckerSet> checkerSets,
             String checker,
             Map<Long, List<String>> taskToolMap,
             List<String> dimensionList
@@ -1590,41 +1608,61 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                 .distinct()
                 .collect(Collectors.toList());
 
-        return getCheckers(checkerSet, checker, toolNameList, dimensionList);
-    }
-
-    private Set<String> getCheckers(
-            String checkerSetId,
-            Integer checkerSetVersion,
-            String checker,
-            List<String> toolNameList,
-            List<String> dimensionList
-    ) {
-        return getCheckerDetails(checkerSetId, checkerSetVersion, checker, toolNameList, dimensionList).stream()
-                .map(CheckerDetailVO::getCheckerKey).collect(Collectors.toSet());
+        return getCheckers(checkerSets, checker, toolNameList, dimensionList);
     }
 
     @Override
-    public List<CheckerDetailVO> getCheckerDetails(CheckerSet checkerSet, String checker, List<String> toolNameList,
-            List<String> dimensionList) {
-        String checkerSetId = checkerSet != null ? checkerSet.getCheckerSetId() : null;
-        Integer checkerSetVersion = checkerSet != null ? checkerSet.getVersion() : null;
-        return getCheckerDetails(checkerSetId, checkerSetVersion, checker, toolNameList, dimensionList);
-    }
-
-    private List<CheckerDetailVO> getCheckerDetails(
-            String checkerSetId,
-            Integer checkerSetVersion,
-            String checker,
-            List<String> toolNameList,
-            List<String> dimensionList
-    ) {
+    public List<CheckerDetailVO> getCheckerDetails(List<CheckerSet> checkerSets, String checker,
+                                                   List<String> toolNameList, List<String> dimensionList) {
         List<String> checkerCategoryList = ParamUtils.getCheckerCategoryListByDimensionList(dimensionList);
         List<String> checkerListCondition = Lists.newArrayList();
-        Set<String> checkersByCheckerSetId = null;
 
+        // 过滤checkerSets，只保留checkerSetId不为空的
+        List<CheckerSet> filterCheckerSets = checkerSets.stream().filter(Objects::nonNull)
+                .filter(it -> StringUtils.isNotEmpty(it.getCheckerSetId()))
+                .collect(Collectors.toList());
+        Set<String> checkersByCheckerSetIds = null;
+        if (CollectionUtils.isNotEmpty(filterCheckerSets)) {
+            // 这里不会很多，直接循环查询单个即可
+            checkersByCheckerSetIds = checkerSets.stream().flatMap(it -> getCheckersFromCheckerSet(it).stream())
+                    .collect(Collectors.toSet());
+            if (CollectionUtils.isEmpty(checkersByCheckerSetIds)) {
+                return Lists.newArrayList();
+            }
+            checkerListCondition.addAll(checkersByCheckerSetIds);
+        }
+        // 若前端传入的规则不为空
+        if (StringUtils.isNotEmpty(checker)) {
+            if (CollectionUtils.isNotEmpty(checkersByCheckerSetIds) && !checkersByCheckerSetIds.contains(checker)) {
+                log.error("checker does not belong this checker set: {}, {}",
+                        JSONObject.toJSONString(checkerSets), checker);
+                return Lists.newArrayList();
+            }
+
+            checkerListCondition.clear();
+            checkerListCondition.add(checker);
+        }
+
+        return checkerDetailDao.findByToolNameInAndCheckerCategory(
+                toolNameList,
+                checkerCategoryList,
+                checkerListCondition
+        ).stream().map(it -> {
+            CheckerDetailVO vo = new CheckerDetailVO();
+            vo.setCheckerKey(it.getCheckerKey());
+            vo.setToolName(it.getToolName());
+            vo.setCheckerCategory(it.getCheckerCategory());
+            vo.setPublisher(it.getPublisher());
+            return vo;
+        }).collect(Collectors.toList());
+    }
+
+    private Set<String> getCheckersFromCheckerSet(CheckerSet checkerSet) {
+        String checkerSetId = checkerSet == null ? null : checkerSet.getCheckerSetId();
+        Integer checkerSetVersion = checkerSet == null ? null : checkerSet.getVersion();
+        Set<String> checkersByCheckerSetId = null;
         if (StringUtils.isNotEmpty(checkerSetId)) {
-            if (checkerSetVersion != null) {
+            if (checkerSetVersion > 0) {
                 CheckerSetEntity checkerSetEntity = checkerSetRepository.findFirstByCheckerSetIdAndVersion(
                         checkerSetId,
                         checkerSetVersion
@@ -1645,39 +1683,8 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
                         .map(CheckerPropsEntity::getCheckerKey)
                         .collect(Collectors.toSet());
             }
-
-            if (CollectionUtils.isEmpty(checkersByCheckerSetId)) {
-                return Lists.newArrayList();
-            }
-
-            checkerListCondition.addAll(checkersByCheckerSetId);
         }
-
-        // 若前端传入的规则不为空
-        if (StringUtils.isNotEmpty(checker)) {
-            if (CollectionUtils.isNotEmpty(checkersByCheckerSetId) && !checkersByCheckerSetId.contains(checker)) {
-                log.error("checker does not belong this checker set: {}, {}, {}",
-                        checkerSetId, checkerSetVersion, checker);
-
-                return Lists.newArrayList();
-            }
-
-            checkerListCondition.clear();
-            checkerListCondition.add(checker);
-        }
-
-        return checkerDetailDao.findByToolNameInAndCheckerCategory(
-                toolNameList,
-                checkerCategoryList,
-                checkerListCondition
-        ).stream().map(it -> {
-            CheckerDetailVO vo = new CheckerDetailVO();
-            vo.setCheckerKey(it.getCheckerKey());
-            vo.setToolName(it.getToolName());
-            vo.setCheckerCategory(it.getCheckerCategory());
-            vo.setPublisher(it.getPublisher());
-            return vo;
-        }).collect(Collectors.toList());
+        return checkersByCheckerSetId == null ? Collections.emptySet() : checkersByCheckerSetId;
     }
 
     @Override
@@ -1709,8 +1716,8 @@ public class LintQueryWarningBizServiceImpl extends AbstractQueryWarningBizServi
     /**
      * lint从scmFiLe中获取代码提交人
      *
-     * @param taskId 任务id
-     * @param toolName 工具名称
+     * @param taskId             任务id
+     * @param toolName           工具名称
      * @param lintDefectV2Entity 告警
      * @return 提交人
      */

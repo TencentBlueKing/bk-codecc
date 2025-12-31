@@ -72,6 +72,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * CCN告警提交消息队列的消费者
  *
@@ -379,12 +381,12 @@ public class CCNDefectCommitConsumer extends AbstractDefectCommitConsumer {
         List<CCNDefectEntity> partDefectList = new ArrayList<>();
         Set<String> filePathSet = new HashSet<>();
         Set<String> relPathSet = new HashSet<>();
-        List<AsyncRabbitTemplate.RabbitConverterFuture<Boolean>> asyncResultList = new ArrayList<>();
+        List<CompletableFuture<Boolean>> asyncResultList = new ArrayList<>();
         AtomicBoolean running = new AtomicBoolean(true);
         CountDownLatch finishLatch = new CountDownLatch(1);
         Set<Long> taskList = concurrentDefectTracingConfigCache.getVipTaskSet();
         Boolean isVip = CollectionUtils.isNotEmpty(taskList) && taskList.contains(commitDefectVO.getTaskId());
-        LinkedBlockingQueue<AsyncRabbitTemplate.RabbitConverterFuture<Boolean>> asyncResultQueue =
+        LinkedBlockingQueue<CompletableFuture<Boolean>> asyncResultQueue =
                 setConcurrentBlockingQueue(
                         commitDefectVO.getTaskId(),
                         commitDefectVO.getToolName(),
@@ -452,8 +454,8 @@ public class CCNDefectCommitConsumer extends AbstractDefectCommitConsumer {
             Set<String> filterPaths,
             BuildEntity buildEntity,
             int chunkNo,
-            @NotNull LinkedBlockingQueue<AsyncRabbitTemplate.RabbitConverterFuture<Boolean>> asyncResultQueue,
-            List<AsyncRabbitTemplate.RabbitConverterFuture<Boolean>> secondResultList,
+            @NotNull LinkedBlockingQueue<CompletableFuture<Boolean>> asyncResultQueue,
+            List<CompletableFuture<Boolean>> secondResultList,
             Boolean isVip) {
         DefectClusterDTO defectClusterDTO = new DefectClusterDTO(
                 commitDefectVO,
@@ -462,7 +464,7 @@ public class CCNDefectCommitConsumer extends AbstractDefectCommitConsumer {
                 "",
                 ""
         );
-        AsyncRabbitTemplate.RabbitConverterFuture<Boolean> clusterResult = newCCNDefectTracingComponent
+        CompletableFuture<Boolean> clusterResult = newCCNDefectTracingComponent
                 .executeCluster(defectClusterDTO,
                         taskDetailVO,
                         chunkNo,

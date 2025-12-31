@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.defect.vo.admin;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.Collection;
@@ -27,33 +26,33 @@ import java.util.List;
  */
 
 @Data
-@ApiModel("按组织架构查询任务告警请求体")
+@Schema(description = "按组织架构查询任务告警请求体")
 public class DeptTaskDefectReqVO {
-    @ApiModelProperty("工具名称")
+    @Schema(description = "工具名称")
     private String toolName;
 
-    @ApiModelProperty("任务ID集合")
+    @Schema(description = "任务ID集合")
     private Collection<Long> taskIds;
 
-    @ApiModelProperty("事业群ID")
+    @Schema(description = "事业群ID")
     private Integer bgId;
 
-    @ApiModelProperty("部门ID")
+    @Schema(description = "部门ID")
     private List<Integer> deptIds;
 
-    @ApiModelProperty("开始时间")
+    @Schema(description = "开始时间")
     private String startDate;
 
-    @ApiModelProperty("截止时间")
+    @Schema(description = "截止时间")
     private String endDate;
 
-    @ApiModelProperty("创建来源")
+    @Schema(description = "创建来源")
     private List<String> createFrom;
 
-    @ApiModelProperty("遗留告警超时天数阈值")
+    @Schema(description = "遗留告警超时天数阈值")
     private Integer timeoutDays;
 
-    @ApiModelProperty("告警严重级别筛选")
+    @Schema(description = "告警严重级别筛选")
     private Integer severity;
 
 }

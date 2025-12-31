@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.bk.codecc.task.vo.checkerset.OpenSourceCheckerSetVO;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,7 +14,7 @@ import java.util.List;
  */
 @Data
 @NoArgsConstructor
-@ApiModel("开源治理或预发布版规则集所有对应规则集映射")
+@Schema(description = "开源治理或预发布版规则集所有对应规则集映射")
 public class OpenScanAndPreProdCheckerSetMapVO {
 
     /**
@@ -34,6 +34,8 @@ public class OpenScanAndPreProdCheckerSetMapVO {
 
     private Map<String, List<OpenSourceCheckerSetVO>> prodCommunityOpenScanV2;
 
+    private Map<String, List<OpenSourceCheckerSetVO>> prodBkSecScan;
+
     /**
      * 预发布版对应的规则集
      */
@@ -50,6 +52,8 @@ public class OpenScanAndPreProdCheckerSetMapVO {
     private Map<String, List<OpenSourceCheckerSetVO>> preProdTegAmsScan;
 
     private Map<String, List<OpenSourceCheckerSetVO>> preProdCommunityOpenScanV2;
+
+    private Map<String, List<OpenSourceCheckerSetVO>> preProdBkSecScan;
 
     private TimeUnit prodOpenScanTimeGap;
 
@@ -78,6 +82,10 @@ public class OpenScanAndPreProdCheckerSetMapVO {
     private TimeUnit prodCommunityOpenScanV2TimeGap;
 
     private TimeUnit preProdCommunityOpenScanV2TimeGap;
+
+    private TimeUnit prodBkSecScanTimeGap;
+
+    private TimeUnit preProdBkSecScanTimeGap;
 
 
     @Data

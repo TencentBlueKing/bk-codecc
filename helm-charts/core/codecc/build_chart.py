@@ -95,6 +95,7 @@ include_dict = {
     '__BK_CODECC_MONGO_QUARTZ_URL__': '{{ include "codecc.quartz.mongodbUri" . }}',
     '__BK_CODECC_MONGO_SCHEDULE_URL__': '{{ include "codecc.schedule.mongodbUri" . }}',
     '__BK_CODECC_MONGO_TASK_URL__': '{{ include "codecc.task.mongodbUri" . }}',
+    '__BK_CODECC_MONGO_CODECCJOB_URL__': '{{ include "codecc.codeccjob.mongodbUri" . }}',
     '__BK_CODECC_RABBITMQ_ADDR__': '{{ include "codecc.rabbitmq.host" . }}',
     '__BK_CODECC_RABBITMQ_PASSWORD__': '{{ include "codecc.rabbitmq.password" . }}',
     '__BK_CODECC_RABBITMQ_USER__': '{{ include "codecc.rabbitmq.username" . }}',
@@ -103,7 +104,7 @@ include_dict = {
     '__BK_CODECC_REDIS_HOST__': '{{ include "codecc.redis.host" . }}',
     '__BK_CODECC_REDIS_PASSWORD__': '{{ include "codecc.redis.password" . }}',
     '__BK_CODECC_REDIS_PORT__': '{{ include "codecc.redis.port" . }}',
-    '__BK_CODECC_SERVICE_PERFIX__': '{{ include "common.names.fullname" . }}-'
+    '__BK_CODECC_SERVICE_PERFIX__': '{{ include "codecc.names.fullname" . }}-'
 }
 
 # 读取变量映射

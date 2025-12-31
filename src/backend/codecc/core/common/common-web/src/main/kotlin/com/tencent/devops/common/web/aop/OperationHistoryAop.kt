@@ -29,6 +29,7 @@ package com.tencent.devops.common.web.aop
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_PROJECT_ID
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_TASK_ID
 import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_USER_ID
+import com.tencent.devops.common.web.BkUserClient
 import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.constant.ComConstants.AUTHOR_TRANSFER
 import com.tencent.devops.common.constant.ComConstants.BusinessType
@@ -58,6 +59,7 @@ import com.tencent.devops.common.constant.ComConstants.FUNC_TASK_SWITCH
 import com.tencent.devops.common.constant.ComConstants.FUNC_TOOL_SWITCH
 import com.tencent.devops.common.constant.ComConstants.FUNC_TRIGGER_ANALYSIS
 import com.tencent.devops.common.constant.ComConstants.OPEN_CHECKER
+import com.tencent.devops.common.util.MultenantUtils
 import com.tencent.devops.common.web.aop.annotation.OperationHistory
 import com.tencent.devops.common.web.aop.model.OperationHistoryDTO
 import com.tencent.devops.common.web.mq.EXCHANGE_OPERATION_HISTORY
@@ -65,6 +67,7 @@ import com.tencent.devops.common.web.mq.ROUTE_OPERATION_HISTORY
 import net.sf.json.JSONArray
 import net.sf.json.JSONObject
 import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.BooleanUtils
 import org.aspectj.lang.JoinPoint
 import org.aspectj.lang.annotation.AfterReturning
 import org.aspectj.lang.annotation.Aspect
@@ -72,6 +75,7 @@ import org.aspectj.lang.annotation.Pointcut
 import org.slf4j.LoggerFactory
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
 
@@ -90,6 +94,15 @@ class OperationHistoryAop @Autowired constructor(
         private val logger = LoggerFactory.getLogger(OperationHistoryAop::class.java)
     }
 
+    @Value("\${codecc.enableMultiTenant:#{null}}")
+    private val enableMultiTenant: Boolean? = null
+    @Value("\${iam.appCode:#{null}}")
+    private val bkIamAppCode: String? = null
+    @Value("\${iam.appSecret:#{null}}")
+    private val bkIamAppSecret: String? = null
+    @Value("\${bkapi.tenant.host:#{null}}")
+    private val host: String? = null
+
     @Pointcut("@annotation(com.tencent.devops.common.web.aop.annotation.OperationHistory)")
     fun operationHistory() {
     }
@@ -99,15 +112,15 @@ class OperationHistoryAop @Autowired constructor(
         joinPoint: JoinPoint,
         annotation: OperationHistory
     ) {
-        //获取功能id
+        // 获取功能id
         val funcId = getFuncId(joinPoint, annotation.funcId)
         if (funcId.isBlank()) {
             logger.error("operation history aborted!!")
             return
         }
-        //获取操作类型
+        // 获取操作类型
         val operType = getOperType(joinPoint, funcId, annotation.operType)
-        //获取特定工具
+        // 获取特定工具
         var toolName: String? = null
         if (funcId == FUNC_DEFECT_MANAGE || funcId == FUNC_CHECKER_CONFIG || funcId == FUNC_CODE_COMMENT_ADD
                 || funcId == FUNC_CODE_COMMENT_DEL
@@ -148,7 +161,7 @@ class OperationHistoryAop @Autowired constructor(
             }
         }
 
-        //获取任务id
+        // 获取任务id
         val request = (RequestContextHolder.currentRequestAttributes() as ServletRequestAttributes).request
         val taskId = if (StringUtils.isBlank(request.getHeader(AUTH_HEADER_DEVOPS_TASK_ID))) {
             0L
@@ -159,14 +172,16 @@ class OperationHistoryAop @Autowired constructor(
         val pipelineId = request.getParameter("pipelineId") ?: ""
         // 获取单流水线对应多任务标识
         val multiPipelineMark = request.getParameter("multiPipelineMark")
-        //获取操作用户
-        val userName = request.getHeader(AUTH_HEADER_DEVOPS_USER_ID) ?: request.getParameter("userName")
-        //获取操作消息
-        val paramArray = getParamArray(joinPoint, funcId, userName)
-        //获取当前时间
-        val currentTime = System.currentTimeMillis()
         // 获取项目的id
         val projectId = request.getHeader(AUTH_HEADER_DEVOPS_PROJECT_ID) ?: request.getParameter("projectId")
+        // 获取操作用户
+        var userName = (request.getHeader(AUTH_HEADER_DEVOPS_USER_ID) ?: request.getParameter("userName"))
+        userName = userNameConverter(projectId, userName)
+
+        // 获取操作消息
+        val paramArray = getParamArray(joinPoint, funcId, userName)
+        // 获取当前时间
+        val currentTime = System.currentTimeMillis()
         val operationHistoryDTO = OperationHistoryDTO(
             taskId = taskId,
             pipelineId = pipelineId,
@@ -183,13 +198,22 @@ class OperationHistoryAop @Autowired constructor(
             projectId = projectId
         )
         logger.info(">>>>>>>>>>>>>>> operationHistoryDTO: $operationHistoryDTO")
-        //发送消息，异步处理
+        // 发送消息，异步处理
         rabbitTemplate.convertAndSend(
             EXCHANGE_OPERATION_HISTORY,
             ROUTE_OPERATION_HISTORY, operationHistoryDTO
         )
     }
 
+    private fun userNameConverter(projectId: String?, userId: String): String {
+        if (projectId == null || BooleanUtils.isNotTrue(enableMultiTenant)) {
+            return userId
+        }
+
+        val tp = MultenantUtils.splitProjectId(projectId) ?: return userId
+        val tenantId = tp.left
+        return BkUserClient.getUserName(host, bkIamAppCode, bkIamAppSecret, tenantId, userId)
+    }
 
     /**
      * 获取操作类型
@@ -202,7 +226,7 @@ class OperationHistoryAop @Autowired constructor(
         return with(funcId)
         {
             when (this) {
-                //停用启用任务
+                // 停用启用任务
                 FUNC_TOOL_SWITCH -> {
                     val manageType = objects[1] as String
                     if (ComConstants.CommonJudge.COMMON_Y.value() == manageType) {
@@ -231,7 +255,6 @@ class OperationHistoryAop @Autowired constructor(
         }
     }
 
-
     /**
      * 获取操作记录消息
      */
@@ -241,7 +264,7 @@ class OperationHistoryAop @Autowired constructor(
         return with(funcId)
         {
             when (this) {
-                //注册工具功能
+                // 注册工具功能
                 FUNC_REGISTER_TOOL -> {
                     val jsonObject = JSONObject.fromObject(objects[0])
                     val toolArray = jsonObject.getJSONArray("tools")
@@ -250,31 +273,31 @@ class OperationHistoryAop @Autowired constructor(
                     }.reduce { acc, s -> "$acc,$s" }
                     arrayOf(user, toolName)
                 }
-                //修改任务信息功能
+                // 修改任务信息功能
                 FUNC_TASK_INFO -> {
                     arrayOf(user)
                 }
-                //停用启用任务
+                // 停用启用任务
                 FUNC_TASK_SWITCH -> {
                     arrayOf(user)
                 }
-                //停用启用工具
+                // 停用启用工具
                 FUNC_TOOL_SWITCH -> {
                     arrayOf(user)
                 }
-                //触发立即分析
+                // 触发立即分析
                 FUNC_TRIGGER_ANALYSIS -> {
                     arrayOf(user)
                 }
-                //定时扫描分析
+                // 定时扫描分析
                 FUNC_SCAN_SCHEDULE -> {
                     arrayOf(user)
                 }
-                //操作屏蔽路径
+                // 操作屏蔽路径
                 FUNC_FILTER_PATH -> {
                     arrayOf(user)
                 }
-                //作者批量转换
+                // 作者批量转换
                 FUNC_DEFECT_MANAGE -> {
                     val jsonObject = JSONObject.fromObject(objects[1])
                     val toolName = jsonObject.getString("toolName")
@@ -282,7 +305,7 @@ class OperationHistoryAop @Autowired constructor(
                     val targetAuthor = jsonObject.getJSONArray("targetAuthor")
                     arrayOf(user, toolName, sourceAuthor.join(","), targetAuthor.join(","))
                 }
-                //任务代码库更新
+                // 任务代码库更新
                 FUNC_CODE_REPOSITORY -> {
                     arrayOf(user)
                 }

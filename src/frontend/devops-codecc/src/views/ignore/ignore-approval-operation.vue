@@ -112,53 +112,32 @@
         <div class="review-setting-title">
           {{ $t('忽略什么问题会经过审批') }}
         </div>
-        <bk-form-item :label="$t('审批人')" property="approverType" error-display-type="normal" required>
-          <template v-if="!isCustomApprover">
-            <bk-select
-              v-model="formData.approverType"
-              :placeholder="$t('请选择审批人')"
-              :style="isCustomApprover ? 'width: 120px' : 'width: 490px'"
+        <bk-form-item :label="$t('审批人')" property="approverTypes" error-display-type="normal" required>
+          <bk-select
+            multiple
+            v-model="formData.approverTypes"
+            :placeholder="$t('请选择审批人')"
+          >
+            <bk-option
+              v-for="(item, index) in approverList"
+              :key="index"
+              :id="item.id"
+              :name="item.name"
             >
-              <bk-option
-                v-for="(item, index) in approverList"
-                :key="index"
-                :id="item.id"
-                :name="item.name"
-              >
-                <span>{{ item.name }}</span>
-              </bk-option>
-            </bk-select>
-          </template>
-
-          <div v-else class="flex">
-            <bk-select
-              v-model="formData.approverType"
-              :placeholder="$t('请选择审批人')"
-              style="width: 120px"
-            >
-              <bk-option
-                v-for="(item, index) in approverList"
-                :key="index"
-                :id="item.id"
-                :name="item.name"
-              >
-                <span>{{ item.name }}</span>
-              </bk-option>
-            </bk-select>
-            <template v-if="isCustomApprover">
-              <bk-tag-input
-                allow-create
-                v-if="IS_ENV_TAI"
-                style="width: 420px; margin-left: 10px"
-                v-model="formData.customApprovers"
-              ></bk-tag-input>
-              <bk-tag-input allow-create
-                v-else
-                style="width: 420px; margin-left: 10px"
-                v-model="formData.customApprovers"
-              ></bk-tag-input>
-            </template>
-          </div>
+              <span>{{ item.name }}</span>
+            </bk-option>
+          </bk-select>
+        </bk-form-item>
+        <bk-form-item
+          v-if="hasCustomApprover"
+          property="customApprovers"
+          error-display-type="normal"
+          class="!mt-[12px]">
+          <UserSelector
+            allow-create
+            style="width: 420px; margin-left: 10px"
+            :value.sync="formData.customApprovers"
+          />
         </bk-form-item>
         <bk-form-item>
           <bk-button theme="primary" class="mr10" :loading="buttonLoading" @click="handleConfirm">
@@ -176,7 +155,11 @@ import { leaveConfirm } from '@/common/leave-confirm';
 import { getTaskList } from '@/common/preload';
 import { deepClone } from '@/common/util';
 import { mapState } from 'vuex';
+import UserSelector from '@/components/user-selector/index.vue';
 export default {
+  components: {
+    UserSelector,
+  },
   props: {
     entityId: {
       type: String,
@@ -196,7 +179,7 @@ export default {
         ignoreTypeIds: [],
         taskScopeType: 'ALL',
         taskScopeList: [],
-        approverType: '',
+        approverTypes: [],
         customApprovers: [],
       },
       dimensionsList: {
@@ -267,15 +250,17 @@ export default {
             trigger: 'blur',
           },
         ],
-        approverType: [
+        approverTypes: [
           {
             required: true,
             message: this.$t('请选择审批人'),
             trigger: 'blur',
           },
+        ],
+        customApprovers: [
           {
-            validator: () => !this.isCustomApprover || this.formData.customApprovers.length !== 0,
-            message: this.$t('请选择审批人'),
+            required: true,
+            message: this.$t('请添加自定义审批人'),
             trigger: 'blur',
           },
         ],
@@ -297,8 +282,9 @@ export default {
     formLabelWidth() {
       return this.langType === 'zh-CN' ? 110 : 150;
     },
-    isCustomApprover() {
-      return this.formData.approverType === 'CUSTOM_APPROVER';
+    hasCustomApprover() {
+      const CUSTOM_APPROVER = 'CUSTOM_APPROVER';
+      return this.formData.approverTypes.includes(CUSTOM_APPROVER);
     },
   },
   watch: {
@@ -401,7 +387,7 @@ export default {
           this.formData.ignoreTypeIds = data.ignoreTypeIds;
           this.formData.taskScopeType = data.taskScopeType;
           this.formData.taskScopeList = data.taskScopeList;
-          this.formData.approverType = data.approverType;
+          this.formData.approverTypes = data.approverTypes;
           this.formData.customApprovers = data.customApprovers;
           this.$nextTick(() => {
             global.changeAlert = false;

@@ -1,0 +1,2 @@
+com.tencent.devops.common.service.ServiceAutoConfiguration
+com.tencent.devops.common.service.async.AsyncTaskConfiguration

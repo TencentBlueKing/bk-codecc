@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo.openapi;
 
 import com.tencent.devops.common.constant.ComConstants;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -40,16 +39,16 @@ import lombok.Data;
 
 
 @Data
-@ApiModel("各忽略类型的告警数")
+@Schema(description = "各忽略类型的告警数")
 public class IgnoreDefectVO
 {
-    @ApiModelProperty("已忽略的误报告警数")
+    @Schema(description = "已忽略的误报告警数")
     private Integer error;
 
-    @ApiModelProperty("已忽略的设计如此告警数")
+    @Schema(description = "已忽略的设计如此告警数")
     private Integer special;
 
-    @ApiModelProperty("已忽略的其他原因告警数")
+    @Schema(description = "已忽略的其他原因告警数")
     private Integer other;
 
 

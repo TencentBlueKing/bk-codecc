@@ -41,105 +41,113 @@
       </div>
     </div>
     <div v-else>
-      <bk-form-item :label="$t('编译环境')">
-        <bk-select
-          @change="getCompileToolList"
-          :clearable="false"
-          placeholder=" "
-          v-model="compile.compileEnv"
-        >
-          <bk-option
-            v-for="option in bulidEnvList"
-            :key="option.id"
-            :id="option.id"
-            :name="option.name"
+      <div>
+        <bk-form-item :label="$t('编译环境')">
+          <bk-select
+            @change="getCompileToolList"
+            :clearable="false"
+            placeholder=" "
+            v-model="compile.compileEnv"
           >
-          </bk-option>
-        </bk-select>
-      </bk-form-item>
-      <bk-form-item
-        v-for="(item, index) in toolList"
-        :key="item"
-        class="compile-tool"
-        :label="index === 0 ? $t('编译工具') : ''"
-      >
-        <bk-select
-          @change="getVersionList"
-          :clearable="false"
-          :loading="selectLoading"
-          placeholder=" "
-          popover-width="50%"
-          v-model="compile.compileTool[index]"
+            <bk-option
+              v-for="option in bulidEnvList"
+              :key="option.id"
+              :id="option.id"
+              :name="option.name"
+            >
+            </bk-option>
+          </bk-select>
+        </bk-form-item>
+        <bk-form-item
+          v-for="(item, index) in toolList"
+          :key="item"
+          class="compile-tool"
+          :label="index === 0 ? $t('编译工具') : ''"
         >
-          <bk-option
-            v-for="option in compileToolList"
-            :key="option.name"
-            :id="option.name"
-            :name="option.name"
-            :disabled="compile.compileTool.includes(option.name)"
+          <bk-select
+            @change="getVersionList"
+            :clearable="false"
+            :loading="selectLoading"
+            placeholder=" "
+            popover-width="50%"
+            v-model="compile.compileTool[index]"
           >
-          </bk-option>
-        </bk-select>
-        <bk-select
-          class="compile-version"
-          :clearable="false"
-          placeholder=" "
-          popover-width="50%"
-          v-model="compile.compileToolVersion[index]"
-        >
-          <bk-option
-            v-for="option in compileToolVersionList[index]"
-            :key="option"
-            :id="option"
-            :name="option"
+            <bk-option
+              v-for="option in compileToolList"
+              :key="option.name"
+              :id="option.name"
+              :name="option.name"
+              :disabled="compile.compileTool.includes(option.name)"
+            >
+            </bk-option>
+          </bk-select>
+          <bk-select
+            class="compile-version"
+            :clearable="false"
+            placeholder=" "
+            popover-width="50%"
+            v-model="compile.compileToolVersion[index]"
           >
-          </bk-option>
-        </bk-select>
-        <div class="tool-icon">
-          <i
-            class="bk-icon icon-plus"
-            @click="addTool(index)"
-            v-if="index === toolList.length - 1"
-          ></i>
-          <i
-            class="bk-icon icon-close"
-            @click="deleteTool(index)"
-            v-if="toolList.length > 1 || compile.compileTool[index]"
-          ></i>
-        </div>
-      </bk-form-item>
-      <bk-form-item :label="$t('脚本类型')">
-        <bk-radio-group
-          v-model="scriptData.projectBuildType"
-          class="radio-param"
-        >
-          <bk-radio
-            v-for="(option, index) in varOptionList"
-            :value="option.id"
-            :key="index"
-            class="item"
-          >{{ option.name }}</bk-radio
+            <bk-option
+              v-for="option in compileToolVersionList[index]"
+              :key="option"
+              :id="option"
+              :name="option"
+            >
+            </bk-option>
+          </bk-select>
+          <div class="tool-icon">
+            <i
+              class="bk-icon icon-plus"
+              @click="addTool(index)"
+              v-if="index === toolList.length - 1"
+            ></i>
+            <i
+              class="bk-icon icon-close"
+              @click="deleteTool(index)"
+              v-if="toolList.length > 1 || compile.compileTool[index]"
+            ></i>
+          </div>
+        </bk-form-item>
+        <bk-form-item :label="$t('脚本类型')" :required="true">
+          <bk-radio-group
+            v-model="scriptData.projectBuildType"
+            class="radio-param"
           >
-        </bk-radio-group>
-      </bk-form-item>
-      <bk-form-item :label="$t('脚本内容')">
-        <Ace
-          class="ace-wrapper"
-          :read-only="disabled"
-          :value="value"
-          :lang="
-            scriptData.projectBuildType.toUpperCase() === 'SHELL'
-              ? 'sh'
-              : scriptData.projectBuildType
-          "
-          :name="name"
-          v-model="scriptData.projectBuildCommand"
-          @input="handleScriptInput"
-          height="300"
-          width="100%"
+            <bk-radio
+              v-for="(option, index) in varOptionList"
+              :value="option.id"
+              :key="index"
+              class="item"
+            >{{ option.name }}</bk-radio
+            >
+          </bk-radio-group>
+        </bk-form-item>
+        <bk-form-item
+          :label="$t('脚本内容')"
+          :rules="formRules.projectBuildCommand"
+          :property="'projectBuildCommand'"
+          :required="true"
+          :error-display-type="'normal'"
         >
-        </Ace>
-      </bk-form-item>
+          <Ace
+            class="ace-wrapper"
+            :read-only="disabled"
+            :value="value"
+            :lang="
+              scriptData.projectBuildType.toUpperCase() === 'SHELL'
+                ? 'sh'
+                : scriptData.projectBuildType
+            "
+            :name="name"
+            v-model="scriptData.projectBuildCommand"
+            @input="handleScriptInput"
+            height="300"
+            width="100%"
+          >
+          </Ace>
+        </bk-form-item>
+      </div>
     </div>
   </div>
 </template>
@@ -159,6 +167,10 @@ export default {
       type: Object,
     },
     isToolManage: {
+      type: Boolean,
+      default: true,
+    },
+    shownTool: {
       type: Boolean,
       default: true,
     },
@@ -185,6 +197,13 @@ export default {
             trigger: 'change',
           },
         ],
+        projectBuildCommand: [
+          {
+            validator: this.valiProjectBuildCommand,
+            message: this.$t('脚本内容字段不能为空'),
+            trigger: 'blur'
+          }
+        ]
       },
       scriptData: {
         projectBuildType: 'SHELL',
@@ -229,12 +248,20 @@ export default {
         }
       },
       deep: true,
-    },
+    }
   },
   created() {
     this.getCompileToolList();
   },
   methods: {
+    // 验证项目构建命令是否有效
+    valiProjectBuildCommand() {
+      const { projectBuildCommand } = this.scriptData;
+      const defaultMessage = this.$t('工具将通过调用编译脚本来编译您的代码，以追踪深层次的缺陷');
+      // 更严格的空值检查
+      const isEmpty = !projectBuildCommand?.trim() || projectBuildCommand === defaultMessage;
+      return (!this.shownTool) || !isEmpty;
+    },
     getCompileToolList(val) {
       if (val) {
         this.selectLoading = true;
@@ -332,7 +359,7 @@ export default {
         });
       }
       return env;
-    },
+    }
   },
 };
 </script>

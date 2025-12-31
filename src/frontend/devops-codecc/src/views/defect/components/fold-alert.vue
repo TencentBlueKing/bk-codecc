@@ -22,7 +22,7 @@
           <div v-for="item, index in filterDataList" :key="index" class="alert-content-items">
             <span class="alert-content-name">{{ `${item.fileName}:${item.lineNum} ${item.checker}` }}</span>
             <span class="alert-content-approval">
-              <span class="author-name">{{ getApprover(item.ignoreApproverType, item.customIgnoreApprovers) }}</span>
+              <span class="author-name">{{ getApprover(item.ignoreApproverTypes, item.customIgnoreApprovers) }}</span>
               <span>{{ $t('审批') }}</span>
             </span>
           </div>
@@ -67,18 +67,33 @@ export default {
     filterDataList() {
       return this.dataList.slice(0, this.maxShowLength);
     },
+    curApproverList() {
+      return this.approverList.reduce((map, item) => {
+        map.set(item.key, item);
+        return map;
+      }, new Map());
+    },
   },
   methods: {
     toggleFold() {
       this.isFold = !this.isFold;
       this.$emit('toggleFold', this.isFold);
     },
-    getApprover(approverType, customApprovers) {
-      if (approverType !== 'CUSTOM_APPROVER') {
-        const approver = this.approverList.find(item => item.key === approverType);
-        return approver ? approver.name : '';
+    getApprover(approverTypes, customApprovers) {
+      const CUSTOM_APPROVER = 'CUSTOM_APPROVER'; // 自定义审批人
+      const curApprovers = approverTypes.reduce((array, approverType) => {
+        // 若有自定义审批人，从customApprovers中提取审批人名称
+        if (approverType === CUSTOM_APPROVER) {
+          array.push(...customApprovers);
+        } else {
+          array.push(this.curApproverList.get(approverType)?.name);
+        }
+        return array;
+      }, []);
+      if (curApprovers.length !== 0) {
+        return curApprovers.join(', ');
       }
-      return customApprovers.join(', ');
+      return '--';
     },
   },
 };

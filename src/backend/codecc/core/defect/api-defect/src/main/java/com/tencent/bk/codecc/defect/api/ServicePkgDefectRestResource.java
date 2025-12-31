@@ -16,20 +16,20 @@ import com.tencent.bk.codecc.defect.vo.CLOCDefectQueryRspInfoVO;
 import com.tencent.bk.codecc.defect.vo.ToolClocRspVO;
 import com.tencent.bk.codecc.defect.vo.openapi.TaskOverviewDetailRspVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.data.domain.Sort;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * 告警相关接口
@@ -37,36 +37,36 @@ import javax.ws.rs.core.MediaType;
  * @date 2019/11/15
  * @version V1.0
  */
-@Api(tags = {"SERVICE_PKGDEFECT"}, description = "告警相关接口")
+@Tag(name = "SERVICE_PKGDEFECT", description = "告警相关接口")
 @Path("/service/pkgDefect")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface ServicePkgDefectRestResource {
 
-    @ApiOperation("查询代码行数信息")
+    @Operation(summary = "查询代码行数信息")
     @Path("/codeLine/taskId/{taskId}")
     @POST
     Result<ToolClocRspVO> queryCodeLine(
-            @ApiParam(value = "任务id", required = true)
+            @Parameter(description = "任务id", required = true)
             @PathParam(value = "taskId")
             Long taskId,
-            @ApiParam(value = "工具名称", required = true)
+            @Parameter(description = "工具名称", required = true)
             @QueryParam(value = "toolName")
             @DefaultValue("SCC")
             String toolName);
 
 
-    @ApiOperation("通过task_id和语言查询代码行信息")
+    @Operation(summary = "通过task_id和语言查询代码行信息")
     @Path("/codeLine/taskId/{taskId}/toolName/{toolName}/language/{language}")
     @GET
     Result<CLOCDefectQueryRspInfoVO> queryCodeLineByTaskIdAndLanguge(
-            @ApiParam(value = "任务id", required = true)
+            @Parameter(description = "任务id", required = true)
             @PathParam(value = "taskId")
                     Long taskId,
-            @ApiParam(value = "工具名称", required = true)
+            @Parameter(description = "工具名称", required = true)
             @PathParam(value = "toolName")
                     String toolName,
-            @ApiParam(value = "语言", required = true)
+            @Parameter(description = "语言", required = true)
             @PathParam(value = "language")
                     String language);
 }

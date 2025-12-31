@@ -1,20 +1,19 @@
 package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-@ApiModel("GitHub同步配置")
+@Schema(description = "GitHub同步配置")
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class GithubSyncVO extends CommonVO {
 
-    @ApiModelProperty("value")
+    @Schema(description = "value")
     private String value;
 
-    @ApiModelProperty("paramType")
+    @Schema(description = "paramType")
     private String paramType;
 
 }

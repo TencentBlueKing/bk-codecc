@@ -74,6 +74,20 @@
         </bk-popover>
       </section>
       <section class="task-status">
+        <div class="build-progress-content small" v-if="llmIgnoreTotal && llmIgnoreCurrent !== llmIgnoreTotal">
+          <p class="progress-text">
+            {{ $t('LLM告警验证中') }}
+            <span class="progress-precent"
+            >{{ llmIgnoreCurrent }}/{{ llmIgnoreTotal }}</span
+            >
+          </p>
+          <bk-progress
+            :percent="llmIgnoreCurrent / llmIgnoreTotal || 0"
+            :show-text="false"
+            :color="'#3a84ff'"
+            stroke-width="4"
+          ></bk-progress>
+        </div>
         <template v-if="status && status.status === 1">
           <bk-button disabled theme="primary" icon="bk-icon icon-play-circle-shape" class="cc-white">{{
             $t('立即检查')
@@ -403,6 +417,8 @@ export default {
       tipsHtmlConfig: {},
       dimension: 'DEFECT',
       coldTaskVisible: false,
+      llmIgnoreCurrent: 0,
+      llmIgnoreTotal: 0,
     };
   },
   computed: {
@@ -643,7 +659,7 @@ export default {
   },
   mounted() {
     this.initWebSocket();
-    this.initProgressWebSocket();
+    this.initOtherWebSocket();
     this.initScaList();
   },
   beforeDestroy() {
@@ -664,6 +680,7 @@ export default {
       const res = await this.$store.dispatch('task/overView', {
         taskId: this.taskId,
         buildNum: this.$route.query.buildNum,
+        buildId: this.$route.query.buildId,
       });
       if (res.lastAnalysisResultList) {
         this.taskDetail = this.detail;
@@ -734,9 +751,9 @@ export default {
       await this.$store.dispatch('task/triggerAnalyze').finally(() => {
         setTimeout(() => {
           this.isAnalyzeLoading = false;
+          this.init();
         }, 100);
       });
-      await this.init();
     },
     reAnalyze() {
       this.analyse(1);
@@ -773,22 +790,34 @@ export default {
         error: message => console.error(message),
       });
     },
-    initProgressWebSocket() {
-      const subscribe = `/topic/generalProgress/taskId/${this.taskId}`;
+    initOtherWebSocket() {
       if (taskWebsocket.stompClient.connected) {
-        taskWebsocket.subscribeMsg(subscribe, {
+        // 扫描进度
+        taskWebsocket.subscribeMsg(`/topic/generalProgress/taskId/${this.taskId}`, {
           success: (res) => {
             const data = JSON.parse(res.body);
-            // console.log('🚀 ~ file: layout-inner.vue ~ line 510 ~ initProgressWebSocket ~ data', data)
+            console.log(`/topic/generalProgress/taskId/${this.taskId}`, data);
             this.buildProgressRule = data;
-            console.log(this.buildProgressRule);
+            // console.log(this.buildProgressRule);
+          },
+          error: message => this.$showTips({ message, theme: 'error' }),
+        });
+        // 大模型忽略进度
+        taskWebsocket.subscribeMsg(`/topic/defect/llm/${this.taskId}`, {
+          success: (res) => {
+            const data = res.body;
+            console.log(`/topic/defect/llm/${this.taskId}`, data);
+            // 大模型忽略进度, data为 string, 例如'1/2'，需要转换成数字
+            const [current, total] = data.split('/').map(Number);
+            this.llmIgnoreCurrent = current;
+            this.llmIgnoreTotal = total;
           },
           error: message => this.$showTips({ message, theme: 'error' }),
         });
       } else {
         // websocket还没连接的话，1s后重试
         setTimeout(() => {
-          this.initProgressWebSocket();
+          this.initOtherWebSocket();
         }, 1000);
       }
     },
@@ -985,6 +1014,14 @@ export default {
     .build-progress-content {
       width: 260px;
       margin-right: 14px;
+
+      &.small {
+        width: 160px;
+
+        .bk-progress {
+          width: 160px;
+        }
+      }
 
       .bk-progress {
         position: relative;

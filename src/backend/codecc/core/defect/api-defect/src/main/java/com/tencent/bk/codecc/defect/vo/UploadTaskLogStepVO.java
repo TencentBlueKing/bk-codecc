@@ -28,11 +28,10 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 
 /**
@@ -42,51 +41,51 @@ import javax.validation.constraints.NotNull;
  * @date 2019/4/30
  */
 @Data
-@ApiModel("上报任务分析记录步骤的VO")
+@Schema(description = "上报任务分析记录步骤的VO")
 public class UploadTaskLogStepVO {
-    @ApiModelProperty(value = "流名称", required = true)
+    @Schema(description = "流名称", required = true)
     @JsonProperty("stream_name")
     private String streamName;
 
-    @ApiModelProperty(value = "任务主键id")
+    @Schema(description = "任务主键id")
     @JsonProperty("task_id")
     private long taskId;
 
-    @ApiModelProperty(value = "工具名（ID）", required = true)
+    @Schema(description = "工具名（ID）", required = true)
     private String toolName;
 
     @NotNull(message = "构建Id不能为空")
-    @ApiModelProperty(value = "构建Id", required = true)
+    @Schema(description = "构建Id", required = true)
     private String pipelineBuildId;
 
-    @ApiModelProperty(value = "触发来源,用于保存任务手动触发的触发人")
+    @Schema(description = "触发来源,用于保存任务手动触发的触发人")
     private String triggerFrom;
 
-    @ApiModelProperty(value = "当前步骤", required = true)
+    @Schema(description = "当前步骤", required = true)
     private int stepNum;
 
-    @ApiModelProperty(value = "步骤状态", required = true)
+    @Schema(description = "步骤状态", required = true)
     private int flag;
 
-    @ApiModelProperty(value = "开始时间", required = true)
+    @Schema(description = "开始时间", required = true)
     private long startTime;
 
-    @ApiModelProperty(value = "结束时间")
+    @Schema(description = "结束时间")
     private long endTime;
 
-    @ApiModelProperty(value = "步骤信息")
+    @Schema(description = "步骤信息")
     private String msg;
 
-    @ApiModelProperty(value = "步骤耗时")
+    @Schema(description = "步骤耗时")
     private long elapseTime;
 
-    @ApiModelProperty(value = "GOML目录结构是否符合规范,true/false")
+    @Schema(description = "GOML目录结构是否符合规范,true/false")
     private Boolean dirStructSuggestParam;
 
-    @ApiModelProperty(value = "GOML编译是否成功，true（成功）/false（失败）")
+    @Schema(description = "GOML编译是否成功，true（成功）/false（失败）")
     private Boolean compileResult;
 
-    @ApiModelProperty(value = "流水线运行失败")
+    @Schema(description = "流水线运行失败")
     private Boolean pipelineFail;
 
     /**
@@ -108,6 +107,6 @@ public class UploadTaskLogStepVO {
      */
     private Integer recommitTimes;
 
-    @ApiModelProperty(value = "项目ID,仅用于MQ传参")
+    @Schema(description = "项目ID,仅用于MQ传参")
     private String projectId;
 }

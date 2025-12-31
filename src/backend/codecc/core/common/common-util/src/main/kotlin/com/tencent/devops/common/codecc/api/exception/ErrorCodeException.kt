@@ -27,7 +27,7 @@
 
 package com.tencent.devops.common.codecc.api.exception
 
-import javax.ws.rs.core.Response
+import jakarta.ws.rs.core.Response
 
 /**
  * 根据错误码会反查错误信息，用于改造现有直接抛出一些错误的异常

@@ -18,6 +18,7 @@
           >{{ $t('请选择') }}</span
           >
           <span
+            v-show="renderList?.[key]?.length !== 0"
             class="bk-select-clear bk-icon icon-close-circle-shape"
             @click.stop="handleClear(selectSets[key], key)"
           ></span>

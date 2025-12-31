@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.vo.checkerset;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -19,7 +19,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("流水线规则集视图")
+@Schema(description = "流水线规则集视图")
 public class PipelineCheckerSetVO extends CommonVO
 {
     private List<PipelineCheckerSetRecordVO> records;

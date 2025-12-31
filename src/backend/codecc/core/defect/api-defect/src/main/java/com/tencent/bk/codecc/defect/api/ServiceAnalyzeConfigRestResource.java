@@ -29,13 +29,13 @@ package com.tencent.bk.codecc.defect.api;
 import com.tencent.bk.codecc.task.vo.AnalyzeConfigInfoVO;
 import com.tencent.devops.common.api.annotation.ServiceInterface;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * 多工具规则接口
@@ -43,18 +43,18 @@ import javax.ws.rs.core.MediaType;
  * @version V1.0
  * @date 2019/5/23
  */
-@Api(tags = {"SERVICE_ANALYZE_CONFIG"}, description = "分析配置")
+@Tag(name = "SERVICE_ANALYZE_CONFIG", description = "分析配置")
 @Path("/service/analyze/config")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @ServiceInterface(value = "report")
 public interface ServiceAnalyzeConfigRestResource {
-    @ApiOperation("查询任务的规则配置")
+    @Operation(summary = "查询任务的规则配置")
     @Path("/task/checkers")
     @POST
     Result<AnalyzeConfigInfoVO> getTaskCheckerConfig(AnalyzeConfigInfoVO analyzeConfigInfoVO);
 
-    @ApiOperation("平台侧工具构建信息")
+    @Operation(summary = "平台侧工具构建信息")
     @Path("/tasks/buildInfo")
     @POST
     Result<AnalyzeConfigInfoVO> getBuildInfo(AnalyzeConfigInfoVO analyzeConfigInfoVO);

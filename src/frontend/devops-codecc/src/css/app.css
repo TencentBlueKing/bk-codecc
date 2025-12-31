@@ -397,3 +397,16 @@ a:hover {
 ::before, ::after {
   box-sizing: content-box;
 }
+
+.display-name-tag-input-options {
+  padding-inline: 10px;
+  height: 32px;
+  line-height: 32px;
+}
+
+.display-name-tag-input-tags {
+  padding-inline: 5px;
+  height: 20px;
+  line-height: 20px;
+  font-size: 12px;
+}

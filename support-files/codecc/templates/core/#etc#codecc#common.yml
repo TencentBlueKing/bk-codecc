@@ -8,19 +8,19 @@ spring:
   data:
     mongodb:
       auto-index-creation: __BK_CODECC_MONGODB_AUTO_CREATE_INDEX__
-  redis:
-    host: __BK_CODECC_REDIS_HOST__
-    password: __BK_CODECC_REDIS_PASSWORD__
-    port: __BK_CODECC_REDIS_PORT__
-    database: __BK_CODECC_REDIS_DB__
-    jedis:
-      pool:
-        max-active: __BK_CODECC_REDIS_POOL_ACTIVE__
-        max-wait: -1
-        max-idle: __BK_CODECC_REDIS_POOL_IDLE__
-        min-idle: 0
-    connect-timeout: 5000
-    client-type: jedis
+    redis:
+      host: __BK_CODECC_REDIS_HOST__
+      password: __BK_CODECC_REDIS_PASSWORD__
+      port: __BK_CODECC_REDIS_PORT__
+      database: __BK_CODECC_REDIS_DB__
+      lettuce:
+        pool:
+          max-active: __BK_CODECC_REDIS_POOL_ACTIVE__
+          max-wait: -1
+          max-idle: __BK_CODECC_REDIS_POOL_IDLE__
+          min-idle: 0
+      connect-timeout: 5000
+      client-type: lettuce
   rabbitmq:
     virtual-host: __BK_CODECC_RABBITMQ_VHOST__
     username: __BK_CODECC_RABBITMQ_USER__
@@ -102,7 +102,12 @@ bkci:
     url: __BK_CI_PRIVATE_URL__
   token: __BK_CI_TOKEN__
 
+bkapi:
+  tenant:
+    host: __BK_API_TENANT_HOST__
+
 codecc:
+  enableMultiTenant: __BK_CODECC_ENABLE_MULTI_TENANT__
   public:
     url: __BK_CODECC_FQDN__
   privatetoken: __BK_CODECC_PRIVATE_TOKEN__
@@ -116,6 +121,10 @@ service:
     codecc: __BK_CODECC_SERVICE_PERFIX__
   suffix:
     codecc: __BK_CODECC_SERVICE_SUFFIX__
+
+iam:
+  appCode: __BK_IAM_APP_CODE__
+  appSecret: __BK_IAM_APP_SECRET__
 
 auth:
   # idProvider为权限中心对接方式，sample(开源默认实现无鉴权)/ bk_login（蓝鲸登录) / client
@@ -149,6 +158,7 @@ storage:
     username: __BK_CODECC_STORAGE_BKREPO_USERNAME__
     password: __BK_CODECC_STORAGE_BKREPO_PASSWORD__
     project: __BK_CODECC_STORAGE_BKREPO_PROJECT__
+    tenant: __BK_CODECC_STORAGE_BKREPO_TENANT_ID__
     repo: __BK_CODECC_STORAGE_BKREPO_REPO__
     host: __BK_CODECC_STORAGE_BKREPO_HOST__
 

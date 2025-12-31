@@ -28,18 +28,6 @@ export default {
         this.fetchListTool();
       }
     },
-    'operateParams.targetAuthor'() {
-      window.changeAlert = true;
-    },
-    'operateParams.ignoreReasonType'() {
-      window.changeAlert = true;
-    },
-    'operateParams.ignoreReason'() {
-      window.changeAlert = true;
-    },
-    'commentParams.comment'() {
-      window.changeAlert = true;
-    },
   },
   computed: {
     ...mapState(['user']),

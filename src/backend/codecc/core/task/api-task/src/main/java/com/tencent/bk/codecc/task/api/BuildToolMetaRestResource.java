@@ -29,12 +29,11 @@ package com.tencent.bk.codecc.task.api;
 import com.tencent.devops.common.api.BKToolBasicInfoVO;
 import com.tencent.devops.common.api.ToolMetaDetailVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_PROJECT_ID;
@@ -46,52 +45,52 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
  * @version V2.0
  * @date 2020/4/8
  */
-@Api(tags = {"BUILD_TOOL_META"}, description = "工具元数据注册接口")
+@Tag(name = "BUILD_TOOL_META", description = "工具元数据注册接口")
 @Path("/build/toolmeta")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface BuildToolMetaRestResource
 {
-    @ApiOperation("工具元数据注册")
+    @Operation(summary = "工具元数据注册")
     @Path("/")
     @POST
     Result<ToolMetaDetailVO> register(
-            @ApiParam(value = "用户名", required = true)
+            @Parameter(description = "用户名", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
                     String userName,
-            @ApiParam(value = "工具元数据信息", required = true)
+            @Parameter(description = "工具元数据信息", required = true)
                     ToolMetaDetailVO toolMetaDetailVO
     );
 
-    @ApiOperation("工具元数据查询")
+    @Operation(summary = "工具元数据查询")
     @Path("/list")
     @GET
     Result<List<ToolMetaDetailVO>> queryToolMetaDataList(
-            @ApiParam(value = "项目ID", required = true)
+            @Parameter(description = "项目ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
                     String projectId,
-            @ApiParam(value = "任务id", required = true)
+            @Parameter(description = "任务id", required = true)
             @QueryParam("taskId")
                 Long taskId
     );
 
-    @ApiOperation("工具元数据查询")
+    @Operation(summary = "工具元数据查询")
     @Path("/")
     @GET
     Result<ToolMetaDetailVO> queryToolMetaData(
-            @ApiParam(value = "项目ID", required = true)
+            @Parameter(description = "项目ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
                     String projectId,
-            @ApiParam(value = "工具名称", required = true)
+            @Parameter(description = "工具名称", required = true)
             @QueryParam("toolName")
                     String toolName
     );
 
-    @ApiOperation("获取工具基本信息")
+    @Operation(summary = "获取工具基本信息")
     @Path("/get/basicInfo/{toolName}")
     @GET
     Result<BKToolBasicInfoVO> getBasicInfo(
-            @ApiParam(value = "工具名", required = true)
+            @Parameter(description = "工具名", required = true)
             @PathParam("toolName")
             String toolName
     );

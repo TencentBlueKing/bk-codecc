@@ -13,6 +13,9 @@
 package com.tencent.bk.codecc.task.model;
 
 import lombok.Data;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -29,13 +32,26 @@ import java.util.List;
 
 @Data
 @Document(collection = "t_analyze_count_stat")
+@CompoundIndexes({
+        @CompoundIndex(name = "date_1_data_from_1_tool_name_1",
+                def = "{'date': 1, 'data_from': 1, 'tool_name': 1}",
+                background = true
+        ),
+        @CompoundIndex(name = "date_1_data_from_1_status_1",
+                def = "{'date': 1, 'data_from': 1, 'status': 1}",
+                background = true
+        )
+})
 public class AnalyzeCountStatEntity {
+
+    @Id
+    private String entityId;
 
     /**
      * 统计日期
      */
     @Field
-    @Indexed
+    @Indexed(background = true)
     private String date;
 
     /**
@@ -65,5 +81,11 @@ public class AnalyzeCountStatEntity {
      */
     @Field("task_id_list")
     private List<Long> taskIdList;
+
+    /**
+     * 统计次数
+     */
+    @Field("total_count")
+    private Integer totalCount;
 
 }

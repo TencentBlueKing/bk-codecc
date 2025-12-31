@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.List;
  * @date 2024/03/20
  */
 @Data
-@ApiModel("工具基础信息视图")
+@Schema(description = "工具基础信息视图")
 public class ToolBasicInfoVO {
 
     private String toolName;

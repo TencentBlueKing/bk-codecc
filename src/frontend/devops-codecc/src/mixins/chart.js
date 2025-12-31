@@ -52,10 +52,14 @@ export default {
     },
   },
   methods: {
-    handleInitAuthor(authorTypeMap, authorType, list = {}) {
+    async handleInitAuthor(authorTypeMap, authorType, list = {}) {
       const elemList = list.authorList || [{}];
+      const dataMap = await this.$store.dispatch(
+        'displayname/batchGetDisplayName',
+        elemList.map(item => item.authorName || ''),
+      );
 
-      const authorName = elemList.map(item => item.authorName || '');
+      const authorName = elemList.map(item => dataMap.get(item.authorName)?.display_name || item.authorName || '');
       const serious = elemList.map(item => item.serious || 0);
       const normal = elemList.map(item => item.normal || 0);
       const prompt = elemList.map(item => item.prompt || 0);
@@ -65,6 +69,7 @@ export default {
       if (elemList.length === 1 && !elemList[0].authorName) {
         this[authorTypeMap[authorType].data] = [];
       }
+
 
       const option = {
         title: {

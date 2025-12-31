@@ -24,4 +24,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ItsmSystemInfoRepository extends MongoRepository<ItsmSystemInfoEntity, String> {
     ItsmSystemInfoEntity findFirstBySystem(String system);
+
+    ItsmSystemInfoEntity findFirstBySystemAndVersion(String system, Integer version);
 }

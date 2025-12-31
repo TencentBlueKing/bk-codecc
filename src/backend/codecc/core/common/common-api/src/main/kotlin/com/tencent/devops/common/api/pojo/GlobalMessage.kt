@@ -26,27 +26,25 @@
 
 package com.tencent.devops.common.api.pojo
 
-import io.swagger.annotations.ApiModel
-import io.swagger.annotations.ApiModelProperty
-
+import io.swagger.v3.oas.annotations.media.Schema
 /**
  * 国际化信息处理
  *
  * @since: 2018-11-09
  * @version: $Revision$ $Date$ $LastChangedBy$
  */
-@ApiModel("返回码详情")
+@Schema(description = "返回码详情")
 data class GlobalMessage(
-        @ApiModelProperty("主键ID", required = true)
+        @get:Schema(description = "主键ID", required = true)
         val id: String,
-        @ApiModelProperty("国际化Key", required = true)
+        @get:Schema(description = "国际化Key", required = true)
         val key: String,
-        @ApiModelProperty("国际化模块", required = true)
+        @get:Schema(description = "国际化模块", required = true)
         val keyCode: String,
-        @ApiModelProperty("中文简体描述信息", required = true)
+        @get:Schema(description = "中文简体描述信息", required = true)
         var messageZhCn: String,
-        @ApiModelProperty("中文繁体描述信息", required = false)
+        @get:Schema(description = "中文繁体描述信息", required = false)
         var messageZhTw: String?,
-        @ApiModelProperty("英文描述信息", required = false)
+        @get:Schema(description = "英文描述信息", required = false)
         var messageEn: String?
 )

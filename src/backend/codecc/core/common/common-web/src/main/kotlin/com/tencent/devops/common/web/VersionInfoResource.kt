@@ -26,23 +26,23 @@
 
 package com.tencent.devops.common.web
 
-import io.swagger.annotations.Api
-import io.swagger.annotations.ApiOperation
+import io.swagger.v3.oas.annotations.tags.Tag
+import io.swagger.v3.oas.annotations.Operation
 import org.slf4j.LoggerFactory
-import javax.ws.rs.Consumes
-import javax.ws.rs.GET
-import javax.ws.rs.Path
-import javax.ws.rs.Produces
-import javax.ws.rs.core.MediaType
+import jakarta.ws.rs.Consumes
+import jakarta.ws.rs.GET
+import jakarta.ws.rs.Path
+import jakarta.ws.rs.Produces
+import jakarta.ws.rs.core.MediaType
 
 @RestResource
-@Api(tags = ["EXTERNAL_INFO"], description = "获取我们当前的版本信息")
+@Tag(name = "EXTERNAL_INFO", description = "获取我们当前的版本信息")
 @Path("/external/service/versionInfo")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 class VersionInfoResource {
 
-    @ApiOperation("获取微服务当前信息")
+    @Operation(summary = "获取微服务当前信息")
     @GET
     @Path("/")
     fun getInfo(): String {

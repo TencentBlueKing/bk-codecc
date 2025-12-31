@@ -62,6 +62,7 @@ import com.tencent.devops.common.constant.ComConstants.CheckerSetPackageType;
 import com.tencent.devops.common.constant.ComConstants.Tool;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.constant.RedisKeyConstants;
+import com.tencent.devops.common.constant.ToolConstants;
 import com.tencent.devops.common.redis.lock.RedisLock;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import com.tencent.devops.common.util.BeanUtils;
@@ -264,6 +265,29 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
     }
 
     /**
+     * v2 版的 getParamJson
+     */
+    private JSONObject getParamJsonV2(TaskDetailVO taskDetailVO, String toolName) {
+        JSONObject result = new JSONObject();
+        if (StringUtils.isBlank(toolName)) {
+            return result;
+        }
+
+        List<ToolConfigParamJsonVO> toolConfigParams = taskDetailVO.getDevopsToolParams();
+        toolConfigParams.stream()
+                .filter(it1 -> toolName.equals(it1.getToolName()))
+                .forEach(it2 -> {
+                    if (StringUtils.isBlank(it2.getVarName())) {
+                        return;
+                    }
+
+                    result.put(it2.getVarName(), it2.getChooseValue() == null ? "" : it2.getChooseValue());
+                });
+
+        return result;
+    }
+
+    /**
      * 获取参数
      *
      * @param taskDetailVO
@@ -273,8 +297,12 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
      */
     @Override
     public JSONObject getParamJson(TaskDetailVO taskDetailVO, String toolName, String createFrom) {
-        JSONObject paramJson = new JSONObject();
+        if (ToolConstants.ToolParamsVersion.V2.getValue()
+                .equals(taskDetailVO.getDevopsToolParamVersion())) {
+            return getParamJsonV2(taskDetailVO, toolName);
+        }
 
+        JSONObject paramJson = new JSONObject();
         List<ToolConfigParamJsonVO> toolConfigParams = taskDetailVO.getDevopsToolParams();
         Map<String, String> toolConfigParamMap;
         if (CollectionUtils.isNotEmpty(toolConfigParams)) {
@@ -457,7 +485,6 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
             String toolName = reqTool.getToolName();
             ToolConfigInfoEntity toolConfigInfoEntity = oldToolMap.get(toolName);
             if (toolConfigInfoEntity == null) {
-
                 // 工具没有停用才允许注册
                 if (!taskService.checkToolRemoved(toolName, taskInfoEntity)) {
                     try {
@@ -470,23 +497,17 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
                     }
                 }
             } else {
+                boolean updateFlag = false;
                 // 重新启用工具
                 if (ComConstants.FOLLOW_STATUS.WITHDRAW.value() == toolConfigInfoEntity.getFollowStatus()) {
                     toolConfigInfoEntity.setFollowStatus(toolConfigInfoEntity.getLastFollowStatus());
-                    toolConfigInfoEntity.setParamJson(reqTool.getParamJson());
-                    toolConfigInfoEntity.setUpdatedBy(userName);
-                    toolConfigInfoEntity.setUpdatedDate(curTime);
+                    updateFlag = true;
 
                     // 重新启用的工具需要设置强制全量扫描标志
                     forceFullScanTools.add(toolName);
                     log.info("enable task {} tool {}", taskId, toolName);
-                } else if (!specialParamUtil.isSameParam(toolName,
-                        toolConfigInfoEntity.getParamJson(), reqTool.getParamJson())) {
-                    // 修改工具
-                    toolConfigInfoEntity.setParamJson(reqTool.getParamJson());
-                    toolConfigInfoEntity.setUpdatedBy(userName);
-                    toolConfigInfoEntity.setUpdatedDate(curTime);
-
+                } else if (!specialParamUtil.isSameParam(toolName, toolConfigInfoEntity.getParamJson(),
+                        reqTool.getParamJson(), taskDetailVO.getDevopsToolParamVersion())) {
                     // 修改了特殊参数的工具需要设置强制全量扫描标志
                     forceFullScanTools.add(toolName);
                     log.info("modify task {} tool {}", taskId, toolName);
@@ -494,6 +515,17 @@ public abstract class AbstractTaskRegisterService implements TaskRegisterService
                     // 老插件切换为新插件需要设置强制全量扫描标志
                     forceFullScanTools.add(toolName);
                 }
+
+                // 只要 paramJson 不相同, 就需要更新
+                if (!StringUtils.equals(toolConfigInfoEntity.getParamJson(), reqTool.getParamJson())) {
+                    toolConfigInfoEntity.setParamJson(reqTool.getParamJson());
+                    updateFlag = true;
+                }
+
+                if (updateFlag) {
+                    toolConfigInfoEntity.applyAuditInfoOnUpdate(userName);
+                }
+
                 toolConfigInfoEntityList.add(toolConfigInfoEntity);
             }
 

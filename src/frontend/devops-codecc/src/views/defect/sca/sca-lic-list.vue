@@ -11,19 +11,7 @@
     >
       <div class="breadcrumb">
         <div class="breadcrumb-name">
-          <bk-tab
-            active="sca-lic"
-            :label-height="42"
-            @tab-change="handleTabChange"
-            type="unborder-card"
-          >
-            <bk-tab-panel
-              v-for="(panel, index) in panels"
-              v-bind="panel"
-              :key="index"
-            >
-            </bk-tab-panel>
-          </bk-tab>
+          <ActiveTab :list="panels" value="sca-lic" @update:value="handleTabChange" />
           <div
             class="tab-extra-icon"
           >
@@ -109,6 +97,15 @@
                   <i class="bk-icon fail-icon codecc-icon icon-close-line" v-else />
                 </template>
               </bk-table-column>
+              <bk-table-column
+                :label="$t('GPL 兼容')"
+                min-width="100"
+                prop="gplCompatible">
+                <template slot-scope="props">
+                  <i class="bk-icon success-icon codecc-icon icon-check-line" v-if="props.row.gplCompatible" />
+                  <i class="bk-icon fail-icon codecc-icon icon-close-line" v-else />
+                </template>
+              </bk-table-column>
               <div slot="empty">
                 <div class="codecc-table-empty-text">
                   <img src="../../../images/empty.png" class="empty-img" />
@@ -159,6 +156,7 @@
         v-if="licDetailDialogVisible"
         :entity-id="curRow.entityId"
         :build-id="curRow.buildId"
+        :tool-name="curRow.toolName"
         :license-name="curRow.name"
         @closeDetail="licDetailDialogVisible = false"
       ></scaLicDetail>
@@ -171,12 +169,14 @@ import Empty from '@/components/empty';
 import scaLicDetail from './sca-lic-detail.vue';
 import SeverityStatus from '../components/severity-status.vue';
 import scaUtil from '@/mixins/sca-list';
+import ActiveTab from '../components/active-tab.vue';
 
 export default {
   components: {
     Empty,
     scaLicDetail,
     SeverityStatus,
+    ActiveTab,
   },
   mixins: [scaUtil],
   data() {

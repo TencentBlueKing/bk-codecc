@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo.common;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -37,33 +36,33 @@ import lombok.Data;
  * @date 2019/5/27
  */
 @Data
-@ApiModel("公用告警详情查询返回视图")
+@Schema(description = "公用告警详情查询返回视图")
 public class CommonDefectDetailQueryRspVO
 {
-    @ApiModelProperty("文件名")
+    @Schema(description = "文件名")
     private String fileName;
 
-    @ApiModelProperty("文件路径")
+    @Schema(description = "文件路径")
     private String filePath;
 
-    @ApiModelProperty("文件内容")
+    @Schema(description = "文件内容")
     private String fileContent;
 
-    @ApiModelProperty("相对路径")
+    @Schema(description = "相对路径")
     private String relativePath;
 
-    @ApiModelProperty("截取的代码片段的起始行")
+    @Schema(description = "截取的代码片段的起始行")
     private int trimBeginLine;
 
-    @ApiModelProperty("版本号")
+    @Schema(description = "版本号")
     private String revision;
 
-    @ApiModelProperty("同分支的最后一次构建号")
+    @Schema(description = "同分支的最后一次构建号")
     private String lastBuildNumOfSameBranch;
 
-    @ApiModelProperty("该告警在同分支的最后一次构建中是否已被修复")
+    @Schema(description = "该告警在同分支的最后一次构建中是否已被修复")
     private Boolean defectIsFixedOnLastBuildNumOfSameBranch;
 
-    @ApiModelProperty("AI告警修复建议")
+    @Schema(description = "AI告警修复建议")
     private String defectSuggestions;
 }

@@ -12,7 +12,7 @@
  
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -24,18 +24,18 @@ import lombok.Data;
 @Data
 public class CLOCLanguageVO 
 {
-    @ApiModelProperty("cloc语言信息")
+    @Schema(description = "cloc语言信息")
     private String language;
 
-    @ApiModelProperty("代码总和")
+    @Schema(description = "代码总和")
     private Long codeSum;
 
-    @ApiModelProperty("空行总和")
+    @Schema(description = "空行总和")
     private Long blankSum;
 
-    @ApiModelProperty("注释总和")
+    @Schema(description = "注释总和")
     private Long commentSum;
 
-    @ApiModelProperty("有效注释总和")
+    @Schema(description = "有效注释总和")
     private Long efficientCommentSum;
 }

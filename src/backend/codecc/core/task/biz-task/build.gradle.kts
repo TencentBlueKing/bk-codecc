@@ -11,15 +11,15 @@ dependencies {
     api(project(":core:task:api-task"))
     api(project(":core:defect:api-defect"))
     api(project(":core:quartz:api-quartz"))
-    api("org.json:json")
+    api("org.json:json:${Versions.jsonVersion}")
     api("org.redisson:redisson")
-    api(group = "com.tencent.bk.devops.ci.image", name = "api-image") {
-        isChanging = true
+    api(group = "com.tencent.bk.devops.ci.misc", name = "api-image"){
+        isChanging=true
     }
-    api(group = "com.tencent.bk.devops.ci.project", name = "api-project") {
-        isChanging = true
+    api(group = "com.tencent.bk.devops.ci.project", name = "api-project"){
+        isChanging=true
     }
-    api(group = "com.tencent.bk.devops.ci.process", name = "api-process") {
-        isChanging = true
+    api(group = "com.tencent.bk.devops.ci.process", name = "api-process"){
+        isChanging=true
     }
 }

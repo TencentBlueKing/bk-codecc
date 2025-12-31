@@ -138,7 +138,6 @@
 </template>
 
 <script>
-import { bkSelect, bkOption } from 'bk-magic-vue';
 import Result from './result.vue';
 
 export default {

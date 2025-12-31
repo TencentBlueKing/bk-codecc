@@ -12,6 +12,7 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
@@ -47,7 +48,8 @@ public class IgnoreTypeNotifyRabbitMQConfig {
     }
 
     @Bean
-    public Binding ignoreTypeNotifyQueueBind(Queue ignoreTypeNotifyQueue, CustomExchange ignoreTypeNotifyExchange) {
+    public Binding ignoreTypeNotifyQueueBind(@Qualifier("ignoreTypeNotifyQueue") Queue ignoreTypeNotifyQueue,
+                                              @Qualifier("ignoreTypeNotifyExchange") CustomExchange ignoreTypeNotifyExchange) {
         return BindingBuilder.bind(ignoreTypeNotifyQueue).to(ignoreTypeNotifyExchange)
                 .with(ROUTE_IGNORE_TYPE_NOTIFY).noargs();
     }
@@ -60,8 +62,8 @@ public class IgnoreTypeNotifyRabbitMQConfig {
     @Bean
     public SimpleMessageListenerContainer ignoreTypeNotifyMessageListenerContainer(
             ConnectionFactory connectionFactory,
-            Queue ignoreTypeNotifyQueue,
-            RabbitAdmin ignoreTypeNotifyRabbitAdmin,
+            @Qualifier("ignoreTypeNotifyQueue") Queue ignoreTypeNotifyQueue,
+            @Qualifier("ignoreTypeNotifyRabbitAdmin") RabbitAdmin ignoreTypeNotifyRabbitAdmin,
             IgnoreTypeNotifyConsumer ignoreTypeNotifyConsumer,
             Jackson2JsonMessageConverter jackson2JsonMessageConverter) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer(connectionFactory);

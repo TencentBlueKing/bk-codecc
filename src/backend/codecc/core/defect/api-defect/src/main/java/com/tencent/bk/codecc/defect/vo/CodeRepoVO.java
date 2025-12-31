@@ -12,8 +12,7 @@
  
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.Set;
@@ -25,18 +24,18 @@ import java.util.Set;
  * @version V1.0
  */
 @Data
-@ApiModel("代码库视图")
+@Schema(description = "代码库视图")
 public class CodeRepoVO 
 {
-    @ApiModelProperty("代码库路径")
+    @Schema(description = "代码库路径")
     private String url;
 
-    @ApiModelProperty("分支")
+    @Schema(description = "分支")
     private String branch;
 
-    @ApiModelProperty("版本")
+    @Schema(description = "版本")
     private String version;
 
-    @ApiModelProperty("工具名")
+    @Schema(description = "工具名")
     private Set<String> toolNames;
 }

@@ -15,16 +15,6 @@ import org.springframework.stereotype.Service;
 @Service("PHPCSSpecialParamBizService")
 public class PHPCSSpecialParamServiceImpl extends AbstractSpecialParamServiceImpl
 {
-    /**
-     * 修改工具配置影响规则时清空规则集
-     * @param reqParamJsonObj
-     * @param currentParamJsonObj
-     */
-    @Override
-    public boolean paramJsonModified(JSONObject reqParamJsonObj, JSONObject currentParamJsonObj)
-    {
-        return !reqParamJsonObj.getString(ComConstants.KEY_PHPCS_STANDARD).equals(currentParamJsonObj.getString(ComConstants.KEY_PHPCS_STANDARD));
-    }
 
     /**
      * 特殊参数是否相同

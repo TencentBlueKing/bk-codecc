@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,15 +11,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class QueryTaskCheckerSetsRequest {
 
-    @ApiParam(value = "任务Id", required = false)
+    @Parameter(description = "任务Id", required = false)
     private List<Long> taskIdList;
 
-    @ApiParam(value = "工具名称", required = false)
+    @Parameter(description = "工具名称", required = false)
     private List<String> toolNameList;
 
-    @ApiParam(value = "维度", required = false)
+    @Parameter(description = "维度", required = false)
     private List<String> dimensionList;
 
-    @ApiParam(value = "快照Id", required = false)
+    @Parameter(description = "快照Id", required = false)
     private String buildId;
 }

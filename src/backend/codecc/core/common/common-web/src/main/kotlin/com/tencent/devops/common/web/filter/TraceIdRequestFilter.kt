@@ -4,9 +4,9 @@ import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_BUILD_ID
 import com.tencent.devops.common.web.RequestFilter
 import io.opentelemetry.api.trace.Span
 import org.slf4j.LoggerFactory
-import javax.ws.rs.container.ContainerRequestContext
-import javax.ws.rs.container.ContainerRequestFilter
-import javax.ws.rs.ext.Provider
+import jakarta.ws.rs.container.ContainerRequestContext
+import jakarta.ws.rs.container.ContainerRequestFilter
+import jakarta.ws.rs.ext.Provider
 
 /**
  * 为链路添加buildId属性

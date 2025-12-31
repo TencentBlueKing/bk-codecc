@@ -12,8 +12,7 @@
  
 package com.tencent.bk.codecc.defect.vo.ignore;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -26,11 +25,11 @@ import java.util.Map;
  * @version V1.0
  */
 @Data
-@ApiModel("注释忽略信息视图")
+@Schema(description = "注释忽略信息视图")
 public class IgnoreCommentDefectVO {
-    @ApiModelProperty("任务id")
+    @Schema(description = "任务id")
     private Long taskId;
 
-    @ApiModelProperty("注释忽略信息")
+    @Schema(description = "注释忽略信息")
     private Map<String, List<IgnoreCommentDefectSubVO>> ignoreDefectMap;
 }

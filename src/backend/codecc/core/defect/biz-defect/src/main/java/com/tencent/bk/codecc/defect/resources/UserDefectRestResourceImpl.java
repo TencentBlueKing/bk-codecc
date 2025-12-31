@@ -37,6 +37,7 @@ import com.tencent.bk.codecc.defect.service.IDefectOperateBizService;
 import com.tencent.bk.codecc.defect.service.IIgnoreTypeService;
 import com.tencent.bk.codecc.defect.service.IQueryWarningBizService;
 import com.tencent.bk.codecc.defect.service.IStatQueryWarningService;
+import com.tencent.bk.codecc.defect.service.MultiTenantService;
 import com.tencent.bk.codecc.defect.service.TaskLogService;
 import com.tencent.bk.codecc.defect.service.impl.CLOCQueryWarningBizServiceImpl;
 import com.tencent.bk.codecc.defect.service.impl.LintBatchIgnoreApprovalBizServiceImpl;
@@ -66,6 +67,7 @@ import com.tencent.bk.codecc.defect.vo.common.CommonDefectDetailQueryReqVO;
 import com.tencent.bk.codecc.defect.vo.common.CommonDefectDetailQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.common.CommonDefectQueryRspVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
+import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVOBase;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO_Old;
 import com.tencent.bk.codecc.defect.vo.common.QueryWarningPageInitRspVO;
 import com.tencent.devops.common.api.ToolMetaBaseVO;
@@ -83,6 +85,7 @@ import com.tencent.devops.common.service.IBizService;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import com.tencent.devops.common.util.BeanUtils;
 import com.tencent.devops.common.util.List2StrUtil;
+import com.tencent.devops.common.util.MultenantUtils;
 import com.tencent.devops.common.web.RestResource;
 import com.tencent.devops.common.web.aop.annotation.OperationHistory;
 import com.tencent.devops.common.web.condition.CommunityCondition;
@@ -91,13 +94,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.util.Pair;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -159,6 +165,7 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
                 null,
                 statusList,
                 null,
+                null,
                 buildId,
                 false
         );
@@ -172,47 +179,44 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
         );
     }
 
+    /**
+     * 已经废弃，使用v2版本，等待PreCi重构后删除
+     * @param userId
+     * @param projectId
+     * @param request
+     * @return
+     */
     @Override
-    public Result<QueryWarningPageInitRspVO> queryCheckersAndAuthors(
-            Long taskId, String toolName, String dimension,
-            String status, String checkerSet, String buildId
-    ) {
-        List<Long> taskIdList = Lists.newArrayList(taskId);
-        Pair<List<String>, List<String>> pair = ParamUtils.parseToolNameAndDimensions(toolName, dimension);
-        List<String> toolNameList = pair.getFirst();
-        List<String> dimensionList = pair.getSecond();
-        List<String> statusList = List2StrUtil.fromString(status, ComConstants.STRING_SPLIT);
-
-        // 兼容老版本接口，当时还没有跨任务，所以multiTaskQuery固定为false
-        QueryCheckersAndAuthorsRequest request = new QueryCheckersAndAuthorsRequest(
-                taskIdList, toolNameList, dimensionList,null,
-                statusList, checkerSet, buildId, false
-        );
-        return queryCheckersAndAuthors("", "", request);
-    }
-
-    @Override
+    @Deprecated
     public Result<QueryWarningPageInitRspVO> queryCheckersAndAuthors(
             String userId,
             String projectId,
             QueryCheckersAndAuthorsRequest request
     ) {
+        if (StringUtils.isNotEmpty(request.getCheckerSet())) {
+            DefectQueryReqVOBase.CheckerSet checkerSet = new DefectQueryReqVOBase.CheckerSet();
+            checkerSet.setCheckerSetId(request.getCheckerSet());
+            request.setCheckerSets(Collections.singletonList(checkerSet));
+        }
+        return queryCheckersAndAuthorsV2(userId, projectId, request);
+    }
+
+    @Override
+    public Result<QueryWarningPageInitRspVO> queryCheckersAndAuthorsV2(String userId, String projectId,
+                                                                       QueryCheckersAndAuthorsRequest request) {
         List<String> toolNameList = request.getToolNameList();
         List<String> dimensionList = request.getDimensionList();
-
         IQueryWarningBizService service = fileAndDefectQueryFactory.createBizService(
                 toolNameList,
                 dimensionList,
                 ComConstants.BusinessType.QUERY_WARNING.value(),
                 IQueryWarningBizService.class
         );
-
         QueryWarningPageInitRspVO response = service.processQueryWarningPageInitRequest(
                 userId,
                 projectId,
                 request
         );
-
         return new Result<>(response);
     }
 
@@ -455,6 +459,7 @@ public class UserDefectRestResourceImpl implements UserDefectRestResource {
                 ComConstants.BATCH_PROCESSOR_INFIX + bizType,
                 IBizService.class
         );
+
         return service.processBiz(batchDefectProcessReqVO);
     }
 

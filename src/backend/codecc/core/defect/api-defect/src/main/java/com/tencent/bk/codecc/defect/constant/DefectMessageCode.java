@@ -86,4 +86,9 @@ public interface DefectMessageCode {
      * 项目告警数过多
      */
     String PROJECT_DEFECT_TOO_MANY = "2300031";
+
+    /**
+     * 更新告警提单统计数据失败
+     */
+    String UPSERT_ISSUE_STATISTIC_FAILED = "2303013";
 }

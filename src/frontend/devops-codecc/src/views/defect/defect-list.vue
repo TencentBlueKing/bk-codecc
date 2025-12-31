@@ -151,7 +151,7 @@
                 </div>
                 <div class="cc-col">
                   <bk-form-item :label="$t('single.规则集')">
-                    <bk-select v-model="searchParams.checkerSet" searchable>
+                    <bk-select v-model="searchParams.checkerSets" searchable multiple>
                       <bk-option
                         v-for="checkerSet in searchFormData.checkerSetList"
                         :key="checkerSet.checkerSetId"
@@ -206,6 +206,8 @@
                       :list="searchFormData.authorList"
                       :max-data="1"
                       :trigger="'focus'"
+                      :tpl="renderDisplayNameTagInputOption"
+                      :tag-tpl="renderDisplayNameTagInputTag"
                       :allow-create="true"
                     >
                     </bk-tag-input>
@@ -414,18 +416,18 @@
                         :key="item.buildId"
                         :id="item.buildId"
                         :name="`#${item.buildNum} ${item.branch} ${
-                          item.buildUser
+                          usersMap.get(item.buildUser)?.display_name || item.buildUser
                         } ${formatDate(item.buildTime) || ''}${$t('触发')}`"
                       >
                         <div
                           class="cc-ellipsis"
                           :title="`#${item.buildNum} ${item.branch} ${
-                            item.buildUser
+                            usersMap.get(item.buildUser)?.display_name || item.buildUser
                           } ${formatDate(item.buildTime) || ''}${$t('触发')}`"
                         >
                           {{
                             `#${item.buildNum} ${item.branch} ${
-                              item.buildUser
+                              usersMap.get(item.buildUser)?.display_name || item.buildUser
                             } ${formatDate(item.buildTime) || ''}${$t('触发')}`
                           }}
                         </div>
@@ -526,7 +528,7 @@
                   </bk-form-item>
                 </div>
 
-                <div class="cc-col" v-show="allRenderColumnMap.approval">
+                <div class="cc-col" v-show="allRenderColumnMap.approval && isInnerSite">
                   <bk-form-item :label="$t('审批')">
                     <bk-select
                       ref="approvalSelect"
@@ -808,6 +810,7 @@
         width="560"
         theme="primary"
         header-position="left"
+        :mask-close="false"
         :before-close="handleBeforeClose"
         :title="
           operateParams.changeAuthorType === 1
@@ -830,24 +833,14 @@
               property="sourceAuthor"
               :label="$t('原处理人')"
             >
-              <bk-input
-                v-model="operateParams.sourceAuthor"
-                :disabled="operateParams.changeAuthorType === 1"
-                style="width: 290px"
-              ></bk-input>
+              <bk-user-display-name :user-id="operateParams.sourceAuthor"></bk-user-display-name>
             </bk-form-item>
             <bk-form-item :label="$t('新处理人')">
-              <bk-tag-input
+              <UserSelector
                 allow-create
-                v-if="IS_ENV_TAI"
-                v-model="operateParams.targetAuthor"
+                :value.sync="operateParams.targetAuthor"
                 style="width: 290px"
-              ></bk-tag-input>
-              <bk-tag-input allow-create
-                v-else
-                v-model="operateParams.targetAuthor"
-                style="width: 290px"
-              ></bk-tag-input>
+              />
             </bk-form-item>
           </bk-form>
         </div>
@@ -870,7 +863,7 @@
             theme="primary"
             type="button"
             :disabled="authorEditDialogLoading"
-            @click.native="authorEditDialogVisible = false"
+            @click.native="handleCloseAuthorDialog"
           >
             {{ $t('取消') }}
           </bk-button>
@@ -883,6 +876,7 @@
         :position="ignoreDialogPositionConfig"
         theme="primary"
         header-position="left"
+        :mask-close="false"
         :title="ignoreReasonDialogTitle"
         :before-close="handleBeforeClose"
         @cancel="handleIgnoreCancel"
@@ -913,7 +907,7 @@
                 v-model="operateParams.ignoreReasonType"
                 class="ignore-list"
               >
-                <div v-for="ignore in ignoreList" :key="ignore.ignoreTypeId">
+                <div v-for="ignore in ignoreList.filter(i => i.status !== 2)" :key="ignore.ignoreTypeId">
                   <bk-radio
                     class="cc-radio"
                     :value="ignore.ignoreTypeId"
@@ -1017,6 +1011,7 @@
         width="560"
         theme="primary"
         header-position="left"
+        :mask-close="false"
         :before-close="handleBeforeClose"
         :title="$t('问题评论')"
       >
@@ -1086,7 +1081,7 @@
   </div>
 </template>
 
-<script>
+<script lang="jsx">
 import _ from 'lodash';
 import { bus } from '@/common/bus';
 import { format } from 'date-fns';
@@ -1096,6 +1091,7 @@ import { getClosest, toggleClass } from '@/common/util';
 import { export_json_to_excel } from '@/vendor/export2Excel';
 import util from '@/mixins/defect-list';
 import defectCache from '@/mixins/defect-cache';
+import displayNameTagInputTpl from '@/mixins/display-name-tag-input-tpl';
 import detail from './detail';
 import tableDefect from './table-defect';
 import Empty from '@/components/empty';
@@ -1108,6 +1104,7 @@ import DatePicker from '@/components/date-picker/index.vue';
 import DEPLOY_ENV from '@/constants/env';
 import FoldAlert from './components/fold-alert.vue';
 import ignore from '@/store/modules/ignore';
+import UserSelector from '@/components/user-selector/index.vue';
 
 // 搜索过滤项缓存
 const SEARCH_OPTION_CACHE = 'search_option_columns_defect';
@@ -1123,8 +1120,9 @@ export default {
     ChartPanel,
     DefectPanel,
     FoldAlert,
+    UserSelector,
   },
-  mixins: [util, defectCache],
+  mixins: [util, defectCache, displayNameTagInputTpl],
   data() {
     const isProjectDefect = this.$route.name === 'project-defect-list';
     this.getDefaultOption = () => (isProjectDefect
@@ -1133,7 +1131,7 @@ export default {
         { id: 'dimension', name: this.$t('维度'), isChecked: true },
         { id: 'toolName', name: this.$t('工具'), isChecked: true },
         {
-          id: 'checkerSet',
+          id: 'checkerSets',
           name: this.$t('single.规则集'),
           isChecked: true,
         },
@@ -1142,7 +1140,7 @@ export default {
         { id: 'dimension', name: this.$t('维度'), isChecked: true },
         { id: 'toolName', name: this.$t('工具'), isChecked: true },
         {
-          id: 'checkerSet',
+          id: 'checkerSets',
           name: this.$t('single.规则集'),
           isChecked: true,
         },
@@ -1156,7 +1154,7 @@ export default {
         { id: 'daterange', name: this.$t('日期'), isChecked: val },
         { id: 'status', name: this.$t('状态'), isChecked: val },
         { id: 'severity', name: this.$t('级别'), isChecked: val },
-        { id: 'approval', name: this.$t('审批'), isChecked: val },
+        ...(this.isInnerSite ? [{ id: 'approval', name: this.$t('审批'), isChecked: val }] : []),
         { id: 'operate', name: this.$t('操作'), isChecked: val },
       ]
       : [
@@ -1166,7 +1164,7 @@ export default {
         { id: 'path', name: this.$t('路径'), isChecked: val },
         { id: 'status', name: this.$t('状态'), isChecked: val },
         { id: 'severity', name: this.$t('级别'), isChecked: val },
-        { id: 'approval', name: this.$t('审批'), isChecked: val },
+        ...(this.isInnerSite ? [{ id: 'approval', name: this.$t('审批'), isChecked: val }] : []),
         { id: 'operate', name: this.$t('操作'), isChecked: val },
       ]);
 
@@ -1255,7 +1253,7 @@ export default {
         toolName: toolId ? toolId.split(',') : toolId,
         dimension: query.dimension || '',
         checker: query.checker || '',
-        checkerSet: query.checkerSet || '',
+        checkerSets: [],
         author: query.author,
         severity: this.numToArray(query.severity),
         status,
@@ -1393,7 +1391,6 @@ export default {
       taskIdList: isProjectDefect ? [] : [Number(taskId)],
       isProjectDefect,
       emptyDialogVisible: false,
-      IS_ENV_TAI: window.IS_ENV_TAI,
       dateType: query.dateType || 'createTime',
       isInnerSite: DEPLOY_ENV === 'tencent',
       approverList: [],
@@ -1409,6 +1406,9 @@ export default {
     }),
     ...mapState('project', {
       projectVisitable: 'visitable',
+    }),
+    ...mapState('displayname', {
+      usersMap: 'usersMap',
     }),
     visitable() {
       return this.projectVisitable || !this.isProjectDefect;
@@ -1488,13 +1488,14 @@ export default {
     operateTreeData() {
       const { isProjectDefect } = this;
       const { tapdOpsCount, maskOpsCount, maskNotFixCount, commentOpsCount, notOpsCount } = this.searchFormData;
+      const innerOperateList = this.isInnerSite ? [{
+        id: 'ISSUE_SUBMIT',
+        name: `${this.$t('已提 TAPD 单')}${
+          isProjectDefect ? '' : `(${tapdOpsCount || 0})`
+        }`,
+      }] : [];
       const operateList = [
-        {
-          id: 'ISSUE_SUBMIT',
-          name: `${this.$t('已提 TAPD 单')}${
-            isProjectDefect ? '' : `(${tapdOpsCount || 0})`
-          }`,
-        },
+        ...innerOperateList,
         {
           id: 'MARK',
           name: `${this.$t('已标记处理')}${
@@ -1551,8 +1552,8 @@ export default {
       return { cacheKey };
     },
     statusRelevantParams() {
-      const { checkerSet, checker, author, fileList, buildId, daterange } = this.searchParams;
-      return { checkerSet, checker, author, fileList, buildId, daterange };
+      const { checkerSets, checker, author, fileList, buildId, daterange } = this.searchParams;
+      return { checkerSets, checker, author, fileList, buildId, daterange };
     },
     severityRelevantParams() {
       const { status } = this.searchParams;
@@ -1739,7 +1740,7 @@ export default {
         this.fetchOperateParams();
       }
     },
-    'searchParams.checkerSet'(val, oldVal) {
+    'searchParams.checkerSets'(val, oldVal) {
       if (!_.isEqual(val, oldVal)) {
         this.fetchOtherParams();
       }
@@ -1813,7 +1814,7 @@ export default {
       this.customOption = defaultOptionColumn;
     }
     this.selectedOptionColumn = _.cloneDeep(defaultOptionColumn);
-    this.guideFlag = Boolean(localStorage.getItem('guideEnd') || '');
+    this.guideFlag = Boolean(localStorage.getItem('guideEnd') || !this.isInnerSite);
   },
   mounted() {
     const memberNeverShow = JSON.parse(window.localStorage.getItem('memberNeverShow'));
@@ -1827,6 +1828,11 @@ export default {
       : (this.isSearchDropdown = lintSearchExpend);
     this.openDetail(); // 打开详情
     this.keyOperate();
+    // 主动给 body 设置焦点，确保键盘事件能触发
+    this.$nextTick(() => {
+      document.body.setAttribute('tabindex', '-1');
+      document.body.focus();
+    });
   },
   beforeDestroy() {
     document.onkeydown = null;
@@ -1888,7 +1894,7 @@ export default {
       this.setTableHeight();
     },
 
-    downloadExcel() {
+    async downloadExcel() {
       if (this.tableLoading) {
         this.$bkMessage({
           message: this.$t('问题列表加载中，请等待列表加载完再尝试导出。'),
@@ -1904,17 +1910,28 @@ export default {
         });
         return;
       }
-      this.exportLoading = true;
-      this.$store
-        .dispatch('defect/lintList', params)
-        .then((res) => {
-          const listKey = clusterType === 'defect' ? 'defectList' : 'fileList';
-          const list = res && res[listKey] && res[listKey].records;
-          this.generateExcel(list, clusterType);
-        })
-        .finally(() => {
-          this.exportLoading = false;
-        });
+      try {
+        this.exportLoading = true;
+        const res = await this.$store.dispatch('defect/lintList', params);
+        const listKey = clusterType === 'defect' ? 'defectList' : 'fileList';
+        const list = res && res[listKey] && res[listKey].records;
+        // display name 处理
+        const userIds = [...new Set([
+          ...list.map(item => item.author).flat(),
+          ...list.map(item => item.ignoreAuthor),
+        ])];
+        const dataMap = await this.$store.dispatch('displayname/batchGetDisplayName', userIds);
+        for (const row of list) {
+          row.author = row.author.map(id => dataMap.get(id)?.display_name || id);
+          row.ignoreAuthor = dataMap.get(row.ignoreAuthor)?.display_name || row.ignoreAuthor;
+        }
+
+        this.generateExcel(list, clusterType);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        this.exportLoading = false;
+      }
     },
     generateExcel(list = [], clusterType) {
       const { isProjectDefect } = this;
@@ -2004,10 +2021,13 @@ export default {
       // }
       let ignoreStr = '';
       if (status & 4 && ignoreReasonType) {
-        const ignoreName = this.ignoreList.find(item => item.ignoreTypeId === ignoreReasonType)?.name;
+        const ignoreName = this.getIgnoreName(ignoreReasonType);
         ignoreName && (ignoreStr = `-${ignoreName}`);
       }
       return `${statusMap[key]}${ignoreStr}`;
+    },
+    getIgnoreName(ignoreReasonType) {
+      return this.ignoreList.find(item => item.ignoreTypeId === ignoreReasonType)?.name || '';
     },
     // 处理表格数据
     formatJson(filterVal, list, clusterType) {
@@ -2050,16 +2070,7 @@ export default {
           );
         }
         if (j === 'ignoreReasonType') {
-          if (item[j] === 1) {
-            return this.$t('工具误报');
-          }
-          if (item[j] === 2) {
-            return this.$t('设计如此');
-          }
-          if (item[j] === 4) {
-            return this.$t('其他');
-          }
-          return '';
+          return this.getIgnoreName(item[j]);
         }
         if (j === 'dimension') {
           // const { dimension } = this.searchParams;
@@ -2102,24 +2113,28 @@ export default {
     async fetchBuildList() {
       if (this.visitable === false) return;
       this.selectLoading.buildListLoading = true;
-      this.buildList = await this.$store.dispatch('defect/getBuildList', {
+      const list = await this.$store.dispatch('defect/getBuildList', {
         taskId: this.taskId,
       });
+      // display name 处理
+      const userIds = [...new Set(list.map(item => item.buildUser))];
+      await this.$store.dispatch('displayname/batchGetDisplayName', userIds);
+      this.buildList = list;
       this.selectLoading.buildListLoading = false;
     },
     getSearchParams() {
       const { dimension, toolName, taskIdList, isProjectDefect } = this;
-      const { daterange, authorList } = this.searchParams;
+      const { daterange, authorList, checkerSets } = this.searchParams;
       const author = isProjectDefect ? authorList[0] : this.searchParams.author;
       const { isSelectAll } = this;
-      const checkerSet = this.searchFormData.checkerSetList
-        .find(checkerSet => checkerSet.checkerSetId === this.searchParams.checkerSet);
+      const checkerSetList = this.searchFormData.checkerSetList
+        .filter(checkerSet => checkerSets.includes(checkerSet.checkerSetId));
       const params = {
         ...this.searchParams,
         dimensionList: dimension,
         toolNameList: toolName,
         isSelectAll,
-        checkerSet,
+        checkerSets: checkerSetList,
         taskIdList,
         author,
         multiTaskQuery: isProjectDefect,
@@ -2190,6 +2205,7 @@ export default {
       this.searchFormData = Object.assign(this.searchFormData, {
         checkerSetList,
       });
+      this.searchParams.checkerSets = this.$route.query.checkerSet ? this.$route.query.checkerSet.split(',') : [];
     },
     async fetchStatusParams() {
       if (this.visitable === false) return;
@@ -2226,13 +2242,15 @@ export default {
     async fetchOtherParams() {
       if (this.visitable === false) return;
       this.selectLoading.otherParamsLoading = true;
-      const { status, checkerSet, buildId } = this.searchParams;
+      const { status, checkerSets, buildId } = this.searchParams;
       const { taskIdList, dimension, toolName, isProjectDefect } = this;
+      const checkerSetList = this.searchFormData.checkerSetList
+        .filter(checkerSet => checkerSets.includes(checkerSet.checkerSetId));
       const params = {
         dimensionList: dimension,
         toolNameList: toolName,
         statusList: status,
-        checkerSet,
+        checkerSets: checkerSetList,
         buildId,
         taskIdList,
         multiTaskQuery: isProjectDefect,
@@ -2241,7 +2259,14 @@ export default {
       const { authorList = [], checkerList = [], filePathTree = {} } = res;
       const newAuthorList = authorList.filter(item => item !== this.user.username);
       newAuthorList.unshift(this.user.username);
-      const newList = newAuthorList.map(item => ({ id: item, name: item }));
+      const dataMap = await this.$store.dispatch(
+        'displayname/batchGetDisplayName',
+        newAuthorList,
+      );
+      const newList = newAuthorList.map(author => ({
+        id: author,
+        name: dataMap.get(author)?.display_name || author,
+      }));
       this.searchFormData = Object.assign(this.searchFormData, {
         authorList: newList,
         checkerList,
@@ -2478,7 +2503,8 @@ export default {
       this.defectDetailSearchParams.entityId = '';
       this.defectDetailSearchParams.entityId = row.entityId;
       this.defectDetailSearchParams.defectId = row.defectId;
-      this.defectDetailSearchParams.filePath = row.filePath;
+      this.defectDetailSearchParams.filePath = row.filePath || row.fileName;
+      this.defectDetailSearchParams.toolName = row.toolName;
     },
     handleCodeFullScreen(type) {
       this.$nextTick(() => {
@@ -2657,6 +2683,7 @@ export default {
           }
         })
         .finally(() => {
+          window.changeAlert = false;
           this.detailLoading = false;
         });
     },
@@ -2679,7 +2706,6 @@ export default {
       });
     },
     handleAuthor(changeAuthorType, entityId, author) {
-      window.changeAlert = false;
       this.authorEditDialogVisible = true;
       this.operateParams.changeAuthorType = changeAuthorType;
       if (author !== undefined) {
@@ -2753,6 +2779,7 @@ export default {
         })
         .finally(() => {
           this.tableLoading = false;
+          this.handleClearWindowAlert();
         });
     },
     handleIgnore(ignoreType, batchFlag, entityId, filePath, ignoreApprovalStatus) {
@@ -2778,7 +2805,6 @@ export default {
       if (ignoreType === 'RevertIgnore') {
         this.handleIgnoreConfirm();
       } else {
-        window.changeAlert = false;
         this.ignoreReasonDialogVisible = true;
       }
     },
@@ -2820,7 +2846,7 @@ export default {
         .then((res) => {
           if (res.code === '0') {
             let message = '';
-            let isIgnoreApproval = false;
+            const isIgnoreApproval = false;
             const list = res.data || [];
             if (this.operateParams.bizType === 'ChangeIgnoreType') {
               message = this.$t('修改忽略类型成功');
@@ -2838,19 +2864,19 @@ export default {
                     index: 0,
                   });
                 }
-                if (item.failCount) {
-                  sortMessage.push({
-                    text: this.$t(`剩余x个问题由于状态原因${typeMap[item.bizType]}失败。`, [item.failCount || 0]),
-                    index: 1,
-                  });
-                }
-                if (item.bizType === 'IgnoreApproval' && item.count !== 0) {
-                  isIgnoreApproval = true;
-                  sortMessage.push({
-                    text: this.$t('另外x个问题正在忽略审批中。', [item.count]),
-                    index: 2,
-                  });
-                }
+                // if (item.failCount) {
+                //   sortMessage.push({
+                //     text: this.$t(`剩余x个问题由于状态原因${typeMap[item.bizType]}失败。`, [item.failCount || 0]),
+                //     index: 1,
+                //   });
+                // }
+                // if (item.bizType === 'IgnoreApproval' && item.count !== 0) {
+                //   isIgnoreApproval = true;
+                //   sortMessage.push({
+                //     text: this.$t('另外x个问题正在忽略审批中。', [item.count]),
+                //     index: 2,
+                //   });
+                // }
                 message = sortMessage
                   .sort((a, b) => a.index - b.index)
                   .map(item => item.text)
@@ -2891,9 +2917,7 @@ export default {
             }
             this.initParams();
 
-            this.operateParams.ignoreReason = '';
-            this.operateParams.ignoreReasonType = '';
-            this.$nextTick(() => window.changeAlert = false);
+            this.initIgnoreDialog();
             if (this.defectDetailDialogVisible) {
               this.handleFileListRowClick(this.defectList[this.fileIndex]);
             }
@@ -2904,13 +2928,19 @@ export default {
         })
         .finally(() => {
           this.tableLoading = false;
+          this.handleClearWindowAlert();
         });
     },
     handleIgnoreCancel() {
-      this.operateParams.ignoreReason = '';
-      this.operateParams.ignoreReasonType = '';
+      this.initIgnoreDialog();
       this.ignoreReasonDialogVisible = false;
       this.isShowDetailDialog = true;
+      this.handleClearWindowAlert();
+    },
+    /** 初始化忽略对话框 */
+    initIgnoreDialog() {
+      this.operateParams.ignoreReason = '';
+      this.operateParams.ignoreReasonType = '';
     },
     toLogs() {
       this.changeHandlerVisible = false;
@@ -3208,6 +3238,10 @@ export default {
       this.$store.dispatch('ignore/fetchApproverList').then((res) => {
         this.approverList = res?.data?.APPROVER_TYPE;
       });
+    },
+    handleCloseAuthorDialog() {
+      this.authorEditDialogVisible = false;
+      this.handleClearWindowAlert();
     },
   },
 };

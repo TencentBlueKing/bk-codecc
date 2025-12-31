@@ -51,7 +51,7 @@ import org.springframework.http.server.ServerHttpResponse
 import org.springframework.http.server.ServletServerHttpRequest
 import org.springframework.messaging.simp.config.MessageBrokerRegistry
 import org.springframework.web.socket.WebSocketHandler
-import org.springframework.web.socket.config.annotation.AbstractWebSocketMessageBrokerConfigurer
+import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry
 import org.springframework.web.socket.server.HandshakeInterceptor
@@ -64,7 +64,7 @@ open class WebSocketConfig @Autowired constructor(
     private val authTaskService: AuthTaskService,
     private val client: Client,
     private val redisTemplate: RedisTemplate<String, String>
-) : AbstractWebSocketMessageBrokerConfigurer() {
+) : WebSocketMessageBrokerConfigurer {
 
     companion object {
         private val logger = LoggerFactory.getLogger(WebSocketConfig::class.java)
@@ -145,6 +145,12 @@ open class WebSocketConfig @Autowired constructor(
                         return true
                     }
 
+                    // 若是蓝鲸开发者中心的工具开发者则校验通过
+                    if (bkAuthExPermissionApi.isToolDeveloper(user, taskId)) {
+                        logger.info("current user is tool developer: $user taskId: $taskId")
+                        return true
+                    }
+
                     val processors = SpringContextUtil.getBeansOfType(CustomizeWebSocketCheckProcessor::class.java)
                     if (processors.isNotEmpty()) {
                         processors.values.forEach { processor ->
@@ -188,7 +194,7 @@ open class WebSocketConfig @Autowired constructor(
 
     private fun isAutoProject(projectId: String): Boolean {
         return projectId.startsWith(ComConstants.GONGFENG_PROJECT_ID_PREFIX) ||
-                projectId.startsWith(ComConstants.GONGFENG_PRIVATYE_PROJECT_PREFIX) ||
+                projectId.startsWith(ComConstants.GONGFENG_PRIVATE_PROJECT_PREFIX) ||
                 projectId == "CUSTOMPROJ_TEG_CUSTOMIZED"
     }
 }

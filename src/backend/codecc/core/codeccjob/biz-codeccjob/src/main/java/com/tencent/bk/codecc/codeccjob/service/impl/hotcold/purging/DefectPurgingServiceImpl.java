@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.codeccjob.service.impl.hotcold.purging;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson2.JSON;
 import com.google.common.collect.Maps;
 import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.CCNDefectRepository;
 import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.CLOCDefectRepository;
@@ -70,7 +70,8 @@ public class DefectPurgingServiceImpl extends AbstractDefectPurgingTemplate {
 
         if (list != null) {
             try {
-                return JSON.toJSONString(list, false);
+                // Fastjson2: 直接使用 toJSONString(obj)，不再支持 boolean 参数
+                return JSON.toJSONString(list);
             } catch (Throwable t) {
                 log.error("getRemark fail, task id: {}", taskId, t);
                 return "";

@@ -28,8 +28,7 @@ package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.devops.common.api.annotation.I18NFieldMarker;
 import com.tencent.devops.common.api.annotation.I18NModuleCode;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -42,45 +41,45 @@ import lombok.NoArgsConstructor;
  * @date 2019/2/13
  */
 @Data
-@ApiModel("元数据信息")
+@Schema(description = "元数据信息")
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class MetadataVO {
     private String entityId;
 
-    @ApiModelProperty("键值")
+    @Schema(description = "键值")
     private String key;
 
-    @ApiModelProperty("数据名")
+    @Schema(description = "数据名")
     @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.BASE_DATA_PARAM_NAME)
     private String name;
 
-    @ApiModelProperty("数据全名")
+    @Schema(description = "数据全名")
     @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.BASE_DATA_PARAM_EXTEND1)
     private String fullName;
 
     /**
      * 状态：测试（T）、发布（P）， 注：测试状态时只有管理员可以在页面上看到
      */
-    @ApiModelProperty(value = "状态：测试（T）、发布（P）", allowableValues = "{T,P}")
+    @Schema(description = "状态：测试（T）、发布（P）", allowableValues = "{T,P}")
     private String status;
 
-    @ApiModelProperty(value = "创建人")
+    @Schema(description = "创建人")
     private String creator;
 
-    @ApiModelProperty(value = "创建时间")
+    @Schema(description = "创建时间")
     private long createTime;
 
     /**
      * 别名，用于跟第三方系统对接的时候兼容
      */
-    @ApiModelProperty(value = "别名")
+    @Schema(description = "别名")
     private String aliasNames;
 
-    @ApiModelProperty("LANG类型专用，lang_full_key")
+    @Schema(description = "LANG类型专用，lang_full_key")
     private String langFullKey;
 
-    @ApiModelProperty("LANG类型专用，lang_type")
+    @Schema(description = "LANG类型专用，lang_type")
     private String langType;
 }

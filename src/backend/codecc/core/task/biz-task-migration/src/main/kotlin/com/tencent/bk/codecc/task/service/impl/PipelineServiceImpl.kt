@@ -28,6 +28,8 @@ package com.tencent.bk.codecc.task.service.impl
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
 import com.tencent.bk.codecc.defect.api.ServiceReportTaskLogRestResource
 import com.tencent.bk.codecc.defect.vo.UploadTaskLogStepVO
 import com.tencent.bk.codecc.task.constant.TaskConstants
@@ -61,6 +63,7 @@ import com.tencent.devops.common.pipeline.enums.ChannelCode
 import com.tencent.devops.common.pipeline.pojo.element.Element
 import com.tencent.devops.common.pipeline.pojo.element.trigger.TimerTriggerElement
 import com.tencent.devops.common.service.ToolMetaCacheService
+import com.tencent.devops.common.service.utils.SpringContextUtil
 import com.tencent.devops.process.api.service.ServiceBuildResource
 import com.tencent.devops.process.api.service.ServicePipelineResource
 import com.tencent.devops.repository.api.ServiceRepositoryResource
@@ -72,6 +75,7 @@ import com.tencent.devops.repository.pojo.GithubRepository
 import com.tencent.devops.store.api.atom.ServiceMarketAtomResource
 import com.tencent.devops.store.api.container.ServiceContainerAppResource
 import com.tencent.devops.store.pojo.atom.InstallAtomReq
+import feign.RequestInterceptor
 import lombok.extern.slf4j.Slf4j
 import net.sf.json.JSONArray
 import org.slf4j.LoggerFactory
@@ -81,6 +85,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.util.*
+import java.util.concurrent.TimeUnit
 import kotlin.collections.set
 
 /**
@@ -110,6 +115,28 @@ open class PipelineServiceImpl @Autowired constructor(
     @Value("\${devops.dispatch.imageVersion:3.*}")
     private val imageVersion: String = ""
 
+    /**
+     * 用于平台自建任务插件版本缓存
+     */
+    private val platformPluginVersionCache = CacheBuilder.newBuilder()
+        .maximumSize(10000)
+        .expireAfterWrite(5, TimeUnit.MINUTES)
+        .build(
+            object : CacheLoader<String, Optional<String>>() {
+                override fun load(versionType: String): Optional<String> {
+                    return try {
+                        logger.info("begin to get platform plugin version: $versionType")
+                        Optional.ofNullable(getPlatformVersion(versionType))
+                    } catch (t: Throwable) {
+                        logger.error(
+                            "get platform plugin version fail! version type: $versionType, error: $t"
+                        )
+                        Optional.empty() // 返回一个空的Optional
+                    }
+                }
+            }
+        )
+
     override fun updateCodeLibrary(userName: String, registerVO: BatchRegisterVO, taskEntity: TaskInfoEntity): Boolean {
         if (taskEntity.createFrom == ComConstants.BsTaskCreateFrom.BS_PIPELINE.value() ||
             taskEntity.createFrom == ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value()) {
@@ -134,7 +161,7 @@ open class PipelineServiceImpl @Autowired constructor(
                                 PipelineUtils.Companion.CodeElementData(
                                     scmType = registerVO.scmType,
                                     repoHashId = registerVO.repoHashId,
-                                    branch= registerVO.branch,
+                                    branch = registerVO.branch,
                                     relPath = ""
                                 )
                             )
@@ -196,7 +223,7 @@ open class PipelineServiceImpl @Autowired constructor(
         // 更新流水线model
         with(taskEntity) {
             val channelCode = pipelineUtils.getDevopsChannelCode(createFrom, taskEntity.nameEn)
-            val edit = client.getDevopsService(ServicePipelineResource::class.java).edit(userName, projectId, pipelineId, newModel, channelCode)
+            val edit = client.getDevopsService(ServicePipelineResource::class.java).editPipeline(userName, projectId, pipelineId, newModel, channelCode)
             if (Objects.nonNull(edit) && edit.data != true) {
                 throw CodeCCException(CommonMessageCode.BLUE_SHIELD_INTERNAL_ERROR)
             }
@@ -240,12 +267,13 @@ open class PipelineServiceImpl @Autowired constructor(
             registerVO = registerVO,
             taskInfoEntity = taskInfoEntity,
             relPath = relPath,
+            specifiedVersion = platformPluginVersionCache.get(ComConstants.KEY_PLUGIN_VERSION_CODECC).orElse(null),
             imageName = imageName,
             dispatchType = pipelineUtils.getDispatchType(finalBuildType, imageName, imageVersion)
         )
-        if("UPDATE" == pipelineAction) {
+        if ("UPDATE" == pipelineAction) {
             val result = client.getDevopsService(ServicePipelineResource::class.java)
-                .edit(userName, taskInfoEntity.projectId, taskInfoEntity.pipelineId, modelParam, ChannelCode.CODECC_EE)
+                .editPipeline(userName, taskInfoEntity.projectId, taskInfoEntity.pipelineId, modelParam, ChannelCode.CODECC_EE)
             if (result.isNotOk() || null == result.data) {
                 logger.error("create pipeline fail! err msg: {}", result.message)
                 throw CodeCCException(CommonMessageCode.BLUE_SHIELD_INTERNAL_ERROR)
@@ -299,6 +327,14 @@ open class PipelineServiceImpl @Autowired constructor(
         } else if (ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value() == createFrom) {
             channelCode = ChannelCode.GONGFENGSCAN
         }
+
+        val interceptor = SpringContextUtil.getBean(
+            RequestInterceptor::class.java,
+            "devopsRequestInterceptor"
+        )
+        logger.info("Interceptor: $interceptor")
+
+        logger.info("manualStartup: $userName | $projectId | $pipelineId | $valueMap | $channelCode")
         val buildIdResult = client.getDevopsService(ServiceBuildResource::class.java).manualStartup(
             userName, projectId, pipelineId, valueMap, channelCode
         )
@@ -353,7 +389,7 @@ open class PipelineServiceImpl @Autowired constructor(
             logger.error("get repo list fail!")
             throw CodeCCException(CommonMessageCode.BLUE_SHIELD_INTERNAL_ERROR)
         }
-        return repoResult.data!!.map { (repositoryHashId, aliasName, url, type, _, _, _, _, authType) ->
+        return repoResult.data!!.map { (repositoryHashId, aliasName, url, type, _, _, _, _, _, _, _, _, authType) ->
             val repoInfoVO = RepoInfoVO()
             repoInfoVO.repoHashId = repositoryHashId
             repoInfoVO.url = url
@@ -514,11 +550,12 @@ open class PipelineServiceImpl @Autowired constructor(
                                 if (!executeTime.isBlank() && !executeDate.isNullOrEmpty()) {
                                     val cronTabStr = pipelineUtils.getCrontabTimingStr(executeTime, executeDate)
                                     //无论原来是否有定时任务原子，都新建更新
-                                    val timerTriggerElement =
-                                        TimerTriggerElement("定时触发", null, null,
-                                            cronTabStr,
-                                            null, listOf(cronTabStr), null
-                                        )
+                                    val timerTriggerElement = TimerTriggerElement(
+                                        name = "定时触发",
+                                        id = null,
+                                        status = null,
+                                        newExpression = listOf(cronTabStr)
+                                    )
                                     newElements.add(timerTriggerElement)
                                 }
                                 TriggerContainer(
@@ -558,7 +595,7 @@ open class PipelineServiceImpl @Autowired constructor(
         }
 
         val modifyResult = client.getDevopsService(ServicePipelineResource::class.java)
-            .edit(userName, projectId, pipelineId, newModel, channelCode)
+            .editPipeline(userName, projectId, pipelineId, newModel, channelCode)
         if (modifyResult.isNotOk() || modifyResult.data != true) {
             logger.error("mongotemplate bs pipeline info fail! bs project id: {}", projectId)
             throw CodeCCException(CommonMessageCode.BLUE_SHIELD_INTERNAL_ERROR)
@@ -642,7 +679,7 @@ open class PipelineServiceImpl @Autowired constructor(
             )
         }
         val modifyResult = client.getDevopsService(ServicePipelineResource::class.java)
-            .edit(userName, projectId, pipelineId, newModel, channelCode)
+            .editPipeline(userName, projectId, pipelineId, newModel, channelCode)
         if (modifyResult.isNotOk()) {
             logger.error("mongotemplate bs pipeline info fail! bs project id: {}", projectId)
             throw CodeCCException(CommonMessageCode.BLUE_SHIELD_INTERNAL_ERROR)
@@ -830,5 +867,14 @@ open class PipelineServiceImpl @Autowired constructor(
 
     companion object {
         private val logger = LoggerFactory.getLogger(PipelineServiceImpl::class.java)
+    }
+
+    /**
+     * 获取平台自建任务插件版本号
+     */
+    private fun getPlatformVersion(versionType: String): String? {
+        val baseDataList =
+            baseDataRepository.findAllByParamTypeAndParamCode(ComConstants.KEY_PLATFORM_VERSION, versionType)
+        return if (baseDataList.isNullOrEmpty()) null else baseDataList[0].paramValue
     }
 }

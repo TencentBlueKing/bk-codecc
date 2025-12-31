@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -39,23 +38,23 @@ import java.util.List;
  * @date 2020/9/15
  */
 @Data
-@ApiModel("更新告警的请求对象")
+@Schema(description = "更新告警的请求对象")
 public class UpdateDefectVO {
-    @ApiModelProperty(value = "流名称", required = true)
+    @Schema(description = "流名称", required = true)
     private String streamName;
 
-    @ApiModelProperty("任务id")
+    @Schema(description = "任务id")
     private Long taskId;
 
-    @ApiModelProperty(value = "工具名称", required = true)
+    @Schema(description = "工具名称", required = true)
     private String toolName;
 
-    @ApiModelProperty(value = "构建Id", required = true)
+    @Schema(description = "构建Id", required = true)
     private String buildId;
 
-    @ApiModelProperty(value = "告警列表", required = true)
+    @Schema(description = "告警列表", required = true)
     private List<DefectDetailVO> defectList;
 
-    @ApiModelProperty("数据迁移是否成功")
+    @Schema(description = "数据迁移是否成功")
     private Boolean migrationSuccessful;
 }

@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.Collection;
@@ -26,27 +25,27 @@ import java.util.Set;
  * @date 2021/5/7
  */
 @Data
-@ApiModel("工具构建信息")
+@Schema(description = "工具构建信息")
 public class ToolBuildInfoReqVO {
 
-    @ApiModelProperty(value = "任务ID")
+    @Schema(description = "任务ID")
     private Long taskId;
 
-    @ApiModelProperty("任务ID集合")
+    @Schema(description = "任务ID集合")
     private Collection<Long> taskIds;
 
-    @ApiModelProperty(value = "工具名称")
+    @Schema(description = "工具名称")
     private String toolName;
 
-    @ApiModelProperty("多个工具名称")
+    @Schema(description = "多个工具名称")
     private List<String> toolNames;
 
-    @ApiModelProperty(value = "强制全量扫描标志 Y：强制全量扫描 N：按任务配置扫描")
+    @Schema(description = "强制全量扫描标志 Y：强制全量扫描 N：按任务配置扫描")
     private String forceFullScan;
 
-    @ApiModelProperty(value = "告警快照基准构建ID")
+    @Schema(description = "告警快照基准构建ID")
     private String defectBaseBuildId;
 
-    @ApiModelProperty("创建来源")
+    @Schema(description = "创建来源")
     private Set<String> createFrom;
 }

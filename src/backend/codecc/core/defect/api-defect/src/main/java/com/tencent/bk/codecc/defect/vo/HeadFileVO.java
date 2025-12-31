@@ -12,8 +12,7 @@
  
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.Set;
@@ -25,11 +24,11 @@ import java.util.Set;
  * @version V1.0
  */
 @Data
-@ApiModel("头文件路径信息视图")
+@Schema(description = "头文件路径信息视图")
 public class HeadFileVO {
-    @ApiModelProperty("头文件路径信息视图")
+    @Schema(description = "头文件路径信息视图")
     private Long taskId;
 
-    @ApiModelProperty("头文件路径清单")
+    @Schema(description = "头文件路径清单")
     private Set<String> headFileSet;
 }

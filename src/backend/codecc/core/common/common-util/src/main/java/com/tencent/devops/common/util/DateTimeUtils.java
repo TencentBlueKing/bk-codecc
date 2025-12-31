@@ -1,6 +1,7 @@
 package com.tencent.devops.common.util;
 
 import com.tencent.devops.common.api.exception.CodeCCException;
+import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -15,8 +16,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -451,6 +454,31 @@ public class DateTimeUtils {
     }
 
     /**
+     * 获取两个时间戳日期间的天数, 不足一天则为1
+     *
+     * @param startTimeMillis
+     * @param endTimeMillis
+     * @return
+     */
+    public static int getDaysDiff(Long startTimeMillis, Long endTimeMillis) {
+        if (startTimeMillis == null || endTimeMillis == null) {
+            return 0;
+        }
+
+        // 转换为LocalDate进行比较，忽略时间部分
+        LocalDate startDate = Instant.ofEpochMilli(startTimeMillis)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
+
+        LocalDate endDate = Instant.ofEpochMilli(endTimeMillis)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
+
+        // 计算自然日差异，加1表示包含起止日
+        return (int) ChronoUnit.DAYS.between(startDate, endDate) + ComConstants.DAY_ONE;
+    }
+
+    /**
      * 将LocalDate转为时间戳
      */
     public static long localDateTransformTimestamp(LocalDate localDate) {
@@ -529,17 +557,32 @@ public class DateTimeUtils {
     /**
      * 获取当前日期前X天的日期
      *
-     * @return
+     * @param includeToday 是否包含当天
+     * <p>示例：
+     * {@code day=1, includeToday=false → 返回昨天}
+     * {@code day=1, includeToday=true → 返回今天}
+     * {@code day=2, includeToday=false → 返回前天和昨天}
+     * {@code day=2, includeToday=true → 返回昨天和今天}</p>
      */
     @NotNull
-    public static List<String> getBeforeDaily(Integer day) {
+    public static List<String> getBeforeDaily(Integer day, boolean includeToday) {
+        if (day == null || day <= 0) {
+            logger.warn("param day is invalid: {}", day);
+            return Collections.emptyList();
+        }
         Calendar calendar = Calendar.getInstance();
-        //获得当前日期前 day 天的日期
-        calendar.add(Calendar.DATE, -day);
-        List<String> dates = new ArrayList<String>();
+        // 如果 includeToday=false，则从昨天开始计算
+        if (!includeToday) {
+            // 先回到昨天
+            calendar.add(Calendar.DATE, -1);
+        }
+        // 然后向前推 (day - 1) 天
+        calendar.add(Calendar.DATE, -(day - 1));
+
+        List<String> dates = new ArrayList<>();
         for (int i = 0; i < day; i++) {
-            calendar.add(Calendar.DATE, 1);
             dates.add(new SimpleDateFormat(yyyyMMddFormat).format(calendar.getTime()));
+            calendar.add(Calendar.DATE, 1);
         }
         return dates;
     }
@@ -625,7 +668,7 @@ public class DateTimeUtils {
     public static List<String> getDatesByStartTimeAndEndTime(String startTime, String endTime, int day) {
         List<String> dates;
         if (StringUtils.isEmpty(startTime) || StringUtils.isEmpty(endTime)) {
-            dates = DateTimeUtils.getBeforeDaily(day);
+            dates = DateTimeUtils.getBeforeDaily(day, true);
         } else {
             dates = DateTimeUtils.getStartTimeBetweenEndTime(startTime, endTime, DateTimeUtils.yyyyMMddFormat);
         }

@@ -2,32 +2,35 @@ package com.tencent.bk.codecc.task.api;
 
 import com.tencent.bk.codecc.task.vo.itsm.ItsmSystemInfoVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * 获取ITSM系统信息
  */
-@Api(tags = {"SERVICE_ITSM_INFO"}, description = "获取ITSM系统信息")
+@Tag(name = "SERVICE_ITSM_INFO", description = "获取ITSM系统信息")
 @Path("/service/itsm")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface ServiceItsmSystemInfoResource {
 
-    @ApiOperation("查询构建ID关系")
+    @Operation(summary = "查询构建ID关系")
     @Path("/system/{system}")
     @GET
     Result<ItsmSystemInfoVO> getSystemInfo(
-            @ApiParam(value = "系统")
+            @Parameter(description = "系统")
             @PathParam("system")
-            String system
+            String system,
+            @Parameter(description = "版本")
+            @QueryParam("version")
+            Integer version
     );
 }

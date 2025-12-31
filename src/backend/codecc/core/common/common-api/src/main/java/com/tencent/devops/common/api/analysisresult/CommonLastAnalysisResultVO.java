@@ -27,8 +27,7 @@
 package com.tencent.devops.common.api.analysisresult;
 
 import com.tencent.devops.common.api.analysisresult.BaseLastAnalysisResultVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -42,72 +41,72 @@ import java.util.Set;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("lint类工具最近一次分析结果")
+@Schema(description = "lint类工具最近一次分析结果")
 public class CommonLastAnalysisResultVO extends BaseLastAnalysisResultVO
 {
-    @ApiModelProperty("新增数")
+    @Schema(description = "新增数")
     private Integer newCount;
 
-    @ApiModelProperty("遗留总数")
+    @Schema(description = "遗留总数")
     private Integer existCount;
 
-    @ApiModelProperty("关闭数")
+    @Schema(description = "关闭数")
     private Integer closeCount;
 
-    @ApiModelProperty("修复数")
+    @Schema(description = "修复数")
     private Integer fixedCount;
 
-    @ApiModelProperty("屏蔽数")
+    @Schema(description = "屏蔽数")
     private Integer excludeCount;
 
-    @ApiModelProperty("遗留提示告警总数")
+    @Schema(description = "遗留提示告警总数")
     private Integer existPromptCount;
 
-    @ApiModelProperty("遗留一般告警总数")
+    @Schema(description = "遗留一般告警总数")
     private Integer existNormalCount;
 
-    @ApiModelProperty("遗留严重告警总数")
+    @Schema(description = "遗留严重告警总数")
     private Integer existSeriousCount;
 
-    @ApiModelProperty("新增提示告警总数")
+    @Schema(description = "新增提示告警总数")
     private Integer newPromptCount;
 
-    @ApiModelProperty("新增一般告警总数")
+    @Schema(description = "新增一般告警总数")
     private Integer newNormalCount;
 
-    @ApiModelProperty("新增严重告警总数")
+    @Schema(description = "新增严重告警总数")
     private Integer newSeriousCount;
 
-    @ApiModelProperty("新增告警处理人")
+    @Schema(description = "新增告警处理人")
     private Set<String> newAuthors;
 
-    @ApiModelProperty("遗留告警处理人")
+    @Schema(description = "遗留告警处理人")
     private Set<String> existAuthors;
 
-    @ApiModelProperty("提示告警处理人")
+    @Schema(description = "提示告警处理人")
     private Set<String> promptAuthors;
 
-    @ApiModelProperty("一般告警处理人")
+    @Schema(description = "一般告警处理人")
     private Set<String> normalAuthors;
 
-    @ApiModelProperty("严重告警处理人")
+    @Schema(description = "严重告警处理人")
     private Set<String> seriousAuthors;
 
     /**
      * 存量提示级别处理人
      */
-    @ApiModelProperty("存量提示级别处理人")
+    @Schema(description = "存量提示级别处理人")
     private Set<String> existPromptAuthors;
 
     /**
      * 存量一般级别处理人
      */
-    @ApiModelProperty("存量一般级别处理人")
+    @Schema(description = "存量一般级别处理人")
     private Set<String> existNormalAuthors;
 
     /**
      * 存量严重级别处理人
      */
-    @ApiModelProperty("存量严重级别处理人")
+    @Schema(description = "存量严重级别处理人")
     private Set<String> existSeriousAuthors;
 }

@@ -2,7 +2,7 @@
 apiVersion: {{ include "common.capabilities.ingress.apiVersion" . }}
 kind: Ingress
 metadata:
-  name: {{ include "common.names.fullname" . }}-ingress
+  name: {{ include "codecc.names.fullname" . }}-ingress
   labels: {{- include "codecc.labels.standard" . | nindent 4 }}
     {{- if .Values.commonLabels }}
       {{- include "common.tplvalues.render" (dict "value" .Values.commonLabels "context" $) | nindent 4 }}
@@ -23,7 +23,7 @@ spec:
             {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
             pathType: Prefix
             {{- end }}
-            backend: {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-gateway"  (include "common.names.fullname" .)) "servicePort" "http" "context" $) | nindent 14 }}
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-gateway"  (include "codecc.names.fullname" .)) "servicePort" "http" "context" $) | nindent 14 }}
     - host: docker.{{ .Values.config.bkCodeccPublicUrl }}
       http:
         paths:
@@ -31,7 +31,7 @@ spec:
             {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
             pathType: Prefix
             {{- end }}
-            backend: {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-gateway"  (include "common.names.fullname" .)) "servicePort" "http" "context" $) | nindent 14 }}
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-gateway"  (include "codecc.names.fullname" .)) "servicePort" "http" "context" $) | nindent 14 }}
     - host: helm.{{ .Values.config.bkCodeccPublicUrl }}
       http:
         paths:
@@ -39,5 +39,5 @@ spec:
             {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
             pathType: Prefix
             {{- end }}
-            backend: {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-gateway"  (include "common.names.fullname" .)) "servicePort" "http" "context" $) | nindent 14 }}
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-gateway"  (include "codecc.names.fullname" .)) "servicePort" "http" "context" $) | nindent 14 }}
 {{- end }}

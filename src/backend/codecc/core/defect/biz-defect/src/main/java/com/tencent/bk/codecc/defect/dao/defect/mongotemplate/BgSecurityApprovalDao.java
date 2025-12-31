@@ -12,6 +12,8 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import static com.tencent.devops.common.constant.ComConstants.DEFAULT_BG_ID;
+
 @Slf4j
 @Repository
 public class BgSecurityApprovalDao {
@@ -31,19 +33,19 @@ public class BgSecurityApprovalDao {
         }
         // 添加组织信息的筛选条件
         if (orgInfo != null) {
-            if (orgInfo.getBgId() != null) {
+            if (orgInfo.getBgId() != null && orgInfo.getBgId() > 0) {
                 criteria.and("org.bg_id").is(orgInfo.getBgId());
             }
-            if (orgInfo.getBusinessLineId() != null) {
+            if (orgInfo.getBusinessLineId() != null && orgInfo.getBusinessLineId() > 0) {
                 criteria.and("org.business_line_id").is(orgInfo.getBusinessLineId());
             }
-            if (orgInfo.getDeptId() != null) {
+            if (orgInfo.getDeptId() != null && orgInfo.getDeptId() > 0) {
                 criteria.and("org.dept_id").is(orgInfo.getDeptId());
             }
-            if (orgInfo.getCenterId() != null) {
+            if (orgInfo.getCenterId() != null && orgInfo.getCenterId() > 0) {
                 criteria.and("org.center_id").is(orgInfo.getCenterId());
             }
-            if (orgInfo.getGroupId() != null) {
+            if (orgInfo.getGroupId() != null && orgInfo.getGroupId() > 0) {
                 criteria.and("org.group_id").is(orgInfo.getGroupId());
             }
         }

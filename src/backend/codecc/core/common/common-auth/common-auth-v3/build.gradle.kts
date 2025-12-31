@@ -3,7 +3,7 @@ dependencies {
     api(group = "com.tencent.bk.devops.ci.process", name = "api-process"){
         isChanging=true
     }
-    api(group = "com.tencent.bk.devops.ci.common", name = "common-auth-v3"){
+    api(group = "com.tencent.bk.devops.ci.common", name = "common-auth-provider"){
         isChanging=true
     }
 }

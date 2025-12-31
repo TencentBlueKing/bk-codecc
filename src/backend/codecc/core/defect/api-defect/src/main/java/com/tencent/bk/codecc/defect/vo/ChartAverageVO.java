@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.common.CommonTrendRspVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -39,13 +38,13 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("平均圈复杂度的图表节点视图")
+@Schema(description = "平均圈复杂度的图表节点视图")
 public class ChartAverageVO extends CommonTrendRspVO
 {
 
-    @ApiModelProperty("项目的平均圈复杂度")
+    @Schema(description = "项目的平均圈复杂度")
     private Float averageCCN;
 
-    @ApiModelProperty("超标圈复杂度总和")
+    @Schema(description = "超标圈复杂度总和")
     private Integer ccnBeyondThresholdSum;
 }

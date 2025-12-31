@@ -33,6 +33,8 @@ import com.tencent.devops.common.service.utils.PageableUtils;
 import com.tencent.devops.common.util.DateTimeUtils;
 import com.tencent.devops.common.util.ThreadPoolUtil;
 import com.tencent.devops.common.util.ThreadUtils;
+
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -51,6 +53,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.tencent.devops.common.constant.ComConstants.DAY_THIRTY;
@@ -222,42 +225,50 @@ public class CodeRepoServiceImpl implements CodeRepoService {
      * @param reqVO
      */
     private void initCodeRepoStatTrendCore(QueryTaskListReqVO reqVO) {
-        List<String> createFromList = new ArrayList<>();
+        List<String> createFromList;
         if (CollectionUtils.isNotEmpty(reqVO.getCreateFrom())) {
             createFromList = reqVO.getCreateFrom();
         } else {
-            createFromList.add(ComConstants.DefectStatType.USER.value());
-            createFromList.add(ComConstants.DefectStatType.CLOSED_SOURCE_SCAN.value());
-            createFromList.add(ComConstants.DefectStatType.OPEN_SOURCE_SCAN.value());
+            createFromList = Arrays.stream(ComConstants.DefectStatType.values()).map(ComConstants.DefectStatType::value)
+                    .collect(Collectors.toList());
         }
 
-        // 获取初始化天数 默认查询30天
+        // 获取初始化天数 默认查询30天,如果是每天定时任务，只统计前一天
         List<String> dates;
         if (reqVO.getInitDay() != null && reqVO.getInitDay() != 0) {
-            dates = DateTimeUtils.getBeforeDaily(reqVO.getInitDay());
+            dates = DateTimeUtils.getBeforeDaily(reqVO.getInitDay(), false);
         } else {
-            dates = DateTimeUtils.getBeforeDaily(DAY_THIRTY);
+            dates = DateTimeUtils.getBeforeDaily(DAY_THIRTY, false);
         }
-        // 因为定时任务 避免数据重复 不需要初始化当天时间
-        dates.remove(dates.size() - 1);
-        log.info("initCodeRepoStatTrend, dates:[{}-{}]", dates.get(0), dates.get(dates.size() - 1));
+        log.info("initCodeRepoStatTrend, dates:[{}-{}]", dates.get(0),
+                dates.size() > 1 ? dates.get(dates.size() - 1) : dates.get(0));
 
         for (String createFrom : createFromList) {
             boolean isFirstDay = true;
             long yesterdayUrlCount = 0;
             long yesterdayBranchCount = 0;
             List<CodeRepoStatDailyEntity> codeRepoStatDailyEntityList = new ArrayList<>();
+
+            // 查询已存在的代码仓库统计数据,方便修复数据
+            Map<String, CodeRepoStatDailyEntity> exsitCodeRepoMap =
+                    codeRepoStatDailyRepository.findByDataFromAndDateIn(createFrom, dates).stream().collect(
+                            Collectors.toMap(CodeRepoStatDailyEntity::getDate, Function.identity(), (k, v) -> v));
+
             for (String date : dates) {
                 long endTime = DateTimeUtils.getTimeStampEnd(date);
                 // 获取代码仓库/分支数量
                 long urlCount = codeRepoStatisticDao.getUrlCountByEndTimeAndCreateFrom(endTime, createFrom);
                 long branchCount = codeRepoStatisticDao.getBranchCount(endTime, createFrom);
 
-                CodeRepoStatDailyEntity codeRepoStatDailyEntity = new CodeRepoStatDailyEntity();
-                // 统计日期
-                codeRepoStatDailyEntity.setDate(date);
-                // 来源
-                codeRepoStatDailyEntity.setDataFrom(createFrom);
+                CodeRepoStatDailyEntity codeRepoStatDailyEntity = exsitCodeRepoMap.get(date);
+                if (codeRepoStatDailyEntity == null) {
+                    codeRepoStatDailyEntity = new CodeRepoStatDailyEntity();
+                    // 统计日期
+                    codeRepoStatDailyEntity.setDate(date);
+                    // 来源
+                    codeRepoStatDailyEntity.setDataFrom(createFrom);
+                }
+
                 // 累计代码仓库数
                 codeRepoStatDailyEntity.setCodeRepoCount(urlCount);
                 // 累计分支数
@@ -293,7 +304,9 @@ public class CodeRepoServiceImpl implements CodeRepoService {
             }
             log.info("initCodeRepoStatistic, codeRepoStatDailyEntityList.size:[{}]",
                     codeRepoStatDailyEntityList.size());
-            codeRepoStatDailyRepository.saveAll(codeRepoStatDailyEntityList);
+            if (!codeRepoStatDailyEntityList.isEmpty()) {
+                codeRepoStatDailyRepository.saveAll(codeRepoStatDailyEntityList);
+            }
         }
     }
 

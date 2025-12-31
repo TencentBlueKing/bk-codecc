@@ -15,4 +15,6 @@ dependencies {
     api(group = "com.tencent.bk.devops.ci.project", name = "api-project"){
         isChanging=true
     }
+    // Swagger v3 依赖 (版本由根 build.gradle.kts 的 dependencyManagement 管理)
+    api("io.swagger.core.v3:swagger-jaxrs2-jakarta")
 }

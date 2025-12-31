@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
@@ -74,6 +74,38 @@ public class MetricsDao {
         Criteria criteria = new Criteria();
         criteria.orOperator(orCriList.toArray(new Criteria[]{}));
         return defectMongoTemplate.find(Query.query(criteria), MetricsEntity.class);
+    }
+
+    /**
+     * 查询指定任务 构建id 的分数
+     */
+    public List<MetricsEntity> findScoreByTaskIdAndBuildId(Map<Long, String> taskLatestBuildIdMap) {
+        List<Criteria> orCriteriaList = new ArrayList<>();
+        // 为空则不查询
+        if (taskLatestBuildIdMap == null || taskLatestBuildIdMap.isEmpty()) {
+            return Collections.emptyList();
+        }
+        // or语句拼接条件
+        for (Map.Entry<Long, String> entry : taskLatestBuildIdMap.entrySet()) {
+            orCriteriaList.add(Criteria.where("task_id").is(entry.getKey()).and("build_id").is(entry.getValue()));
+        }
+        Criteria criteria = new Criteria();
+        if (CollectionUtils.isNotEmpty(orCriteriaList)) {
+            criteria.orOperator(orCriteriaList.toArray(new Criteria[0]));
+        }
+
+        MatchOperation match = Aggregation.match(criteria);
+
+        // 解决同一次构建可能存在2条记录
+        GroupOperation group = Aggregation.group("task_id")
+                .first("task_id").as("task_id")
+                .first("rd_indicators_score").as("rd_indicators_score");
+
+        Aggregation agg = Aggregation.newAggregation(match, group);
+
+        AggregationResults<MetricsEntity> results =
+                defectMongoTemplate.aggregate(agg, "t_metrics", MetricsEntity.class);
+        return results.getMappedResults();
     }
 
     /**

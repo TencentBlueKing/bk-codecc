@@ -13,8 +13,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.devops.common.api.checkerset.CheckerPropVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -26,13 +25,13 @@ import java.util.List;
  * @version V1.0
  */
 @Data
-@ApiModel("全量绑定更新规则请求")
+@Schema(description = "全量绑定更新规则请求")
 public class UpdateAllCheckerReq 
 {
-    @ApiModelProperty("规则信息")
+    @Schema(description = "规则信息")
     List<CheckerPropVO> checkerProps;
 
-    @ApiModelProperty("查询条件")
+    @Schema(description = "查询条件")
     private CheckerListQueryReq checkerListQueryReq;
 
 }

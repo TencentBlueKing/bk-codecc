@@ -70,7 +70,7 @@ import com.tencent.devops.common.constant.audit.ActionIds;
 import com.tencent.devops.common.constant.audit.ResourceTypes;
 import com.tencent.devops.common.service.prometheus.BkTimed;
 import com.tencent.devops.common.util.BeanUtils;
-import com.tencent.devops.common.util.TaskCreateFromUtils;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -363,44 +363,6 @@ public class PipelineTaskRegisterServiceImpl extends AbstractTaskRegisterService
             taskInfoEntity.setPipelineId(taskDetailVO.getPipelineId());
         }
         taskRepository.save(taskInfoEntity);
-    }
-
-    /**
-     * 为工蜂做工具注册
-     *
-     * @param taskDetailVO
-     * @param taskInfoEntity
-     * @param userName
-     */
-    private void upsertToolsForGongfeng(TaskDetailVO taskDetailVO, TaskInfoEntity taskInfoEntity, String userName) {
-        // 初始化工具列表
-        Set<String> reqToolSet = new HashSet<>();
-        String devopsTools = taskDetailVO.getDevopsTools();
-        JSONArray newToolJsonArray = new JSONArray(devopsTools);
-        for (int i = 0; i < newToolJsonArray.length(); i++) {
-            if (StringUtils.isNotEmpty(newToolJsonArray.getString(i))) {
-                reqToolSet.add(newToolJsonArray.getString(i));
-            }
-        }
-        log.info("req tools: {}, {}", reqToolSet.size(), reqToolSet.toString());
-
-        List<ToolConfigInfoVO> toolList = new ArrayList<>();
-        reqToolSet.forEach(toolName -> {
-            ToolConfigInfoVO toolConfigInfoVO = instBatchToolInfoModel(taskDetailVO, toolName);
-            toolList.add(toolConfigInfoVO);
-        });
-        taskDetailVO.setToolConfigInfoList(toolList);
-        List<String> forceFullScanTools = new ArrayList<>();
-
-        // 更新保存工具，包括新添加工具、信息修改工具、停用工具、启用工具
-        upsert(taskDetailVO, taskInfoEntity, userName, forceFullScanTools);
-
-        // 设置强制全量扫描标志
-        if (CollectionUtils.isNotEmpty(forceFullScanTools)) {
-            log.info("set force full scan, taskId:{}, toolNames:{}", taskDetailVO.getTaskId(), forceFullScanTools);
-            client.get(ServiceToolBuildInfoResource.class)
-                    .setForceFullScan(taskDetailVO.getTaskId(), forceFullScanTools);
-        }
     }
 
     /**

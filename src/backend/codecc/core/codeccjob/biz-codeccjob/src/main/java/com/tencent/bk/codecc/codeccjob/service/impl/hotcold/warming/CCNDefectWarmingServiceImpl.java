@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.codeccjob.service.impl.hotcold.warming;
 
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
+import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.TypeReference;
 import com.tencent.bk.codecc.codeccjob.dao.defect.mongorepository.CCNDefectRepository;
 import com.tencent.bk.codecc.codeccjob.service.ColdDataWarmingService;
 import com.tencent.bk.codecc.codeccjob.service.impl.hotcold.pojo.ArchivingFileModel;

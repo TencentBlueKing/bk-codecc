@@ -1,4 +1,11 @@
 {{/*
+Create a default fully qualified app name.
+*/}}
+{{- define "codecc.names.fullname" -}}
+bk-codecc
+{{- end -}}
+
+{{/*
 Return the proper Docker Image Registry Secret Names
 */}}
 {{- define "codecc.imagePullSecrets" -}}
@@ -10,7 +17,7 @@ Create the name of the service account to use
 */}}
 {{- define "codecc.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create -}}
-    {{ default (printf "%s-foo" (include "common.names.fullname" .)) .Values.serviceAccount.name }}
+    {{ default (printf "%s-foo" (include "codecc.names.fullname" .)) .Values.serviceAccount.name }}
 {{- else -}}
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
@@ -157,6 +164,18 @@ Return the mongodb connection uri
 {{- .Values.bkCodeccMongoScheduleUrl -}}
 {{- else -}}
 {{- printf "mongodb://%s:%s@%s/db_schedule?%s" .Values.externalMongodb.username (.Values.externalMongodb.password | urlquery) (include "codecc.mongodb.fullname" .) .Values.externalMongodb.extraUrlParams -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "codecc.codeccjob.mongodbUri" -}}
+{{- if eq .Values.mongodb.enabled true -}}
+{{- printf "mongodb://%s:%s@%s/db_codeccjob?" .Values.mongodb.auth.username .Values.mongodb.auth.password (include "codecc.mongodb.fullname" .) -}}
+{{- else -}}
+{{- if not (empty .Values.bkCodeccMongoCodeccjobUrl) -}}
+{{- .Values.bkCodeccMongoCodeccjobUrl -}}
+{{- else -}}
+{{- printf "mongodb://%s:%s@%s/db_codeccjob?%s" .Values.externalMongodb.username (.Values.externalMongodb.password | urlquery) (include "codecc.mongodb.fullname" .) .Values.externalMongodb.extraUrlParams -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

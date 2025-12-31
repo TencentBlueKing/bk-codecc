@@ -47,13 +47,23 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware
-import javax.ws.rs.ApplicationPath
+import jakarta.ws.rs.ApplicationPath
 
 @ApplicationPath("/api")
 open class JerseyConfig : ResourceConfig(), ApplicationContextAware, InitializingBean {
 
     private lateinit var applicationContext: ApplicationContext
     private val logger = LoggerFactory.getLogger(JerseyConfig::class.java)
+    
+    init {
+        // 禁用 Jersey 自动发现功能，避免加载依赖旧 javax.ws.rs API 的组件
+        // 这不会影响功能，因为我们在 afterPropertiesSet() 中显式注册了所有需要的组件
+        property("jersey.config.server.disableAutoDiscovery", true)
+        
+        // 显式启用必要的功能
+        property("jersey.config.server.wadl.disableWadl", true)  // 禁用 WADL 生成（可选）
+    }
+    
     override fun setApplicationContext(applicationContext: ApplicationContext) {
         this.applicationContext = applicationContext
     }

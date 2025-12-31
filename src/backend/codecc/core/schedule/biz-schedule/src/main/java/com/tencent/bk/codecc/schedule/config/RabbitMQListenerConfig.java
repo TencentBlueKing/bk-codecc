@@ -43,6 +43,7 @@ import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
@@ -84,7 +85,7 @@ public class RabbitMQListenerConfig {
     }
 
     @Bean
-    public Binding scheduleQueueBind(Queue scheduleQueue, DirectExchange scheduleExchange) {
+    public Binding scheduleQueueBind(@Qualifier("scheduleQueue") Queue scheduleQueue, DirectExchange scheduleExchange) {
         return BindingBuilder.bind(scheduleQueue).to(scheduleExchange).with(ROUTE_ANALYZE_DISPATCH);
     }
 
@@ -102,7 +103,7 @@ public class RabbitMQListenerConfig {
     }
 
     @Bean
-    public Binding analyzeScheduleOpensourceQueueBind(Queue analyzeScheduleOpensourceQueue, DirectExchange analyzeScheduleOpensourceExchange) {
+    public Binding analyzeScheduleOpensourceQueueBind(@Qualifier("analyzeScheduleOpensourceQueue") Queue analyzeScheduleOpensourceQueue, DirectExchange analyzeScheduleOpensourceExchange) {
         return BindingBuilder.bind(analyzeScheduleOpensourceQueue).to(analyzeScheduleOpensourceExchange).with(ROUTE_ANALYZE_DISPATCH_OPENSOURCE);
     }
 

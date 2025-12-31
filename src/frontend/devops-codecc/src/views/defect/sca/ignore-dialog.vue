@@ -6,6 +6,7 @@
     v-model="isShow"
     :title="title"
     :position="ignoreDialogPositionConfig"
+    :mask-close="false"
     @before-close="handleBeforeClose"
     @cancel="handleHide"
   >
@@ -33,7 +34,7 @@
         <bk-form-item property="ignoreReason">
           <!-- 忽略类型单选 -->
           <bk-radio-group v-model="form.ignoreReasonType" class="ignore-list">
-            <div v-for="ignore in ignoreList" :key="ignore.ignoreTypeId">
+            <div v-for="ignore in ignoreList.filter(i => i.status !== 2)" :key="ignore.ignoreTypeId">
               <bk-radio class="cc-radio" :value="ignore.ignoreTypeId" @change="() => handleChangeRadio(ignore)">
                 {{ ignore.name }}
                 <!-- 路径屏蔽 -->
@@ -194,6 +195,8 @@ export default {
       this.isShow = false;
       this.form.ignoreReason = '';
       this.form.ignoreReasonType = '';
+      this.$emit('ignoreReasonTypeChange', '');
+      this.$emit('ignoreReasonChange', '');
     },
     handleBeforeClose() {
       this.$emit('beforeClose');

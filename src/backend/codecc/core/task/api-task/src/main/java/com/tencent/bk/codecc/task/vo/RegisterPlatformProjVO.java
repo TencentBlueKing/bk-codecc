@@ -26,11 +26,10 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * 注册platform项目的请求体
@@ -39,16 +38,16 @@ import javax.validation.constraints.NotNull;
  * @date 2019/11/18
  */
 @Data
-@ApiModel("注册platform项目请求体")
+@Schema(description = "注册platform项目请求体")
 public class RegisterPlatformProjVO
 {
     @NotNull(message = "流名称不能为空")
-    @ApiModelProperty(value = "流名称", required = true)
+    @Schema(description = "流名称", required = true)
     private String streamName;
 
-    @ApiModelProperty(value = "接口传入的platform ip")
+    @Schema(description = "接口传入的platform ip")
     private String platformIp;
 
-    @ApiModelProperty(value = "任务创建来源，主要用于区分工蜂项目")
+    @Schema(description = "任务创建来源，主要用于区分工蜂项目")
     private String createFrom;
 }

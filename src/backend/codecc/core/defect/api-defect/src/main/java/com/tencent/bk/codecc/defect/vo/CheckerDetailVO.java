@@ -30,15 +30,14 @@ import com.tencent.bk.codecc.task.vo.CovSubcategoryVO;
 import com.tencent.devops.common.api.CommonVO;
 import com.tencent.devops.common.api.annotation.I18NFieldMarker;
 import com.tencent.devops.common.api.annotation.I18NModuleCode;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.Set;
 
@@ -50,140 +49,140 @@ import java.util.Set;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("规则详情视图实体类")
+@Schema(description = "规则详情视图实体类")
 public class CheckerDetailVO extends CommonVO {
 
-    @ApiModelProperty(value = "工具名", required = true)
+    @Schema(description = "工具名", required = true)
     private String toolName;
 
-    @ApiModelProperty(value = "告警类型key", required = true)
+    @Schema(description = "告警类型key", required = true)
     private String checkerKey;
 
-    @ApiModelProperty(value = "规则名称", required = true)
+    @Schema(description = "规则名称", required = true)
     @Pattern(regexp = "^[a-zA-Z_]{1,20}$", message = "输入的规则名不符合命名规则")
     private String checkerName;
 
-    @ApiModelProperty(value = "规则详细描述", required = true)
+    @Schema(description = "规则详细描述", required = true)
     @Size(min = 0, max = 150)
     @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.CHECKER_DETAIL_CHECKER_DESC)
     private String checkerDesc;
 
-    @ApiModelProperty(value = "规则详细描述-带占位符")
+    @Schema(description = "规则详细描述-带占位符")
     @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.CHECKER_DETAIL_CHECKER_DESC_MODEL)
     private String checkerDescModel;
 
-    @ApiModelProperty(value = "规则严重程度，1=>严重，2=>一般，3=>提示", required = true, allowableValues = "{1,2,3}")
+    @Schema(description = "规则严重程度，1=>严重，2=>一般，3=>提示", required = true, allowableValues = "{1,2,3}")
     @Min(1)
     @Max(3)
     private Integer severity;
 
-    @ApiModelProperty(value = "规则所属语言（针对KLOCKWORK）", required = true)
+    @Schema(description = "规则所属语言（针对KLOCKWORK）", required = true)
     private Integer language;
 
-    @ApiModelProperty(value = "规则状态 2=>打开 1=>关闭;", required = true, allowableValues = "{1,2}")
+    @Schema(description = "规则状态 2=>打开 1=>关闭;", required = true, allowableValues = "{1,2}")
     private Integer status;
 
-    @ApiModelProperty("规则状态是否打开")
+    @Schema(description = "规则状态是否打开")
     private Boolean checkerStatus;
 
-    @ApiModelProperty(value = "规则类型", required = true)
+    @Schema(description = "规则类型", required = true)
     @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.CHECKER_DETAIL_CHECKER_TYPE)
     private String checkerType;
 
-    @ApiModelProperty(value = "规则类型说明", required = true)
+    @Schema(description = "规则类型说明", required = true)
     private String checkerTypeDesc;
 
-    @ApiModelProperty(value = "规则类型排序序列号", required = true)
+    @Schema(description = "规则类型排序序列号", required = true)
     private String checkerTypeSort;
 
-    @ApiModelProperty(value = "所属规则包", required = true)
+    @Schema(description = "所属规则包", required = true)
     private String pkgKind;
 
-    @ApiModelProperty(value = "项目框架（针对Eslint工具,目前有vue,react,standard）", required = true)
+    @Schema(description = "项目框架（针对Eslint工具,目前有vue,react,standard）", required = true)
     private String frameworkType;
 
-    @ApiModelProperty(value = "规则配置", required = true)
+    @Schema(description = "规则配置", required = true)
     private String props;
 
-    @ApiModelProperty(value = "规则参数值", required = true)
+    @Schema(description = "规则参数值", required = true)
     private String paramValue;
 
-    @ApiModelProperty(value = "规则所属标准", required = true)
+    @Schema(description = "规则所属标准", required = true)
     private Integer standard;
 
-    @ApiModelProperty(value = "规则是否支持配置true：支持;空或false：不支持", required = true)
+    @Schema(description = "规则是否支持配置true：支持;空或false：不支持", required = true)
     private Boolean editable;
 
-    @ApiModelProperty(value = "示例代码", required = true)
+    @Schema(description = "示例代码", required = true)
     private String codeExample;
 
-    @ApiModelProperty(value = "是否原生规则true:原生;false:自定义")
+    @Schema(description = "是否原生规则true:原生;false:自定义")
     private Boolean nativeChecker;
 
-    @ApiModelProperty(value = "是否进阶规则1:是;0:否")
+    @Schema(description = "是否进阶规则1:是;0:否")
     private int covProperty;
 
-    @ApiModelProperty(value = "Coverity规则子选项")
+    @Schema(description = "Coverity规则子选项")
     private List<CovSubcategoryVO> covSubcategory;
 
-    @ApiModelProperty(value = "规则集是否选中")
+    @Schema(description = "规则集是否选中")
     private Boolean checkerSetSelected;
 
     /*-------------------根据改动新增规则字段---------------------*/
     /**
      * 规则对应语言，都存文字，mongodb对按位与不支持
      */
-    @ApiModelProperty(value = "规则对应语言，都存文字，mongodb对按位与不支持")
+    @Schema(description = "规则对应语言，都存文字，mongodb对按位与不支持")
     private Set<String> checkerLanguage;
 
     /**
      * 规则类型
      */
-    @ApiModelProperty(value = "规则类型")
+    @Schema(description = "规则类型")
     @Pattern(regexp = "CODE_DEFECT|CODE_FORMAT|SECURITY_RISK|COMPLEXITY|DUPLICATE|SOFTWARE_COMPOSITION")
     private String checkerCategory;
 
     /**
      * 规则类型中文名
      */
-    @ApiModelProperty(value = "规则类型中文名")
+    @Schema(description = "规则类型中文名")
     @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.CHECKER_DETAIL_CHECKER_CATEGORY_NAME)
     private String checkerCategoryName;
 
     /**
      * 规则标签
      */
-    @ApiModelProperty(value = "规则标签")
+    @Schema(description = "规则标签")
     @I18NFieldMarker(keyFieldHolder = "entityId", moduleCode = I18NModuleCode.CHECKER_DETAIL_CHECKER_TAG)
     private List<String> checkerTag;
 
     /**
      * 规则推荐类型
      */
-    @ApiModelProperty(value = "规则推荐类型")
+    @Schema(description = "规则推荐类型")
     private String checkerRecommend;
 
-    @ApiModelProperty(value = "错误代码示例")
+    @Schema(description = "错误代码示例")
     private String errExample;
 
-    @ApiModelProperty(value = "正确代码示例")
+    @Schema(description = "正确代码示例")
     private String rightExample;
 
-    @ApiModelProperty(value = "规则值和工具名集合")
+    @Schema(description = "规则值和工具名集合")
     private String checkerKeyAndToolName;
 
-    @ApiModelProperty(value = "规则参数列表，规则导入时接口传入")
+    @Schema(description = "规则参数列表，规则导入时接口传入")
     private List<CheckerProps> checkerProps;
 
-    @ApiModelProperty(value = "规则的扫描粒度")
+    @Schema(description = "规则的扫描粒度")
     private String checkGranularity;
 
-    @ApiModelProperty("规则版本")
+    @Schema(description = "规则版本")
     private Integer checkerVersion;
 
-    @ApiModelProperty("规则发布者")
+    @Schema(description = "规则发布者")
     private String publisher;
 
-    @ApiModelProperty("规则来源：用户自定义/工具集成")
+    @Schema(description = "规则来源：用户自定义/工具集成")
     private String checkerSource;
 }

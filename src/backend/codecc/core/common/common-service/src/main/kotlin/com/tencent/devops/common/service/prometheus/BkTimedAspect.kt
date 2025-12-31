@@ -43,7 +43,7 @@ import org.springframework.beans.factory.annotation.Value
 import java.util.*
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap
-import javax.ws.rs.Path
+import jakarta.ws.rs.Path
 
 
 /**

@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -24,25 +23,25 @@ import java.util.List;
  * @version V1.0
  * @date 2021/1/8
  */
-@ApiModel("灰度报告视图")
+@Schema(description = "灰度报告视图")
 @Data
 public class GrayToolReportVO {
-    @ApiModelProperty("蓝盾项目id")
+    @Schema(description = "蓝盾项目id")
     private String projectId;
-    @ApiModelProperty("工具名")
+    @Schema(description = "工具名")
     private String toolName;
-    @ApiModelProperty("统一下发生成的唯一id")
+    @Schema(description = "统一下发生成的唯一id")
     private String codeccBuildId;
-    @ApiModelProperty("上一次报告信息")
+    @Schema(description = "上一次报告信息")
     private GrayToolReportSubVO lastReportInfo;
-    @ApiModelProperty("本次报告信息")
+    @Schema(description = "本次报告信息")
     private GrayToolReportSubVO currentReportInfo;
-    @ApiModelProperty("成功率变化比率")
+    @Schema(description = "成功率变化比率")
     private String successRatioChange;
-    @ApiModelProperty("告警变化比率")
+    @Schema(description = "告警变化比率")
     private String defectCountChange;
-    @ApiModelProperty("扫描耗时变化比率")
+    @Schema(description = "扫描耗时变化比率")
     private String elapseTimeChange;
-    @ApiModelProperty("扫描出告警的任务清单")
+    @Schema(description = "扫描出告警的任务清单")
     private List<GrayDefectTaskSubVO> defectTaskList;
 }

@@ -66,7 +66,7 @@ public class OrgInfoUtils {
         ProjectVO projectVO = result.getData();
         */
         AllProperties allProperties = SpringContextUtil.Companion.getBean(AllProperties.class);
-        String reqUrl = "https://" + allProperties.getDevopsDevUrl() + "/ms/project/api/service/projects/" + projectId;
+        String reqUrl = "http://" + allProperties.getDevopsDevUrl() + "/ms/project/api/service/projects/" + projectId;
         try {
             Map<String, String> headers = new HashMap<>();
             headers.put(AUTH_HEADER_DEVOPS_BK_TOKEN, allProperties.getDevopsToken());

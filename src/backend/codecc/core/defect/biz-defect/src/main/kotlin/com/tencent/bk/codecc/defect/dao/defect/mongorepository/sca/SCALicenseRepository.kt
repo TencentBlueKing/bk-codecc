@@ -47,6 +47,12 @@ interface SCALicenseRepository : MongoRepository<SCALicenseEntity, String> {
         names: List<String>
     ): List<SCALicenseEntity>
 
+    fun findByTaskIdAndToolNameInAndNameIn(
+        taskId: Long,
+        toolName: List<String>,
+        names: List<String>
+    ): List<SCALicenseEntity>
+
     /**
      * 根据任务ID集合和实体ID集合批量查询
      * @param taskId 任务ID集合

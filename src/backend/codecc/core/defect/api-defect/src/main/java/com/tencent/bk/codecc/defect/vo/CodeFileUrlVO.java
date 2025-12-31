@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -14,12 +14,12 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class CodeFileUrlVO
 {
     @NotEmpty(message = "流名称不能为空")
-    @ApiModelProperty(value = "流名称", required = true)
+    @Schema(description = "流名称", required = true)
     private String streamName;
 
-    @ApiModelProperty(value = "工具名称", required = true)
+    @Schema(description = "工具名称", required = true)
     private String toolName;
 
-    @ApiModelProperty(value = "所有文件的代码仓库url", required = true)
+    @Schema(description = "所有文件的代码仓库url", required = true)
     private String fileList;
 }

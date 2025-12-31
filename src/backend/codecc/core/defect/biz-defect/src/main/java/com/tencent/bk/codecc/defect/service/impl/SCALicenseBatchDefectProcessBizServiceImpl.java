@@ -8,6 +8,7 @@ import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.IgnoredNegativeDefe
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.SCALicenseDao;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.sca.SCALicenseEntity;
+import com.tencent.bk.codecc.defect.service.IIgnoredNegativeDefectService;
 import com.tencent.bk.codecc.defect.service.ISCABatchDefectProcessBizService;
 import com.tencent.bk.codecc.defect.utils.SCAUtils;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
@@ -38,6 +39,8 @@ public class SCALicenseBatchDefectProcessBizServiceImpl implements ISCABatchDefe
     private SCALicenseDao scaLicenseDao;
     @Autowired
     private IgnoredNegativeDefectDao ignoredNegativeDefectDao;
+    @Autowired
+    private IIgnoredNegativeDefectService iIgnoredNegativeDefectService;
     @Autowired
     private Client client;
 
@@ -119,7 +122,8 @@ public class SCALicenseBatchDefectProcessBizServiceImpl implements ISCABatchDefe
                 throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
             }
 
-            ignoredNegativeDefectDao.batchInsert(defectList, batchDefectProcessReqVO, taskBaseResult.getData());
+            iIgnoredNegativeDefectService.batchInsertIgnoredDefects(defectList,
+                    batchDefectProcessReqVO, taskBaseResult.getData());
         }
     }
 

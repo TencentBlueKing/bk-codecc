@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -40,31 +39,31 @@ import java.util.List;
  * @date 2019/8/16
  */
 @Data
-@ApiModel("忽略规则视图")
+@Schema(description = "忽略规则视图")
 public class IgnoreCheckerVO extends CommonVO
 {
 
     /**
      * 任务ID
      */
-    @ApiModelProperty("任务ID")
+    @Schema(description = "任务ID")
     private Long taskId;
 
     /**
      * 工具名称
      */
-    @ApiModelProperty("工具名称")
+    @Schema(description = "工具名称")
     private String toolName;
 
     /**
      * 关闭的默认规则列表
      */
-    @ApiModelProperty("关闭的默认规则列表")
+    @Schema(description = "关闭的默认规则列表")
     private List<String> closeDefaultCheckers;
 
     /**
      * 打开的非默认规则列表
      */
-    @ApiModelProperty("打开的非默认规则列表")
+    @Schema(description = "打开的非默认规则列表")
     private List<String> openNonDefaultCheckers;
 }

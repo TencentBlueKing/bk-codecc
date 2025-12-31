@@ -28,7 +28,7 @@ package com.tencent.bk.codecc.defect.model;
 
 import com.tencent.codecc.common.db.CommonEntity;
 import com.tencent.devops.common.constant.ComConstants;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.Transient;

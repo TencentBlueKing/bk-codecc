@@ -124,7 +124,9 @@
     <div class="task-detail-right">
       <section class="detail-content">
         <p class="detail-header">
-          {{ $t('待处理') }} <span class="flc">({{ user.username }})</span>
+          {{ $t('待处理') }} <span class="flc">
+            (<bk-user-display-name :user-id="user.username"></bk-user-display-name>)
+          </span>
         </p>
         <bk-container :col="3" :gutter="4" class="person-data">
           <bk-row>
@@ -454,6 +456,7 @@ export default {
           taskId: this.taskId,
           showLoading: true,
           buildNum: this.$route.query.buildNum,
+          buildId: this.$route.query.buildId,
         })
         .then((res) => {
           if (res.lastAnalysisResultList) {
@@ -467,6 +470,7 @@ export default {
           taskId: this.$route.params.taskId,
           orderBy: 'dimension',
           buildNum: this.$route.query.buildNum,
+          buildId: this.$route.query.buildId,
         })
         .then((res) => {
           this.rdScore = res;

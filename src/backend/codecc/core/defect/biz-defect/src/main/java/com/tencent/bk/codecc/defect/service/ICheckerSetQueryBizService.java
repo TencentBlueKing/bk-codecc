@@ -4,6 +4,7 @@ import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
 import com.tencent.bk.codecc.defect.vo.CheckerCommonCountVO;
 import com.tencent.bk.codecc.defect.vo.CheckerSetListQueryReq;
 import com.tencent.bk.codecc.defect.vo.OtherCheckerSetListQueryReq;
+import com.tencent.bk.codecc.defect.vo.checkerset.TaskUsageDetailVO;
 import com.tencent.bk.codecc.task.vo.TaskBaseVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetParamsVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
@@ -23,13 +24,13 @@ import org.springframework.data.domain.Page;
  */
 public interface ICheckerSetQueryBizService {
     /**
-     * 查询规则集列表
+     * 查询 "研发商店" 规则集列表
      *
      * @param projectId
      * @param queryCheckerSetReq
      * @return
      */
-    Page<CheckerSetVO> getOtherCheckerSets(String projectId, OtherCheckerSetListQueryReq queryCheckerSetReq);
+    List<CheckerSetVO> getOtherCheckerSets(String projectId, OtherCheckerSetListQueryReq queryCheckerSetReq);
 
     /**
      * 查询规则集列表
@@ -232,4 +233,19 @@ public interface ICheckerSetQueryBizService {
             List<String> toolNameList,
             boolean needProps
     );
+
+    /**
+     * 按照类型获取到详细规则列表
+     * @param type 规则类型 openScan privateScan communityOpenScanV2 epcScan githubOpenScan communityOpenScan tegAmsScan
+     * @return checker_name列表
+     */
+    Set<String> getPackageCheckerNameByType(String type);
+
+    /**
+     * 获取使用规则集的任务详情
+     * @param projectId    项目ID
+     * @param checkerSetId 规则集ID
+     * @return 任务使用规则集详情分页
+     */
+    Page<TaskUsageDetailVO> getCheckerSetTaskUsageDetail(String projectId, String checkerSetId);
 }

@@ -103,6 +103,11 @@ public interface ComConstants {
     String BATCH_DEFECT_PROCESSOR_INFFIX = "BatchDefectProcess";
 
     /**
+     * 平台自建任务指定CodeCC扫描版本配置
+     */
+    String KEY_PLATFORM_VERSION = "PLATFORM_VERSION";
+
+    /**
      * 项目已接入工具的名称之间的分隔符
      */
     String TOOL_NAMES_SEPARATOR = ",";
@@ -121,6 +126,7 @@ public interface ComConstants {
      * GOML工具特殊参数rel_path
      */
     String PARAMJSON_KEY_REL_PATH = "rel_path";
+
     /**
      * GOML工具特殊参数go_path
      */
@@ -140,8 +146,15 @@ public interface ComConstants {
     int PROMPT = 4;
 
     /**
+     * 超时时间
+     */
+    long TIMEOUT_FIVE = 5;
+
+    /**
      * 天数
      */
+    int DAY_ONE = 1;
+    int DAY_THREE = 3;
     int DAY_FOURTEEN = 14;
     int DAY_THIRTY = 30;
     int DAY_THIRTYONE = 31;
@@ -289,6 +302,11 @@ public interface ComConstants {
      * OP管理员名单
      */
     String KEY_OP_ADMIN_MEMBER = "OP_ADMIN_MEMBER";
+
+    /**
+     * CodeCC插件缓存版本的的Key
+     */
+    String KEY_PLUGIN_VERSION_CODECC = "CODECC";
 
     /**
      * 流水线任务限制
@@ -558,7 +576,7 @@ public interface ComConstants {
     /**
      * 闭源扫描项目id前缀
      */
-    String GONGFENG_PRIVATYE_PROJECT_PREFIX = "CLOSED_SOURCE_";
+    String GONGFENG_PRIVATE_PROJECT_PREFIX = "CLOSED_SOURCE_";
     /**
      * GIHUB开源扫描项目id前缀
      */
@@ -637,6 +655,15 @@ public interface ComConstants {
     String PROD_TENCENT_COMMUNITY_OPENSOURCE_V2_CHECKER_SET_TIME_GAP
             = "PROD_TENCENT_COMMUNITY_OPENSOURCE_V2_CHECKER_SET_TIME_GAP";
 
+    /**
+     * 蓝鲸安全治理预发布规则开始结束时间
+     */
+    String PRE_PROD_BK_SEC_CHECKER_SET_TIME_GAP = "PRE_PROD_BK_SEC_CHECKER_SET_TIME_GAP";
+    /**
+     * 蓝鲸安全治理生产规则开始结束时间
+     */
+    String PROD_BK_SEC_CHECKER_SET_TIME_GAP = "PROD_BK_SEC_CHECKER_SET_TIME_GAP";
+
 
 
 
@@ -667,6 +694,13 @@ public interface ComConstants {
     String CLEAN_NODE_THREAD_NUM = "CLEAN_NODE_THREAD_NUM";
     String CLEAN_TASK_STATUS = "CLEAN_TASK_STATUS";
     String CLEAN_TASK_WHITE_LIST = "CLEAN_TASK_WHITE_LIST";
+
+    /**
+     * 保存每日统计表最大保留天数
+     * 定时清理统计记录
+     */
+    String CLEAN_DAILY_STAT_DAY = "CLEAN_DAILY_STAT_DAY";
+
     /**
      * 工具许可项目白名单(即只有指定的项目才能使用该工具，用于某些收费工具对特定项目使用)
      * {
@@ -754,12 +788,15 @@ public interface ComConstants {
      */
     String SWITCH_FOR_DATA_SEPARATION_WARM_UP = "SWITCH_FOR_DATA_SEPARATION_WARM_UP";
 
-
     String EMPTY_STRING = "";
 
     long DEFAULT_PLUGIN_TIMEOUT_MIN = 900;
 
     long MAX_PLUGIN_TIMEOUT_MIN = 10800;
+    /**
+     * 默认BG的默认ID
+     */
+    int DEFAULT_BG_ID = -1;
 
     /**
      * 业务类型
@@ -918,6 +955,10 @@ public interface ComConstants {
         SCC,
         BLACKDUCK,
         WOODPECKER_COMMITSCAN,
+        XCHECK,
+        SCSCANNER,
+        CODEAUDIT,
+        PECKER_SECURITY,
 
         BKCHECK,
 
@@ -1383,6 +1424,22 @@ public interface ComConstants {
         }
     }
 
+    enum IssueBatchProcessStatus {
+        SUCCESS(1),        // 批次处理成功
+        IN_PROGRESS(0),    // 批次处理中
+        FAIL(-1),           // 批次处理失败
+        TIMEOUT(-2);         // 批次处理超时
+
+        private final Integer value;
+        IssueBatchProcessStatus(Integer value) {
+            this.value = value;
+        }
+
+        public Integer value() {
+            return this.value;
+        }
+    }
+
     enum EslintFrameworkType {
         standard, vue, react
     }
@@ -1606,6 +1663,28 @@ public interface ComConstants {
         private int value;
 
         Status(int value) {
+            this.value = value;
+        }
+
+        public int value() {
+            return value;
+        }
+    }
+
+    /**
+     * 忽略类型的状态:
+     * 0 启用
+     * 1 不启用
+     * 2 后台启用 (该忽略类型不能被用户选中, 只能由后台直接赋值)
+     */
+    enum IgnoreTypeStatus {
+        ENABLE(0),
+        DISABLE(1),
+        BACKEND_ENABLE(2);
+
+        private final int value;
+
+        IgnoreTypeStatus(int value) {
             this.value = value;
         }
 
@@ -2179,7 +2258,7 @@ public interface ComConstants {
         }
 
         public static String getGongfengScanType(String projectId) {
-            if (projectId.startsWith(GONGFENG_PRIVATYE_PROJECT_PREFIX)) {
+            if (projectId.startsWith(GONGFENG_PRIVATE_PROJECT_PREFIX)) {
                 // 闭源扫描
                 return CLOSED_SOURCE_SCAN.value();
             } else if (projectId.startsWith(GITHUB_PROJECT_PREFIX)) {
@@ -2254,7 +2333,12 @@ public interface ComConstants {
         /**
          * 外网开源治理（新）
          */
-        COMMUNITY_OPEN_SCAN_V2("communityOpenScanV2");
+        COMMUNITY_OPEN_SCAN_V2("communityOpenScanV2"),
+
+        /**
+         * 蓝鲸安全治理
+         */
+        BK_SEC_SCAN("bkSecScan");
 
         private String value;
 
@@ -2773,11 +2857,58 @@ public interface ComConstants {
     }
 
     /**
+     * 工具开发者角色类型
+     */
+    enum RoleType {
+        DEVELOPER(1),
+        OWNER(2),
+        MASTER(4);
+
+        private final int value;
+
+        RoleType(int value) {
+            this.value = value;
+        }
+
+        public int getValue() {
+            return value;
+        }
+    }
+
+    /**
      * ITSM 系统
      */
     enum ItsmSystem {
         BK_ITSM;
     }
 
+    /**
+     * 管理员权限类型
+     */
+    enum PrivilegeType {
+        GLOBAL_ADMIN("GLOBAL_ADMIN"),
+        BG_ADMIN("BG_ADMIN");
 
+        private String value;
+
+        PrivilegeType(String value) {
+            this.value = value;
+        }
+
+        public String value() {
+            return value;
+        }
+
+        public static PrivilegeType getByName(String name) {
+            if (StringUtils.isBlank(name)) {
+                return null;
+            }
+            for (PrivilegeType value : PrivilegeType.values()) {
+                if (value.name().equals(name)) {
+                    return value;
+                }
+            }
+            return null;
+        }
+    }
 }

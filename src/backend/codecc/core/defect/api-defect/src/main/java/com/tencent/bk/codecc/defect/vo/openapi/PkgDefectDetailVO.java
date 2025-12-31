@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo.openapi;
 
 import com.tencent.bk.codecc.defect.vo.report.CommonChartAuthorVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -39,25 +38,25 @@ import lombok.Data;
  */
 
 @Data
-@ApiModel("规则维度的告警统计视图")
+@Schema(description = "规则维度的告警统计视图")
 public class PkgDefectDetailVO
 {
-    @ApiModelProperty("规则名称")
+    @Schema(description = "规则名称")
     private String checkerName;
 
-    @ApiModelProperty("开启该规则的项目数")
+    @Schema(description = "开启该规则的项目数")
     private Integer taskCount;
 
-    @ApiModelProperty("已忽略告警数")
+    @Schema(description = "已忽略告警数")
     private IgnoreDefectVO ignoreCount;
 
-    @ApiModelProperty("已修复告警数")
+    @Schema(description = "已修复告警数")
     private CommonChartAuthorVO fixedCount;
 
-    @ApiModelProperty("待修复告警数")
+    @Schema(description = "待修复告警数")
     private CommonChartAuthorVO existCount;
 
-    @ApiModelProperty("已屏蔽告警数")
+    @Schema(description = "已屏蔽告警数")
     private CommonChartAuthorVO excludedCount;
 
     public PkgDefectDetailVO()

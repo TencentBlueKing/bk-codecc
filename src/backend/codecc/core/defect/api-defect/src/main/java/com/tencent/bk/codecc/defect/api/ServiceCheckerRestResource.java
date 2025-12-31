@@ -30,14 +30,14 @@ import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
 import com.tencent.bk.codecc.defect.vo.QueryTaskCheckerDimensionRequest;
 import com.tencent.devops.common.api.checkerset.CheckerPropVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import java.util.List;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * 多工具规则接口
@@ -45,17 +45,17 @@ import javax.ws.rs.core.MediaType;
  * @version V1.0
  * @date 2019/5/23
  */
-@Api(tags = {"SERVICE_CHECKER"}, description = "多工具规则接口")
+@Tag(name = "SERVICE_CHECKER", description = "多工具规则接口")
 @Path("/service/checker")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface ServiceCheckerRestResource {
-    @ApiOperation("根据任务关联工具以及其关联规则获取维度信息")
+    @Operation(summary = "根据任务关联工具以及其关联规则获取维度信息")
     @Path("/listDimensionByToolAndChecker")
     @POST
     Result<List<String>> queryDimensionByToolChecker(QueryTaskCheckerDimensionRequest request);
 
-    @ApiOperation("获取工具对应的规则")
+    @Operation(summary = "获取工具对应的规则")
     @Path("/listCheckerDetailByCheckerPropVO")
     @POST
     Result<List<CheckerDetailVO>> queryCheckerDetailByCheckerPropVO(List<CheckerPropVO> propVOS);

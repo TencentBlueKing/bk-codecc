@@ -13,8 +13,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -27,23 +26,23 @@ import java.util.Map;
  * @date 2019/10/7
  */
 @Data
-@ApiModel("上传CLOC统计数据视图")
+@Schema(description = "上传CLOC统计数据视图")
 public class UploadCLOCStatisticVO
 {
-    @ApiModelProperty("任务id")
+    @Schema(description = "任务id")
     @JsonProperty("task_id")
     private Long taskId;
 
-    @ApiModelProperty("流名称")
+    @Schema(description = "流名称")
     @JsonProperty("stream_name")
     private String streamName;
 
     @JsonProperty("tool_name")
     private String toolName;
 
-    @ApiModelProperty("语言代码量统计")
+    @Schema(description = "语言代码量统计")
     private List<CLOCLanguageVO> languageCodeList;
 
-    @ApiModelProperty("语言统计")
+    @Schema(description = "语言统计")
     private List<String> languages;
 }

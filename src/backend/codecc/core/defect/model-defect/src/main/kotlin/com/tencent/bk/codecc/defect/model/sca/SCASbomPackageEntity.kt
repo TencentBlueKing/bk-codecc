@@ -1,6 +1,7 @@
 package com.tencent.bk.codecc.defect.model.sca
 
 import com.tencent.bk.codecc.defect.model.sca.sbom.SbomPackage
+import com.tencent.devops.common.constant.ComConstants
 import org.springframework.data.mongodb.core.index.CompoundIndex
 import org.springframework.data.mongodb.core.index.CompoundIndexes
 import org.springframework.data.mongodb.core.mapping.Document
@@ -25,17 +26,17 @@ class SCASbomPackageEntity(
      * 任务ID
      */
     @Field("task_id")
-    var taskId: Long,
+    var taskId: Long = 0L,
     /**
      * 工具名称
      */
     @Field("tool_name")
-    var toolName: String,
+    var toolName: String = ComConstants.EMPTY_STRING,
     /**
      * 状态
      */
     @Field("status")
-    var status: Int,
+    var status: Int = ComConstants.DefectStatus.NEW.value(),
 
     /**
      * 引入的文件信息列表

@@ -12,8 +12,7 @@
 package com.tencent.bk.codecc.defect.vo.openapi;
 
 import com.tencent.devops.common.api.pojo.Page;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -26,13 +25,13 @@ import java.util.List;
  */
 
 @Data
-@ApiModel("任务概览统计响应视图")
+@Schema(description = "任务概览统计响应视图")
 public class TaskOverviewDetailRspVO
 {
-    @ApiModelProperty("任务概览清单")
+    @Schema(description = "任务概览清单")
     private Page<TaskOverviewDetailVO> statisticsTask;
 
-    @ApiModelProperty("个性化扫描任务清单")
+    @Schema(description = "个性化扫描任务清单")
     private Page<CustomTaskOverviewVO> statCustomTask;
 
 }

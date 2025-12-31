@@ -13,8 +13,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -26,10 +25,10 @@ import java.util.List;
  * @version V1.0
  */
 @Data
-@ApiModel("代码评论视图")
+@Schema(description = "代码评论视图")
 public class CodeCommentVO extends CommonVO
 {
-    @ApiModelProperty("评论清单")
+    @Schema(description = "评论清单")
     private List<SingleCommentVO> commentList;
 
 }

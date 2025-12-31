@@ -73,7 +73,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -416,10 +416,7 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
             setToolImageRevision(taskInfoEntity, toolConfigInfoEntity);
             return analyzeConfigInfoVO;
         } else {
-            boolean isChanged = isToolImageChange(
-                    toolConfigInfoEntity, buildId, taskInfoEntity.getProjectId(),
-                    taskInfoEntity.getCheckerSetEnvType()
-            );
+            boolean isChanged = isToolImageChange(toolConfigInfoEntity, buildId, taskInfoEntity);
 
             if (isChanged) {
                 // 如果工具镜像有变更，也应该强制全量
@@ -632,20 +629,19 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
      *
      * @param toolConfigInfoEntity
      * @param buildId
-     * @param projectId
-     * @param checkerSetEnvType
      * @return
      */
     private boolean isToolImageChange(
             ToolConfigInfoEntity toolConfigInfoEntity,
-            String buildId, String projectId, String checkerSetEnvType
+            String buildId,
+            TaskInfoEntity taskInfoEntity
     ) {
         long taskId = toolConfigInfoEntity.getTaskId();
         String toolName = toolConfigInfoEntity.getToolName();
         log.info("check is tool image changed, taskId:{}, toolName:{}, buildId:{}", taskId, toolName, buildId);
 
         String oldToolImageRevision = toolConfigInfoEntity.getToolImageRevision();
-        String newToolImageRevision = getCurToolImageRevision(projectId, taskId, toolName, checkerSetEnvType);
+        String newToolImageRevision = getCurToolImageRevision(taskId, toolName, taskInfoEntity);
 
         if (StringUtils.isNotEmpty(newToolImageRevision) && !newToolImageRevision.equals(oldToolImageRevision)) {
             log.info("need to update tool image! taskId: {}, toolName: {}, buildId: {}", taskId, toolName, buildId);
@@ -684,16 +680,13 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
     /**
      * 获取当前工具镜像版本
      *
-     * @param projectId
      * @param taskId
      * @param toolName
-     * @param checkerSetEnvType
      * @return
      */
-    private String getCurToolImageRevision(
-            String projectId, Long taskId,
-            String toolName, String checkerSetEnvType
-    ) {
+    private String getCurToolImageRevision(Long taskId, String toolName, TaskInfoEntity taskInfoEntity) {
+        String projectId = taskInfoEntity.getProjectId();
+        String checkerSetEnvType = taskInfoEntity.getCheckerSetEnvType();
         ToolMetaBaseVO toolMetaBaseVO = toolMetaCacheService.getToolBaseMetaCache(toolName);
 
         // coverity,klocwork,pinpoint工具没有镜像，通过工具版本号来判断是否有变化
@@ -705,7 +698,8 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
             String toolV = ComConstants.ToolIntegratedStatus.P.name();
 
             // 查询是否灰度项目，并获取灰度状态
-            GrayToolProjectVO grayPro = grayToolProjectService.findByProjectIdAndToolName(projectId, toolName);
+            GrayToolProjectVO grayPro =
+                    grayToolProjectService.findByProjectIdAndToolName(projectId, toolName, taskInfoEntity);
             if (grayPro != null) {
                 if (grayPro.getStatus() == ComConstants.ToolIntegratedStatus.G.value()) {
                     toolV = ComConstants.ToolIntegratedStatus.G.name();
@@ -744,10 +738,9 @@ public class AnalyzeConfigServiceImpl implements AnalyzeConfigService {
             ToolConfigInfoEntity toolConfigInfoEntity
     ) {
         long taskId = toolConfigInfoEntity.getTaskId();
-        String projectId = taskInfoEntity.getProjectId();
-        String checkerSetEnvType = taskInfoEntity.getCheckerSetEnvType();
         String toolName = toolConfigInfoEntity.getToolName();
-        String toolImageRevision = getCurToolImageRevision(projectId, taskId, toolName, checkerSetEnvType);
+        String toolImageRevision =
+                getCurToolImageRevision(taskId, toolName, taskInfoEntity);
         toolConfigInfoEntity.setToolImageRevision(toolImageRevision);
         toolDao.updateToolImageRevision(taskId, toolName, toolImageRevision);
     }

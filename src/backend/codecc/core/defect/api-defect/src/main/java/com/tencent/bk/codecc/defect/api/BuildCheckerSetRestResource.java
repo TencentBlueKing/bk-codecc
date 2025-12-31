@@ -35,21 +35,21 @@ import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
 import java.util.Set;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * 规则集接口
@@ -57,13 +57,13 @@ import javax.ws.rs.core.MediaType;
  * @version V1.0
  * @date 2020/1/2
  */
-@Api(tags = {"BUILD_CHECKER_SET"}, description = " 配置规则集接口")
+@Tag(name = "BUILD_CHECKER_SET", description = " 配置规则集接口")
 @Path("/build/checkerSet")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface BuildCheckerSetRestResource {
 
-    @ApiOperation("规则集关联到项目或任务")
+    @Operation(summary = "规则集关联到项目或任务")
     @Path("/relationships")
     @POST
     Result<Boolean> setRelationships(
@@ -75,11 +75,11 @@ public interface BuildCheckerSetRestResource {
             String projectId,
             @QueryParam("taskId")
             Long taskId,
-            @ApiParam(value = "规则集列表")
+            @Parameter(description = "规则集列表")
             List<CheckerSetVO> checkerSetVOList
     );
 
-    @ApiOperation("更新规则集状态元数据")
+    @Operation(summary = "更新规则集状态元数据")
     @Path("/tools/{toolName}/integratedStatus/update")
     @PUT
     Result<String> updateToolCheckerSetToStatus(
@@ -87,39 +87,48 @@ public interface BuildCheckerSetRestResource {
             String user,
             @HeaderParam(AUTH_HEADER_DEVOPS_BUILD_ID)
             String buildId,
-            @ApiParam(value = "工具名称")
+            @Parameter(description = "工具名称")
             @PathParam("toolName")
             String toolName,
-            @ApiParam(value = "源状态")
+            @Parameter(description = "源状态")
             @QueryParam("fromStatus")
             ToolIntegratedStatus fromStatus,
-            @ApiParam(value = "目标状态")
+            @Parameter(description = "目标状态")
             @QueryParam("toStatus")
             ToolIntegratedStatus toStatus,
             ToolCheckerSetToStatusVo toolCheckerSetToStatusVo
     );
 
-    @ApiOperation("回滚规则集状态元数据")
+    @Operation(summary = "回滚规则集状态元数据")
     @Path("/tools/{toolName}/integratedStatus/revert")
     @PUT
     Result<String> revertToolCheckerSetStatus(
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String user,
-            @ApiParam(value = "工具名称")
+            @Parameter(description = "工具名称")
             @PathParam("toolName")
             String toolName,
-            @ApiParam(value = "状态")
+            @Parameter(description = "状态")
             @QueryParam("status")
             ToolIntegratedStatus status,
             Set<String> checkerSetIds
     );
 
-    @ApiOperation("获取工具中所有规则的详情")
+    @Operation(summary = "获取工具中所有规则的详情")
     @Path("/queryChecker/toolName/{toolName}")
     @GET
     Result<List<CheckerDetailVO>> queryCheckerByToolName(
-            @ApiParam(value = "工具名称", required = true)
+            @Parameter(description = "工具名称", required = true)
             @PathParam("toolName")
             String toolName
+    );
+
+    @Operation(summary = "按照类型查询具体详细规则列表")
+    @Path("/package/{type}/checkerName/list")
+    @GET
+    Result<Set<String>> getPackageCheckerNameByType(
+            @Parameter(description = "规则类型", required = true)
+            @PathParam("type")
+            String type
     );
 }

@@ -36,9 +36,12 @@ import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.audit.ActionIds;
 import com.tencent.devops.common.service.ToolMetaCacheService;
+import com.tencent.devops.common.util.MultenantUtils;
 import com.tencent.devops.common.web.RestResource;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.List;
 import java.util.Locale;
@@ -58,6 +61,9 @@ public class BuildToolMetaRestResourceImpl implements BuildToolMetaRestResource 
     @Autowired
     private ToolMetaCacheService toolMetaCacheService;
 
+    @Value("${codecc.enableMultiTenant:#{false}}")
+    private Boolean enableMultiTenant;
+
     @Override
     @AuditEntry(actionId = ActionIds.REGISTER_TOOL)
     public Result<ToolMetaDetailVO> register(String userName, ToolMetaDetailVO toolMetaDetailVO) {
@@ -66,6 +72,17 @@ public class BuildToolMetaRestResourceImpl implements BuildToolMetaRestResource 
 
     @Override
     public Result<List<ToolMetaDetailVO>> queryToolMetaDataList(String projectId, Long taskId) {
+        if (enableMultiTenant) {
+            Pair<String, String> tp = MultenantUtils.splitProjectId(projectId);
+            if (tp == null) {
+                throw new CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID,
+                        new String[]{"多租户场景下, projectId 格式错误."});
+            }
+
+            String tenantId = tp.getLeft();
+
+            return new Result<>(toolMetaService.queryToolMetaDataList(tenantId, projectId, taskId));
+        }
         return new Result<>(toolMetaService.queryToolMetaDataList(projectId, taskId));
     }
 

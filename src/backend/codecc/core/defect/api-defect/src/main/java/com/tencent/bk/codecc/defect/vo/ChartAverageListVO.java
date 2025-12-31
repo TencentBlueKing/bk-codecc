@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -39,17 +38,17 @@ import java.util.List;
  * @date 2019/5/28
  */
 @Data
-@ApiModel("平均圈复杂度列表视图")
+@Schema(description = "平均圈复杂度列表视图")
 public class ChartAverageListVO
 {
 
-    @ApiModelProperty("圈复杂度平均最大值")
+    @Schema(description = "圈复杂度平均最大值")
     private Float maxHeight;
 
-    @ApiModelProperty("圈复杂度平均最小值")
+    @Schema(description = "圈复杂度平均最小值")
     private Float minHeight;
 
-    @ApiModelProperty("ccn趋势图")
+    @Schema(description = "ccn趋势图")
     private List<ChartAverageVO> averageList;
 
 

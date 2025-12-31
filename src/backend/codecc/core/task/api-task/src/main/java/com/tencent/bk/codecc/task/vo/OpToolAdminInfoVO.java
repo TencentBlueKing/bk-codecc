@@ -12,7 +12,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -31,9 +31,9 @@ import java.util.List;
 @NoArgsConstructor
 public class OpToolAdminInfoVO {
 
-    @ApiModelProperty("用户名ID")
+    @Schema(description = "用户名ID")
     private String userId;
 
-    @ApiModelProperty("负责工具列表")
+    @Schema(description = "负责工具列表")
     private List<String> toolList;
 }

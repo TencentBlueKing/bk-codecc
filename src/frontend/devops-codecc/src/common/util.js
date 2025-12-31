@@ -525,3 +525,46 @@ export function isJSON(str = '') {
     return false;
   }
 };
+
+/**
+ * 将 Markdown 格式的链接转换为 HTML 链接
+ * 同时进行 XSS 防护
+ * @param {string} str - 包含 Markdown 链接的字符串
+ * @returns {string} 转换后的 HTML 字符串
+ */
+export function convertLink(str) {
+  if (typeof str !== 'string') {
+    return '';
+  }
+
+  // 转义 HTML 特殊字符
+  const escapeHtml = unsafe => unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+  // 验证 URL 是否合法
+  const isValidUrl = (url) => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  return str.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+    // 验证 URL
+    if (!isValidUrl(url)) {
+      return escapeHtml(match);
+    }
+
+    // 转义文本和 URL
+    const safeText = escapeHtml(text);
+    const safeUrl = escapeHtml(url);
+
+    return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeText}</a>`;
+  });
+}

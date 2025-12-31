@@ -2,7 +2,6 @@ package com.tencent.bk.codecc.defect.dao.core.mongotemplate;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.tencent.bk.codecc.defect.model.CheckerSetsVersionInfoEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetCatagoryEntity;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
 import com.tencent.bk.codecc.defect.pojo.CheckerMaxVersionAggModel;
@@ -17,7 +16,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -25,9 +23,7 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
-import org.springframework.data.mongodb.core.aggregation.LimitOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
-import org.springframework.data.mongodb.core.aggregation.SkipOperation;
 import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -233,13 +229,12 @@ public class CheckerSetDao {
      * @param quickSearch
      * @param codeLang
      * @param checkerSetCategory
-     * @param pageable
      * @return
      */
     public List<CheckerSetEntity> findMoreByCondition(String quickSearch, Set<String> codeLang,
             Set<CheckerSetCategory> checkerSetCategory,
             Set<String> projectCheckerSetIds, Boolean projectInstalled,
-            Map<String, Integer> toolGrayMap, Pageable pageable) {
+            Map<String, Integer> toolGrayMap) {
         // 查询条件
         List<Criteria> criteriaList = new ArrayList<>();
         if (StringUtils.isNotBlank(quickSearch)) {
@@ -335,17 +330,6 @@ public class CheckerSetDao {
                 .last("_id").as("base_checker_set_id");
         aggOptions.add(group);
 
-        // 排序分页
-        if (pageable != null) {
-            SortOperation sort = Aggregation.sort(Sort.Direction.ASC, "legacy").and(pageable.getSort());
-            aggOptions.add(sort);
-
-            SkipOperation skip = Aggregation.skip((long) (pageable.getPageNumber() * pageable.getPageSize()));
-            aggOptions.add(skip);
-
-            LimitOperation limit = Aggregation.limit(pageable.getPageSize());
-            aggOptions.add(limit);
-        }
         Aggregation agg = Aggregation.newAggregation(aggOptions);
         AggregationResults<CheckerSetEntity> queryResult = defectCoreMongoTemplate.aggregate(agg, COLLECTION_NAME,
                 CheckerSetEntity.class);
@@ -433,6 +417,28 @@ public class CheckerSetDao {
     }
 
     /**
+     * 根据规则id和版本号获取规则集
+     * @param checkerSetIdVersionMap map
+     * @return 规则集列表
+     */
+    public List<CheckerSetEntity> findCheckerSetByCheckerSetIdVersionMap(Map<String, Integer> checkerSetIdVersionMap) {
+        List<Criteria> cris = new ArrayList<>();
+        checkerSetIdVersionMap.forEach((checkerSetId, version) -> {
+            cris.add(Criteria.where("checker_set_id").is(checkerSetId).and("version").is(version));
+        });
+        List<CheckerSetEntity> vos = new ArrayList<>();
+        List<List<Criteria>> crisList = Lists.partition(cris, ComConstants.SMALL_PAGE_SIZE);
+        for (List<Criteria> criteriaList : crisList) {
+            Criteria criteria = new Criteria();
+            criteria.orOperator(criteriaList.toArray(new Criteria[0]));
+            Query query = new Query(criteria);
+            query.fields().include("checker_props.checker_key");
+            vos.addAll(defectCoreMongoTemplate.find(query, CheckerSetEntity.class, COLLECTION_NAME));
+        }
+        return vos;
+    }
+
+    /**
      * 获取规则集最大版本关系
      *
      * @param checkIdSet
@@ -492,7 +498,7 @@ public class CheckerSetDao {
      * OP修改这些信息需要同步该规则集的所有版本
      */
     public long updateInfoByCheckerSetId(String updater, String checkerSetId, String checkerSetName, String creator,
-            List<CheckerSetCatagoryEntity> catagories, String checkerSetSource, String description) {
+            List<CheckerSetCatagoryEntity> catagories, String checkerSetSource, String projectId, String description) {
         Query query = new Query();
         query.addCriteria(Criteria.where("checker_set_id").is(checkerSetId));
 
@@ -512,7 +518,9 @@ public class CheckerSetDao {
         if (StringUtils.isNotBlank(checkerSetSource)) {
             update.set("checker_set_source", checkerSetSource);
         }
-
+        if (StringUtils.isNotBlank(projectId)) {
+            update.set("project_id", projectId);
+        }
         if (StringUtils.isNotBlank(description)) {
             update.set("description", description);
         }

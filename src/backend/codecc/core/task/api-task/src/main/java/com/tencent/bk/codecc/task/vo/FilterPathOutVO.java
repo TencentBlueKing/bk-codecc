@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -39,32 +38,32 @@ import java.util.List;
  * @date 2019/5/17
  */
 @Data
-@ApiModel("屏蔽路径树输出参数视图")
+@Schema(description = "屏蔽路径树输出参数视图")
 public class FilterPathOutVO
 {
 
-    @ApiModelProperty(value = "任务Id")
+    @Schema(description = "任务Id")
     private Long taskId;
 
-    @ApiModelProperty(value = "默认屏蔽路径")
+    @Schema(description = "默认屏蔽路径")
     private List<String> defaultFilterPath;
 
-    @ApiModelProperty(value = "默认添加屏蔽路径列表")
+    @Schema(description = "默认添加屏蔽路径列表")
     private List<String> defaultAddPaths;
 
-    @ApiModelProperty(value = "自定义屏蔽路径列表")
+    @Schema(description = "自定义屏蔽路径列表")
     private List<String> filterPaths;
 
-    @ApiModelProperty(value = "code.yml屏蔽路径列表")
+    @Schema(description = "code.yml屏蔽路径列表")
     private List<String> testSourceFilterPath;
 
-    @ApiModelProperty(value = "code.yml屏蔽路径列表")
+    @Schema(description = "code.yml屏蔽路径列表")
     private List<String> autoGenFilterPath;
 
-    @ApiModelProperty(value = "code.yml屏蔽路径列表")
+    @Schema(description = "code.yml屏蔽路径列表")
     private List<String> thirdPartyFilterPath;
 
-    @ApiModelProperty(value = "过滤路径类型")
+    @Schema(description = "过滤路径类型")
     private String pathType;
 
 

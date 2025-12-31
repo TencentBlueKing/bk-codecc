@@ -28,8 +28,7 @@ package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.common.CommonDataReportRspVO;
 import com.tencent.bk.codecc.defect.vo.report.ChartAuthorListVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -42,17 +41,17 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("圈复杂度数据报表响应视图")
+@Schema(description = "圈复杂度数据报表响应视图")
 public class CCNDataReportRspVO extends CommonDataReportRspVO
 {
 
-    @ApiModelProperty("ccn作者分布图")
+    @Schema(description = "ccn作者分布图")
     private ChartAuthorListVO chartAuthorList;
 
-    @ApiModelProperty("ccn趋势图")
+    @Schema(description = "ccn趋势图")
     private ChartAverageListVO chartAverageList;
 
-    @ApiModelProperty("超标复杂度趋势图")
+    @Schema(description = "超标复杂度趋势图")
     private ChartAverageListVO chartBeyondThresholdList;
 
 }

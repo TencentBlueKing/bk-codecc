@@ -128,4 +128,14 @@ interface TaskLogOverviewService {
      * 上报插件错误信息
      */
     fun reportPluginErrorInfo(taskId: Long, buildId: String, errorCode: Int?, errorType: Int?)
+
+    /**
+     * 根据task_id和build_id查询
+     */
+    fun findByTaskIdAndBuild(taskId: Long, buildId: String): TaskLogOverviewVO?
+
+    /**
+     * 按实体id查询上一次分析记录，有时候构建号不是连续的
+     */
+    fun findPreviousByTaskIdAndEntityId(taskId: Long, buildNum: String): TaskLogOverviewVO?
 }

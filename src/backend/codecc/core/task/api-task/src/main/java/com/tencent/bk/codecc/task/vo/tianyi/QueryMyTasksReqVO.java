@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.task.vo.tianyi;
 
 import com.tencent.devops.common.api.CommonPageVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -41,16 +40,16 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("查询作者名下的任务列表")
+@Schema(description = "查询作者名下的任务列表")
 public class QueryMyTasksReqVO extends CommonPageVO
 {
-    @ApiModelProperty(value = "作者企业账号", required = true)
+    @Schema(description = "作者企业账号", required = true)
     private String author;
 
-    @ApiModelProperty(value = "代码仓库地址", required = true)
+    @Schema(description = "代码仓库地址", required = true)
     private String repoUrl;
 
-    @ApiModelProperty(value = "分支名称")
+    @Schema(description = "分支名称")
     private String branch;
 
 

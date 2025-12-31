@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.report.ChartAuthorListVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -38,16 +37,16 @@ import lombok.Data;
  * @date 2019/5/28
  */
 @Data
-@ApiModel("数据报表的作者列表分布视图")
+@Schema(description = "数据报表的作者列表分布视图")
 public class LintChartAuthorListVO {
 
-    @ApiModelProperty("新的告警作者列表")
+    @Schema(description = "新的告警作者列表")
     private ChartAuthorListVO newAuthorList;
 
-    @ApiModelProperty("历史的告警作者列表")
+    @Schema(description = "历史的告警作者列表")
     private ChartAuthorListVO historyAuthorList;
 
-    @ApiModelProperty("作者列表")
+    @Schema(description = "作者列表")
     private ChartAuthorListVO authorList;
 
 

@@ -27,12 +27,12 @@
 package com.tencent.bk.codecc.task.dao.mongotemplate;
 
 import com.google.common.collect.Lists;
-import com.mongodb.BasicDBObject;
 import com.tencent.bk.codecc.task.model.TaskIdToolInfoEntity;
 import com.tencent.bk.codecc.task.model.ToolCheckerSetEntity;
 import com.tencent.bk.codecc.task.model.ToolConfigInfoEntity;
 import com.tencent.bk.codecc.task.model.ToolCountScriptEntity;
 import com.tencent.bk.codecc.task.vo.ToolConfigBaseVO;
+import com.tencent.devops.common.api.ToolMetaBaseVO;
 import com.tencent.devops.common.constant.ComConstants;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -79,17 +79,6 @@ public class ToolDao {
         update.set("current_build_id", toolConfigBaseVO.getCurrentBuildId());
         update.set("updatedBy", ComConstants.SYSTEM_USER);
         update.set("updatedDate", System.currentTimeMillis());
-        mongoTemplate.updateMulti(query, update, ToolConfigInfoEntity.class);
-    }
-
-    public void updateParamJson(ToolConfigInfoEntity toolConfigInfoEntity, String userName) {
-        Query query = new Query();
-        query.addCriteria(Criteria.where("task_id").is(toolConfigInfoEntity.getTaskId())).
-                addCriteria(Criteria.where("tool_name").is(toolConfigInfoEntity.getToolName()));
-        Update update = new Update();
-        update.set("param_json", toolConfigInfoEntity.getParamJson());
-        update.set("updated_by", userName);
-        update.set("updated_date", System.currentTimeMillis());
         mongoTemplate.updateMulti(query, update, ToolConfigInfoEntity.class);
     }
 
@@ -161,7 +150,6 @@ public class ToolDao {
         update.set("updated_by", "system");
         mongoTemplate.updateMulti(query, update, ToolConfigInfoEntity.class);
     }
-
 
     /**
      * 按任务ID查询指定状态的且有构建ID的工具信息

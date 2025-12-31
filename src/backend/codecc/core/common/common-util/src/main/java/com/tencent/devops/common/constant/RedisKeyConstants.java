@@ -341,6 +341,11 @@ public interface RedisKeyConstants {
     String PREFIX_BG_ADMIN = "BG_ADMIN:";
 
     /**
+     * TOOL开发者:rtx set
+     */
+    String PREFIX_TOOL_DEVELOPER = "TOOL_DEVELOPER:";
+
+    /**
      * CodCC当前周的活跃用户
      */
     String USER_LOG_WEEK_RETAIN = "USER_LOG_WEEK_RETAIN:";
@@ -401,40 +406,6 @@ public interface RedisKeyConstants {
      * 处理人重新分配的缓存key判断
      */
     String IS_REALLOCATE = "reallocate";
-
-
-    String PREFIX_MIGRATE_HISTORY_DEFECT = "MIGRATE_HISTORY_DEFECT:";
-
-    /**
-     * 批量开关
-     */
-    String REDIS_KEY_BATCH_MIGRATE_DEFECT_ENABLE =
-            "LOCK_KEY:BATCH_MIGRATION_HISTORY_DEFECT_ENABLE";
-
-    /**
-     * 迁移开关
-     */
-    String REDIS_KEY_MIGRATE_DEFECT_ENABLE =
-            "LOCK_KEY:MIGRATION_HISTORY_DEFECT_ENABLE";
-
-    /**
-     * 迁移下发间隔
-     */
-    String REDIS_KEY_MIGRATE_DEFECT_INTERVAL =
-            "LOCK_KEY:MIGRATION_HISTORY_DEFECT_INTERVAL";
-
-    /**
-     * 回滚批量开关
-     */
-    String REDIS_KEY_BATCH_ROLLBACL_MIGRATE_DEFECT_ENABLE =
-            "LOCK_KEY:BATCH_ROLLBACK_MIGRATION_HISTORY_DEFECT_ENABLE";
-
-    /**
-     * 回滚开关
-     */
-    String REDIS_KEY_ROLLBACL_MIGRATE_DEFECT_ENABLE =
-            "LOCK_KEY:ROLLBACK_MIGRATION_HISTORY_DEFECT_ENABLE";
-
     /**
      * 调试的BuildId
      */
@@ -498,6 +469,11 @@ public interface RedisKeyConstants {
     String TEST_TASKS_STARTER_LOCK = "TEST_TASKS_STARTER_LOCK";
 
     /**
+     * 防止 TencentLLMNegativeDefectFilterMQ 重复过滤同一次 build 的告警
+     */
+    String LLM_DEFECT_FILTER_LOCK = "LLM_DEFECT_FILTER_LOCK";
+
+    /**
      * Open Scan 任务创建防重
      */
     String OPEN_SCAN_CREATE_TASK_LOCK = "OPEN_SCAN_CREATE_TASK_LOCK";
@@ -548,4 +524,17 @@ public interface RedisKeyConstants {
      * 定时任务开关：同步TEG/AMS仓库信息,字符串 "true"为打开，否则为关闭
      */
     String SYNC_TEG_AMS_TASK_ENABLE = "SYNC_TEG_AMS_TASK_ENABLE";
+
+    String LLM_INIT_IGNORE_LOCK = "LLM_INIT_IGNORE_LOCK";
+
+    /**
+     * 大模型误报过滤进度相关的 redis key
+     */
+    String KEY_PROGRESS_TOTAL_PRE = "LLM_FILTER_PROGRESS_TOTAL_";
+    String KEY_PROGRESS_DONE_PRE = "LLM_FILTER_PROGRESS_DONE_";
+
+    /**
+     * t_time_cost_history 表的写锁
+     */
+    String TIME_COST_HISTORY_LOCK = "TIME_COST_HISTORY_LOCK";
 }

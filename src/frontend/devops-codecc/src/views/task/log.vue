@@ -13,7 +13,9 @@
       <bk-table-column type="expand" width="30">
         <template slot-scope="props">
           <div class="log-expand">
-            <p class="log-txt">{{ $t('触发人') }}：{{ props.row.buildUser }}</p>
+            <p class="log-txt">{{ $t('触发人') }}：
+              <bk-user-display-name :user-id="props.row.buildUser"></bk-user-display-name>
+            </p>
             <p class="log-txt">
               <span class="mr5"
               >{{ $t('版本号') }}：{{ props.row.version }}</span

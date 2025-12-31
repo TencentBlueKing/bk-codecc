@@ -29,8 +29,7 @@
 
 package com.tencent.devops.common.api;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -42,33 +41,33 @@ import java.util.List;
  * @date 2019/4/24
  */
 @Data
-@ApiModel("工具完整信息视图")
+@Schema(description = "工具完整信息视图")
 public class ToolVersionVO {
-    @ApiModelProperty("工具版本类型，T-测试版本，G-灰度版本，P-正式发布版本，O-开源扫描")
+    @Schema(description = "工具版本类型，T-测试版本，G-灰度版本，P-正式发布版本，O-开源扫描")
     private String versionType;
 
-    @ApiModelProperty("docker启动运行的命令，命令由工具开发者提供，并支持带选项--json传入input.json")
+    @Schema(description = "docker启动运行的命令，命令由工具开发者提供，并支持带选项--json传入input.json")
     private String dockerTriggerShell;
 
-    @ApiModelProperty("docker镜像存放URL，如：xxx.xxx.xxx.com/paas/public/tlinux2.2_codecc_tools")
+    @Schema(description = "docker镜像存放URL，如：xxx.xxx.xxx.com/paas/public/tlinux2.2_codecc_tools")
     private String dockerImageURL;
 
-    @ApiModelProperty("工具docker镜像版本号")
+    @Schema(description = "工具docker镜像版本号")
     private String dockerImageVersion;
 
-    @ApiModelProperty("工具外部docker镜像版本号，用于关联第三方直接提供的docker镜像版本")
+    @Schema(description = "工具外部docker镜像版本号，用于关联第三方直接提供的docker镜像版本")
     private String foreignDockerImageVersion;
 
-    @ApiModelProperty("docker镜像hash值")
+    @Schema(description = "docker镜像hash值")
     private String dockerImageHash;
 
-    @ApiModelProperty(value = "工具二进制相关信息")
+    @Schema(description = "工具二进制相关信息")
     private ToolMetaDetailVO.Binary binary;
 
-    @ApiModelProperty("更新时间")
+    @Schema(description = "更新时间")
     private Long updatedDate;
 
-    @ApiModelProperty("更新人")
+    @Schema(description = "更新人")
     private String updatedBy;
 }
 

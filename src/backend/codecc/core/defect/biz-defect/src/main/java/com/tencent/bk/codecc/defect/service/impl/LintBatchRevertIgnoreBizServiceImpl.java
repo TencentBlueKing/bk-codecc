@@ -1,10 +1,12 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
 import com.google.common.collect.Sets;
-import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.IgnoredNegativeDefectDao;
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.LintDefectV2Dao;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
+import com.tencent.bk.codecc.defect.service.ToolBuildInfoService;
+import com.tencent.bk.codecc.defect.service.IIgnoredNegativeDefectService;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
+import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO.TaskInfoVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.BusinessType;
@@ -12,13 +14,18 @@ import com.tencent.devops.common.constant.ComConstants.ToolType;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.Objects;
+import java.util.Collections;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 /**
  * Lint工具批量恢复忽略实现类
@@ -32,9 +39,11 @@ public class LintBatchRevertIgnoreBizServiceImpl extends AbstractLintBatchDefect
 
     @Autowired
     private LintDefectV2Dao defectDao;
+    @Autowired
+    private IIgnoredNegativeDefectService iIgnoredNegativeDefectService;
 
     @Autowired
-    private IgnoredNegativeDefectDao ignoredNegativeDefectDao;
+    private ToolBuildInfoService toolBuildInfoService;
 
     /**
      * 获取批处理类型对应的告警状态条件
@@ -61,7 +70,49 @@ public class LintBatchRevertIgnoreBizServiceImpl extends AbstractLintBatchDefect
         defectDao.batchUpdateDefectStatusIgnoreBit(batchDefectProcessReqVO.getTaskId(), defects, 0,
                 null, null, true);
 
+        // 将缺陷列表按任务ID分组，并收集每个任务对应的工具名称集合
+        List<BatchDefectProcessReqVO.TaskInfoVO> taskInfoVOS = groupDefectsByTaskIdAndToolName(defects);
+        if (!CollectionUtils.isEmpty(taskInfoVOS)) {
+            if (CollectionUtils.isEmpty(batchDefectProcessReqVO.getTaskInfos())) {
+                batchDefectProcessReqVO.setTaskInfos(taskInfoVOS);
+            } else {
+                batchDefectProcessReqVO.getTaskInfos().addAll(taskInfoVOS);
+            }
+        }
+        // 设置工具全量扫描
+        toolBuildInfoService.batchSetForceFullScan(batchDefectProcessReqVO.getTaskInfos());
+
         refreshOverviewData(batchDefectProcessReqVO.getTaskId());
+    }
+
+    /**
+     * 将缺陷列表按任务ID分组，并转换为TaskInfoVO列表
+     *
+     * @param defects 缺陷实体列表
+     * @return TaskInfoVO列表，包含任务ID和对应的工具名称集合
+     */
+    private List<BatchDefectProcessReqVO.TaskInfoVO> groupDefectsByTaskIdAndToolName(List<LintDefectV2Entity> defects) {
+        if (CollectionUtils.isEmpty(defects)) {
+            return Collections.emptyList();
+        }
+        return defects.stream()
+                        .filter(Objects::nonNull)                  // 过滤List中的null元素
+                        .filter(entity -> entity.getToolName() != null)  // 过滤toolName为null的实体
+                        .collect(Collectors.groupingBy(
+                                LintDefectV2Entity::getTaskId,    // 按任务ID分组, taskId -> long
+                                Collectors.mapping(
+                                        LintDefectV2Entity::getToolName,  // 提取工具名称
+                                        Collectors.toCollection(HashSet::new)
+                                )
+                        ))
+                        .entrySet().stream()
+                        .map(entry -> {
+                            BatchDefectProcessReqVO.TaskInfoVO taskInfo = new BatchDefectProcessReqVO.TaskInfoVO();
+                            taskInfo.setTaskId(entry.getKey());
+                            taskInfo.setToolNames(entry.getValue());
+                            return taskInfo;
+                        })
+                        .collect(Collectors.toList());
     }
 
     @Override
@@ -80,11 +131,32 @@ public class LintBatchRevertIgnoreBizServiceImpl extends AbstractLintBatchDefect
         defectDao.batchUpdateDefectStatusIgnoreBit(batchDefectProcessReqVO.getTaskId(), defects, 0,
                 null, null, true);
 
-        ignoredNegativeDefectDao.batchDelete(entityIdSet);
+        iIgnoredNegativeDefectService.batchDeleteIgnoredDefects(batchDefectProcessReqVO.getTaskId(), entityIdSet);
+
+        // 将缺陷列表按任务ID分组，并收集每个任务对应的工具名称集合
+        List<BatchDefectProcessReqVO.TaskInfoVO> taskInfoVOS = groupDefectsByTaskIdAndToolName(defects);
+        if (CollectionUtils.isEmpty(taskInfoVOS)) {
+            return;
+        }
+        if (CollectionUtils.isEmpty(batchDefectProcessReqVO.getTaskInfos())) {
+            batchDefectProcessReqVO.setTaskInfos(taskInfoVOS);
+            return;
+        }
+        Map<Long, TaskInfoVO> cache = batchDefectProcessReqVO.getTaskInfos().stream()
+                .collect(Collectors.toMap(TaskInfoVO::getTaskId, Function.identity()));
+        for (TaskInfoVO taskInfoVO : taskInfoVOS) {
+            if (cache.containsKey(taskInfoVO.getTaskId())) {
+                cache.get(taskInfoVO.getTaskId()).getToolNames().addAll(taskInfoVO.getToolNames());
+            } else {
+                batchDefectProcessReqVO.getTaskInfos().add(taskInfoVO);
+            }
+        }
     }
 
     @Override
     protected void processAfterAllPageDone(BatchDefectProcessReqVO batchDefectProcessReqVO) {
+        // 设置工具全量扫描
+        toolBuildInfoService.batchSetForceFullScan(batchDefectProcessReqVO.getTaskInfos());
         refreshOverviewData(batchDefectProcessReqVO.getTaskId());
     }
 

@@ -27,12 +27,12 @@
 package com.tencent.devops.common.web
 
 import com.tencent.devops.common.service.Profile
-import io.swagger.jaxrs.config.BeanConfig
-import io.swagger.jaxrs.listing.ApiListingResource
-import io.swagger.jaxrs.listing.SwaggerSerializers
+import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.info.Info
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import javax.annotation.PostConstruct
+import jakarta.annotation.PostConstruct
 
 class JerseySwaggerConfig constructor(
     private val profile: Profile
@@ -51,11 +51,10 @@ class JerseySwaggerConfig constructor(
 
     @PostConstruct
     fun init() {
-        logger.info("configSwagger-start")
+        logger.info("configSwagger-start (v3)")
         configSwagger()
-        register(SwaggerSerializers::class.java)
-        register(ApiListingResource::class.java)
-        logger.info("configSwagger-end")
+        register(OpenApiResource::class.java)
+        logger.info("configSwagger-end (v3)")
     }
 
     private fun configSwagger() {
@@ -65,13 +64,16 @@ class JerseySwaggerConfig constructor(
                 {
                     if (isLocal()) "" else "/${getServiceName()}"
                 }
-            BeanConfig().apply {
-                title = applicationDesc
-                version = applicationVersion
-                resourcePackage = packageName
-                scan = true
-                basePath = "/api$appName"
-            }
+            
+            // Swagger v3 配置
+            val openAPI = OpenAPI().info(
+                Info()
+                    .title(applicationDesc ?: "CodeCC API")
+                    .version(applicationVersion ?: "1.0")
+            )
+            
+            // 注册 OpenAPI 配置
+            logger.info("Swagger v3 configured: basePath=/api$appName, package=$packageName")
         }
     }
 }

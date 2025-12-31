@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -39,17 +38,17 @@ import java.util.List;
  * @date 2019/5/28
  */
 @Data
-@ApiModel("重复率趋势列表视图")
+@Schema(description = "重复率趋势列表视图")
 public class DupcChartTrendListVO
 {
 
-    @ApiModelProperty("重复率趋势最大值")
+    @Schema(description = "重复率趋势最大值")
     private Float maxHeight;
 
-    @ApiModelProperty("重复率趋势最小值")
+    @Schema(description = "重复率趋势最小值")
     private Float minHeight;
 
-    @ApiModelProperty("重复率趋列表势图")
+    @Schema(description = "重复率趋列表势图")
     private List<DupcChartTrendVO> ducpChartList;
 
 

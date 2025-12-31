@@ -30,11 +30,10 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.tencent.bk.codecc.defect.vo.LintDefectDetailQueryReqVO;
 import com.tencent.bk.codecc.defect.vo.sca.SCADefectDetailQueryReqVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 
 /**
@@ -44,7 +43,7 @@ import javax.validation.constraints.NotNull;
  * @date 2019/5/27
  */
 @Data
-@ApiModel("公共告警详情查询请求视图")
+@Schema(description = "公共告警详情查询请求视图")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "pattern", visible = true, defaultImpl = CommonDefectDetailQueryReqVO.class)
 @JsonSubTypes({
         @JsonSubTypes.Type(value = LintDefectDetailQueryReqVO.class, name = "LINT"),
@@ -52,28 +51,28 @@ import javax.validation.constraints.NotNull;
 })
 public class CommonDefectDetailQueryReqVO {
 
-    @ApiModelProperty(value = "告警主键id", required = true)
+    @Schema(description = "告警主键id", required = true)
     private String entityId;
 
-    @ApiModelProperty(value = "工具名", required = true)
+    @Schema(description = "工具名", required = true)
     private String toolName;
 
-    @ApiModelProperty(value = "工具维度", required = true)
+    @Schema(description = "工具维度", required = true)
     private String dimension;
 
-    @ApiModelProperty(value = "工具模型", required = true)
+    @Schema(description = "工具模型", required = true)
     @NotNull(message = "工具模型不能为空")
     private String pattern;
 
-    @ApiModelProperty(value = "文件路径")
+    @Schema(description = "文件路径")
     private String filePath;
 
-    @ApiModelProperty(value = "构建Id")
+    @Schema(description = "构建Id")
     private String buildId;
 
-    @ApiModelProperty(value = "流模式响应")
+    @Schema(description = "流模式响应")
     private Boolean stream = false;
 
-    @ApiModelProperty(value = "是否刷新缓存")
+    @Schema(description = "是否刷新缓存")
     private Boolean flushCache = false;
 }

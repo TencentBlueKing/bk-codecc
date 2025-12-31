@@ -106,7 +106,7 @@ import { bus } from './common/bus';
 import { toggleLang } from './i18n';
 import { getToolMeta, getToolList, getTaskList } from './common/preload';
 import DEPLOY_ENV from '@/constants/env';
-// import Aegis from 'aegis-web-sdk';
+import BkUserDisplayName from '@blueking/bk-user-display-name';
 
 export default {
   name: 'App',
@@ -131,6 +131,9 @@ export default {
     ...mapGetters(['mainContentLoading']),
     ...mapState('task', {
       status: 'status',
+    }),
+    ...mapState('displayname', {
+      tenantId: 'tenantId',
     }),
     ...mapGetters('op', {
       isMaintainClose: 'isMaintainClose',
@@ -179,6 +182,7 @@ export default {
     async '$route.fullPath'(val) {
       // 同步地址到蓝盾
       if (window.self !== window.top) {
+        console.log('$route.fullPath', val);
         // iframe嵌入
         devopsUtil.syncUrl(val.replace(/^\/codecc\//, '/')); // eslint-disable-line
       }
@@ -198,12 +202,7 @@ export default {
     },
   },
   created() {
-    // const aegis = new Aegis({
-    //   id: window.AEGISID, // 项目ID
-    //   uin: this.user.username, // 用户唯一 ID（可选）
-    //   reportApiSpeed: true, // 接口测速
-    //   reportAssetSpeed: true, // 静态资源测速
-    // });
+    this.initDisplayName();
     // 蓝盾切换项目
     window.addEventListener('change::$currentProjectId', (data) => {
       if (
@@ -305,8 +304,8 @@ export default {
         this.$router.push({ name: 'task-settings-authority' });
       } else {
         window.open(`${window.DEVOPS_SITE_URL}/console/permission/apply?project_code=${this.projectId}&projectName=${
-            this.projectId}&resourceType=project&resourceName=${this.projectId}&iamResourceCode=${
-            this.projectId}&iamRelatedResourceType=project`, '_blank')
+          this.projectId}&resourceType=project&resourceName=${this.projectId}&iamResourceCode=${
+          this.projectId}&iamRelatedResourceType=project`, '_blank');
       }
     },
     handleClickLink() {
@@ -316,6 +315,19 @@ export default {
       this.isRouterAlive = false;
       this.$nextTick(() => {
         this.isRouterAlive = true;
+      });
+    },
+    async initDisplayName() {
+      await this.$store.dispatch('displayname/getTenantId');
+      BkUserDisplayName.configure({
+        // 必填，租户 ID
+        tenantId: this.tenantId,
+        // 必填，网关地址
+        apiBaseUrl: window.BK_API_TENANT_BASE_URL,
+        // 可选，缓存时间，单位为毫秒, 默认 5 分钟, 只对单一值生效
+        cacheDuration: 1000 * 60 * 5,
+        // 可选，当输入为空时，显示的文本，默认为 '--'
+        emptyText: '--',
       });
     },
   },

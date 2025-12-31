@@ -1,7 +1,6 @@
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -12,15 +11,15 @@ import lombok.Data;
  */
 
 @Data
-@ApiModel("默认屏蔽路径列表视图")
+@Schema(description = "默认屏蔽路径列表视图")
 public class DefaultFilterPathVO {
 
-    @ApiModelProperty("屏蔽路径")
+    @Schema(description = "屏蔽路径")
     private String filterPath;
 
-    @ApiModelProperty("创建者")
+    @Schema(description = "创建者")
     private String createdBy;
 
-    @ApiModelProperty("创建时间")
+    @Schema(description = "创建时间")
     private Long createDate;
 }

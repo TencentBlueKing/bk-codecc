@@ -1,7 +1,6 @@
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -13,18 +12,18 @@ import lombok.Data;
  */
 @Data
 @AllArgsConstructor
-@ApiModel("持续集成项目视图")
+@Schema(description = "持续集成项目视图")
 public class DevopsProjectVO {
-    @ApiModelProperty("项目id")
+    @Schema(description = "项目id")
     private String projectId;
 
-    @ApiModelProperty("项目名称")
+    @Schema(description = "项目名称")
     private String projectName;
 
-    @ApiModelProperty("项目代码")
+    @Schema(description = "项目代码")
     private String projectCode;
 
-    @ApiModelProperty("项目类型")
+    @Schema(description = "项目类型")
     private Integer projectType;
 
 }

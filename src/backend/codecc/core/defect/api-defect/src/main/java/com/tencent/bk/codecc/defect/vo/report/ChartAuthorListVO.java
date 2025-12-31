@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo.report;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -40,20 +39,20 @@ import java.util.List;
  * @date 2019/5/28
  */
 @Data
-@ApiModel("数据报表的作者列表分布视图")
+@Schema(description = "数据报表的作者列表分布视图")
 public class ChartAuthorListVO
 {
 
-    @ApiModelProperty("告警处理人最大值")
+    @Schema(description = "告警处理人最大值")
     private Integer maxHeight;
 
-    @ApiModelProperty("告警处理人最小值")
+    @Schema(description = "告警处理人最小值")
     private Integer minHeight;
 
-    @ApiModelProperty("告警作者列表")
+    @Schema(description = "告警作者列表")
     private List<ChartAuthorBaseVO> authorList;
 
-    @ApiModelProperty("告警总计")
+    @Schema(description = "告警总计")
     private ChartAuthorBaseVO totalAuthor;
 
 

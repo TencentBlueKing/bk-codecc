@@ -26,7 +26,7 @@ public class FileCachePurgingServiceImpl extends AbstractDefectPurgingTemplate {
                 ROUTE_DATA_SEPARATION_FILE_CACHE_PURGING,
                 taskId,
                 message -> {
-                    message.getMessageProperties().setDelay((int) TimeUnit.SECONDS.toMillis(5));
+                    message.getMessageProperties().setDelayLong(TimeUnit.SECONDS.toMillis(5));
                     return message;
                 }
         );

@@ -2,7 +2,7 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: {{ include "common.names.fullname" . }}-common
+  name: {{ include "codecc.names.fullname" . }}-common
   labels: {{- include "codecc.labels.standard" . | nindent 4 }}
     app.kubernetes.io/component: common
     {{- if .Values.commonLabels }}

@@ -1,8 +1,7 @@
 package com.tencent.bk.codecc.defect.vo.report;
 
 import com.tencent.devops.common.constant.ComConstants;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -12,18 +11,18 @@ import lombok.Data;
  * @date 2019/12/4
  */
 @Data
-@ApiModel("圈复杂度数据报表作者信息视图")
+@Schema(description = "圈复杂度数据报表作者信息视图")
 public class CCNChartAuthorVO extends ChartAuthorBaseVO {
-    @ApiModelProperty("超高级别数量")
+    @Schema(description = "超高级别数量")
     private Integer superHigh;
 
-    @ApiModelProperty("高级别数量")
+    @Schema(description = "高级别数量")
     private Integer high;
 
-    @ApiModelProperty("中级别数量")
+    @Schema(description = "中级别数量")
     private Integer medium;
 
-    @ApiModelProperty("低级别数量")
+    @Schema(description = "低级别数量")
     private Integer low;
 
     public CCNChartAuthorVO() {

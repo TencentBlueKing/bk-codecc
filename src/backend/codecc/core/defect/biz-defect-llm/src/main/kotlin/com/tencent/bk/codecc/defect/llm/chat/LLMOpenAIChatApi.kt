@@ -1,6 +1,5 @@
 package com.tencent.bk.codecc.defect.llm.chat
 
-import com.tencent.bk.codecc.defect.constant.LLMConstants
 import com.tencent.bk.codecc.defect.llm.extension.streamEventsFromForOpenAI
 import com.tencent.bk.codecc.defect.llm.extension.streamRequestOf
 import com.tencent.bk.codecc.defect.llm.http.HttpRequester
@@ -10,11 +9,11 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import org.slf4j.LoggerFactory
 
-internal class LLMOpenAIChatApi(private val requester: HttpRequester) {
-    private val logger = LoggerFactory.getLogger(LLMOpenAIChatApi::class.java)
-
+internal class LLMOpenAIChatApi(
+    private val requester: HttpRequester,
+    private val apiPath: String
+) {
     fun chatCompletions(
         request: ChatCompletionRequestV2,
         authorization: String
@@ -22,7 +21,7 @@ internal class LLMOpenAIChatApi(private val requester: HttpRequester) {
         val builder = HttpRequestBuilder().apply {
             method = HttpMethod.Post
             url(
-                path = LLMConstants.LLM_GATEWAY_URL_USERSPACE
+                path = apiPath
             )
             setBody(streamRequestOf(request))
             contentType(ContentType.Application.Json)
@@ -39,5 +38,4 @@ internal class LLMOpenAIChatApi(private val requester: HttpRequester) {
             }
         }
     }
-
 }

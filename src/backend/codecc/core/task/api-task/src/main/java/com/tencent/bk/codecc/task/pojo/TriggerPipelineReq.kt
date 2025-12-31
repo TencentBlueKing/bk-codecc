@@ -1,58 +1,56 @@
 package com.tencent.bk.codecc.task.pojo
 
 import com.tencent.devops.common.constant.ComConstants
-import io.swagger.annotations.ApiModel
-import io.swagger.annotations.ApiModelProperty
-
-@ApiModel("流水线触发请求体")
+import io.swagger.v3.oas.annotations.media.Schema
+@Schema(description = "流水线触发请求体")
 data class TriggerPipelineReq(
-    @ApiModelProperty("仓库路径")
+    @get:Schema(description = "仓库路径")
     val gitUrl: String?,
-    @ApiModelProperty("分支")
+    @get:Schema(description = "分支")
     val branch: String?,
-    @ApiModelProperty("commitId")
+    @get:Schema(description = "commitId")
     val commitId: String?,
-    @ApiModelProperty("版本号")
+    @get:Schema(description = "版本号")
     val revision: String?,
-    @ApiModelProperty("工蜂项目id")
+    @get:Schema(description = "工蜂项目id")
     val gongfengProjectId: Int?,
-    @ApiModelProperty("逻辑仓标识")
+    @get:Schema(description = "逻辑仓标识")
     val logicRepo: String? = null,
-    @ApiModelProperty("仓库类型")
+    @get:Schema(description = "仓库类型")
     val repoType: String?,
-    @ApiModelProperty("是否显示告警")
+    @get:Schema(description = "是否显示告警")
     val defectDisplay: Boolean?,
-    @ApiModelProperty("是否校验工蜂项目")
+    @get:Schema(description = "是否校验工蜂项目")
     val checkGongfengProject: Boolean? = false,
-    @ApiModelProperty("是否采用yml文件进行流水线编排")
+    @get:Schema(description = "是否采用yml文件进行流水线编排")
     val useYml: Boolean? = false,
-    @ApiModelProperty("指定规则集包类型")
+    @get:Schema(description = "指定规则集包类型")
     val checkerSetPackageType: String?,
-    @ApiModelProperty("指定开源扫描规则集模型")
+    @get:Schema(description = "指定开源扫描规则集模型")
     val checkerSetRange: List<OpenSourceCheckerSetModel>?,
-    @ApiModelProperty("指定扫描集群")
+    @get:Schema(description = "指定扫描集群")
     val codeccDispatchRoute: ComConstants.CodeCCDispatchRoute?,
-    @ApiModelProperty("codecc流水线模型")
+    @get:Schema(description = "codecc流水线模型")
     val codeCCPipelineReq: CodeCCPipelineReq,
-    @ApiModelProperty("支持指定git仓库目录，多个目录用英文逗号分隔")
+    @get:Schema(description = "支持指定git仓库目录，多个目录用英文逗号分隔")
     val includePath: String?,
-    @ApiModelProperty("扫描任务owner")
+    @get:Schema(description = "扫描任务owner")
     val taskOwner: String? = null,
-    @ApiModelProperty("仓库 namespace owner")
+    @get:Schema(description = "仓库 namespace owner")
     val namespaceOwners: String? = null,
-    @ApiModelProperty("仓库 project owner")
+    @get:Schema(description = "仓库 project owner")
     val projectOwners: String? = null,
-    @ApiModelProperty("一级部门ID")
+    @get:Schema(description = "一级部门ID")
     val bgId: Long? = null,
-    @ApiModelProperty("二级部门ID")
+    @get:Schema(description = "二级部门ID")
     val deptId: Long? = null,
-    @ApiModelProperty("三级部门ID")
+    @get:Schema(description = "三级部门ID")
     val centerId: Long? = null,
-    @ApiModelProperty("四级部门ID")
+    @get:Schema(description = "四级部门ID")
     val groupId: Long? = null,
-    @ApiModelProperty("是否忽略分支参数来识别同一个任务")
+    @get:Schema(description = "是否忽略分支参数来识别同一个任务")
     val branchIgnore: Boolean? = null,
-    @ApiModelProperty("额外的仓库信息")
+    @get:Schema(description = "额外的仓库信息")
     val extRepoInfo: Map<String, Any>? = null
 ) {
     constructor(

@@ -21,6 +21,10 @@ import io.ktor.client.statement.*
 import io.ktor.util.reflect.*
 import io.ktor.utils.io.errors.*
 import kotlinx.coroutines.CancellationException
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 /** HTTP transport layer */
 class HttpTransport(private val httpClient: HttpClient) : HttpRequester {
@@ -70,7 +74,53 @@ class HttpTransport(private val httpClient: HttpClient) : HttpRequester {
     private suspend fun apiException(exception: ClientRequestException): Exception {
         val response = exception.response
         val status = response.status.value
-        val error = response.body<LLMError>()
+
+        // 获取原始响应内容
+        val rawResponse = try {
+            response.bodyAsText()
+        } catch (e: Exception) {
+            "Failed to read response body: ${e.message}"
+        }
+
+        // 尝试直接解析为LLMError格式，兼容原有接口
+        val llmError = try {
+            response.body<LLMError>()
+        } catch (e: Exception) {
+            null
+        }
+
+        // 尝试解析为json对象, 模型方存在多种异常响应格式
+        val customError = try {
+            Json.parseToJsonElement(rawResponse).jsonObject
+        } catch (e: Exception) {
+            null
+        }
+
+        // 根据响应格式创建错误对象
+        val error = when {
+            llmError != null -> llmError
+            customError != null -> {
+                LLMError(
+                    detail = LLMErrorDetails(
+                        code = customError["code"]?.jsonPrimitive?.contentOrNull ?: "UNKNOWN",
+                        message = customError["message"]?.jsonPrimitive?.contentOrNull ?: "unknown error",
+                        param = customError["param"]?.jsonPrimitive?.contentOrNull,
+                        type = customError["type"]?.jsonPrimitive?.contentOrNull ?: "custom_llm_error"
+                    )
+                )
+            }
+            else -> {
+                LLMError(
+                    detail = LLMErrorDetails(
+                        code = "DESERIALIZATION_FAILED",
+                        message = "failed to parse error response, raw response: $rawResponse",
+                        param = null,
+                        type = "internal_error"
+                    )
+                )
+            }
+        }
+
         return when (status) {
             429 -> RateLimitException(status, error, exception)
             400, 404, 415 -> InvalidRequestException(status, error, exception)

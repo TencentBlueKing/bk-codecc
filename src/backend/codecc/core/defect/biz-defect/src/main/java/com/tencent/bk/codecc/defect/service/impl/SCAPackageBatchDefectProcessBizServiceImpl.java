@@ -10,6 +10,7 @@ import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.SCASbomPackageDao;
 import com.tencent.bk.codecc.defect.model.defect.LintDefectV2Entity;
 import com.tencent.bk.codecc.defect.model.sca.BuildSCASbomPackageEntity;
 import com.tencent.bk.codecc.defect.model.sca.SCASbomPackageEntity;
+import com.tencent.bk.codecc.defect.service.IIgnoredNegativeDefectService;
 import com.tencent.bk.codecc.defect.service.ISCABatchDefectProcessBizService;
 import com.tencent.bk.codecc.defect.service.TaskLogService;
 import com.tencent.bk.codecc.defect.utils.SCAUtils;
@@ -50,7 +51,7 @@ public class SCAPackageBatchDefectProcessBizServiceImpl implements ISCABatchDefe
     @Autowired
     TaskLogService taskLogService;
     @Autowired
-    private IgnoredNegativeDefectDao ignoredNegativeDefectDao;
+    private IIgnoredNegativeDefectService iIgnoredNegativeDefectService;
     @Autowired
     private Client client;
 
@@ -178,7 +179,8 @@ public class SCAPackageBatchDefectProcessBizServiceImpl implements ISCABatchDefe
                 throw new CodeCCException(CommonMessageCode.INTERNAL_SYSTEM_FAIL);
             }
 
-            ignoredNegativeDefectDao.batchInsert(defectList, batchDefectProcessReqVO, taskBaseResult.getData());
+            iIgnoredNegativeDefectService.batchInsertIgnoredDefects(defectList,
+                    batchDefectProcessReqVO, taskBaseResult.getData());
         }
     }
 

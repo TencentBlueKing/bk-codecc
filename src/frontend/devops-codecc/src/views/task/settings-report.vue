@@ -25,12 +25,10 @@
               ).name
             }}</label>
             <div v-if="formData.rtxReceiverType === '2'" class="member-list">
-              <span
+              <bk-user-display-name
                 class="receiver-list"
-                v-for="(item, index) in formData.rtxReceiverList"
-                :key="index"
-              >{{ item }}</span
-              >
+                :user-id="formData.rtxReceiverList">
+              </bk-user-display-name>
             </div>
             <label v-if="formData.rtxReceiverType === '4'" class="f12">{{
               $t('暂不包含重复率工具重复文件的相关作者')
@@ -66,16 +64,16 @@
               ><i class="bk-icon icon-edit2 fs18"></i
               >{{ $t('修改接收人') }}</span
               >
-              <span
+              <bk-user-display-name
+                v-if="formData.rtxReceiverList.length > 0"
                 class="receiver-list"
-                v-for="(item, index) in formData.rtxReceiverList"
-                :key="index"
-              >{{ item }}</span
-              >
+                :user-id="formData.rtxReceiverList">
+              </bk-user-display-name>
             </bk-form-item>
             <bk-dialog
               :position="{ top: 50, left: 5 }"
               v-model="isCustomReceiverShow"
+              :mask-close="false"
               width="720"
             >
               <custom-receiver
@@ -197,23 +195,20 @@
               ).name
             }}</label>
             <div v-if="formData.emailReceiverType === '2'" class="member-list">
-              <span
+              <bk-user-display-name
                 class="receiver-list"
-                v-for="(item, index) in formData.emailReceiverList"
-                :key="index"
-              >{{ item }}</span
-              >
+                :user-id="formData.emailReceiverList">
+              </bk-user-display-name>
             </div>
             <label v-if="formData.emailReceiverType === '4'" class="f12">{{
               $t('暂不包含重复率工具重复文件的相关作者')
             }}</label>
             <div style="height: 15px"></div>
             <label class="pipeline-item bk-label">{{ $t('抄送人') }}</label>
-            <label class="pipeline-content">{{
-              formData.emailCCReceiverList.length
-                ? formData.emailCCReceiverList.join()
-                : '--'
-            }}</label>
+            <bk-user-display-name
+              class="pipeline-content"
+              :user-id="formData?.emailCCReceiverList">
+            </bk-user-display-name>
             <div style="height: 15px"></div>
             <label class="pipeline-item bk-label">{{ $t('即时报告') }}</label>
             <label class="pipeline-content"
@@ -266,16 +261,16 @@
               ><i class="bk-icon icon-edit2 fs18"></i
               >{{ $t('修改收件人') }}</span
               >
-              <span
+              <bk-user-display-name
+                v-if="formData.emailReceiverList.length > 0"
                 class="receiver-list"
-                v-for="(item, index) in formData.emailReceiverList"
-                :key="index"
-              >{{ item }}</span
-              >
+                :user-id="formData.emailReceiverList">
+              </bk-user-display-name>
             </bk-form-item>
             <bk-dialog
               :position="{ top: 50, left: 5 }"
               v-model="isEmailReceiverShow"
+              :mask-close="false"
               width="720"
             >
               <custom-receiver
@@ -294,17 +289,10 @@
               </template>
             </bk-dialog>
             <bk-form-item :label="$t('抄送人')">
-              <bk-tag-input
+              <UserSelector
                 allow-create
-                v-if="IS_ENV_TAI"
-                v-model="formData.emailCCReceiverList"
-                type="all"
-              ></bk-tag-input>
-              <bk-tag-input allow-create
-                v-else
-                v-model="formData.emailCCReceiverList"
-                type="all"
-              ></bk-tag-input>
+                :value.sync="formData.emailCCReceiverList"
+              />
             </bk-form-item>
             <divider></divider>
             <bk-form-item :label="$t('定时报告')">
@@ -417,6 +405,7 @@ import WeekSelector from '@/components/week-selector';
 // import ToolSelector from '@/components/tool-selector'
 import CustomReceiver from '@/components/custom-receiver';
 import axios from 'axios';
+import UserSelector from '@/components/user-selector/index.vue';
 
 export default {
   components: {
@@ -424,6 +413,7 @@ export default {
     WeekSelector,
     // ToolSelector,
     CustomReceiver,
+    UserSelector,
   },
   data() {
     return {
@@ -482,7 +472,6 @@ export default {
         6: '周六',
         7: '周日',
       },
-      IS_ENV_TAI: window.IS_ENV_TAI,
     };
   },
   computed: {

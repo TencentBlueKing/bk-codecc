@@ -43,7 +43,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
-import javax.servlet.http.HttpServletResponse
+import jakarta.servlet.http.HttpServletResponse
 
 /**
  * @date 2019/7/11
@@ -69,7 +69,7 @@ class LogServiceImpl @Autowired constructor(
     ): QueryLogRepVO? {
         val result = client.getDevopsService(ServiceLogResource::class.java)
             .getInitLogs(userId, projectId, pipelineId, buildId, false, null,
-                tag, null, 1)
+                tag, null, 1,null,null,null)
         if (result.isNotOk() || null == result.data) {
             logger.error(
                 "get log info fail! bs project id: {}, bs pipeline id: {}, build id: {}",
@@ -102,7 +102,7 @@ class LogServiceImpl @Autowired constructor(
         val result = client.getDevopsService(ServiceLogResource::class.java)
             .getMoreLogs(userId,
                 projectId, pipelineId, buildId, false,null,num ?: 100, fromStart
-                    ?: true, start, end, tag, null, executeCount ?: 1
+                    ?: true, start, end, tag, null, executeCount ?: 1,null,null
             )
         if (result.isNotOk() || null == result.data) {
             logger.error(
@@ -169,7 +169,7 @@ class LogServiceImpl @Autowired constructor(
     ): QueryLogRepVO {
         val result = client.getDevopsService(ServiceLogResource::class.java)
             .getAfterLogs(userId, projectId, pipelineId, buildId, start, false,null,
-                tag, null, executeCount ?: 1)
+                tag, null, executeCount ?: 1,null,null)
         if (result.isNotOk() || null == result.data) {
             logger.error(
                 "get more log info fail! bs project id: {}, bs pipeline id: {}, build id: {}",

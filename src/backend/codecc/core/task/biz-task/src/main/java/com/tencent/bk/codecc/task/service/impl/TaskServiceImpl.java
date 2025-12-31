@@ -193,6 +193,7 @@ import com.tencent.devops.common.client.Client;
 import com.tencent.devops.common.codecc.util.JsonUtil;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
+import com.tencent.devops.common.constant.ToolConstants;
 import com.tencent.devops.common.constant.audit.ActionAuditRecordContents;
 import com.tencent.devops.common.constant.audit.ActionIds;
 import com.tencent.devops.common.constant.audit.ResourceTypes;
@@ -229,7 +230,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.json.JSONObject;
 import org.apache.commons.collections.CollectionUtils;
@@ -238,6 +239,7 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1086,6 +1088,7 @@ public class TaskServiceImpl implements TaskService {
      *
      * @param taskId
      * @param buildNum
+     * @param buildId
      * @param toolConfigInfoList
      * @return List<ToolLastAnalysisResultVO>
      * @date 2023/12/14
@@ -1093,13 +1096,19 @@ public class TaskServiceImpl implements TaskService {
     private List<ToolLastAnalysisResultVO> getToolAnalysisResults(
             long taskId,
             String buildNum,
+            String buildId,
             List<ToolConfigInfoEntity> toolConfigInfoList
     ) {
         GetLastAnalysisResultsVO getLastAnalysisResultsVO = new GetLastAnalysisResultsVO();
         getLastAnalysisResultsVO.setTaskId(taskId);
 
         Result<List<ToolLastAnalysisResultVO>> result;
-        if (NumberUtils.isCreatable(buildNum)) {
+        // taskId + buildId不会重复，优先buildId查询
+        if (StringUtils.isNotBlank(buildId)) {
+            getLastAnalysisResultsVO.setBuildId(buildId);
+            result = client.get(ServiceTaskLogRestResource.class).getAnalysisResult(getLastAnalysisResultsVO);
+        }
+        else if (NumberUtils.isCreatable(buildNum)) {
             getLastAnalysisResultsVO.setBuildNum(buildNum);
             result = client.get(ServiceTaskLogRestResource.class).getAnalysisResults(getLastAnalysisResultsVO);
         } else {
@@ -1127,7 +1136,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TaskOverviewVO getTaskOverview(Long taskId, String buildNum) {
+    public TaskOverviewVO getTaskOverview(Long taskId, String specifyBuildId, String buildNum) {
         List<TaskInfoEntity> taskEntities = taskRepository.findToolListByTaskId(taskId);
         TaskInfoEntity taskEntity = CollectionUtils.isEmpty(taskEntities) ? null : taskEntities.get(0);
         if (taskEntity == null) {
@@ -1136,7 +1145,7 @@ public class TaskServiceImpl implements TaskService {
         }
 
         List<ToolConfigInfoEntity> toolConfigInfoList = taskEntity.getToolConfigInfoList();
-        List<ToolLastAnalysisResultVO> toolAnalysisResults = getToolAnalysisResults(taskId, buildNum,
+        List<ToolLastAnalysisResultVO> toolAnalysisResults = getToolAnalysisResults(taskId, buildNum, specifyBuildId,
                 toolConfigInfoList);
 
         List<TaskOverviewVO.LastAnalysis> toolLastAnalysisList = new ArrayList<>();
@@ -1150,7 +1159,7 @@ public class TaskServiceImpl implements TaskService {
         }
 
         String buildId = null;
-        if (NumberUtils.isCreatable(buildNum)) {   // 指定构建号
+        if (NumberUtils.isCreatable(buildNum) || StringUtils.isNotBlank(specifyBuildId)) {   // 指定构建号 or 指定构建ID
             if (CollectionUtils.isNotEmpty(toolAnalysisResults)) {
                 for (ToolLastAnalysisResultVO toolAnalysisRes : toolAnalysisResults) {
                     int curStep = toolAnalysisRes.getCurrStep();
@@ -1255,9 +1264,9 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TaskOverviewVO getTaskOverview(Long taskId, String buildNum, String orderBy) {
+    public TaskOverviewVO getTaskOverview(Long taskId, String buildId, String buildNum, String orderBy) {
         if (StringUtils.isBlank(orderBy) || orderBy.equals("TOOL")) {
-            return getTaskOverview(taskId, buildNum);
+            return getTaskOverview(taskId, buildId, buildNum);
         }
 
         List<TaskInfoEntity> taskEntities = taskRepository.findToolListByTaskId(taskId);
@@ -1317,11 +1326,11 @@ public class TaskServiceImpl implements TaskService {
 
         if (result.isOk() && result.getData() != null) {
             TaskLogOverviewVO taskLogOverviewVO = result.getData();
-            String buildId = taskLogOverviewVO.getBuildId();
+            String taskBuildId = taskLogOverviewVO.getBuildId();
             log.info("get task overview by type: {} {}", taskId, buildId);
             // 获取维度统计信息
             Result<List<BaseClusterResultVO>> clusterResult =
-                    client.get(ServiceClusterStatisticRestReource.class).getClusterStatistic(taskId, buildId);
+                    client.get(ServiceClusterStatisticRestReource.class).getClusterStatistic(taskId, taskBuildId);
 
             List<BaseClusterResultVO> clusterVOList = clusterResult.getData();
             if (clusterResult.isOk() && clusterVOList != null) {
@@ -1335,7 +1344,7 @@ public class TaskServiceImpl implements TaskService {
             }
 
             // 获取度量信息
-            Result<MetricsVO> metricsRes = client.get(ServiceMetricsRestResource.class).getMetrics(taskId, buildId);
+            Result<MetricsVO> metricsRes = client.get(ServiceMetricsRestResource.class).getMetrics(taskId, taskBuildId);
             if (metricsRes.isOk() && metricsRes.getData() != null) {
                 try {
                     org.apache.commons.beanutils.BeanUtils.copyProperties(taskOverviewVO, metricsRes.getData());
@@ -2172,9 +2181,8 @@ public class TaskServiceImpl implements TaskService {
             List<ToolConfigInfoEntity> tools = toolRepository.saveAll(toolConfigInfoEntityList);
             taskInfoEntity.setToolConfigInfoList(tools);
             taskRepository.save(taskInfoEntity);
-            List<String> forceFullScanTools = new ArrayList<String>() {{
-                add(Tool.SCC.name());
-            }};
+            List<String> forceFullScanTools = new ArrayList<>();
+            forceFullScanTools.add(Tool.SCC.name());
             client.get(ServiceToolBuildInfoResource.class)
                     .setForceFullScan(taskInfoEntity.getTaskId(), forceFullScanTools);
         } else if (clocList.get(0).getFollowStatus() == FOLLOW_STATUS.WITHDRAW.value()) {
@@ -2222,7 +2230,7 @@ public class TaskServiceImpl implements TaskService {
         rabbitTemplate.convertAndSend(EXCHANGE_EXPIRED_TASK_STATUS, ROUTE_EXPIRED_TASK_STATUS,
                 new ScanTaskTriggerDTO(taskId, buildId), message -> {
                     //todo 配置在配置文件里
-                    message.getMessageProperties().setDelay(finalTimeout);
+                    message.getMessageProperties().setDelayLong((long) finalTimeout);
                     return message;
                 });
 
@@ -2234,7 +2242,7 @@ public class TaskServiceImpl implements TaskService {
         //todo 后续和流水线对齐
         rabbitTemplate.convertAndSend(EXCHANGE_EXPIRED_TASK_STATUS, ROUTE_EXPIRED_TASK_STATUS,
                 new ScanTaskTriggerDTO(taskId, buildId), message -> {
-                    message.getMessageProperties().setDelay(timeout != null ? timeout * 1000 : 24 * 60 * 60 * 1000);
+                    message.getMessageProperties().setDelayLong((long) (timeout != null ? timeout * 1000 : 24 * 60 * 60 * 1000));
                     return message;
                 });
         return true;
@@ -2583,6 +2591,81 @@ public class TaskServiceImpl implements TaskService {
     }
 
     /**
+     * 更新 t_tool_config 中的工具配置信息 (v2 版)
+     *
+     * @param targetToolConfigs 将要保存 t_tool_config 表中的工具配置信息列表
+     * @param sourceToolConfigs 从 TaskDetailVO 的 DevopsToolParams 字段取出, 是请求传来的工具配置信息
+     * @param taskId
+     * @param userName
+     */
+    private void updateToolConfigInfosV2(
+            List<ToolConfigInfoEntity> targetToolConfigs,
+            List<ToolConfigParamJsonVO> sourceToolConfigs,
+            Long taskId,
+            String userName
+    ) {
+        // 将 sourceToolConfigs 中的工具配置根据工具名分组
+        Map<String, List<ToolConfigParamJsonVO>> devopsToolParamMap = sourceToolConfigs.stream()
+                .filter(it -> StringUtils.isNotBlank(it.getToolName()))
+                .collect(Collectors.groupingBy(ToolConfigParamJsonVO::getToolName));
+
+        // 记录 sourceToolConfigs 中已经被更新到 targetToolConfigs 的工具
+        Set<String> updatedTools = new HashSet<>();
+        targetToolConfigs.forEach(targetConfig -> {
+            String toolName = targetConfig.getToolName();
+            if (StringUtils.isNotBlank(toolName)
+                    || !devopsToolParamMap.containsKey(toolName)) {
+                return;
+            }
+            updatedTools.add(toolName);
+
+            org.json.JSONObject targetJson;
+            try {
+                targetJson = StringUtils.isBlank(targetConfig.getParamJson())
+                        ? new org.json.JSONObject() : new org.json.JSONObject(targetConfig.getParamJson());
+            } catch (JSONException e) {
+                log.error("create target JSONObject(paramJson: {}) error: {}",
+                        targetConfig.getParamJson(), e.getMessage());
+                return;
+            }
+
+            // 此处的配置更新沿用了原来的思路: 对于一个字段, 如果用户在新的工具配置中没有该字段的有效配置值, 在记录中还是保存原来的配置
+            devopsToolParamMap.get(toolName).forEach(it -> {
+                if (StringUtils.isBlank(it.getVarName()) || it.getChooseValue() == null) {
+                    return;
+                }
+
+                targetJson.put(it.getVarName(), it.getChooseValue());
+            });
+
+            targetConfig.setParamJson(targetJson.toString());
+            targetConfig.applyAuditInfoOnUpdate(userName);
+        });
+
+        // 处理 sourceToolConfigs 中还没被更新进 targetToolConfigs 的工具配置, 防御性编程
+        devopsToolParamMap.forEach((toolName, toolConfigs) -> {
+            if (updatedTools.contains(toolName)) {
+                return;
+            }
+            updatedTools.add(toolName);
+
+            org.json.JSONObject newToolConfigJson = new org.json.JSONObject();
+            toolConfigs.forEach(it -> newToolConfigJson.put(it.getVarName(), it.getChooseValue()));
+
+            ToolConfigInfoEntity newToolConfig = ToolConfigInfoEntity.builder()
+                    .taskId(taskId)
+                    .toolName(toolName)
+                    .paramJson(newToolConfigJson.toString())
+                    .build();
+            newToolConfig.applyAuditInfoOnCreate(userName);
+
+            targetToolConfigs.add(newToolConfig);
+        });
+
+        toolRepository.saveAll(targetToolConfigs);
+    }
+
+    /**
      * 更新工具配置信息
      *
      * @param taskDetailVO
@@ -2594,8 +2677,12 @@ public class TaskServiceImpl implements TaskService {
         // 提交更新任务工具的配置信息
         List<ToolConfigParamJsonVO> updateToolConfigList = taskDetailVO.getDevopsToolParams();
 
-        //根据原有的和提交的，更新工具参数
+        if (ToolConstants.ToolParamsVersion.V2.getValue().equals(taskDetailVO.getDevopsToolParamVersion())) {
+            updateToolConfigInfosV2(toolConfigList, updateToolConfigList, taskDetailVO.getTaskId(), userName);
+            return;
+        }
 
+        //根据原有的和提交的，更新工具参数
         if (CollectionUtils.isNotEmpty(toolConfigList) && CollectionUtils.isNotEmpty(updateToolConfigList)) {
             //提交参数map
             Map<String, String> paramMap = updateToolConfigList.stream().collect(Collectors.toMap(
@@ -3591,6 +3678,23 @@ public class TaskServiceImpl implements TaskService {
         return taskBaseVOList;
     }
 
+    @Override
+    public List<Long> queryTasIdByProjectId(String projectId) {
+        log.info("project id query param: projectId: {}", projectId);
+        return taskDao.findTaskIdByProjectId(projectId);
+    }
+
+    @Override
+    public List<Long> queryAllTaskIdByProjectId(String projectId) {
+        log.info("project id query param: projectId: {}", projectId);
+        return taskDao.findAllTaskIdByProjectId(projectId);
+    }
+
+    @Override
+    public List<String> queryAllPipelineIdByProjectId(String projectId) {
+        return taskDao.findAllPipelineIdByProjectId(projectId);
+    }
+
     /**
      * 分页获取有效任务的项目id
      *
@@ -3619,7 +3723,7 @@ public class TaskServiceImpl implements TaskService {
     public List<Long> queryTaskIdPageByProjectId(String projectId, Integer pageNum, Integer pageSize) {
         log.info("task id query param: projectId: {}, pageNum:{}, pageSize:{}", projectId, pageNum, pageSize);
 
-        Pageable pageable = PageableUtils.getPageable(pageNum, pageSize);
+        Pageable pageable = PageableUtils.getPageable(pageNum, pageSize, "task_id", Sort.Direction.ASC, "");
         return taskDao.findTaskIdPageByProjectId(projectId, pageable);
     }
 
@@ -3750,7 +3854,9 @@ public class TaskServiceImpl implements TaskService {
                 BsTaskCreateFrom.BS_CODECC.value()
         );
 
-        if (projectId.startsWith(ComConstants.GONGFENG_PROJECT_ID_PREFIX)) {
+        if (projectId.startsWith(ComConstants.GONGFENG_PROJECT_ID_PREFIX)
+                || projectId.startsWith(ComConstants.GONGFENG_PRIVATE_PROJECT_PREFIX)
+                || projectId.startsWith(ComConstants.GITHUB_PROJECT_PREFIX)) {
             createFromList.add(BsTaskCreateFrom.GONGFENG_SCAN.value());
         }
 
@@ -4066,6 +4172,42 @@ public class TaskServiceImpl implements TaskService {
             log.info("project:{} stop task success. task size :{}", projectId, taskIds.size());
         } catch (Exception e) {
             log.error("project:" + projectId + " stop task cause error", e);
+        }
+    }
+
+    @Override
+    public void startEnableProjectTask(String projectId) {
+        try {
+            log.info("start enable project:{} task.", projectId);
+            // 1. 查询项目是否启用
+            ProjectVO projectVO = client.getDevopsService(ServiceProjectResource.class).get(projectId).getData();
+            if (projectVO == null || projectVO.getEnabled() == null || !projectVO.getEnabled()) {
+                // 状态为空或未启用，不处理
+                log.info("project:{} not enabled, skip enable task.", projectId);
+                return;
+            }
+
+            // 2. 查询所有禁用原因为"project disable"的任务
+            List<TaskInfoEntity> disabledTasks = taskRepository.findTaskIdByProjectIdAndStatusAndDisableReason(
+                    projectId,
+                    TaskConstants.TaskStatus.DISABLE.value(),
+                    TASK_STOP_REASON_PROJECT_DISABLE
+            );
+
+            if (CollectionUtils.isEmpty(disabledTasks)) {
+                log.info("project:{} has no tasks disabled by project disable.", projectId);
+                return;
+            }
+
+            // 3. 批量启用这些任务
+            List<Long> taskIds = disabledTasks.stream()
+                    .map(TaskInfoEntity::getTaskId)
+                    .collect(Collectors.toList());
+            taskDao.batchStartTask(taskIds);
+            log.info("project:{} enable {} tasks success.", projectId, taskIds.size());
+
+        } catch (Exception e) {
+            log.error("project:" + projectId + " enable task cause error", e);
         }
     }
 }

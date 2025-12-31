@@ -1,14 +1,13 @@
 package com.tencent.devops.common.api.clusterresult;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
-@ApiModel
+@Schema
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class SCAClusterResultVO extends BaseClusterResultVO {
@@ -18,21 +17,21 @@ public class SCAClusterResultVO extends BaseClusterResultVO {
         this.setToolList(toolList);
     }
 
-    @ApiModelProperty("组件数量")
+    @Schema(description = "组件数量")
     private Long packageCount;
 
-    @ApiModelProperty("漏洞数量")
+    @Schema(description = "漏洞数量")
     private Long newVulCount;
 
-    @ApiModelProperty("高风险漏洞数量")
+    @Schema(description = "高风险漏洞数量")
     private Long newHighVulCount;
 
-    @ApiModelProperty("中风险漏洞数量")
+    @Schema(description = "中风险漏洞数量")
     private Long newMediumVulCount;
 
-    @ApiModelProperty("低风险漏洞数量")
+    @Schema(description = "低风险漏洞数量")
     private Long newLowVulCount;
 
-    @ApiModelProperty("证书数量")
+    @Schema(description = "证书数量")
     private Long licenseCount;
 }

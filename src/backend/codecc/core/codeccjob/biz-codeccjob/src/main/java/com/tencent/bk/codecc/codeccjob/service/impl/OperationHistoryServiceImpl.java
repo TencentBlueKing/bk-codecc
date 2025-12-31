@@ -286,8 +286,10 @@ public class OperationHistoryServiceImpl implements OperationHistoryService {
                 // 忽略告警分开传值 paramArray[1] 传递 ignoreReasonType  paramArray[2] 传递 ignoreReason
                 String ignoreReasonFull = "未忽略";
                 if (StringUtils.isNotBlank(paramArray[1])) {
+                    // 提取用户ID（去除括号中的中文名称），避免HTTP Header中包含非ASCII字符
+                    String userId = extractUserId(operaHisDTO.getOperator());
                     Result<IgnoreTypeProjectConfigVO> result = client.get(UserIgnoreTypeRestResource.class).detail(
-                            operaHisDTO.getProjectId(), operaHisDTO.getOperator(), Integer.parseInt(paramArray[1]));
+                            operaHisDTO.getProjectId(), userId, Integer.parseInt(paramArray[1]));
                     // 判断是data是否为空，如果为空就返回未忽略
                     if (result.isOk() && result.getData() != null) {
                         String ignoreReasonType = result.getData().getName();
@@ -530,5 +532,25 @@ public class OperationHistoryServiceImpl implements OperationHistoryService {
         if (toolDefectIdMap != null && !toolDefectIdMap.isEmpty()) {
             entity.setToolName(String.join(ComConstants.STRING_SPLIT, toolDefectIdMap.keySet()));
         }
+    }
+
+    /**
+     * 从操作者字符串中提取用户ID
+     * 例如: "rtx(小明)" -> "rtx"
+     *      "admin" -> "admin"
+     *
+     * @param operator 操作者字符串，格式可能为 "userId(userName)" 或 "userId"
+     * @return 纯用户ID，不包含中文名称
+     */
+    private String extractUserId(String operator) {
+        if (StringUtils.isBlank(operator)) {
+            return operator;
+        }
+        // 如果包含括号，提取括号前的部分
+        int bracketIndex = operator.indexOf('(');
+        if (bracketIndex > 0) {
+            return operator.substring(0, bracketIndex);
+        }
+        return operator;
     }
 }

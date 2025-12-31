@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.common.CommonDefectDetailQueryRspVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -43,18 +42,18 @@ import java.util.Map;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("重复率类告警详情查询返回视图")
+@Schema(description = "重复率类告警详情查询返回视图")
 public class DUPCDefectDetailQueryRspVO extends CommonDefectDetailQueryRspVO
 {
     /**
      * 文件的所有重复块列表
      */
-    @ApiModelProperty("文件的所有重复块列表")
+    @Schema(description = "文件的所有重复块列表")
     private List<CodeBlockVO> blockInfoList;
 
     /**
      * 源重复块对应的目标重复列表
      */
-    @ApiModelProperty("源重复块对应的目标重复列表")
+    @Schema(description = "源重复块对应的目标重复列表")
     private Map<String, List<CodeBlockVO>> targetBlockMap;
 }

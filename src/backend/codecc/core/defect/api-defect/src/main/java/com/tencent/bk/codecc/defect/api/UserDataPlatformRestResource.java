@@ -27,12 +27,11 @@
 package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * task interface
@@ -40,24 +39,24 @@ import javax.ws.rs.core.MediaType;
  * @version V1.0
  * @date 2019/4/23
  */
-@Api(tags = {"DATA_PLATFORM"}, description = "数据平台相关接口")
+@Tag(name = "DATA_PLATFORM", description = "数据平台相关接口")
 @Path("/user/data-platform")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface UserDataPlatformRestResource
 {
 
-    @ApiOperation("启动推送")
+    @Operation(summary = "启动推送")
     @Path("/push")
     @GET
     Result<String> push(
-            @ApiParam(value = "页码", required = true)
+            @Parameter(description = "页码", required = true)
             @QueryParam("pageNum")
                     int pageNum,
-            @ApiParam(value = "分页大小", required = true)
+            @Parameter(description = "分页大小", required = true)
             @QueryParam("pageSize")
                     int pageSize,
-            @ApiParam(value = "分页大小", required = true)
+            @Parameter(description = "分页大小", required = true)
             @QueryParam("dataSource")
                     String dataSource
     ) throws InterruptedException;

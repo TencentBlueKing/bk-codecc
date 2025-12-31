@@ -1,7 +1,6 @@
 package com.tencent.bk.codecc.defect.vo.report;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,11 +14,11 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ApiModel("数据报表作者信息视图")
+@Schema(description = "数据报表作者信息视图")
 public class ChartAuthorBaseVO {
-    @ApiModelProperty("作者名称")
+    @Schema(description = "作者名称")
     String authorName;
 
-    @ApiModelProperty("总数")
+    @Schema(description = "总数")
     Integer total;
 }

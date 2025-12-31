@@ -12,7 +12,7 @@
 
 package com.tencent.bk.codecc.quartz.job;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.tencent.bk.codecc.defect.api.ServiceIgnoreTypeRestResource;
 import com.tencent.bk.codecc.defect.dto.IgnoreTypeNotifyTriggerModel;
 import com.tencent.bk.codecc.defect.vo.ignore.IgnoreTypeNotifyVO;

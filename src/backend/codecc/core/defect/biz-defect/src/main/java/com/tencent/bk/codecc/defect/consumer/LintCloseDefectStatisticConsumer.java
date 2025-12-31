@@ -25,6 +25,7 @@ import com.tencent.bk.codecc.defect.vo.enums.CheckerCategory;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.service.IConsumer;
 import com.tencent.devops.common.util.ThreadUtils;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

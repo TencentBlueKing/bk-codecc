@@ -1,8 +1,7 @@
 package com.tencent.bk.codecc.task.vo.checkerset;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -20,9 +19,9 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
-@ApiModel("清除任务工具对应的规则集请求体视图")
+@Schema(description = "清除任务工具对应的规则集请求体视图")
 public class UpdateCheckerSet2TaskReqVO extends CommonVO
 {
-    @ApiModelProperty(value = "工具名称列表", required = true)
+    @Schema(description = "工具名称列表", required = true)
     private List<ToolCheckerSetVO> toolCheckerSets;
 }

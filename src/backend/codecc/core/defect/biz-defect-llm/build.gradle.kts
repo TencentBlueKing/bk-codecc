@@ -1,5 +1,5 @@
 plugins {
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.6.21"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
 }
 
 dependencies {
@@ -10,14 +10,13 @@ dependencies {
     api(project(":core:defect:api-defect-llm"))
     api(project(":core:defect:model-defect-llm"))
 
-    api("io.ktor:ktor-client-core-jvm:2.2.1")
-//    api("io.ktor:ktor-client-core-jvm:2.3.2")
-    api("io.ktor:ktor-client-okhttp:2.2.1")
-    api("io.ktor:ktor-network:2.2.1")
-    api("io.ktor:ktor-client-logging:2.2.1")
-    api("io.ktor:ktor-client-auth:2.2.1")
-    api("io.ktor:ktor-client-content-negotiation:2.2.1")
-    api("io.ktor:ktor-serialization-kotlinx-json-jvm:2.2.1")
+    api("io.ktor:ktor-client-core-jvm:${Versions.ktorVersion}")
+    api("io.ktor:ktor-client-okhttp:${Versions.ktorVersion}")
+    api("io.ktor:ktor-network:${Versions.ktorVersion}")
+    api("io.ktor:ktor-client-logging:${Versions.ktorVersion}")
+    api("io.ktor:ktor-client-auth:${Versions.ktorVersion}")
+    api("io.ktor:ktor-client-content-negotiation:${Versions.ktorVersion}")
+    api("io.ktor:ktor-serialization-kotlinx-json-jvm:${Versions.ktorVersion}")
 
     api(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core"){
         isChanging=true
@@ -28,5 +27,5 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-coroutines-test")
 
     api("org.springframework.boot:spring-boot-starter-websocket")
-    api(group="javax.websocket", name="javax.websocket-api", version= "1.1")
+    api(group="jakarta.websocket", name="jakarta.websocket-api", version= Versions.jakartaWebsocketVersion)
 }

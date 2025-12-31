@@ -15,38 +15,37 @@ package com.tencent.bk.codecc.defect.api;
 import com.tencent.bk.codecc.defect.vo.common.BuildWithBranchVO;
 import com.tencent.bk.codecc.defect.vo.common.TaskCodeLineVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 
-@Api(tags = {"BUILD_TASK"}, description = "任务信息查询接口")
+@Tag(name = "BUILD_TASK", description = "任务信息查询接口")
 @Path("/build/task")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface BuildTaskRestResource {
 
-    @ApiOperation("查询构建快照相关信息")
+    @Operation(summary = "查询构建快照相关信息")
     @Path("/tasks/{taskId}/buildInfosWithBranches")
     @GET
     Result<List<BuildWithBranchVO>> queryBuildInfosWithBranches(
-        @ApiParam(value = "任务ID", required = true)
+        @Parameter(description = "任务ID", required = true)
         @PathParam(value = "taskId")
         Long taskId
     );
 
-    @ApiOperation("查询任务的代码行信息")
+    @Operation(summary = "查询任务的代码行信息")
     @Path("/tasks/{taskId}/codeLine")
     @GET
     Result<List<TaskCodeLineVO>> getTaskCodeLineInfo(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @PathParam(value = "taskId")
             Long taskId
     );

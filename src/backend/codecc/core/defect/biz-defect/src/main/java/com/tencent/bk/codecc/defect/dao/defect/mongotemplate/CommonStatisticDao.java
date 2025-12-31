@@ -27,6 +27,7 @@
 package com.tencent.bk.codecc.defect.dao.defect.mongotemplate;
 
 import com.tencent.bk.codecc.defect.model.statistic.CommonStatisticEntity;
+import com.tencent.devops.common.constant.ComConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
@@ -37,8 +38,10 @@ import org.springframework.data.mongodb.core.aggregation.GroupOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -125,5 +128,42 @@ public class CommonStatisticDao {
                 "t_statistic", CommonStatisticEntity.class);
 
         return queryResult.getMappedResults();
+    }
+
+    /**
+     * 根据工具名称，任务编号范围，时间范围获取CommonStatistic分析报告
+     * @param toolName 工具名称
+     * @param taskIds 任务编号范围
+     * @param startTime 起始时间
+     * @param endTime 结束时间
+     * @return 分析报告列表
+     */
+    public List<CommonStatisticEntity> getScanStatisticList(
+            String toolName,
+            List<Long> taskIds,
+            Long startTime,
+            Long endTime
+    ) {
+        List<CommonStatisticEntity> results = new ArrayList<>();
+        Query query = Query.query(Criteria.where("tool_name").is(toolName));
+        query.addCriteria(Criteria.where("task_id").in(taskIds));
+        query.addCriteria(Criteria.where("time").gte(startTime).lt(endTime));
+        query.fields().include(
+                "task_id", "exist_count", "new_count", "fixed_count"
+        );
+
+        long page = 0;
+        query.limit(ComConstants.COMMON_PAGE_SIZE);
+        while (true) {
+            query.skip(page * ComConstants.COMMON_PAGE_SIZE);
+            List<CommonStatisticEntity> batchResult =
+                    defectMongoTemplate.find(query, CommonStatisticEntity.class);
+            if (batchResult.isEmpty()) {
+                break;
+            }
+            results.addAll(batchResult);
+            page++;
+        }
+        return results;
     }
 }

@@ -30,13 +30,12 @@ import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.bk.codecc.task.vo.RepoInfoVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.validation.Valid;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,49 +48,49 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
  * @version V1.0
  * @date 2019/5/28
  */
-@Api(tags = {"SERVICE_BASEDATA"}, description = "基础数据服务接口")
+@Tag(name = "SERVICE_BASEDATA", description = "基础数据服务接口")
 @Path("/service/baseData")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface ServiceBaseDataResource
 {
-    @ApiOperation("获取任务信息")
+    @Operation(summary = "获取任务信息")
     @Path("/paramType/{paramType}/paramCode/{paramCode}")
     @GET
     Result<List<BaseDataVO>> getInfoByTypeAndCode(
-            @ApiParam(value = "参数类型", required = true)
+            @Parameter(description = "参数类型", required = true)
             @PathParam(value = "paramType")
                     String paramType,
-            @ApiParam(value = "参数代码", required = true)
+            @Parameter(description = "参数代码", required = true)
             @PathParam(value = "paramCode")
                     String paramCode);
 
-    @ApiOperation("获取规则集信息")
+    @Operation(summary = "获取规则集信息")
     @Path("/paramType/{paramType}/paramCodesList")
     @POST
     Result<List<BaseDataVO>> getInfoByTypeAndCodeList(
-            @ApiParam(value = "参数类型", required = true)
+            @Parameter(description = "参数类型", required = true)
             @PathParam(value = "paramType")
                     String paramType,
-            @ApiParam(value = "参数代码", required = true)
+            @Parameter(description = "参数代码", required = true)
                     List<String> paramCodeList);
 
-    @ApiOperation("根据蓝盾项目ID批量查询仓库地址")
+    @Operation(summary = "根据蓝盾项目ID批量查询仓库地址")
     @Path("/repoUrl")
     @POST
     Result<Map<String, RepoInfoVO>> getRepoUrlByProjects(
-            @ApiParam(value = "蓝盾项目ID", required = true)
+            @Parameter(description = "蓝盾项目ID", required = true)
                     Set<String> bkProjectIds);
 
-    @ApiOperation("根据参数类型获取参数列表")
+    @Operation(summary = "根据参数类型获取参数列表")
     @Path("/paramType/{paramType}/params")
     @GET
     Result<List<BaseDataVO>> getParamsByType(
-            @ApiParam(value = "参数类型", required = true)
+            @Parameter(description = "参数类型", required = true)
             @PathParam(value = "paramType")
                     String paramType);
 
-    @ApiOperation("批量保存元数据信息")
+    @Operation(summary = "批量保存元数据信息")
     @Path("/batchSave")
     @POST
     Result<Integer> batchSave(
@@ -99,7 +98,7 @@ public interface ServiceBaseDataResource
             String uerId,
             List<BaseDataVO> baseDataVOList);
 
-    @ApiOperation("删除元数据信息")
+    @Operation(summary = "删除元数据信息")
     @Path("/{id}/id/delete")
     @DELETE
     Result<Integer> deleteById(
@@ -107,45 +106,32 @@ public interface ServiceBaseDataResource
         String id);
 
 
-    @ApiOperation("更新屏蔽用户名单")
+    @Operation(summary = "更新屏蔽用户名单")
     @Path("/excludeUserMember/update")
     @POST
     Result<Boolean> updateExcludeUserMember(
-            @ApiParam(value = "当前用户", required = true) @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String userName,
-            @ApiParam(value = "屏蔽名单请求体", required = true) @Valid BaseDataVO baseDataVO);
+            @Parameter(description = "当前用户", required = true) @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String userName,
+            @Parameter(description = "屏蔽名单请求体", required = true) @Valid BaseDataVO baseDataVO);
 
 
-    @ApiOperation("获取屏蔽用户名单")
+    @Operation(summary = "获取屏蔽用户名单")
     @Path("/excludeUserMember/list")
     @GET
     Result<List<String>> queryExcludeUserMember();
 
-
-    @ApiOperation("更新管理员名单")
-    @Path("/adminMember/update")
-    @POST
-    Result<Boolean> updateAdminMember(
-            @ApiParam(value = "当前用户", required = true) @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String userName,
-            @ApiParam(value = "屏蔽名单请求体", required = true) @Valid BaseDataVO baseDataVO);
-
-    @ApiOperation("更新OP管理员名单")
+    @Operation(summary = "更新OP管理员名单")
     @Path("/op/adminMember/update")
     @POST
     Result<Boolean> updateOpAdminMember(
-            @ApiParam(value = "当前用户", required = true) @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String userName,
-            @ApiParam(value = "屏蔽名单请求体", required = true) @Valid BaseDataVO baseDataVO);
+            @Parameter(description = "当前用户", required = true) @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String userName,
+            @Parameter(description = "屏蔽名单请求体", required = true) @Valid BaseDataVO baseDataVO);
 
-    @ApiOperation("获取管理员名单")
-    @Path("/adminMember/list")
-    @GET
-    Result<List<String>> queryAdminMember();
-
-    @ApiOperation("获取op管理员用户名单")
+    @Operation(summary = "获取op管理员用户名单")
     @Path("/op/adminMember/list")
     @GET
     Result<List<String>> queryOpAdminMember();
 
-    @ApiOperation("获取语言元数据")
+    @Operation(summary = "获取语言元数据")
     @Path("/")
     @POST
     Result<List<BaseDataVO>> findBaseData();

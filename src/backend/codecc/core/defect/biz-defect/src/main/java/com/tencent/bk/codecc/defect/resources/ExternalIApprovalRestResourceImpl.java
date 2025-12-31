@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.resources;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.tencent.bk.codecc.defect.api.ExternalIApprovalRestResource;
 import com.tencent.devops.common.constant.IgnoreApprovalConstants;
 import com.tencent.bk.codecc.defect.service.IgnoreApprovalService;

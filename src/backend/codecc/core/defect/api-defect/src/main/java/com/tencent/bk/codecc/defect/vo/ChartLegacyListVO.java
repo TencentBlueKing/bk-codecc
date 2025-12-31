@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -39,29 +38,29 @@ import java.util.List;
  * @date 2019/5/28
  */
 @Data
-@ApiModel("数据报表告警遗留列表视图[折线图]")
+@Schema(description = "数据报表告警遗留列表视图[折线图]")
 public class ChartLegacyListVO
 {
 
-    @ApiModelProperty("新告警图表展示的最高数量")
+    @Schema(description = "新告警图表展示的最高数量")
     private Integer newMaxHeight;
 
-    @ApiModelProperty("新告警图表展示的最低数量")
+    @Schema(description = "新告警图表展示的最低数量")
     private Integer newMinHeight;
 
-    @ApiModelProperty("历史告警图表展示的最高数量")
+    @Schema(description = "历史告警图表展示的最高数量")
     private Integer historyMaxHeight;
 
-    @ApiModelProperty("历史告警图表展示的最低数量")
+    @Schema(description = "历史告警图表展示的最低数量")
     private Integer historyMinHeight;
 
-    @ApiModelProperty("图表展示的最高数量")
+    @Schema(description = "图表展示的最高数量")
     private Integer maxHeight;
 
-    @ApiModelProperty("图表展示的最低数量")
+    @Schema(description = "图表展示的最低数量")
     private Integer minHeight;
 
-    @ApiModelProperty("告警遗留列表")
+    @Schema(description = "告警遗留列表")
     private List<ChartLegacyVO> legacyList;
 
 

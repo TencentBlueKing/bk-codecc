@@ -6,22 +6,23 @@ import { export_json_to_excel } from '@/vendor/export2Excel';
 export default {
   data() {
     const isFromOverview = this.$route.query.from === 'overview';
+    const isProjectDefect = this.$route.name === 'project-defect-list';
     return {
       isFromOverview,
+      isProjectDefect,
       isFullScreen: true,
-      enableToolName: 'PECKER_SCA',
-      toolId: 'PECKER_SCA',
+      // enableToolName: 'PECKER_SCA',
+      // toolId: 'PECKER_SCA',
       screenHeight: 336,
       panels: [
         { name: 'sca-pkg', label: `${this.$t('组件')} (0)` },
-        // 隐藏漏洞数
-        // { name: 'sca-vuln', label: `${this.$t('漏洞')} (0)` },
+        { name: 'sca-vuln', label: `${this.$t('漏洞')} (0)` },
         { name: 'sca-lic', label: `${this.$t('许可证')} (0)` },
       ],
       basicSearchParams: {
         // data
         taskIdList: [Number(this.$route.params.taskId)],
-        toolNameList: ['PECKER_SCA'],
+        // toolNameList: ['PECKER_SCA'],
         dimensionList: ['SCA'],
         pattern: 'SCA',
         // query
@@ -29,6 +30,10 @@ export default {
         sortType: 'ASC', // 排序方式
       },
       severityFilters: [
+        {
+          text: this.$t('未知'),
+          value: 0,
+        },
         {
           text: this.$t('高危'),
           value: 1,
@@ -61,26 +66,26 @@ export default {
         4: 'promptCount',
       },
       vulnSeverityMap: {
+        0: this.$t('未知'),
         1: this.$t('高'),
         2: this.$t('中'),
         4: this.$t('低'),
       },
       vulnSeverityTextMap: {
         unknownCount: this.$t('未知'),
-        highCount: this.$t('高'),
-        mediumCount: this.$t('中'),
-        lowCount: this.$t('低'),
+        seriousCount: this.$t('高'),
+        normalCount: this.$t('中'),
+        promptCount: this.$t('低'),
       },
       vulnSeverityFiledMap: {
         0: 'unknownCount',
-        1: 'highCount',
-        2: 'mediumCount',
-        4: 'lowCount',
+        1: 'seriousCount',
+        2: 'normalCount',
+        4: 'promptCount',
       },
       tabMap: {
         packageCount: 'sca-pkg',
-        // 隐藏漏洞数
-        // newVulCount: 'sca-vuln',
+        newVulCount: 'sca-vuln',
         licenseCount: 'sca-lic',
       },
     };
@@ -90,7 +95,7 @@ export default {
       projectVisitable: 'visitable',
     }),
     visitable() {
-      return this.projectVisitable;
+      return this.projectVisitable || !this.isProjectDefect;
     },
     ...mapGetters(['mainContentLoading']),
     ...mapState('task', {
@@ -131,7 +136,7 @@ export default {
       return language === 'en-US';
     },
     enableSCA() {
-      return this.taskDetail.enableToolList.find(item => item.toolName === this.enableToolName);
+      return this.taskDetail.enableToolList.find(item => item.toolPattern === 'SCA');
     },
   },
   created() {

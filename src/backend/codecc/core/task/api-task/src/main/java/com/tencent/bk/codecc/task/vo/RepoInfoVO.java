@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -40,23 +39,23 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("代码库信息视图")
+@Schema(description = "代码库信息视图")
 public class RepoInfoVO extends CommonVO
 {
 
-    @ApiModelProperty("代码库id")
+    @Schema(description = "代码库id")
     private String repoHashId;
 
-    @ApiModelProperty("代码库链接")
+    @Schema(description = "代码库链接")
     private String url;
 
-    @ApiModelProperty("仓库别名")
+    @Schema(description = "仓库别名")
     private String aliasName;
 
-    @ApiModelProperty("类型")
+    @Schema(description = "类型")
     private String type;
 
-    @ApiModelProperty("认证类型")
+    @Schema(description = "认证类型")
     private String authType;
 
 }

@@ -20,7 +20,7 @@ dependencies {
         exclude(group="com.tencent.bk.devops.ci.common", module = "common-api")
         exclude(group="com.tencent.bk.devops.ci.common", module = "common-auth")
     }
-    api(group = "com.tencent.bk.devops.ci.plugin", name = "api-plugin"){
+    api(group = "com.tencent.bk.devops.ci.misc", name = "api-plugin"){
         isChanging=true
     }
     api(group = "com.tencent.bk.devops.ci.notify", name = "api-notify"){

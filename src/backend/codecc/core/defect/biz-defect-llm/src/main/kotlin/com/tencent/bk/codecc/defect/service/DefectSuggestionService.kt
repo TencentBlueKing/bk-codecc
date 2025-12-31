@@ -54,6 +54,9 @@ class DefectSuggestionService @Autowired constructor(
     @Value("\${codecc.llm.bkaidev:#{null}}")
     val bkaidevHost: String? = null
 
+    @Value("\${codecc.llm.bkaidevpath:#{null}}")
+    val bkAiDevPath: String? = null
+
     @Value("\${codecc.llm.model:'hunyuan-turbo'}")
     val model: String = ""
 
@@ -64,19 +67,10 @@ class DefectSuggestionService @Autowired constructor(
             defectId = defectId,
             goodEvaluates = mutableListOf(),
             badEvaluates = mutableListOf()
-        )
-        val defectsSuggestionRecordEntityList =
-            defectSuggestionRecordRepository.findByDefectId(defectId)
-        if (!defectsSuggestionRecordEntityList.isNullOrEmpty()) {
-            defectsSuggestionRecordEntityList.forEach { entity ->
-                entity?.let {
-                    if (entity.goodEvaluates != null) {
-                        defectEvaluate.goodEvaluates.addAll(entity.goodEvaluates)
-                    }
-                    if (entity.badEvaluates != null) {
-                        defectEvaluate.badEvaluates.addAll(entity.badEvaluates)
-                    }
-                }
+        ).apply {
+            defectSuggestionRecordRepository.findFirstByDefectId(defectId)?.let { entity ->
+                entity.goodEvaluates?.let { goodEvaluates.addAll(it) }
+                entity.badEvaluates?.let { badEvaluates.addAll(it) }
             }
         }
         return defectEvaluate
@@ -85,16 +79,11 @@ class DefectSuggestionService @Autowired constructor(
     fun defectSuggestionEvaluate(
         request: DefectSuggestionEvaluateVO
     ): Boolean {
-        val defectsSuggestionRecordEntityList =
-            defectSuggestionRecordRepository.findByDefectId(request.defectId)
-        if (defectsSuggestionRecordEntityList?.isNotEmpty() == true) {
-            defectsSuggestionRecordEntityList.forEach { entity ->
-                entity?.let {
-                    entity?.goodEvaluates = request.goodEvaluates
-                    entity?.badEvaluates = request.badEvaluates
-                    defectSuggestionRecordRepository.save(it)
-                }
-            }
+        val entity = defectSuggestionRecordRepository.findFirstByDefectId(request.defectId)
+        entity?.let {
+            it.goodEvaluates = request.goodEvaluates
+            it.badEvaluates = request.badEvaluates
+            defectSuggestionRecordRepository.save(it)
             return true
         }
         return false
@@ -207,14 +196,13 @@ class DefectSuggestionService @Autowired constructor(
         var codeLanguage = ""
         // 当告警类型为lint类型
         (defectDetailQueryRspVO as? LintDefectDetailQueryRspVO)?.lintDefectDetailVO?.let { defect ->
-            //获取文件语言
+            // 获取文件语言
             codeLanguage = getLanguageByExtension(getFileExtension(defect.filePath))
 
             // 获取文件内容
             val fileContent = defect.fileInfoMap[defect.fileMd5]?.contents
             if (defect.defectInstances == null) {
                 // 单行告警
-                // 获取告警描述
                 message = defect.message
                 // 通过告警行，获取行内容
                 chatContent = fileContent?.let {
@@ -247,7 +235,7 @@ class DefectSuggestionService @Autowired constructor(
 
         // 多行圈复杂度告警
         (defectDetailQueryRspVO as? CCNDefectDetailQueryRspVO)?.defectVO?.let { ccn ->
-            //获取文件语言
+            // 获取文件语言
             codeLanguage = getLanguageByExtension(getFileExtension(ccn.filePath))
 
             // 获取文件内容
@@ -312,6 +300,7 @@ class DefectSuggestionService @Autowired constructor(
             bkAppCode = appCode,
             bkAppSecret = appSecret,
             host = bkaidevHost,
+            path = bkAiDevPath,
             bkTicket = bkTicket,
             apiKey = LLMConstants.LLM_API_KEY
         )
@@ -352,6 +341,7 @@ class DefectSuggestionService @Autowired constructor(
             bkAppCode = appCode,
             bkAppSecret = appSecret,
             host = bkaidevHost,
+            path = bkAiDevPath,
             bkTicket = bkTicket,
             apiKey = LLMConstants.LLM_API_KEY
         )

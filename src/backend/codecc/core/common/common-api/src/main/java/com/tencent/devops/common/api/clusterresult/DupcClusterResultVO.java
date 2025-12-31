@@ -1,14 +1,13 @@
 package com.tencent.devops.common.api.clusterresult;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
-@ApiModel
+@Schema
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class DupcClusterResultVO extends BaseClusterResultVO {
@@ -18,15 +17,15 @@ public class DupcClusterResultVO extends BaseClusterResultVO {
         this.setToolList(toolList);
     }
 
-    @ApiModelProperty
+    @Schema
     private Integer totalCount;
 
-    @ApiModelProperty
+    @Schema
     private Integer defectChange;
 
-    @ApiModelProperty
+    @Schema
     private Double dupRate;
 
-    @ApiModelProperty
+    @Schema
     private Double dupRateChange;
 }

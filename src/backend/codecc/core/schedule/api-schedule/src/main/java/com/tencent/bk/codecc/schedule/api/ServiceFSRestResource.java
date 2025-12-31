@@ -28,15 +28,15 @@ package com.tencent.bk.codecc.schedule.api;
 
 import com.tencent.bk.codecc.schedule.vo.*;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
 
 /**
@@ -45,38 +45,38 @@ import java.io.InputStream;
  * @version V2.0
  * @date 2019/09/28
  */
-@Api(tags = {"SERVICE_FS"}, description = "文件上传下载接口")
+@Tag(name = "SERVICE_FS", description = "文件上传下载接口")
 @Path("/service/fs")
 public interface ServiceFSRestResource
 {
-    @ApiOperation("获取文件索引")
+    @Operation(summary = "获取文件索引")
     @Path("/index/{type}/{fileName}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     Result<FileIndexVO> index(
-            @ApiParam(value = "文件名", required = true)
+            @Parameter(description = "文件名", required = true)
             @PathParam("fileName")
                     String fileName,
-            @ApiParam(value = "类型", required = true)
+            @Parameter(description = "类型", required = true)
             @PathParam("type")
                     String type);
 
 
-    @ApiOperation("获取索引信息")
+    @Operation(summary = "获取索引信息")
     @Path("/fileindex/{type}/{fileName}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     Result<FileIndexVO> getFileIndex(
-            @ApiParam(value = "文件名", required = true)
+            @Parameter(description = "文件名", required = true)
             @PathParam("fileName")
                     String fileName,
-            @ApiParam(value = "类型", required = true)
+            @Parameter(description = "类型", required = true)
             @PathParam("type")
                     String type);
 
-    @ApiOperation("获取索引信息")
+    @Operation(summary = "获取索引信息")
     @Path("/fileindex/updateUploadInfo")
     @POST
     @Produces(MediaType.APPLICATION_JSON)

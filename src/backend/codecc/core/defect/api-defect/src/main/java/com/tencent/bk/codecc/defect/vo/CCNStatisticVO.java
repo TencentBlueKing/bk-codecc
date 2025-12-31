@@ -12,8 +12,7 @@
  
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -23,32 +22,32 @@ import lombok.Data;
  * @version V1.0
  */
 @Data
-@ApiModel("圈复杂度视图")
+@Schema(description = "圈复杂度视图")
 public class CCNStatisticVO extends StatisticVO
 {
 
     /**
      * 本次分析前的遗留告警数
      */
-    @ApiModelProperty("本次分析前的遗留告警数")
+    @Schema(description = "本次分析前的遗留告警数")
     private int lastDefectCount;
 
     /**
      * 本次分析的平均圈复杂度
      */
-    @ApiModelProperty("本次分析的平均圈复杂度")
+    @Schema(description = "本次分析的平均圈复杂度")
     private float averageCCN;
 
     /**
      * 本次分析前的平均圈复杂度
      */
-    @ApiModelProperty("本次分析前的平均圈复杂度")
+    @Schema(description = "本次分析前的平均圈复杂度")
     private float lastAverageCCN;
 
     /**
      * 本次分析的平均圈复杂度变化
      */
-    @ApiModelProperty("本次分析的平均圈复杂度变化")
+    @Schema(description = "本次分析的平均圈复杂度变化")
     private float averageCCNChange;
 
 }

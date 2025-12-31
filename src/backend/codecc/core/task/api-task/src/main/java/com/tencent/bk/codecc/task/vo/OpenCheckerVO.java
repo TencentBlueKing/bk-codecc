@@ -26,11 +26,10 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.Data;
 
 /**
@@ -40,33 +39,33 @@ import lombok.Data;
  * @date 2019/5/20
  */
 @Data
-@ApiModel("打开规则视图")
+@Schema(description = "打开规则视图")
 public class OpenCheckerVO {
 
-    @ApiModelProperty("规则名称")
+    @Schema(description = "规则名称")
     private String checkerName;
 
-    @ApiModelProperty("是否为原生规则")
+    @Schema(description = "是否为原生规则")
     private Boolean nativeChecker;
 
-    @ApiModelProperty("配置了改规则的语言")
+    @Schema(description = "配置了改规则的语言")
     private Long lang;
 
-    @ApiModelProperty(value = "规则严重程度，1=>严重，2=>一般，3=>提示", required = true, allowableValues = "{1,2,3}")
+    @Schema(description = "规则严重程度，1=>严重，2=>一般，3=>提示", required = true, allowableValues = "{1,2,3}")
     @Min(1)
     @Max(3)
     private Integer severity;
 
-    @ApiModelProperty("规则参数选项")
+    @Schema(description = "规则参数选项")
     private List<CheckerOptions> checkerOptions;
 
     @Data
     public static class CheckerOptions {
 
-        @ApiModelProperty("参数名称")
+        @Schema(description = "参数名称")
         private String checkerOptionName;
 
-        @ApiModelProperty("参数值")
+        @Schema(description = "参数值")
         private String checkerOptionValue;
     }
 

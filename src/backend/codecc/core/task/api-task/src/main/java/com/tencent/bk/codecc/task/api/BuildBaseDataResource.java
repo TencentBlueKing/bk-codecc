@@ -29,20 +29,18 @@ package com.tencent.bk.codecc.task.api;
 
 import com.tencent.devops.common.api.BaseDataVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 
 /**
@@ -51,16 +49,16 @@ import java.util.List;
  * @version V1.0
  * @date 2019/5/28
  */
-@Api(tags = {"BUILD_BASEDATA"}, description = "基础数据服务接口")
+@Tag(name = "BUILD_BASEDATA", description = "基础数据服务接口")
 @Path("/build/baseData")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface BuildBaseDataResource {
-    @ApiOperation("根据参数类型获取参数列表")
+    @Operation(summary = "根据参数类型获取参数列表")
     @Path("/paramType/{paramType}/params")
     @GET
     Result<List<BaseDataVO>> getParamsByType(
-            @ApiParam(value = "参数类型", required = true)
+            @Parameter(description = "参数类型", required = true)
             @PathParam(value = "paramType")
                     String paramType);
 }

@@ -13,7 +13,7 @@
 package com.tencent.bk.codecc.task.vo.gongfeng;
 
 import com.tencent.devops.common.api.ToolVersionVO;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -30,15 +30,15 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 public class ToolVersionExtVO extends ToolVersionVO {
 
-    @ApiModelProperty("之前镜像版本号")
+    @Schema(description = "之前镜像版本号")
     private String lastDockerImageVersion;
 
-    @ApiModelProperty("工具名")
+    @Schema(description = "工具名")
     private String toolName;
 
-    @ApiModelProperty("镜像版本号下拉选项")
+    @Schema(description = "镜像版本号下拉选项")
     private List<String> imageVersionList;
 
-    @ApiModelProperty("镜像Hash值下拉选项")
+    @Schema(description = "镜像Hash值下拉选项")
     private List<String> imageHashList;
 }

@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -43,53 +42,53 @@ import java.util.Map;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("灰度工具项目视图")
+@Schema(description = "灰度工具项目视图")
 public class GrayToolProjectVO extends CommonVO {
     /**
      * 项目Id
      */
-    @ApiModelProperty(value = "项目Id", required = true)
+    @Schema(description = "项目Id", required = true)
     private String projectId;
 
-    @ApiModelProperty("工具id（存储状态）")
+    @Schema(description = "工具id（存储状态）")
     private String toolName;
 
-    @ApiModelProperty(value = "需灰度工具清单,注册灰度工具时必填入参")
+    @Schema(description = "需灰度工具清单,注册灰度工具时必填入参")
     private List<String> toolNameList;
 
     /**
      * 项目灰度状态
      */
-    @ApiModelProperty(value = "项目灰度状态", required = true)
+    @Schema(description = "项目灰度状态", required = true)
     private int status;
 
     /**
      * 项目灰度状态
      */
-    @ApiModelProperty(value = "是否开源治理项目", required = true)
+    @Schema(description = "是否开源治理项目", required = true)
     private boolean openSourceProject;
 
     /**
      * 配置参数
      */
-    @ApiModelProperty("配置参数")
+    @Schema(description = "配置参数")
     private Map<String, Object> configureParam;
 
     /**
      * 接口人
      */
-    @ApiModelProperty("接口人")
+    @Schema(description = "接口人")
     private String projectOwner;
 
     /**
      * 原因
      */
-    @ApiModelProperty("原因")
+    @Schema(description = "原因")
     private String reason;
 
     /**
      * 筛除机器创建项目(0:筛除 1:不筛除)
      */
-    @ApiModelProperty("筛除机器创建项目")
+    @Schema(description = "筛除机器创建项目")
     private Integer hasRobotTaskBool;
 }

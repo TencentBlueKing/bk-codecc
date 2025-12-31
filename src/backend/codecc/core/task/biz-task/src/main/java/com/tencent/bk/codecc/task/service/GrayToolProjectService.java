@@ -26,6 +26,7 @@
 
 package com.tencent.bk.codecc.task.service;
 
+import com.tencent.bk.codecc.task.model.TaskInfoEntity;
 import com.tencent.bk.codecc.task.vo.GrayReportVO;
 import com.tencent.bk.codecc.task.vo.GrayToolProjectReqVO;
 import com.tencent.bk.codecc.task.vo.TriggerGrayToolVO;
@@ -54,7 +55,7 @@ public interface GrayToolProjectService {
     /**
      * 根据项目ID和工具名称查询信息
      */
-    GrayToolProjectVO findByProjectIdAndToolName(String projectId, String toolName);
+    GrayToolProjectVO findByProjectIdAndToolName(String projectId, String toolName, TaskInfoEntity taskInfoEntity);
 
     /**
      * 更新项目灰度信息

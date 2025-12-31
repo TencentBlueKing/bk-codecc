@@ -5,10 +5,12 @@
     :theme="'primary'"
     :width="579"
     :title="$t('设置默认路径')"
+    :mask-close="false"
     :before-close="handleBeforeClose"
     @confirm="save"
     @cancel="cancel"
     :position="{ top: 100, left: 5 }"
+    render-directive="if"
   >
     <bk-transfer
       :title="title"
@@ -44,7 +46,6 @@ export default {
   computed: {
     inputVisible: {
       get() {
-        window.changeAlert = false;
         return this.visible;
       },
       set(value) {
@@ -55,7 +56,6 @@ export default {
   },
   methods: {
     change(sourceList, targetList, tagetValueList) {
-      window.changeAlert = true;
       this.sourceLength = sourceList.length;
       this.targetLength = targetList.length;
       this.selectedList.defaultFilterPath = targetList;

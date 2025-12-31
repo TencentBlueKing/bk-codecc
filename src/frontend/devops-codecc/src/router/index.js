@@ -181,6 +181,7 @@ router.afterEach(async (to, from) => {
     if (!store.state.tool.mapList.CCN && to.meta && !to.meta.notNeedToolList) {
       getToolList();
     }
+
     preloading = true;
     await preload();
     preloading = false;

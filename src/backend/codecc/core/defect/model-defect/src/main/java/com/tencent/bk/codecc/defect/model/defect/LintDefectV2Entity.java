@@ -26,7 +26,7 @@
 
 package com.tencent.bk.codecc.defect.model.defect;
 
-import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson2.annotation.JSONField;
 import com.tencent.bk.codecc.defect.model.CodeCommentEntity;
 import java.util.List;
 import lombok.Data;
@@ -330,4 +330,18 @@ public class LintDefectV2Entity extends CommonSpecialEntity {
      */
     @Field("ignore_approval_status")
     private Integer ignoreApprovalStatus;
+
+    /**
+     * 该告警的上下文代码起止行, 一般是指告警所在函数的起止
+     */
+    @Transient
+    private Long contextStartLine;
+    @Transient
+    private Long contextEndLine;
+
+    /**
+     * 是否要将该告警上传 LLM 服务做误报过滤
+     */
+    @Transient
+    private Boolean enableLlmFilter;
 }

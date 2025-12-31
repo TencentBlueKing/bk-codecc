@@ -15,13 +15,13 @@ object LLMConstants {
     /**
      * 大模型选项
      */
-    // TODO：以下变量获取的值，后期通过OP获取
+    // 以下变量获取的值，后期通过OP获取
     const val LLM_NAME = ""
 
     /**
      * 大模型鉴权key
      */
-    // TODO: 以下变量获取的值，后期通过OP获取
+    // 以下变量获取的值，后期通过OP获取
     const val LLM_API_KEY = ""
 
     /**
@@ -32,7 +32,7 @@ object LLMConstants {
     /**
      * 结果随机性
      */
-    // TODO: 以下变量获取的值，后期通过OP获取
+    // 以下变量获取的值，后期通过OP获取
     const val TEMPERATURE = 0.9
 
     /**
@@ -103,7 +103,7 @@ object LLMConstants {
 
     const val LLM_PROMPT_ANSWER_ASSISTANT_CHAT_CONTEXT_SEPARATE = "output:"
 
-    val LANG_SUFFIX_MAP  = mapOf(
+    val LANG_SUFFIX_MAP = mapOf(
         "cs" to listOf(".cs"),
         "cpp" to listOf(".c", ".ec", ".pgc", ".C", ".c++", ".cc", ".CPP", ".cpp", ".cxx", ".inl", ".pcc", ".H", ".h", ".hh", ".hpp", ".hxx"),
         "java" to listOf(".java"),
@@ -115,7 +115,7 @@ object LLMConstants {
         "ruby" to listOf(".rb"),
         "lua" to listOf(".lua"),
         "go" to listOf(".go"),
-        "swift" to listOf(".Swift"),
+        "swift" to listOf(".swift"),
         "typescript" to listOf(".ts", ".tsx"),
         "kotlin" to listOf(".kt", ".kts"),
         "dart" to listOf(".dart"),

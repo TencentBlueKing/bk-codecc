@@ -12,7 +12,7 @@
 
 package com.tencent.bk.codecc.defect.consumer;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.google.common.collect.Lists;
 import com.tencent.bk.codecc.defect.component.DefectConsumerRetryLimitComponent;
 import com.tencent.bk.codecc.defect.component.ScmJsonComponent;

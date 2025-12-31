@@ -10,4 +10,6 @@ public interface ToolConfigService {
     List<ToolConfigInfoVO> getToolConfigByTaskIdAndToolName(List<Long> taskIds, String toolName);
 
     List<ToolConfigInfoVO> getToolConfigByTaskIdIn(List<Long> taskId);
+
+    List<Long> getTaskIdsByToolWithCursor(String toolName, Long taskId, Long size);
 }

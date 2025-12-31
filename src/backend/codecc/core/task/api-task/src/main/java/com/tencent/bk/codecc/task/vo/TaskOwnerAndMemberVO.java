@@ -12,8 +12,7 @@
  
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -25,13 +24,13 @@ import java.util.List;
  * @version V1.0
  */
 @Data
-@ApiModel("任务成员及管理员视图")
+@Schema(description = "任务成员及管理员视图")
 public class TaskOwnerAndMemberVO 
 {
-    @ApiModelProperty("任务管理员")
+    @Schema(description = "任务管理员")
     private List<String> taskOwner;
 
-    @ApiModelProperty("任务成员")
+    @Schema(description = "任务成员")
     private List<String> taskMember;
 
 }

@@ -6,6 +6,12 @@
     :empty-content="emptyContent"
     @change="change"
   >
+    <template #source-option="data">
+      <bk-user-display-name :user-id="data"></bk-user-display-name>
+    </template>
+    <template #target-option="data">
+      <bk-user-display-name :user-id="data"></bk-user-display-name>
+    </template>
   </bk-transfer>
 </template>
 <script>

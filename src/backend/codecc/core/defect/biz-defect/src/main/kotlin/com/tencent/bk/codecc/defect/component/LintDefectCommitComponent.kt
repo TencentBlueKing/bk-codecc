@@ -1,6 +1,5 @@
 package com.tencent.bk.codecc.defect.component
 
-import com.alibaba.fastjson.JSONObject
 import com.fasterxml.jackson.core.type.TypeReference
 import com.tencent.bk.codecc.defect.cluster.ClusterLintCompareProcess
 import com.tencent.bk.codecc.defect.component.abstract.AbstractDefectCommitComponent
@@ -13,17 +12,22 @@ import com.tencent.bk.codecc.defect.pojo.AggregateDefectOutputModelV2
 import com.tencent.bk.codecc.defect.pojo.DefectClusterDTO
 import com.tencent.bk.codecc.defect.service.DefectFilePathClusterService
 import com.tencent.bk.codecc.defect.vo.CommitDefectVO
+import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
+import com.tencent.bk.codecc.task.constant.TaskMessageCode
+import com.tencent.bk.codecc.task.vo.TaskDetailVO
 import com.tencent.devops.common.api.codecc.util.JsonUtil
 import com.tencent.devops.common.api.exception.CodeCCException
+import com.tencent.devops.common.api.pojo.codecc.Result
 import com.tencent.devops.common.api.util.UUIDUtil
+import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.constant.ComConstants.DefectStatus
 import com.tencent.devops.common.constant.ComConstants.Tool
 import com.tencent.devops.common.constant.CommonMessageCode
-import com.tencent.devops.common.constant.RedisKeyConstants
 import org.apache.commons.lang.BooleanUtils
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.util.Pair
 import org.springframework.stereotype.Component
@@ -36,13 +40,19 @@ class LintDefectCommitComponent @Autowired constructor(
     protected val lintDefectV2Dao: LintDefectV2Dao,
     private val clusterLintCompareProcess: ClusterLintCompareProcess,
     protected val newLintDefectTracingComponent: NewLintDefectTracingComponent,
-    private val redisTemplate: RedisTemplate<String, String>,
+    private val newAggregateDebugService: AggregateDebugService,
     private val defectFilePathClusterService: DefectFilePathClusterService,
     private val scmJsonComponent: ScmJsonComponent
 ) : AbstractDefectCommitComponent<LintDefectV2Entity>(scmJsonComponent) {
     companion object {
         private val logger = LoggerFactory.getLogger(LintDefectCommitComponent::class.java)
     }
+
+    @Value("\${codecc.enableMultiTenant:#{null}}")
+    private val enableMultiTenant: Boolean? = null
+
+    @Autowired
+    private lateinit var client: Client
 
     @ExperimentalUnsignedTypes
     override fun processCluster(defectClusterDTO: DefectClusterDTO) {
@@ -68,9 +78,20 @@ class LintDefectCommitComponent @Autowired constructor(
                         "rel path set size: ${relPathSet?.size}, file path set size: ${filePathSet?.size}"
             )
 
+            if (enableMultiTenant == true) {
+                val taskOwner = getTaskOwner(client, taskId)
+                // 多租户场景下需要对 author 做处理
+                aggregateDefectNewInputModel.defectList.forEach {
+                    it.author = listOf(taskOwner)
+                }
+            }
+
             // 2. 获取原有告警清单
             var queryOrSaveBeginTime = System.currentTimeMillis()
             val preDefectList = getPreDefectList(this, relPathSet, filePathSet)
+            // 打印调试日志调试
+            newAggregateDebugService.checkAndOutputDebugInfo(buildEntity?.taskId ?: 0L, preDefectList)
+
             queryListCost = System.currentTimeMillis() - queryOrSaveBeginTime
             logger.info(
                 "[lint cluster process] get pre defect list, $commonlog, size: ${preDefectList.size}"
@@ -87,15 +108,21 @@ class LintDefectCommitComponent @Autowired constructor(
                 preDefectList = preDefectList,
                 md5SameMap = md5SameMap
             )
+
             logger.info(
                 "[lint cluster process] pre handle result, $commonlog, input defect size: ${inputDefectList.size}"
             )
+
+            // 打印调试日志调试
+            newAggregateDebugService.checkAndOutputDebugInfo(buildEntity?.taskId ?: 0L, inputDefectList)
 
             // 5. 聚类得到结果
             val outputDefectList = clusterMethod(inputDefectList, md5SameMap)
             logger.info(
                 "[lint cluster process] cluster result, $commonlog, output group size: ${outputDefectList.size}"
             )
+            // 打印调试日志调试
+            newAggregateDebugService.checkAndOutputDebugInfo(buildEntity?.taskId ?: 0L, outputDefectList)
 
             // 6. 对于聚类结果进行后处理
             val upsertDefectList = postHandleDefectList(
@@ -152,8 +179,10 @@ class LintDefectCommitComponent @Autowired constructor(
         }
         finalDefectList.addAll(currentDefectList)
         // 2.再处理原有的告警
-        val processedPreDefectList = preDefectList.filter { !it.pinpointHash.isNullOrBlank() ||
-                toolName in Tool.SCAN_COMMIT_TOOLS }
+        val processedPreDefectList = preDefectList.filter {
+            !it.pinpointHash.isNullOrBlank() ||
+                    toolName in Tool.SCAN_COMMIT_TOOLS
+        }
         processedPreDefectList.forEach {
             it.newDefect = false
             if (it.status == 0) {
@@ -213,20 +242,6 @@ class LintDefectCommitComponent @Autowired constructor(
         return finalDefects
     }
 
-    private fun postHandleDefectListDebugEnabled(buildEntity: BuildEntity?): Boolean {
-        if (buildEntity == null || buildEntity.buildId.isNullOrEmpty()) {
-            return false
-        }
-        val check: Boolean = try {
-            redisTemplate.opsForSet()
-                    .isMember(RedisKeyConstants.DEBUG_BUILD_ID_SET_KEY, buildEntity.buildId) ?: false
-        } catch (e: Exception) {
-            logger.error("postHandleDefectListDebugEnabled cause error. ${buildEntity.buildId}", e)
-            false
-        }
-        return check
-    }
-
     override fun postHandleDefectList(
         outputDefectList: List<AggregateDefectOutputModelV2<LintDefectV2Entity>>,
         buildEntity: BuildEntity?,
@@ -238,15 +253,11 @@ class LintDefectCommitComponent @Autowired constructor(
             return emptyList()
         }
 
-        // 是否开启日志调试
-        if (postHandleDefectListDebugEnabled(buildEntity)) {
-            logger.info("postHandleDefectList outputDefectList:{}", JSONObject.toJSONString(outputDefectList))
-        }
-
+        val debugTaskId = newAggregateDebugService.isDebugTaskId(buildEntity?.taskId ?: 0L)
 
         val upsertDefectList = mutableListOf<LintDefectV2Entity>()
         outputDefectList.forEach {
-            //将每一组的告警分为新告警和老告警
+            // 将每一组的告警分为新告警和老告警
             val partitionedDefects = it.defects.partition { defect -> defect.newDefect }
             val newDefects = partitionedDefects.first
 
@@ -326,6 +337,13 @@ class LintDefectCommitComponent @Autowired constructor(
                     priorityIgnoreDefectMap.forEach { entry ->
                         updateOldDefectInfo(entry.value, entry.key, transferAuthorList, buildEntity, isReallocate)
                         entry.value.pinpointHashGroup = groupId
+                        val newDefect = entry.key
+                        if (newDefect.enableLlmFilter != null) {
+                            entry.value.enableLlmFilter = newDefect.enableLlmFilter
+                            entry.value.contextStartLine = newDefect.contextStartLine
+                            entry.value.contextEndLine = newDefect.contextEndLine
+                        }
+
                         upsertDefectList.add(entry.value)
                         // 查看是否有需要处理的相同旧告警
                         processSameOldDefect(entry.value, sameOldDefectMap, upsertDefectList, buildEntity)
@@ -400,6 +418,12 @@ class LintDefectCommitComponent @Autowired constructor(
                         if (selectedOldDefect.author.isNullOrEmpty()) {
                             selectedOldDefect.author = newDefect.author
                         }
+
+                        if (newDefect.enableLlmFilter != null) {
+                            selectedOldDefect.enableLlmFilter = newDefect.enableLlmFilter
+                            selectedOldDefect.contextStartLine = newDefect.contextStartLine
+                            selectedOldDefect.contextEndLine = newDefect.contextEndLine
+                        }
                     } else {
                         selectedOldDefect = newDefect
                         selectedOldDefect.createTime = System.currentTimeMillis()
@@ -430,6 +454,10 @@ class LintDefectCommitComponent @Autowired constructor(
                     needToCloseDefects.forEach { closeDefect ->
                         if (closeDefect.status == ComConstants.DefectStatus.NEW.value()) {
                             fixDefect(closeDefect, buildEntity)
+                            closeDefect.pinpointHashGroup = groupId
+                            upsertDefectList.add(closeDefect)
+                        } else if (debugTaskId) {
+                            // 如果是调试的任务，记录pinpointHashGroup
                             closeDefect.pinpointHashGroup = groupId
                             upsertDefectList.add(closeDefect)
                         }

@@ -14,6 +14,7 @@ import com.tencent.bk.codecc.defect.model.incremental.CodeRepoInfoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildInfoEntity;
 import com.tencent.bk.codecc.defect.model.incremental.ToolBuildStackEntity;
 import com.tencent.bk.codecc.defect.service.ToolBuildInfoService;
+import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
 import com.tencent.bk.codecc.defect.vo.ToolBuildInfoReqVO;
 import com.tencent.bk.codecc.defect.vo.ToolBuildStackReqVO;
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
@@ -315,6 +316,19 @@ public class ToolBuildInfoServiceImpl implements ToolBuildInfoService {
             return false;
         }
         toolBuildInfoDao.editToolBuildInfo(taskIdSet, Lists.newArrayList(toolName));
+        return true;
+    }
+
+    @Override
+    public Boolean batchSetForceFullScan(List<BatchDefectProcessReqVO.TaskInfoVO> taskInfoVOS) {
+        if (CollectionUtils.isEmpty(taskInfoVOS)) {
+            log.warn("batchSetForceFullScan fail! taskIdToolsMap is empty");
+            return false;
+        }
+
+        log.info("batchSetForceFullScan taskIdToolsMap: {}", taskInfoVOS);
+
+        toolBuildInfoDao.batchSetForceFullScan(taskInfoVOS);
         return true;
     }
 

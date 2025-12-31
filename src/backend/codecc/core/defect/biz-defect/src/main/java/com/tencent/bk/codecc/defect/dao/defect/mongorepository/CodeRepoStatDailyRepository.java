@@ -17,6 +17,9 @@ import com.tencent.bk.codecc.defect.model.CodeRepoStatDailyEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
+import java.util.List;
+
 /**
  * 规则告警统计
  *
@@ -25,4 +28,6 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface CodeRepoStatDailyRepository extends MongoRepository<CodeRepoStatDailyEntity, String> {
+
+    List<CodeRepoStatDailyEntity> findByDataFromAndDateIn(String dataFrom, List<String> dateList);
 }

@@ -1,11 +1,14 @@
 package com.tencent.bk.codecc.defect.component
 
-import com.alibaba.fastjson.JSONObject
+import com.alibaba.fastjson2.JSONObject
 import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.TaskLogOverviewDao
 import com.tencent.bk.codecc.task.api.ServiceTaskRestResource
 import com.tencent.bk.codecc.task.vo.PipelineCallbackVo
 import com.tencent.devops.common.client.Client
+import com.tencent.devops.common.web.mq.EXCHANGE_PIPELINE_CALLBACK_NO_TASK
+import com.tencent.devops.common.web.mq.ROUTE_PIPELINE_CALLBACK_NO_TASK
 import org.slf4j.LoggerFactory
+import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Component
 class PipelineBuildEndHandleComponent @Autowired constructor(
     private val finishTaskHandleComponent: FinishTaskHandleComponent,
     private val taskLogOverviewDao: TaskLogOverviewDao,
+    private val rabbitTemplate: RabbitTemplate,
     private val client: Client
 ) {
 
@@ -38,6 +42,11 @@ class PipelineBuildEndHandleComponent @Autowired constructor(
             }
             if (allTaskResult.data.isNullOrEmpty()) {
                 logger.info("handle pipeline build end get all task empty! pipelineId : $pipelineId.")
+                rabbitTemplate.convertAndSend(
+                    EXCHANGE_PIPELINE_CALLBACK_NO_TASK,
+                    ROUTE_PIPELINE_CALLBACK_NO_TASK,
+                    pipelineCallbackVo
+                )
                 return
             }
             val overviews = taskLogOverviewDao.findByTaskIdsAndBuildId(allTaskResult.data, buildId!!)

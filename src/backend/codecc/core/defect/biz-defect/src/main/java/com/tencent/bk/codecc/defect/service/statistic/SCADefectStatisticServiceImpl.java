@@ -48,7 +48,6 @@ public class SCADefectStatisticServiceImpl extends AbstractDefectStatisticServic
             DefectStatisticModel<SCAVulnerabilityEntity> defectStatisticModel) {
         return new SCADefectStatisticModelBuilder()
                 .sbomAggregateModel(defectStatisticModel.getSbomAggregateModel())
-                .licenses(defectStatisticModel.getScaLicenses())
                 .fastIncrementFlag(defectStatisticModel.getFastIncrementFlag())
                 .taskId(defectStatisticModel.getTaskDetailVO().getTaskId())
                 .toolName(defectStatisticModel.getToolName())
@@ -77,7 +76,6 @@ public class SCADefectStatisticServiceImpl extends AbstractDefectStatisticServic
      */
     @Override
     public void statisticDefect(SCAVulnerabilityEntity defectEntity, SCADefectStatisticModel statisticModel) {
-        statisticModel.getVulnerabilities().add(defectEntity);
     }
 
     /**

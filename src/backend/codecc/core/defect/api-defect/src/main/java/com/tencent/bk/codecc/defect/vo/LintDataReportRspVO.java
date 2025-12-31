@@ -27,8 +27,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.common.CommonDataReportRspVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -40,13 +39,13 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("Lint类数据报表响应视图")
+@Schema(description = "Lint类数据报表响应视图")
 public class LintDataReportRspVO extends CommonDataReportRspVO {
 
-    @ApiModelProperty("告警遗留数据列表[新/历史遗留]")
+    @Schema(description = "告警遗留数据列表[新/历史遗留]")
     private ChartLegacyListVO chartLegacys;
 
-    @ApiModelProperty("作者数据列表[新/历史告警]")
+    @Schema(description = "作者数据列表[新/历史告警]")
     private LintChartAuthorListVO chartAuthors;
 
 }

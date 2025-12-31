@@ -27,7 +27,7 @@
 package com.tencent.bk.codecc.task.vo;
 
 import com.tencent.devops.common.api.ToolMetaBaseVO;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -39,7 +39,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("工具配置加入工具元数据")
+@Schema(description = "工具配置加入工具元数据")
 public class ToolConfigInfoWithMetadataVO extends ToolConfigInfoVO
 {
     /**

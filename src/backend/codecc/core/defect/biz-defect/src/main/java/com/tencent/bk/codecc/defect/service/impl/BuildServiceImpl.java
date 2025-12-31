@@ -20,6 +20,7 @@ import com.tencent.bk.codecc.defect.model.BuildEntity;
 import com.tencent.bk.codecc.defect.model.CheckerSetsVersionInfoEntity;
 import com.tencent.bk.codecc.defect.model.TaskLogEntity;
 import com.tencent.bk.codecc.defect.service.BuildService;
+import com.tencent.bk.codecc.defect.service.ICheckerSetQueryBizService;
 import com.tencent.bk.codecc.defect.vo.common.BuildVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.checkerset.CheckerSetVO;
@@ -60,6 +61,8 @@ public class BuildServiceImpl implements BuildService {
     private BuildRepository buildRepository;
     @Autowired
     private TaskLogRepository taskLogRepository;
+    @Autowired
+    private ICheckerSetQueryBizService checkerSetQueryBizService;
 
     @Override
     public BuildVO upsertAndGetBuildInfo(BuildVO buildVO) {
@@ -164,13 +167,7 @@ public class BuildServiceImpl implements BuildService {
     }
 
     private List<CheckerSetsVersionInfoEntity> getCheckerSetsVersionByTaskId(long taskId) {
-        Result<List<CheckerSetVO>> result = client.get(ServiceCheckerSetRestResource.class).getCheckerSets(taskId);
-        if (result.isNotOk() || result.getData() == null) {
-            String errorMsg = "保存构建信息时，获取规则集版本失败: " + taskId;
-            logger.error(errorMsg);
-            throw new CodeCCException(CommonMessageCode.INTERNAL_SERVICE_ERROR, new String[]{errorMsg}, null);
-        }
-        List<CheckerSetVO> taskCheckerSetList = result.getData();
+        List<CheckerSetVO> taskCheckerSetList = checkerSetQueryBizService.getCheckerSetsByTaskId(taskId);
         List<CheckerSetsVersionInfoEntity> checkerSetsVersionInfoEntityList =
                 new ArrayList<>(Collections.emptyList());
         if (CollectionUtils.isNotEmpty(taskCheckerSetList)) {

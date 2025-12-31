@@ -41,7 +41,6 @@ class ChatCompletionRequestBuilderV2 {
         messages = ChatMessagesBuilderV2().apply(block).messages
     }
 
-
     /**
      * Builder of [ChatCompletionRequestV2] instances.
      */
@@ -66,5 +65,4 @@ class ChatMessagesBuilderV2 {
     fun message(block: SerializableChatBuilder.() -> Unit) {
         messages += SerializableChatBuilder().apply(block).build()
     }
-
 }

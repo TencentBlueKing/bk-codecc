@@ -41,7 +41,7 @@ import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.ComConstants.BsTaskCreateFrom;
 import com.tencent.devops.common.constant.ComConstants.Status;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
@@ -729,6 +729,22 @@ public class TaskDao implements CommonTaskDao {
                 : taskIdInfoList.stream().map(TaskIdInfo::getTaskId).collect(Collectors.toList());
     }
 
+    public List<Long> findTaskIdByProjectId(String projectId) {
+        Query query = Query.query(Criteria.where("project_id").is(projectId)
+                .and("status").is(ComConstants.Status.ENABLE.value()));
+        return mongoTemplate.findDistinct(query, "task_id", TaskInfoEntity.class, Long.class);
+    }
+
+    public List<Long> findAllTaskIdByProjectId(String projectId) {
+        Query query = Query.query(Criteria.where("project_id").is(projectId));
+        return mongoTemplate.findDistinct(query, "task_id", TaskInfoEntity.class, Long.class);
+    }
+
+    public List<String> findAllPipelineIdByProjectId(String projectId) {
+        Query query = Query.query(Criteria.where("project_id").is(projectId));
+        return mongoTemplate.findDistinct(query, "pipeline_id", TaskInfoEntity.class, String.class);
+    }
+
     /**
      * 以"大于lastTaskId、升序"的形式分页获取task部分信息
      *
@@ -783,8 +799,12 @@ public class TaskDao implements CommonTaskDao {
      *
      * @return page list
      */
-    public List<TaskOrgInfoEntity> findByPage(Pageable pageable) {
+    public List<TaskOrgInfoEntity> findByPage(Set<Long> taskIds, Pageable pageable) {
         Query query = Query.query(Criteria.where("status").is(ComConstants.Status.ENABLE.value()));
+        // 选填条件
+        if (CollectionUtils.isNotEmpty(taskIds)) {
+            query.addCriteria(Criteria.where("task_id").in(taskIds));
+        }
         query.fields().include("task_id", "create_from", "project_id", "task_owner", "created_by", "bg_id", "dept_id",
                 "business_line_id", "center_id", "group_id", "gongfeng_project_id");
         if (pageable != null) {
@@ -821,7 +841,7 @@ public class TaskDao implements CommonTaskDao {
 
                 // 回写owner到任务详情表
                 if (StringUtils.isNotEmpty(userInfoEntity.getUserName())) {
-                    // update.push("task_owner").atPosition(0).value(userInfoEntity.getUserName());
+                    // 此处直接set也不会覆盖原有的owner，因为 checkOrgInfoIsSame 方法中已经约定做了处理
                     update.set("task_owner", Arrays.asList(userInfoEntity.getUserName().split(ComConstants.COMMA)));
                 }
                 ops.updateOne(query, update);
@@ -964,6 +984,21 @@ public class TaskDao implements CommonTaskDao {
         mongoTemplate.updateMulti(updateQuery, update, TaskInfoEntity.class);
     }
 
+    /**
+     * 批量启用任务
+     * @param taskIds 任务ID列表
+     */
+    public void batchStartTask(List<Long> taskIds) {
+        List<List<Long>> taskIdLists = Lists.partition(taskIds, COMMON_PAGE_SIZE);
+        for (List<Long> taskIdList : taskIdLists) {
+            Query updateQuery = Query.query(Criteria.where("task_id").in(taskIdList));
+            Update update = Update.update("status", Status.ENABLE.value());
+            update.set("disable_time", null);
+            update.set("disable_reason", null);
+            mongoTemplate.updateMulti(updateQuery, update, TaskInfoEntity.class);
+        }
+    }
+
     public List<TaskStatisticVO> findTaskStatisticByIds(List<Long> taskIds) {
         MatchOperation match = Aggregation
                 .match(Criteria.where("task_id").in(taskIds));
@@ -988,5 +1023,28 @@ public class TaskDao implements CommonTaskDao {
         query.with(pageable);
         return mongoTemplate.find(query, TaskIdInfo.class, "t_task_detail").stream().map(
                 TaskIdInfo::getTaskId).collect(Collectors.toList());
+    }
+
+    /**
+     *  根据插件编号获取任务编号
+     * @param bkPluginIds 蓝盾插件编号
+     * @return 任务集合
+     */
+    public List<Long> findTaskIdByBkPluginIds(List<Integer> bkPluginIds) {
+        if (bkPluginIds.isEmpty()) {
+            log.info("findTaskIdByBkPluginIds bkPluginIds is empty!");
+            return Collections.emptyList();
+        }
+
+        Criteria criteria = new Criteria();
+        criteria.and("create_from").is(ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value())
+                .and("pipeline_id").ne(ComConstants.EMPTY_STRING)
+                .and("gongfeng_project_id").in(bkPluginIds)
+                .and("status").is(Status.ENABLE.value())
+                .orOperator(Criteria.where("project_id").is(ComConstants.OTEAM_PROJECT_ID)
+                ,Criteria.where("project_id").regex(ComConstants.GONGFENG_PROJECT_ID_PREFIX));
+
+        Query query = new Query(criteria);
+        return mongoTemplate.findDistinct(query, "task_id", "t_task_detail", Long.class);
     }
 }

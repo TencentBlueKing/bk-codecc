@@ -48,7 +48,12 @@
         <span class="config-txt">
           {{ $t('共找到') }}<span class="num">{{ totalCount }}</span
           >，{{ $t('已选中')
-          }}<span class="num">{{ selectedConf.length }}</span>
+          }}<span class="num">{{ selectedConf.length }}</span
+          ><span v-if="!isPertainProject">，{{ $t('该规则集创建自项目ID') }}：
+            <bk-button
+              text
+              @click="goToSourceProject"
+            >{{ checkersetConf.sourceProjectId}}</bk-button></span>
         </span>
         <div class="cc-keyboard">
           <span>{{ $t('当前已支持键盘操作') }}</span>
@@ -222,7 +227,7 @@
           <span class="checker-top">
             <span class="checker-col">
               <span class="checker-col-label">{{ $t('发布者：') }}</span>
-              <span class="checker-col-content">{{ publisher }}</span>
+              <bk-user-display-name :user-id="publisher"></bk-user-display-name>
             </span>
             <span class="checker-col">
               <span class="checker-col-label">{{ $t('更新时间：') }}</span>
@@ -332,14 +337,6 @@
               ></div>
             </span>
           </span>
-          <bk-button
-            :disabled="!isEditAndDelect"
-            type="submit"
-            :title="'基础按钮'"
-            @click="handleEdit(checker)"
-            class="mr10">
-            {{ $t('编 辑') }}
-          </bk-button>
           <!--          <bk-button-->
           <!--              :disabled="!isEditAndDelect"-->
           <!--              :theme="'danger'"-->
@@ -350,9 +347,17 @@
           <!--            {{ $t('删 除') }}-->
           <!--          </bk-button>-->
         </div>
-        <div v-show="hasDetail" class="checker-detail" id="checkerDetail">
+        <div v-show="hasDetail" class="checker-detail mt-5" id="checkerDetail">
           {{ checkerTypeDesc }}
         </div>
+        <bk-button
+          :disabled="!isEditAndDelect"
+          type="submit"
+          :title="'基础按钮'"
+          @click="handleEdit(checker)"
+          class="mr10">
+          {{ $t('编 辑') }}
+        </bk-button>
       </div>
     </bk-sideslider>
 
@@ -360,6 +365,7 @@
       v-model="updateVisible"
       theme="primary"
       width="533px"
+      :mask-close="false"
       :before-close="handleBeforeClose"
       class="update-parameter"
     >
@@ -415,13 +421,38 @@
       :position="{ top: 50, left: 5 }"
       :title="$t('现已支持键盘操作，提升操作效率')"
     >
-      <div>
-        <img
-          style="width: 552px"
-          v-if="isEn"
-          src="../../images/operate-checker-en.png"
-        />
-        <img v-else src="../../images/operate-checker.svg" />
+      <div
+        class="flex items-center text-[#979BA5] mt-[8px] p-[16px]
+          !text-[12px] border-[#DCDEE5] border-[1px] border-solid">
+        <div>
+          <img :src="KEY_SWITCH" class="w-[29px] h-[30px] inline-block mr-[16px]" />
+          <span>{{ $t('上下键切换规则') }}</span>
+        </div>
+        <bk-divider direction="vertical" class="!h-[29px] !mx-[16px]"></bk-divider>
+        <div>
+          <img :src="KEY_ENTER" class="w-[68px] h-[24px] inline-block mr-[16px]" />
+          <span>{{ $t('Enter 键进入规则详情') }}</span>
+        </div>
+      </div>
+
+      <div class="flex justify-center bg-[#EAEBF0] p-[8px]">
+        <img :src="checkerListImg" class="w-[574px]" />
+      </div>
+      <div
+        class="flex items-center text-[#979BA5] mt-[35px] p-[16px]
+          !text-[12px] border-[#DCDEE5] border-[1px] border-solid">
+        <div>
+          <img :src="KEY_SWITCH" class="w-[29px] h-[30px] inline-block mr-[16px]" />
+          <span>{{ $t('上下键切换规则') }}</span>
+        </div>
+        <bk-divider direction="vertical" class="!h-[29px] !mx-[16px]"></bk-divider>
+        <div>
+          <img :src="KEY_ESC" class="w-[39px] h-[24px] inline-block mr-[16px]" />
+          <span>{{ $t('Esc 键关闭规则详情') }}</span>
+        </div>
+      </div>
+      <div class="flex justify-center bg-[#EAEBF0] p-[8px]">
+        <img :src="checkerDetailImg" class="w-[574px]" />
       </div>
       <div class="operate-footer" slot="footer">
         <bk-button
@@ -449,6 +480,15 @@ import { language } from '../../i18n';
 import DEPLOY_ENV from '@/constants/env';
 import create from './create.vue';
 import { throttle } from 'lodash';
+import KEY_SWITCH from '../../images/operate-tips/button/switch.png';
+import KEY_ENTER from '../../images/operate-tips/button/checker-enter.png';
+import KEY_ESC from '../../images/operate-tips/button/checker-esc.png';
+import zhCheckerList from '../../images/operate-tips/zh/checker-list.png';
+import zhCheckerDetail from '../../images/operate-tips/zh/checker-detail.png';
+import enCheckerList from '../../images/operate-tips/en/checker-list.png';
+import enCheckerDetail from '../../images/operate-tips/en/checker-detail.png';
+import jaCheckerList from '../../images/operate-tips/ja/checker-list.png';
+import jaCheckerDetail from '../../images/operate-tips/ja/checker-detail.png';
 
 export default {
   components: {
@@ -535,6 +575,20 @@ export default {
       permissionList: [],
       toolRedPoint: window.localStorage.getItem('red-point-checker-tool-20241101'),
       checkerRedPoint: window.localStorage.getItem('red-point-checker-checker-20241101'),
+      langKey: {
+        'zh-CN': 'zh',
+        'en-US': 'en',
+        'ja-JP': 'ja',
+      },
+      KEY_SWITCH,
+      KEY_ENTER,
+      KEY_ESC,
+      zhCheckerList,
+      zhCheckerDetail,
+      enCheckerList,
+      enCheckerDetail,
+      jaCheckerList,
+      jaCheckerDetail,
     };
   },
   computed: {
@@ -553,8 +607,40 @@ export default {
     projectId() {
       return this.$route.params.projectId;
     },
+    isPertainProject() {
+      return (
+        this.checkersetConf.sourceProjectId
+          && this.checkersetConf.sourceProjectId === this.projectId
+      );
+    },
     userName() {
       return this.$store.state.user.username;
+    },
+    checkerListImg() {
+      const curLang = this.langKey[language] || 'zh';
+      switch (curLang) {
+        case 'zh':
+          return zhCheckerList;
+        case 'en':
+          return enCheckerList;
+        case 'ja':
+          return jaCheckerList;
+        default:
+          return zhCheckerList;
+      };
+    },
+    checkerDetailImg() {
+      const curLang = this.langKey[language] || 'zh';
+      switch (curLang) {
+        case 'zh':
+          return zhCheckerDetail;
+        case 'en':
+          return enCheckerDetail;
+        case 'ja':
+          return jaCheckerDetail;
+        default:
+          return zhCheckerDetail;
+      };
     },
   },
   watch: {
@@ -583,17 +669,6 @@ export default {
         });
       }
     },
-    updateVisible() {
-      this.$nextTick(() => {
-        window.changeAlert = false;
-      });
-    },
-    'ruleData.propsArr': {
-      deep: true,
-      handler() {
-        window.changeAlert = true;
-      },
-    },
   },
   created() {
     this.fetchSearch(true);
@@ -604,7 +679,7 @@ export default {
     function keyDown(event) {
       const e = event || window.event;
       // if (e.target.nodeName !== 'BODY') return
-      if (vm.$refs.addRegular.visible) return;
+      if (vm.$refs?.customRules?.visible) return;
       switch (e.code) {
         case 'Enter':
           if (e.target.getAttribute('class') !== 'bk-form-input') vm.handleRowClick();
@@ -645,6 +720,13 @@ export default {
           break;
       }
     }
+  },
+  mounted() {
+    // 主动给 body 设置焦点，确保键盘事件能触发
+    this.$nextTick(() => {
+      document.body.setAttribute('tabindex', '-1');
+      document.body.focus();
+    });
   },
   beforeDestroy() {
     // document.onkeydown = null
@@ -1097,6 +1179,11 @@ export default {
       };
       const res = await this.$store.dispatch('checker/permission', params);
       this.permissionList = res.data;
+    },
+    goToSourceProject() {
+      console.log(this.checkersetConf);
+      window.open(`${window.DEVOPS_SITE_URL}/console/codecc/${this.checkersetConf.sourceProjectId
+      }/checkerset/${this.checkersetConf.checkerSetId}/${this.checkersetConf.version}/manage`, '_blank');
     },
   },
 };

@@ -28,15 +28,14 @@ package com.tencent.bk.codecc.schedule.api;
 
 import com.tencent.bk.codecc.schedule.vo.FreeVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * 分析服务调度接口
@@ -44,16 +43,16 @@ import javax.ws.rs.core.MediaType;
  * @version V2.0
  * @date 2019/09/28
  */
-@Api(tags = {"SERVICE_DISPATCH"}, description = "分析服务调度接口")
+@Tag(name = "SERVICE_DISPATCH", description = "分析服务调度接口")
 @Path("/service")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface ServiceScheduleRestResource
 {
-    @ApiOperation(value = "释放任务分析资源")
+    @Operation(summary = "释放任务分析资源")
     @Path("/free")
     @POST
     Result<Boolean> free(
-            @ApiParam(value = "释放任务分析资源的请求信息", required = true)
+            @Parameter(description = "释放任务分析资源的请求信息", required = true)
                     FreeVO freeVO);
 }

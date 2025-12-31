@@ -26,16 +26,17 @@
 
 package com.tencent.bk.codecc.task.init
 
+import com.tencent.bk.codecc.defect.api.ServiceToolDeveloperInfoResource
 import com.tencent.bk.codecc.task.dao.CommonDao
 import com.tencent.bk.codecc.task.dao.mongorepository.BaseDataRepository
 import com.tencent.bk.codecc.task.dao.mongorepository.TaskRepository
 import com.tencent.bk.codecc.task.model.TaskInfoEntity
-import com.tencent.bk.codecc.task.service.AdminAuthorizeService
+import com.tencent.bk.codecc.task.service.AdminPrivilegeService
 import com.tencent.bk.codecc.task.service.code.InitResponseCode
-import com.tencent.devops.common.auth.api.pojo.external.KEY_ADMIN_MEMBER
 import com.tencent.devops.common.auth.api.pojo.external.KEY_CREATE_FROM
 import com.tencent.devops.common.auth.api.pojo.external.KEY_PROJECT_ID
 import com.tencent.devops.common.auth.api.pojo.external.PREFIX_TASK_INFO
+import com.tencent.devops.common.client.Client
 import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.constant.RedisKeyConstants
 import com.tencent.devops.common.constant.RedisKeyConstants.STANDARD_LANG
@@ -44,11 +45,11 @@ import com.tencent.devops.common.util.ThreadPoolUtil
 import org.apache.commons.lang.StringUtils
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.CommandLineRunner
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 
@@ -59,8 +60,12 @@ class InitializationRunner @Autowired constructor(
     private val baseDataRepository: BaseDataRepository,
     private val redisTemplate: RedisTemplate<String, String>,
     private val toolMetaCacheService: ToolMetaCacheService,
-    private val adminAuthorizeService: AdminAuthorizeService,
-    private val commonDao: CommonDao
+    private val adminPrivilegeService: AdminPrivilegeService,
+    private val commonDao: CommonDao,
+    private val client: Client,
+    @Value("\${spring.data.redis.host:localhost}") private val redisHost: String,
+    @Value("\${spring.data.redis.port:6379}") private val redisPort: Int,
+    @Value("\${spring.data.redis.database:0}") private val redisDatabase: Int
 ) : CommandLineRunner {
 
     companion object {
@@ -81,19 +86,19 @@ class InitializationRunner @Autowired constructor(
             }
         }
 
-        val jedisConnectionFactory: JedisConnectionFactory = redisTemplate.connectionFactory as JedisConnectionFactory
+        // 记录 Redis 连接信息（兼容 Jedis 和 Lettuce）
         logger.info(
             "start to init data with redis: {}, {}, {}",
-            jedisConnectionFactory.hostName,
-            jedisConnectionFactory.port,
-            jedisConnectionFactory.database
+            redisHost,
+            redisPort,
+            redisDatabase
         )
 
         // 国际化操作[ 响应码、操作记录、规则包、规则名称、报表日期、工具参数、工具描述、操作类型 ]
         globalMessage(redisTemplate)
 
         // 管理员列表
-        adminMember(redisTemplate)
+        adminMember()
 
         // 所有项目的创建来源
         ThreadPoolUtil.addRunnableTask { taskCreateFrom(redisTemplate) }
@@ -155,39 +160,11 @@ class InitializationRunner @Autowired constructor(
     /**
      * 管理员列表
      */
-    private fun adminMember(redisTemplate: RedisTemplate<String, String>) {
-        val baseDataEntities = baseDataRepository.findAllByParamTypeAndParamCode("ADMIN_MEMBER", "ADMIN_MEMBER")
-        if (!baseDataEntities.isNullOrEmpty()) {
-            val baseDataEntity = baseDataEntities[0]
-            if (!baseDataEntity.paramValue.isNullOrEmpty()) {
-                redisTemplate.opsForValue().set(KEY_ADMIN_MEMBER, baseDataEntity.paramValue)
-            }
-        }
-        // 添加bg管理员清单
-        /**
-         * 953: CDG
-         * 29294: CSIG
-         * 956: IEG
-         * 29292: PCG
-         * 14129: WXG
-         * 958: TEG
-         * 78: S1
-         * 2233: S2
-         * 234: S3
-         * 955: 其他
-         */
-//        val baseDataEntityList = baseDataRepository.findAllByParamType("BG_ADMIN_MEMBER")
-//        if (!baseDataEntityList.isNullOrEmpty()) {
-//            baseDataEntityList.forEach {
-//                redisTemplate.opsForHash<String, String>()
-//                    .put(RedisKeyConstants.KEY_USER_BG_ADMIN, it.paramCode, it.paramValue)
-//            }
-//        }
-        // 新BG管理员清单
-        val initializationBgAdminMember = adminAuthorizeService.initializationBgAdminMember()
-        if (initializationBgAdminMember) {
-            logger.info("initialization BgAdminMember success.")
-        }
+    private fun adminMember() {
+        // 新-初始化平台、BG、工具管理员
+        adminPrivilegeService.initializationBgAndGlobalAdminMember()
+        // 蓝鲸开发者中心管理员初始化
+        client.get(ServiceToolDeveloperInfoResource::class.java).initializationToolDeveloper()
     }
 
     /**

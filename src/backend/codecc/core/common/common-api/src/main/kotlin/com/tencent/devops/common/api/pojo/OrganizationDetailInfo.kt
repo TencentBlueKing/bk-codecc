@@ -26,21 +26,19 @@
 
 package com.tencent.bk.codecc.idcsync.pojo
 
-import io.swagger.annotations.ApiModel
-import io.swagger.annotations.ApiModelProperty
-
-@ApiModel("组织架构详细信息")
+import io.swagger.v3.oas.annotations.media.Schema
+@Schema(description = "组织架构详细信息")
 data class OrganizationDetailInfo(
-    @ApiModelProperty("事业群ID")
+    @get:Schema(description = "事业群ID")
     val bgId: Int?,
-    @ApiModelProperty("事业群名字")
+    @get:Schema(description = "事业群名字")
     val bgName: String?,
-    @ApiModelProperty("部门ID")
+    @get:Schema(description = "部门ID")
     val deptId: Int?,
-    @ApiModelProperty("部门名字")
+    @get:Schema(description = "部门名字")
     val deptName: String?,
-    @ApiModelProperty("中心ID")
+    @get:Schema(description = "中心ID")
     val centerId: Int?,
-    @ApiModelProperty("中心名字")
+    @get:Schema(description = "中心名字")
     val centerName: String?
 )

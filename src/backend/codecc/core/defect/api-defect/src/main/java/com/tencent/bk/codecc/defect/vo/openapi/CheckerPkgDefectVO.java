@@ -15,8 +15,7 @@ package com.tencent.bk.codecc.defect.vo.openapi;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.bk.codecc.defect.vo.LintFileVO;
 import com.tencent.devops.common.api.pojo.Page;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -26,20 +25,20 @@ import lombok.Data;
  * @version V1.0
  */
 @Data
-@ApiModel("指定规则包告警列表信息")
+@Schema(description = "指定规则包告警列表信息")
 public class CheckerPkgDefectVO 
 {
 
-    @ApiModelProperty("codecc代码扫描任务id")
+    @Schema(description = "codecc代码扫描任务id")
     @JsonProperty("projId")
     private Long taskId;
 
-    @ApiModelProperty("告警详情列表")
+    @Schema(description = "告警详情列表")
     private Page<DefectDetailVO> defectList;
 
-    @ApiModelProperty("工具名")
+    @Schema(description = "工具名")
     private String toolName;
 
-    @ApiModelProperty("Lint类工具告警列表")
+    @Schema(description = "Lint类工具告警列表")
     private Page<LintFileVO> lintDefectList;
 }

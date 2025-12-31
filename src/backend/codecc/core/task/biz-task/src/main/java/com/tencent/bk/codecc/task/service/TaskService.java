@@ -170,7 +170,7 @@ public interface TaskService {
      * @param taskId
      * @return
      */
-    TaskOverviewVO getTaskOverview(Long taskId, String buildNum);
+    TaskOverviewVO getTaskOverview(Long taskId, String buildId, String buildNum);
 
     /**
      * 获取任务信息概览
@@ -178,7 +178,7 @@ public interface TaskService {
      * @param taskId
      * @return
      */
-    TaskOverviewVO getTaskOverview(Long taskId, String buildNum, String orderBy);
+    TaskOverviewVO getTaskOverview(Long taskId, String buildId, String buildNum, String orderBy);
 
     /**
      * 开启任务
@@ -578,6 +578,12 @@ public interface TaskService {
 
     List<TaskBaseVO> queryTaskListByProjectId(String projectId);
 
+    List<Long> queryTasIdByProjectId(String projectId);
+
+    List<Long> queryAllTaskIdByProjectId(String projectId);
+
+    List<String> queryAllPipelineIdByProjectId(String projectId);
+
     List<String> queryProjectIdPage(Set<String> createFrom, Integer pageNum, Integer pageSize);
 
     List<Long> queryTaskIdPageByProjectId(String projectId, Integer pageNum, Integer pageSize);
@@ -633,4 +639,11 @@ public interface TaskService {
      * @param projectId
      */
     void stopDisableProjectTask(String projectId);
+
+    /**
+     * 项目启用后重新启用任务
+     * @param projectId
+     */
+    void startEnableProjectTask(String projectId);
+
 }

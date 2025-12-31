@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.task.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -25,29 +24,29 @@ import java.util.List;
  * @version V1.0
  */
 @Data
-@ApiModel("任务清单查询请求视图")
+@Schema(description = "任务清单查询请求视图")
 public class TaskListReqVO {
-    @ApiModelProperty("任务状态")
+    @Schema(description = "任务状态")
     private TaskListStatus taskStatus;
 
-    @ApiModelProperty("任务名: bs_pipeline -- 流水线;  bs_codecc;服务创建")
+    @Schema(description = "任务名: bs_pipeline -- 流水线;  bs_codecc;服务创建")
     private String taskSource;
 
-    @ApiModelProperty(value = "第几页")
+    @Schema(description = "第几页")
     private int page = 0;
 
-    @ApiModelProperty(value = "每页多少条")
+    @Schema(description = "每页多少条")
     private int pageSize = 10;
 
-    @ApiModelProperty(value = "是否分页")
+    @Schema(description = "是否分页")
     private Boolean pageable;
 
-    @ApiModelProperty(value = "true, 展示已停用任务; false, 展示启用任务")
+    @Schema(description = "true, 展示已停用任务; false, 展示启用任务")
     private Boolean showDisabledTask;
 
-    @ApiModelProperty(value = "选择展示的任务类型. 1, 启用任务; 2, 停用任务; 3, 测试任务")
+    @Schema(description = "选择展示的任务类型. 1, 启用任务; 2, 停用任务; 3, 测试任务")
     private Integer showTaskType;
 
-    @ApiModelProperty("任务状态集合")
+    @Schema(description = "任务状态集合")
     private List<TaskListStatus> taskStatusList;
 }

@@ -217,5 +217,16 @@ export default {
           console.error(e);
         });
     },
+    taskListForUsage({ commit, rootState }, params) {
+      return http
+        .get(`/defect/api/user/checkerSet/${params.checkerSetId}/taskUsageList`)
+        .then((res) => {
+          const data = res || {};
+          return data;
+        })
+        .catch((e) => {
+          console.error(e);
+        });
+    },
   },
 };

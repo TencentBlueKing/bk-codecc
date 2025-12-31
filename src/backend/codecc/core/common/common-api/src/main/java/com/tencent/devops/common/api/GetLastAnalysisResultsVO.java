@@ -26,8 +26,7 @@
 
 package com.tencent.devops.common.api;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.Set;
@@ -39,13 +38,15 @@ import java.util.Set;
  * @date 2019/6/10
  */
 @Data
-@ApiModel("获取任务所有有效工具的最近一次分析结果的请求对象")
+@Schema(description = "获取任务所有有效工具的最近一次分析结果的请求对象")
 public class GetLastAnalysisResultsVO
 {
-    @ApiModelProperty(value = "任务主键id", required = true)
+    @Schema(description = "任务主键id", required = true)
     private long taskId;
 
     private String buildNum;
+
+    private String buildId;
 
     private Set<String> toolSet;
 }

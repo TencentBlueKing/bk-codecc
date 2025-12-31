@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -39,25 +38,25 @@ import lombok.Data;
  */
 @Data
 @AllArgsConstructor
-@ApiModel("分析记录分组查询视图类")
+@Schema(description = "分析记录分组查询视图类")
 public class TaskLogGroupVO
 {
 
-    @ApiModelProperty("任务主键id")
+    @Schema(description = "任务主键id")
     private long taskId;
 
-    @ApiModelProperty("工具名")
+    @Schema(description = "工具名")
     private String toolName;
 
 
-    @ApiModelProperty("分析开始时间")
+    @Schema(description = "分析开始时间")
     private long startTime;
 
 
-    @ApiModelProperty("分析结束时间")
+    @Schema(description = "分析结束时间")
     private long endTime;
 
 
-    @ApiModelProperty("分析耗时")
+    @Schema(description = "分析耗时")
     private long elapseTime;
 }

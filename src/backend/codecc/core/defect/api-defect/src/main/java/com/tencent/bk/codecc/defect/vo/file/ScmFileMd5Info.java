@@ -12,28 +12,27 @@
  
 package com.tencent.bk.codecc.defect.vo.file;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 @Data
-@ApiModel("文件内容")
+@Schema(description = "文件内容")
 public class ScmFileMd5Info
 {
-    @ApiModelProperty(value = "文件名", required = true)
+    @Schema(description = "文件名", required = true)
     @NotNull(message = "文件名不能为空")
     private String filePath;
 
-    @ApiModelProperty(value = "文件名", required = true)
+    @Schema(description = "文件名", required = true)
     private String fileRelPath;
 
-    @ApiModelProperty(value = "文件名md5", required = true)
+    @Schema(description = "文件名md5", required = true)
     @NotNull(message = "文件名md5不能为空")
     private String md5;
 
-    @ApiModelProperty(value = "创建时间", required = true)
+    @Schema(description = "创建时间", required = true)
     private long createTime;
 }

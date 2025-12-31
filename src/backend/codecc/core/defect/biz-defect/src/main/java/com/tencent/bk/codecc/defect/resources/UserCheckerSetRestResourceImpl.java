@@ -3,6 +3,7 @@ package com.tencent.bk.codecc.defect.resources;
 import com.google.common.collect.Lists;
 import com.tencent.bk.audit.annotations.AuditEntry;
 import com.tencent.bk.codecc.defect.api.UserCheckerSetRestResource;
+import com.tencent.bk.codecc.defect.auth.CheckerSetListExtAuth;
 import com.tencent.bk.codecc.defect.auth.CheckerSetExtAuth;
 import com.tencent.bk.codecc.defect.dao.core.mongorepository.CheckerSetRepository;
 import com.tencent.bk.codecc.defect.model.checkerset.CheckerSetEntity;
@@ -15,6 +16,7 @@ import com.tencent.bk.codecc.defect.vo.OtherCheckerSetListQueryReq;
 import com.tencent.bk.codecc.defect.vo.QueryTaskCheckerSetsRequest;
 import com.tencent.bk.codecc.defect.vo.QueryTaskCheckerSetsResponse;
 import com.tencent.bk.codecc.defect.vo.UpdateAllCheckerReq;
+import com.tencent.bk.codecc.defect.vo.checkerset.TaskUsageDetailVO;
 import com.tencent.bk.codecc.defect.vo.enums.CheckerSetPermissionType;
 import com.tencent.devops.common.api.annotation.I18NResponse;
 import com.tencent.devops.common.api.checkerset.AuthManagementPermissionReqVO;
@@ -46,8 +48,14 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.util.Pair;
 
 /**
@@ -56,20 +64,24 @@ import org.springframework.data.util.Pair;
  * @version V1.0
  * @date 2020/1/2
  */
+@ConditionalOnProperty(name = "codecc.enableMultiTenant", havingValue = "false", matchIfMissing = true)
 @Slf4j
 @RestResource
 public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResource {
 
     @Autowired
-    private ICheckerSetManageBizService checkerSetManageBizService;
+    protected ICheckerSetManageBizService checkerSetManageBizService;
+
     @Autowired
-    private ICheckerSetQueryBizService checkerSetQueryBizService;
+    protected ICheckerSetQueryBizService checkerSetQueryBizService;
 
     @Autowired
     private AuthExPermissionApi authExPermissionApi;
 
     @Autowired
     private CheckerSetRepository checkerSetRepository;
+
+    private static final long MAX_LEV_DIS = 1000010;
 
     @Override
     public Result<CheckerSetParamsVO> getParams(String projectId) {
@@ -116,8 +128,11 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
 
     @Override
     @I18NResponse
-    @AuthMethod(resourceType = ResourceType.PROJECT, permission = {CodeCCAuthAction.RULESET_LIST})
-    public Result<List<CheckerSetVO>> getCheckerSets(CheckerSetListQueryReq queryCheckerSetReq) {
+    @AuthMethod(
+            resourceType = ResourceType.PROJECT,
+            permission = {CodeCCAuthAction.RULESET_LIST},
+            extPassClassName = CheckerSetListExtAuth.class
+    )public Result<List<CheckerSetVO>> getCheckerSets(CheckerSetListQueryReq queryCheckerSetReq) {
         if (queryCheckerSetReq.getTaskId() != null) {
             return new Result<>(checkerSetQueryBizService.getCheckerSetsOfTask(queryCheckerSetReq));
         } else {
@@ -191,11 +206,77 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
         }
     }
 
+    protected int compareCheckerSets(CheckerSetVO a, CheckerSetVO b, String sortField, Sort.Direction sortDirec) {
+        // 如果有一个是默认规则集, 另一个不是, 则默认规则集在前
+        int aIsDefault = BooleanUtils.toInteger(a.isDefault());
+        int bIsDefault = BooleanUtils.toInteger(b.isDefault());
+        if (aIsDefault != bIsDefault) {
+            return bIsDefault - aIsDefault;
+        }
+
+        // 如果有一个是推荐规则集, 另一个不是, 则推荐规则集在前
+        int aIsRecommend = BooleanUtils.toInteger(a.isRecommend());
+        int bIsRecommend = BooleanUtils.toInteger(b.isRecommend());
+        if (aIsRecommend != bIsRecommend) {
+            return bIsRecommend - aIsRecommend;
+        }
+
+        // 规则集名字与 quickSearch 的编辑距离更小的在前
+        long aLevDis = a.getLevDis() == null ? MAX_LEV_DIS : a.getLevDis();
+        long bLevDis = b.getLevDis() == null ? MAX_LEV_DIS : b.getLevDis();
+        if (aLevDis != bLevDis) {
+            return Long.compare(aLevDis, bLevDis);
+        }
+
+        // 将 legacy = true 的规则集放到后面, 因为它们适用于 CodeCC 的老插件
+        int aIsLegacy = BooleanUtils.toInteger(a.getLegacy(), 1, 0, 0);
+        int bIsLegacy = BooleanUtils.toInteger(b.getLegacy(), 1, 0, 0);
+        if (aIsLegacy != bIsLegacy) {
+            return aIsLegacy - bIsLegacy;
+        }
+
+        // 最后才比较用户指定的 sortField, 目前只支持根据 task_usage 和 create_date 这 2 个字段排序
+        if (sortField.equals("task_usage")) {
+            // 前端其实没有用到 sortField 这个字段, 所有逻辑都是跑到这个 task_usage 的比较
+            int aTaskUsage = a.getTaskUsage() == null ? 0 : a.getTaskUsage();
+            int bTaskUsage = b.getTaskUsage() == null ? 0 : b.getTaskUsage();
+            if (aTaskUsage != bTaskUsage) {
+                return Sort.Direction.ASC.equals(sortDirec) ? aTaskUsage - bTaskUsage : bTaskUsage - aTaskUsage;
+            }
+            // 这里需要保证排序的稳定性 (即对于相同的数据, 每次排序的结果都是完全一样的), 所以一定要分出大小
+            // 如果 taskUsage 也一样, 就比较 createTime
+        }
+
+        long aCreateTime = a.getCreateTime() == null ? 0 : a.getCreateTime();
+        long bCreateTime = b.getCreateTime() == null ? 0 : b.getCreateTime();
+        return Sort.Direction.ASC.equals(sortDirec) ? Long.compare(aCreateTime, bCreateTime) :
+                Long.compare(bCreateTime, aCreateTime);
+    }
+
     @Override
     @I18NResponse
     public Result<Page<CheckerSetVO>> getOtherCheckerSets(String projectId,
             OtherCheckerSetListQueryReq queryCheckerSetReq) {
-        return new Result<>(checkerSetQueryBizService.getOtherCheckerSets(projectId, queryCheckerSetReq));
+        List<CheckerSetVO> checkerSets = checkerSetQueryBizService.getOtherCheckerSets(projectId, queryCheckerSetReq);
+        int pageNum = Math.max(queryCheckerSetReq.getPageNum() - 1, 0);
+        int pageSize = queryCheckerSetReq.getPageSize() <= 0 ? 100 : queryCheckerSetReq.getPageSize();
+        // 用于请求返回的分页属性
+        Pageable pageable = PageRequest.of(pageNum, pageSize);
+
+        if (CollectionUtils.isEmpty(checkerSets)) {
+            Page<CheckerSetVO> page = new PageImpl<>(Lists.newArrayList(), pageable, 0);
+            return new Result<>(page);
+        }
+
+
+        List<CheckerSetVO> result = checkerSets.stream()
+                .sorted((o1, o2) -> compareCheckerSets(o1, o2, queryCheckerSetReq.getSortField(),
+                        queryCheckerSetReq.getSortType()))
+                .skip((long) pageNum * pageSize)
+                .limit(pageSize)
+                .collect(Collectors.toList());
+
+        return new Result<>(new PageImpl<>(result, pageable, checkerSets.size()));
     }
 
     @Override
@@ -285,5 +366,10 @@ public class UserCheckerSetRestResourceImpl implements UserCheckerSetRestResourc
     @Override
     public Result<List<CheckerSetVO>> getCheckerSetsForPreCI() {
         return new Result<>(checkerSetQueryBizService.queryCheckerDetailForPreCI());
+    }
+
+    @Override
+    public Result<Page<TaskUsageDetailVO>> getTaskUsageList(String projectId, String checkerSetId) {
+        return Result.success(checkerSetQueryBizService.getCheckerSetTaskUsageDetail(projectId, checkerSetId));
     }
 }

@@ -20,6 +20,7 @@ import test from './modules/test';
 import http from '@/api';
 import { unifyObjectStyle } from '@/common/util';
 import preci from './modules/preci';
+import displayname from './modules/displayname';
 import axios from 'axios';
 
 if (process.env.NODE_ENV === 'development') {
@@ -62,6 +63,7 @@ const store = new Vuex.Store({
     paas,
     test,
     preci,
+    displayname,
   },
   plugins: [loadedPlugin],
   // 公共 store

@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.defect.vo;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -11,15 +11,15 @@ import lombok.Data;
 @Data
 public class ProcessNegativeDefectReqVO {
 
-    @ApiModelProperty(value = "更新误报告警处理进展")
+    @Schema(description = "更新误报告警处理进展")
     private Integer processProgress;
 
-    @ApiModelProperty(value = "误报的处理原因类型")
+    @Schema(description = "误报的处理原因类型")
     private Integer processReasonType;
 
-    @ApiModelProperty(value = "误报的处理原因")
+    @Schema(description = "误报的处理原因")
     private String processReason;
 
-    @ApiModelProperty(value = "TAPD/Github Issue链接")
+    @Schema(description = "TAPD/Github Issue链接")
     private String issueLink;
 }

@@ -372,14 +372,15 @@ public class BuildSnapshotServiceImpl implements BuildSnapshotService {
         return buildDefectSummaryDao.findLastByTaskId(taskId);
     }
 
+
     @Override
     public void saveSCASnapshot(long taskId, String toolName, String buildId, BuildEntity buildEntity,
-            SCASbomAggregateModel aggregateModel, List<SCAVulnerabilityEntity> vulnerabilities,
-            List<SCALicenseEntity> licenses) {
+            SCASbomAggregateModel aggregateModel) {
         // 后续SCAVulnerabilityEntity可能需要录入lint告警库，与build_defect_v2
         scaSbomService.saveSCASbomSnapshot(taskId, toolName, buildId, buildEntity, aggregateModel);
-        scaVulnerabilityService.saveBuildVulnerabilities(taskId, toolName, buildId, buildEntity, vulnerabilities);
-        scaLicenseService.saveBuildLicenses(taskId, toolName, buildId, buildEntity, licenses);
+        scaVulnerabilityService.saveBuildVulnerabilities(taskId, toolName, buildId, buildEntity,
+                aggregateModel.getVulnerabilities());
+        scaLicenseService.saveBuildLicenses(taskId, toolName, buildId, buildEntity, aggregateModel.getLicenses());
     }
 
     private BuildDefectV2Entity constructBuildDefectV2Entity(long taskId, String toolName, String buildId,

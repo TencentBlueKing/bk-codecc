@@ -12,6 +12,8 @@ import com.tencent.bk.codecc.task.vo.TaskBaseVO;
 import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.bk.codecc.task.vo.TaskIdVO;
 import com.tencent.bk.codecc.task.vo.TestTaskReportVO;
+import com.tencent.bk.codecc.task.vo.TestTaskResultReqVO;
+import com.tencent.bk.codecc.task.vo.TestTaskStatusReqVO;
 import com.tencent.bk.codecc.task.vo.ToolBasicInfoVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.web.RestResource;
@@ -78,12 +80,12 @@ public class UserTestTaskRestResourceImpl implements UserTestTaskRestResource {
     }
 
     @Override
-    public Result<Boolean> getTestStatus(String toolName, String version) {
+    public Result<Boolean> getTestStatus(TestTaskStatusReqVO request) {
         return new Result<>(true);
     }
 
     @Override
-    public Result<BatchTestResultVO> getBatchTestResult(String toolName, String version, Integer stage) {
+    public Result<BatchTestResultVO> getBatchTestResult(TestTaskResultReqVO request) {
         return new Result<>(null);
     }
 
@@ -102,4 +104,5 @@ public class UserTestTaskRestResourceImpl implements UserTestTaskRestResource {
     public Result<Integer> countTestReport(String toolName, Integer stage, QueryTestReportReqVO queryTestReportReqVO) {
         return new Result<>(0);
     }
+
 }

@@ -1,13 +1,10 @@
 package com.tencent.bk.codecc.defect.service.impl;
 
-import com.tencent.bk.codecc.defect.dao.defect.mongotemplate.IgnoredNegativeDefectDao;
+import com.tencent.bk.codecc.defect.service.IIgnoredNegativeDefectService;
 import com.tencent.bk.codecc.defect.service.ISCABatchDefectProcessBizService;
 import com.tencent.bk.codecc.defect.vo.BatchDefectProcessReqVO;
 import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO;
-import com.tencent.bk.codecc.task.api.ServiceTaskRestResource;
-import com.tencent.bk.codecc.task.vo.TaskDetailVO;
 import com.tencent.devops.common.api.exception.CodeCCException;
-import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.constant.CommonMessageCode;
 import com.tencent.devops.common.service.BizServiceFactory;
@@ -32,9 +29,8 @@ public class SCABatchChangeIgnoreTypeBizServiceImpl extends AbstractSCABatchDefe
 
     @Autowired
     private BizServiceFactory<ISCABatchDefectProcessBizService> scaBatchDefectProcessBizServiceFactory;
-
     @Autowired
-    private IgnoredNegativeDefectDao ignoredNegativeDefectDao;
+    private IIgnoredNegativeDefectService iIgnoredNegativeDefectService;
 
     @Override
     protected List<Long> getTaskIdsByDefectKeySet(BatchDefectProcessReqVO batchDefectProcessReqVO) {
@@ -93,7 +89,8 @@ public class SCABatchChangeIgnoreTypeBizServiceImpl extends AbstractSCABatchDefe
         );
 
         if (batchDefectProcessReqVO.getIgnoreReasonType() != ComConstants.IgnoreReasonType.ERROR_DETECT.value()) {
-            ignoredNegativeDefectDao.batchDelete(batchDefectProcessReqVO.getDefectKeySet());
+            iIgnoredNegativeDefectService.batchDeleteIgnoredDefects(batchDefectProcessReqVO.getTaskId(),
+                    batchDefectProcessReqVO.getDefectKeySet());
         }
     }
 

@@ -42,6 +42,7 @@
           </bk-form-item>
           <bk-form-item>
             <bk-button
+              v-if="process !== 'success' && process !== 'fail'"
               theme="primary"
               :disabled="!repoScaleId || !need || !!process"
               @click="startTest">
@@ -53,9 +54,15 @@
             </span>
             <span v-if="process === 'fail'">
               <bk-popconfirm
-                :content="$t('随机测试的指标未达到建议值，是否确认跳过？')"
+                :content="$t('结束后，整个流程会置为失败。')"
                 width="288"
-                @confirm="skipTest">
+                @confirm="skipTest('finish')">
+                <bk-button class="ml-[15px]">{{ $t('结束') }}</bk-button>
+              </bk-popconfirm>
+              <bk-popconfirm
+                :content="$t('随机测试的指标未达到建议值，是否确认跳过？跳过后，整个流程会置为成功。')"
+                width="288"
+                @confirm="skipTest('success')">
                 <bk-button class="ml-[15px]">{{ $t('跳过') }}</bk-button>
               </bk-popconfirm>
               <bk-icon class="text-[14px] text-[#FF5A5A] pl-[15px]" type="close-circle-shape" />
@@ -75,7 +82,6 @@
 </template>
 
 <script>
-import { bkSelect, bkOption } from 'bk-magic-vue';
 import Result from './result.vue';
 
 export default {
@@ -98,7 +104,8 @@ export default {
   watch: {
     process(val) {
       console.log('🚀 ~ process ~ val:', val);
-      if (val) {
+      // 如果测试结束，则发送消息给父级, 只有成功才自动发送，失败要手动发送
+      if (val === 'success') {
         window.parent.postMessage({
           type: 'design-test',
           data: val,
@@ -149,8 +156,15 @@ export default {
         }
       }
     },
-    skipTest() {
-      this.process = 'success';
+    skipTest(process) {
+      this.process = process;
+      // 如果失败，且点击“结束”，则发送消息给父级，置为失败
+      if (process === 'finish') {
+        window.parent.postMessage({
+          type: 'design-test',
+          data: 'fail',
+        }, '*');
+      }
     },
   },
 };

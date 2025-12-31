@@ -1,7 +1,6 @@
 package com.tencent.bk.codecc.defect.vo.ignore;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ApiModel("忽略统计详情")
+@Schema(description = "忽略统计详情")
 public class IgnoreStatDetail {
 
     public IgnoreStatDetail(Long taskId, String nameCn, String gitRepo) {
@@ -27,25 +26,25 @@ public class IgnoreStatDetail {
         this.name = name;
     }
 
-    @ApiModelProperty("任务id")
+    @Schema(description = "任务id")
     private Long taskId;
 
-    @ApiModelProperty("任务中文名")
+    @Schema(description = "任务中文名")
     private String nameCn;
 
-    @ApiModelProperty("代码库")
+    @Schema(description = "代码库")
     private String gitRepo;
 
-    @ApiModelProperty("跳转问题列表默认的工具维度")
+    @Schema(description = "跳转问题列表默认的工具维度")
     private String dimension;
 
-    @ApiModelProperty("忽略问题数量")
+    @Schema(description = "忽略问题数量")
     private Integer defectIgnoreCount;
 
-    @ApiModelProperty("忽略风险函数数量")
+    @Schema(description = "忽略风险函数数量")
     private Integer ccnIgnoreCount;
 
-    @ApiModelProperty("告警处理人ID(忽略人)")
+    @Schema(description = "告警处理人ID(忽略人)")
     private String name;
 
     public void addDefectIgnoreCount(int defectIgnoreCount) {

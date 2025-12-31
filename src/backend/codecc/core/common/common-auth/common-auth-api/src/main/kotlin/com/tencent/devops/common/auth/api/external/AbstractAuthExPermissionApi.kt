@@ -63,6 +63,30 @@ abstract class AbstractAuthExPermissionApi @Autowired constructor(
         return AuthApiUtils.getAdminMember(redisTemplate)
     }
 
+    override fun isToolDeveloper(
+        user: String,
+        taskId: String,
+    ): Boolean {
+        val authTaskService = SpringContextUtil.getBean(AuthTaskService::class.java)
+        return try {
+            // 获取任务所使用的工具
+            val tools = authTaskService.getTaskToolNameList(taskId.toLong())
+            if (tools.isEmpty()) {
+                logger.debug("No tools found for taskId $taskId.")
+                return false
+            }
+            // 判断该用户是不是含有其中的工具开发者权限
+            val isAdmin = tools.any { toolName ->
+                redisTemplate.opsForSet().isMember("${RedisKeyConstants.PREFIX_TOOL_DEVELOPER}$toolName", user) == true
+            }
+            logger.info("User $user is${if (isAdmin) "" else " not"} a tool developer.")
+            isAdmin
+        } catch (e: Exception) {
+            logger.error("Error checking tool developer status for user $user and taskId $taskId", e)
+            false
+        }
+    }
+
     /**
      * 校验用户是否是BG管理员
      */

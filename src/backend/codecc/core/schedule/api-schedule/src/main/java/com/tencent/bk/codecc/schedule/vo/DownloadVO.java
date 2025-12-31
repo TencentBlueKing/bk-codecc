@@ -26,12 +26,11 @@
 
 package com.tencent.bk.codecc.schedule.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.ToString;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * 下载工具客户端的请求体
@@ -40,23 +39,23 @@ import javax.validation.constraints.NotNull;
  * @date 2019/10/10
  */
 @Data
-@ApiModel("下载文件的请求体")
+@Schema(description = "下载文件的请求体")
 @ToString
 public class DownloadVO
 {
     @NotNull(message = "文件名不能为空")
-    @ApiModelProperty(value = "文件名", required = true)
+    @Schema(description = "文件名", required = true)
     private String fileName;
 
     @NotNull(message = "下载的起始地址不能为空")
-    @ApiModelProperty(value = "下载的起始地址", required = true)
+    @Schema(description = "下载的起始地址", required = true)
     private Long beginIndex;
 
     @NotNull(message = "下载的字节长度不能为空")
-    @ApiModelProperty(value = "下载的字节长度")
+    @Schema(description = "下载的字节长度")
     private Long btyeSize;
 
     @NotNull(message = "下载类型不能为空")
-    @ApiModelProperty(value = "下载类型")
+    @Schema(description = "下载类型")
     private String downloadType;
 }

@@ -29,6 +29,5 @@ public interface IgnoreTypeSysRepository extends MongoRepository<IgnoreTypeSysEn
 
     IgnoreTypeSysEntity findFirstByOrderByIgnoreTypeIdDesc();
 
-
-    List<IgnoreTypeSysEntity> findByStatusOrderByIgnoreTypeId(Integer status);
+    List<IgnoreTypeSysEntity> findByStatusInOrderByIgnoreTypeId(List<Integer> ignoreTypeIds);
 }

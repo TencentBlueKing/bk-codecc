@@ -48,8 +48,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.BeansException
 import java.util.regex.Pattern
-import javax.ws.rs.container.ContainerRequestContext
-import javax.ws.rs.container.ContainerRequestFilter
+import jakarta.ws.rs.container.ContainerRequestContext
+import jakarta.ws.rs.container.ContainerRequestFilter
 
 class PermissionAuthFilter(
     private val resourceType: ResourceType,
@@ -82,7 +82,7 @@ class PermissionAuthFilter(
                 null
             } ?: throw CodeCCException(CommonMessageCode.PARAMETER_IS_INVALID, arrayOf(extPassBeanName))
 
-            if (processor.isPassAuth(requestContext)) {
+            if (processor.isPassAuth(requestContext, this)) {
                 return
             }
             logger.warn("extPassClassName[$extPassBeanName] is not pass auth! user: $user")
@@ -121,92 +121,15 @@ class PermissionAuthFilter(
             ResourceType.TASK -> {
                 // 当没获取到任务id时，只校验项目维度的权限
                 val taskId = requestContext.getHeaderString(AUTH_HEADER_DEVOPS_TASK_ID)
-                if (taskId.isNullOrBlank()) {
-                    logger.warn("permission auth task id isNullOrBlank")
-                    val isProjectRole = authExPermissionApi.authProjectRole(projectId, user, role = null)
-                    if (!isProjectRole) {
-                        throw UnauthorizedException("unauthorized user permission!")
-                    }
-                    return
-                }
-
-                val taskCreateFrom = authTaskService.getTaskCreateFrom(taskId.toLong())
-                logger.info("task create from: $taskCreateFrom, user: $user， projectId: $projectId")
-
-                // 若是BG管理员则校验通过
-                if (authExPermissionApi.isBgAdminMember(user, taskId, taskCreateFrom)) {
-                    return
-                }
-                when (taskCreateFrom) {
-                    ComConstants.BsTaskCreateFrom.BS_PIPELINE.value() -> {
-                        val pipelineAuthResults: MutableList<BkAuthExResourceActionModel> = mutableListOf()
-                        // 工蜂CI项目没有在蓝鲸权限中心注册过，需要走Oauth鉴权与工蜂权限对齐
-                        if (Pattern.compile("^git_[0-9]+$").matcher(projectId).find()) {
-                            val authProcessor =
-                                SpringContextUtil.getBean(GitPipelineTaskAuthProcessor::class.java) ?: return
-                            pipelineAuthResults.add(
-                                BkAuthExResourceActionModel(
-                                    "pipeline_auth",
-                                    null, null, authProcessor.isPassAuth(requestContext, actions)
-                                )
-                            )
-                        } else {
-                            // 普通流水线在蓝鲸权限中心鉴权
-                            val pipelieActions = PermissionUtil.getPipelinePermissionsFromActions(actions)
-                            val pipelinePermissionAuthResult = authExPermissionApi.validatePipelineBatchPermission(
-                                user,
-                                taskId,
-                                projectId,
-                                pipelieActions
-                            )
-                            var pipelineAuthPass = true
-                            pipelinePermissionAuthResult.forEach {
-                                if (it.isPass == false) {
-                                    pipelineAuthPass = false
-                                }
-                            }
-
-                            if (pipelineAuthPass) {
-                                pipelineAuthResults.add(
-                                    BkAuthExResourceActionModel(
-                                        "pipeline_auth",
-                                        null, null, true
-                                    )
-                                )
-                            } else {
-                                pipelineAuthResults.add(
-                                    BkAuthExResourceActionModel(
-                                        "pipeline_auth",
-                                        null, null, false
-                                    )
-                                )
-                            }
-                        }
-                        pipelineAuthResults
-                    }
-
-                    ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value() -> {
-                        val authProcessor =
-                            SpringContextUtil.getBean(GongfengScanTaskAuthProcessor::class.java) ?: return
-                        if (authProcessor.isPassAuth(requestContext, actions)) {
-                            logger.info("gongfeng authorization pass, task id: $taskId")
-                            return
-                        } else {
-                            logger.error("empty validate result: $user")
-                            throw CodeCCException(CommonMessageCode.PERMISSION_DENIED, arrayOf(user))
-                        }
-                    }
-
-                    else -> {
-                        val codeccActions = PermissionUtil.getCodeCCPermissionsFromActions(actions)
-                        authExPermissionApi.validateTaskBatchPermission(
-                            user,
-                            taskId,
-                            projectId,
-                            codeccActions
-                        )
-                    }
-                }
+                validUserTaskPermission(
+                    requestContext = requestContext,
+                    authExPermissionApi = authExPermissionApi,
+                    authTaskService = authTaskService,
+                    user = user,
+                    projectId = projectId,
+                    actions,
+                    taskId
+                )
             }
 
             else -> {
@@ -226,6 +149,109 @@ class PermissionAuthFilter(
         }
         logger.error("validate permission fail! user: $user")
         throw UnauthorizedException("unauthorized user permission!")
+    }
+
+    fun validUserTaskPermission(
+        requestContext: ContainerRequestContext,
+        authExPermissionApi: AuthExPermissionApi,
+        authTaskService: AuthTaskService,
+        user: String,
+        projectId: String,
+        actions: List<CodeCCAuthAction>,
+        taskId: String? = null,
+    ): List<BkAuthExResourceActionModel> {
+        if (taskId.isNullOrBlank()) {
+            logger.warn("permission auth task id isNullOrBlank")
+            val isProjectRole = authExPermissionApi.authProjectRole(projectId, user, role = null)
+            if (!isProjectRole) {
+                throw UnauthorizedException("unauthorized user permission!")
+            }
+            return listOf(BkAuthExResourceActionModel(isPass = true))
+        }
+
+        val taskCreateFrom = authTaskService.getTaskCreateFrom(taskId.toLong())
+        logger.info("task create from: $taskCreateFrom, user: $user， projectId: $projectId")
+
+        // 若是BG管理员则校验通过
+        if (authExPermissionApi.isBgAdminMember(user, taskId, taskCreateFrom)) {
+            return listOf(BkAuthExResourceActionModel(isPass = true))
+        }
+
+        // 若是蓝鲸工具开发者则校验通过
+        if (authExPermissionApi.isToolDeveloper(user, taskId)) {
+            return listOf(BkAuthExResourceActionModel(isPass = true))
+        }
+
+        return when (taskCreateFrom) {
+            ComConstants.BsTaskCreateFrom.BS_PIPELINE.value() -> {
+                val pipelineAuthResults: MutableList<BkAuthExResourceActionModel> = mutableListOf()
+                // 工蜂CI项目没有在蓝鲸权限中心注册过，需要走Oauth鉴权与工蜂权限对齐
+                if (Pattern.compile("^git_[0-9]+$").matcher(projectId).find()) {
+                    val authProcessor =
+                        SpringContextUtil.getBean(GitPipelineTaskAuthProcessor::class.java)
+                    pipelineAuthResults.add(
+                        BkAuthExResourceActionModel(
+                            "pipeline_auth",
+                            null, null, authProcessor.isPassAuth(requestContext, actions)
+                        )
+                    )
+                } else {
+                    // 普通流水线在蓝鲸权限中心鉴权
+                    val pipelieActions = PermissionUtil.getPipelinePermissionsFromActions(actions)
+                    val pipelinePermissionAuthResult = authExPermissionApi.validatePipelineBatchPermission(
+                        user,
+                        taskId,
+                        projectId,
+                        pipelieActions
+                    )
+                    var pipelineAuthPass = true
+                    pipelinePermissionAuthResult.forEach {
+                        if (it.isPass == false) {
+                            pipelineAuthPass = false
+                        }
+                    }
+
+                    if (pipelineAuthPass) {
+                        pipelineAuthResults.add(
+                            BkAuthExResourceActionModel(
+                                "pipeline_auth",
+                                null, null, true
+                            )
+                        )
+                    } else {
+                        pipelineAuthResults.add(
+                            BkAuthExResourceActionModel(
+                                "pipeline_auth",
+                                null, null, false
+                            )
+                        )
+                    }
+                }
+                return pipelineAuthResults
+            }
+
+            ComConstants.BsTaskCreateFrom.GONGFENG_SCAN.value() -> {
+                val authProcessor =
+                    SpringContextUtil.getBean(GongfengScanTaskAuthProcessor::class.java)
+                if (authProcessor.isPassAuth(requestContext, actions)) {
+                    logger.info("gongfeng authorization pass, task id: $taskId")
+                    return listOf(BkAuthExResourceActionModel(isPass = true))
+                } else {
+                    logger.error("empty validate result: $user")
+                    throw CodeCCException(CommonMessageCode.PERMISSION_DENIED, arrayOf(user))
+                }
+            }
+
+            else -> {
+                val codeccActions = PermissionUtil.getCodeCCPermissionsFromActions(actions)
+                authExPermissionApi.validateTaskBatchPermission(
+                    user,
+                    taskId,
+                    projectId,
+                    codeccActions
+                )
+            }
+        }
     }
 
     private fun checkBooleanListPass(booleanList: List<Boolean>): Boolean {

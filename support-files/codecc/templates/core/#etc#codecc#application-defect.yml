@@ -26,7 +26,18 @@ codecc:
   codeLangRelateCheckerSetTools: __BK_CODECC_CODE_LANG_RELATE_CHECKER_SET_TOOLS__
   llm:
     bkaidev: __BK_CODECC_LLM_BKAIDEV_HOST__
+    bkaidevpath: __BK_CODECC_LLM_BKAIDEV_PATH__
     appcode: __BK_CODECC_LLM_APP_CODE__
     appsecret: __BK_CODECC_LLM_APP_SECRET__
     model: __BK_CODECC_LLM_MODEL__
+  admin: __BK_CODECC_ADMIN__
+
+bkpass:
+  rootpath: __BK_CODECC_BKPASS_ROOT_PATH__
+  codecc: 
+    appcode: __BK_CODECC_BKPASS_APP_CODE__
+    appsecret: __BK_CODECC_BKPASS_APP_SECRET__
+    appPdId:  __BK_CODECC_BKPASS_APP_PD_ID__    
+  
+
 

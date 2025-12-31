@@ -4,6 +4,7 @@ import com.tencent.bk.codecc.defect.api.BuildCheckerSetRestResource;
 import com.tencent.bk.codecc.defect.service.CheckerService;
 import com.tencent.bk.codecc.defect.service.ICheckerSetIntegratedBizService;
 import com.tencent.bk.codecc.defect.service.ICheckerSetManageBizService;
+import com.tencent.bk.codecc.defect.service.ICheckerSetQueryBizService;
 import com.tencent.bk.codecc.defect.vo.CheckerDetailVO;
 import com.tencent.bk.codecc.defect.vo.integrated.ToolCheckerSetToStatusVo;
 import com.tencent.devops.common.api.checkerset.CheckerSetRelationshipVO;
@@ -15,10 +16,10 @@ import com.tencent.devops.common.web.RestResource;
 import java.util.List;
 import java.util.Set;
 
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.ws.rs.PathParam;
+import jakarta.ws.rs.PathParam;
 
 @RestResource
 public class BuildCheckerSetRestResourceImpl implements BuildCheckerSetRestResource {
@@ -28,6 +29,9 @@ public class BuildCheckerSetRestResourceImpl implements BuildCheckerSetRestResou
 
     @Autowired
     private ICheckerSetIntegratedBizService checkerSetIntegratedBizService;
+
+    @Autowired
+    private ICheckerSetQueryBizService checkerSetQueryBizService;
 
     @Autowired
     private CheckerService checkerService;
@@ -79,5 +83,10 @@ public class BuildCheckerSetRestResourceImpl implements BuildCheckerSetRestResou
     @Override
     public Result<List<CheckerDetailVO>> queryCheckerByToolName(String toolName) {
         return new Result<>(checkerService.queryCheckerByTool(toolName));
+    }
+
+    @Override
+    public Result<Set<String>> getPackageCheckerNameByType(String type) {
+        return new Result<>(checkerSetQueryBizService.getPackageCheckerNameByType(type));
     }
 }

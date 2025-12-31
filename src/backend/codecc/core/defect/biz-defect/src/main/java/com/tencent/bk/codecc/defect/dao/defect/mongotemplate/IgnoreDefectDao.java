@@ -13,16 +13,12 @@
 package com.tencent.bk.codecc.defect.dao.defect.mongotemplate;
 
 import com.tencent.bk.codecc.defect.model.ignore.IgnoreCommentDefectModel;
-import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
-
-import java.util.HashMap;
 
 /**
  * 注释忽略持久类
@@ -35,40 +31,19 @@ public class IgnoreDefectDao {
     @Autowired
     private MongoTemplate defectMongoTemplate;
 
-    /**
-     * 更新忽略告警信息
-     * @param ignoreCommentDefectModel
-     */
-    public void upsertIgnoreDefectInfo(IgnoreCommentDefectModel ignoreCommentDefectModel) {
-        if (MapUtils.isNotEmpty(ignoreCommentDefectModel.getIgnoreDefectMap())) {
-            BulkOperations ops = defectMongoTemplate
-                    .bulkOps(BulkOperations.BulkMode.UNORDERED, IgnoreCommentDefectModel.class);
-            ignoreCommentDefectModel.getIgnoreDefectMap().forEach((k, v) -> {
-                    Query query = new Query();
-                    query.addCriteria(Criteria.where("task_id").is(ignoreCommentDefectModel.getTaskId()));
-                    Update update = new Update();
-                    update.set("task_id", ignoreCommentDefectModel.getTaskId());
-                    if (null == v) {
-                        update.unset(String.format("ignore_defect_map.%s", k));
-                    } else {
-                        update.set(String.format("ignore_defect_map.%s", k), v);
-                    }
-                    ops.upsert(query, update);
-            });
-            ops.execute();
-        }
+    public IgnoreCommentDefectModel findFirstUnmigratedByTaskId(Long taskId) {
+        Criteria criteria = Criteria.where("task_id").is(taskId).and("migrated").ne(true);
+        Query query = new Query(criteria);
+
+        return defectMongoTemplate.findOne(query, IgnoreCommentDefectModel.class);
     }
 
-    /**
-     * 删除忽略告警映射字段
-     * @param taskId
-     */
-    public void deleteIgnoreDefectMap(Long taskId) {
-        Query query = new Query();
-        query.addCriteria(Criteria.where("task_id").is(taskId));
+    public void updateMigratedByTaskId(Long taskId) {
+        Criteria criteria = Criteria.where("task_id").is(taskId).and("migrated").ne(true);
+        Query query = new Query(criteria);
         Update update = new Update();
-        update.set("task_id", taskId);
-        update.set("ignore_defect_map", new HashMap<>());
-        defectMongoTemplate.upsert(query, update, IgnoreCommentDefectModel.class);
+        update.set("migrated", true);
+
+        defectMongoTemplate.updateFirst(query, update, IgnoreCommentDefectModel.class);
     }
 }

@@ -84,14 +84,19 @@
                 class="pb20"
                 :key="toolParam.name"
               >
-                <tool-params-form
-                  v-for="param in toolParam.paramsList"
-                  :key="param.key"
-                  :param="param"
-                  :tool="toolParam.name"
-                  @handleFactorChange="handleFactorChange"
-                >
-                </tool-params-form>
+                <div class="container">
+                  <div class="title">
+                    {{ toolParam.displayName }}
+                  </div>
+                  <tool-params-form
+                    v-for="param in toolParam.paramsList"
+                    :key="param.key"
+                    :param="param"
+                    :tool="toolParam.name"
+                    @handleFactorChange="handleFactorChange"
+                  >
+                  </tool-params-form>
+                </div>
               </div>
             </bk-form>
             <tool-config-form
@@ -99,6 +104,7 @@
               scenes="register-add"
               :tools="toolList"
               :code-lang="formData.codeLang"
+              :show-content="showContent"
               ref="toolConfigForm"
             />
           </div>
@@ -163,6 +169,7 @@ export default {
       buttonLoading: false,
       paramsValue: {},
       checkerSetList: [],
+      showContent: false
     };
   },
   computed: {
@@ -175,27 +182,43 @@ export default {
     },
     toolConfigParams() {
       const toolConfigParams = [];
-      const toolParamList = ['GOML', 'BKCHECK'];
-      Object.keys(this.toolMap).forEach((key) => {
-        if (toolParamList.includes(key) && this.toolList.includes(key)) {
-          try {
-            this.toolMap[key].paramsList = this.toolMap[key] && JSON.parse(this.toolMap[key].params);
-            // 如果是bkcheck第一个参数是MetricsUri平台不需要展示，需要给清除
-            if (key === 'BKCHECK') {
-              this.toolMap[key].paramsList.shift()
-            }
-            // 如果paramsList里面varType是bool类型，需要把varDefault的字符串转成bool类型
-            for (const param of this.toolMap[key].paramsList) {
-              if (param.varType === 'BOOLEAN') {
-                param.varDefault = JSON.parse(param.varDefault)
-              }
-            }
-            toolConfigParams.push(this.toolMap[key]);
-          } catch (error) {
-            console.error(error);
-          }
+      const entries = Object.entries(this.toolMap);
+      for (const [key, toolItem] of entries) {
+        // 提前过滤无效项
+        if (
+            !this.toolList.includes(key) ||
+            toolItem.status === "D" ||
+            !toolItem.params
+        ) {
+          continue;
         }
-      });
+        try {
+          // 解析参数列表（避免重复解析）
+          toolItem.paramsList = JSON.parse(toolItem.params);
+          // 特殊处理 BKCHECK 工具
+          if (key === 'BKCHECK') {
+            // BKCHECK的编译扫描，需要私有构建机，目前暂时不展示
+            const paramsToRemove = ['MetricsUri', 'bkcheckCompileScan'];
+            // 如果不是C_CPP语言不支持宏定义，添加bkcheckCustomMacros到删除列表
+            if (!this.formData.codeLang.includes(2)) {
+              paramsToRemove.push('bkcheckCustomMacros');
+            }
+            toolItem.paramsList = toolItem.paramsList.filter(
+                param => !paramsToRemove.includes(param.varName)
+            );
+          }
+          // 转换类型
+          for (const param of toolItem.paramsList) {
+            // 工具开发规范varType只能为字符串，这里需要转换的类型进行json转换
+            if (['NUMBER', 'BOOLEAN'].includes(param.varType)) {
+              param.varDefault = JSON.parse(param.varDefault);
+            }
+          }
+          toolConfigParams.push(toolItem);
+        } catch (error) {
+          console.error(`Error processing tool ${key}:`, error);
+        }
+      }
       return toolConfigParams;
     },
     toolCnList() {
@@ -344,9 +367,19 @@ export default {
     },
     getParamsValue() {
       return this.toolConfigParams.flatMap(({ name: toolName, paramsList }) =>
-          paramsList.map(({ varName, varDefault = '' }) => {
-            let chooseValue = (this.paramsValue[toolName]?.[varName]) ?? varDefault;
-            chooseValue = Array.isArray(chooseValue) ? JSON.stringify(chooseValue) : String(chooseValue);
+          paramsList.flatMap(({ varName, varDefault = "" }) => {
+            let chooseValue = this.paramsValue[toolName]?.[varName] ?? varDefault;
+            if (!Array.isArray(chooseValue)) {
+              chooseValue = String(chooseValue);
+            } else {
+              // 过滤无效参数
+              chooseValue = chooseValue.filter(
+                item => item != null &&
+                item !== "" &&
+                (typeof item !== 'string' || item.trim() !== "")
+              );
+              chooseValue = chooseValue.length === 0 ? "[]" : JSON.stringify(chooseValue);
+            }
             return { toolName, varName, chooseValue };
           })
       );
@@ -357,6 +390,10 @@ export default {
         this.paramsValue[toolName],
         factor,
       );
+      // bkcheck编译扫描动态展示出来
+      if (toolName === "BKCHECK" && this.paramsValue[toolName] && 'bkcheckCompileScan' in this.paramsValue[toolName]) {
+        this.showContent = this.paramsValue[toolName].bkcheckCompileScan
+      }
     },
   },
 };
@@ -438,5 +475,26 @@ export default {
 .icon-angle-left {
   position: relative;
   top: 2px;
+}
+
+.container {
+  width: 638px; /* 或其他你想要的宽度值 */
+  border: 1px dashed #dcdee5;
+  margin: 10px 0;
+  padding: 20px;
+  left: 60px;
+  position: relative;
+  white-space: pre-line; /* 保留换行符，合并连续空格 */
+  .title {
+    margin-bottom: 16px;
+    position: absolute;
+    top: -30px;
+    left: 10px;
+    background-color: white;
+    font-weight: 900;
+    font-size: 14px;
+    padding: 0 6px;
+    color: black;
+  }
 }
 </style>

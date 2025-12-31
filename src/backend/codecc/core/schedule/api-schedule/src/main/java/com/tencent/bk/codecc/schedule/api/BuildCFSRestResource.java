@@ -28,15 +28,15 @@ package com.tencent.bk.codecc.schedule.api;
 
 import com.tencent.bk.codecc.schedule.vo.*;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
 
 /**
@@ -45,35 +45,35 @@ import java.io.InputStream;
  * @version V2.0
  * @date 2019/09/28
  */
-@Api(tags = {"SERVICE_FS"}, description = "文件上传下载接口")
+@Tag(name = "SERVICE_FS", description = "文件上传下载接口")
 @Path("/build/cfs")
 public interface BuildCFSRestResource
 {
-    @ApiOperation(value = "分片上传", notes = "客户端将文件分片后逐个上传")
+    @Operation(summary = "分片上传", description = "客户端将文件分片后逐个上传")
     @Path("/upload")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     Result<Boolean> upload(
             @NotNull(message = "文件名不能为空")
-            @ApiParam(value = "文件名", required = true)
+            @Parameter(description = "文件名", required = true)
             @FormDataParam("fileName")
                     String fileName,
-            @ApiParam(value = "分片总数")
+            @Parameter(description = "分片总数")
             @FormDataParam("chunks")
                     Integer chunks,
-            @ApiParam(value = "当前分片")
+            @Parameter(description = "当前分片")
             @FormDataParam("chunk")
                     Integer chunk,
             @NotNull(message = "上传类型不能为空")
-            @ApiParam(value = "上传类型")
+            @Parameter(description = "上传类型")
             @FormDataParam("uploadType")
                     String uploadType,
-            @ApiParam(value = "构建id")
+            @Parameter(description = "构建id")
             @FormDataParam("buildId")
                     String buildId,
             @NotNull(message = "文件内容不能为空")
-            @ApiParam(value = "文件", required = true)
+            @Parameter(description = "文件", required = true)
             @FormDataParam("file")
                     InputStream file);
 
@@ -84,69 +84,69 @@ public interface BuildCFSRestResource
      * @param fileChunksMergeVO
      * @return
      */
-    @ApiOperation(value = "分片合并", notes = "所有分片上传成功后，调用该接口对分片进行合并")
+    @Operation(summary = "分片合并", description = "所有分片上传成功后，调用该接口对分片进行合并")
     @Path("/merge")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     Result<Boolean> chunksMerge(
-            @ApiParam(value = "分片合并的请求信息", required = true)
+            @Parameter(description = "分片合并的请求信息", required = true)
                     FileChunksMergeVO fileChunksMergeVO);
 
 
-    @ApiOperation("获取待下载文件的大小")
+    @Operation(summary = "获取待下载文件的大小")
     @Path("/download/fileSize")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     Result<Long> getFileSize(
-            @ApiParam(value = "获取待下载文件大小的请求信息", required = true)
+            @Parameter(description = "获取待下载文件大小的请求信息", required = true)
                     GetFileSizeVO getFileSizeVO);
 
 
-    @ApiOperation("下载文件")
+    @Operation(summary = "下载文件")
     @Path("/download")
     @POST
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     @Consumes(MediaType.APPLICATION_JSON)
     Response download(
-            @ApiParam(value = "下载文件的请求体", required = true)
+            @Parameter(description = "下载文件的请求体", required = true)
                     DownloadVO downloadVO);
 
-    @ApiOperation("获取待下载文件的信息")
+    @Operation(summary = "获取待下载文件的信息")
     @Path("/download/fileInfo")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     Result<FileInfoModel> getFileInfo(
-            @ApiParam(value = "获取待下载文件信息的请求信息", required = true)
+            @Parameter(description = "获取待下载文件信息的请求信息", required = true)
                     GetFileSizeVO getFileSizeVO);
 
 
-    @ApiOperation("获取文件索引")
+    @Operation(summary = "获取文件索引")
     @Path("/index/{type}/{fileName}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     Result<FileIndexVO> index(
-            @ApiParam(value = "文件名", required = true)
+            @Parameter(description = "文件名", required = true)
             @PathParam("fileName")
                     String fileName,
-            @ApiParam(value = "类型", required = true)
+            @Parameter(description = "类型", required = true)
             @PathParam("type")
                     String type);
 
 
-    @ApiOperation("获取索引信息")
+    @Operation(summary = "获取索引信息")
     @Path("/fileindex/{type}/{fileName}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     Result<FileIndexVO> getFileIndex(
-            @ApiParam(value = "文件名", required = true)
+            @Parameter(description = "文件名", required = true)
             @PathParam("fileName")
                     String fileName,
-            @ApiParam(value = "类型", required = true)
+            @Parameter(description = "类型", required = true)
             @PathParam("type")
                     String type);
 }

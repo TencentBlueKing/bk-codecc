@@ -30,19 +30,18 @@ import com.tencent.bk.codecc.task.vo.GrayReportVO;
 import com.tencent.bk.codecc.task.vo.GrayToolReportVO;
 import com.tencent.bk.codecc.task.vo.TriggerGrayToolVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 import java.util.Set;
 
 import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
@@ -53,53 +52,53 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
  * @version V2.0
  * @date 2020/12/29
  */
-@Api(tags = {"GRAY_TOOL_PROJECT"}, description = "灰度工具项目调用接口")
+@Tag(name = "GRAY_TOOL_PROJECT", description = "灰度工具项目调用接口")
 @Path("/build/gray/task")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface BuildGrayToolProjectRestResource {
-    @ApiOperation("灰度项目数据更新")
+    @Operation(summary = "灰度项目数据更新")
     @Path("/pool/toolName/{toolName}/stage/{stage}")
     @POST
     Result<Boolean> createGrayTaskPool(
-            @ApiParam(value = "工具名", required = true) @PathParam("toolName") String toolName,
-            @ApiParam(value = "语言", required = false) @QueryParam("langCode") String langCode,
-            @ApiParam(value = "阶段", required = true) @PathParam("stage") String stage,
-            @ApiParam(value = "当前用户", required = true) @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String user);
+            @Parameter(description = "工具名", required = true) @PathParam("toolName") String toolName,
+            @Parameter(description = "语言", required = false) @QueryParam("langCode") String langCode,
+            @Parameter(description = "阶段", required = true) @PathParam("stage") String stage,
+            @Parameter(description = "当前用户", required = true) @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) String user);
 
-    @ApiOperation("触发灰度池项目")
+    @Operation(summary = "触发灰度池项目")
     @Path("/pool/trigger/toolName/{toolName}/taskNum")
     @GET
     Result<TriggerGrayToolVO> triggerGrayTaskPool(
-            @ApiParam(value = "工具名", required = true) @PathParam("toolName") String toolName,
-            @ApiParam(value = "执行任务数", required = false) @QueryParam("taskNum") String taskNum,
-            @ApiParam(value = "语言", required = false) @QueryParam("langCode") String langCode
+            @Parameter(description = "工具名", required = true) @PathParam("toolName") String toolName,
+            @Parameter(description = "执行任务数", required = false) @QueryParam("taskNum") String taskNum,
+            @Parameter(description = "语言", required = false) @QueryParam("langCode") String langCode
     );
 
-    @ApiOperation("查询灰度报告")
+    @Operation(summary = "查询灰度报告")
     @Path("/report/toolName/{toolName}/codeccBuildId/{codeccBuildId}")
     @GET
     Result<GrayToolReportVO> findGrayReportByToolNameAndCodeCCBuildId(
-        @ApiParam(value = "工具名", required = true)
+        @Parameter(description = "工具名", required = true)
         @PathParam("toolName")
             String toolName,
-        @ApiParam(value = "codecc构建id", required = true)
+        @Parameter(description = "codecc构建id", required = true)
         @PathParam("codeccBuildId")
             String codeccBuildId);
 
-    @ApiOperation("根据构建号查询灰度报告")
+    @Operation(summary = "根据构建号查询灰度报告")
     @Path("/report/byBuildNum")
     @POST
     Result<GrayToolReportVO> findGaryReportByToolNameAndCodeCCBuildIdAndBuildNum(
-        @ApiParam(value = "报告信息", required = true)
+        @Parameter(description = "报告信息", required = true)
         GrayReportVO grayReportVO
     );
 
-    @ApiOperation("查询任务清单")
+    @Operation(summary = "查询任务清单")
     @Path("/task/list/toolName/{toolName}")
     @GET
     Result<Set<Long>> findTaskListByToolName(
-        @ApiParam(value = "工具名", required = true)
+        @Parameter(description = "工具名", required = true)
         @PathParam("toolName")
             String toolName);
 }

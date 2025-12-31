@@ -48,6 +48,10 @@ export default {
         },
       },
       vulnSeverityMap: {
+        0: {
+          theme: '',
+          text: this.$t('未知'),
+        },
         1: {
           theme: 'danger',
           text: this.$t('高危'),

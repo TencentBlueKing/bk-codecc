@@ -29,8 +29,7 @@ package com.tencent.bk.codecc.task.vo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.devops.common.api.CodeRepoVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -43,104 +42,104 @@ import java.util.Map;
  * @date 2019/5/20
  */
 @Data
-@ApiModel("告警配置详情视图")
+@Schema(description = "告警配置详情视图")
 public class AnalyzeConfigInfoVO {
-    @ApiModelProperty("任务id")
+    @Schema(description = "任务id")
     @JsonProperty("task_id")
     private long taskId;
 
-    @ApiModelProperty("任务英文名")
+    @Schema(description = "任务英文名")
     @JsonProperty("stream_name")
     private String nameEn;
 
-    @ApiModelProperty("代码库路径")
+    @Schema(description = "代码库路径")
     private String url;
 
-    @ApiModelProperty("代码库密码")
+    @Schema(description = "代码库密码")
     @JsonProperty("password")
     private String passWord;
 
-    @ApiModelProperty("多工具类型")
+    @Schema(description = "多工具类型")
     @JsonProperty("tool_name")
     private String multiToolType;
 
-    @ApiModelProperty("过滤路径")
+    @Schema(description = "过滤路径")
     @JsonProperty("skip_paths")
     private String skipPaths;
 
-    @ApiModelProperty("屏蔽规则")
+    @Schema(description = "屏蔽规则")
     @JsonProperty("skip_checkers")
     private String skipCheckers;
 
-    @ApiModelProperty("账号")
+    @Schema(description = "账号")
     private String account;
 
-    @ApiModelProperty(value = "代码库类型", allowableValues = "{svn,git}")
+    @Schema(description = "代码库类型", allowableValues = "{svn,git}")
     @JsonProperty("scm_type")
     private String scmType;
 
-    @ApiModelProperty(value = "鉴权方式", allowableValues = "{http,ssh}")
+    @Schema(description = "鉴权方式", allowableValues = "{http,ssh}")
     @JsonProperty("cert_type")
     private String certType;
 
-    @ApiModelProperty("git分支")
+    @Schema(description = "git分支")
     @JsonProperty("git_branch")
     private String gitBranch;
 
-    @ApiModelProperty("oAuth的access token")
+    @Schema(description = "oAuth的access token")
     @JsonProperty("access_token")
     private String accessToken;
 
-    @ApiModelProperty("ssh鉴权方式的私钥")
+    @Schema(description = "ssh鉴权方式的私钥")
     @JsonProperty("ssh_private_key")
     private String sshPrivateKey;
 
-    @ApiModelProperty(value = "扫描类型0:全量扫描,1:增量扫描,2:diff模式", allowableValues = "{0,1,2}")
+    @Schema(description = "扫描类型0:全量扫描,1:增量扫描,2:diff模式", allowableValues = "{0,1,2}")
     @JsonProperty("scan_type")
     private Integer scanType;
 
-    @ApiModelProperty(value = "项目接口人")
+    @Schema(description = "项目接口人")
     @JsonProperty("proj_owner")
     private String projOwner;
 
-    @ApiModelProperty(value = "工具打开的规则")
+    @Schema(description = "工具打开的规则")
     @JsonProperty("open_checkers")
     private List<OpenCheckerVO> openCheckers;
 
-    @ApiModelProperty(value = "工具特殊参数")
+    @Schema(description = "工具特殊参数")
     private List<ToolOptions> toolOptions;
 
-    @ApiModelProperty(value = "platform ip")
+    @Schema(description = "platform ip")
     private String platformIp;
 
-    @ApiModelProperty(value = "Coverity规则子选项")
+    @Schema(description = "Coverity规则子选项")
     private List<String> covOptions;
 
-    @ApiModelProperty(value = "Coverity编译规则")
+    @Schema(description = "Coverity编译规则")
     private String covPWCheckers;
 
-    @ApiModelProperty(value = "上次扫描的代码仓库列表")
+    @Schema(description = "上次扫描的代码仓库列表")
     private List<CodeRepoVO> lastCodeRepos;
 
-    @ApiModelProperty(value = "本次扫描的代码仓库列表")
+    @Schema(description = "本次扫描的代码仓库列表")
     private List<CodeRepoVO> codeRepos;
 
-    @ApiModelProperty(value = "本次扫描拉取的代码仓库子路径")
+    @Schema(description = "本次扫描拉取的代码仓库子路径")
     private List<String> repoRelativePathList;
 
-    @ApiModelProperty(value = "任务语言")
+    @Schema(description = "任务语言")
     private Long language;
 
-    @ApiModelProperty(value = "任务语言")
+    @Schema(description = "任务语言")
     private List<String> languageStrList;
 
-    @ApiModelProperty(value = "任务管理员")
+    @Schema(description = "任务管理员")
     private List<String> admins;
 
-    @ApiModelProperty(value = "基础构建Id")
+    @Schema(description = "基础构建Id")
     private String baseBuildId;
 
-    @ApiModelProperty(value = "上一次执行时间")
+    @Schema(description = "上一次执行时间")
     private Long lastExecuteTime;
 
     /**
@@ -148,11 +147,11 @@ public class AnalyzeConfigInfoVO {
      */
     private String paramJson;
 
-    @ApiModelProperty(value = "代码库信息")
+    @Schema(description = "代码库信息")
     @JsonProperty("repo_url_map")
     private Map<String, String> repoUrlMap;
 
-    @ApiModelProperty(value = "是否只扫路径白名单，true:只扫路径白名单，false:全都扫")
+    @Schema(description = "是否只扫路径白名单，true:只扫路径白名单，false:全都扫")
     private Boolean onlyScanWhitePath;
 
     // ==============================用于调用getBuildInfo时传递参数，无其他作用 begin===================================
@@ -178,19 +177,19 @@ public class AnalyzeConfigInfoVO {
 
     // ==============================用于调用getBuildInfo时传递参数，无其他作用 end===================================
     @Data
-    @ApiModel("工具特殊参数")
+    @Schema(description = "工具特殊参数")
     public static class ToolOptions {
 
-        @ApiModelProperty("参数名称")
+        @Schema(description = "参数名称")
         private String optionName;
 
-        @ApiModelProperty("参数值")
+        @Schema(description = "参数值")
         private String optionValue;
 
-        @ApiModelProperty("操作系统类型")
+        @Schema(description = "操作系统类型")
         private String osType;
 
-        @ApiModelProperty("构建环境")
+        @Schema(description = "构建环境")
         private Map<String, String> buildEnv;
 
     }

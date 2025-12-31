@@ -400,6 +400,23 @@ public class TaskLogDao {
         return defectMongoTemplate.aggregate(aggregation, "t_task_log", TaskLogEntity.class).getMappedResults();
     }
 
+    /**
+     * 查询在指定时间范围内有日志记录的任务ID列表
+     * @param taskIds 任务ID列表(必填)
+     * @param startTime 开始时间(毫秒时间戳)
+     * @param endTime 结束时间(毫秒时间戳)
+     * @return 符合条件的任务ID列表
+     */
+    public List<Long> findActiveTaskIdsInTimeRange(List<Long> taskIds, long startTime, long endTime) {
+        if (CollectionUtils.isEmpty(taskIds)) {
+            return Lists.newArrayList();
+        }
+        Criteria criteria = Criteria.where("task_id").in(taskIds)
+                .and("start_time").gte(startTime)
+                .and("end_time").lte(endTime);
+        return defectMongoTemplate.findDistinct(new Query(criteria), "task_id", "t_task_log", Long.class);
+    }
+
     public List<TaskLogEntity> findByTaskIdAndToolNameAndStartTimeGt(Long taskId, String toolName, Long startTime) {
         Query query = Query.query(Criteria.where("task_id").is(taskId)
                 .and("tool_name").is(toolName).and("start_time").gt(startTime)

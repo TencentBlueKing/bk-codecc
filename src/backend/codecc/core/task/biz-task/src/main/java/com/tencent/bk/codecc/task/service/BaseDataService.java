@@ -236,4 +236,22 @@ public interface BaseDataService {
      * @return boolean
      */
     Boolean deleteGitHubSync(String entityId, String userId);
+
+    /**
+     * 更新平台自建任务插件版本
+     *
+     * @param version 版本
+     * @param user 更新操作用户
+     * @param code codecc
+     * @return boolean
+     */
+    Boolean updatePlatformVersion(String version, String user, String code);
+
+    /**
+     * 获取当前平台插件版本
+     *
+     * @param code code
+     * @return boolean
+     */
+    String getPlatformNowVersion(String code);
 }

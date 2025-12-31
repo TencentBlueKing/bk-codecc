@@ -1,23 +1,22 @@
 package com.tencent.bk.codecc.defect.api;
 
 import com.tencent.devops.common.api.pojo.codecc.Result;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import java.util.Map;
 import java.util.Set;
 
-@Api(tags = {"SERVICE_CCN_DEFECT"}, description = "ccn告警")
+@Tag(name = "SERVICE_CCN_DEFECT", description = "ccn告警")
 @Path("/service/ccn/defect")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface ServiceCCNDefectRestResource {
-    @ApiOperation("生成id")
+    @Operation(summary = "生成id")
     @Path("/genId")
     @POST
     Result<Map<Long, Integer>> genId(

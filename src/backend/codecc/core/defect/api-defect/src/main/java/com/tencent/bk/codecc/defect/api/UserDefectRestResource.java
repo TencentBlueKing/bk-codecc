@@ -56,28 +56,28 @@ import com.tencent.bk.codecc.defect.vo.common.DefectQueryReqVO_Old;
 import com.tencent.bk.codecc.defect.vo.common.QueryWarningPageInitRspVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
-import javax.validation.Valid;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 import org.springframework.data.domain.Sort;
 
 /**
  * 告警查询服务
  */
-@Api(tags = {"USER_WARN"}, description = "告警查询服务接口")
+@Tag(name = "USER_WARN", description = "告警查询服务接口")
 @Path("/user/warn")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -92,53 +92,29 @@ public interface UserDefectRestResource {
      * @param buildId
      * @return
      */
-    @ApiOperation("初始化告警管理页面的缺陷类型、作者以及树")
+    @Operation(summary = "初始化告警管理页面的缺陷类型、作者以及树")
     @Path("/checker/authors/toolName/{toolName}")
     @GET
     Result<QueryWarningPageInitRspVO> queryCheckersAndAuthors(
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userId,
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             Long taskId,
-            @ApiParam(value = "工具名称", required = true)
+            @Parameter(description = "工具名称", required = true)
             @PathParam(value = "toolName")
             String toolName,
-            @ApiParam(value = "告警状态")
+            @Parameter(description = "告警状态")
             @QueryParam(value = "status")
             String status,
-            @ApiParam(value = "构建Id")
+            @Parameter(description = "构建Id")
             @QueryParam(value = "buildId")
             String buildId,
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId
     );
 
-    @ApiOperation("初始化告警管理页面的缺陷类型、作者以及树")
-    @Path("/checker/authors/list")
-    @GET
-    Result<QueryWarningPageInitRspVO> queryCheckersAndAuthors(
-            @ApiParam(value = "任务ID", required = true)
-            @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
-            Long taskId,
-            @ApiParam(value = "工具名称，数据迁移后支持多选，逗号分割多个", required = false)
-            @QueryParam(value = "toolName")
-            String toolName,
-            @ApiParam(value = "维度，数据迁移后支持多选，逗号分割多个", required = false)
-            @QueryParam(value = "dimension")
-            String dimension,
-            @ApiParam(value = "告警状态")
-            @QueryParam(value = "status")
-            String status,
-            @ApiParam(value = "规则及名称", required = false)
-            @QueryParam(value = "checkerSet")
-            String checkerSet,
-            @ApiParam(value = "构建Id", required = false)
-            @QueryParam(value = "buildId")
-            String buildId
-    );
-
-    @ApiOperation("初始化告警管理页面的缺陷类型、作者以及文件树")
+    @Operation(summary = "初始化告警管理页面的缺陷类型、作者以及文件树")
     @Path("/checker/authors/list")
     @POST
     Result<QueryWarningPageInitRspVO> queryCheckersAndAuthors(
@@ -149,34 +125,45 @@ public interface UserDefectRestResource {
             QueryCheckersAndAuthorsRequest request
     );
 
+    @Operation(summary = "初始化告警管理页面的缺陷类型、作者以及文件树")
+    @Path("/v2/checker/authors/list")
+    @POST
+    Result<QueryWarningPageInitRspVO> queryCheckersAndAuthorsV2(
+            @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
+            String userId,
+            @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
+            String projectId,
+            QueryCheckersAndAuthorsRequest request
+    );
 
-    @ApiOperation("查询告警清单")
+
+    @Operation(summary = "查询告警清单")
     @Path("/list")
     @POST
     Result<CommonDefectQueryRspVO> queryDefectList(
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userId,
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             long taskId,
-            @ApiParam(value = "查询参数详情", required = true)
+            @Parameter(description = "查询参数详情", required = true)
             @Valid
             DefectQueryReqVO_Old requestVO,
-            @ApiParam(value = "页数")
+            @Parameter(description = "页数")
             @QueryParam(value = "pageNum")
             int pageNum,
-            @ApiParam(value = "页面大小")
+            @Parameter(description = "页面大小")
             @QueryParam(value = "pageSize")
             int pageSize,
-            @ApiParam(value = "排序字段")
+            @Parameter(description = "排序字段")
             @QueryParam(value = "sortField")
             String sortField,
-            @ApiParam(value = "排序方式")
+            @Parameter(description = "排序方式")
             @QueryParam(value = "sortType")
             Sort.Direction sortType
     );
 
-    @ApiOperation("查询告警清单(带提单信息)")
+    @Operation(summary = "查询告警清单(带提单信息)")
     @Path("/issue/list")
     @POST
     Result<CommonDefectQueryRspVO> queryDefectListWithIssue(
@@ -184,296 +171,296 @@ public interface UserDefectRestResource {
             String userId,
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId,
-            @ApiParam(value = "查询参数详情", required = true)
+            @Parameter(description = "查询参数详情", required = true)
             @Valid
             DefectQueryReqVO defectQueryReqVO,
-            @ApiParam(value = "页数")
+            @Parameter(description = "页数")
             @QueryParam(value = "pageNum")
             int pageNum,
-            @ApiParam(value = "页面大小")
+            @Parameter(description = "页面大小")
             @QueryParam(value = "pageSize")
             int pageSize,
-            @ApiParam(value = "排序字段")
+            @Parameter(description = "排序字段")
             @QueryParam(value = "sortField")
             String sortField,
-            @ApiParam(value = "排序方式")
+            @Parameter(description = "排序方式")
             @QueryParam(value = "sortType")
             Sort.Direction sortType
     );
 
-    @ApiOperation("查询告警详情")
+    @Operation(summary = "查询告警详情")
     @Path("/detail")
     @POST
     Result<CommonDefectDetailQueryRspVO> queryDefectDetail(
-            @ApiParam(value = "项目ID", required = true)
+            @Parameter(description = "项目ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId,
-            @ApiParam(value = "任务ID", required = false)
+            @Parameter(description = "任务ID", required = false)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             Long taskId,
-            @ApiParam(value = "用户ID", required = true)
+            @Parameter(description = "用户ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userId,
-            @ApiParam(value = "查询参数详情", required = true)
+            @Parameter(description = "查询参数详情", required = true)
             @Valid
             CommonDefectDetailQueryReqVO commonDefectDetailQueryReqVO,
-            @ApiParam(value = "排序字段")
+            @Parameter(description = "排序字段")
             @QueryParam(value = "sortField")
             String sortField,
-            @ApiParam(value = "排序方式")
+            @Parameter(description = "排序方式")
             @QueryParam(value = "sortType")
             Sort.Direction sortType
     );
 
-    @ApiOperation("查询告警详情(带提单信息)")
+    @Operation(summary = "查询告警详情(带提单信息)")
     @Path("/issue/detail")
     @POST
     Result<CommonDefectDetailQueryRspVO> queryDefectDetailWithIssue(
-            @ApiParam(value = "项目ID", required = true)
+            @Parameter(description = "项目ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId,
-            @ApiParam(value = "任务ID", required = false)
+            @Parameter(description = "任务ID", required = false)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             Long taskId,
-            @ApiParam(value = "用户ID", required = true)
+            @Parameter(description = "用户ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userId,
-            @ApiParam(value = "查询参数详情", required = true)
+            @Parameter(description = "查询参数详情", required = true)
             @Valid
             CommonDefectDetailQueryReqVO commonDefectDetailQueryReqVO,
-            @ApiParam(value = "排序字段")
+            @Parameter(description = "排序字段")
             @QueryParam(value = "sortField")
             String sortField,
-            @ApiParam(value = "排序方式")
+            @Parameter(description = "排序方式")
             @QueryParam(value = "sortType")
             Sort.Direction sortType
     );
 
-    @ApiOperation("查询告警详情（不带代码文件片段）")
+    @Operation(summary = "查询告警详情（不带代码文件片段）")
     @Path("/withoutFileContent/detail")
     @POST
     Result<CommonDefectDetailQueryRspVO> queryDefectDetailWithoutFileContent(
-            @ApiParam(value = "任务ID", required = false)
+            @Parameter(description = "任务ID", required = false)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             Long taskId,
-            @ApiParam(value = "用户ID", required = true)
+            @Parameter(description = "用户ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userId,
-            @ApiParam(value = "查询参数详情", required = true)
+            @Parameter(description = "查询参数详情", required = true)
             @Valid
             CommonDefectDetailQueryReqVO commonDefectDetailQueryReqVO,
-            @ApiParam(value = "排序字段")
+            @Parameter(description = "排序字段")
             @QueryParam(value = "sortField")
             String sortField,
-            @ApiParam(value = "排序方式")
+            @Parameter(description = "排序方式")
             @QueryParam(value = "sortType")
             Sort.Direction sortType
     );
 
-    @ApiOperation("查询告警详情（带提单信息, 不带代码文件片段）")
+    @Operation(summary = "查询告警详情（带提单信息, 不带代码文件片段）")
     @Path("/withoutFileContent/issue/detail")
     @POST
     Result<CommonDefectDetailQueryRspVO> queryDefectDetailWithIssueWithoutFileContent(
-            @ApiParam(value = "任务ID", required = false)
+            @Parameter(description = "任务ID", required = false)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             Long taskId,
-            @ApiParam(value = "用户ID", required = true)
+            @Parameter(description = "用户ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userId,
-            @ApiParam(value = "查询参数详情", required = true)
+            @Parameter(description = "查询参数详情", required = true)
             @Valid
             CommonDefectDetailQueryReqVO commonDefectDetailQueryReqVO,
-            @ApiParam(value = "排序字段")
+            @Parameter(description = "排序字段")
             @QueryParam(value = "sortField")
             String sortField,
-            @ApiParam(value = "排序方式")
+            @Parameter(description = "排序方式")
             @QueryParam(value = "sortType")
             Sort.Direction sortType
     );
 
-    @ApiOperation("获取告警文件所对应的片段 (极简接口)")
+    @Operation(summary = "获取告警文件所对应的片段 (极简接口)")
     @Path("/defectFileContentSegment")
     @POST
     Result<CommonDefectDetailQueryRspVO> queryDefectFileContentSegment(
-            @ApiParam(value = "项目ID", required = true)
+            @Parameter(description = "项目ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId,
-            @ApiParam(value = "任务ID", required = false)
+            @Parameter(description = "任务ID", required = false)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             Long taskId,
-            @ApiParam(value = "用户ID", required = true)
+            @Parameter(description = "用户ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userId,
-            @ApiParam(value = "获取文件片段相关参数", required = true)
+            @Parameter(description = "获取文件片段相关参数", required = true)
             @Valid
             QueryDefectFileContentSegmentReqVO request);
 
-    @ApiOperation("获取文件片段")
+    @Operation(summary = "获取文件片段")
     @Path("/fileContentSegment")
     @POST
     Result<CommonDefectDetailQueryRspVO> getFileContentSegment(
-            @ApiParam(value = "项目ID", required = true)
+            @Parameter(description = "项目ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId,
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             long taskId,
-            @ApiParam(value = "用户ID", required = true)
+            @Parameter(description = "用户ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userId,
-            @ApiParam(value = "获取文件片段", required = true)
+            @Parameter(description = "获取文件片段", required = true)
             @Valid
             GetFileContentSegmentReqVO getFileContentSegmentReqVO);
 
-    @ApiOperation("告警批量处理")
+    @Operation(summary = "告警批量处理")
     @Path("/batch")
     @POST
     Result<List<BatchDefectProcessRspVO>> batchDefectProcess(
-            @ApiParam(value = "项目ID", required = true)
+            @Parameter(description = "项目ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId,
-            @ApiParam(value = "用户名", required = true)
+            @Parameter(description = "用户名", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userName,
-            @ApiParam(value = "批量告警处理请求信息", required = true)
+            @Parameter(description = "批量告警处理请求信息", required = true)
             @Valid
             BatchDefectProcessReqVO batchDefectProcessReqVO
     );
 
-    @ApiOperation("提前获取忽略审核")
+    @Operation(summary = "提前获取忽略审核")
     @Path("/preIgnoreApproval")
     @POST
     Result<PreIgnoreApprovalCheckVO> preCheckIgnoreApproval(
-            @ApiParam(value = "项目ID", required = true)
+            @Parameter(description = "项目ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId,
-            @ApiParam(value = "用户名", required = true)
+            @Parameter(description = "用户名", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userName,
-            @ApiParam(value = "批量告警处理请求信息", required = true)
+            @Parameter(description = "批量告警处理请求信息", required = true)
             @Valid
             BatchDefectProcessReqVO batchDefectProcessReqVO
     );
 
-    @ApiOperation("查询构建列表")
+    @Operation(summary = "查询构建列表")
     @Path("/tasks/{taskId}/buildInfos")
     @GET
     Result<List<BuildVO>> queryBuildInfos(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @PathParam(value = "taskId")
             Long taskId
     );
 
-    @ApiOperation("查询构建快照相关信息")
+    @Operation(summary = "查询构建快照相关信息")
     @Path("/tasks/{taskId}/buildInfosWithBranches")
     @GET
     Result<List<BuildWithBranchVO>> queryBuildInfosWithBranches(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @PathParam(value = "taskId")
             Long taskId
     );
 
-    @ApiOperation("运营数据:按条件获取任务告警统计信息")
+    @Operation(summary = "运营数据:按条件获取任务告警统计信息")
     @Path("/deptTaskDefect")
     @POST
     Result<DeptTaskDefectRspVO> queryDeptTaskDefect(
-            @ApiParam(value = "用户名", required = true)
+            @Parameter(description = "用户名", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userName,
-            @ApiParam(value = "按组织架构查询任务告警请求", required = true)
+            @Parameter(description = "按组织架构查询任务告警请求", required = true)
             @Valid
             DeptTaskDefectReqVO deptTaskDefectReqVO
     );
 
-    @ApiOperation("添加代码评论")
+    @Operation(summary = "添加代码评论")
     @Path("/codeComment/toolName/{toolName}")
     @POST
     Result<Boolean> addCodeComment(
-            @ApiParam(value = "告警主键id", required = true)
+            @Parameter(description = "告警主键id", required = true)
             @QueryParam(value = "defectId")
             String defectId,
-            @ApiParam(value = "工具名", required = true)
+            @Parameter(description = "工具名", required = true)
             @PathParam(value = "toolName")
             String toolName,
-            @ApiParam(value = "评论主键id", required = true)
+            @Parameter(description = "评论主键id", required = true)
             @QueryParam(value = "commentId")
             String commentId,
-            @ApiParam(value = "用户名", required = true)
+            @Parameter(description = "用户名", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userName,
-            @ApiParam(value = "评论信息", required = true)
+            @Parameter(description = "评论信息", required = true)
             SingleCommentVO singleCommentVO,
-            @ApiParam(value = "文件名", required = true)
+            @Parameter(description = "文件名", required = true)
             @QueryParam(value = "fileName")
             String fileName,
-            @ApiParam(value = "任务名称", required = true)
+            @Parameter(description = "任务名称", required = true)
             @QueryParam(value = "nameCn")
             String nameCn,
-            @ApiParam(value = "规则", required = true)
+            @Parameter(description = "规则", required = true)
             @QueryParam(value = "checker")
             String checker,
-            @ApiParam(value = "项目ID", required = true)
+            @Parameter(description = "项目ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId,
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             String taskId
     );
 
-    @ApiOperation("更新代码评论")
+    @Operation(summary = "更新代码评论")
     @Path("/codeComment/commentId/{commentId}/toolName/{toolName}")
     @PUT
     Result<Boolean> updateCodeComment(
-            @ApiParam(value = "评论主键id", required = true)
+            @Parameter(description = "评论主键id", required = true)
             @PathParam(value = "commentId")
             String commentId,
-            @ApiParam(value = "用户名", required = true)
+            @Parameter(description = "用户名", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userName,
-            @ApiParam(value = "工具名", required = true)
+            @Parameter(description = "工具名", required = true)
             @PathParam(value = "toolName")
             String toolName,
-            @ApiParam(value = "评论信息", required = true)
+            @Parameter(description = "评论信息", required = true)
             SingleCommentVO singleCommentVO
     );
 
-    @ApiOperation("删除代码评论")
+    @Operation(summary = "删除代码评论")
     @Path("/codeComment/commentId/{commentId}/singleCommentId/{singleCommentId}/toolName/{toolName}")
     @DELETE
     Result<Boolean> deleteCodeComment(
-            @ApiParam(value = "评论主键id", required = true)
+            @Parameter(description = "评论主键id", required = true)
             @PathParam(value = "commentId")
             String commentId,
-            @ApiParam(value = "单独评论主键id", required = true)
+            @Parameter(description = "单独评论主键id", required = true)
             @PathParam(value = "singleCommentId")
             String singleCommentId,
-            @ApiParam(value = "工具名", required = true)
+            @Parameter(description = "工具名", required = true)
             @PathParam(value = "toolName")
             String toolName,
-            @ApiParam(value = "用户名", required = true)
+            @Parameter(description = "用户名", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userName,
-            @ApiParam(value = "告警实体id")
+            @Parameter(description = "告警实体id")
             @QueryParam(value = "entityId")
             String entityId,
-            @ApiParam(value = "评论内容")
+            @Parameter(description = "评论内容")
             @QueryParam(value = "comment")
             String comment
     );
 
-    @ApiOperation("查询文件告警收敛清单")
+    @Operation(summary = "查询文件告警收敛清单")
     @Path("/gather/taskId/{taskId}/toolName/{toolName}")
     @GET
     Result<FileDefectGatherVO> queryFileDefectGather(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @PathParam(value = "taskId")
             long taskId,
-            @ApiParam(value = "工具名", required = true)
+            @Parameter(description = "工具名", required = true)
             @PathParam(value = "toolName")
             String toolName
     );
 
-    @ApiOperation("查询文件告警收敛清单")
+    @Operation(summary = "查询文件告警收敛清单")
     @Path("/queryFileDefectGather")
     @POST
     Result<FileDefectGatherVO> queryFileDefectGather(
@@ -484,56 +471,56 @@ public interface UserDefectRestResource {
             QueryFileDefectGatherRequest request
     );
 
-    @ApiOperation("查询代码统计清单")
+    @Operation(summary = "查询代码统计清单")
     @Path("/list/toolName/{toolName}/orderBy/{orderBy}")
     @GET
     Result<CommonDefectQueryRspVO> queryCLOCList(
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userId,
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             long taskId,
-            @ApiParam(value = "工具名", required = true)
+            @Parameter(description = "工具名", required = true)
             @PathParam(value = "toolName")
             String toolName,
-            @ApiParam(value = "数据展示方式", required = true)
+            @Parameter(description = "数据展示方式", required = true)
             @PathParam(value = "orderBy")
             ComConstants.CLOCOrder orderBy
     );
 
-    @ApiOperation("告警管理初始化页面")
+    @Operation(summary = "告警管理初始化页面")
     @Path("/initpage")
     @POST
     Result<Object> pageInit(
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userId,
-            @ApiParam(value = "项目ID", required = true)
+            @Parameter(description = "项目ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId,
-            @ApiParam(value = "查询参数详情", required = true)
+            @Parameter(description = "查询参数详情", required = true)
             @Valid
             DefectQueryReqVO defectQueryReqVO
     );
 
-    @ApiOperation("查询代码统计清单")
+    @Operation(summary = "查询代码统计清单")
     @Path("/list/tool/stat/toolName/{toolName}")
     @GET
     Result<List<StatDefectQueryRespVO>> queryStatList(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_TASK_ID)
             long taskId,
-            @ApiParam(value = "工具名", required = true)
+            @Parameter(description = "工具名", required = true)
             @PathParam(value = "toolName")
             String toolName,
-            @ApiParam(value = "查询范围起始时间", required = false)
+            @Parameter(description = "查询范围起始时间", required = false)
             @QueryParam("startTime")
             long startTime,
-            @ApiParam(value = "查询范围结束时间", required = false)
+            @Parameter(description = "查询范围结束时间", required = false)
             @QueryParam(value = "endTime")
             long endTime
     );
 
-    @ApiOperation("获取当时真实执行过的工具列表(工具可能后期停用了)")
+    @Operation(summary = "获取当时真实执行过的工具列表(工具可能后期停用了)")
     @Path("/listToolName")
     @POST
     Result<ListToolNameResponse> listToolName(
@@ -544,16 +531,16 @@ public interface UserDefectRestResource {
             ListToolNameRequest request
     );
 
-    @ApiOperation("数据是否迁移成功")
+    @Operation(summary = "数据是否迁移成功")
     @Path("/commonToLintMigrationSuccessful/{taskId}")
     @GET
     Result<Boolean> commonToLintMigrationSuccessful(
-            @ApiParam(value = "任务ID", required = true)
+            @Parameter(description = "任务ID", required = true)
             @PathParam("taskId")
             long taskId
     );
 
-    @ApiOperation("统计含告警的文件数")
+    @Operation(summary = "统计含告警的文件数")
     @Path("/getNewDefectFileCount")
     @POST
     Result<Long> getNewDefectFileCount(CountDefectFileRequest request);

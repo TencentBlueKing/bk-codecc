@@ -64,11 +64,10 @@
                   <bk-select v-model="searchParams.author" searchable>
                     <bk-option
                       v-for="(author, index) in searchFormData.authorList"
-                      :key="index"
-                      :id="author"
-                      :name="author"
-                    >
-                    </bk-option>
+                      :key="author.id"
+                      :id="author.id"
+                      :name="author.name"
+                    ></bk-option>
                   </bk-select>
                 </bk-form-item>
               </div>
@@ -298,9 +297,7 @@
             </bk-table-column>
             <bk-table-column :label="$t('相关作者')" prop="authorList">
               <template slot-scope="props">
-                <span v-bk-tooltips="props.row.authorList">{{
-                  props.row.authorList
-                }}</span>
+                <bk-user-display-name :user-id="props.row.authorList"></bk-user-display-name>
               </template>
             </bk-table-column>
             <bk-table-column
@@ -578,7 +575,7 @@ export default {
     async init() {
       this.contentLoading = true;
       await Promise.all([this.fetchLintList(), this.fetchLintParams()])
-        .then(([list, params]) => {
+        .then(async ([list, params]) => {
           this.isFetched = true;
           this.listData = list;
           this.formatFilePath(params.filePathTree);
@@ -592,10 +589,18 @@ export default {
             newAuthorList.unshift(user);
             return newAuthorList;
           }
-          params.authorList = addCurrentUser(
+          const authorList = addCurrentUser(
             params.authorList,
             this.user.username
           );
+          const dataMap = await this.$store.dispatch(
+            'displayname/batchGetDisplayName',
+            authorList,
+          );
+          params.authorList = authorList.map(author => ({
+            id: author,
+            name: dataMap.get(author)?.display_name || author,
+          }));
           this.searchFormData = Object.assign({}, this.searchFormData, params);
           this.pagination.count = this.listData.defectList.totalElements;
         })
@@ -823,7 +828,7 @@ export default {
         JSON.stringify(this.selectedOptionColumn)
       );
     },
-    downloadExcel() {
+    async downloadExcel() {
       const params = this.getSearchParams();
       params.pageSize = 300000;
       if (this.totalCount > 300000) {
@@ -834,16 +839,22 @@ export default {
         });
         return;
       }
-      this.exportLoading = true;
-      this.$store
-        .dispatch('defect/lintList', params)
-        .then((res) => {
-          const list = res && res.defectList && res.defectList.content;
-          this.generateExcel(list);
-        })
-        .finally(() => {
-          this.exportLoading = false;
-        });
+      try {
+        this.exportLoading = true;
+        const res = await this.$store.dispatch('defect/lintList', params);
+        const list = res && res.defectList && res.defectList.content;
+        // display name 处理
+        const userIds = [...new Set(list.map(item => item.authorList))];
+        const dataMap = await this.$store.dispatch('displayname/batchGetDisplayName', userIds);
+        for (const row of list) {
+          row.authorList = dataMap.get(row.authorList)?.display_name || row.author;
+        }
+        this.generateExcel(list);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        this.exportLoading = false;
+      }
     },
     generateExcel(list = []) {
       const tHeader = [
@@ -878,7 +889,7 @@ export default {
       export_json_to_excel(tHeader, data, title);
     },
     formatJson(filterVal, list) {
-      let index = 1;
+      let index = 0;
       return list.map((item) =>
         filterVal.map((j) => {
           if (j === 'index') {

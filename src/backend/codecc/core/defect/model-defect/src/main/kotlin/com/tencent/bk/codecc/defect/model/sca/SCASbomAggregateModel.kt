@@ -10,23 +10,15 @@ class SCASbomAggregateModel(
      */
     var toolName: String,
     /**
-     * 基础信息
-     */
-    var info: SCASbomInfoEntity,
-    /**
      * 组件信息
      */
     var packages: List<SCASbomPackageEntity>,
     /**
-     * 文件信息
+     * 漏洞信息
      */
-    var files: List<SCASbomFileEntity>,
+    var vulnerabilities: List<SCAVulnerabilityEntity>,
     /**
-     * 代码片段信息
+     * 许可证信息
      */
-    var snippets: List<SCASbomSnippetEntity>,
-    /**
-     * 关联关系
-     */
-    var relationships: List<SCASbomRelationshipEntity>,
+    var licenses: List<SCALicenseEntity>,
 )

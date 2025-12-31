@@ -30,20 +30,19 @@ import com.tencent.bk.codecc.defect.vo.CheckerImportVO;
 import com.tencent.devops.common.api.checkerset.CheckerPropVO;
 import com.tencent.devops.common.api.pojo.codecc.Result;
 import com.tencent.devops.common.constant.ComConstants.ToolIntegratedStatus;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Map;
 
@@ -57,67 +56,67 @@ import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USE
  * @version V2.0
  * @date 2020/4/8
  */
-@Api(tags = {"BUILD_CHECKER"}, description = "规则导入接口")
+@Tag(name = "BUILD_CHECKER", description = "规则导入接口")
 @Path("/build/checker")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface BuildCheckerRestResource {
 
-    @ApiOperation("导入规则")
+    @Operation(summary = "导入规则")
     @Path("/")
     @POST
     Result<Map<String, List<CheckerPropVO>>> checkerImport(
-            @ApiParam(value = "用户名", required = true)
+            @Parameter(description = "用户名", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userName,
-            @ApiParam(value = "项目名", required = true)
+            @Parameter(description = "项目名", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_PROJECT_ID)
             String projectId,
-            @ApiParam(value = "规则导入请求对象", required = true)
+            @Parameter(description = "规则导入请求对象", required = true)
             CheckerImportVO checkerImportVO
     );
 
-    @ApiOperation("更新规则集状态元数据")
+    @Operation(summary = "更新规则集状态元数据")
     @Path("/tools/{toolName}/integratedStatus/update")
     @PUT
     Result<List<String>> updateToolCheckersToStatus(
-            @ApiParam(value = "用户名", required = true)
+            @Parameter(description = "用户名", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userName,
-            @ApiParam(value = "buildId", required = true)
+            @Parameter(description = "buildId", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_BUILD_ID)
             String buildId,
-            @ApiParam(value = "工具名称")
+            @Parameter(description = "工具名称")
             @PathParam("toolName")
             String toolName,
-            @ApiParam(value = "源状态")
+            @Parameter(description = "源状态")
             @QueryParam("fromStatus")
             ToolIntegratedStatus fromStatus,
-            @ApiParam(value = "目前状态")
+            @Parameter(description = "目前状态")
             @QueryParam("toStatus")
             ToolIntegratedStatus toStatus
     );
 
-    @ApiOperation("回滚规则集状态元数据")
+    @Operation(summary = "回滚规则集状态元数据")
     @Path("/tools/{toolName}/integratedStatus/revert")
     @PUT
     Result<String> revertToolCheckerSetStatus(
-            @ApiParam(value = "用户名", required = true)
+            @Parameter(description = "用户名", required = true)
             @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID)
             String userName,
-            @ApiParam(value = "工具名称")
+            @Parameter(description = "工具名称")
             @PathParam("toolName")
             String toolName,
-            @ApiParam(value = "状态")
+            @Parameter(description = "状态")
             @QueryParam("status")
             ToolIntegratedStatus status
     );
 
-    @ApiOperation("获取工具的规则数量")
+    @Operation(summary = "获取工具的规则数量")
     @Path("/get/checkerNum/{toolName}")
     @GET
     Result<Long> getCheckerNumByToolName(
-            @ApiParam(value = "工具名称")
+            @Parameter(description = "工具名称")
             @PathParam("toolName")
             String toolName
     );

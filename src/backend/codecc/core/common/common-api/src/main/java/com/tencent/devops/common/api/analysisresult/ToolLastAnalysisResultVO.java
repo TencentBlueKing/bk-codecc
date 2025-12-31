@@ -27,7 +27,7 @@
 package com.tencent.devops.common.api.analysisresult;
 
 import com.tencent.devops.common.api.analysisresult.BaseLastAnalysisResultVO;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -41,28 +41,28 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ToolLastAnalysisResultVO
 {
-    @ApiModelProperty("任务主键id")
+    @Schema(description = "任务主键id")
     private long taskId;
 
-    @ApiModelProperty("工具名")
+    @Schema(description = "工具名")
     private String toolName;
 
-    @ApiModelProperty("分析开始时间")
+    @Schema(description = "分析开始时间")
     private long startTime;
 
-    @ApiModelProperty("分析结束时间")
+    @Schema(description = "分析结束时间")
     private long endTime;
 
-    @ApiModelProperty("分析耗时")
+    @Schema(description = "分析耗时")
     private long elapseTime;
 
-    @ApiModelProperty("构建ID")
+    @Schema(description = "构建ID")
     private String buildId;
 
-    @ApiModelProperty("构建号")
+    @Schema(description = "构建号")
     private String buildNum;
 
-    @ApiModelProperty("最近分析统计结果")
+    @Schema(description = "最近分析统计结果")
     private BaseLastAnalysisResultVO lastAnalysisResultVO;
 
     private int currStep;

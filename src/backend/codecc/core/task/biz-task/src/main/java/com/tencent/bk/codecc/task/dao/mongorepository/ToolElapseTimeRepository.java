@@ -16,6 +16,8 @@ import com.tencent.bk.codecc.task.model.ToolElapseTimeEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 /**
  * 工具分析耗时数据持久化接口
  *
@@ -25,4 +27,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ToolElapseTimeRepository extends MongoRepository<ToolElapseTimeEntity, String> {
 
+    List<ToolElapseTimeEntity> findByDateAndDataFromAndScanStatType(String date, String dataFrom, String scanStatType);
 }

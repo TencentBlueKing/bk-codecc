@@ -1,7 +1,7 @@
 package com.tencent.bk.codecc.defect.vo.ignore;
 
 import com.tencent.devops.common.api.CommonVO;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -16,16 +16,16 @@ public class IgnoreTypeSysVO extends CommonVO {
     /**
      * 名字
      */
-    @ApiModelProperty("name")
+    @Schema(description = "name")
     private String name;
     /**
      * 忽略类型的ID
      */
-    @ApiModelProperty("ignore_type_id")
+    @Schema(description = "ignore_type_id")
     private Integer ignoreTypeId;
     /**
      * 状态： 0启用，1不启用
      */
-    @ApiModelProperty("status")
+    @Schema(description = "status")
     private Integer status;
 }

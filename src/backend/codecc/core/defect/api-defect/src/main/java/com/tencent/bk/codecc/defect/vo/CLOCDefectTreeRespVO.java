@@ -1,8 +1,7 @@
 package com.tencent.bk.codecc.defect.vo;
 
 import com.tencent.bk.codecc.defect.vo.common.CommonDefectQueryRspVO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,12 +17,12 @@ import java.util.List;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel("代码统计文件树返回视图")
+@Schema(description = "代码统计文件树返回视图")
 public class CLOCDefectTreeRespVO extends CommonDefectQueryRspVO {
-    @ApiModelProperty("本次扫描代码库信息")
+    @Schema(description = "本次扫描代码库信息")
     private List<CodeRepo> codeRepo;
 
-    @ApiModelProperty("CLOC文件树根结点")
+    @Schema(description = "CLOC文件树根结点")
     private CLOCTreeNodeVO clocTreeNodeVO;
 
     @Data
@@ -42,13 +41,13 @@ public class CLOCDefectTreeRespVO extends CommonDefectQueryRspVO {
             }
         }
 
-        @ApiModelProperty("代码库名称")
+        @Schema(description = "代码库名称")
         private String name;
 
-        @ApiModelProperty("代码库url")
+        @Schema(description = "代码库url")
         private String url;
 
-        @ApiModelProperty("代码库分支")
+        @Schema(description = "代码库分支")
         private String branch;
     }
 }

@@ -1,22 +1,21 @@
 package com.tencent.devops.common.api;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Set;
 import lombok.Data;
 
 @Data
-@ApiModel
+@Schema
 public class OpenSourceCheckerSetVO {
-    @ApiModelProperty
+    @Schema
     private String checkerSetId;
 
-    @ApiModelProperty
+    @Schema
     private Set<String> toolList;
 
-    @ApiModelProperty
+    @Schema
     private String checkerSetType;
 
-    @ApiModelProperty
+    @Schema
     private Integer version;
 }

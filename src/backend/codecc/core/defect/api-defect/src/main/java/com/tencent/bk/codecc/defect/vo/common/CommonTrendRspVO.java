@@ -26,8 +26,7 @@
 
 package com.tencent.bk.codecc.defect.vo.common;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -37,14 +36,14 @@ import lombok.Data;
  * @date 2019/6/3
  */
 @Data
-@ApiModel("公共响应趋势视图")
+@Schema(description = "公共响应趋势视图")
 public class CommonTrendRspVO
 {
 
-    @ApiModelProperty("日期")
+    @Schema(description = "日期")
     private String date;
 
-    @ApiModelProperty("日期显示")
+    @Schema(description = "日期显示")
     private String tips;
 
 }

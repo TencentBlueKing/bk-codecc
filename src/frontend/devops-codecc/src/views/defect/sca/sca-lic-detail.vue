@@ -157,13 +157,17 @@ export default {
       type: String,
       default: '',
     },
+    toolName: {
+      type: String,
+      default: '',
+    },
   },
   data() {
     return {
       searchParams: {
         // data
         taskId: this.$route.params.taskId,
-        toolName: 'PECKER_SCA',
+        toolName: this.toolName,
         licenseName: this.licenseName,
         dimension: 'SCA',
         entityId: this.entityId,
@@ -247,9 +251,12 @@ export default {
     }
 
     .license-summary-info {
-      display: grid;
+      display: flex;
       line-height: 25px;
-      grid-template-columns: 40px calc(100% - 40px);
+
+      .license-summary-label {
+        white-space: nowrap;
+      }
 
       .license-summary-value {
         max-height: 80px;

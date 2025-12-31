@@ -12,8 +12,7 @@
 
 package com.tencent.bk.codecc.defect.vo.admin;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -24,36 +23,36 @@ import lombok.Data;
  */
 
 @Data
-@ApiModel("冒烟检查详情视图")
+@Schema(description = "冒烟检查详情视图")
 public class SmokeCheckDetailVO {
 
-    @ApiModelProperty("任务ID")
+    @Schema(description = "任务ID")
     private Long taskId;
 
-    @ApiModelProperty("工具名")
+    @Schema(description = "工具名")
     private String toolName;
 
-    @ApiModelProperty("项目id")
+    @Schema(description = "项目id")
     private String projectId;
 
-    @ApiModelProperty("冒烟前告警数")
+    @Schema(description = "冒烟前告警数")
     private int beforeDefectCount;
 
-    @ApiModelProperty("冒烟后告警数")
+    @Schema(description = "冒烟后告警数")
     private int afterDefectCount;
 
-    @ApiModelProperty("告警变化数")
+    @Schema(description = "告警变化数")
     private int defectChange;
 
-    @ApiModelProperty("是否已执行")
+    @Schema(description = "是否已执行")
     private int hadExecute;
 
-    @ApiModelProperty("最近分析时间")
+    @Schema(description = "最近分析时间")
     private String analyzeDate;
 
-    @ApiModelProperty("冒烟前耗时")
+    @Schema(description = "冒烟前耗时")
     private long beforeElapseTime;
 
-    @ApiModelProperty("冒烟后耗时")
+    @Schema(description = "冒烟后耗时")
     private long afterElapseTime;
 }

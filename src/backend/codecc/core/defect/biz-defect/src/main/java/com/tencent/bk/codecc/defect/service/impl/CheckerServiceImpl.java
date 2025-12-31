@@ -209,18 +209,18 @@ public class CheckerServiceImpl implements CheckerService {
      * 根据指定条件查询规则
      *
      * @param toolNameSet
-     * @param checkerSet
+     * @param checkerSets
      * @param returnOnlyMapCheckerKeyAndType false返回的vo是全字段，true返回的vo只包含checkerKey和checkerType
      * @return
      */
     @Override
-    public Map<String, CheckerDetailVO> queryAllChecker(List<String> toolNameSet, String checkerSet,
+    public Map<String, CheckerDetailVO> queryAllChecker(List<String> toolNameSet, List<String> checkerSets,
             boolean returnOnlyMapCheckerKeyAndType) {
         Set<String> checkerKeyBySetId = new HashSet<>();
-        if (StringUtils.isNotEmpty(checkerSet)) {
-            checkerSetRepository.findByCheckerSetId(checkerSet).forEach(checkerSetEntity -> checkerKeyBySetId.addAll(
-                    checkerSetEntity.getCheckerProps().stream().map(CheckerPropsEntity::getCheckerKey)
-                            .collect(Collectors.toList())));
+        if (CollectionUtils.isNotEmpty(checkerSets)) {
+            checkerSetRepository.findByCheckerSetIdIn(checkerSets).forEach(checkerSetEntity ->
+                    checkerKeyBySetId.addAll(checkerSetEntity.getCheckerProps().stream()
+                            .map(CheckerPropsEntity::getCheckerKey).collect(Collectors.toList())));
         }
 
         List<CheckerDetailEntity> checkerDetailEntityList =
@@ -228,7 +228,7 @@ public class CheckerServiceImpl implements CheckerService {
                         : checkerRepository.findByToolNameIn(toolNameSet);
         List<CheckerDetailVO> checkerDetailList = new ArrayList<>();
         checkerDetailEntityList.forEach(checkerDetailEntity -> {
-            if (StringUtils.isNotBlank(checkerSet)) {
+            if (CollectionUtils.isNotEmpty(checkerSets)) {
                 if (!checkerKeyBySetId.contains(checkerDetailEntity.getCheckerKey())) {
                     return;
                 }
@@ -247,10 +247,10 @@ public class CheckerServiceImpl implements CheckerService {
     @Override
     public List<CheckerDetailVO> queryAllCheckerI18NWrapper(
             List<String> toolNameSet,
-            String checkerSet,
+            List<String> checkerSets,
             boolean returnOnlyMapCheckerKeyAndType
     ) {
-        Map<String, CheckerDetailVO> map = queryAllChecker(toolNameSet, checkerSet, returnOnlyMapCheckerKeyAndType);
+        Map<String, CheckerDetailVO> map = queryAllChecker(toolNameSet, checkerSets, returnOnlyMapCheckerKeyAndType);
 
         if (MapUtils.isEmpty(map)) {
             return Lists.newArrayList();
@@ -1809,7 +1809,7 @@ public class CheckerServiceImpl implements CheckerService {
             String createdByProjectId = checkerDetailEntity.getCreatedByProjectId();
             if (StringUtils.isNotBlank(createdByProjectId)
                 && createdByProjectId.equals(authManagementPermissionReqVO.getProjectId())) {
-                if (authExPermissionApi.authProjectManager(authManagementPermissionReqVO.getProjectId(), userId)) {
+                if (authExPermissionApi.authProjectMultiManager(authManagementPermissionReqVO.getProjectId(), userId)) {
                     checkerPermissionTypes.add(CheckerPermissionType.MANAGER);
                 }
             }

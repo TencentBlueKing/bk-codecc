@@ -1,6 +1,6 @@
 package com.tencent.bk.codecc.task.resources;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.tencent.bk.codecc.task.api.ServicePipelineCallbackRestResource;
 import com.tencent.bk.codecc.task.model.PipelineCallbackRegister;
 import com.tencent.bk.codecc.task.service.PipelineCallbackRegisterService;
