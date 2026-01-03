@@ -7,13 +7,14 @@ on:
 jobs:
   codecc:
     name: Build CodeCC
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Set up JDK 17
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v3
         with:
-          java-version: 17
+          distribution: "temurin"
+          java-version: "17"
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
         with:
@@ -70,7 +71,7 @@ jobs:
 
   releaseAll:
     name: Release All
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: ${{ always() }}
     needs: [codecc]
     steps:
