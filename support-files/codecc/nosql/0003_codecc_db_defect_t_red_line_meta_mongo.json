@@ -83,3 +83,15 @@
 {"_id":{"$oid":"5eddf8d903173c7a49492d0e"},"en_name":"WOODPECKER_SENSITIVE_NEW_SERIOUS","cn_name":"啄木鸟敏感信息接入后严重告警数","detail":"WOODPECKER_SENSITIVE","extra":"{\"codeLang\":\"ALL\"}","msg":"","type":"INT"}
 {"_id":{"$oid":"5eddf8d903173c7a49492d10"},"en_name":"WOODPECKER_SENSITIVE_HISTORY_PROMPT","cn_name":"啄木鸟敏感信息接入前提示告警数","detail":"WOODPECKER_SENSITIVE","extra":"{\"codeLang\":\"ALL\"}","msg":"","type":"INT"}
 {"_id":{"$oid":"5eddf8d903173c7a49492d15"},"en_name":"WOODPECKER_SENSITIVE_HISTORY_SERIOUS","cn_name":"啄木鸟敏感信息接入前严重告警数","detail":"WOODPECKER_SENSITIVE","extra":"{\"codeLang\":\"ALL\"}","msg":"","type":"INT"}
+{"_id":{"$oid":"60ba207816aa0f139b67a50c"},"en_name":"STANDARD_HISTORY_SERIOUS","cn_name":"代码规范存量严重问题数","detail":"STANDARD","type":"INT","msg":"","extra":""}
+{"_id":{"$oid":"60ba207816aa0f139b67a51e"},"en_name":"STANDARD_HISTORY_NORMAL","cn_name":"代码规范存量一般问题数","detail":"STANDARD","type":"INT","msg":"","extra":""}
+{"_id":{"$oid":"60ba207816aa0f139b67a527"},"en_name":"STANDARD_HISTORY_PROMPT","cn_name":"代码规范存量提示问题数","detail":"STANDARD","type":"INT","msg":"","extra":""}
+{"_id":{"$oid":"60ba207816aa0f139b67a536"},"en_name":"STANDARD_NEW_SERIOUS","cn_name":"代码规范新严重问题数","detail":"STANDARD","type":"INT","msg":"","extra":""}
+{"_id":{"$oid":"60ba207816aa0f139b67a542"},"en_name":"STANDARD_NEW_NORMAL","cn_name":"代码规范新一般问题数","detail":"STANDARD","type":"INT","msg":"","extra":""}
+{"_id":{"$oid":"60ba207816aa0f139b67a54f"},"en_name":"STANDARD_NEW_PROMPT","cn_name":"代码规范新提示问题数","detail":"STANDARD","type":"INT","msg":"","extra":""}
+{"_id":{"$oid":"60ba207816aa0f139b67a59d"},"en_name":"SECURITY_HISTORY_SERIOUS","cn_name":"安全漏洞存量严重问题数","detail":"SECURITY","type":"INT","msg":"","extra":""}
+{"_id":{"$oid":"60ba207816aa0f139b67a5a7"},"en_name":"SECURITY_HISTORY_NORMAL","cn_name":"安全漏洞存量一般问题数","detail":"SECURITY","type":"INT","msg":"","extra":""}
+{"_id":{"$oid":"60ba207816aa0f139b67a5b2"},"en_name":"SECURITY_HISTORY_PROMPT","cn_name":"安全漏洞存量提示问题数","detail":"SECURITY","type":"INT","msg":"","extra":""}
+{"_id":{"$oid":"60ba207816aa0f139b67a5bb"},"en_name":"SECURITY_NEW_SERIOUS","cn_name":"安全漏洞新严重问题数","detail":"SECURITY","type":"INT","msg":"","extra":""}
+{"_id":{"$oid":"60ba207816aa0f139b67a5c7"},"en_name":"SECURITY_NEW_NORMAL","cn_name":"安全漏洞新一般问题数","detail":"SECURITY","type":"INT","msg":"","extra":""}
+{"_id":{"$oid":"60ba207816aa0f139b67a5d1"},"en_name":"SECURITY_NEW_PROMPT","cn_name":"安全漏洞新提示问题数","detail":"SECURITY","type":"INT","msg":"","extra":""}

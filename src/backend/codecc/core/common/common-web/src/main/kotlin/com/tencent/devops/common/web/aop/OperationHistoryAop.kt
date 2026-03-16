@@ -179,7 +179,7 @@ class OperationHistoryAop @Autowired constructor(
         userName = userNameConverter(projectId, userName)
 
         // 获取操作消息
-        val paramArray = getParamArray(joinPoint, funcId, userName)
+        val paramArray = getParamArray(joinPoint, funcId, userName, projectId)
         // 获取当前时间
         val currentTime = System.currentTimeMillis()
         val operationHistoryDTO = OperationHistoryDTO(
@@ -213,6 +213,19 @@ class OperationHistoryAop @Autowired constructor(
         val tp = MultenantUtils.splitProjectId(projectId) ?: return userId
         val tenantId = tp.left
         return BkUserClient.getUserName(host, bkIamAppCode, bkIamAppSecret, tenantId, userId)
+    }
+
+    private fun batchUserNameConverter(projectId: String?, userIds: Set<String>): Set<String> {
+        if (projectId == null || BooleanUtils.isNotTrue(enableMultiTenant)) {
+            return userIds
+        }
+
+        val result = mutableSetOf<String>()
+        for (userId in userIds) {
+            result.add(userNameConverter(projectId, userId))
+        }
+
+        return result
     }
 
     /**
@@ -258,7 +271,7 @@ class OperationHistoryAop @Autowired constructor(
     /**
      * 获取操作记录消息
      */
-    private fun getParamArray(joinPoint: JoinPoint, funcId: String, user: String): Array<String> {
+    private fun getParamArray(joinPoint: JoinPoint, funcId: String, user: String, projectId: String): Array<String> {
 
         val objects = joinPoint.args
         return with(funcId)
@@ -329,10 +342,12 @@ class OperationHistoryAop @Autowired constructor(
                     val jsonObject = JSONObject.fromObject(objects[0])
                     val defectKeySet = jsonArray2Set(jsonArray = jsonObject.getJSONArray("defectKeySet"))
                     val sourceAuthorSet = jsonArray2Set(jsonArray = jsonObject.getJSONArray("sourceAuthor"))
+                    val realSourceAuthors = batchUserNameConverter(projectId, sourceAuthorSet)
                     val newAuthorSet = jsonArray2Set(jsonArray = jsonObject.getJSONArray("newAuthor"))
+                    val realNewAuthors = batchUserNameConverter(projectId, newAuthorSet)
                     arrayOf(
-                        defectKeySet.joinToString(","), sourceAuthorSet.joinToString(","),
-                        newAuthorSet.joinToString(",")
+                        defectKeySet.joinToString(","), realSourceAuthors.joinToString(","),
+                        realNewAuthors.joinToString(",")
                     )
                 }
                 FUNC_CODE_COMMENT_ADD -> {

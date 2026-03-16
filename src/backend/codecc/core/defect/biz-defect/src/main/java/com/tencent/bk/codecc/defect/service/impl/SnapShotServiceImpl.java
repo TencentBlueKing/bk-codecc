@@ -45,6 +45,8 @@ import com.tencent.devops.common.constant.ComConstants;
 import com.tencent.devops.common.redis.lock.RedisLock;
 import com.tencent.devops.common.service.BizServiceFactory;
 import com.tencent.devops.common.util.BeanUtils;
+import com.tencent.devops.common.util.MultenantUtils;
+import com.tencent.devops.common.web.BkUserClient;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -53,7 +55,10 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -88,6 +93,16 @@ public class SnapShotServiceImpl implements SnapShotService {
     private Client client;
     @Autowired
     private SnapShotDao snapShotDao;
+    @Value("${codecc.enableMultiTenant:#{null}}")
+    private Boolean enableMultiTenant;
+    @Value("${iam.appCode:#{null}}")
+    private String bkIamAppCode;
+    @Value("${iam.appSecret:#{null}}")
+    private String bkIamAppSecret;
+    @Value("${bkapi.tenant.host:#{null}}")
+    private String host;
+
+
     private LoadingCache<String, List<String>> toolOrderCache = CacheBuilder.newBuilder()
             .refreshAfterWrite(15, TimeUnit.MINUTES)
             .build(new CacheLoader<String, List<String>>() {
@@ -157,10 +172,20 @@ public class SnapShotServiceImpl implements SnapShotService {
                 ? toolOrder.indexOf(it.getToolNameEn()) : Integer.MAX_VALUE));
         // 作者排序
         for (ToolSnapShotEntity toolSnapShotEntity : snapShot.getToolSnapshotList()) {
-            if (toolSnapShotEntity instanceof LintSnapShotEntity
-                    && CollectionUtils.isNotEmpty(((LintSnapShotEntity) toolSnapShotEntity).getAuthorList())) {
-                ((LintSnapShotEntity) toolSnapShotEntity).getAuthorList().sort(Comparator.comparing(
-                        NotRepairedAuthorEntity::getTotalCount, Comparator.reverseOrder()));
+            if (toolSnapShotEntity instanceof LintSnapShotEntity) {
+                LintSnapShotEntity entity = (LintSnapShotEntity) toolSnapShotEntity;
+                if (CollectionUtils.isNotEmpty(entity.getAuthorList())) {
+                    if (BooleanUtils.isTrue(enableMultiTenant)) {
+                        entity.getAuthorList()
+                                .forEach(it -> {
+                                    String realName = userNameConverter(projectId, it.getName());
+                                    it.setName(realName);
+                                });
+                    }
+                    entity.getAuthorList()
+                            .sort(Comparator.comparing(
+                                    NotRepairedAuthorEntity::getTotalCount, Comparator.reverseOrder()));
+                }
             }
         }
 
@@ -168,6 +193,19 @@ public class SnapShotServiceImpl implements SnapShotService {
         BeanUtils.copyProperties(snapShot, snapShotVO);
 
         return snapShotVO;
+    }
+
+    private String userNameConverter(String projectId, String userId) {
+        if (projectId == null || BooleanUtils.isNotTrue(enableMultiTenant)) {
+            return userId;
+        }
+
+        Pair<String, String> tp = MultenantUtils.splitProjectId(projectId);
+        if (tp == null) {
+            return userId;
+        }
+        String tenantId = tp.getLeft();
+        return BkUserClient.INSTANCE.getUserName(host, bkIamAppCode, bkIamAppSecret, tenantId, userId);
     }
 
     @Override
