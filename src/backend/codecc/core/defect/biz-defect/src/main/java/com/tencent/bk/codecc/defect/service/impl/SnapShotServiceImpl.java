@@ -175,12 +175,9 @@ public class SnapShotServiceImpl implements SnapShotService {
             if (toolSnapShotEntity instanceof LintSnapShotEntity) {
                 LintSnapShotEntity entity = (LintSnapShotEntity) toolSnapShotEntity;
                 if (CollectionUtils.isNotEmpty(entity.getAuthorList())) {
-                    log.info("#TMP author size: {}, enableMultiTenant: {}",
-                            entity.getAuthorList().size(), enableMultiTenant);
                     if (BooleanUtils.isTrue(enableMultiTenant)) {
                         entity.getAuthorList()
                                 .forEach(it -> {
-                                    log.info("#TMP author: {}", it);
                                     String realName = userNameConverter(projectId, it.getName());
                                     it.setName(realName);
                                 });
