@@ -1,0 +1,7 @@
+{
+  "bkauthBaseUrl": "https://bkauth-test.example.com/realms/devops",
+  "clientId": "preci-ide-plugin-test",
+  "resource": "service:codecc",
+  "scope": "",
+  "redirectPath": "/api/preci/oauth/callback"
+}

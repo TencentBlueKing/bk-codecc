@@ -1,0 +1,36 @@
+#!/bin/bash
+################################################################################
+# PreCI PKG Pre-install Script
+#
+# Runs before the installer copies payload files. Stops any running PreCI
+# services to prevent file-in-use conflicts during upgrade.
+#
+# PKG installer script arguments:
+#   $1 - Package path
+#   $2 - Target location
+#   $3 - Target volume
+################################################################################
+
+# Determine the real logged-in user (PKG scripts run as root)
+REAL_USER=$(/usr/bin/stat -f "%Su" /dev/console 2>/dev/null || echo "${USER}")
+REAL_HOME=$(/usr/bin/dscl . -read "/Users/${REAL_USER}" NFSHomeDirectory 2>/dev/null | /usr/bin/awk '{print $2}')
+if [[ -z "${REAL_HOME}" ]]; then
+    REAL_HOME=$(eval echo "~${REAL_USER}")
+fi
+
+INSTALL_DIR="${REAL_HOME}/PreCI"
+
+# Graceful stop via preci CLI
+if [[ -x "${INSTALL_DIR}/preci" ]]; then
+    /usr/bin/sudo -u "${REAL_USER}" "${INSTALL_DIR}/preci" server stop 2>/dev/null || true
+fi
+
+sleep 1
+
+# Force-kill remaining processes
+/usr/bin/pkill -f "preci-server" 2>/dev/null || true
+/usr/bin/pkill -f "preci-mcp" 2>/dev/null || true
+
+sleep 1
+
+exit 0

@@ -1,0 +1,41 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>MagicNumber:PreCIApiClient.kt$PreCIApiClient$10</ID>
+    <ID>MagicNumber:PreCIApiClient.kt$PreCIApiClient$3</ID>
+    <ID>MagicNumber:PreCIApiClient.kt$PreCIApiClient$30</ID>
+    <ID>MagicNumber:PreCIPortDetector.kt$PreCIPortDetector$1024</ID>
+    <ID>MagicNumber:PreCIPortDetector.kt$PreCIPortDetector$5</ID>
+    <ID>MagicNumber:PreCIPortDetector.kt$PreCIPortDetector$65535</ID>
+    <ID>MagicNumber:PreCISettingsComponent.kt$PreCISettingsComponent$3</ID>
+    <ID>MagicNumber:PreCISettingsComponent.kt$PreCISettingsComponent$30</ID>
+    <ID>MagicNumber:PreCISettingsComponent.kt$PreCISettingsComponent$5</ID>
+    <ID>MagicNumber:RetryInterceptor.kt$RetryInterceptor$500L</ID>
+    <ID>MaxLineLength:RetryInterceptor.kt$RetryInterceptor$logger.info("Retrying request (attempt $attempt/$maxRetries) after ${delayMs}ms delay: ${request.url}")</ID>
+    <ID>MaxLineLength:SerializationTest.kt$SerializationTest$val jsonString = """{"projectRoot":"/root","toolStatuses":{"tool1":"running","tool2":"done"},"status":"running"}"""</ID>
+    <ID>SwallowedException:PreCIApiClient.kt$PreCIApiClient$e: Exception</ID>
+    <ID>SwallowedException:PreCIPortDetector.kt$PreCIPortDetector$e: Exception</ID>
+    <ID>ThrowsCount:PreCIApiClient.kt$PreCIApiClient$private fun executeRequest(request: Request): String</ID>
+    <ID>ThrowsCount:PreCIPortDetector.kt$PreCIPortDetector$fun getServerPort(): Int</ID>
+    <ID>TooGenericExceptionCaught:LoggingInterceptor.kt$LoggingInterceptor$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PreCIApiClient.kt$PreCIApiClient$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PreCIPortDetector.kt$PreCIPortDetector$e: Exception</ID>
+    <ID>TooManyFunctions:PreCIApiClient.kt$PreCIApiClient</ID>
+    <ID>WildcardImport:LoggingInterceptorTest.kt$import org.junit.jupiter.api.*</ID>
+    <ID>WildcardImport:LoggingInterceptorTest.kt$import org.junit.jupiter.api.Assertions.*</ID>
+    <ID>WildcardImport:PreCIApiClient.kt$import com.codecc.preci.api.model.request.*</ID>
+    <ID>WildcardImport:PreCIApiClient.kt$import com.codecc.preci.api.model.response.*</ID>
+    <ID>WildcardImport:PreCIApiClient.kt$import com.codecc.preci.core.http.*</ID>
+    <ID>WildcardImport:PreCIApiClientTest.kt$import com.codecc.preci.api.model.request.*</ID>
+    <ID>WildcardImport:PreCIApiClientTest.kt$import com.codecc.preci.api.model.response.*</ID>
+    <ID>WildcardImport:PreCIApiClientTest.kt$import io.mockk.*</ID>
+    <ID>WildcardImport:PreCIApiClientTest.kt$import org.junit.jupiter.api.*</ID>
+    <ID>WildcardImport:PreCIApiClientTest.kt$import org.junit.jupiter.api.Assertions.*</ID>
+    <ID>WildcardImport:PreCIPortDetectorTest.kt$import org.junit.jupiter.api.Assertions.*</ID>
+    <ID>WildcardImport:PreCISettingsStateTest.kt$import org.junit.jupiter.api.Assertions.*</ID>
+    <ID>WildcardImport:PreCISettingsTest.kt$import org.junit.jupiter.api.Assertions.*</ID>
+    <ID>WildcardImport:SerializationTest.kt$import com.codecc.preci.api.model.request.*</ID>
+    <ID>WildcardImport:SerializationTest.kt$import com.codecc.preci.api.model.response.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

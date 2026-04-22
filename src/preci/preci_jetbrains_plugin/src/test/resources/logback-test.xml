@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 测试环境日志配置 - 输出到控制台，方便查看测试日志 -->
+    
+    <!-- 定义属性：日志格式 -->
+    <property name="LOG_PATTERN" value="%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" />
+
+    <!-- 控制台输出 Appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 根 Logger 配置 - 测试环境默认 DEBUG 级别 -->
+    <root level="DEBUG">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+    <!-- PreCI 包的日志 - 使用 DEBUG 级别便于测试时查看 -->
+    <logger name="com.codecc.preci" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <!-- 关闭第三方库的调试日志，减少噪音 -->
+    <logger name="okhttp3" level="WARN" />
+    <logger name="org.jetbrains" level="WARN" />
+    <logger name="com.intellij" level="WARN" />
+</configuration>
+

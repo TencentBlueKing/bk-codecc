@@ -1,0 +1,7 @@
+{
+  "bkauthBaseUrl": "https://stage.bkauth.woa.com/realms/bk-devops",
+  "clientId": "bk-preci",
+  "resource": "service:codecc",
+  "scope": "",
+  "redirectPath": "/api/preci/oauth/callback"
+}

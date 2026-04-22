@@ -1,0 +1,51 @@
+{
+  "checkerSetId": "standard_python_pylint",
+  "checkerSetName": "腾讯代码规范 (Python) 规则集 (PYLINT)",
+  "toolName": "PYLINT",
+  "checkers": [
+    "len-as-condition",
+    "bad-whitespace",
+    "bare-except",
+    "mixed-line-endings",
+    "multiple-imports",
+    "broad-except",
+    "function-redefined",
+    "line-too-long",
+    "trailing-newlines",
+    "unused-variable",
+    "missing-final-newline",
+    "misplaced-future",
+    "wildcard-import",
+    "multiple-statements",
+    "mixed-indentation",
+    "bad-indentation",
+    "unused-import",
+    "wrong-import-order",
+    "invalid-name",
+    "dangerous-default-value",
+    "singleton-comparison",
+    "trailing-whitespace",
+    "trailing-comma-tuple",
+    "unexpected-line-ending-format"
+  ],
+  "checkerOptions": [
+    {
+      "checkerId": "line-too-long",
+      "checkerOption": {
+        "max-line-length": "120"
+      }
+    },
+    {
+      "checkerId": "invalid-name",
+      "checkerOption": {
+        "good-names": "TDW_PL"
+      }
+    },
+    {
+      "checkerId": "unexpected-line-ending-format",
+      "checkerOption": {
+        "expected-line-ending-format": "LF"
+      }
+    }
+  ]
+}
