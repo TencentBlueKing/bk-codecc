@@ -5,7 +5,6 @@ import com.codecc.preci.core.log.PreCILogger
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.concurrent.TimeUnit
-import com.codecc.preci.util.ShellCommandHelper
 
 /**
  * PreCI 端口检测工具

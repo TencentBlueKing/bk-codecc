@@ -1,3 +1,5 @@
+// Package logger wraps zap to provide the PreCI server's structured logger
+// with log-file rotation support.
 package logger
 
 import (

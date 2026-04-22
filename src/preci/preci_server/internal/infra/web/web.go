@@ -1,3 +1,5 @@
+// Package web contains common HTTP helpers, such as request/response
+// utilities used across PreCI web handlers.
 package web
 
 import (

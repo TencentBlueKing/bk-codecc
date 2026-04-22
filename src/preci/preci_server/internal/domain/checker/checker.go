@@ -1,3 +1,5 @@
+// Package checker implements the checker/checker-set domain, covering rule
+// management and synchronization with the remote CodeCC service.
 package checker
 
 import (

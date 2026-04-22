@@ -1,3 +1,5 @@
+// Package defect implements the defect domain (loading, storing and querying
+// scan defects produced by PreCI tools).
 package defect
 
 import (

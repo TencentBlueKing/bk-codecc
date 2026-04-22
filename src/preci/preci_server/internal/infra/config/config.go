@@ -1,3 +1,4 @@
+// Package config loads and exposes the PreCI server configuration.
 package config
 
 import (

@@ -80,7 +80,11 @@ func (c *CodeCCClient) GetToolInfos(toolNames []string) ([]dto.ToolMetaDetail, e
 // BatchGetCheckerSeverities 批量获取规则的 Severity
 func (c *CodeCCClient) BatchGetCheckerSeverities(toolNames []string) (*dto.BatchGetCheckerSeverityData, error) {
 	var response dto.BatchGetCheckerSeverityResp
-	if err := c.post(BatchGetCheckerSeverityPath, dto.BatchGetCheckerSeverityReq{ToolNames: toolNames}, &response); err != nil {
+	if err := c.post(
+		BatchGetCheckerSeverityPath,
+		dto.BatchGetCheckerSeverityReq{ToolNames: toolNames},
+		&response,
+	); err != nil {
 		c.logger.Error(fmt.Sprintf("batch get checker severities failed: %v", err))
 		return nil, err
 	}

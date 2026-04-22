@@ -36,7 +36,10 @@ func (c *BkRepoClient) UploadLog(userId, token, uploadedFile string) error {
 	}
 	defer file.Close()
 
-	path := fmt.Sprintf("/generic/temporary/upload/%s/%s/%s/%s.log?token=", BkRepoProject, BkRepoRepo, BkRepoUploadSubPath, userId) + token
+	path := fmt.Sprintf(
+		"/generic/temporary/upload/%s/%s/%s/%s.log?token=",
+		BkRepoProject, BkRepoRepo, BkRepoUploadSubPath, userId,
+	) + token
 
 	headers := map[string]string{
 		"Content-Type":       "application/octet-stream",

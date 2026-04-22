@@ -1,3 +1,5 @@
+// Package git implements Git-specific helpers used by the SCM layer to
+// inspect repositories and collect changed-file information.
 package git
 
 import (

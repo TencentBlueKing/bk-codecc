@@ -1,3 +1,4 @@
+// Package config holds runtime configuration for the MCP tool entrypoint.
 package config
 
 var (

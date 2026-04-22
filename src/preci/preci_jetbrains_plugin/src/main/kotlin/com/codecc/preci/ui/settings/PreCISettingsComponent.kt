@@ -41,7 +41,18 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.awt.BorderLayout
 import java.awt.Dimension
-import javax.swing.*
+import javax.swing.BorderFactory
+import javax.swing.Box
+import javax.swing.BoxLayout
+import javax.swing.ButtonGroup
+import javax.swing.DefaultComboBoxModel
+import javax.swing.JButton
+import javax.swing.JComponent
+import javax.swing.JOptionPane
+import javax.swing.JPanel
+import javax.swing.JRadioButton
+import javax.swing.JTextField
+import javax.swing.SwingUtilities
 
 /**
  * PreCI 配置界面 UI 组件
@@ -351,6 +362,7 @@ class PreCISettingsComponent {
      * 保留此方法供其他模块调用（如 [ServerStartupActivity] 中的自动检测逻辑）。
      * Settings 页面的按钮已切换为 [handleCheckUpdate]。
      */
+    @Suppress("unused")
     private fun handleAutoDetect() {
         checkUpdateButton.isEnabled = false
         checkUpdateButton.text = "检测中..."

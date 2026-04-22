@@ -3,7 +3,11 @@ package com.codecc.preci.ui.toolwindow
 import com.codecc.preci.api.model.response.PipelineBuild
 import com.codecc.preci.api.model.response.PipelineBuildLog
 import com.codecc.preci.core.log.PreCILogger
-import com.codecc.preci.service.pipeline.*
+import com.codecc.preci.service.pipeline.BuildHistoryResult
+import com.codecc.preci.service.pipeline.BuildLogsResult
+import com.codecc.preci.service.pipeline.PipelineService
+import com.codecc.preci.service.pipeline.StartBuildResult
+import com.codecc.preci.service.pipeline.StopBuildResult
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.project.Project
@@ -14,10 +18,15 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.awt.BorderLayout
 import java.awt.Cursor
-import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.Font
 import java.awt.event.MouseAdapter
@@ -25,7 +34,15 @@ import java.awt.event.MouseEvent
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import javax.swing.*
+import java.util.concurrent.CancellationException
+import javax.swing.JButton
+import javax.swing.JComponent
+import javax.swing.JLabel
+import javax.swing.JPanel
+import javax.swing.JTable
+import javax.swing.JTextArea
+import javax.swing.ListSelectionModel
+import javax.swing.SwingUtilities
 import javax.swing.table.AbstractTableModel
 import javax.swing.table.DefaultTableCellRenderer
 

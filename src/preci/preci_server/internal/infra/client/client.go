@@ -1,3 +1,5 @@
+// Package client provides HTTP clients for external services consumed by
+// PreCI (CodeCC, bkrepo, bkauth, etc.).
 package client
 
 import (

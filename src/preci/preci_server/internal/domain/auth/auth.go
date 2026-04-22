@@ -1,3 +1,5 @@
+// Package auth implements the authentication/authorization domain for
+// PreCI, including OAuth login flows and token caching.
 package auth
 
 import (

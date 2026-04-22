@@ -1,3 +1,5 @@
+// Package task implements the task domain, including scan orchestration,
+// progress tracking and task metadata management.
 package task
 
 import (

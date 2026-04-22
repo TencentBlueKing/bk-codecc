@@ -1,3 +1,5 @@
+// Package scm provides source-code-management abstractions shared by the
+// individual SCM implementations (e.g. Git) used by PreCI.
 package scm
 
 import (

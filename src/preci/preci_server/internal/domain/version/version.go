@@ -1,3 +1,5 @@
+// Package version implements the version domain, which resolves the
+// installed/latest PreCI versions and coordinates self-upgrade.
 package version
 
 import (

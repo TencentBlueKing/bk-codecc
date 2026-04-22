@@ -1,3 +1,5 @@
+// Package tool implements the tool domain, providing metadata and
+// installation/invocation logic for PreCI scanning tools.
 package tool
 
 import (

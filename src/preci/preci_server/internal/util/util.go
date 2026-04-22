@@ -1,3 +1,5 @@
+// Package util provides small utility helpers shared across the PreCI
+// server codebase.
 package util
 
 import (
