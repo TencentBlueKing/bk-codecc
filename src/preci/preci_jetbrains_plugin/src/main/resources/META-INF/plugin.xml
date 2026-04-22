@@ -1,0 +1,250 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
+    <id>com.tencent.devops.ide.plugin</id>
+
+    <!-- Public plugin name should be written in Title Case.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
+    <name>PreCI</name>
+
+    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <vendor email="support@codecc.com" url="https://codecc.com">CodeCC</vendor>
+
+    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
+         Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
+    <description><![CDATA[
+    <p><strong>PreCI</strong> 是一个代码质量检查工具，帮助开发者在本地快速发现代码问题。</p>
+
+    <h3>主要功能</h3>
+    <ul>
+      <li><strong>多种扫描模式</strong>：支持全量扫描、目标扫描和增量扫描（pre-commit/pre-push）</li>
+      <li><strong>实时结果展示</strong>：在 IDE 中直接查看扫描结果，一键跳转到问题代码位置</li>
+      <li><strong>规则集管理</strong>：灵活选择和配置代码检查规则集</li>
+      <li><strong>服务管理</strong>：便捷地启动、停止和监控 PreCI Local Server</li>
+      <li><strong>自动更新</strong>：及时获取最新版本和功能</li>
+    </ul>
+
+    <h3>使用前提</h3>
+    <p>本插件会自动安装 PreCI CLI 工具。插件将与本地运行的 PreCI Local Server 通信。</p>
+  ]]></description>
+
+    <!-- Product and plugin compatibility requirements.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lang</depends>
+    <depends>org.jetbrains.plugins.terminal</depends>
+    <depends>Git4Idea</depends>
+
+    <!-- Extension points defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- 应用级别服务：配置管理 -->
+        <applicationService
+            serviceImplementation="com.codecc.preci.core.config.PreCISettings"/>
+
+        <!-- 项目级别服务：服务器管理 -->
+        <projectService
+            serviceInterface="com.codecc.preci.service.server.ServerManagementService"
+            serviceImplementation="com.codecc.preci.service.server.ServerManagementServiceImpl"/>
+
+        <!-- 应用级别服务：鉴权服务（全局共享，所有项目与同一个 PreCI Server 交互） -->
+        <applicationService
+            serviceInterface="com.codecc.preci.service.auth.AuthService"
+            serviceImplementation="com.codecc.preci.service.auth.AuthServiceImpl"/>
+
+        <!-- 项目级别服务：扫描服务 -->
+        <projectService
+            serviceInterface="com.codecc.preci.service.scan.ScanService"
+            serviceImplementation="com.codecc.preci.service.scan.ScanServiceImpl"/>
+
+        <!-- 项目级别服务：规则集服务 -->
+        <projectService
+            serviceInterface="com.codecc.preci.service.checker.CheckerService"
+            serviceImplementation="com.codecc.preci.service.checker.CheckerServiceImpl"/>
+
+        <!-- 应用级别服务：版本管理服务 -->
+        <applicationService
+            serviceInterface="com.codecc.preci.service.version.VersionService"
+            serviceImplementation="com.codecc.preci.service.version.VersionServiceImpl"/>
+
+        <!-- 项目级别服务：CodeCC 远程代码检查服务 -->
+        <projectService
+            serviceInterface="com.codecc.preci.service.codecc.CodeCCService"
+            serviceImplementation="com.codecc.preci.service.codecc.CodeCCServiceImpl"/>
+
+        <!-- 项目级别服务：VCS 检查服务（pre-commit / pre-push） -->
+        <projectService
+            serviceInterface="com.codecc.preci.service.vcs.VcsCheckService"
+            serviceImplementation="com.codecc.preci.service.vcs.VcsCheckServiceImpl"/>
+
+        <!-- 项目级别服务：PAC 流水线服务 -->
+        <projectService
+            serviceInterface="com.codecc.preci.service.pipeline.PipelineService"
+            serviceImplementation="com.codecc.preci.service.pipeline.PipelineServiceImpl"/>
+
+        <!-- OAuth 回调 RestService：接收浏览器 OAuth 重定向 -->
+        <httpRequestHandler
+            implementation="com.codecc.preci.service.oauth.OAuthCallbackRestService"/>
+
+        <!-- 应用级别服务：OAuth 流程编排 -->
+        <applicationService
+            serviceImplementation="com.codecc.preci.service.oauth.OAuthService"/>
+
+        <!-- 项目启动活动:服务器状态检查 -->
+        <postStartupActivity
+            implementation="com.codecc.preci.service.server.ServerStartupActivity"/>
+
+        <!-- 通知分组 -->
+        <notificationGroup
+            id="PreCI.ServerManagement"
+            displayType="BALLOON"
+            isLogByDefault="true"/>
+
+        <notificationGroup
+            id="PreCI.Install"
+            displayType="STICKY_BALLOON"
+            isLogByDefault="true"/>
+
+        <notificationGroup
+            id="PreCI.Auth"
+            displayType="BALLOON"
+            isLogByDefault="true"/>
+
+        <notificationGroup
+            id="PreCI.Scan"
+            displayType="BALLOON"
+            isLogByDefault="true"/>
+
+        <notificationGroup
+            id="PreCI.Checker"
+            displayType="BALLOON"
+            isLogByDefault="true"/>
+
+        <notificationGroup
+            id="PreCI.CodeCC"
+            displayType="BALLOON"
+            isLogByDefault="true"/>
+
+        <notificationGroup
+            id="PreCI.Pipeline"
+            displayType="BALLOON"
+            isLogByDefault="true"/>
+
+        <!-- 配置页面：在 Settings → Tools → PreCI -->
+        <applicationConfigurable
+            parentId="tools"
+            instance="com.codecc.preci.ui.settings.PreCIConfigurable"
+            id="com.tencent.devops.ide.plugin.settings"
+            displayName="PreCI"/>
+
+        <!-- 工具窗口：显示扫描结果和进度 -->
+        <toolWindow
+            id="PreCI"
+            anchor="bottom"
+            factoryClass="com.codecc.preci.ui.toolwindow.PreCIToolWindowFactory"
+            icon="/icon/devops.png"/>
+
+        <!-- PreCI 缺陷高亮和块状提示：通过 FileEditorManagerListener 实现 -->
+        <!-- 监听器在 ServerStartupActivity 中注册，使用 addBlockElement 方式添加 Inlay -->
+        <!-- 无需使用 InlayHintsProvider，直接在编辑器中添加块状提示 -->
+
+        <!-- Pre-Commit 检查：在 Commit 前执行 PreCI 代码检查 -->
+        <checkinHandlerFactory
+            implementation="com.codecc.preci.vcs.PreCICheckinHandlerFactory"/>
+
+        <!-- Pre-Push 检查：在 Push 前执行 PreCI 代码检查（需 Git 插件） -->
+        <prePushHandler
+            implementation="com.codecc.preci.vcs.PreCIPrePushHandler"/>
+
+        <!-- 其他扩展点将在后续任务中填充 -->
+        <!-- 例如：StatusBarWidgetFactory、Action 等 -->
+    </extensions>
+
+    <!-- Actions defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-actions.html -->
+    <actions>
+        <!-- PreCI 主菜单组 -->
+        <group id="PreCI.MainMenu" text="PreCI" description="PreCI 代码检查工具" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+
+            <!-- 登录 Action -->
+            <action
+                id="PreCI.Login"
+                class="com.codecc.preci.ui.action.LoginAction"
+                text="Login..."
+                description="登录到 PreCI Local Server"
+                icon="AllIcons.General.User"/>
+
+            <!-- 项目初始化 Action -->
+            <action
+                id="PreCI.InitProject"
+                class="com.codecc.preci.ui.action.InitProjectAction"
+                text="Initialize Project..."
+                description="初始化 PreCI 项目配置"
+                icon="AllIcons.Actions.Execute"/>
+
+            <separator/>
+
+            <!-- 全量扫描 Action -->
+            <action
+                id="PreCI.FullScan"
+                class="com.codecc.preci.ui.action.FullScanAction"
+                text="Full Scan"
+                description="执行全量扫描，扫描整个项目"
+                icon="AllIcons.Actions.Execute"/>
+
+            <!-- Pre-Commit 扫描 Action -->
+            <action
+                id="PreCI.PreCommitScan"
+                class="com.codecc.preci.ui.action.PreCommitScanAction"
+                text="Pre-Commit Scan"
+                description="执行 pre-commit 增量扫描，扫描 Git 暂存区变更"
+                icon="AllIcons.Actions.Commit"/>
+
+            <!-- Pre-Push 扫描 Action -->
+            <action
+                id="PreCI.PrePushScan"
+                class="com.codecc.preci.ui.action.PrePushScanAction"
+                text="Pre-Push Scan"
+                description="执行 pre-push 增量扫描，扫描未推送的提交"
+                icon="AllIcons.Vcs.Push"/>
+
+            <separator/>
+
+            <!-- 加载扫描结果 Action -->
+            <action
+                id="PreCI.LoadScanResult"
+                class="com.codecc.preci.ui.action.LoadScanResultAction"
+                text="Load Scan Results"
+                description="加载历史扫描结果，无需执行新的扫描"
+                icon="AllIcons.Actions.Refresh"/>
+
+            <separator/>
+
+            <!-- 规则集选择 Action -->
+            <action
+                id="PreCI.CheckerSets"
+                class="com.codecc.preci.ui.action.CheckerSetAction"
+                text="Checker Sets..."
+                description="选择和管理代码检查规则集"
+                icon="AllIcons.General.Settings"/>
+        </group>
+
+        <!-- 项目视图和编辑器右键菜单组 -->
+        <group id="PreCI.ContextMenu" text="PreCI" description="PreCI 代码检查" popup="true">
+            <!-- 添加到项目视图右键菜单 -->
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+            <!-- 添加到编辑器右键菜单 -->
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+
+            <!-- 目标扫描 Action（右键菜单专用） -->
+            <action
+                id="PreCI.TargetScan"
+                class="com.codecc.preci.ui.action.TargetScanAction"
+                text="Scan with PreCI"
+                description="扫描选中的文件或目录"
+                icon="AllIcons.Actions.Execute"/>
+        </group>
+    </actions>
+</idea-plugin>

@@ -1,0 +1,7 @@
+{
+  "BKAuth": {
+    "BaseURL": "http://stage.bkauth.woa.com/realms/bk-devops",
+    "ClientID": "bk-preci",
+    "Resource": "service:codecc"
+  }
+}

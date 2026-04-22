@@ -1,0 +1,28 @@
+{
+  "checkerSetId": "standard_ai_checker",
+  "checkerSetName": "星图智检",
+  "toolName": "ACTION_CODE_CHECK",
+  "checkers": [
+    "AICheck-API / Function Errors-Error",
+    "AICheck-API / Function Errors-Fatal",
+    "AICheck-API / Function Errors-Warn",
+    "AICheck-Behavioral Problems-Error",
+    "AICheck-Behavioral Problems-Fatal",
+    "AICheck-Behavioral Problems-Warn",
+    "AICheck-Data Neutralization Issues-Error",
+    "AICheck-Data Neutralization Issues-Fatal",
+    "AICheck-Data Neutralization Issues-Warn",
+    "AICheck-Data Processing Errors-Error",
+    "AICheck-Data Processing Errors-Fatal",
+    "AICheck-Data Processing Errors-Warn",
+    "AICheck-Expression Issues-Error",
+    "AICheck-Expression Issues-Fatal",
+    "AICheck-Expression Issues-Warn",
+    "AICheck-Logical Errors-Error",
+    "AICheck-Logical Errors-Fatal",
+    "AICheck-Logical Errors-Warn",
+    "AICheck-Numeric Errors-Error",
+    "AICheck-Numeric Errors-Fatal",
+    "AICheck-Numeric Errors-Warn"
+  ]
+}

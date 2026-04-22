@@ -1,0 +1,26 @@
+{
+  "Web": {
+    "ReadTimeout": "5s",
+    "WriteTimeout": "15m",
+    "IdleTimeout": "120s",
+    "ShutdownTimeout": "20s",
+    "CodeCCBaseUrl": "http://codecc.woa.com"
+  },
+  "BkRepo": {
+    "BaseUrl": "http://devnet.bkrepo.woa.com",
+    "Project": "bkdevops",
+    "Repo": "static",
+    "DownloadFolder": "http://devnet.bkrepo.woa.com/generic/bkdevops/static/gw/resource/preci/v2/[ENV]",
+    "UploadSubPath": "gw/resource/preci/v2/log"
+  },
+  "Log": {
+    "Level": "info"
+  },
+  "Db": {
+    "Timeout": "3s",
+    "InitialMmapSize": "33554432"
+  },
+  "Task": {
+    "MaxIncrementalFileSize": 1000
+  }
+}
