@@ -4,13 +4,13 @@
     "WriteTimeout": "15m",
     "IdleTimeout": "120s",
     "ShutdownTimeout": "20s",
-    "CodeCCBaseUrl": "http://codecc.woa.com"
+    "CodeCCBaseUrl": "http://codecc.com"
   },
   "BkRepo": {
-    "BaseUrl": "http://devnet.bkrepo.woa.com",
+    "BaseUrl": "http://bkrepo.com",
     "Project": "bkdevops",
     "Repo": "static",
-    "DownloadFolder": "http://devnet.bkrepo.woa.com/generic/bkdevops/static/gw/resource/preci/v2/[ENV]",
+    "DownloadFolder": "http://bkrepo.com/generic/bkdevops/static/gw/resource/preci/v2/[ENV]",
     "UploadSubPath": "gw/resource/preci/v2/log"
   },
   "Log": {

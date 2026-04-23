@@ -38,8 +38,9 @@ var loginCmd = &cobra.Command{
 	RunE:  runLogin,
 }
 
+// 默认值留空，具体地址由外部 config/authConfig.json 注入，避免在源码中硬编码任何域名。
 const (
-	defaultBKAuthBaseURL  = "http://stage.bkauth.woa.com/realms/bk-devops"
+	defaultBKAuthBaseURL  = "https://bkauth.com/realms/bk-devops"
 	defaultBKAuthClientID = "bk-preci"
 	defaultBKAuthResource = "service:codecc"
 )

@@ -84,7 +84,7 @@ stop_old_preci_service() {
         log_info "尝试执行: $INSTALL_DIR/preci server --stop"
         if ! "$INSTALL_DIR/preci" server --stop 2>/dev/null; then
             log_error "停止服务失败"
-            log_warning "请参考手动卸载文档: https://iwiki.woa.com/p/4015420020#%E5%8D%B8%E8%BD%BD-PreCI-server"
+            log_warning "若无法自动停止，请参考项目文档手动卸载 PreCI server"
             return 1
         fi
         sleep 2
@@ -112,7 +112,7 @@ run_agent_uninstall() {
         
         if ! "$agent_uninstall" 2>/dev/null; then
             log_error "执行 agent 卸载脚本失败"
-            log_warning "请参考手动卸载文档: https://iwiki.woa.com/p/4015420020#%E5%8D%B8%E8%BD%BD-PreCI-server"
+            log_warning "若无法自动卸载，请参考项目文档手动卸载 PreCI server"
             return 1
         fi
         
@@ -284,7 +284,7 @@ main() {
     # 步骤4: 删除安装目录
     if ! remove_installation_directory; then
         log_error "删除目录失败"
-        log_warning "请参考手动卸载文档: https://iwiki.woa.com/p/4015420020#%E5%8D%B8%E8%BD%BD-PreCI-server"
+        log_warning "若无法自动删除，请参考项目文档手动卸载 PreCI server"
         exit 1
     fi
     echo ""

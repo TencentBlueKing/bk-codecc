@@ -2,16 +2,18 @@ package client
 
 import "time"
 
+// 以下默认值留空，具体地址由外部配置文件（如 initConfig.json / authConfig.json）注入，
+// 避免在源码中硬编码任何内部域名。
 var (
-	BKAuthBaseURL  = "http://bkauth-test.woa.com/realms/bk-devops"
+	BKAuthBaseURL  = ""
 	BKAuthClientID = "bk-preci"
 )
 
-var CodeCCBaseUrl = "https://codecc.woa.com"
-var BkRepoBaseUrl = "http://test.devnet.bkrepo.woa.com"
+var CodeCCBaseUrl = ""
+var BkRepoBaseUrl = ""
 var BkRepoProject = "bkdevops"
 var BkRepoRepo = "static"
-var BkRepoDownloadFolder = "http://devnet.bkrepo.woa.com/generic/bkdevops/static/gw/resource/preci/v2/prod"
+var BkRepoDownloadFolder = ""
 var BkRepoUploadSubPath = "gw/resource/preci/v2/log"
 
 // 默认 web 配置

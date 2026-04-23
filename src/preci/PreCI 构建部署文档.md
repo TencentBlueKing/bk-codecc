@@ -151,4 +151,4 @@ PreCI CLI v2 是一个本地化代码质量检查命令行工具。
 完成上述部署后，可参考以下文档，了解 PreCI 详细的使用方法、功能说明和操作示例：
 
 - **PreCI CLI 使用说明**：[Server README.md](preci_server/README.md)
-- **PreCI JetBrains 插件使用说明**：[Plugin README.md](https://git.woa.com/devops-backend/ide-plugin/blob/v2_community/README.md)
+- **PreCI JetBrains 插件使用说明**：[Plugin README.md](preci_jetbrains_plugin/README.md)

@@ -126,7 +126,7 @@ if exist "%PRECI_EXE%" (
     "%PRECI_EXE%" server --stop 2>nul
     if !errorlevel! NEQ 0 (
         call :WriteLog "停止服务失败" "Error"
-        call :WriteLog "请参考手动卸载文档: https://iwiki.woa.com/p/4015420020" "Warning"
+        call :WriteLog "若无法自动停止，请参考项目文档手动卸载 PreCI server" "Warning"
         exit /b 1
     )
     timeout /t 2 /nobreak >nul
@@ -162,7 +162,7 @@ if defined AGENT_UNINSTALL (
     call "%AGENT_UNINSTALL%" 2>nul
     if !errorlevel! NEQ 0 (
         call :WriteLog "执行 agent 卸载脚本失败" "Error"
-        call :WriteLog "请参考手动卸载文档: https://iwiki.woa.com/p/4015420020" "Warning"
+        call :WriteLog "若无法自动卸载，请参考项目文档手动卸载 PreCI server" "Warning"
         exit /b 1
     )
     call :WriteLog "agent 卸载脚本执行完成" "Success"

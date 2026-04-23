@@ -57,8 +57,14 @@ class ServerStartupActivity : ProjectActivity {
     companion object {
         const val NOTIFICATION_GROUP_ID = "PreCI.ServerManagement"
         const val NOTIFICATION_GROUP_ID_INSTALL = "PreCI.Install"
-        const val DOWNLOAD_BASE_URL =
-            "https://bkrepo.woa.com/generic/bkdevops/static/gw/resource/preci/v2/latest/"
+
+        /**
+         * PreCI CLI 安装包下载地址前缀。
+         *
+         * 此值为空时，"自动/手动下载" 能力将不可用；
+         * 开源版本不内置任何域名，使用者可在构建/打包时通过资源注入或发行版配置指定自有下载源。
+         */
+        const val DOWNLOAD_BASE_URL = ""
 
         @Volatile
         private var logInitialized = false

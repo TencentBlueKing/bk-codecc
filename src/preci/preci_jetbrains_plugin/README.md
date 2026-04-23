@@ -15,7 +15,7 @@
 
 
 ## 构建及安装
-详见 [PreCI 构建部署文档](https://git.woa.com/codecc/preci_server/blob/v2_community/PreCI%20%E6%9E%84%E5%BB%BA%E9%83%A8%E7%BD%B2%E6%96%87%E6%A1%A3.md)
+详见 [PreCI 构建部署文档](../PreCI%20%E6%9E%84%E5%BB%BA%E9%83%A8%E7%BD%B2%E6%96%87%E6%A1%A3.md)
 
 
 ## 使用步骤

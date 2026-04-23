@@ -68,7 +68,7 @@ function Stop-OldPreCIService {
             Start-Sleep -Seconds 2
         } catch {
             Write-ColorOutput "停止服务失败" "Error"
-            Write-ColorOutput "请参考手动卸载文档: https://iwiki.woa.com/p/4015420020#%E5%8D%B8%E8%BD%BD-PreCI-server" "Warning"
+            Write-ColorOutput "若无法自动停止，请参考项目文档手动卸载 PreCI server" "Warning"
             return $false
         }
     } else {
@@ -112,7 +112,7 @@ function Invoke-AgentUninstall {
             Write-ColorOutput "agent 卸载脚本执行完成" "Success"
         } catch {
             Write-ColorOutput "执行 agent 卸载脚本失败" "Error"
-            Write-ColorOutput "请参考手动卸载文档: https://iwiki.woa.com/p/4015420020#%E5%8D%B8%E8%BD%BD-PreCI-server" "Warning"
+            Write-ColorOutput "若无法自动卸载，请参考项目文档手动卸载 PreCI server" "Warning"
             return $false
         }
     } else {
@@ -294,7 +294,7 @@ function Main {
         # 步骤4: 删除安装目录
         if (-not (Remove-InstallationDirectory -InstallDir $InstallDir)) {
             Write-ColorOutput "删除目录失败" "Error"
-            Write-ColorOutput "请参考手动卸载文档: https://iwiki.woa.com/p/4015420020#%E5%8D%B8%E8%BD%BD-PreCI-server" "Warning"
+            Write-ColorOutput "若无法自动删除，请参考项目文档手动卸载 PreCI server" "Warning"
             exit 1
         }
         Write-Host ""

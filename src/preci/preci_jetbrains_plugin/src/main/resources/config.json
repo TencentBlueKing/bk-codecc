@@ -1,5 +1,5 @@
 {
-  "bkauthBaseUrl": "https://stage.bkauth.woa.com/realms/bk-devops",
+  "bkauthBaseUrl": "https://bkauth.com/realms/bk-devops",
   "clientId": "bk-preci",
   "resource": "service:codecc",
   "scope": "",

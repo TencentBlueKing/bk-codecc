@@ -171,8 +171,12 @@ data class PreCIPackageInfo(
     val isWindows: Boolean
 ) {
     companion object {
-        private const val BASE_URL =
-            "https://bkrepo.woa.com/generic/bkdevops/static/gw/resource/preci/v2/latest/"
+        /**
+         * PreCI CLI 安装包下载地址前缀。
+         *
+         * 开源版本不内置任何下载域名，使用者可在构建/打包时通过资源注入或发行版配置指定自有下载源。
+         */
+        private const val BASE_URL = ""
 
         /**
          * 根据当前操作系统和架构自动检测对应的安装包信息
