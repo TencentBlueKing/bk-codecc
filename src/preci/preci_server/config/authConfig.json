@@ -1,0 +1,7 @@
+{
+  "BKAuth": {
+    "BaseURL": "https://bkauth.com/realms/bk-devops",
+    "ClientID": "bk-preci",
+    "Resource": "service:codecc"
+  }
+}

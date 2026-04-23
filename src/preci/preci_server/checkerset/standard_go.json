@@ -1,0 +1,30 @@
+{
+  "checkerSetId": "standard_go",
+  "checkerSetName": "腾讯代码规范 (Go) 规则集",
+  "toolName": "GOML",
+  "checkers": [
+    "tosa/linelength",
+    "golint/fnsize",
+    "golint/noptr",
+    "golint/package",
+    "golint/funccomment",
+    "golint/interfacecomment",
+    "golint/structcomment",
+    "golint/funcret",
+    "golint/funcpara"
+  ],
+  "checkerOptions": [
+    {
+      "checkerId": "tosa/linelength",
+      "checkerOption": {
+        "line-length": "120"
+      }
+    },
+    {
+      "checkerId": "golint/fnsize",
+      "checkerOption": {
+        "fnsize": "80"
+      }
+    }
+  ]
+}

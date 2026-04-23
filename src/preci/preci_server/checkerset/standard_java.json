@@ -1,0 +1,72 @@
+{
+  "checkerSetId": "standard_java",
+  "checkerSetName": "腾讯代码规范 (Java) 规则集",
+  "toolName": "CHECKSTYLE",
+  "checkers": [
+    "InterfaceTypeParameterName",
+    "ClassTypeParameterName",
+    "ModifierOrder",
+    "AnnotationLocation",
+    "OuterTypeFilename",
+    "IllegalTokenText",
+    "UpperEll",
+    "MethodTypeParameterName",
+    "VariableDeclarationUsageDistance",
+    "TypeName",
+    "SummaryJavadoc",
+    "GenericWhitespace",
+    "ArrayTypeStyle",
+    "AvoidStarImport",
+    "OneTopLevelClass",
+    "OperatorWrap",
+    "EmptyLineSeparator",
+    "CatchParameterName",
+    "ParenPad",
+    "PackageName",
+    "NoFinalizer",
+    "JavadocTagContinuationIndentation",
+    "MethodName",
+    "OverloadMethodsDeclarationOrder",
+    "JavadocMethod",
+    "CommentsIndentation",
+    "EmptyCatchBlock",
+    "AvoidEscapedUnicodeCharacters",
+    "WhitespaceAround",
+    "MemberName",
+    "OneStatementPerLine",
+    "FallThrough",
+    "NoWhitespaceBefore",
+    "SeparatorWrap",
+    "FileTabCharacter",
+    "NoLineWrap",
+    "MethodParamPad",
+    "EmptyBlock",
+    "MissingSwitchDefault",
+    "ConstantName",
+    "LeftCurly",
+    "ParameterName",
+    "SingleLineJavadoc",
+    "NeedBraces",
+    "LambdaParameterName",
+    "LineLength",
+    "LocalVariableName",
+    "MultipleVariableDeclarations",
+    "RightCurly",
+    "MissingJavadocMethod",
+    "InvalidJavadocPosition"
+  ],
+  "checkerOptions": [
+    {
+      "checkerId": "OperatorWrap",
+      "checkerOption": {
+        "tokens": "BAND, BOR, BSR, BXOR, DIV, EQUAL, GE, GT, LAND, LE, LITERAL_INSTANCEOF, LOR, LT, MINUS, MOD, NOT_EQUAL, PLUS, QUESTION, SL, SR, STAR, METHOD_REF"
+      }
+    },
+    {
+      "checkerId": "LineLength",
+      "checkerOption": {
+        "max": "120"
+      }
+    }
+  ]
+}

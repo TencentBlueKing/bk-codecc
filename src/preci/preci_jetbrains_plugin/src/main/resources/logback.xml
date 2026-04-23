@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 定义属性：日志路径 -->
+    <!-- 优先使用系统属性 preci.log.path（由 LogbackConfigurator 设置） -->
+    <!-- 其次使用环境变量 PRECI_HOME/log -->
+    <!-- 最后使用默认路径 ${user.home}/PreCI/log -->
+    <property name="LOG_PATH" value="${preci.log.path:-${PRECI_HOME:-${user.home}/PreCI}/log}" />
+    <property name="LOG_FILE" value="${LOG_PATH}/preci-jbplugin.log" />
+
+    <!-- 定义属性：日志格式 -->
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" />
+
+    <!-- 控制台输出 Appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <!-- 开发调试时输出 INFO 及以上级别到控制台 -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+    </appender>
+
+    <!-- 文件输出 Appender（带滚动） -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+
+        <!-- 滚动策略：基于文件大小和时间 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 文件名模式：preci-2026-01-14.0.log, preci-2026-01-14.1.log -->
+            <fileNamePattern>${LOG_PATH}/preci-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- 单个文件最大大小 -->
+            <maxFileSize>10MB</maxFileSize>
+            <!-- 保留天数 -->
+            <maxHistory>30</maxHistory>
+            <!-- 总大小限制 -->
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- 异步文件输出 Appender（提升性能） -->
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <!-- 引用文件 Appender -->
+        <appender-ref ref="FILE" />
+        <!-- 队列大小 -->
+        <queueSize>512</queueSize>
+        <!-- 当队列剩余容量小于此值时，丢弃 TRACE、DEBUG、INFO 级别日志 -->
+        <discardingThreshold>0</discardingThreshold>
+        <!-- 包含调用者信息（会影响性能，但对调试有帮助） -->
+        <includeCallerData>false</includeCallerData>
+        <!-- 永不阻塞 -->
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <!-- 根 Logger 配置 -->
+    <root level="${preci.log.level:-INFO}">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ASYNC_FILE" />
+    </root>
+
+    <!-- PreCI 包的日志级别（可单独控制） -->
+    <logger name="com.codecc.preci" level="${preci.log.level:-INFO}" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ASYNC_FILE" />
+    </logger>
+
+    <!-- HTTP 请求日志（可单独控制，默认 INFO） -->
+    <logger name="com.codecc.preci.api" level="${preci.log.http.level:-INFO}" additivity="false">
+        <appender-ref ref="ASYNC_FILE" />
+    </logger>
+
+    <!-- 扫描服务日志 -->
+    <logger name="com.codecc.preci.service.scan" level="${preci.log.level:-INFO}" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ASYNC_FILE" />
+    </logger>
+
+    <!-- 服务管理日志 -->
+    <logger name="com.codecc.preci.service.server" level="${preci.log.level:-INFO}" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ASYNC_FILE" />
+    </logger>
+
+    <!-- 关闭第三方库的调试日志 -->
+    <logger name="okhttp3" level="WARN" />
+    <logger name="org.jetbrains" level="WARN" />
+    <logger name="com.intellij" level="WARN" />
+</configuration>
+

@@ -1,0 +1,131 @@
+#!/bin/bash
+################################################################################
+# PreCI PKG Post-install Script
+#
+# Runs after the installer copies payload files to the staging directory.
+# Moves files to ~/PreCI, sets permissions, and configures environment
+# variables.
+#
+# PKG installer script arguments:
+#   $1 - Package path
+#   $2 - Target location
+#   $3 - Target volume
+#
+# Custom environment variable:
+#   PRECI_INSTALL_DIR - Override install directory (default: ~/PreCI)
+################################################################################
+
+STAGING_DIR="/tmp/preci-pkg-staging"
+
+# --------------------------------------------------------------------------
+# Detect real user (PKG scripts run as root)
+# --------------------------------------------------------------------------
+REAL_USER=$(/usr/bin/stat -f "%Su" /dev/console 2>/dev/null || echo "${USER}")
+REAL_HOME=$(/usr/bin/dscl . -read "/Users/${REAL_USER}" NFSHomeDirectory 2>/dev/null | /usr/bin/awk '{print $2}')
+if [[ -z "${REAL_HOME}" ]]; then
+    REAL_HOME=$(eval echo "~${REAL_USER}")
+fi
+
+INSTALL_DIR="${PRECI_INSTALL_DIR:-${REAL_HOME}/PreCI}"
+
+# --------------------------------------------------------------------------
+# Files to install (must match build-pkg.sh REQUIRED_FILES)
+# --------------------------------------------------------------------------
+EXECUTABLES=("preci" "preci-server" "preci-mcp" "preci-updater")
+SCRIPTS=("install.sh" "uninstall.sh" "uninstall_old_preci.sh")
+DIRECTORIES=("config" "checkerset")
+DIRS_TO_CREATE=("db" "log" "tool")
+
+# --------------------------------------------------------------------------
+# Prepare install directory
+# --------------------------------------------------------------------------
+/bin/mkdir -p "${INSTALL_DIR}"
+
+# --------------------------------------------------------------------------
+# Clean old files (preserve log directory, matching install.sh behavior)
+# --------------------------------------------------------------------------
+for f in "${EXECUTABLES[@]}" "${SCRIPTS[@]}"; do
+    /bin/rm -f "${INSTALL_DIR}/${f}" 2>/dev/null || true
+done
+
+for d in "${DIRECTORIES[@]}"; do
+    /bin/rm -rf "${INSTALL_DIR}/${d}" 2>/dev/null || true
+done
+
+# Clean DIRS_TO_CREATE except log
+for d in "${DIRS_TO_CREATE[@]}"; do
+    [[ "${d}" == "log" ]] && continue
+    /bin/rm -rf "${INSTALL_DIR}/${d}" 2>/dev/null || true
+done
+
+# --------------------------------------------------------------------------
+# Move files from staging to install directory
+# --------------------------------------------------------------------------
+if [[ -d "${STAGING_DIR}" ]]; then
+    /bin/cp -R "${STAGING_DIR}/"* "${INSTALL_DIR}/" 2>/dev/null || true
+    /bin/rm -rf "${STAGING_DIR}"
+fi
+
+# --------------------------------------------------------------------------
+# Create required empty directories
+# --------------------------------------------------------------------------
+for d in "${DIRS_TO_CREATE[@]}"; do
+    /bin/mkdir -p "${INSTALL_DIR}/${d}"
+done
+
+# --------------------------------------------------------------------------
+# Set permissions
+# --------------------------------------------------------------------------
+for f in "${EXECUTABLES[@]}" "${SCRIPTS[@]}"; do
+    /bin/chmod +x "${INSTALL_DIR}/${f}" 2>/dev/null || true
+done
+
+/usr/sbin/chown -R "${REAL_USER}" "${INSTALL_DIR}"
+
+# --------------------------------------------------------------------------
+# Configure environment variables (matching install.sh format exactly)
+# --------------------------------------------------------------------------
+detect_shell_rc() {
+    local user_shell
+    user_shell=$(/usr/bin/dscl . -read "/Users/${REAL_USER}" UserShell 2>/dev/null | /usr/bin/awk '{print $2}')
+    user_shell="${user_shell##*/}"
+
+    local shell_rc=""
+    case "${user_shell}" in
+        zsh)
+            shell_rc="${REAL_HOME}/.zshrc"
+            ;;
+        bash)
+            if [[ -f "${REAL_HOME}/.bash_profile" ]]; then
+                shell_rc="${REAL_HOME}/.bash_profile"
+            else
+                shell_rc="${REAL_HOME}/.bashrc"
+            fi
+            ;;
+        *)
+            shell_rc="${REAL_HOME}/.zshrc"
+            ;;
+    esac
+
+    if [[ ! -f "${shell_rc}" ]]; then
+        /usr/bin/touch "${shell_rc}"
+        /usr/sbin/chown "${REAL_USER}" "${shell_rc}"
+    fi
+
+    echo "${shell_rc}"
+}
+
+SHELL_RC=$(detect_shell_rc)
+
+if ! /usr/bin/grep -q "# PreCI Environment" "${SHELL_RC}" 2>/dev/null; then
+    /bin/cat >> "${SHELL_RC}" << ENVEOF
+
+# PreCI Environment
+# Added by PreCI installer on $(date '+%Y-%m-%d %H:%M:%S')
+export PRECI_HOME="${INSTALL_DIR}"
+export PATH="\${PRECI_HOME}:\${PATH}"
+ENVEOF
+    /usr/sbin/chown "${REAL_USER}" "${SHELL_RC}"
+fi
+
+exit 0
