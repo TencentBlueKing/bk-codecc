@@ -69,11 +69,68 @@ jobs:
           retention-days: 5
           overwrite: true
 
+  preci-server:
+    name: Build PreCI Server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - name: Build PreCI Server (all platforms)
+        working-directory: src/preci/preci_server
+        run: |
+          version="$(basename $GITHUB_REF)"
+          make init
+          make build-win VERSION="$version"
+          make build-linux VERSION="$version"
+          make build-mac-amd64 VERSION="$version"
+          make build-mac-arm64 VERSION="$version"
+          ls -la bin/dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: preci-server
+          path: src/preci/preci_server/bin/dist/*.zip
+          retention-days: 5
+          overwrite: true
+
+  preci-jetbrains-plugin:
+    name: Build PreCI JetBrains Plugin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "17"
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          cache-read-only: false
+      - name: Build JetBrains Plugin
+        working-directory: src/preci/preci_jetbrains_plugin
+        run: |
+          chmod +x gradlew
+          ./gradlew buildPlugin
+          cd build/distributions
+          ls -la
+          # 将生成的压缩包重命名为固定名称
+          mv *.zip preci_jetbrains_plugin.zip
+          ls -la
+      - uses: actions/upload-artifact@v4
+        with:
+          name: preci-jetbrains-plugin
+          path: src/preci/preci_jetbrains_plugin/build/distributions/preci_jetbrains_plugin.zip
+          retention-days: 5
+          overwrite: true
+
   releaseAll:
     name: Release All
     runs-on: ubuntu-latest
     if: ${{ always() }}
-    needs: [codecc]
+    needs: [codecc, preci-server, preci-jetbrains-plugin]
     steps:
       - name: Create Release
         id: create_release
@@ -100,3 +157,60 @@ jobs:
           asset_path: ./bkcodecc-slim.tar.gz
           asset_name: bkcodecc-slim.tar.gz
           asset_content_type: application/gzip
+      ## preci-server
+      - name: download preci-server
+        uses: actions/download-artifact@v4
+        with:
+          name: preci-server
+          path: ./preci-server-dist
+      - name: Upload Release Asset -- PreCI Server (win)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./preci-server-dist/preci-${{ github.ref_name }}-win-amd64.zip
+          asset_name: preci-${{ github.ref_name }}-win-amd64.zip
+          asset_content_type: application/zip
+      - name: Upload Release Asset -- PreCI Server (linux)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./preci-server-dist/preci-${{ github.ref_name }}-linux-amd64.zip
+          asset_name: preci-${{ github.ref_name }}-linux-amd64.zip
+          asset_content_type: application/zip
+      - name: Upload Release Asset -- PreCI Server (mac-amd64)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./preci-server-dist/preci-${{ github.ref_name }}-mac-amd64.zip
+          asset_name: preci-${{ github.ref_name }}-mac-amd64.zip
+          asset_content_type: application/zip
+      - name: Upload Release Asset -- PreCI Server (mac-arm64)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./preci-server-dist/preci-${{ github.ref_name }}-mac-arm64.zip
+          asset_name: preci-${{ github.ref_name }}-mac-arm64.zip
+          asset_content_type: application/zip
+      ## preci-jetbrains-plugin
+      - name: download preci-jetbrains-plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: preci-jetbrains-plugin
+          path: ./preci-jetbrains-plugin-dist
+      - name: Upload Release Asset -- PreCI JetBrains Plugin
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./preci-jetbrains-plugin-dist/preci_jetbrains_plugin.zip
+          asset_name: preci_jetbrains_plugin.zip
+          asset_content_type: application/zip
