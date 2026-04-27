@@ -92,26 +92,16 @@ func (tso *ToolScanOutput) pathConvert() {
 func (tso *ToolScanOutput) Save(sto storage.Storage, toolName string, openCheckers map[string]bool,
 	whitePaths, blackPaths []string) error {
 	log := logger.GetLogger()
+	key := ""
+	var value []string
+	var retError error = nil
+	total := 0
 
 	tso.sortDefects()
 	tso.pathConvert()
 	tso.filter(whitePaths, blackPaths)
 
-	total, retError := batchSaveDefects(sto, tso.Defects, toolName, openCheckers)
-	log.Info(fmt.Sprintf("save %d success", total))
-	return retError
-}
-
-// batchSaveDefects 按 filePath#toolName#checkerName 分组后批量持久化告警
-func batchSaveDefects(sto storage.Storage, defects []Defect, toolName string,
-	openCheckers map[string]bool) (int, error) {
-	log := logger.GetLogger()
-	key := ""
-	var value []string
-	var retError error
-	total := 0
-
-	for _, defect := range defects {
+	for _, defect := range tso.Defects {
 		if !openCheckers[defect.CheckerName] {
 			continue
 		}
@@ -119,13 +109,15 @@ func batchSaveDefects(sto storage.Storage, defects []Defect, toolName string,
 		tempKey := genKey(defect.FilePath, toolName, defect.CheckerName)
 		if tempKey != key {
 			if key != "" && len(value) > 0 {
-				if err := repository.Save(sto, key, value); err != nil {
+				err := repository.Save(sto, key, value)
+				if err != nil {
 					log.Error(fmt.Sprintf("save %s failed: %v", key, err))
 					retError = perror.ErrStorageError
 				} else {
 					total += len(value)
 				}
 			}
+
 			key = tempKey
 			value = []string{}
 		}
@@ -135,14 +127,18 @@ func batchSaveDefects(sto storage.Storage, defects []Defect, toolName string,
 	}
 
 	if key != "" && len(value) > 0 {
-		if err := repository.Save(sto, key, value); err != nil {
+		err := repository.Save(sto, key, value)
+		if err != nil {
 			log.Error(fmt.Sprintf("save %s failed: %v", key, err))
-			return total, perror.ErrStorageError
+			return perror.ErrStorageError
+		} else {
+			total += len(value)
 		}
-		total += len(value)
 	}
 
-	return total, retError
+	log.Info(fmt.Sprintf("save %d success", total))
+
+	return retError
 }
 
 // sortDefects 根据 FilePath 和 Line 对 Defects 进行排序

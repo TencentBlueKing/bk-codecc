@@ -61,7 +61,24 @@ func ListRemoteDefectHandler(r *http.Request) web.Encoder {
 		return web.SimpleEncoder{Err: perror.ErrInvalidRootDir}
 	}
 
-	fillDefectReqDefaults(&req)
+	if req.PageNum == 0 {
+		req.PageNum = 1
+	}
+	if req.PageSize == 0 {
+		req.PageSize = 100
+	}
+	if req.SortField == "" {
+		req.SortField = "fileName"
+	}
+	if req.SortType == "" {
+		req.SortType = "ASC"
+	}
+	if req.Status == nil {
+		req.Status = []string{"1"}
+	}
+	if req.Severity == nil {
+		req.Severity = []string{"1", "2", "4", "8"}
+	}
 
 	data, err := task.ListRemoteDefects(
 		dto.DefectQueryReq{
@@ -85,39 +102,10 @@ func ListRemoteDefectHandler(r *http.Request) web.Encoder {
 		return web.SimpleEncoder{Err: err}
 	}
 
-	resp := buildDefectResp(data, req.ProjectRoot)
-	log.Info(fmt.Sprintf("get %d defects", resp.TotalCount))
-	return web.SimpleEncoder{Body: resp}
-}
-
-// fillDefectReqDefaults 为告警查询请求填充默认参数
-func fillDefectReqDefaults(req *model.ListRemoteDefectReq) {
-	if req.PageNum == 0 {
-		req.PageNum = 1
-	}
-	if req.PageSize == 0 {
-		req.PageSize = 100
-	}
-	if req.SortField == "" {
-		req.SortField = "fileName"
-	}
-	if req.SortType == "" {
-		req.SortType = "ASC"
-	}
-	if req.Status == nil {
-		req.Status = []string{"1"}
-	}
-	if req.Severity == nil {
-		req.Severity = []string{"1", "2", "4", "8"}
-	}
-}
-
-// buildDefectResp 将远端告警数据转换为本地响应结构
-func buildDefectResp(data *dto.LintDefectQueryData, projectRoot string) *model.ListRemoteDefectResp {
 	seriousCount, normalCount, promptCount := 0, 0, 0
 	var defects []model.RemoteDefect
 	for _, d := range data.DefectList.Records {
-		filePath := pathConvert(d.RelPath, projectRoot)
+		filePath := pathConvert(d.RelPath, req.ProjectRoot)
 		defects = append(defects, model.RemoteDefect{
 			FileName: d.FileName,
 			FilePath: filePath,
@@ -139,14 +127,19 @@ func buildDefectResp(data *dto.LintDefectQueryData, projectRoot string) *model.L
 		}
 	}
 
-	return &model.ListRemoteDefectResp{
-		SeriousCount: seriousCount,
-		NormalCount:  normalCount,
-		PromptCount:  promptCount,
-		TotalCount:   len(defects),
-		ExistCount:   data.ExistCount,
-		FixCount:     data.FixCount,
-		IgnoreCount:  data.IgnoreCount,
-		Defects:      defects,
+	totalCount := len(defects)
+
+	log.Info(fmt.Sprintf("get %d defects", totalCount))
+	return web.SimpleEncoder{
+		Body: &model.ListRemoteDefectResp{
+			SeriousCount: seriousCount,
+			NormalCount:  normalCount,
+			PromptCount:  promptCount,
+			TotalCount:   totalCount,
+			ExistCount:   data.ExistCount,
+			FixCount:     data.FixCount,
+			IgnoreCount:  data.IgnoreCount,
+			Defects:      defects,
+		},
 	}
 }
