@@ -139,7 +139,6 @@ func ListOfficialCheckerSet() (error, []*model.CheckerSet) {
 	return ReloadCheckerSet(officialCheckerSetDir)
 }
 
-// ReloadCheckerSet 从指定目录读取所有 JSON 格式的 checkerSet 配置并反序列化返回
 func ReloadCheckerSet(checkerSetDir string) (error, []*model.CheckerSet) {
 	log := logger.GetLogger()
 

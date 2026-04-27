@@ -13,7 +13,6 @@ import (
 	"fmt"
 )
 
-// ListProjects 调用 CodeCC 接口获取当前用户可见的项目列表
 func ListProjects() ([]dto.Project, error) {
 	log := logger.GetLogger()
 	codeClient := client.NewCodeCCClient()
@@ -28,7 +27,6 @@ func ListProjects() ([]dto.Project, error) {
 	return projects, err
 }
 
-// SetProjectId 将用户选择的项目 ID 持久化到本地缓存
 func SetProjectId(projectId string) error {
 	log := logger.GetLogger()
 	log.Info(fmt.Sprintf("set project id: %s", projectId))
@@ -90,7 +88,6 @@ func DeviceLogin(accessToken, refreshToken, projectId string, expiresIn int64) (
 	return userId, projectId, nil
 }
 
-// RefreshAccessToken 使用 refreshToken 刷新 OAuth access token 并更新本地缓存
 func RefreshAccessToken(refreshToken string) (*model.OauthToken, error) {
 	log := logger.GetLogger()
 
