@@ -11,6 +11,7 @@ import (
 
 const BKAuthOAuthTokenPath = "/oauth2/token"
 
+// BKAuthTokenResponse 蓝鲸 BKAuth OAuth2 接口返回的 token 结构
 type BKAuthTokenResponse struct {
 	AccessToken  string `json:"access_token"`
 	TokenType    string `json:"token_type"`
@@ -19,6 +20,7 @@ type BKAuthTokenResponse struct {
 	Scope        string `json:"scope"`
 }
 
+// BKAuthClient 封装与蓝鲸 BKAuth 服务交互的 HTTP 客户端
 type BKAuthClient struct {
 	httpClient *HTTPClient
 	logger     *logger.Logger

@@ -6,6 +6,7 @@ import (
 	"fmt"
 )
 
+// CheckerSetEntity 规则集在持久化存储层的实体，对应一份规则集的完整信息
 type CheckerSetEntity struct {
 	CheckerSetId   string          `json:"checkerSetId"`   // 规则集 ID
 	CheckerSetName string          `json:"checkerSetName"` // 规则集名称
@@ -14,11 +15,13 @@ type CheckerSetEntity struct {
 	CheckerOptions []CheckerOption `json:"checkerOptions"`
 }
 
+// CheckerOption 单条规则的可配置参数，以 map 形式存放键值对
 type CheckerOption struct {
 	CheckerId     string            `json:"checkerId"`
 	CheckerOption map[string]string `json:"checkerOption"`
 }
 
+// ToolCheckerSetEntity 单个工具下生效的规则与选项集合
 type ToolCheckerSetEntity struct {
 	ToolName       string          `json:"toolName"`
 	Checkers       []string        `json:"checkers"`

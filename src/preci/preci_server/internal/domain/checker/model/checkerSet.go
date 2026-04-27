@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 )
 
+// CheckerSet 规则集的领域模型，包含规则集 ID、名称、关联工具、规则及规则选项
 type CheckerSet struct {
 	CheckerSetId   string                     `json:"checkerSetId"`   // 规则集 ID
 	CheckerSetName string                     `json:"checkerSetName"` // 规则集名称

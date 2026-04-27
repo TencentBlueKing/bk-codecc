@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 )
 
+// InitRequest 初始化项目接口的请求，指定当前路径、根路径及是否需要重新加载工具检查器
 type InitRequest struct {
 	CurrentPath          string `json:"currentPath" validate:"required"` // 当前路径
 	RootPath             string `json:"rootPath"`                        // 项目根路径
@@ -14,6 +15,7 @@ func (req *InitRequest) Decode(data []byte) error {
 	return json.Unmarshal(data, req)
 }
 
+// InitResponse 初始化项目接口的响应，返回项目根路径、工具列表和版本更新信息
 type InitResponse struct {
 	RootPath       string   `json:"rootPath"`                 // 项目根路径
 	Tools          []string `json:"tools"`                    // 工具列表

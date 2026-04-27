@@ -15,6 +15,7 @@ const (
 	ToolVersionProd = "P"
 )
 
+// ToolMeta 扫描工具的元信息，包含工具名、展示名、语言及当前选用的版本信息
 type ToolMeta struct {
 	Name         string      `json:"name"`
 	DisplayName  string      `json:"displayName"`
@@ -86,6 +87,7 @@ func (t *ToolMeta) GetBinDownloadUrl() string {
 	}
 }
 
+// ToolVersion 工具的具体版本信息，包含 docker 镜像和二进制两种发行形态
 type ToolVersion struct {
 	// 工具版本类型，T-测试版本，G-灰度版本，P-正式发布版本，O-开源扫描. 目前 PreCI 只使用 P 版本
 	VersionType string `json:"versionType"`
@@ -109,6 +111,7 @@ type ToolVersion struct {
 	Binary Binary `json:"binary"`
 }
 
+// Binary 工具二进制分发信息，按平台区分下载地址和启动命令
 type Binary struct {
 	WinUrl        string `json:"winUrl"`        // win二进制的下载路径
 	LinuxUrl      string `json:"linuxUrl"`      // linux二进制的下载路径

@@ -16,6 +16,7 @@ const (
 	userIdKey       = "userUserId"
 )
 
+// UserInfoEntity 登录用户信息在持久化存储层的实体，保存 token 及关联的蓝盾项目 ID
 type UserInfoEntity struct {
 	AccessToken  string `json:"AccessToken"`
 	RefreshToken string `json:"RefreshToken"`

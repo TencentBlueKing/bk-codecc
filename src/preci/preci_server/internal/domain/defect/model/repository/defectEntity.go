@@ -12,6 +12,7 @@ import (
 
 const bucketName = "b_defect_batch"
 
+// DefectEntity 告警在持久化存储层的实体，用于编码/解码 bbolt 中的告警记录
 type DefectEntity struct {
 	ToolName    string `json:"toolName"`
 	CheckerName string `json:"checkerName"`

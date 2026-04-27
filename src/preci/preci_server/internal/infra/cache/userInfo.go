@@ -15,6 +15,7 @@ const proactiveRefreshThresholdSec = 720 // 10% of typical 7200s token lifetime
 
 var userInfoCache = new(UserInfo)
 
+// UserInfo 登录用户的内存缓存信息，包含 token、过期时间及所属项目
 type UserInfo struct {
 	AccessToken  string
 	RefreshToken string
@@ -23,6 +24,7 @@ type UserInfo struct {
 	ProjectId    string
 }
 
+// RefreshedToken 刷新 token 后返回的结果，包含新的 access/refresh token 及过期时间
 type RefreshedToken struct {
 	UserId       string
 	AccessToken  string

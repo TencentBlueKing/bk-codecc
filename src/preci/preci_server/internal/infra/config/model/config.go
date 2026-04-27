@@ -2,6 +2,7 @@ package model
 
 import "time"
 
+// Config PreCI server 的顶层配置结构，由 koanf 从配置文件加载
 type Config struct {
 	Web struct {
 		ReadTimeout     time.Duration `koanf:"ReadTimeout"`

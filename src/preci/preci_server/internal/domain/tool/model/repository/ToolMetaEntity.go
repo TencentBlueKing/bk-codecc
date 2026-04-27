@@ -17,6 +17,7 @@ const (
 	dockerPre  = "d#" // Docker镜像信息存储格式: d#[工具 Name] <-> DockerImageEntity
 )
 
+// ToolMetaEntity 工具元信息在持久化存储层的实体
 type ToolMetaEntity struct {
 	Name        string `json:"name"`
 	DisplayName string `json:"displayName"`
@@ -35,6 +36,7 @@ func (e *ToolMetaEntity) Decode(data []byte) error {
 	return json.Unmarshal(data, e)
 }
 
+// DockerImageEntity 工具 docker 镜像信息在持久化存储层的实体
 type DockerImageEntity struct {
 	// docker启动运行的命令
 	DockerTriggerShell string `json:"dockerTriggerShell"`
@@ -57,6 +59,7 @@ func (e *DockerImageEntity) Encode() ([]byte, error) {
 	return json.Marshal(e)
 }
 
+// BinaryEntity 工具二进制信息在持久化存储层的实体
 type BinaryEntity struct {
 	WinUrl        string `json:"winUrl"`        // win二进制的下载路径
 	LinuxUrl      string `json:"linuxUrl"`      // linux二进制的下载路径

@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 )
 
+// ScmInfo 描述一个代码仓库的 SCM 类型及其根目录
 type ScmInfo struct {
 	ScmType     string
 	ProjectRoot string

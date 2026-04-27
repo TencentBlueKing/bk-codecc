@@ -16,6 +16,7 @@ const (
 	WriteFile = 4
 )
 
+// TaskInfoEntity 任务信息在持久化存储层的实体，包含任务 ID、项目根目录、规则集及路径过滤配置
 type TaskInfoEntity struct {
 	TaskId              int64    `json:"taskId"`     // 任务 ID
 	RootDir             string   `json:"rootDir"`    // 项目根目录

@@ -14,6 +14,7 @@ import (
 	"time"
 )
 
+// BoltDB 基于 bbolt 的本地键值存储实现，保存数据目录路径和底层 db 句柄
 type BoltDB struct {
 	dataDir    string
 	dbInstance *bbolt.DB

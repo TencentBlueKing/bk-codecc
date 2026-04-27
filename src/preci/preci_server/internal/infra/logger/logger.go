@@ -10,6 +10,7 @@ import (
 	"path"
 )
 
+// Logger 对 zap.Logger 的轻量封装，额外保存可动态调整的日志级别
 type Logger struct {
 	*zap.Logger
 	atomicLevel zap.AtomicLevel

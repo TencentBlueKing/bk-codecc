@@ -12,6 +12,7 @@ import (
 
 const taskInfoJson = "taskInfo.json"
 
+// TaskInfo 任务信息的领域模型，是 TaskInfoEntity 的领域层表示，包含工具、规则集等运行时信息
 type TaskInfo struct {
 	TaskId         int64    // 任务 ID
 	RootDir        string   // 项目根目录

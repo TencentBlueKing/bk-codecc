@@ -15,6 +15,7 @@ import (
 	"strconv"
 )
 
+// Defect 本地扫描产生的单条告警记录
 type Defect struct {
 	ToolName    string `json:"toolName"`
 	CheckerName string `json:"checkerName"`
@@ -24,6 +25,7 @@ type Defect struct {
 	Severity    int64  `json:"severity"`
 }
 
+// ToolScanOutput 单个工具本次扫描产出的告警集合
 type ToolScanOutput struct {
 	Defects []Defect `json:"defects"`
 }

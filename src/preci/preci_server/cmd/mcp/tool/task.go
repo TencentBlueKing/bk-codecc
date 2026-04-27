@@ -13,12 +13,14 @@ import (
 	"time"
 )
 
+// ScanRequest MCP 工具 Scan / ScanAndResult 的入参，指定扫描类型、路径和项目根目录
 type ScanRequest struct {
 	ScanType    int      `json:"scanType" jsonschema:"扫描类型。0，全量扫描；100，指定目录/文件扫描；102，pre-commit 扫描；103，pre-push 扫描"`
 	Paths       []string `json:"paths,omitempty" jsonschema:"待扫描的路径列表"`
 	ProjectRoot string   `json:"projectRoot" jsonschema:"项目根目录"`
 }
 
+// ScanResponse MCP 工具 Scan 的出参，返回启动扫描后的提示信息
 type ScanResponse struct {
 	Message string `json:"message" jsonschema:"启动扫描成功后的返回信息，包括扫描工具列表、扫描文件数和其他信息"`
 }
@@ -48,6 +50,7 @@ func Scan(ctx context.Context, req *mcp.CallToolRequest, input ScanRequest) (*mc
 	}, nil
 }
 
+// ProgressResponse MCP 工具 Progress 的出参，包含当前扫描任务的整体状态以及各工具的运行状态
 type ProgressResponse struct {
 	ProjectRoot  string            `json:"projectRoot" jsonschema:"项目根目录"`
 	ToolStatuses map[string]string `json:"toolStatuses" jsonschema:"各工具的运行状态"`
@@ -76,10 +79,12 @@ func Progress(ctx context.Context, req *mcp.CallToolRequest, _ interface{}) (*mc
 	}, nil
 }
 
+// ResultRequest MCP 工具 Result / ProgressAndResult 的入参，指定查询扫描结果的目录
 type ResultRequest struct {
 	Path string `json:"path" jsonschema:"查询该目录下的扫描结果"`
 }
 
+// Defect 表示一条扫描告警，包含工具名、规则名、告警位置以及严重程度等信息
 type Defect struct {
 	ToolName    string `json:"toolName" jsonschema:"工具名"`
 	CheckerName string `json:"checkerName" jsonschema:"规则名"`
@@ -89,6 +94,7 @@ type Defect struct {
 	Severity    int64  `json:"severity" jsonschema:"告警的严重程度。1，严重；2，一般；other，提示"`
 }
 
+// ResultResponse MCP 工具 Result / ScanAndResult 的出参，返回本次扫描结果中的全部告警
 type ResultResponse struct {
 	Defects []Defect `json:"defects" jsonschema:"扫描结果中的所有告警"`
 }
@@ -136,6 +142,7 @@ func Result(ctx context.Context, req *mcp.CallToolRequest, input ResultRequest) 
 	return nil, resp, err
 }
 
+// ProgressAndResultResponse MCP 工具 ProgressAndResult 的出参，同时返回扫描进度和扫描结果以及可能的错误
 type ProgressAndResultResponse struct {
 	Progress ProgressResponse `json:"progress" jsonschema:"扫描进度"`
 	Result   ResultResponse   `json:"result" jsonschema:"扫描结果"`

@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// OauthToken OAuth 鉴权 token 模型，保存 access/refresh token 及过期时间、关联用户等信息
 type OauthToken struct {
 	AccessToken  string `json:"AccessToken"`
 	RefreshToken string `json:"RefreshToken"`
