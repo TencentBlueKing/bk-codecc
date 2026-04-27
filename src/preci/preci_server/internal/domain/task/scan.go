@@ -42,6 +42,7 @@ func getTaskInfo(rootDir string) (*model.TaskInfo, error) {
 	return taskInfo, nil
 }
 
+// ScanSCC 执行 SCC 扫描并可选地根据语言自动匹配默认规则集
 func ScanSCC(rootDir string, scanType int, incrementalFiles []string, projectId string,
 	taskInfo *model.TaskInfo, selectCheckerSet bool) error {
 	log := logger.GetLogger()
@@ -79,29 +80,36 @@ func ScanSCC(rootDir string, scanType int, incrementalFiles []string, projectId 
 		return nil
 	}
 
-	// 用户未配置规则集，根据 SCC 产出的 languages.txt 自动使用默认规则集
+	return autoSelectCheckerSets(rootDir)
+}
+
+// autoSelectCheckerSets 根据 SCC 产出的语言信息自动选择对应的默认规则集
+func autoSelectCheckerSets(rootDir string) error {
+	log := logger.GetLogger()
+
 	langs := readLanguagesFromSCC(rootDir)
-	if len(langs) > 0 {
-		seenCheckerSet := make(map[string]bool) // 去重：同一 checkerSetId 只处理一次
-		checkerSetIds := make([]string, 0)
-		for lang := range langs {
-			checkerSetId, ok := defaultCheckerSetByLang[lang]
-			if !ok || seenCheckerSet[checkerSetId] {
-				continue
-			}
-			seenCheckerSet[checkerSetId] = true
-			checkerSetIds = append(checkerSetIds, checkerSetId)
-		}
-
-		checkerSetIds, err := checker.SelectCheckerSet(rootDir, checkerSetIds)
-		if err != nil {
-			log.Error(fmt.Sprintf("rootDir=%s. failed to select checker set: %v.", rootDir, err))
-			return err
-		}
-
-		log.Info(fmt.Sprintf("SCC自动选取如下规则集：%v", checkerSetIds))
+	if len(langs) == 0 {
+		return nil
 	}
 
+	seenCheckerSet := make(map[string]bool) // 去重：同一 checkerSetId 只处理一次
+	checkerSetIds := make([]string, 0)
+	for lang := range langs {
+		checkerSetId, ok := defaultCheckerSetByLang[lang]
+		if !ok || seenCheckerSet[checkerSetId] {
+			continue
+		}
+		seenCheckerSet[checkerSetId] = true
+		checkerSetIds = append(checkerSetIds, checkerSetId)
+	}
+
+	checkerSetIds, err := checker.SelectCheckerSet(rootDir, checkerSetIds)
+	if err != nil {
+		log.Error(fmt.Sprintf("rootDir=%s. failed to select checker set: %v.", rootDir, err))
+		return err
+	}
+
+	log.Info(fmt.Sprintf("SCC自动选取如下规则集：%v", checkerSetIds))
 	return nil
 }
 
@@ -182,7 +190,21 @@ func searchAllFiles(now string, incrementalFiles *[]string, whitePaths, blackPat
 	}
 
 	// 递归遍历目录下的所有非隐藏文件
-	err = filepath.Walk(now, func(filePath string, info os.FileInfo, err error) error {
+	err = filepath.Walk(now, newFileWalker(incrementalFiles, maxIncFile, whitePaths, blackPaths))
+
+	if err != nil {
+		log.Warn(fmt.Sprintf("遍历目录 %s 失败: %s", now, err.Error()))
+		return false
+	}
+
+	return len(*incrementalFiles) >= maxIncFile
+}
+
+// newFileWalker 创建一个 filepath.WalkFunc，用于遍历目录时收集非隐藏且符合黑白名单的文件
+func newFileWalker(incrementalFiles *[]string, maxIncFile int,
+	whitePaths, blackPaths []string) filepath.WalkFunc {
+	log := logger.GetLogger()
+	return func(filePath string, info os.FileInfo, err error) error {
 		if len(*incrementalFiles) >= maxIncFile {
 			return filepath.SkipAll // 达到上限，停止遍历
 		}
@@ -215,14 +237,7 @@ func searchAllFiles(now string, incrementalFiles *[]string, whitePaths, blackPat
 		// 添加文件到列表
 		*incrementalFiles = append(*incrementalFiles, filePath)
 		return nil
-	})
-
-	if err != nil {
-		log.Warn(fmt.Sprintf("遍历目录 %s 失败: %s", now, err.Error()))
-		return false
 	}
-
-	return len(*incrementalFiles) >= maxIncFile
 }
 
 func targetScan(rootDir string, targetPaths []string) (message string, tools []string, fileNum int, err error) {
@@ -341,6 +356,7 @@ func runScanInBackground(rootDir string, toolScanInputs []*toolmodel.ToolScanInp
 	}
 }
 
+// Cancel 取消当前正在执行的扫描任务，返回扫描项目的根目录
 func Cancel() string {
 	resp := ""
 	if NowScan != nil && !NowScan.IsComplete() {

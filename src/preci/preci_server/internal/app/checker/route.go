@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// Routes 注册 checker 模块的 HTTP 路由（规则集列表、选择、取消选择）
 func Routes(mux *chi.Mux, log *logger.Logger) {
 	app := &web.App{
 		Logger: log,

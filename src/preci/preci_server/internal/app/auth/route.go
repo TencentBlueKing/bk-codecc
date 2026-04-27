@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// Routes 注册 auth 模块的 HTTP 路由（OAuth 登录、项目管理）
 func Routes(mux *chi.Mux, log *logger.Logger) {
 	app := &web.App{
 		Logger: log,

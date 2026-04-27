@@ -59,6 +59,7 @@ func (tso *ToolScanOutput) filter(whitePaths, blackPaths []string) {
 	tso.Defects = filtered
 }
 
+// Decode 将 JSON 字节数据反序列化为 ToolScanOutput 实例
 func (tso *ToolScanOutput) Decode(data []byte) error {
 	return json.Unmarshal(data, tso)
 }
@@ -87,19 +88,30 @@ func (tso *ToolScanOutput) pathConvert() {
 	}
 }
 
+// Save 将扫描产出的告警排序、路径转换、过滤后持久化到存储层
 func (tso *ToolScanOutput) Save(sto storage.Storage, toolName string, openCheckers map[string]bool,
 	whitePaths, blackPaths []string) error {
 	log := logger.GetLogger()
-	key := ""
-	var value []string
-	var retError error = nil
-	total := 0
 
 	tso.sortDefects()
 	tso.pathConvert()
 	tso.filter(whitePaths, blackPaths)
 
-	for _, defect := range tso.Defects {
+	total, retError := batchSaveDefects(sto, tso.Defects, toolName, openCheckers)
+	log.Info(fmt.Sprintf("save %d success", total))
+	return retError
+}
+
+// batchSaveDefects 按 filePath#toolName#checkerName 分组后批量持久化告警
+func batchSaveDefects(sto storage.Storage, defects []Defect, toolName string,
+	openCheckers map[string]bool) (int, error) {
+	log := logger.GetLogger()
+	key := ""
+	var value []string
+	var retError error
+	total := 0
+
+	for _, defect := range defects {
 		if !openCheckers[defect.CheckerName] {
 			continue
 		}
@@ -107,15 +119,13 @@ func (tso *ToolScanOutput) Save(sto storage.Storage, toolName string, openChecke
 		tempKey := genKey(defect.FilePath, toolName, defect.CheckerName)
 		if tempKey != key {
 			if key != "" && len(value) > 0 {
-				err := repository.Save(sto, key, value)
-				if err != nil {
+				if err := repository.Save(sto, key, value); err != nil {
 					log.Error(fmt.Sprintf("save %s failed: %v", key, err))
 					retError = perror.ErrStorageError
 				} else {
 					total += len(value)
 				}
 			}
-
 			key = tempKey
 			value = []string{}
 		}
@@ -125,18 +135,14 @@ func (tso *ToolScanOutput) Save(sto storage.Storage, toolName string, openChecke
 	}
 
 	if key != "" && len(value) > 0 {
-		err := repository.Save(sto, key, value)
-		if err != nil {
+		if err := repository.Save(sto, key, value); err != nil {
 			log.Error(fmt.Sprintf("save %s failed: %v", key, err))
-			return perror.ErrStorageError
-		} else {
-			total += len(value)
+			return total, perror.ErrStorageError
 		}
+		total += len(value)
 	}
 
-	log.Info(fmt.Sprintf("save %d success", total))
-
-	return retError
+	return total, retError
 }
 
 // sortDefects 根据 FilePath 和 Line 对 Defects 进行排序
@@ -157,6 +163,7 @@ func (tso *ToolScanOutput) sortDefects() {
 	})
 }
 
+// LoadToolScanOutputJson 从 JSON 字节数据反序列化为 ToolScanOutput 实例
 func LoadToolScanOutputJson(data []byte) (*ToolScanOutput, error) {
 	tso := new(ToolScanOutput)
 	err := json.Unmarshal(data, &tso)
@@ -167,6 +174,7 @@ func LoadToolScanOutputJson(data []byte) (*ToolScanOutput, error) {
 	return tso, nil
 }
 
+// DeleteProjectAllDefects 删除指定项目根目录下的所有告警记录
 func DeleteProjectAllDefects(sto storage.Storage, projectRoot string) error {
 	return repository.DeleteProjectAllDefects(sto, projectRoot)
 }
@@ -187,6 +195,7 @@ func getCheckerSeverity(sto storage.Storage, toolName, checkerName string, cache
 	return severity, nil
 }
 
+// GetAllDefectsByPathPre 根据路径前缀从存储层获取所有告警并填充 severity
 func GetAllDefectsByPathPre(sto storage.Storage, pathPre string) ([]*Defect, error) {
 	log := logger.GetLogger()
 	defectEntities, err := repository.GetByPathPre(sto, pathPre)

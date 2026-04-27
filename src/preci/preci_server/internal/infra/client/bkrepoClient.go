@@ -27,6 +27,7 @@ func NewBkRepoClient() *BkRepoClient {
 	}
 }
 
+// UploadLog 将指定日志文件上传到 BkRepo
 func (c *BkRepoClient) UploadLog(userId, token, uploadedFile string) error {
 	// 打开要上传的文件
 	file, err := os.Open(uploadedFile)

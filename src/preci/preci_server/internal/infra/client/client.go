@@ -18,6 +18,7 @@ import (
 
 var httpTokenRefresher func() error
 
+// RegisterHTTPTokenRefresher 注册全局的 token 刷新回调函数
 func RegisterHTTPTokenRefresher(fn func() error) {
 	httpTokenRefresher = fn
 }

@@ -4,6 +4,7 @@ import "codecc/preci_server/internal/infra/config/model"
 
 var DB Storage
 
+// Storage 定义本地键值存储的统一接口
 type Storage interface {
 	Init(config model.DBConfig) error
 

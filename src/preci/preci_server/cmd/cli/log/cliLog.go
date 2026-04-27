@@ -20,6 +20,7 @@ func Start(format string, v ...any) {
 	log.Println("[>]START " + fmt.Sprintf(format, v...))
 }
 
+// Info 输出普通信息日志
 func Info(format string, v ...any) {
 	log.Println(fmt.Sprintf(format, v...))
 }

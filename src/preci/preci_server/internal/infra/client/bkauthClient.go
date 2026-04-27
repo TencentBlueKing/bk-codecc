@@ -27,6 +27,7 @@ type BKAuthClient struct {
 	clientID   string
 }
 
+// NewBKAuthClient 创建 BKAuth OAuth2 客户端
 func NewBKAuthClient() *BKAuthClient {
 	config := &ClientConfig{
 		BaseURL: BKAuthBaseURL,
@@ -39,6 +40,7 @@ func NewBKAuthClient() *BKAuthClient {
 	}
 }
 
+// RefreshToken 使用 refresh token 向 BKAuth 请求刷新 access token
 func (c *BKAuthClient) RefreshToken(refreshToken string) (*BKAuthTokenResponse, error) {
 	formData := url.Values{
 		"grant_type":    {"refresh_token"},

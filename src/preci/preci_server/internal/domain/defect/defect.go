@@ -13,6 +13,7 @@ import (
 	"strings"
 )
 
+// GetAllDefectsByPathPre 根据路径前缀查询本地存储中的所有告警记录
 func GetAllDefectsByPathPre(pathPre string) ([]*model.Defect, error) {
 	log := logger.GetLogger()
 

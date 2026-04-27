@@ -8,6 +8,7 @@ import (
 const checkerBucketName = "b_checker"
 const severityPre = "s#"
 
+// UpdateCheckerSeverity 更新单条规则的 severity 到存储层
 func UpdateCheckerSeverity(sto storage.Storage, toolName, checker string, severity int64) error {
 	key := severityPre + toolName + "#" + checker
 	return sto.UpdateByStrKey2Int(checkerBucketName, key, severity)
@@ -23,6 +24,7 @@ func BuildCheckerSeverityKey(toolName, checker string) string {
 	return severityPre + toolName + "#" + checker
 }
 
+// GetCheckerSeverity 从存储层读取指定工具/规则的 severity
 func GetCheckerSeverity(sto storage.Storage, toolName, checker string) (int64, error) {
 	key := severityPre + toolName + "#" + checker
 	data, err := sto.GetByStrKey(checkerBucketName, key)

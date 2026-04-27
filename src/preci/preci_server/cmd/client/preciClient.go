@@ -62,6 +62,7 @@ func NewPreCIServerClient(port int) (*PreCIServerClient, error) {
 	}, nil
 }
 
+// Health 健康检查，确认 PreCI-server 是否可用
 func (c *PreCIServerClient) Health() (*misc.HealthResp, error) {
 	var resp misc.HealthResp
 	err := c.httpClient.Get(healthPath, nil, &resp)
@@ -71,10 +72,12 @@ func (c *PreCIServerClient) Health() (*misc.HealthResp, error) {
 	return &resp, nil
 }
 
+// DebugMode 切换日志调试模式
 func (c *PreCIServerClient) DebugMode(mode string) error {
 	return c.httpClient.Get(strings.Replace(debugModePath, "[mode]", mode, 1), nil, nil)
 }
 
+// GetLatestVersion 获取 PreCI 最新可用版本信息
 func (c *PreCIServerClient) GetLatestVersion() (*misc.LatestVersionResp, error) {
 	var resp misc.LatestVersionResp
 
@@ -86,6 +89,7 @@ func (c *PreCIServerClient) GetLatestVersion() (*misc.LatestVersionResp, error) 
 	return &resp, nil
 }
 
+// DownloadLatestPreCI 下载最新版本的 PreCI 客户端
 func (c *PreCIServerClient) DownloadLatestPreCI() error {
 	err := c.httpClient.Get(downloadLatestPath, nil, nil)
 	if err != nil {
@@ -94,6 +98,7 @@ func (c *PreCIServerClient) DownloadLatestPreCI() error {
 	return nil
 }
 
+// GetScanProgress 获取当前扫描进度
 func (c *PreCIServerClient) GetScanProgress() (*model.ScanProgressResponse, error) {
 	var resp model.ScanProgressResponse
 	err := c.httpClient.Get(scanProgressPath, nil, &resp)
@@ -104,6 +109,7 @@ func (c *PreCIServerClient) GetScanProgress() (*model.ScanProgressResponse, erro
 	return &resp, nil
 }
 
+// GetScanResult 根据路径获取扫描结果
 func (c *PreCIServerClient) GetScanResult(path string) (*model.ScanResultResponse, error) {
 	var resp model.ScanResultResponse
 
@@ -118,6 +124,7 @@ func (c *PreCIServerClient) GetScanResult(path string) (*model.ScanResultRespons
 	return &resp, nil
 }
 
+// GetCheckerSetList 获取规则集列表
 func (c *PreCIServerClient) GetCheckerSetList() (*CheckerSetListResp, error) {
 	var resp CheckerSetListResp
 	err := c.httpClient.Get(checkerSetListPath, nil, &resp)
@@ -128,6 +135,7 @@ func (c *PreCIServerClient) GetCheckerSetList() (*CheckerSetListResp, error) {
 	return &resp, nil
 }
 
+// SelectCheckerSets 选中指定的规则集
 func (c *PreCIServerClient) SelectCheckerSets(currentPath string, checkerSets []string) (*checker.SelectResp, error) {
 	req := &checker.SelectReq{
 		ProjectRootDir: currentPath,
@@ -143,6 +151,7 @@ func (c *PreCIServerClient) SelectCheckerSets(currentPath string, checkerSets []
 	return &resp, nil
 }
 
+// UnselectCheckerSets 取消选中指定的规则集
 func (c *PreCIServerClient) UnselectCheckerSets(currentPath string, checkerSets []string) (*checker.SelectResp, error) {
 	req := &checker.SelectReq{
 		ProjectRootDir: currentPath,
@@ -158,6 +167,7 @@ func (c *PreCIServerClient) UnselectCheckerSets(currentPath string, checkerSets 
 	return &resp, nil
 }
 
+// ReportLog 上报日志到远端
 func (c *PreCIServerClient) ReportLog() error {
 	err := c.httpClient.Get(reportLogPath, nil, nil)
 	if err != nil {
@@ -166,6 +176,7 @@ func (c *PreCIServerClient) ReportLog() error {
 	return nil
 }
 
+// ShutdownServer 关闭 PreCI-server 服务
 func (c *PreCIServerClient) ShutdownServer() error {
 	err := c.httpClient.Get(shutDownPath, nil, nil)
 	if err != nil {
@@ -175,6 +186,7 @@ func (c *PreCIServerClient) ShutdownServer() error {
 	return nil
 }
 
+// ListProjects 获取用户有权限的蓝盾项目列表
 func (c *PreCIServerClient) ListProjects() ([]dto.Project, error) {
 	var resp auth.ListProjectsResp
 	err := c.httpClient.Get(listProjectsPath, nil, &resp)
@@ -184,6 +196,7 @@ func (c *PreCIServerClient) ListProjects() ([]dto.Project, error) {
 	return resp.Projects, nil
 }
 
+// OAuthDeviceLogin 通过 OAuth Device Flow 进行登录
 func (c *PreCIServerClient) OAuthDeviceLogin(accessToken, refreshToken, projectId string,
 	expiresIn int64) (string, string, error) {
 	request := &auth.OAuthDeviceLoginReq{
@@ -202,6 +215,7 @@ func (c *PreCIServerClient) OAuthDeviceLogin(accessToken, refreshToken, projectI
 	return resp.UserId, resp.ProjectId, nil
 }
 
+// StartScan 启动代码扫描任务
 func (c *PreCIServerClient) StartScan(scanType int, paths []string, rootDir string) (string, error) {
 	request := &model.ScanRequest{
 		ScanType: scanType,
@@ -227,6 +241,7 @@ func (c *PreCIServerClient) StartScan(scanType int, paths []string, rootDir stri
 	return successMessage, nil
 }
 
+// Init 初始化扫描任务，下载工具和同步规则集
 func (c *PreCIServerClient) Init(currentPath, projRootPath string) (*model.InitResponse, error) {
 	request := &model.InitRequest{
 		CurrentPath: currentPath,
@@ -252,6 +267,7 @@ func (c *PreCIServerClient) ReloadTool(toolName string) error {
 	return nil
 }
 
+// CancelScan 取消当前正在执行的扫描任务
 func (c *PreCIServerClient) CancelScan() (string, error) {
 	var resp model.ScanCancelResponse
 	err := c.httpClient.Get(cancelPath, nil, &resp)
@@ -262,10 +278,12 @@ func (c *PreCIServerClient) CancelScan() (string, error) {
 	return resp.ProjectRoot, nil
 }
 
+// SetProject 设置当前使用的蓝盾项目 ID
 func (c *PreCIServerClient) SetProject(projectId string) error {
 	return c.httpClient.Get(strings.Replace(setProjectPath, "[projectId]", projectId, 1), nil, nil)
 }
 
+// GetProject 获取当前使用的蓝盾项目 ID
 func (c *PreCIServerClient) GetProject() (string, error) {
 	var resp auth.GetProjectResp
 	err := c.httpClient.Get(getProjectPath, nil, &resp)

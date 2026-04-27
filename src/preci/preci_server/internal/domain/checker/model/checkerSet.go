@@ -15,6 +15,7 @@ type CheckerSet struct {
 	CheckerOptions []repository.CheckerOption `json:"checkerOptions"`
 }
 
+// Decode 将 JSON 字节数据反序列化为 CheckerSet 实例
 func (cs *CheckerSet) Decode(data []byte) error {
 	return json.Unmarshal(data, cs)
 }

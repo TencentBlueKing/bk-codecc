@@ -17,6 +17,7 @@ import (
 	"time"
 )
 
+// ReloadToolCheckers 从远端批量拉取指定工具的 checker severity 并写入本地存储
 func ReloadToolCheckers(toolNames []string) error {
 	c := client.NewCodeCCClient()
 	log := logger.GetLogger()
@@ -52,6 +53,7 @@ func ReloadToolCheckers(toolNames []string) error {
 	return nil
 }
 
+// SelectCheckerSet 将指定规则集的 JSON 文件从安装目录复制到项目 .codecc 目录下
 func SelectCheckerSet(projectRootDir string, checkerSetIds []string) ([]string, error) {
 	installDir := config.GlobalConf.GetInstallDir()
 	checkerSetDir := filepath.Join(installDir, constant.CheckerSetDir)
@@ -103,6 +105,7 @@ func SelectCheckerSet(projectRootDir string, checkerSetIds []string) ([]string, 
 	return succCheckerSetIds, nil
 }
 
+// UnselectCheckerSet 从项目 .codecc 目录中删除指定规则集的 JSON 文件
 func UnselectCheckerSet(projectRootDir string, checkerSetIds []string) ([]string, error) {
 	targetDir := filepath.Join(projectRootDir, constant.CodeCCDir, constant.CheckerSetDir)
 	log := logger.GetLogger()
@@ -130,6 +133,7 @@ func UnselectCheckerSet(projectRootDir string, checkerSetIds []string) ([]string
 	return succCheckerSetIds, nil
 }
 
+// ListOfficialCheckerSet 列出安装目录下的所有官方规则集
 func ListOfficialCheckerSet() (error, []*model.CheckerSet) {
 	installDir := config.GlobalConf.GetInstallDir()
 	officialCheckerSetDir := filepath.Join(installDir, constant.CheckerSetDir)
@@ -139,6 +143,7 @@ func ListOfficialCheckerSet() (error, []*model.CheckerSet) {
 	return ReloadCheckerSet(officialCheckerSetDir)
 }
 
+// ReloadCheckerSet 从指定目录加载并解析所有 JSON 格式的规则集文件
 func ReloadCheckerSet(checkerSetDir string) (error, []*model.CheckerSet) {
 	log := logger.GetLogger()
 

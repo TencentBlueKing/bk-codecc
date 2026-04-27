@@ -16,6 +16,7 @@ type OauthToken struct {
 	UserType     string `json:"UserType"`
 }
 
+// NewOauthToken2 根据登录信息创建 OauthToken 实例并计算过期时间
 func NewOauthToken2(userId, accessToken, refreshToken string, expiresIn int64) OauthToken {
 	return OauthToken{
 		AccessToken:  accessToken,
@@ -26,6 +27,7 @@ func NewOauthToken2(userId, accessToken, refreshToken string, expiresIn int64) O
 	}
 }
 
+// Save 将 OAuth token 信息持久化到存储层
 func (t *OauthToken) Save(sto storage.Storage) error {
 	return repository.SaveAccessToken(sto, t.UserId, t.AccessToken, t.RefreshToken, t.ExpiredTime)
 }

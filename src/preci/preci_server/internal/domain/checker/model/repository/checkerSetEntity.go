@@ -30,6 +30,7 @@ type ToolCheckerSetEntity struct {
 
 const bucketName = "b_checker_set"
 
+// Encode 将 CheckerSetEntity 序列化为 JSON 字节
 func (t *CheckerSetEntity) Encode() ([]byte, error) {
 	jsonData, err := json.Marshal(t)
 	if err != nil {
@@ -43,7 +44,7 @@ func genStoreKey(checkerSetId string, taskId int64) string {
 	return fmt.Sprintf("%d#%s", taskId, checkerSetId)
 }
 
-// Save 将token信息保存到 db
+// Save 将规则集信息序列化后保存到存储层
 func (t *CheckerSetEntity) Save(sto storage.Storage, taskId int64) error {
 	jsonData, err := t.Encode()
 	if err != nil {
@@ -56,6 +57,7 @@ func (t *CheckerSetEntity) Save(sto storage.Storage, taskId int64) error {
 	return nil
 }
 
+// GetByCheckerSetIdIn 根据规则集 ID 列表从存储中批量获取规则集实体
 func GetByCheckerSetIdIn(sto storage.Storage, checkerSetIds []string, taskId int64) []*CheckerSetEntity {
 	var result []*CheckerSetEntity
 	for _, checkerSetId := range checkerSetIds {

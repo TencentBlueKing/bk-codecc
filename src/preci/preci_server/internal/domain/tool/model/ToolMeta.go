@@ -122,6 +122,7 @@ type Binary struct {
 	BinaryVersion string `json:"binaryVersion"` // 二进制工具版本
 }
 
+// GetCommand 根据当前操作系统返回工具的启动命令，并替换输入输出占位符
 func (b *Binary) GetCommand(inputJsonPath, outputJsonPath string) string {
 	cmd := ""
 	switch runtime.GOOS {

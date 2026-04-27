@@ -18,6 +18,7 @@ type Logger struct {
 
 var globalLogger *Logger
 
+// InitLogger 初始化全局 Logger 实例，配置文件和控制台双输出以及日志轮转
 func InitLogger(installDir, fileName string) *Logger {
 	// 创建log目录
 	logDir := path.Join(installDir, "log")
@@ -83,6 +84,7 @@ func InitLogger(installDir, fileName string) *Logger {
 	return globalLogger
 }
 
+// GetLogger 获取全局 Logger 单例
 func GetLogger() *Logger {
 	return globalLogger
 }

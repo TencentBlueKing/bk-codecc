@@ -80,6 +80,7 @@ func (b *BinaryEntity) Decode(data []byte) error {
 	return json.Unmarshal(data, b)
 }
 
+// GetToolBinaryInfo 从存储中读取指定工具的二进制下载信息
 func GetToolBinaryInfo(sto storage.Storage, toolName string) (*model.Binary, error) {
 	data, err := sto.GetByStrKey(bucketName, binPre+toolName)
 	if err != nil {
@@ -102,27 +103,17 @@ func GetToolBinaryInfo(sto storage.Storage, toolName string) (*model.Binary, err
 	}, nil
 }
 
+// SaveToolMeta 保存工具元信息（二进制和 Docker 镜像版本），仅在版本变化时更新
 func SaveToolMeta(sto storage.Storage, tool *model.ToolMeta) (bool, error) {
 	log := logger.GetLogger()
 	toolName := tool.Name
 
-	versionKey := versionPre + toolName
-	oldVersion, err := sto.GetByStrKey(bucketName, versionKey)
-	binVersion, imageVersion := "", ""
-	if err != nil {
-		log.Info(fmt.Sprintf("GetByStrKey error: %s", err.Error()))
-	} else if oldVersion != nil {
-		str := string(oldVersion)
-		log.Info(fmt.Sprintf("old version is %s", str))
-		versions := strings.Split(str, ",")
-		binVersion, imageVersion = versions[0], versions[1]
-	}
+	binVersion, imageVersion := getOldVersions(sto, toolName)
 
 	updateFlag := false
 	if binVersion == "" || tool.ToolVersions.Binary.BinaryVersion != binVersion {
 		binVersion = tool.ToolVersions.Binary.BinaryVersion
-		err := updateBinary(sto, tool.ToolVersions.Binary, toolName)
-		if err != nil {
+		if err := updateBinary(sto, tool.ToolVersions.Binary, toolName); err != nil {
 			log.Error(fmt.Sprintf("updateBinary error: %v", err))
 			return true, err
 		}
@@ -131,8 +122,7 @@ func SaveToolMeta(sto storage.Storage, tool *model.ToolMeta) (bool, error) {
 
 	if imageVersion == "" || tool.ToolVersions.DockerImageVersion != imageVersion {
 		imageVersion = tool.ToolVersions.DockerImageVersion
-		err := updateDockerImage(sto, tool.ToolVersions, toolName)
-		if err != nil {
+		if err := updateDockerImage(sto, tool.ToolVersions, toolName); err != nil {
 			log.Error(fmt.Sprintf("updateDockerImage error: %v", err))
 			return true, err
 		}
@@ -140,15 +130,7 @@ func SaveToolMeta(sto storage.Storage, tool *model.ToolMeta) (bool, error) {
 	}
 
 	if updateFlag {
-		value := fmt.Sprintf("%s,%s", binVersion, imageVersion)
-		err := sto.UpdateByStrKey(bucketName, versionKey, []byte(value))
-		if err != nil {
-			// 如果更新 b_tool_meta 失败，就不再继续更新 b_tool_meta 了
-			log.Error(fmt.Sprintf("update b_tool_meta [%s : %s] error: %v", versionKey, value, err))
-			return true, err
-		}
-
-		if err = updateToolMeta(sto, tool); err != nil {
+		if err := saveVersionAndMeta(sto, tool, binVersion, imageVersion); err != nil {
 			return true, err
 		}
 	}
@@ -156,6 +138,38 @@ func SaveToolMeta(sto storage.Storage, tool *model.ToolMeta) (bool, error) {
 	return updateFlag, nil
 }
 
+// getOldVersions 从存储层读取工具的旧版本信息（二进制版本, Docker 镜像版本）
+func getOldVersions(sto storage.Storage, toolName string) (string, string) {
+	log := logger.GetLogger()
+	versionKey := versionPre + toolName
+	oldVersion, err := sto.GetByStrKey(bucketName, versionKey)
+	if err != nil {
+		log.Info(fmt.Sprintf("GetByStrKey error: %s", err.Error()))
+		return "", ""
+	}
+	if oldVersion == nil {
+		return "", ""
+	}
+	str := string(oldVersion)
+	log.Info(fmt.Sprintf("old version is %s", str))
+	versions := strings.Split(str, ",")
+	return versions[0], versions[1]
+}
+
+// saveVersionAndMeta 保存版本号和工具元信息到存储层
+func saveVersionAndMeta(sto storage.Storage, tool *model.ToolMeta, binVersion, imageVersion string) error {
+	log := logger.GetLogger()
+	toolName := tool.Name
+	versionKey := versionPre + toolName
+	value := fmt.Sprintf("%s,%s", binVersion, imageVersion)
+	if err := sto.UpdateByStrKey(bucketName, versionKey, []byte(value)); err != nil {
+		log.Error(fmt.Sprintf("update b_tool_meta [%s : %s] error: %v", versionKey, value, err))
+		return err
+	}
+	return updateToolMeta(sto, tool)
+}
+
+// GetToolLang 获取指定工具的语言编码
 func GetToolLang(sto storage.Storage, toolName string) (int64, error) {
 	log := logger.GetLogger()
 

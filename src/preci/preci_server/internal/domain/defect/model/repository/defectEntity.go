@@ -22,6 +22,7 @@ type DefectEntity struct {
 	Severity    int    `json:"severity"`
 }
 
+// Save 将告警数据序列化后保存到存储层
 func Save(sto storage.Storage, key string, defects []string) error {
 	data, err := json.Marshal(defects)
 	if err != nil {
@@ -41,6 +42,7 @@ func DeleteProjectAllDefects(sto storage.Storage, projectRoot string) error {
 	return sto.DeleteByPrefix(bucketName, projectRoot)
 }
 
+// GetByPathPre 根据路径前缀查询存储层中所有匹配的告警实体
 func GetByPathPre(sto storage.Storage, pathPre string) ([]*DefectEntity, error) {
 	log := logger.GetLogger()
 

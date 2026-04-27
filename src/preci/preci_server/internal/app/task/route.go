@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// Routes 注册 task 模块的 HTTP 路由（初始化、扫描、进度查询等）
 func Routes(mux *chi.Mux, log *logger.Logger) {
 	app := &web.App{
 		Logger: log,
