@@ -23,6 +23,7 @@ type ListRemoteDefectReq struct {
 	SortType  string `json:"sortType"`
 }
 
+// Decode 从 JSON 字节流反序列化到当前请求
 func (req *ListRemoteDefectReq) Decode(data []byte) error {
 	return json.Unmarshal(data, req)
 }
@@ -52,6 +53,7 @@ type RemoteDefect struct {
 	ToolName string   `json:"toolName"`
 }
 
+// Encode 将当前响应序列化为 JSON 字节流
 func (resp *ListRemoteDefectResp) Encode() ([]byte, error) {
 	return json.Marshal(resp)
 }

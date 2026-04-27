@@ -9,6 +9,7 @@ type ScanRequest struct {
 	RootDir  string   `json:"rootDir"`
 }
 
+// Decode 从 JSON 字节流反序列化到当前请求
 func (sr *ScanRequest) Decode(data []byte) error {
 	return json.Unmarshal(data, sr)
 }
@@ -20,6 +21,7 @@ type ScanResponse struct {
 	ScanFileNum int      `json:"scanFileNum"`
 }
 
+// Encode 将当前响应序列化为 JSON 字节流
 func (sr *ScanResponse) Encode() ([]byte, error) {
 	return json.Marshal(sr)
 }

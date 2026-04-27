@@ -25,6 +25,7 @@ type UserInfoEntity struct {
 	ProjectId    string `json:"ProjectId"` // 蓝盾项目 ID
 }
 
+// SaveAccessToken 持久化登录用户的 userId 及 access/refresh token 与过期时间
 func SaveAccessToken(sto storage.Storage, userId, accessToken, refreshToken string, expiredTime int64) error {
 	log := logger.GetLogger()
 
@@ -51,6 +52,7 @@ func SaveAccessToken(sto storage.Storage, userId, accessToken, refreshToken stri
 	return nil
 }
 
+// SaveProjectId 持久化当前选中的蓝盾项目 ID
 func SaveProjectId(sto storage.Storage, projectId string) error {
 	log := logger.GetLogger()
 
@@ -62,6 +64,7 @@ func SaveProjectId(sto storage.Storage, projectId string) error {
 	return nil
 }
 
+// GetProjectId 从存储中读取当前选中的蓝盾项目 ID
 func GetProjectId(sto storage.Storage) (string, error) {
 	log := logger.GetLogger()
 	result := ""
@@ -76,6 +79,7 @@ func GetProjectId(sto storage.Storage) (string, error) {
 	return result, nil
 }
 
+// GetAccessToken 从存储中加载当前登录用户的 token 信息，组装为 UserInfoEntity 返回
 func GetAccessToken(sto storage.Storage) (*UserInfoEntity, error) {
 	log := logger.GetLogger()
 	result := new(UserInfoEntity)

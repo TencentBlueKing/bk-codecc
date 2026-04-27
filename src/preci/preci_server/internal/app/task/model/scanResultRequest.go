@@ -10,6 +10,7 @@ type ScanResultRequest struct {
 	Path string `json:"path" validate:"required"`
 }
 
+// Decode 从 JSON 字节流反序列化到当前请求
 func (req *ScanResultRequest) Decode(data []byte) error {
 	return json.Unmarshal(data, req)
 }
@@ -19,6 +20,7 @@ type ScanResultResponse struct {
 	Defects []defectmodel.Defect `json:"defects"`
 }
 
+// Encode 将当前响应序列化为 JSON 字节流
 func (resp *ScanResultResponse) Encode() ([]byte, error) {
 	return json.Marshal(resp)
 }

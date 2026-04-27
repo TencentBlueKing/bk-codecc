@@ -9,6 +9,7 @@ type LatestVersionResp struct {
 	LatestVersion string `json:"latestVersion"`
 }
 
+// Encode 将当前响应序列化为 JSON 字节流
 func (resp *LatestVersionResp) Encode() ([]byte, error) {
 	return json.Marshal(resp)
 }
@@ -22,6 +23,7 @@ type HealthResp struct {
 	ProjectId      string `json:"projectId"`
 }
 
+// Encode 将当前响应序列化为 JSON 字节流
 func (h *HealthResp) Encode() ([]byte, error) {
 	return json.Marshal(h)
 }

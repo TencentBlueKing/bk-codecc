@@ -11,6 +11,7 @@ type InitRequest struct {
 	NoReloadToolCheckers bool   `json:"noReloadToolCheckers"`            // 是否需要重新加载工具检查器
 }
 
+// Decode 从 JSON 字节流反序列化到当前请求
 func (req *InitRequest) Decode(data []byte) error {
 	return json.Unmarshal(data, req)
 }
@@ -24,6 +25,7 @@ type InitResponse struct {
 	LatestVersion  string   `json:"latestVersion,omitempty"`  // 最新版本号
 }
 
+// Encode 将当前响应序列化为 JSON 字节流
 func (resp *InitResponse) Encode() ([]byte, error) {
 	return json.Marshal(resp)
 }

@@ -7,6 +7,7 @@ type ScanCancelResponse struct {
 	ProjectRoot string `json:"projectRoot"`
 }
 
+// Encode 将当前响应序列化为 JSON 字节流
 func (resp *ScanCancelResponse) Encode() ([]byte, error) {
 	return json.Marshal(resp)
 }

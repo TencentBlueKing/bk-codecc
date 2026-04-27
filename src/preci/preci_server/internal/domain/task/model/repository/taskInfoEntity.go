@@ -28,6 +28,7 @@ type TaskInfoEntity struct {
 	storage.AuditEntity `json:"auditEntity"`
 }
 
+// NewTaskInfoEntity 以指定的任务 ID、项目根目录和 SCM 类型构造一个任务实体，其他字段初始化为空
 func NewTaskInfoEntity(taskId int64, rootDir, scmType string) *TaskInfoEntity {
 	return &TaskInfoEntity{
 		TaskId:     taskId,
@@ -40,6 +41,7 @@ func NewTaskInfoEntity(taskId int64, rootDir, scmType string) *TaskInfoEntity {
 	}
 }
 
+// Decode 从 JSON 字节流反序列化到当前任务实体
 func (t *TaskInfoEntity) Decode(data []byte) error {
 	return json.Unmarshal(data, t)
 }
@@ -59,6 +61,7 @@ func (t *TaskInfoEntity) Encode() ([]byte, error) {
 	return json.Marshal(t)
 }
 
+// Save 按 saveType 决定是插入还是更新，写入存储时会同步维护 CreatedAt/UpdatedAt 时间戳
 func (t *TaskInfoEntity) Save(sto storage.Storage, saveType int) error {
 	now := time.Now().Unix()
 	// 如果是新数据, 设置 CreatedAt

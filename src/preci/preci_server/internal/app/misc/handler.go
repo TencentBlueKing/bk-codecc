@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// DownloadLatestPreCIHandler HTTP 处理器：触发下载最新的 PreCI 安装包
 func DownloadLatestPreCIHandler(_ *http.Request) web.Encoder {
 	err := version.DownloadLatestPreCI()
 	if err != nil {
@@ -22,6 +23,7 @@ func DownloadLatestPreCIHandler(_ *http.Request) web.Encoder {
 	return web.SimpleEncoder{}
 }
 
+// LatestVersionHandler HTTP 处理器：返回当前可用的 PreCI 最新版本号
 func LatestVersionHandler(_ *http.Request) web.Encoder {
 	latestVersion, err := version.GetLatestVersion()
 	if err != nil {
@@ -37,6 +39,7 @@ func LatestVersionHandler(_ *http.Request) web.Encoder {
 	}
 }
 
+// ReportLogHandler HTTP 处理器：触发上报本地日志到远端
 func ReportLogHandler(_ *http.Request) web.Encoder {
 	err := misc.LogReporter()
 	if err != nil {
@@ -48,6 +51,7 @@ func ReportLogHandler(_ *http.Request) web.Encoder {
 	return web.SimpleEncoder{}
 }
 
+// DebugHandler HTTP 处理器：根据路径参数 on/off 切换日志等级
 func DebugHandler(r *http.Request) web.Encoder {
 	// 获取路径参数
 	debugMode := chi.URLParam(r, "mode")
@@ -60,6 +64,7 @@ func DebugHandler(r *http.Request) web.Encoder {
 	return web.SimpleEncoder{}
 }
 
+// HealthHandler HTTP 处理器：健康检查，返回服务状态、token 剩余有效期以及当前用户/项目
 func HealthHandler(_ *http.Request) web.Encoder {
 	resp := &HealthResp{Healthy: true}
 

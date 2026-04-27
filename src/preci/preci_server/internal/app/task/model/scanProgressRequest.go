@@ -7,6 +7,7 @@ type ScanProgressRequest struct {
 	RootDir string `json:"rootDir" validate:"required"`
 }
 
+// Decode 从 JSON 字节流反序列化到当前请求
 func (req *ScanProgressRequest) Decode(data []byte) error {
 	return json.Unmarshal(data, req)
 }
@@ -18,6 +19,7 @@ type ScanProgressResponse struct {
 	Status       string            `json:"status"`
 }
 
+// Encode 将当前响应序列化为 JSON 字节流
 func (resp *ScanProgressResponse) Encode() ([]byte, error) {
 	return json.Marshal(resp)
 }

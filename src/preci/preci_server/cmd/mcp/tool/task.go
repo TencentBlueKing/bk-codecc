@@ -25,6 +25,7 @@ type ScanResponse struct {
 	Message string `json:"message" jsonschema:"启动扫描成功后的返回信息，包括扫描工具列表、扫描文件数和其他信息"`
 }
 
+// Scan MCP 工具：按入参启动一次扫描并返回提示信息，扫描异步执行
 func Scan(ctx context.Context, req *mcp.CallToolRequest, input ScanRequest) (*mcp.CallToolResult, ScanResponse, error) {
 	log.Printf("start Scan: %s\n", input.ProjectRoot)
 	cli, err := client.NewPreCIServerClient(config.Port)
@@ -57,6 +58,7 @@ type ProgressResponse struct {
 	Status       string            `json:"status" jsonschema:"本次扫描任务的整体状态"`
 }
 
+// Progress MCP 工具：查询当前扫描任务的进度，返回整体状态及各工具的运行状态
 func Progress(ctx context.Context, req *mcp.CallToolRequest, _ interface{}) (*mcp.CallToolResult,
 	ProgressResponse, error) {
 	log.Println("开始获取当前扫描进度")
@@ -130,6 +132,7 @@ func getResult(cli *client.PreCIServerClient, path string) (ResultResponse, erro
 	}, nil
 }
 
+// Result MCP 工具：查询已完成扫描在指定路径下的告警列表
 func Result(ctx context.Context, req *mcp.CallToolRequest, input ResultRequest) (*mcp.CallToolResult,
 	ResultResponse, error) {
 	cli, err := client.NewPreCIServerClient(config.Port)
@@ -149,6 +152,7 @@ type ProgressAndResultResponse struct {
 	Err      error            `json:"err" jsonschema:"错误信息"`
 }
 
+// ProgressAndResult MCP 工具：一次性返回当前扫描进度，若扫描已结束则附带对应路径下的告警结果
 func ProgressAndResult(ctx context.Context, req *mcp.CallToolRequest, input ResultRequest) (*mcp.CallToolResult,
 	ProgressAndResultResponse, error) {
 	log.Printf("start ProgressAndResult(path: %s)", input.Path)
@@ -192,6 +196,7 @@ func ProgressAndResult(ctx context.Context, req *mcp.CallToolRequest, input Resu
 	return nil, resp, nil
 }
 
+// ScanAndResult MCP 工具：启动扫描并等待完成，然后返回告警结果；轮询超过上限会返回错误
 func ScanAndResult(ctx context.Context, req *mcp.CallToolRequest, input ScanRequest) (*mcp.CallToolResult,
 	ResultResponse, error) {
 	cli, err := client.NewPreCIServerClient(config.Port)

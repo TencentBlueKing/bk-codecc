@@ -17,6 +17,7 @@ type TaskInfo struct {
 	NameCn string `json:"nameCn"`
 }
 
+// Encode 将当前响应序列化为 JSON 字节流
 func (resp *ListRemoteTaskResp) Encode() ([]byte, error) {
 	return json.Marshal(resp)
 }

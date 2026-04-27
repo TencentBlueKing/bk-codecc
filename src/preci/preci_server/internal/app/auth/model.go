@@ -11,6 +11,7 @@ type LoginResp struct {
 	UserId    string `json:"userId"`
 }
 
+// Encode 将当前响应序列化为 JSON 字节流
 func (resp *LoginResp) Encode() ([]byte, error) {
 	return json.Marshal(resp)
 }
@@ -20,6 +21,7 @@ type ListProjectsResp struct {
 	Projects []dto.Project `json:"projects"`
 }
 
+// Encode 将当前响应序列化为 JSON 字节流
 func (resp2 *ListProjectsResp) Encode() ([]byte, error) {
 	return json.Marshal(resp2)
 }
@@ -29,6 +31,7 @@ type GetProjectResp struct {
 	ProjectId string `json:"projectId"`
 }
 
+// Encode 将当前响应序列化为 JSON 字节流
 func (resp3 *GetProjectResp) Encode() ([]byte, error) {
 	return json.Marshal(resp3)
 }
@@ -41,6 +44,7 @@ type OAuthDeviceLoginReq struct {
 	ExpiresIn    int64  `json:"expiresIn"`
 }
 
+// Decode 从 JSON 字节流反序列化到当前请求
 func (r *OAuthDeviceLoginReq) Decode(data []byte) error {
 	return json.Unmarshal(data, r)
 }
