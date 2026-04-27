@@ -158,6 +158,7 @@ func SaveToolMeta(sto storage.Storage, tool *model.ToolMeta) (bool, error) {
 	return updateFlag, nil
 }
 
+// GetToolLang 获取工具支持的语言
 func GetToolLang(sto storage.Storage, toolName string) (int64, error) {
 	log := logger.GetLogger()
 
