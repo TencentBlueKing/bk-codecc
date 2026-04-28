@@ -12,6 +12,7 @@ type Decoder interface {
 	Decode(data []byte) error
 }
 
+// Decode 从 HTTP 请求体中读取数据并使用 Decoder 接口进行反序列化
 func Decode(req *http.Request, decoder Decoder) error {
 	log := logger.GetLogger()
 

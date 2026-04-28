@@ -55,6 +55,7 @@ func getProjectId() (string, error) {
 	return cache.GetProjectId()
 }
 
+// GenerateSCCScanInput 生成 SCC 工具的扫描输入参数
 func GenerateSCCScanInput(scanType int, incrementalFiles []string, projectId string,
 	taskInfo *model.TaskInfo) (*model2.ToolScanInput, error) {
 	log := logger.GetLogger()
@@ -79,6 +80,7 @@ func GenerateSCCScanInput(scanType int, incrementalFiles []string, projectId str
 	return sccInput, nil
 }
 
+// GenerateToolInputCore 根据工具-规则映射关系生成各工具的扫描输入
 func GenerateToolInputCore(scanType int, projectId, rootDir string, incrementalFiles []string,
 	toolCheckers map[string]Checkers) (local []*model2.ToolScanInput) {
 	log := logger.GetLogger()
@@ -121,6 +123,7 @@ func GenerateToolInputCore(scanType int, projectId, rootDir string, incrementalF
 	return
 }
 
+// GenerateScanInput 根据任务信息生成所有工具的扫描输入参数列表
 func GenerateScanInput(scanType int, incrementalFiles []string, projectId string,
 	taskInfo *model.TaskInfo) (local []*model2.ToolScanInput, err error) {
 	log := logger.GetLogger()

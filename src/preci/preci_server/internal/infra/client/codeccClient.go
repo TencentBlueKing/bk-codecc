@@ -42,6 +42,7 @@ func NewCodeCCClient() *CodeCCClient {
 	}
 }
 
+// ListTaskBase 获取当前用户可用的任务基本信息列表
 func (c *CodeCCClient) ListTaskBase() ([]dto.TaskBase, error) {
 	var response dto.TaskInfoResp
 	if err := c.get(ListTaskBasePath, &response); err != nil {
@@ -68,6 +69,7 @@ func (c *CodeCCClient) ListProjects() ([]dto.Project, error) {
 	return response.Data.Projects, nil
 }
 
+// GetToolInfos 根据工具名列表批量获取工具元信息
 func (c *CodeCCClient) GetToolInfos(toolNames []string) ([]dto.ToolMetaDetail, error) {
 	var response dto.BatchGetToolMetaResp
 	if err := c.post(GetToolInfosPath, dto.BatchGetToolMetaReq{ToolNames: toolNames}, &response); err != nil {
@@ -91,6 +93,7 @@ func (c *CodeCCClient) BatchGetCheckerSeverities(toolNames []string) (*dto.Batch
 	return &response.Data, nil
 }
 
+// ListDefects 分页查询远端告警列表
 func (c *CodeCCClient) ListDefects(req dto.DefectQueryReq, pageNum, pageSize int,
 	sortField, sortType string) (*dto.LintDefectQueryData, error) {
 	path := fmt.Sprintf("%s?pageNum=%d&pageSize=%d&sortField=%s&sortType=%s",
@@ -103,6 +106,7 @@ func (c *CodeCCClient) ListDefects(req dto.DefectQueryReq, pageNum, pageSize int
 	return &response.Data, nil
 }
 
+// GetUserInfoByToken 通过 access token 获取用户名
 func (c *CodeCCClient) GetUserInfoByToken(accessToken string) (string, error) {
 	headers := map[string]string{
 		"Authorization": "Bearer " + accessToken,

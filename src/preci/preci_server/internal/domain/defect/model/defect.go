@@ -15,6 +15,7 @@ import (
 	"strconv"
 )
 
+// Defect 本地扫描产生的单条告警记录
 type Defect struct {
 	ToolName    string `json:"toolName"`
 	CheckerName string `json:"checkerName"`
@@ -24,6 +25,7 @@ type Defect struct {
 	Severity    int64  `json:"severity"`
 }
 
+// ToolScanOutput 单个工具本次扫描产出的告警集合
 type ToolScanOutput struct {
 	Defects []Defect `json:"defects"`
 }
@@ -57,6 +59,7 @@ func (tso *ToolScanOutput) filter(whitePaths, blackPaths []string) {
 	tso.Defects = filtered
 }
 
+// Decode 将 JSON 字节数据反序列化为 ToolScanOutput 实例
 func (tso *ToolScanOutput) Decode(data []byte) error {
 	return json.Unmarshal(data, tso)
 }
@@ -85,6 +88,7 @@ func (tso *ToolScanOutput) pathConvert() {
 	}
 }
 
+// Save 将扫描产出的告警排序、路径转换、过滤后持久化到存储层
 func (tso *ToolScanOutput) Save(sto storage.Storage, toolName string, openCheckers map[string]bool,
 	whitePaths, blackPaths []string) error {
 	log := logger.GetLogger()
@@ -155,6 +159,7 @@ func (tso *ToolScanOutput) sortDefects() {
 	})
 }
 
+// LoadToolScanOutputJson 从 JSON 字节数据反序列化为 ToolScanOutput 实例
 func LoadToolScanOutputJson(data []byte) (*ToolScanOutput, error) {
 	tso := new(ToolScanOutput)
 	err := json.Unmarshal(data, &tso)
@@ -165,6 +170,7 @@ func LoadToolScanOutputJson(data []byte) (*ToolScanOutput, error) {
 	return tso, nil
 }
 
+// DeleteProjectAllDefects 删除指定项目根目录下的所有告警记录
 func DeleteProjectAllDefects(sto storage.Storage, projectRoot string) error {
 	return repository.DeleteProjectAllDefects(sto, projectRoot)
 }
@@ -185,6 +191,7 @@ func getCheckerSeverity(sto storage.Storage, toolName, checkerName string, cache
 	return severity, nil
 }
 
+// GetAllDefectsByPathPre 根据路径前缀从存储层获取所有告警并填充 severity
 func GetAllDefectsByPathPre(sto storage.Storage, pathPre string) ([]*Defect, error) {
 	log := logger.GetLogger()
 	defectEntities, err := repository.GetByPathPre(sto, pathPre)

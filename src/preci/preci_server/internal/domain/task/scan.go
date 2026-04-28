@@ -42,6 +42,7 @@ func getTaskInfo(rootDir string) (*model.TaskInfo, error) {
 	return taskInfo, nil
 }
 
+// ScanSCC 执行 SCC 扫描并可选地根据语言自动匹配默认规则集
 func ScanSCC(rootDir string, scanType int, incrementalFiles []string, projectId string,
 	taskInfo *model.TaskInfo, selectCheckerSet bool) error {
 	log := logger.GetLogger()
@@ -341,6 +342,7 @@ func runScanInBackground(rootDir string, toolScanInputs []*toolmodel.ToolScanInp
 	}
 }
 
+// Cancel 取消当前正在执行的扫描任务，返回扫描项目的根目录
 func Cancel() string {
 	resp := ""
 	if NowScan != nil && !NowScan.IsComplete() {

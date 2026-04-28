@@ -7,6 +7,7 @@ import (
 	"net/http"
 )
 
+// SelectHandler HTTP 处理器：为指定项目勾选启用的规则集
 func SelectHandler(req *http.Request) web.Encoder {
 	var request SelectReq
 	err := web.Decode(req, &request)
@@ -30,6 +31,7 @@ func SelectHandler(req *http.Request) web.Encoder {
 	}
 }
 
+// UnselectHandler HTTP 处理器：取消指定项目已选中的规则集
 func UnselectHandler(req *http.Request) web.Encoder {
 	var request SelectReq
 	err := web.Decode(req, &request)
@@ -53,6 +55,7 @@ func UnselectHandler(req *http.Request) web.Encoder {
 	}
 }
 
+// ListHandler HTTP 处理器：查询平台官方规则集列表
 func ListHandler(_ *http.Request) web.Encoder {
 	err, checkerSets := checker.ListOfficialCheckerSet()
 	if err != nil {

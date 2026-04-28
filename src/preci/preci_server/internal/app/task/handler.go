@@ -12,6 +12,7 @@ import (
 	"net/http"
 )
 
+// ScanCancelHandler HTTP 处理器：取消当前正在进行的扫描任务，返回被取消任务的项目根目录
 func ScanCancelHandler(_ *http.Request) web.Encoder {
 	projectRoot := task.Cancel()
 	return web.SimpleEncoder{
@@ -21,6 +22,7 @@ func ScanCancelHandler(_ *http.Request) web.Encoder {
 	}
 }
 
+// ScanHandler HTTP 处理器：根据请求启动一次扫描，返回启动信息和工具列表
 func ScanHandler(r *http.Request) web.Encoder {
 	var req model.ScanRequest
 	err := web.Decode(r, &req)
@@ -48,6 +50,7 @@ func ScanHandler(r *http.Request) web.Encoder {
 	}
 }
 
+// ScanResultHandler HTTP 处理器：查询指定路径下的扫描告警结果
 func ScanResultHandler(r *http.Request) web.Encoder {
 	var req model.ScanResultRequest
 	err := web.Decode(r, &req)
@@ -76,6 +79,7 @@ func ScanResultHandler(r *http.Request) web.Encoder {
 	}
 }
 
+// ReloadToolHandler HTTP 处理器：根据路径参数 toolName 强制重载该工具二进制
 func ReloadToolHandler(r *http.Request) web.Encoder {
 	toolName := chi.URLParam(r, "toolName")
 
@@ -89,6 +93,7 @@ func ReloadToolHandler(r *http.Request) web.Encoder {
 	return web.SimpleEncoder{}
 }
 
+// ScanProgressHandler HTTP 处理器：查询当前扫描任务的进度
 func ScanProgressHandler(_ *http.Request) web.Encoder {
 	progress, err := task.GetScanProgress("")
 	if err != nil {
@@ -106,6 +111,7 @@ func ScanProgressHandler(_ *http.Request) web.Encoder {
 	}
 }
 
+// InitHandler HTTP 处理器：初始化当前项目任务，返回项目信息以及版本更新信息
 func InitHandler(r *http.Request) web.Encoder {
 	var req model.InitRequest
 	err := web.Decode(r, &req)

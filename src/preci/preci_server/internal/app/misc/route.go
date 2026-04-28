@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// Routes 注册 misc 模块的 HTTP 路由（健康检查、版本、日志上报等）
 func Routes(mux *chi.Mux, log *logger.Logger) {
 	app := &web.App{
 		Logger: log,

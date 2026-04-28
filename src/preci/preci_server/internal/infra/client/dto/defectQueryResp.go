@@ -6,6 +6,7 @@ type DefectQueryResp struct {
 	Data LintDefectQueryData `json:"data"`
 }
 
+// LintDefectQueryData 告警查询响应的数据体，包含各维度统计与分页告警列表
 type LintDefectQueryData struct {
 	SeriousCount int            `json:"seriousCount"`
 	NormalCount  int            `json:"normalCount"`
@@ -19,6 +20,7 @@ type LintDefectQueryData struct {
 	DefectList   LintDefectPage `json:"defectList"`
 }
 
+// LintDefectPage 告警分页结构，包含当前页、页大小、总页数及告警记录
 type LintDefectPage struct {
 	Count      int          `json:"count"`
 	Page       int          `json:"page"`
@@ -27,6 +29,7 @@ type LintDefectPage struct {
 	Records    []LintDefect `json:"records"`
 }
 
+// LintDefect CodeCC 返回的单条 Lint 告警记录
 type LintDefect struct {
 	EntityId   string   `json:"entityId"`
 	FileName   string   `json:"fileName"`

@@ -22,10 +22,12 @@ var (
 	isDownloading bool
 )
 
+// GetVersion 返回当前 PreCI 服务的版本号
 func GetVersion() string {
 	return Version
 }
 
+// GetLatestVersion 从远端获取 PreCI 最新发布版本号
 func GetLatestVersion() (string, error) {
 	log := logger.GetLogger()
 	latestVersion, err := client.GetLatestVersion()
@@ -37,6 +39,7 @@ func GetLatestVersion() (string, error) {
 	return latestVersion, nil
 }
 
+// DownloadLatestPreCI 下载最新版本 PreCI 安装包。若下载任务已在进行或当前已是最新版本，会直接返回对应的错误
 func DownloadLatestPreCI() error {
 	log := logger.GetLogger()
 

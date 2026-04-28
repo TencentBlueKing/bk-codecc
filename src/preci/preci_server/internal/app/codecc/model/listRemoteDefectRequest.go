@@ -2,6 +2,7 @@ package model
 
 import "encoding/json"
 
+// ListRemoteDefectReq 查询远端 CodeCC 告警列表接口的请求，支持按任务、工具、维度、作者等多维筛选和分页
 type ListRemoteDefectReq struct {
 	ProjectRoot string `json:"projectRoot"`
 
@@ -22,10 +23,12 @@ type ListRemoteDefectReq struct {
 	SortType  string `json:"sortType"`
 }
 
+// Decode 从 JSON 字节流反序列化到当前请求
 func (req *ListRemoteDefectReq) Decode(data []byte) error {
 	return json.Unmarshal(data, req)
 }
 
+// ListRemoteDefectResp 查询远端 CodeCC 告警列表接口的响应，包含按告警状态统计的计数和告警详情列表
 type ListRemoteDefectResp struct {
 	SeriousCount int            `json:"seriousCount"`
 	NormalCount  int            `json:"normalCount"`
@@ -37,6 +40,7 @@ type ListRemoteDefectResp struct {
 	Defects      []RemoteDefect `json:"defects"`
 }
 
+// RemoteDefect 远端 CodeCC 单条告警记录
 type RemoteDefect struct {
 	FileName string   `json:"fileName"`
 	FilePath string   `json:"filePath"`
@@ -49,6 +53,7 @@ type RemoteDefect struct {
 	ToolName string   `json:"toolName"`
 }
 
+// Encode 将当前响应序列化为 JSON 字节流
 func (resp *ListRemoteDefectResp) Encode() ([]byte, error) {
 	return json.Marshal(resp)
 }

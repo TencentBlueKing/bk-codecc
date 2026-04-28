@@ -16,8 +16,8 @@ repositories {
 dependencies {
     // 日志框架
     implementation("org.slf4j:slf4j-api:2.0.16")
-    implementation("ch.qos.logback:logback-classic:1.5.16")
-    implementation("ch.qos.logback:logback-core:1.5.16")
+    implementation("ch.qos.logback:logback-classic:1.5.32")
+    implementation("ch.qos.logback:logback-core:1.5.32")
 
     // HTTP 客户端
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// Routes 注册 codecc 模块的 HTTP 路由（远端任务和告警查询）
 func Routes(mux *chi.Mux, log *logger.Logger) {
 	app := &web.App{
 		Logger: log,

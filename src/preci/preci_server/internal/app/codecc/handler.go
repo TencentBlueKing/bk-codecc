@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 )
 
+// ListRemoteTaskHandler 处理获取远端 CodeCC 任务列表的 HTTP 请求
 func ListRemoteTaskHandler(_ *http.Request) web.Encoder {
 	log := logger.GetLogger()
 	log.Info("start list remote task")
@@ -45,6 +46,7 @@ func pathConvert(relPath, projectRoot string) string {
 	return filepath.Join(projectRoot, filepath.FromSlash(relPath))
 }
 
+// ListRemoteDefectHandler 处理获取远端 CodeCC 告警列表的 HTTP 请求
 func ListRemoteDefectHandler(r *http.Request) web.Encoder {
 	log := logger.GetLogger()
 	var req model.ListRemoteDefectReq

@@ -157,6 +157,7 @@ func unzipFile(zipPath, destDir string) error {
 	return nil
 }
 
+// readToolVersionTable 读取本地工具版本记录表（toolVersion.json），返回工具名到版本的映射，读取失败时返回 nil
 func readToolVersionTable() map[string]string {
 	baseDir := conf.GlobalConf.GetInstallDir()
 	path := filepath.Join(baseDir, "tool", "toolVersion.json")
@@ -180,6 +181,7 @@ func readToolVersionTable() map[string]string {
 	return result
 }
 
+// ReloadTools 根据工具列表从 CodeCC 拉取元数据并按需下载/解压新版本二进制到本地
 func ReloadTools(toolNames []string) error {
 	log := logger.GetLogger()
 	codeCCClient := client.NewCodeCCClient()
@@ -260,6 +262,7 @@ func ReloadTools(toolNames []string) error {
 	return nil
 }
 
+// RunTool 在指定项目目录下以 toolInput 为参数执行工具，返回输出文件路径。支持 ctx 取消
 func RunTool(ctx context.Context, rootDir string, toolInput *model.ToolScanInput) (string, error) {
 	log := logger.GetLogger()
 	toolName := toolInput.ToolName

@@ -4,16 +4,19 @@ import (
 	"encoding/json"
 )
 
+// InitRequest 初始化项目接口的请求，指定当前路径、根路径及是否需要重新加载工具检查器
 type InitRequest struct {
 	CurrentPath          string `json:"currentPath" validate:"required"` // 当前路径
 	RootPath             string `json:"rootPath"`                        // 项目根路径
 	NoReloadToolCheckers bool   `json:"noReloadToolCheckers"`            // 是否需要重新加载工具检查器
 }
 
+// Decode 从 JSON 字节流反序列化到当前请求
 func (req *InitRequest) Decode(data []byte) error {
 	return json.Unmarshal(data, req)
 }
 
+// InitResponse 初始化项目接口的响应，返回项目根路径、工具列表和版本更新信息
 type InitResponse struct {
 	RootPath       string   `json:"rootPath"`                 // 项目根路径
 	Tools          []string `json:"tools"`                    // 工具列表
@@ -22,6 +25,7 @@ type InitResponse struct {
 	LatestVersion  string   `json:"latestVersion,omitempty"`  // 最新版本号
 }
 
+// Encode 将当前响应序列化为 JSON 字节流
 func (resp *InitResponse) Encode() ([]byte, error) {
 	return json.Marshal(resp)
 }

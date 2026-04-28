@@ -17,6 +17,7 @@ const (
 	dockerPre  = "d#" // Docker镜像信息存储格式: d#[工具 Name] <-> DockerImageEntity
 )
 
+// ToolMetaEntity 工具元信息在持久化存储层的实体
 type ToolMetaEntity struct {
 	Name        string `json:"name"`
 	DisplayName string `json:"displayName"`
@@ -35,6 +36,7 @@ func (e *ToolMetaEntity) Decode(data []byte) error {
 	return json.Unmarshal(data, e)
 }
 
+// DockerImageEntity 工具 docker 镜像信息在持久化存储层的实体
 type DockerImageEntity struct {
 	// docker启动运行的命令
 	DockerTriggerShell string `json:"dockerTriggerShell"`
@@ -57,6 +59,7 @@ func (e *DockerImageEntity) Encode() ([]byte, error) {
 	return json.Marshal(e)
 }
 
+// BinaryEntity 工具二进制信息在持久化存储层的实体
 type BinaryEntity struct {
 	WinUrl        string `json:"winUrl"`        // win二进制的下载路径
 	LinuxUrl      string `json:"linuxUrl"`      // linux二进制的下载路径
@@ -77,6 +80,7 @@ func (b *BinaryEntity) Decode(data []byte) error {
 	return json.Unmarshal(data, b)
 }
 
+// GetToolBinaryInfo 从存储中读取指定工具的二进制下载信息
 func GetToolBinaryInfo(sto storage.Storage, toolName string) (*model.Binary, error) {
 	data, err := sto.GetByStrKey(bucketName, binPre+toolName)
 	if err != nil {
@@ -99,6 +103,7 @@ func GetToolBinaryInfo(sto storage.Storage, toolName string) (*model.Binary, err
 	}, nil
 }
 
+// SaveToolMeta 保存工具元信息（二进制和 Docker 镜像版本），仅在版本变化时更新
 func SaveToolMeta(sto storage.Storage, tool *model.ToolMeta) (bool, error) {
 	log := logger.GetLogger()
 	toolName := tool.Name
@@ -153,6 +158,7 @@ func SaveToolMeta(sto storage.Storage, tool *model.ToolMeta) (bool, error) {
 	return updateFlag, nil
 }
 
+// GetToolLang 获取工具支持的语言
 func GetToolLang(sto storage.Storage, toolName string) (int64, error) {
 	log := logger.GetLogger()
 

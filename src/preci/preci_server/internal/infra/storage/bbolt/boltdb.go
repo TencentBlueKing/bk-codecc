@@ -14,11 +14,13 @@ import (
 	"time"
 )
 
+// BoltDB 基于 bbolt 的本地键值存储实现，保存数据目录路径和底层 db 句柄
 type BoltDB struct {
 	dataDir    string
 	dbInstance *bbolt.DB
 }
 
+// NewBoltDB 创建一个以 dataDir 为数据目录的 BoltDB 实例
 func NewBoltDB(dataDir string) *BoltDB {
 	return &BoltDB{
 		dataDir: dataDir,
@@ -30,6 +32,7 @@ const (
 	waitTime = 500 * time.Millisecond
 )
 
+// Init 初始化 bbolt 数据库，创建数据目录并打开 DB 文件
 func (db *BoltDB) Init(config model.DBConfig) error {
 	log := logger.GetLogger()
 
@@ -77,6 +80,7 @@ func (db *BoltDB) Init(config model.DBConfig) error {
 	return err
 }
 
+// Close 关闭 bbolt 数据库连接，失败时最多重试 3 次
 func (db *BoltDB) Close() {
 	log := logger.GetLogger()
 
@@ -103,6 +107,7 @@ func (db *BoltDB) Close() {
 	log.Error(fmt.Sprintf("failed to close db instance: %v", err))
 }
 
+// UpdateByStrKey2Int 以字符串 key 写入 int64 值到指定 bucket
 func (db *BoltDB) UpdateByStrKey2Int(bucket, key string, value int64) error {
 	return db.update([]byte(bucket), []byte(key), int64ToBytes(value))
 }
@@ -130,22 +135,27 @@ func (db *BoltDB) BatchUpdateByStrKey2Int(bucket string, kvs map[string]int64) e
 	})
 }
 
+// UpdateByStrKey 以字符串 key 写入 []byte 值到指定 bucket
 func (db *BoltDB) UpdateByStrKey(bucket, key string, value []byte) error {
 	return db.update([]byte(bucket), []byte(key), value)
 }
 
+// UpdateByIntKey 以 int64 key 写入 []byte 值到指定 bucket
 func (db *BoltDB) UpdateByIntKey(bucket string, key int64, value []byte) error {
 	return db.update([]byte(bucket), int64ToBytes(key), value)
 }
 
+// GetByStrKey 通过字符串 key 从指定 bucket 读取值
 func (db *BoltDB) GetByStrKey(bucket, key string) ([]byte, error) {
 	return db.get([]byte(bucket), []byte(key))
 }
 
+// GetByIntKey 通过 int64 key 从指定 bucket 读取值
 func (db *BoltDB) GetByIntKey(bucket string, key int64) ([]byte, error) {
 	return db.get([]byte(bucket), int64ToBytes(key))
 }
 
+// IncrementAndGet 对指定 bucket/key 的 int64 值自增 1 并返回新值
 func (db *BoltDB) IncrementAndGet(bucket, key string) (int64, error) {
 	err := db.instanceCheck()
 	if err != nil {

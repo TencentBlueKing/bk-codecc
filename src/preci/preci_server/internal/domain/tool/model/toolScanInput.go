@@ -1,5 +1,6 @@
 package model
 
+// ToolScanInput 工具扫描输入参数，传递给具体扫描工具以执行一次扫描
 type ToolScanInput struct {
 	ProjectName      string    `json:"projName"`
 	ProjectId        string    `json:"projectId"`
@@ -15,6 +16,7 @@ type ToolScanInput struct {
 	// 待选区: toolOptions, buildScript, repos, commitSince, languageTag, codeccWorkspacePath, eslintRule
 }
 
+// Checker 本次扫描中启用的单条规则及其参数
 type Checker struct {
 	CheckerName   string         `json:"checkerName"`
 	NativeChecker bool           `json:"nativeChecker"`
@@ -22,6 +24,7 @@ type Checker struct {
 	CheckerParams []CheckerParam `json:"checkerOptions"`
 }
 
+// CheckerParam 规则的键值参数
 type CheckerParam struct {
 	Key   string `json:"checkerOptionName"`
 	Value string `json:"checkerOptionValue"`

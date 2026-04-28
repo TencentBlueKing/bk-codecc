@@ -33,7 +33,7 @@
 
 #### 2.1. 下载安装
 直接下载现成的安装包进行安装。
-- 下载链接：[Server](), [Plugin]()
+- 下载链接：[Server](https://github.com/TencentBlueKing/bk-codecc/releases), [Plugin](https://github.com/TencentBlueKing/bk-codecc/releases)
 - 在链接中根据本机环境选择相应的脚本或安装包进行安装即可
 
 #### 2.2. 源码编译安装

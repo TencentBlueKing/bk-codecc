@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 )
 
+// LogReporter 将本地日志文件上传到 BkRepo
 func LogReporter() error {
 	log := logger.GetLogger()
 	userInfo, err := cache.GetUserInfo(true)

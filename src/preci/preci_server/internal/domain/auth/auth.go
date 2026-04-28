@@ -13,6 +13,7 @@ import (
 	"fmt"
 )
 
+// ListProjects 获取当前用户有权限的蓝盾项目列表
 func ListProjects() ([]dto.Project, error) {
 	log := logger.GetLogger()
 	codeClient := client.NewCodeCCClient()
@@ -27,6 +28,7 @@ func ListProjects() ([]dto.Project, error) {
 	return projects, err
 }
 
+// SetProjectId 保存蓝盾项目 ID 到本地缓存和 DB
 func SetProjectId(projectId string) error {
 	log := logger.GetLogger()
 	log.Info(fmt.Sprintf("set project id: %s", projectId))
@@ -38,6 +40,7 @@ func SetProjectId(projectId string) error {
 	return nil
 }
 
+// GetProjectId 获取当前缓存中的蓝盾项目 ID
 func GetProjectId() (string, error) {
 	log := logger.GetLogger()
 	projectId, err := cache.GetProjectId()
@@ -60,6 +63,7 @@ func saveAuthInfo(token *model.OauthToken) error {
 	return nil
 }
 
+// DeviceLogin 通过 Device Code Flow 完成登录，保存 token 并返回用户/项目信息
 func DeviceLogin(accessToken, refreshToken, projectId string, expiresIn int64) (string, string, error) {
 	log := logger.GetLogger()
 
@@ -88,6 +92,7 @@ func DeviceLogin(accessToken, refreshToken, projectId string, expiresIn int64) (
 	return userId, projectId, nil
 }
 
+// RefreshAccessToken 使用 refresh token 刷新 access token
 func RefreshAccessToken(refreshToken string) (*model.OauthToken, error) {
 	log := logger.GetLogger()
 

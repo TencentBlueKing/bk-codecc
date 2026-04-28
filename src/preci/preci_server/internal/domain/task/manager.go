@@ -98,6 +98,7 @@ func (p *ScanProgress) MarkCanceled(toolName string) {
 	}
 }
 
+// IsDone 判断指定工具的扫描是否已完成
 func (p *ScanProgress) IsDone(toolName string) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()

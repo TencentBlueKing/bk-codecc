@@ -8,6 +8,7 @@ type UploadArchiveRequest struct {
 	Files       []string `json:"files" validate:"required"`       // 文件列表（绝对路径）
 }
 
+// Decode 从 JSON 字节流反序列化到当前请求
 func (req *UploadArchiveRequest) Decode(data []byte) error {
 	return json.Unmarshal(data, req)
 }
@@ -17,6 +18,7 @@ type UploadArchiveResponse struct {
 	Message string `json:"message"`
 }
 
+// Encode 将当前响应序列化为 JSON 字节流
 func (resp *UploadArchiveResponse) Encode() ([]byte, error) {
 	return json.Marshal(resp)
 }

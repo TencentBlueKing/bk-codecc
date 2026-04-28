@@ -12,6 +12,7 @@ import (
 
 const taskInfoJson = "taskInfo.json"
 
+// TaskInfo 任务信息的领域模型，是 TaskInfoEntity 的领域层表示，包含工具、规则集等运行时信息
 type TaskInfo struct {
 	TaskId         int64    // 任务 ID
 	RootDir        string   // 项目根目录
@@ -24,6 +25,7 @@ type TaskInfo struct {
 	BlackPaths     []string
 }
 
+// NewTaskInfo 以仓储层实体构造领域层的任务信息
 func NewTaskInfo(entity *repository.TaskInfoEntity) *TaskInfo {
 	return &TaskInfo{
 		TaskId:     entity.TaskId,
@@ -36,6 +38,7 @@ func NewTaskInfo(entity *repository.TaskInfoEntity) *TaskInfo {
 	}
 }
 
+// GetTaskInfo 根据 rootPath 查询任务信息：若与缓存一致则直接返回缓存，否则从存储加载并转成领域模型
 func GetTaskInfo(sto storage.Storage, cachedInfo TaskInfo, rootPath string) (*TaskInfo, error) {
 	if rootPath == "" || cachedInfo.RootDir == rootPath {
 		// 直接将 cachedInfo 中的数据返回
@@ -65,6 +68,7 @@ func (t *TaskInfo) Encode() ([]byte, error) {
 	return json.Marshal(t)
 }
 
+// Save 按 saveType 持久化任务信息，并将对应的 taskInfo.json 写入 codeCCDir
 func (t *TaskInfo) Save(sto storage.Storage, saveType int, codeCCDir string) error {
 	if saveType == repository.Noop {
 		return nil
