@@ -7,7 +7,7 @@ MCP_LDFLAGS := -ldflags "-X codecc/preci_server/mcp/config.Version=$(VERSION)"
 .PHONY: build build-server build-cli run run-server test clean help
 
 # 构建 win
-build-win: build-server-win build-cli-win build-updater-win build-mcp-win copy-config-win package-win
+build-win: build-server-win build-cli-win build-updater-win build-mcp-win copy-config-win copy-script-win package-win
 
 build-server-win:
 	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build $(SERV_LDFLAGS) -o bin/win/preci-server.exe ./cmd/server
@@ -19,7 +19,7 @@ build-mcp-win:
 	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build $(MCP_LDFLAGS) -o bin/win/preci-mcp.exe ./cmd/mcp
 
 # 构建 linux
-build-linux: build-server-linux build-cli-linux build-updater-linux build-mcp-linux copy-config-linux package-linux
+build-linux: build-server-linux build-cli-linux build-updater-linux build-mcp-linux copy-config-linux copy-script-linux package-linux
 
 build-server-linux:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(SERV_LDFLAGS) -o bin/linux/preci-server ./cmd/server
@@ -31,7 +31,7 @@ build-mcp-linux:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(MCP_LDFLAGS) -o bin/linux/preci-mcp ./cmd/mcp
 
 # 构建 mac-amd64
-build-mac-amd64: build-server-mac-amd64 build-cli-mac-amd64 build-updater-mac-amd64 build-mcp-mac-amd64 copy-config-mac-amd64 package-mac-amd64
+build-mac-amd64: build-server-mac-amd64 build-cli-mac-amd64 build-updater-mac-amd64 build-mcp-mac-amd64 copy-config-mac-amd64 copy-script-mac-amd64 package-mac-amd64
 
 build-server-mac-amd64:
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build $(SERV_LDFLAGS) -o bin/mac-amd64/preci-server ./cmd/server
@@ -43,7 +43,7 @@ build-mcp-mac-amd64:
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build $(MCP_LDFLAGS) -o bin/mac-amd64/preci-mcp ./cmd/mcp
 
 # 构建 mac-arm64
-build-mac-arm64: build-server-mac-arm64 build-cli-mac-arm64 build-updater-mac-arm64 build-mcp-mac-arm64 copy-config-mac-arm64 package-mac-arm64
+build-mac-arm64: build-server-mac-arm64 build-cli-mac-arm64 build-updater-mac-arm64 build-mcp-mac-arm64 copy-config-mac-arm64 copy-script-mac-arm64 package-mac-arm64
 
 build-server-mac-arm64:
 	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build $(SERV_LDFLAGS) -o bin/mac-arm64/preci-server ./cmd/server
@@ -72,6 +72,21 @@ copy-config-mac-amd64:
 copy-config-mac-arm64:
 	@cp -r config bin/mac-arm64/
 	@cp -r checkerset bin/mac-arm64/
+
+# 复制各平台对应的安装/卸载脚本到 bin/<platform>/
+copy-script: copy-script-win copy-script-linux copy-script-mac-amd64 copy-script-mac-arm64
+
+copy-script-win:
+	@cp -r script/win/. bin/win/
+
+copy-script-linux:
+	@cp -r script/unix/. bin/linux/
+
+copy-script-mac-amd64:
+	@cp -r script/unix/. bin/mac-amd64/
+
+copy-script-mac-arm64:
+	@cp -r script/unix/. bin/mac-arm64/
 
 # 压缩打包（按平台产出对应 zip 压缩包，输出到 bin/dist/）
 package: package-win package-linux package-mac-amd64 package-mac-arm64

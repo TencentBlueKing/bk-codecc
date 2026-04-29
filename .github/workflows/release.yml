@@ -72,6 +72,7 @@ jobs:
   preci-server:
     name: Build PreCI Server
     runs-on: ubuntu-latest
+    needs: codecc
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go
@@ -98,6 +99,7 @@ jobs:
   preci-jetbrains-plugin:
     name: Build PreCI JetBrains Plugin
     runs-on: ubuntu-latest
+    needs: codecc
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 17
@@ -130,7 +132,7 @@ jobs:
     name: Release All
     runs-on: ubuntu-latest
     if: ${{ always() }}
-    needs: [codecc, preci-server, preci-jetbrains-plugin]
+    needs: [preci-server, preci-jetbrains-plugin]
     steps:
       - name: Create Release
         id: create_release
@@ -170,7 +172,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./preci-server-dist/preci-${{ github.ref_name }}-win-amd64.zip
-          asset_name: preci-${{ github.ref_name }}-win-amd64.zip
+          asset_name: preci-win-amd64.zip
           asset_content_type: application/zip
       - name: Upload Release Asset -- PreCI Server (linux)
         uses: actions/upload-release-asset@v1
@@ -179,7 +181,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./preci-server-dist/preci-${{ github.ref_name }}-linux-amd64.zip
-          asset_name: preci-${{ github.ref_name }}-linux-amd64.zip
+          asset_name: preci-linux-amd64.zip
           asset_content_type: application/zip
       - name: Upload Release Asset -- PreCI Server (mac-amd64)
         uses: actions/upload-release-asset@v1
@@ -188,7 +190,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./preci-server-dist/preci-${{ github.ref_name }}-mac-amd64.zip
-          asset_name: preci-${{ github.ref_name }}-mac-amd64.zip
+          asset_name: preci-mac-amd64.zip
           asset_content_type: application/zip
       - name: Upload Release Asset -- PreCI Server (mac-arm64)
         uses: actions/upload-release-asset@v1
@@ -197,7 +199,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./preci-server-dist/preci-${{ github.ref_name }}-mac-arm64.zip
-          asset_name: preci-${{ github.ref_name }}-mac-arm64.zip
+          asset_name: preci-mac-arm64.zip
           asset_content_type: application/zip
       ## preci-jetbrains-plugin
       - name: download preci-jetbrains-plugin
