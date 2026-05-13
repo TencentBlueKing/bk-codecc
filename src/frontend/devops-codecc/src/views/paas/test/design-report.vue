@@ -168,6 +168,7 @@
 import { format } from 'date-fns';
 // eslint-disable-next-line
 import { export_json_to_excel } from '@/vendor/export2Excel';
+import { withSitePath } from '@/utils/path';
 
 export default {
   name: 'DesignReport',
@@ -393,7 +394,8 @@ export default {
       this.queryTestReportDetailList(searchParams);
     },
     openTaskOverview(row) {
-      const url = `${window.location.origin}/codecc/${row.projectId}/task/${row.taskId}/detail`;
+      const taskPath = withSitePath(`/codecc/${row.projectId}/task/${row.taskId}/detail`);
+      const url = `${window.location.origin}${taskPath}`;
       window.open(url, '_blank');
     },
     openGitRepo(row) {

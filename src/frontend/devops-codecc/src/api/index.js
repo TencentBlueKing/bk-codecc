@@ -13,6 +13,7 @@ import { bus } from '../common/bus';
 import { messageError } from '@/common/bkmagic';
 import store from '@/store';
 import I18n from '@/i18n';
+import { withStaticUrl } from '@/utils/path';
 // import router from '@/router'
 import { showLoginModal } from '@blueking/login-modal';
 
@@ -212,7 +213,10 @@ function handleReject(error, config) {
         }/?c_url=${encodeURIComponent(window.location.href)}`;
       } else {
         // 登录成功之后的回调地址，用于执行关闭登录窗口或刷新父窗口页面等动作
-        const successUrl = `${window.location.origin}/static/login_success.html`;
+        const staticSuccessUrl = withStaticUrl('/static/login_success.html');
+        const successUrl = /^(https?:)?\/\//.test(staticSuccessUrl)
+          ? staticSuccessUrl
+          : `${window.location.origin}${staticSuccessUrl}`;
 
         // 系统的登录页地址
         const siteLoginUrl = window.PAAS_SERVICE_URL || '';

@@ -16,6 +16,57 @@
   <body>
     <div id="app"></div>
     <script>
+      function normalizeBasePath(value) {
+        var path = (value || '').trim();
+        if (!path || path.indexOf('__') === 0) {
+          return '/';
+        }
+        if (path.charAt(0) !== '/') {
+          path = '/' + path;
+        }
+        path = path.replace(/\/+/g, '/');
+        if (path.charAt(path.length - 1) !== '/') {
+          path += '/';
+        }
+        return path;
+      }
+
+      function normalizeAssetBase(value, fallback) {
+        var base = (value || '').trim();
+        if (!base || base.indexOf('__') === 0) {
+          return normalizeBasePath(fallback);
+        }
+        if (/^(https?:)?\/\//.test(base)) {
+          return base.charAt(base.length - 1) === '/' ? base : base + '/';
+        }
+        return normalizeBasePath(base);
+      }
+
+      function joinUrl(base, path) {
+        var baseValue = String(base || '/');
+        var pathValue = String(path || '');
+        if (/^(https?:)?\/\//.test(pathValue)) {
+          return pathValue;
+        }
+        if (/^https?:\/\//.test(baseValue)) {
+          var url = new URL(baseValue);
+          url.pathname = [url.pathname, pathValue].join('/').replace(/\/+/g, '/');
+          return url.toString().replace(/\/$/, pathValue ? '' : '/');
+        }
+        if (baseValue.indexOf('//') === 0) {
+          return [baseValue.replace(/\/+$/, ''), pathValue.replace(/^\/+/, '')]
+            .filter(function (item) { return item !== ''; })
+            .join('/');
+        }
+        var startsWithRoot = baseValue.indexOf('/') === 0;
+        var joined = [baseValue, pathValue]
+          .filter(function (item) { return item !== ''; })
+          .join('/')
+          .replace(/\/+/g, '/');
+        return startsWithRoot ? '/' + joined.replace(/^\/+/, '') : joined;
+      }
+
+      var BK_SITE_PATH = normalizeBasePath('<%= process.env.BK_SITE_PATH %>');
       var PAAS_SERVICE_URL = '<%= process.env.BK_PAAS_SERVICE_URL %>';
       var AJAX_URL_PREFIX =
         '<%= process.env.NODE_ENV %>' === 'development'
@@ -48,7 +99,12 @@
       // aegis监控
       // var AEGISID = '<%= process.env.BK_AEGISID %>';
 
-      var BK_STATIC_URL = '<%= process.env.BK_STATIC_URL %>'
+      var BK_STATIC_URL = normalizeAssetBase('<%= process.env.BK_STATIC_URL %>', BK_SITE_PATH)
+      window.BK_SITE_PATH = BK_SITE_PATH
+      window.BK_STATIC_URL = BK_STATIC_URL
+      window.__loadAssetsUrl__ = function (src) {
+        return joinUrl(window.BK_STATIC_URL || '/', src);
+      }
       var IS_ENV_TAI = Boolean(location.host === '<%= process.env.BK_CODECC_HOST_TAI_URL %>')
 
       // 太湖环境
@@ -62,16 +118,24 @@
       (function () {
         if (window.self !== window.top) {
           // iframe嵌入
-          var prefix = '__BK_CI_PUBLIC_PATH_PREFIX__' ? '__BK_CI_PUBLIC_PATH_PREFIX__' : DEVOPS_SITE_URL
+          var ciPublicPathPrefix = '__BK_CI_PUBLIC_PATH_PREFIX__';
+          var prefix = ciPublicPathPrefix && ciPublicPathPrefix.indexOf('__') !== 0
+            ? ciPublicPathPrefix
+            : DEVOPS_SITE_URL;
           var script = document.createElement('script');
           script.type = 'text/javascript';
           script.src = prefix + '/console/static/devops-utils.js';
           document.getElementsByTagName('head')[0].appendChild(script);
         }
         if ('<%= process.env.NODE_ENV %>' !== 'development') {
+          var sitePath = window.BK_SITE_PATH || '/';
+          var pathWithoutSitePath = document.location.pathname;
+          if (sitePath !== '/' && pathWithoutSitePath.indexOf(sitePath) === 0) {
+            pathWithoutSitePath = '/' + pathWithoutSitePath.slice(sitePath.length);
+          }
           var projectId =
-            document.location.pathname.match(/^\/codecc\/([\w.-_]+)\/?/)?.[1] ||
-            document.location.search.match(/projectId=([\w.-_]+)/)?.[1] || '';
+            pathWithoutSitePath.match(/^\/codecc\/([\w._-]+)\/?/)?.[1] ||
+            document.location.search.match(/projectId=([\w._-]+)/)?.[1] || '';
           var projectIdInCookie = document.cookie.replace(
             /(?:(?:^|.*;\s*)X-DEVOPS-PROJECT-ID\s*\=\s*([^;]*).*$)|^.*$/,
             '$1'
@@ -82,7 +146,8 @@
               projectId +
               ';domain=' +
               location.host +
-              ';path=/';
+              ';path=' +
+              (window.BK_SITE_PATH || '/');
             document.location.reload();
           }
         }

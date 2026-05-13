@@ -104,6 +104,8 @@ spec:
               value: {{ .Values.config.bkCodeccGatewayRegionName }}
             - name: BK_CI_FQDN
               value: {{ .Values.config.bkCiFqdn }}
+            - name: BK_SITE_PATH
+              value: {{ default "/" .Values.config.bkSitePath }}
             - name: BK_PUBLIC_PATH_PREFIX
               value: {{ .Values.config.bkPublicPathPrefix }}
             - name: BK_CI_PUBLIC_PATH_PREFIX

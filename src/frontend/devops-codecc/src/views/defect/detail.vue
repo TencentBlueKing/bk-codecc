@@ -586,6 +586,7 @@ import AiSuggestion from './ai-suggestion.vue';
 import CheckerDetail from './checker-detail.vue';
 import DEPLOY_ENV from '@/constants/env';
 import ignoreApprovalIng from '@/images/ignore-approval-ing.svg';
+import { withSitePath } from '@/utils/path';
 
 export default {
   components: {
@@ -1615,18 +1616,25 @@ export default {
     shareDefect() {
       const { projectId, taskId } = this.$route.params;
       const { toolName, entityId, status } = this.currentFile;
-      let prefix = `${location.host}`;
+      let url = `${location.host}${withSitePath(`/codecc/${projectId}/task/${taskId}/defect/lint/${toolName}/list`)}
+?entityId=${entityId}&status=${status}`;
       if (window.self !== window.top) {
-        prefix = `${window.DEVOPS_SITE_URL}/console`;
+        url = `${window.DEVOPS_SITE_URL}/console/codecc/${projectId}/task/${taskId}/defect/lint/${toolName}/list
+?entityId=${entityId}&status=${status}`;
       }
-      let url = `${prefix}/codecc/${projectId}/task/${taskId}/defect/lint/${toolName}/list
-?entityId=${entityId}&status=${status}`;
       if (this.isProjectDefect) {
-        url = `${prefix}/codecc/${projectId}/defect/list
+        url = `${location.host}${withSitePath(`/codecc/${projectId}/defect/list`)}
 ?entityId=${entityId}&status=${status}`;
+        if (window.self !== window.top) {
+          url = `${window.DEVOPS_SITE_URL}/console/codecc/${projectId}/defect/list
+?entityId=${entityId}&status=${status}`;
+        }
       }
       if (this.isPaas) {
-        url = `${prefix}/paas/ignored/${toolName}/list?entityId=${entityId}`;
+        url = `${location.host}${withSitePath(`/paas/ignored/${toolName}/list`)}?entityId=${entityId}`;
+        if (window.self !== window.top) {
+          url = `${window.DEVOPS_SITE_URL}/console/paas/ignored/${toolName}/list?entityId=${entityId}`;
+        }
       }
       const input = document.createElement('input');
       document.body.appendChild(input);
