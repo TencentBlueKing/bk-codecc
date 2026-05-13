@@ -1481,6 +1481,7 @@ import { export_json_to_excel } from '@/vendor/export2Excel';
 import DefectBlock from './defect-block/defect-block';
 import OperateDialog from '@/components/operate-dialog';
 import UserSelector from '@/components/user-selector/index.vue';
+import { withSitePath } from '@/utils/path';
 
 // 搜索过滤项缓存
 const COVERITY_SEARCH_OPTION_CACHE = 'search_option_columns_coverity';
@@ -2972,10 +2973,12 @@ export default {
       const { projectId, taskId } = this.$route.params;
       const { toolName, entityId, status } = this.currentFile;
       let prefix = `${location.protocol}//${location.host}`;
+      let path = withSitePath(`/codecc/${projectId}/task/${taskId}/defect/compile/${toolName}/list`);
       if (window.self !== window.top) {
         prefix = `${location.protocol}${window.DEVOPS_SITE_URL}/console`;
+        path = `/codecc/${projectId}/task/${taskId}/defect/compile/${toolName}/list`;
       }
-      const url = `${prefix}/codecc/${projectId}/task/${taskId}/defect/compile/${toolName}/list
+      const url = `${prefix}${path}
 ?entityId=${entityId}&status=${status}`;
       const input = document.createElement('input');
       document.body.appendChild(input);

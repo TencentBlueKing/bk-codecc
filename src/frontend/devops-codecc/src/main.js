@@ -3,6 +3,7 @@
  * @author blueking
  */
 
+import '../static/webpack_public_path';
 import Vue from 'vue';
 
 import router from './router';
