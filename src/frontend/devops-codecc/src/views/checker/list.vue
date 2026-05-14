@@ -408,6 +408,7 @@ import { mapState } from 'vuex';
 import { format } from 'date-fns';
 import ccCollapse from '@/components/cc-collapse';
 import CodeMirror from '@/common/codemirror';
+import { convertLink, normalizeHtml } from '@/common/util';
 import { leaveConfirm } from '../../common/leave-confirm';
 import { language } from '../../i18n';
 import DEPLOY_ENV from '@/constants/env';
@@ -768,7 +769,7 @@ export default {
           const tools = ['COVERITY', 'KLOCWORK'];
           if (tools.includes(row.toolName) && res.codeExample) {
             this.hasDetail = true;
-            document.getElementById('checkerDetail').innerHTML = res.codeExample;
+            document.getElementById('checkerDetail').innerHTML = normalizeHtml(res.codeExample);
           } else {
             this.hasDetail = false;
           }
@@ -908,12 +909,7 @@ export default {
       this.activeName = activeName;
     },
     handleHttp(str) {
-      let newStr = str.replace(/>/g, '&gt;').replace(/</g, '&lt;');
-      // const reg = /(http:\/\/|https:\/\/)(.+)/g
-      // newStr = newStr.replace(reg, '<a target="_blank" href=\'$1$2\'>$1$2</a>')
-      const reg = /\[([^\]]+)\]\(([http:\\|https:\\]{1}[^)]+)\)/g;
-      newStr = newStr.replace(reg, '<a target="_blank" href=\'$2\'>$1</a>');
-      return newStr;
+      return convertLink(str);
     },
     handleBeforeClose() {
       return leaveConfirm();

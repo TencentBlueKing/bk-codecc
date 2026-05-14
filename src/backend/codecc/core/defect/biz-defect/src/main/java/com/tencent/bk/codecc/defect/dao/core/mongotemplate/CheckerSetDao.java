@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -52,6 +53,17 @@ public class CheckerSetDao {
 
     @Autowired
     private MongoTemplate defectCoreMongoTemplate;
+
+    /**
+     * 标准化模糊搜索关键字：截断长度并做字面量匹配
+     */
+    private static String normalizeKeyword(String input) {
+        if (input == null) {
+            return "";
+        }
+        String trimmed = input.length() > 64 ? input.substring(0, 64) : input;
+        return Pattern.quote(trimmed);
+    }
 
     /**
      * 更新指定规则集所有版本数据
@@ -99,7 +111,7 @@ public class CheckerSetDao {
             }
         }
         if (StringUtils.isNotBlank(keyWord)) {
-            andCriteriaList.add(Criteria.where("checker_set_name").regex(keyWord));
+            andCriteriaList.add(Criteria.where("checker_set_name").regex(normalizeKeyword(keyWord)));
         }
         if (CollectionUtils.isNotEmpty(codeLang)) {
             List<Criteria> langCriteria = new ArrayList<>();
@@ -140,7 +152,7 @@ public class CheckerSetDao {
         if (null != officialFlag && officialFlag) {
             List<Criteria> secondAndCriteriaList = new ArrayList<>();
             if (StringUtils.isNotBlank(keyWord)) {
-                secondAndCriteriaList.add(Criteria.where("checker_set_name").regex(keyWord));
+                secondAndCriteriaList.add(Criteria.where("checker_set_name").regex(normalizeKeyword(keyWord)));
             }
             List<Criteria> langOrCriteria = new ArrayList<>();
             if (CollectionUtils.isNotEmpty(codeLang)) {
@@ -238,11 +250,12 @@ public class CheckerSetDao {
         // 查询条件
         List<Criteria> criteriaList = new ArrayList<>();
         if (StringUtils.isNotBlank(quickSearch)) {
+            String normalizedQuickSearch = normalizeKeyword(quickSearch);
             criteriaList.add(
                     new Criteria().orOperator(
-                            Criteria.where("checker_set_name").regex(quickSearch, "i"),
-                            Criteria.where("creator").regex(quickSearch, "i"),
-                            Criteria.where("description").regex(quickSearch, "i")
+                            Criteria.where("checker_set_name").regex(normalizedQuickSearch, "i"),
+                            Criteria.where("creator").regex(normalizedQuickSearch, "i"),
+                            Criteria.where("description").regex(normalizedQuickSearch, "i")
                     )
             );
         }

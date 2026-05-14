@@ -77,23 +77,38 @@ cluster:
   tag: __BK_CODECC_CLUSTER_TAG__
 
 
-# monitor path config
-management: 
+management:
   endpoints:
     web:
       base-path: /management
       exposure:
-        include: '*'
+        include: health,info,prometheus
   security:
-    enabled: false
+    enabled: true
   endpoint:
     health:
-      show-details: always
+      show-details: never
       group:
         readiness:
           include: readinessState, readinessIndicator
         liveness:
           include: livenessState, livenessIndicator
+    env:
+      enabled: false
+    configprops:
+      enabled: false
+    heapdump:
+      enabled: false
+    threaddump:
+      enabled: false
+    loggers:
+      enabled: false
+    beans:
+      enabled: false
+    mappings:
+      enabled: false
+    auditevents:
+      enabled: false
 
 bkci:
   public:

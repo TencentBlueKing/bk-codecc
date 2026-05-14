@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -86,6 +87,17 @@ public class TaskDao implements CommonTaskDao {
 
     @Autowired
     private MongoTemplate mongoTemplate;
+
+    /**
+     * 标准化模糊搜索关键字：截断长度并做字面量匹配
+     */
+    private static String normalizeKeyword(String input) {
+        if (input == null) {
+            return "";
+        }
+        String trimmed = input.length() > 64 ? input.substring(0, 64) : input;
+        return Pattern.quote(trimmed);
+    }
 
     public Boolean updateTask(long taskId, Long codeLang, String nameCn, List<String> taskOwner,
             List<String> taskMember, String disableTime, int status, String userName) {
@@ -506,8 +518,8 @@ public class TaskDao implements CommonTaskDao {
         Query query = new Query();
         query.addCriteria(Criteria.where("create_from").is(createFrom))
                 .addCriteria(Criteria.where("status").is(status))
-                .addCriteria(Criteria.where("project_id").regex(projectId))
-                .addCriteria(Criteria.where("tool_names").regex(toolNames));
+                .addCriteria(Criteria.where("project_id").regex(normalizeKeyword(projectId)))
+                .addCriteria(Criteria.where("tool_names").regex(normalizeKeyword(toolNames)));
         query.skip(skip).limit(limit);
         return mongoTemplate.find(query, TaskInfoEntity.class);
     }
@@ -528,7 +540,7 @@ public class TaskDao implements CommonTaskDao {
         Query query = new Query();
         query.addCriteria(Criteria.where("create_from").is(createFrom))
                 .addCriteria(Criteria.where("status").is(status))
-                .addCriteria(Criteria.where("project_id").regex(projectId));
+                .addCriteria(Criteria.where("project_id").regex(normalizeKeyword(projectId)));
         query.skip(skip).limit(limit);
         return mongoTemplate.find(query, TaskInfoEntity.class);
     }
@@ -566,8 +578,8 @@ public class TaskDao implements CommonTaskDao {
 
     public List<TaskInfoEntity> findByCodeccNameCn(String projectId, String nameCn, Long offset, Long limit) {
         Query query = new Query();
-        query.addCriteria(Criteria.where("project_id").regex(projectId));
-        query.addCriteria(Criteria.where("nameCn").regex(nameCn));
+        query.addCriteria(Criteria.where("project_id").regex(normalizeKeyword(projectId)));
+        query.addCriteria(Criteria.where("nameCn").regex(normalizeKeyword(nameCn)));
 
         if (offset != null && limit != null) {
             query.skip(Math.toIntExact(offset)).limit(Math.toIntExact(limit));

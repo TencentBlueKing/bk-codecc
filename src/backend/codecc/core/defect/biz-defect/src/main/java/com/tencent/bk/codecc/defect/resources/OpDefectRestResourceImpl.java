@@ -40,9 +40,15 @@ import com.tencent.devops.common.service.BizServiceFactory;
 import com.tencent.devops.common.util.ThreadPoolUtil;
 import com.tencent.devops.common.web.RestResource;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import static com.tencent.devops.common.api.auth.HeaderKt.AUTH_HEADER_DEVOPS_USER_ID;
 
 /**
  * op接口实现
@@ -83,6 +89,19 @@ public class OpDefectRestResourceImpl implements OpDefectRestResource {
 
     @Autowired
     private OpAuthApi opAuthApi;
+
+    /**
+     * 从请求头读取调用者并按管理员维度校验
+     */
+    private void requireAdmin() {
+        ServletRequestAttributes attributes =
+                (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        HttpServletRequest request = attributes.getRequest();
+        String userName = request.getHeader(AUTH_HEADER_DEVOPS_USER_ID);
+        if (StringUtils.isBlank(userName) || !authExPermissionApi.isAdminMember(userName)) {
+            throw new CodeCCException(CommonMessageCode.IS_NOT_ADMIN_MEMBER);
+        }
+    }
 
     @Override
     public Result<DeptTaskDefectRspVO> queryDeptTaskDefect(String userName, DeptTaskDefectReqVO deptTaskDefectReqVO) {
@@ -125,12 +144,14 @@ public class OpDefectRestResourceImpl implements OpDefectRestResource {
     @Override
     public Result<Boolean> initCheckerDetailScript(String toolName, Integer pageNum, Integer pageSize, String sortField,
             String sortType) {
+        requireAdmin();
         return new Result<>(
                 refreshCheckerScriptService.initCheckerDetailScript(toolName, pageNum, pageSize, sortField, sortType));
     }
 
     @Override
     public Result<Long> getTaskCodeLineCount(@NotNull QueryTaskListReqVO reqVO) {
+        requireAdmin();
         return new Result<>(queryCodeLineService.queryCodeLineByTaskIds(reqVO.getTaskIds()));
     }
 
@@ -147,27 +168,32 @@ public class OpDefectRestResourceImpl implements OpDefectRestResource {
 
     @Override
     public Result<CheckerSetParamsVO> getCheckerSetParams() {
+        requireAdmin();
         return new Result<>(checkerSetQueryBizService.getCheckerSetParams());
     }
 
     @Override
     public Result<Boolean> initCodeRepoStatistic(DeptTaskDefectReqVO reqVO, Integer pageNum, Integer pageSize,
             String sortField, String sortType) {
+        requireAdmin();
         return new Result<>(codeRepoService.initCodeRepoStatistic(reqVO, pageNum, pageSize, sortField, sortType));
     }
 
     @Override
     public Result<Boolean> codeRepoStatisticFixed(DeptTaskDefectReqVO reqVO) {
+        requireAdmin();
         return new Result<>(codeRepoService.codeRepoStatisticFixed(reqVO));
     }
 
     @Override
     public Result<Boolean> initCodeRepoStatTrend(QueryTaskListReqVO reqVO) {
+        requireAdmin();
         return new Result<>(codeRepoService.initCodeRepoStatTrend(reqVO));
     }
 
     @Override
     public Result<List<QueryTaskListReqVO>> queryAccessedTaskAndToolName(QueryTaskListReqVO reqVO) {
+        requireAdmin();
         return new Result<>(tencentGetTaskLogService.queryAccessedTaskAndToolName(reqVO));
     }
 
@@ -192,6 +218,7 @@ public class OpDefectRestResourceImpl implements OpDefectRestResource {
 
     @Override
     public Result<String> queryCheckerSetNameByCheckerSetId(String checkerSetId) {
+        requireAdmin();
         return new Result<>(checkerSetQueryBizService.queryCheckerSetNameByCheckerSetId(checkerSetId));
     }
 

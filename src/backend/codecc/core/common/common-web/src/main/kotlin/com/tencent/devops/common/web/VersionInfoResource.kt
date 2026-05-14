@@ -26,14 +26,17 @@
 
 package com.tencent.devops.common.web
 
+import com.tencent.devops.common.api.auth.AUTH_HEADER_DEVOPS_USER_ID
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
 import org.slf4j.LoggerFactory
 import javax.ws.rs.Consumes
 import javax.ws.rs.GET
+import javax.ws.rs.HeaderParam
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
 import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response
 
 @RestResource
 @Api(tags = ["EXTERNAL_INFO"], description = "获取我们当前的版本信息")
@@ -45,13 +48,19 @@ class VersionInfoResource {
     @ApiOperation("获取微服务当前信息")
     @GET
     @Path("/")
-    fun getInfo(): String {
+    fun getInfo(
+        @HeaderParam(AUTH_HEADER_DEVOPS_USER_ID) userName: String?
+    ): Response {
+        if (userName.isNullOrBlank()) {
+            return Response.status(Response.Status.FORBIDDEN).entity("").build()
+        }
         try {
-            return VersionInfoResource::class.java.getResource("/version.txt").readText()
+            val content = VersionInfoResource::class.java.getResource("/version.txt")?.readText() ?: ""
+            return Response.ok(content).build()
         } catch (t: Throwable) {
             logger.warn("Fail to read the version info", t)
         }
-        return ""
+        return Response.ok("").build()
     }
 
     companion object {
