@@ -23,7 +23,7 @@
     "bk-magic-vue": "2.5.6",
     "@vue/composition-api": "^1.7.1",
     "art-template": "^4.13.2",
-    "axios": "^0.21.1",
+    "axios": "^0.31.1",
     "bk-permission": "0.0.21",
     "brace": "^0.10.0",
     "codemirror": "^5.45.0",

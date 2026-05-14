@@ -220,6 +220,13 @@ export default {
       }
     },
     async submit() {
+      if (this.hasNoPermission) {
+        this.$bkMessage({
+          theme: 'error',
+          message: this.$t('您没有权限保存该规则集'),
+        });
+        return;
+      }
       const version = this.version || this.$route.params.version;
       const checkersetId = this.checkersetId || this.$route.params.checkersetId;
       const params = { checkersetId, version };

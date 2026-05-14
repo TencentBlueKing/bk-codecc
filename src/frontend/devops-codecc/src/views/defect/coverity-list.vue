@@ -2394,6 +2394,15 @@ export default {
       }
       const { detailContent } = this;
       this.currentFile.locatedIndex = 0;
+      const escapeHtml = (val) => {
+        if (val === undefined || val === null) return '';
+        return String(val)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      };
       defectList.forEach((defect) => {
         if (defect.fileMd5 !== fileMd5) return;
         const { index, lineNum, message, main, kind } = defect;
@@ -2413,8 +2422,8 @@ export default {
           hints.innerHTML = `
                             <div class="lint-info-main">
                                 <i class="lint-icon bk-icon icon-right-shape"></i>
-                                <p>${checkerDom.innerText}</p>
-                                <p>${displayType}(${checker})</p>
+                                <p>${escapeHtml(checkerDom.innerText)}</p>
+                                <p>${escapeHtml(displayType)}(${escapeHtml(checker)})</p>
                             </div>
                             <div>${messageDom.outerHTML}</div>
                         `;
@@ -2426,7 +2435,7 @@ export default {
         } else {
           hints.innerHTML = `
                             <div class="lint-info">
-                                <p>${checkerDom.outerHTML}</p>
+                                <p>${escapeHtml(checkerDom.innerText)}</p>
                             </div>
                         `;
           codeViewer.addLineClass(
