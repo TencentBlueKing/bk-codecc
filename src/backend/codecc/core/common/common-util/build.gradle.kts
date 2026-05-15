@@ -19,7 +19,7 @@ dependencies {
     api("commons-collections:commons-collections")
     api("commons-lang:commons-lang:2.6")
     api("commons-codec:commons-codec:1.9")
-    api("com.google.code.gson:gson:2.8.2")
+    api("com.google.code.gson:gson:2.8.9")
     api("com.alibaba:fastjson")
     api("com.squareup.okhttp3:okhttp")
     api("org.springframework.boot:spring-boot-starter-jersey")

@@ -5,13 +5,14 @@ import multiprocessing
 import xmlrpc.client
 import zipfile
 import shutil
+import subprocess
 
 def main_input(stream_name, argv):
-    command = 'python scan.py ' + stream_name
-    print(command)
+    cmd = ['python', 'scan.py', stream_name]
     for i in range(len(argv)-2):
-        command += ' \''+argv[i+2]+'\''
-    ret = os.system(command)
+        cmd.append(argv[i+2])
+    print(' '.join(cmd))
+    ret = subprocess.call(cmd, shell=False)
     if not ret == 0:
         raise
 

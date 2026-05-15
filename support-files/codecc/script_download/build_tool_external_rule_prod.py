@@ -191,13 +191,11 @@ def main_input_new(scan_path, stream_name, tool,  argv):
     for scan_tool in tool_list:
         result_status = 0
         os.chdir(scan_path)
-        command = 'python3 scan.py ' + stream_name +' '+scan_tool
+        command = ['python3', 'scan.py', stream_name, scan_tool]
         for i in range(len(argv)-2):
-            if os_type == "Windows":
-                command += ' \"'+argv[i+2].replace('\"','\\"')+'\"'
-            else:
-                command += ' \''+argv[i+2]+'\''
-        proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,shell=True, start_new_session=True)
+            command.append(argv[i+2])
+        print(' '.join(command))
+        proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False, start_new_session=True)
         try:
             while True:
                 next_line = proc.stdout.readline()
