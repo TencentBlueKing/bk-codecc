@@ -60,6 +60,13 @@ class PermissionAuthFilter(
 
     companion object {
         val logger: Logger = LoggerFactory.getLogger(PermissionAuthFilter::class.java)
+
+        private val REQUIRE_GATEWAY_HEADER: Boolean =
+            System.getProperty("codecc.gateway.requireHeader", "false")
+                .equals("true", ignoreCase = true)
+
+        private val GATEWAY_HEADER: String =
+            System.getProperty("codecc.gateway.headerName", "X-DEVOPS-JWT-TOKEN")
     }
 
     override fun filter(requestContext: ContainerRequestContext) {
@@ -69,6 +76,13 @@ class PermissionAuthFilter(
 
         // 如果是管理员就直接校验通过
         if (authExPermissionApi.isAdminMember(user)) {
+            if (REQUIRE_GATEWAY_HEADER) {
+                val gatewayToken = requestContext.getHeaderString(GATEWAY_HEADER)
+                if (gatewayToken.isNullOrBlank()) {
+                    logger.error("admin auth rejected: missing $GATEWAY_HEADER, user: $user")
+                    throw UnauthorizedException("missing gateway header")
+                }
+            }
             return
         }
 

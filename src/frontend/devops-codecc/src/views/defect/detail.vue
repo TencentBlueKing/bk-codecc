@@ -496,7 +496,7 @@
 
 <script>
 import CodeMirror from '@/common/codemirror';
-import { addClass, formatDiff, getClosest, hasClass } from '@/common/util';
+import { addClass, escapeHtml, formatDiff, getClosest, hasClass } from '@/common/util';
 import { mapState } from 'vuex';
 import { format } from 'date-fns';
 import { bus } from '@/common/bus';
@@ -1147,10 +1147,13 @@ export default {
         const { index, lineNum, message } = defect;
         const messageDom = document.createElement('span');
         messageDom.style.width = '100%';
-        const newMessage = `${index ? `${index}.` : ''}${message}`;
-        messageDom.innerHTML = toolName === 'WECHECK'
-          ? `<pre style="margin: 0;overflow-y: auto">${newMessage}</pre>`
-          : marked.parse(newMessage);
+        const escapedMessage = escapeHtml(message);
+        const newMessage = `${index ? `${index}.` : ''}${escapedMessage}`;
+        if (toolName === 'WECHECK') {
+          messageDom.innerHTML = `<pre style="margin: 0;overflow-y: auto">${newMessage}</pre>`;
+        } else {
+          messageDom.innerHTML = marked.parse(newMessage);
+        }
         const hintId = `${lineNum}-${0}`;
         let mainClass = '';
         const hasRedPoint = !localStorage.getItem('hasRedPoint');
@@ -1159,21 +1162,26 @@ export default {
           // 评论
           if (detailVO.codeComment) {
             for (const comment of detailVO.codeComment.commentList) {
+              const userName = escapeHtml(comment.userName);
+              const commentText = escapeHtml(comment.comment);
+              const singleCommentId = escapeHtml(comment.singleCommentId);
+              const commentEntityId = escapeHtml(detailVO.codeComment.entityId);
+              const defectEntityId = escapeHtml(detailVO.entityId);
               checkerComment += `<p class="comment-item">
                 <span class="info">
                   <i class="codecc-icon icon-commenter"></i>
-                  <span>${comment.userName}</span>
-                  <span title="${comment.comment}">
-                    ${comment.comment}
+                  <span>${userName}</span>
+                  <span title="${commentText}">
+                    ${commentText}
                   </span>
                 </span>
                 <span class="handle">
-                  <span>${this.formatTime(comment.commentTime)}</span>
+                  <span>${escapeHtml(this.formatTime(comment.commentTime))}</span>
                   <i class="bk-icon icon-delete"
-                    data-singlecommentid="comment-${comment.singleCommentId}"
-                    data-commentid="comment-${detailVO.codeComment.entityId}"
-                    data-comment="${comment.comment}"
-                    data-entityid="${detailVO.entityId}"
+                    data-singlecommentid="comment-${singleCommentId}"
+                    data-commentid="comment-${commentEntityId}"
+                    data-comment="${commentText}"
+                    data-entityid="${defectEntityId}"
                   ></i>
                 </span>
               </p>`;

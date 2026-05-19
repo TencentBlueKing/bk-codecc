@@ -101,6 +101,7 @@
 <script>
 import { mapGetters, mapState } from 'vuex';
 import { bus } from './common/bus';
+import { convertLink } from './common/util';
 import { toggleLang } from './i18n';
 import { getToolMeta, getToolList, getTaskList } from './common/preload';
 import DEPLOY_ENV from '@/constants/env';
@@ -292,10 +293,7 @@ export default {
       this[`${key}Visible`] = false;
     },
     handleHttp(str) {
-      let newStr = str.replace(/>/g, '&gt;').replace(/</g, '&lt;');
-      const reg = /\[([^\]]+)\]\(([http:\\|https:\\]{1}[^)]+)\)/g;
-      newStr = newStr.replace(reg, '<a target="_blank" href=\'$2\'>$1</a>');
-      return newStr;
+      return convertLink(str);
     },
     confirmPermission() {
       this.permissionDialogVisible = false;

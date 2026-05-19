@@ -79,20 +79,38 @@ public class FileUtils {
             logger.error("ZipFile {} ready failed: ", file, e);
             return false;
         }
+        File canonicalDestDir;
+        try {
+            canonicalDestDir = new File(destDir).getCanonicalFile();
+        } catch (IOException e) {
+            logger.error("unzip resolve dest dir failed, destDir: {}", destDir, e);
+            return false;
+        }
         Enumeration<? extends ZipEntry> entries = zipFile.entries();
         while (entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
-            File entryDestination = new File(destDir, entry.getName());
+            File entryDestination = new File(canonicalDestDir, entry.getName());
+            File canonicalEntry;
+            try {
+                canonicalEntry = entryDestination.getCanonicalFile();
+            } catch (IOException e) {
+                logger.error("unzip resolve entry path failed, entry: {}", entry.getName(), e);
+                return false;
+            }
+            if (!canonicalEntry.toPath().startsWith(canonicalDestDir.toPath())) {
+                logger.error("unexpected entry path: {}", entry.getName());
+                return false;
+            }
             if (entry.isDirectory()) {
-                if (!entryDestination.exists()) {
-                    entryDestination.mkdirs();
+                if (!canonicalEntry.exists()) {
+                    canonicalEntry.mkdirs();
                 }
             } else {
-                File parentDir = entryDestination.getParentFile();
-                if (!parentDir.exists()) {
+                File parentDir = canonicalEntry.getParentFile();
+                if (parentDir != null && !parentDir.exists()) {
                     parentDir.mkdirs();
                 }
-                if (!unzip(zipFile, entry, entryDestination)) {
+                if (!unzip(zipFile, entry, canonicalEntry)) {
                     return false;
                 }
             }

@@ -535,6 +535,88 @@ export function array2Str(arr, separator = ';') {
   if (isArray(arr)) return arr.join(separator);
 }
 
+/**
+ * 解析并规范化 HTML 字符串，保留常见结构性节点
+ * @param {string} html 原始 html 字符串
+ * @returns string 规范化后的 html
+ */
+export function normalizeHtml(html) {
+  if (html === undefined || html === null) return '';
+  const dangerousTags = ['script', 'iframe', 'object', 'embed', 'link', 'meta', 'style', 'svg', 'math', 'base'];
+  const template = document.createElement('template');
+  template.innerHTML = String(html);
+  const walk = (node) => {
+    const children = Array.from(node.childNodes);
+    children.forEach((child) => {
+      if (child.nodeType === 1) {
+        const tag = child.tagName.toLowerCase();
+        if (dangerousTags.indexOf(tag) !== -1) {
+          child.remove();
+          return;
+        }
+        Array.from(child.attributes).forEach((attr) => {
+          const name = attr.name.toLowerCase();
+          const value = String(attr.value || '').trim();
+          if (name.startsWith('on') || name === 'srcdoc') {
+            child.removeAttribute(attr.name);
+            return;
+          }
+          if ((name === 'href' || name === 'src' || name === 'action' || name === 'formaction')
+            && /^\s*(javascript:|vbscript:|data:text\/html)/i.test(value)) {
+            child.removeAttribute(attr.name);
+          }
+        });
+        walk(child);
+      }
+    });
+  };
+  walk(template.content);
+  return template.innerHTML;
+}
+
+/**
+ * 对字符串中的 HTML 特殊字符进行实体转义
+ * @param {*} val 待转义的值
+ * @returns string
+ */
+export function escapeHtml(val) {
+  if (val === undefined || val === null) return '';
+  return String(val)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * 将文本中的 markdown 风格链接 `[text](http(s)://...)` 转为 `<a>` 标签
+ * @param {*} str 原始文本
+ * @returns string HTML 字符串
+ */
+export function convertLink(str) {
+  if (str === undefined || str === null) return '';
+  const PLACEHOLDER_PREFIX = '\u0000LINK';
+  const PLACEHOLDER_SUFFIX = '\u0000';
+  const links = [];
+  const reg = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
+  const replaced = String(str).replace(reg, (match, text, url) => {
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        return match;
+      }
+      const idx = links.length;
+      links.push(`<a target="_blank" href="${escapeHtml(parsed.href)}">${escapeHtml(text)}</a>`);
+      return `${PLACEHOLDER_PREFIX}${idx}${PLACEHOLDER_SUFFIX}`;
+    } catch (e) {
+      return match;
+    }
+  });
+  const escaped = escapeHtml(replaced);
+  return escaped.replace(new RegExp(`${PLACEHOLDER_PREFIX}(\\d+)${PLACEHOLDER_SUFFIX}`, 'g'), (m, idx) => links[Number(idx)] || '');
+}
+
 export function isJSON(str = '') {
   try {
     JSON.parse(str);

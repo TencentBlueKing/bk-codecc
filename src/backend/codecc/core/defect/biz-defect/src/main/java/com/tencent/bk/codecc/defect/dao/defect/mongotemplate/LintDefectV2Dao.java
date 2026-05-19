@@ -84,6 +84,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -586,7 +587,13 @@ public class LintDefectV2Dao {
         // 路径过滤
         if (CollectionUtils.isNotEmpty(fileList)) {
             List<Criteria> criteriaList = new ArrayList<>();
-            fileList.forEach(file -> criteriaList.add(Criteria.where("file_path").regex(file)));
+            fileList.forEach(file -> {
+                if (file == null) {
+                    return;
+                }
+                String trimmedFile = file.length() > 256 ? file.substring(0, 256) : file;
+                criteriaList.add(Criteria.where("file_path").regex(Pattern.quote(trimmedFile)));
+            });
             andOpList.add(new Criteria().orOperator(criteriaList.toArray(new Criteria[0])));
         }
 

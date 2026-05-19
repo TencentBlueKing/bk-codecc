@@ -33,6 +33,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * 基础数据表持久层
@@ -57,9 +58,10 @@ public class BaseDataDao {
 
         // 搜索框模糊查询
         if (StringUtils.isNotEmpty(paramValue)) {
+            String quoted = Pattern.quote(paramValue.length() > 64 ? paramValue.substring(0, 64) : paramValue);
             List<Criteria> quickSearchCriteria = new ArrayList<>();
-            quickSearchCriteria.add(Criteria.where("param_value").regex(paramValue));
-            quickSearchCriteria.add(Criteria.where("created_by").regex(paramValue));
+            quickSearchCriteria.add(Criteria.where("param_value").regex(quoted));
+            quickSearchCriteria.add(Criteria.where("created_by").regex(quoted));
             criteriaList.add(new Criteria().orOperator(quickSearchCriteria.toArray(new Criteria[0])));
 
         }
@@ -109,7 +111,8 @@ public class BaseDataDao {
 
         // 流水线id支持匹配查询
         if (StringUtils.isNotBlank(paramCode)) {
-            criteria.and("param_code").regex(paramCode);
+            String quoted = Pattern.quote(paramCode.length() > 64 ? paramCode.substring(0, 64) : paramCode);
+            criteria.and("param_code").regex(quoted);
         }
 
         long totalCount = mongoTemplate.count(new Query(criteria), BaseDataEntity.class);
