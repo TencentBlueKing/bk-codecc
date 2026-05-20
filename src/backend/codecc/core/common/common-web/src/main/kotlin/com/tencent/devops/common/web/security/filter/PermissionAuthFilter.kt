@@ -44,6 +44,7 @@ import com.tencent.devops.common.auth.api.util.PermissionUtil
 import com.tencent.devops.common.constant.ComConstants
 import com.tencent.devops.common.constant.CommonMessageCode
 import com.tencent.devops.common.service.utils.SpringContextUtil
+import com.tencent.devops.common.web.security.GatewayTokenVerifier
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.BeansException
@@ -61,6 +62,11 @@ class PermissionAuthFilter(
     companion object {
         val logger: Logger = LoggerFactory.getLogger(PermissionAuthFilter::class.java)
 
+        /**
+         * 是否要求管理员请求必须携带网关注入的来源 token。
+         * 默认 false 以保持向后兼容；运维侧网关下发链路就绪后通过
+         * -Dcodecc.gateway.requireHeader=true 开启，并注册 GatewayTokenVerifier bean 做真正验签。
+         */
         private val REQUIRE_GATEWAY_HEADER: Boolean =
             System.getProperty("codecc.gateway.requireHeader", "false")
                 .equals("true", ignoreCase = true)
@@ -77,11 +83,7 @@ class PermissionAuthFilter(
         // 如果是管理员就直接校验通过
         if (authExPermissionApi.isAdminMember(user)) {
             if (REQUIRE_GATEWAY_HEADER) {
-                val gatewayToken = requestContext.getHeaderString(GATEWAY_HEADER)
-                if (gatewayToken.isNullOrBlank()) {
-                    logger.error("admin auth rejected: missing $GATEWAY_HEADER, user: $user")
-                    throw UnauthorizedException("missing gateway header")
-                }
+                verifyGatewayToken(requestContext, user)
             }
             return
         }
@@ -256,5 +258,34 @@ class PermissionAuthFilter(
      */
     private fun lowerFirstChar(className: String): String {
         return className.replaceFirst(className[0], className[0].toLowerCase())
+    }
+
+    /**
+     * 校验管理员请求的来源 token。
+     * 若注册了 GatewayTokenVerifier bean，则使用其做真实校验（建议实现 JWT 验签 / HMAC / mTLS 链路）；
+     * 否则仅做存在性检查，并打印告警提示运维补齐真实校验逻辑。
+     */
+    private fun verifyGatewayToken(requestContext: ContainerRequestContext, user: String?) {
+        val token = requestContext.getHeaderString(GATEWAY_HEADER)
+        if (token.isNullOrBlank()) {
+            logger.error("admin request rejected: missing $GATEWAY_HEADER, user: $user")
+            throw UnauthorizedException("missing gateway token")
+        }
+        val verifier: GatewayTokenVerifier? = try {
+            SpringContextUtil.getBean(GatewayTokenVerifier::class.java)
+        } catch (e: BeansException) {
+            null
+        }
+        if (verifier == null) {
+            logger.warn(
+                "GatewayTokenVerifier not registered, falling back to presence-only check; " +
+                        "register a bean for real signature verification."
+            )
+            return
+        }
+        if (!verifier.verify(token, user)) {
+            logger.error("admin request rejected: invalid gateway token, user: $user")
+            throw UnauthorizedException("invalid gateway token")
+        }
     }
 }
