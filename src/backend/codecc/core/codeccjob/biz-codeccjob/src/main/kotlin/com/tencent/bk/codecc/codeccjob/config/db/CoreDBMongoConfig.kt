@@ -30,7 +30,7 @@ class CoreDBMongoConfig {
         SimpleMongoClientDatabaseFactory(defectCoreMongoProperties.uri!!)
 
     @Bean
-    fun mongoMappingContext() = MongoMappingContext()
+    fun mongoMappingContext() = MongoMappingContext().apply { setAutoIndexCreation(true) }
 
     @Bean
     fun defectCoreMappingMongoConverter(
