@@ -83,13 +83,11 @@ export default {
           subTitle: titleMap[name],
           maskClose: true,
           confirmFn: () => {
-            const urlPrefix = this.taskDetail.projectId.startsWith('git_')
-              ? window.STREAM_SITE_URL
-              : window.DEVOPS_SITE_URL;
-            const urlSuffix = this.taskDetail.projectId.startsWith('git_')
-              ? `#${this.taskDetail.projectName}`
-              : `/edit#${this.taskDetail.atomCode}`;
-            window.open(`${urlPrefix}/pipeline/${this.taskDetail.pipelineId}${urlSuffix}`, '_blank');
+            const isStream = this.taskDetail.projectId.startsWith('git_');
+            const pipelineUrl = isStream
+              ? `${window.STREAM_SITE_URL}/pipeline/${this.taskDetail.pipelineId}#${this.taskDetail.projectName}`
+              : `${window.DEVOPS_SITE_URL}/console/pipeline/${this.taskDetail.projectId}/${this.taskDetail.pipelineId}/edit#${this.taskDetail.atomCode}`;
+            window.open(pipelineUrl, '_blank');
           },
         });
         return false;
