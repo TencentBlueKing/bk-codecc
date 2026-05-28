@@ -1,5 +1,6 @@
 package com.tencent.bk.codecc.codeccjob.config.db
 
+import org.springframework.boot.autoconfigure.mongo.MongoProperties
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -30,7 +31,8 @@ class CoreDBMongoConfig {
         SimpleMongoClientDatabaseFactory(defectCoreMongoProperties.uri!!)
 
     @Bean
-    fun mongoMappingContext() = MongoMappingContext()
+    fun mongoMappingContext(mongoProperties: MongoProperties) =
+        MongoMappingContext().apply { setAutoIndexCreation(mongoProperties.isAutoIndexCreation ?: false) }
 
     @Bean
     fun defectCoreMappingMongoConverter(

@@ -45,3 +45,14 @@ NoticeList.forEach((item) => {
   fileData = fileData.replace(/getNotice\(\);/g, '');
   fs.writeFileSync(item, fileData);
 });
+
+// 去除 PreCI IDE 内网能力（问题详情侧栏）
+const preCiList = ['./src/views/defect/detail.vue'];
+preCiList.forEach((item) => {
+  let fileData = fs.readFileSync(item).toString();
+  fileData = fileData.replace(
+    /v-if="isOpenIde && checkerShow\(\)"/g,
+    'v-if="isInnerSite && isOpenIde && checkerShow()"',
+  );
+  fs.writeFileSync(item, fileData);
+});

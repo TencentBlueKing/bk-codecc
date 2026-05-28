@@ -36,6 +36,7 @@ import com.tencent.devops.common.api.ToolMetaDetailVO;
 import com.tencent.devops.common.api.constant.CommonMessageCode;
 import com.tencent.devops.common.api.exception.CodeCCException;
 import com.tencent.devops.common.api.pojo.codecc.Result;
+import com.tencent.devops.common.auth.api.external.AuthExPermissionApi;
 import com.tencent.devops.common.service.ToolMetaCacheService;
 import com.tencent.devops.common.web.RestResource;
 import org.apache.commons.lang.StringUtils;
@@ -58,8 +59,15 @@ public class BuildToolMetaRestResourceImpl implements BuildToolMetaRestResource 
     @Autowired
     private ToolMetaCacheService toolMetaCacheService;
 
+    @Autowired
+    private AuthExPermissionApi authExPermissionApi;
+
     @Override
     public Result<ToolMetaDetailVO> register(String userName, ToolMetaDetailVO toolMetaDetailVO) {
+        if (StringUtils.isBlank(userName) || !authExPermissionApi.isAdminMember(userName)) {
+            throw new CodeCCException(
+                    com.tencent.devops.common.constant.CommonMessageCode.IS_NOT_ADMIN_MEMBER);
+        }
         return new Result<>(toolMetaService.register(userName, toolMetaDetailVO));
     }
 

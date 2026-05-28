@@ -31,17 +31,32 @@ def delete_file_folder(src):
         except:  
             pass 
 
+def _resolve_entry_path(base_dir, entry_name):
+    name = entry_name.replace('\\', '/')
+    if not name or name.startswith('/') or os.path.isabs(name):
+        raise ValueError('invalid zip entry: %s' % entry_name)
+    base_real = os.path.realpath(base_dir)
+    target = os.path.realpath(os.path.join(base_real, name))
+    if target != base_real and not target.startswith(base_real + os.sep):
+        raise ValueError('invalid zip entry: %s' % entry_name)
+    return target
+
 def unzip_file(zipfilename, unziptodir):
     if not os.path.exists(unziptodir): os.makedirs(unziptodir)
     zfobj = zipfile.ZipFile(zipfilename)
     for name in zfobj.namelist():
-        name = name.replace('\\','/')
-        if name.endswith('/'):
-            os.makedirs(os.path.join(unziptodir, name))
-        else:            
-            ext_filename = os.path.join(unziptodir, name)
-            ext_dir= os.path.dirname(ext_filename)
-            if not os.path.exists(ext_dir) : os.makedirs(ext_dir)
+        try:
+            ext_filename = _resolve_entry_path(unziptodir, name)
+        except ValueError as e:
+            print('skip entry: %s' % e)
+            continue
+        if name.replace('\\', '/').endswith('/'):
+            if not os.path.exists(ext_filename):
+                os.makedirs(ext_filename)
+        else:
+            ext_dir = os.path.dirname(ext_filename)
+            if ext_dir and not os.path.exists(ext_dir):
+                os.makedirs(ext_dir)
             with open(ext_filename, 'wb') as outfile:
                 outfile.write(zfobj.read(name))
                 

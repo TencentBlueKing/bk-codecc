@@ -178,7 +178,7 @@
                   class="codecc-icon icon-tapd"
                 ></span>
               </span>
-              <div v-if="isOpenIde && checkerShow()">
+              <div v-if="isInnerSite && isOpenIde && checkerShow()">
                 <div v-if="openIdeDetail.data.length > 0 && openIdeDetail.success && !openIdeDetail.low">
                   <bk-alert class="close-ide" type="success">
                     <div slot="title">{{ $t('检测到您已安装PreCI') }}</div>
