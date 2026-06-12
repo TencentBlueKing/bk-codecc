@@ -239,6 +239,7 @@
 <script>
 import { mapState } from 'vuex';
 import { language } from '../../i18n';
+import { withSitePath } from '@/utils/path';
 
 export default {
   props: {
@@ -550,11 +551,13 @@ export default {
     },
     goToTaskDetailUrl(taskId) {
       let prefix = `${location.protocol}//${location.host}`;
+      let path = withSitePath(`/codecc/${this.projectId}/task/${taskId}/detail`);
       if (window.self !== window.top) {
         prefix = `${window.DEVOPS_SITE_URL}/console`;
+        path = `/codecc/${this.projectId}/task/${taskId}/detail`;
       }
-      return `${prefix}/codecc/${this.projectId}/task/${taskId}/detail`
-    }
+      return `${prefix}${path}`;
+    },
   },
 };
 </script>

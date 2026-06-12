@@ -84,6 +84,7 @@ const routes = rootRoutes.concat(
 
 const router = new VueRouter({
   mode: 'history',
+  base: window.BK_SITE_PATH || '/',
   routes,
 });
 

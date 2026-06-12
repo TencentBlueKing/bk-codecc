@@ -470,60 +470,65 @@ export default {
       }
       const params = { ...this.$route.params, toolId: toolName };
       // delete routeParams.toolId
+      // 注意：href 用于 <a> 标签显示（需包含 router base，如 /codecc-demo/）；
+      // to 用于 router.push（不能包含 base，否则会被再次拼接导致 base 重复）。
+      const resolveItem = location => ({
+        to: location,
+        href: this.$router.resolve(location).href,
+      });
       const menuBase = [
         {
           id: 'task-detail',
           name: this.$t('总览'),
           routeName: 'task-detail',
           icon: 'icon-apps',
-          href: this.$router.resolve({
+          ...resolveItem({
             name: 'task-detail',
             params: routeParams,
             query: { buildNum: 'latest' },
-          }).href,
+          }),
         },
         {
           id: 'task-settings',
           name: this.$t('设置'),
           routeName: 'task-settings',
           icon: 'codecc-icon icon-setting',
-          group: true,
-          href: this.$router.resolve({
-            name: 'task-settings',
+          ...resolveItem({
+            name: 'task-settings-code',
             params: routeParams,
-          }).href,
+          }),
         },
         {
           id: 'defect',
           name: this.$t('代码问题'),
           routeName: 'defect-lint',
           icon: 'icon-order',
-          href: this.$router.resolve({
+          ...resolveItem({
             name: `defect-${this.dimension.toLocaleLowerCase()}-list`,
             params,
             query: { dimension: this.dimension },
-          }).href,
+          }),
         },
         {
           id: 'ccn',
           name: this.$t('圈复杂度'),
           routeName: 'defect-ccn',
           icon: 'codecc-icon icon-complexity',
-          href: this.$router.resolve({ name: 'defect-ccn-list', params }).href,
+          ...resolveItem({ name: 'defect-ccn-list', params }),
         },
         {
           id: 'dupc',
           name: this.$t('重复率'),
           routeName: 'defect-dupc',
           icon: 'codecc-icon icon-repeat-rate',
-          href: this.$router.resolve({ name: 'defect-dupc-list', params }).href,
+          ...resolveItem({ name: 'defect-dupc-list', params }),
         },
         {
           id: 'cloc',
           name: this.$t('代码统计'),
           routeName: 'defect-cloc',
           icon: 'codecc-icon icon-statistics',
-          href: this.$router.resolve({ name: 'defect-cloc-list', params }).href,
+          ...resolveItem({ name: 'defect-cloc-list', params }),
         },
       ];
       const scaMenusConfig = {
@@ -531,7 +536,7 @@ export default {
         name: this.$t('软件成分'),
         routeName: 'defect-sca',
         icon: 'codecc-icon icon-software-components',
-        href: this.$router.resolve({ name: 'defect-sca-pkg-list', params }).href,
+        ...resolveItem({ name: 'defect-sca-pkg-list', params }),
       };
       // 若scaList不为空，则展示软件成分
       if (this.scaList.length > 0) {
@@ -706,8 +711,24 @@ export default {
       });
     },
     handleMenuSelect(id, item) {
-      if (item.href !== this.$route.path) {
-        this.$router.push(item.href);
+      // bk-navigation-menu 的 select 事件 item 是子组件实例，不是 menus 里的配置对象，
+      // 因此需要按 id 在 menus（及其 children）中查找对应配置。
+      const findMenuConfig = (list) => {
+        for (const cfg of list) {
+          if (cfg.id === id) return cfg;
+          if (cfg.children) {
+            const hit = findMenuConfig(cfg.children);
+            if (hit) return hit;
+          }
+        }
+        return null;
+      };
+      const config = findMenuConfig(this.menus);
+      if (!config || !config.to) return;
+      // 使用未拼接 base 的 location 对象进行跳转，避免 router.push 时 base 被重复拼接
+      const resolved = this.$router.resolve(config.to);
+      if (resolved.route.fullPath !== this.$route.fullPath) {
+        this.$router.push(config.to);
       }
     },
     openSlider() {
